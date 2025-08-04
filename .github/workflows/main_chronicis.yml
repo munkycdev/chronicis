@@ -19,5 +19,6 @@ jobs:
           app-name: chronicis
           slot-name: Production
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-          package: ./wwwroot
+          package: .
+
 
