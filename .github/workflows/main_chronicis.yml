@@ -13,20 +13,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_0D303F9D8B7F436882908052B9F80031 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E3D6C2A9BC5F46478C4E36BB918B45D9 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4FA7BC9036404E8F864DC93159440E8A }}
-
       - name: Upload to Azure
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@v2
         with:
-          app-name: 'chronicis'
-          slot-name: 'Production'
+          app-name: chronicis
+          slot-name: Production
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           package: .
+
 
 
 
