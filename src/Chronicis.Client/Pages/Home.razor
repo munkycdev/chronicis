@@ -1,0 +1,45 @@
+@page "/"
+@inject HttpClient Http
+
+<PageTitle>Chronicis</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Welcome to CHRONICIS</MudText>
+<MudText Class="mb-4">Your D&D campaign knowledge manager</MudText>
+
+@if (_healthStatus == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    <MudText Class="mt-2">Checking API connection...</MudText>
+}
+else if (_healthStatus.Status == "Healthy")
+{
+    <MudAlert Severity="Severity.Success">
+        <strong>@_healthStatus.Message</strong><br/>
+        API Connected at @_healthStatus.Timestamp.ToLocalTime().ToString("HH:mm:ss")
+    </MudAlert>
+}
+else
+{
+    <MudAlert Severity="Severity.Error">
+        <strong>API Connection Failed</strong><br/>
+        @_errorMessage
+    </MudAlert>
+}
+
+@code {
+    private HealthCheckResponse? _healthStatus;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _healthStatus = await Http.GetFromJsonAsync<HealthCheckResponse>("api/health");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error: {ex.Message}";
+            _healthStatus = new HealthCheckResponse { Status = "Unhealthy" };
+        }
+    }
+}
