@@ -6,6 +6,12 @@
         "isEnabled": true,
         "maxTelemetryItemsPerSecond": 20
       }
+    },
+    "logLevel": {
+      "default": "Information",
+      "Host.Results": "Information",
+      "Function": "Information",
+      "Host.Aggregator": "Information"
     }
   },
   "extensions": {
@@ -13,13 +19,8 @@
       "routePrefix": "api"
     }
   },
-  "cors": {
-    "allowedOrigins": [
-      "https://localhost:5001",
-      "https://localhost:5001/",
-      "http://localhost:5002",
-      "https://localhost:7071"
-    ],
-    "supportCredentials": false
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+    "version": "[4.*, 5.0.0)"
   }
 }

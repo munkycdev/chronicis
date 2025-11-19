@@ -1,0 +1,136 @@
+using Chronicis.Api.Data;
+using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace Chronicis.Api.Services
+{
+    /// <summary>
+    /// Repository service for Article entity operations.
+    /// Handles all database queries and business logic for articles.
+    /// </summary>
+    public interface IArticleService
+    {
+        Task<List<ArticleTreeDto>> GetRootArticlesAsync();
+        Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId);
+        Task<ArticleDetailDto?> GetArticleDetailAsync(int id);
+    }
+
+    public class ArticleService : IArticleService
+    {
+        private readonly ChronicisDbContext _context;
+        private readonly ILogger<ArticleService> _logger;
+
+        public ArticleService(ChronicisDbContext context, ILogger<ArticleService> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Get all root-level articles (ParentId is null).
+        /// </summary>
+        public async Task<List<ArticleTreeDto>> GetRootArticlesAsync()
+        {
+            _logger.LogInformation("Fetching root articles");
+
+            return await _context.Articles
+                .Where(a => a.ParentId == null)
+                .OrderBy(a => a.Title)
+                .Select(a => new ArticleTreeDto
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    ParentId = a.ParentId,
+                    HasChildren = a.Children.Any(),
+                    CreatedDate = a.CreatedDate
+                })
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Get all child articles of a specific parent.
+        /// </summary>
+        public async Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId)
+        {
+            _logger.LogInformation("Fetching children for article {ParentId}", parentId);
+
+            return await _context.Articles
+                .Where(a => a.ParentId == parentId)
+                .OrderBy(a => a.Title)
+                .Select(a => new ArticleTreeDto
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    ParentId = a.ParentId,
+                    HasChildren = a.Children.Any(),
+                    CreatedDate = a.CreatedDate
+                })
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Get full article details including breadcrumb path from root.
+        /// </summary>
+        public async Task<ArticleDetailDto?> GetArticleDetailAsync(int id)
+        {
+            _logger.LogInformation("Fetching article detail for {ArticleId}", id);
+
+            var article = await _context.Articles
+                .Include(a => a.Parent)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (article == null)
+            {
+                _logger.LogWarning("Article {ArticleId} not found", id);
+                return null;
+            }
+
+            // Build breadcrumb path by walking up the hierarchy
+            var breadcrumbs = await BuildBreadcrumbsAsync(article);
+
+            return new ArticleDetailDto
+            {
+                Id = article.Id,
+                Title = article.Title,
+                ParentId = article.ParentId,
+                Body = article.Body,
+                CreatedDate = article.CreatedDate,
+                ModifiedDate = article.ModifiedDate,
+                Breadcrumbs = breadcrumbs
+            };
+        }
+
+        /// <summary>
+        /// Recursively build breadcrumb trail from root to current article.
+        /// </summary>
+        private async Task<List<BreadcrumbDto>> BuildBreadcrumbsAsync(Article article)
+        {
+            var breadcrumbs = new List<BreadcrumbDto>();
+            var current = article;
+
+            // Walk up the tree to build path
+            while (current != null)
+            {
+                breadcrumbs.Insert(0, new BreadcrumbDto
+                {
+                    Id = current.Id,
+                    Title = current.Title
+                });
+
+                if (current.ParentId.HasValue)
+                {
+                    current = await _context.Articles
+                        .FirstOrDefaultAsync(a => a.Id == current.ParentId.Value);
+                }
+                else
+                {
+                    current = null;
+                }
+            }
+
+            return breadcrumbs;
+        }
+    }
+}
