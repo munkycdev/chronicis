@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 using System.Diagnostics;
 
-StartLocalDB();
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -25,35 +24,3 @@ builder.Services.AddScoped<ArticleApiService>();
 builder.Services.AddScoped<TreeStateService>();
 
 await builder.Build().RunAsync();
-
-static void StartLocalDB()
-{
-    try
-    {
-        var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "sqllocaldb",
-                Arguments = "start mssqllocaldb",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = false
-            }
-        };
-
-        process.Start();
-        process.WaitForExit();
-
-        if (process.ExitCode == 0 || process.ExitCode == -1) // -1 means already running
-        {
-            Console.WriteLine("✓ LocalDB is running");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Warning: Could not start LocalDB: {ex.Message}");
-        Console.WriteLine("You may need to start it manually: sqllocaldb start mssqllocaldb");
-    }
-}

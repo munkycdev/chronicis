@@ -51,6 +51,9 @@ namespace Chronicis.Api.Data
 
         private void SeedData(ModelBuilder modelBuilder)
         {
+            // Use static dates instead of DateTime.UtcNow
+            var baseDate = new DateTime(2024, 6, 1, 12, 0, 0, DateTimeKind.Utc);
+
             // Root articles
             modelBuilder.Entity<Article>().HasData(
                 new Article
@@ -58,21 +61,21 @@ namespace Chronicis.Api.Data
                     Id = 1,
                     Title = "World",
                     Body = "Overview of the campaign world.",
-                    CreatedDate = DateTime.UtcNow.AddMonths(-6)
+                    CreatedDate = baseDate
                 },
                 new Article
                 {
                     Id = 2,
                     Title = "Characters",
                     Body = "Player characters and important NPCs.",
-                    CreatedDate = DateTime.UtcNow.AddMonths(-6)
+                    CreatedDate = baseDate
                 },
                 new Article
                 {
                     Id = 3,
                     Title = "Sessions",
                     Body = "Campaign session notes and history.",
-                    CreatedDate = DateTime.UtcNow.AddMonths(-6)
+                    CreatedDate = baseDate
                 }
             );
 
@@ -84,7 +87,7 @@ namespace Chronicis.Api.Data
                     Title = "Sword Coast",
                     ParentId = 1,
                     Body = "The western region of Faerûn.",
-                    CreatedDate = DateTime.UtcNow.AddMonths(-5)
+                    CreatedDate = baseDate.AddDays(30)
                 },
                 new Article
                 {
@@ -92,7 +95,7 @@ namespace Chronicis.Api.Data
                     Title = "Waterdeep",
                     ParentId = 4,
                     Body = "The City of Splendors, largest city on the Sword Coast.",
-                    CreatedDate = DateTime.UtcNow.AddMonths(-5)
+                    CreatedDate = baseDate.AddDays(60)
                 }
             );
 
@@ -104,7 +107,7 @@ namespace Chronicis.Api.Data
                     Title = "Thorin Ironforge",
                     ParentId = 2,
                     Body = "Dwarf fighter, member of the adventuring party.",
-                    CreatedDate = DateTime.UtcNow.AddMonths(-4)
+                    CreatedDate = baseDate.AddDays(90)
                 },
                 new Article
                 {
@@ -112,7 +115,7 @@ namespace Chronicis.Api.Data
                     Title = "Elara Moonwhisper",
                     ParentId = 2,
                     Body = "Elf wizard, specializes in divination magic.",
-                    CreatedDate = DateTime.UtcNow.AddMonths(-4)
+                    CreatedDate = baseDate.AddDays(90)
                 }
             );
 
@@ -124,7 +127,7 @@ namespace Chronicis.Api.Data
                     Title = "Session 1: The Adventure Begins",
                     ParentId = 3,
                     Body = "The party meets at the Yawning Portal tavern in Waterdeep.",
-                    CreatedDate = DateTime.UtcNow.AddMonths(-3)
+                    CreatedDate = baseDate.AddDays(120)
                 }
             );
         }
