@@ -1,0 +1,157 @@
+@using Chronicis.Shared.DTOs
+@using Chronicis.Client.Services
+@inject ArticleApiService ArticleApi
+@inject TreeStateService TreeState
+@inject ILogger<ArticleDetail> Logger
+
+<MudPaper Class="pa-6" Elevation="1">
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+        <MudSkeleton SkeletonType="SkeletonType.Text" Height="60px" Class="mt-4" />
+        <MudSkeleton SkeletonType="SkeletonType.Text" Height="40px" Class="mt-2" />
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" Class="mt-4" />
+    }
+    else if (_error != null)
+    {
+        <MudAlert Severity="Severity.Error">@_error</MudAlert>
+    }
+    else if (_article == null)
+    {
+        <MudText Typo="Typo.h5" Class="mb-4">Welcome to Chronicis</MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            Select an article from the navigation tree to view its details.
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Default">
+            Or create a new article to start building your campaign knowledge base.
+        </MudText>
+    }
+    else
+    {
+        @* Breadcrumb Navigation *@
+        <MudBreadcrumbs Items="_breadcrumbItems" Class="mb-4">
+            <ItemTemplate Context="item">
+                <MudLink Href="#" OnClick="@(() => NavigateToBreadcrumb(item))">
+                    @item.Text
+                </MudLink>
+            </ItemTemplate>
+        </MudBreadcrumbs>
+
+        @* Article Header *@
+        <div class="d-flex justify-space-between align-center mb-4">
+            <MudText Typo="Typo.h4">@_article.Title</MudText>
+            <div>
+                @* Placeholder for Edit/Delete buttons - Phase 2 *@
+            </div>
+        </div>
+
+        @* Metadata *@
+        <MudText Typo="Typo.body2" Color="Color.Default" Class="mb-4">
+            Created: @_article.CreatedDate.ToLocalTime().ToString("MMM dd, yyyy 'at' h:mm tt")
+            @if (_article.ModifiedDate.HasValue)
+            {
+                <span> • Modified: @_article.ModifiedDate.Value.ToLocalTime().ToString("MMM dd, yyyy 'at' h:mm tt")</span>
+            }
+        </MudText>
+
+        @* Article Body *@
+        <MudDivider Class="mb-4" />
+        
+        @if (string.IsNullOrWhiteSpace(_article.Body))
+        {
+            <MudText Typo="Typo.body2" Color="Color.Default" Class="font-italic">
+                This article has no content yet. Click Edit to add content.
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.body1" Style="white-space: pre-wrap;">
+                @_article.Body
+            </MudText>
+        }
+    }
+</MudPaper>
+
+@code {
+    private ArticleDetailDto? _article;
+    private List<BreadcrumbItem> _breadcrumbItems = new();
+    private bool _isLoading;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        TreeState.OnStateChanged += OnTreeStateChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && TreeState.SelectedArticleId.HasValue)
+        {
+            await LoadArticleAsync(TreeState.SelectedArticleId.Value);
+        }
+    }
+
+    private async void OnTreeStateChanged()
+    {
+        if (TreeState.SelectedArticleId.HasValue)
+        {
+            await LoadArticleAsync(TreeState.SelectedArticleId.Value);
+        }
+        else
+        {
+            _article = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadArticleAsync(int articleId)
+    {
+        try
+        {
+            _isLoading = true;
+            _error = null;
+            StateHasChanged();
+
+            _article = await ArticleApi.GetArticleDetailAsync(articleId);
+            
+            if (_article != null)
+            {
+                BuildBreadcrumbs();
+            }
+            else
+            {
+                _error = "Article not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load article {ArticleId}", articleId);
+            _error = "Failed to load article. Please try again.";
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void BuildBreadcrumbs()
+    {
+        _breadcrumbItems = _article?.Breadcrumbs
+            .Select(b => new BreadcrumbItem(b.Title, null, false, b.Id.ToString()))
+            .ToList() ?? new();
+    }
+
+    private void NavigateToBreadcrumb(BreadcrumbItem item)
+    {
+        if (int.TryParse(item.Href, out var articleId))
+        {
+            TreeState.SelectedArticleId = articleId;
+        }
+    }
+
+    public void Dispose()
+    {
+        TreeState.OnStateChanged -= OnTreeStateChanged;
+    }
+}

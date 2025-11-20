@@ -1,0 +1,106 @@
+@inherits LayoutComponentBase
+@using Chronicis.Client.Components
+@using Chronicis.Client.Components.Articles
+
+<MudThemeProvider Theme="_theme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    @* App Bar *@
+    <MudAppBar Elevation="1" Color="Color.Primary">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" 
+                       Color="Color.Inherit" 
+                       Edge="Edge.Start" 
+                       OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="ml-3">Chronicis</MudText>
+        <MudSpacer />
+        @* Placeholder for global search - Phase 3 *@
+    </MudAppBar>
+
+    @* Left Navigation Drawer *@
+    <MudDrawer @bind-Open="_drawerOpen" 
+               Elevation="2" 
+               Variant="@DrawerVariant.Persistent"
+               Width="320px">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">Articles</MudText>
+        </MudDrawerHeader>
+        
+        <MudDivider />
+        
+        @* Search Box - Phase 3 implementation *@
+        <div class="pa-4">
+            <MudTextField @bind-Value="_searchQuery"
+                          Placeholder="Search articles..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Disabled="true" />
+            <MudText Typo="Typo.caption" Color="Color.Default" Class="mt-1">
+                Search coming in Phase 3
+            </MudText>
+        </div>
+
+        <MudDivider />
+
+        @* Article Tree *@
+        <ArticleTreeView />
+    </MudDrawer>
+
+    @* Main Content Area *@
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private string _searchQuery = string.Empty;
+
+    // Chronicis Theme matching the style guide
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#1F2A33",        // Deep Blue-Grey
+            Secondary = "#C4AF8E",      // Beige-Gold
+            AppbarBackground = "#1F2A33",
+            Background = "#F4F0EA",     // Soft Off-White
+            DrawerBackground = "#FAFAFA",
+            Surface = "#FFFFFF",
+            TextPrimary = "#1A1A1A",    // Charcoal Text
+            TextSecondary = "#3A4750",  // Slate Grey
+        },
+        Typography = new Typography
+        {
+            Default = new Default
+            {
+                FontFamily = new[] { "Inter", "Helvetica", "Arial", "sans-serif" }
+            },
+            H4 = new H4
+            {
+                FontFamily = new[] { "Spellweaver Display", "Georgia", "serif" },
+                FontWeight = 500
+            },
+            H5 = new H5
+            {
+                FontFamily = new[] { "Spellweaver Display", "Georgia", "serif" },
+                FontWeight = 500
+            },
+            H6 = new H6
+            {
+                FontFamily = new[] { "Spellweaver Display", "Georgia", "serif" },
+                FontWeight = 500
+            }
+        }
+    };
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}

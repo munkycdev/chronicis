@@ -1,0 +1,120 @@
+@using Chronicis.Shared.DTOs
+
+<div class="tree-item @(IsSelected ? "selected" : "")"
+     style="@($"padding-left: {Level * 20}px; cursor: pointer;")"
+     @onclick="@HandleClick">
+
+    @if (Article.HasChildren)
+    {
+        <MudIconButton Icon="@GetExpandIcon()"
+                       Size="Size.Small"
+                       OnClick="@ToggleExpand"
+                       Class="expand-button" />
+    }
+    else
+    {
+        <span style="display: inline-block; width: 40px;"></span>
+    }
+
+    <MudIcon Icon="@GetArticleIcon()"
+             Size="Size.Small"
+             Class="article-icon" />
+
+    <span class="article-title">@Article.Title</span>
+</div>
+
+@if (IsExpanded && Article.HasChildren)
+{
+    @if (ChildrenCache.TryGetValue(Article.Id, out var children))
+    {
+        @foreach (var child in children)
+        {
+            <ArticleTreeNode Article="@child"
+                             Level="@(Level + 1)"
+                             OnArticleSelected="@OnArticleSelected"
+                             OnLoadChildren="@OnLoadChildren"
+                             ExpandedNodes="@ExpandedNodes"
+                             SelectedId="@SelectedId"
+                             ChildrenCache="@ChildrenCache" />
+        }
+    }
+    else
+    {
+        <div class="tree-item" style="@($"padding-left: {(Level + 1) * 20}px")">
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            <span style="margin-left: 8px;">Loading...</span>
+        </div>
+    }
+}
+
+<style>
+    .tree-item {
+        padding: 8px 4px;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.2s;
+    }
+
+        .tree-item:hover {
+            background-color: rgba(196, 175, 142, 0.1);
+        }
+
+        .tree-item.selected {
+            background-color: rgba(196, 175, 142, 0.2);
+            font-weight: 500;
+        }
+
+    .expand-button {
+        display: inline-flex;
+        margin-right: 4px;
+    }
+
+    .article-icon {
+        margin-right: 8px;
+    }
+
+    .article-title {
+        flex: 1;
+    }
+</style>
+
+@code {
+    [Parameter] public ArticleTreeDto Article { get; set; } = null!;
+    [Parameter] public int Level { get; set; }
+    [Parameter] public EventCallback<int> OnArticleSelected { get; set; }
+    [Parameter] public EventCallback<int> OnLoadChildren { get; set; }
+    [Parameter] public HashSet<int> ExpandedNodes { get; set; } = new();
+    [Parameter] public int? SelectedId { get; set; }
+    [Parameter] public Dictionary<int, List<ArticleTreeDto>> ChildrenCache { get; set; } = new();
+
+    private bool IsExpanded => ExpandedNodes.Contains(Article.Id);
+    private bool IsSelected => SelectedId == Article.Id;
+
+    private async Task HandleClick()
+    {
+        await OnArticleSelected.InvokeAsync(Article.Id);
+    }
+
+    private async Task ToggleExpand()
+    {
+        if (IsExpanded)
+        {
+            ExpandedNodes.Remove(Article.Id);
+        }
+        else
+        {
+            ExpandedNodes.Add(Article.Id);
+            await OnLoadChildren.InvokeAsync(Article.Id);
+        }
+    }
+
+    private string GetExpandIcon()
+    {
+        return IsExpanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight;
+    }
+
+    private string GetArticleIcon()
+    {
+        return Article.HasChildren ? Icons.Material.Filled.Folder : Icons.Material.Filled.Description;
+    }
+}
