@@ -76,5 +76,25 @@ namespace Chronicis.Client.Services
                 throw;
             }
         }
+
+        public async Task<ArticleDto> CreateArticleAsync(ArticleCreateDto dto)
+        {
+            var response = await _httpClient.PostAsJsonAsync("/api/articles", dto);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<ArticleDto>();
+        }
+
+        public async Task<ArticleDto> UpdateArticleAsync(int id, ArticleUpdateDto dto)
+        {
+            var response = await _httpClient.PutAsJsonAsync($"/api/articles/{id}", dto);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<ArticleDto>();
+        }
+
+        public async Task DeleteArticleAsync(int id)
+        {
+            var response = await _httpClient.DeleteAsync($"/api/articles/{id}");
+            response.EnsureSuccessStatusCode();
+        }
     }
 }

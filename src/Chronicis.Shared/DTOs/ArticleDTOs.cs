@@ -3,6 +3,24 @@ using System.Collections.Generic;
 
 namespace Chronicis.Shared.DTOs
 {
+    public class ArticleDto : ArticleDetailDto
+    {
+        public bool HasChildren { get; set; } = false;
+    }
+
+    public class ArticleCreateDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public int? ParentId { get; set; }
+        public string Body { get; set; } = string.Empty;
+    }
+
+    public class ArticleUpdateDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Body { get; set; } = string.Empty;
+    }
+
     /// <summary>
     /// Lightweight DTO for tree view display - only includes essential fields.
     /// </summary>

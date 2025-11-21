@@ -1,5 +1,5 @@
 using Chronicis.Api.Data;
-using Chronicis.Api.Models;
+using Chronicis.Shared.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;

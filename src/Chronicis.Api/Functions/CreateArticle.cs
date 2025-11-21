@@ -1,6 +1,6 @@
 using Chronicis.Api.Data;
-using Chronicis.Api.Models;
 using Chronicis.Api.Services;
+using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
