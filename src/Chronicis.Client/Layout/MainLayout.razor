@@ -1,25 +1,41 @@
 @inherits LayoutComponentBase
+@using Chronicis.Client.ViewModels
 
-<MudThemeProvider Theme="_theme" />
+<MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Class="ml-3 chronicis-heading"><img src="/images/logo.png" alt="Chronicis Logo" class="logo" height="50" width="50" />CHRONICIS</MudText>
+    <MudAppBar Elevation="1" Dense="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="@ToggleDrawer" />
+        <MudImage Src="logo.png" Height="32" Class="mr-2" />
+        <MudText Typo="Typo.h6">Chronicis</MudText>
         <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Inherit" />
     </MudAppBar>
-    
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" Variant="@DrawerVariant.Persistent">
+
+    <MudDrawer @bind-Open="_drawerOpen"
+               Elevation="1"
+               Variant="@DrawerVariant.Persistent"
+               Width="320px">
         <MudDrawerHeader>
-            <MudText Typo="Typo.h6">Campaign</MudText>
+            <MudTextField @bind-Value="_searchQuery"
+                          Placeholder="Search articles..."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Clearable="true"
+                          OnKeyUp="@OnSearchKeyUp"
+                          DebounceInterval="300" />
         </MudDrawerHeader>
-        <MudNavMenu>
-            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Home</MudNavLink>
-        </MudNavMenu>
+        <ArticleTreeView TreeItems="@_treeItems"
+                         OnArticleSelected="@OnArticleSelected" />
     </MudDrawer>
-    
+
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
             @Body
@@ -29,24 +45,24 @@
 
 @code {
     private bool _drawerOpen = true;
-
-    private MudTheme _theme = new MudTheme
-    {
-        PaletteLight = new PaletteLight
-        {
-            Primary = "#C4AF8E",        // Beige-Gold
-            Secondary = "#3A4750",      // Slate Grey
-            AppbarBackground = "#1F2A33", // Deep Blue-Grey
-            AppbarText = "#F4F0EA",     // Soft Off-White
-            Background = "#F4F0EA",     // Soft Off-White
-            Surface = "#FFFFFF",
-            DrawerBackground = "#1F2A33", // Deep Blue-Grey
-            DrawerText = "#F4F0EA",     // Soft Off-White
-        }
-    };
+    private string _searchQuery = string.Empty;
+    private List<ArticleTreeItemViewModel> _treeItems = new();
 
     private void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    private void OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            // Implement search in Phase 3
+        }
+    }
+
+    private void OnArticleSelected(ArticleTreeItemViewModel item)
+    {
+        // Handle article selection
     }
 }

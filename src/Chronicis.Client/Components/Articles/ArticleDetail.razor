@@ -85,17 +85,17 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && TreeState.SelectedArticleId.HasValue)
+        if (firstRender && TreeState.SelectedArticle != null)
         {
-            await LoadArticleAsync(TreeState.SelectedArticleId.Value);
+            await LoadArticleAsync(TreeState.SelectedArticle.Id);
         }
     }
 
     private async void OnTreeStateChanged()
     {
-        if (TreeState.SelectedArticleId.HasValue)
+        if (TreeState.SelectedArticle != null)
         {
-            await LoadArticleAsync(TreeState.SelectedArticleId.Value);
+            await LoadArticleAsync(TreeState.SelectedArticle.Id);
         }
         else
         {
@@ -146,7 +146,7 @@
     {
         if (int.TryParse(item.Href, out var articleId))
         {
-            TreeState.SelectedArticleId = articleId;
+            TreeState.SelectedArticle?.Id = articleId;
         }
     }
 

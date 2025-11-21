@@ -1,82 +1,153 @@
+using Chronicis.Client.ViewModels;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Models;
 
-namespace Chronicis.Client.Services
+namespace Chronicis.Client.Services;
+
+public class TreeStateService
 {
-    /// <summary>
-    /// Manages the state of the article tree including selection and expansion.
-    /// This service is scoped to maintain state during user session.
-    /// </summary>
-    public class TreeStateService
+    private List<ArticleTreeItemViewModel> _rootItems = new();
+    private ArticleTreeItemViewModel? _selectedArticle;
+
+    public event Action? OnStateChanged;
+
+    public List<ArticleTreeItemViewModel> RootItems => _rootItems;
+    public ArticleTreeItemViewModel? SelectedArticle => _selectedArticle;
+
+    public void Initialize(List<ArticleDto> rootArticles)
     {
-        private int? _selectedArticleId;
-        private readonly HashSet<int> _expandedNodes = new();
+        _rootItems = rootArticles.Select(MapToViewModel).ToList();
+        NotifyStateChanged();
+    }
 
-        public event Action? OnStateChanged;
-
-        /// <summary>
-        /// Currently selected article ID.
-        /// </summary>
-        public int? SelectedArticleId
+    public async Task LoadChildrenAsync(ArticleTreeItemViewModel parent, List<ArticleDto> children)
+    {
+        parent.Children = children.Select(c =>
         {
-            get => _selectedArticleId;
-            set
-            {
-                if (_selectedArticleId != value)
-                {
-                    _selectedArticleId = value;
-                    NotifyStateChanged();
-                }
-            }
+            var vm = MapToViewModel(c);
+            vm.ParentId = parent.Id;
+            return vm;
+        }).ToList();
+
+        parent.IsExpanded = true;
+        NotifyStateChanged();
+    }
+
+    public void SelectArticle(ArticleTreeItemViewModel article)
+    {
+        // Deselect previous
+        if (_selectedArticle != null)
+        {
+            _selectedArticle.IsSelected = false;
         }
 
-        /// <summary>
-        /// Set of article IDs that are currently expanded in the tree.
-        /// </summary>
-        public IReadOnlySet<int> ExpandedNodes => _expandedNodes;
+        // Select new
+        _selectedArticle = article;
+        article.IsSelected = true;
+        NotifyStateChanged();
+    }
 
-        /// <summary>
-        /// Toggle expansion state of a node.
-        /// </summary>
-        public void ToggleExpansion(int articleId)
+    // NEW METHODS FOR PHASE 2
+    public async Task AddArticleAsync(ArticleDto article)
+    {
+        var viewModel = MapToViewModel(article);
+
+        if (article.ParentId.HasValue)
         {
-            if (_expandedNodes.Contains(articleId))
+            // Find parent and add as child
+            var parent = FindArticleById(_rootItems, article.ParentId.Value);
+            if (parent != null)
             {
-                _expandedNodes.Remove(articleId);
+                viewModel.ParentId = parent.Id;
+                parent.Children.Add(viewModel);
+                parent.IsExpanded = true; // Auto-expand to show new child
             }
-            else
+        }
+        else
+        {
+            // Add as root article
+            _rootItems.Add(viewModel);
+        }
+
+        NotifyStateChanged();
+    }
+
+    public async Task UpdateArticleAsync(ArticleDto article)
+    {
+        var existing = FindArticleById(_rootItems, article.Id);
+        if (existing != null)
+        {
+            existing.Title = article.Title;
+            existing.Body = article.Body;
+            NotifyStateChanged();
+        }
+    }
+
+    public async Task RemoveArticleAsync(int articleId)
+    {
+        if (RemoveArticleRecursive(_rootItems, articleId))
+        {
+            // If we deleted the selected article, clear selection
+            if (_selectedArticle?.Id == articleId)
             {
-                _expandedNodes.Add(articleId);
+                _selectedArticle = null;
             }
             NotifyStateChanged();
         }
+    }
 
-        /// <summary>
-        /// Expand a specific node.
-        /// </summary>
-        public void ExpandNode(int articleId)
+    private bool RemoveArticleRecursive(List<ArticleTreeItemViewModel> items, int articleId)
+    {
+        var item = items.FirstOrDefault(i => i.Id == articleId);
+        if (item != null)
         {
-            if (_expandedNodes.Add(articleId))
+            items.Remove(item);
+            return true;
+        }
+
+        foreach (var childItem in items)
+        {
+            if (RemoveArticleRecursive(childItem.Children, articleId))
             {
-                NotifyStateChanged();
+                return true;
             }
         }
 
-        /// <summary>
-        /// Collapse a specific node.
-        /// </summary>
-        public void CollapseNode(int articleId)
+        return false;
+    }
+
+    private ArticleTreeItemViewModel? FindArticleById(List<ArticleTreeItemViewModel> items, int id)
+    {
+        foreach (var item in items)
         {
-            if (_expandedNodes.Remove(articleId))
-            {
-                NotifyStateChanged();
-            }
+            if (item.Id == id)
+                return item;
+
+            var found = FindArticleById(item.Children, id);
+            if (found != null)
+                return found;
         }
 
-        /// <summary>
-        /// Check if a node is expanded.
-        /// </summary>
-        public bool IsExpanded(int articleId) => _expandedNodes.Contains(articleId);
+        return null;
+    }
 
-        private void NotifyStateChanged() => OnStateChanged?.Invoke();
+    private ArticleTreeItemViewModel MapToViewModel(ArticleDto dto)
+    {
+        return new ArticleTreeItemViewModel
+        {
+            Id = dto.Id,
+            Title = dto.Title,
+            ParentId = dto.ParentId,
+            Body = dto.Body,
+            HasChildren = dto.HasChildren,
+            Children = new List<ArticleTreeItemViewModel>(),
+            IsExpanded = false,
+            IsSelected = false
+        };
+    }
+
+    private void NotifyStateChanged()
+    {
+        OnStateChanged?.Invoke();
     }
 }

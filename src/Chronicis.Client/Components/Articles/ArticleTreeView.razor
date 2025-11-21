@@ -1,98 +1,207 @@
-@using Chronicis.Shared.DTOs
-@using Chronicis.Client.Services
-@inject ArticleApiService ArticleApi
-@inject TreeStateService TreeState
-@inject ILogger<ArticleTreeView> Logger
+@using Chronicis.Shared.Models
+@using Chronicis.Client.ViewModels
+@inject ArticleApiService ArticleApiService
+@inject TreeStateService TreeStateService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
-<MudPaper Class="pa-4" Elevation="0">
-    @if (_isLoading)
-    {
-        <MudProgressLinear Indeterminate="true" />
-        <MudText Typo="Typo.body2" Class="mt-2">Loading articles...</MudText>
-    }
-    else if (_error != null)
-    {
-        <MudAlert Severity="Severity.Error">@_error</MudAlert>
-    }
-    else if (!_rootArticles.Any())
-    {
-        <MudText Typo="Typo.body2" Color="Color.Default">No articles found. Create your first article to get started!</MudText>
-    }
-    else
-    {
-        @* Simple div-based tree instead of MudList *@
-        <div class="article-tree">
-            @foreach (var article in _rootArticles)
-            {
-                <ArticleTreeNode Article="@article"
-                                 Level="0"
-                                 OnArticleSelected="@OnArticleSelected"
-                                 OnLoadChildren="@LoadChildrenAsync"
-                                 ExpandedNodes="@_expandedNodes"
-                                 SelectedId="@TreeState.SelectedArticleId"
-                                 ChildrenCache="@_childrenCache" />
-            }
+<MudTreeView T="ArticleTreeItemViewModel" 
+             Items="@GetTreeItemData()"
+             Hover="true"
+             Dense="true"
+             Class="article-tree">
+    <ItemTemplate Context="item">
+        <div class="tree-item-content">
+            <span class="@(item.Value?.IsSelected == true ? "selected-item" : "")" 
+                  @onclick="@(() => OnArticleSelectedInternal(item.Value))">
+                @item.Value?.Title
+            </span>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" 
+                     Size="Size.Small" 
+                     Class="tree-item-menu"
+                     AnchorOrigin="Origin.BottomRight"
+                     TransformOrigin="Origin.TopRight">
+                <MudMenuItem OnClick="@(() => OnAddChild(item.Value))">
+                    <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
+                    Add Child
+                </MudMenuItem>
+                <MudMenuItem OnClick="@(() => OnEdit(item.Value))">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-2" />
+                    Edit
+                </MudMenuItem>
+                <MudDivider />
+                <MudMenuItem OnClick="@(() => OnDelete(item.Value))">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Class="mr-2" />
+                    <span style="color: var(--mud-palette-error);">Delete</span>
+                </MudMenuItem>
+            </MudMenu>
         </div>
-    }
-</MudPaper>
-
-<style>
-    .article-tree {
-        font-size: 14px;
-    }
-</style>
+    </ItemTemplate>
+</MudTreeView>
 
 @code {
-    private List<ArticleTreeDto> _rootArticles = new();
-    private Dictionary<int, List<ArticleTreeDto>> _childrenCache = new();
-    private HashSet<int> _expandedNodes = new();
-    private bool _isLoading = true;
-    private string? _error;
+    [Parameter]
+    public List<ArticleTreeItemViewModel> TreeItems { get; set; } = new();
 
-    protected override async Task OnInitializedAsync()
+    [Parameter]
+    public EventCallback<ArticleTreeItemViewModel> OnArticleSelected { get; set; }
+
+    private List<TreeItemData<ArticleTreeItemViewModel>> GetTreeItemData()
     {
-        await LoadRootArticlesAsync();
+        var treeItemData = new List<TreeItemData<ArticleTreeItemViewModel>>();
+        
+        foreach (var item in TreeItems)
+        {
+            treeItemData.Add(ConvertToTreeItemData(item));
+        }
+        
+        return treeItemData;
     }
 
-    private async Task LoadRootArticlesAsync()
+    private TreeItemData<ArticleTreeItemViewModel> ConvertToTreeItemData(ArticleTreeItemViewModel viewModel)
     {
-        try
+        var treeItem = new TreeItemData<ArticleTreeItemViewModel>
         {
-            _isLoading = true;
-            _error = null;
-            _rootArticles = await ArticleApi.GetRootArticlesAsync();
+            Value = viewModel,
+            Expanded = viewModel.IsExpanded,
+            Children = new List<TreeItemData<ArticleTreeItemViewModel>>()
+        };
+
+        if (viewModel.Children?.Any() == true)
+        {
+            foreach (var child in viewModel.Children)
+            {
+                treeItem.Children.Add(ConvertToTreeItemData(child));
+            }
         }
-        catch (Exception ex)
+
+        return treeItem;
+    }
+
+    private async Task OnArticleSelectedInternal(ArticleTreeItemViewModel? item)
+    {
+        if (item != null)
         {
-            Logger.LogError(ex, "Failed to load root articles");
-            _error = "Failed to load articles. Please try again.";
-        }
-        finally
-        {
-            _isLoading = false;
+            await OnArticleSelected.InvokeAsync(item);
         }
     }
 
-    private void OnArticleSelected(int articleId)
+    private async Task OnAddChild(ArticleTreeItemViewModel? parent)
     {
-        TreeState.SelectedArticleId = articleId;
-        StateHasChanged();
+        if (parent == null) return;
+
+        var parameters = new DialogParameters
+        {
+            { "Mode", ArticleEditor.EditorMode.Create },
+            { "ParentId", parent.Id },
+            { "OnSaved", EventCallback.Factory.Create<(string Title, string Body)>(this, async (data) => 
+            {
+                try
+                {
+                    var created = await ArticleApiService.CreateArticleAsync(new ArticleCreateDto
+                    {
+                        Title = data.Title,
+                        ParentId = parent.Id,
+                        Body = data.Body
+                    });
+                    
+                    await TreeStateService.AddArticleAsync(created);
+                    Snackbar.Add("Article created successfully!", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
+                }
+            }) }
+        };
+
+        var options = new DialogOptions 
+        { 
+            CloseButton = true, 
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true 
+        };
+
+        await DialogService.ShowAsync<ArticleEditor>("Create Article", parameters, options);
     }
 
-    private async Task LoadChildrenAsync(int parentId)
+    private async Task OnEdit(ArticleTreeItemViewModel? item)
     {
-        if (_childrenCache.ContainsKey(parentId))
-            return;
+        if (item == null) return;
 
-        try
+        var parameters = new DialogParameters
         {
-            var children = await ArticleApi.GetChildrenAsync(parentId);
-            _childrenCache[parentId] = children;
-            StateHasChanged();
-        }
-        catch (Exception ex)
+            { "Mode", ArticleEditor.EditorMode.Edit },
+            { "Article", new ArticleDto 
+            { 
+                Id = item.Id, 
+                Title = item.Title,
+                Body = item.Body ?? string.Empty,
+                ParentId = item.ParentId
+            } },
+            { "OnSaved", EventCallback.Factory.Create<(string Title, string Body)>(this, async (data) => 
+            {
+                try
+                {
+                    var updated = await ArticleApiService.UpdateArticleAsync(item.Id, new ArticleUpdateDto
+                    {
+                        Title = data.Title,
+                        Body = data.Body
+                    });
+                    
+                    await TreeStateService.UpdateArticleAsync(updated);
+                    Snackbar.Add("Article updated successfully!", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Failed to update article: {ex.Message}", Severity.Error);
+                }
+            }) }
+        };
+
+        var options = new DialogOptions 
+        { 
+            CloseButton = true, 
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true 
+        };
+
+        await DialogService.ShowAsync<ArticleEditor>("Edit Article", parameters, options);
+    }
+
+    private async Task OnDelete(ArticleTreeItemViewModel? item)
+    {
+        if (item == null) return;
+
+        var result = await DialogService.ShowMessageBox(
+            "Delete Article",
+            $"Are you sure you want to delete '{item.Title}'? This action cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+        
+        if (result == true)
         {
-            Logger.LogError(ex, "Failed to load children for article {ParentId}", parentId);
+            try
+            {
+                await ArticleApiService.DeleteArticleAsync(item.Id);
+                await TreeStateService.RemoveArticleAsync(item.Id);
+                Snackbar.Add("Article deleted successfully!", Severity.Success);
+            }
+            catch (HttpRequestException ex)
+            {
+                if (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    Snackbar.Add("Cannot delete article with children. Delete child articles first.", Severity.Warning);
+                }
+                else
+                {
+                    Snackbar.Add("Failed to delete article.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Failed to delete article: {ex.Message}", Severity.Error);
+            }
         }
     }
 }

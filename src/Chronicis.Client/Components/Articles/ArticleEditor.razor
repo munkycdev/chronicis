@@ -52,7 +52,7 @@
     public int? ParentId { get; set; }
 
     [Parameter]
-    public EventCallback<BaseArticleDto> OnSaved { get; set; }
+    public EventCallback<(string Title, string Body)> OnSaved { get; set; }
 
     private MudForm? _form;
     private bool _isValid;
@@ -79,30 +79,9 @@
         _isSaving = true;
         try
         {
-            BaseArticleDto result;
-
-            if (Mode == EditorMode.Create)
-            {
-                var createDto = new ArticleCreateDto
-                {
-                    Title = _title,
-                    ParentId = ParentId,
-                    Body = _body
-                };
-                result = createDto; // You'll call your API service here
-            }
-            else
-            {
-                var updateDto = new ArticleUpdateDto
-                {
-                    Title = _title,
-                    Body = _body
-                };
-                result = updateDto; // You'll call your API service here
-            }
-
-            await OnSaved.InvokeAsync(result);
-            MudDialog.Close(DialogResult.Ok(result));
+            // Just pass the title and body back to the parent
+            await OnSaved.InvokeAsync((_title, _body));
+            MudDialog.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)
         {
