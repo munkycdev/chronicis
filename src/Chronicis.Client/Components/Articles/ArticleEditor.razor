@@ -1,0 +1,127 @@
+@using Chronicis.Shared.Models
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="@_isValid">
+            <MudTextField @bind-Value="_title"
+                          Label="Title"
+                          Required="true"
+                          RequiredError="Title is required"
+                          Immediate="true"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="mb-4" />
+
+            <MudTextField @bind-Value="_body"
+                          Label="Body"
+                          Lines="10"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Default">Cancel</MudButton>
+        <MudButton OnClick="Save" 
+                   Color="Color.Primary" 
+                   Variant="Variant.Filled"
+                   Disabled="@(!_isValid || _isSaving)">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else
+            {
+                @SaveButtonText
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public EditorMode Mode { get; set; } = EditorMode.Create;
+
+    [Parameter]
+    public ArticleDto? Article { get; set; }
+
+    [Parameter]
+    public int? ParentId { get; set; }
+
+    [Parameter]
+    public EventCallback<BaseArticleDto> OnSaved { get; set; }
+
+    private MudForm? _form;
+    private bool _isValid;
+    private bool _isSaving;
+    private string _title = string.Empty;
+    private string _body = string.Empty;
+
+    private string SaveButtonText => Mode == EditorMode.Create ? "Create" : "Save";
+
+    protected override void OnParametersSet()
+    {
+        if (Mode == EditorMode.Edit && Article != null)
+        {
+            _title = Article.Title;
+            _body = Article.Body ?? string.Empty;
+        }
+    }
+
+    private async Task Save()
+    {
+        if (_form == null || !_isValid)
+            return;
+
+        _isSaving = true;
+        try
+        {
+            BaseArticleDto result;
+
+            if (Mode == EditorMode.Create)
+            {
+                var createDto = new ArticleCreateDto
+                {
+                    Title = _title,
+                    ParentId = ParentId,
+                    Body = _body
+                };
+                result = createDto; // You'll call your API service here
+            }
+            else
+            {
+                var updateDto = new ArticleUpdateDto
+                {
+                    Title = _title,
+                    Body = _body
+                };
+                result = updateDto; // You'll call your API service here
+            }
+
+            await OnSaved.InvokeAsync(result);
+            MudDialog.Close(DialogResult.Ok(result));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving article: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public enum EditorMode
+    {
+        Create,
+        Edit
+    }
+}

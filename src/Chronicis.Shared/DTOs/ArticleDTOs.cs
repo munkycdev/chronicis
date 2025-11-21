@@ -3,19 +3,23 @@ using System.Collections.Generic;
 
 namespace Chronicis.Shared.DTOs
 {
+    public class BaseArticleDto
+    {
+
+    }
     public class ArticleDto : ArticleDetailDto
     {
         public bool HasChildren { get; set; } = false;
     }
 
-    public class ArticleCreateDto
+    public class ArticleCreateDto : BaseArticleDto
     {
         public string Title { get; set; } = string.Empty;
         public int? ParentId { get; set; }
         public string Body { get; set; } = string.Empty;
     }
 
-    public class ArticleUpdateDto
+    public class ArticleUpdateDto : BaseArticleDto
     {
         public string Title { get; set; } = string.Empty;
         public string Body { get; set; } = string.Empty;
