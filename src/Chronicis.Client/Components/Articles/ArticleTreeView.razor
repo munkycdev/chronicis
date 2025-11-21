@@ -1,5 +1,6 @@
 @using Chronicis.Shared.Models
 @using Chronicis.Client.ViewModels
+@inject IJSRuntime JSRuntime
 @inject ArticleApiService ArticleApiService
 @inject TreeStateService TreeStateService
 @inject IDialogService DialogService
@@ -203,5 +204,12 @@
                 Snackbar.Add($"Failed to delete article: {ex.Message}", Severity.Error);
             }
         }
+    }
+}
+@code {
+    protected override void OnInitialized()
+    {
+        // Register keyboard shortcuts
+        JSRuntime.InvokeVoidAsync("registerKeyboardShortcuts");
     }
 }

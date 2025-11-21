@@ -2,6 +2,7 @@
 using Chronicis.Client.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using MudBlazor;
 using MudBlazor.Services;
 using System.Diagnostics;
 
@@ -22,5 +23,15 @@ builder.Services.AddMudServices();
 // Register application services
 builder.Services.AddScoped<ArticleApiService>();
 builder.Services.AddScoped<TreeStateService>();
+
+// Add toast notification configuration
+builder.Services.AddMudServices(config =>
+{
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
+    config.SnackbarConfiguration.PreventDuplicates = false;
+    config.SnackbarConfiguration.NewestOnTop = false;
+    config.SnackbarConfiguration.ShowCloseIcon = true;
+    config.SnackbarConfiguration.VisibleStateDuration = 3000;
+});
 
 await builder.Build().RunAsync();
