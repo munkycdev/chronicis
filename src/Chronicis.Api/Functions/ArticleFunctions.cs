@@ -2,7 +2,9 @@ using Chronicis.Api.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using System.Net;
 
 namespace Chronicis.Api.Functions
 {
@@ -26,20 +28,25 @@ namespace Chronicis.Api.Functions
         /// Returns all root-level articles (those without a parent).
         /// </summary>
         [Function("GetRootArticles")]
-        public async Task<IActionResult> GetRootArticles(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles")] HttpRequest req)
+        public async Task<HttpResponseData> GetRootArticles(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles")] HttpRequestData req)
         {
             _logger.LogInformation("GetRootArticles endpoint called");
 
             try
             {
                 var articles = await _articleService.GetRootArticlesAsync();
-                return new OkObjectResult(articles);
+
+                var response = req.CreateResponse(HttpStatusCode.OK);
+                await response.WriteAsJsonAsync(articles);
+                return response;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching root articles");
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                var response = req.CreateResponse(HttpStatusCode.InternalServerError);
+                await response.WriteStringAsync("Internal server error");
+                return response;
             }
         }
 
@@ -48,8 +55,8 @@ namespace Chronicis.Api.Functions
         /// Returns detailed information for a specific article including breadcrumbs.
         /// </summary>
         [Function("GetArticleDetail")]
-        public async Task<IActionResult> GetArticleDetail(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:int}")] HttpRequest req,
+        public async Task<HttpResponseData> GetArticleDetail(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:int}")] HttpRequestData req,
             int id)
         {
             _logger.LogInformation("GetArticleDetail endpoint called for ID: {ArticleId}", id);
@@ -57,18 +64,24 @@ namespace Chronicis.Api.Functions
             try
             {
                 var article = await _articleService.GetArticleDetailAsync(id);
-                
+
                 if (article == null)
                 {
-                    return new NotFoundObjectResult(new { message = $"Article {id} not found" });
+                    var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
+                    await notFoundResponse.WriteAsJsonAsync(new { message = $"Article {id} not found" });
+                    return notFoundResponse;
                 }
 
-                return new OkObjectResult(article);
+                var response = req.CreateResponse(HttpStatusCode.OK);
+                await response.WriteAsJsonAsync(article);
+                return response;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching article {ArticleId}", id);
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                var response = req.CreateResponse(HttpStatusCode.InternalServerError);
+                await response.WriteStringAsync("Internal server error");
+                return response;
             }
         }
 
@@ -77,8 +90,8 @@ namespace Chronicis.Api.Functions
         /// Returns all child articles of the specified parent article.
         /// </summary>
         [Function("GetArticleChildren")]
-        public async Task<IActionResult> GetArticleChildren(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:int}/children")] HttpRequest req,
+        public async Task<HttpResponseData> GetArticleChildren(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:int}/children")] HttpRequestData req,
             int id)
         {
             _logger.LogInformation("GetArticleChildren endpoint called for parent ID: {ParentId}", id);
@@ -86,12 +99,17 @@ namespace Chronicis.Api.Functions
             try
             {
                 var children = await _articleService.GetChildrenAsync(id);
-                return new OkObjectResult(children);
+
+                var response = req.CreateResponse(HttpStatusCode.OK);
+                await response.WriteAsJsonAsync(children);
+                return response;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching children for article {ParentId}", id);
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                var response = req.CreateResponse(HttpStatusCode.InternalServerError);
+                await response.WriteStringAsync("Internal server error");
+                return response;
             }
         }
     }

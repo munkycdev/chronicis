@@ -13,9 +13,8 @@ namespace Chronicis.Api.Data
         {
             var optionsBuilder = new DbContextOptionsBuilder<ChronicisDbContext>();
 
-            // Use LocalDB connection string for migrations
             optionsBuilder.UseSqlServer(
-                "Server=(localdb)\\mssqllocaldb;Database=Chronicis;Trusted_Connection=True;MultipleActiveResultSets=true"
+                "Server=localhost,1433;Database=Chronicis;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True"
             );
 
             return new ChronicisDbContext(optionsBuilder.Options);
