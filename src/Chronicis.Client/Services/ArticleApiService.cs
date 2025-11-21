@@ -21,13 +21,13 @@ namespace Chronicis.Client.Services
         /// <summary>
         /// Fetch all root-level articles.
         /// </summary>
-        public async Task<List<ArticleDto>> GetRootArticlesAsync()
+        public async Task<List<ArticleTreeDto>> GetRootArticlesAsync()
         {
             try
             {
                 _logger.LogInformation("Fetching root articles from API");
-                var articles = await _httpClient.GetFromJsonAsync<List<ArticleDto>>("api/articles");
-                return articles ?? new List<ArticleDto>();
+                var articles = await _httpClient.GetFromJsonAsync<List<ArticleTreeDto>>("api/articles");
+                return articles ?? new List<ArticleTreeDto>();
             }
             catch (Exception ex)
             {

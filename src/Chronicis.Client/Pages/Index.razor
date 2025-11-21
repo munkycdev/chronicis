@@ -21,9 +21,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine("Index page loading...");
         var rootArticles = await ArticleApiService.GetRootArticlesAsync();
-        Console.WriteLine($"Got {rootArticles.Count} articles");
+
         TreeStateService.Initialize(rootArticles);
 
         TreeStateService.OnStateChanged += OnTreeStateChanged;

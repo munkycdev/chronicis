@@ -60,32 +60,37 @@
              Hover="true"
              Dense="true"
              Class="article-tree">
-    <ItemTemplate Context="item">
-        <div class="tree-item-content">
-            <span class="@(item.Value?.IsSelected == true ? "selected-item" : "")" 
-                  @onclick="@(() => OnArticleSelectedInternal(item.Value))">
-                @item.Value?.Title
-            </span>
-            <MudMenu Icon="@Icons.Material.Filled.MoreVert" 
-                     Size="Size.Small" 
-                     Class="tree-item-menu"
-                     AnchorOrigin="Origin.BottomRight"
-                     TransformOrigin="Origin.TopRight">
-                <MudMenuItem OnClick="@(() => OnAddChild(item.Value))">
-                    <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
-                    Add Child
-                </MudMenuItem>
-                <MudMenuItem OnClick="@(() => OnEdit(item.Value))">
-                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-2" />
-                    Edit
-                </MudMenuItem>
-                <MudDivider />
-                <MudMenuItem OnClick="@(() => OnDelete(item.Value))">
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Class="mr-2" />
-                    <span style="color: var(--mud-palette-error);">Delete</span>
-                </MudMenuItem>
-            </MudMenu>
-        </div>
+    <ItemTemplate>
+        <MudTreeViewItem @bind-Expanded="@context.Expanded"
+                         Value="@context.Value"
+                         Items="@context.Children">
+            <Content>
+                <div class="tree-item-content">
+                    <span @onclick="@(() => OnArticleSelectedInternal(context.Value))">
+                        @context.Value?.Title
+                    </span>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                             Size="Size.Small"
+                             Class="tree-item-menu"
+                             AnchorOrigin="Origin.BottomRight"
+                             TransformOrigin="Origin.TopRight">
+                        <MudMenuItem OnClick="@(() => OnAddChild(context.Value))">
+                            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
+                            Add Child
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => OnEdit(context.Value))">
+                            <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-2" />
+                            Edit
+                        </MudMenuItem>
+                        <MudDivider />
+                        <MudMenuItem OnClick="@(() => OnDelete(context.Value))">
+                            <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Class="mr-2" />
+                            <span style="color: var(--mud-palette-error);">Delete</span>
+                        </MudMenuItem>
+                    </MudMenu>
+                </div>
+            </Content>
+        </MudTreeViewItem>
     </ItemTemplate>
 </MudTreeView>
 
@@ -105,32 +110,35 @@
     private List<TreeItemData<ArticleTreeItemViewModel>> GetTreeItemData()
     {
         var treeItemData = new List<TreeItemData<ArticleTreeItemViewModel>>();
-        
+
         foreach (var item in TreeItems)
         {
             treeItemData.Add(ConvertToTreeItemData(item));
         }
-        
+
         return treeItemData;
     }
 
     private TreeItemData<ArticleTreeItemViewModel> ConvertToTreeItemData(ArticleTreeItemViewModel viewModel)
     {
-        var treeItem = new TreeItemData<ArticleTreeItemViewModel>
-        {
-            Value = viewModel,
-            Expanded = viewModel.IsExpanded,
-            Expandable = viewModel.HasChildren || viewModel.Children.Any(),
-            Children = new List<TreeItemData<ArticleTreeItemViewModel>>()
-        };
+        var children = new List<TreeItemData<ArticleTreeItemViewModel>>();
 
+        // Recursively convert all children that are already loaded
         if (viewModel.Children?.Any() == true)
         {
             foreach (var child in viewModel.Children)
             {
-                treeItem.Children.Add(ConvertToTreeItemData(child));
+                children.Add(ConvertToTreeItemData(child));
             }
         }
+
+        var treeItem = new TreeItemData<ArticleTreeItemViewModel>
+        {
+            Value = viewModel,
+            Expanded = true,
+            Expandable = viewModel.HasChildren || viewModel.Children.Any(),
+            Children = children
+        };
 
         return treeItem;
     }

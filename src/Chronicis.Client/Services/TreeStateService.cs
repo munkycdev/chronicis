@@ -14,17 +14,18 @@ public class TreeStateService
     public List<ArticleTreeItemViewModel> RootItems => _rootItems;
     public ArticleTreeItemViewModel? SelectedArticle => _selectedArticle;
 
-    public void Initialize(List<ArticleDto> rootArticles)
+    public void Initialize(List<ArticleTreeDto> rootArticles)
     {
-        _rootItems = rootArticles.Select(MapToViewModel).ToList();
+        _rootItems = rootArticles.Select(MapToTreeViewModel).ToList();
+
         NotifyStateChanged();
     }
 
-    public async Task LoadChildrenAsync(ArticleTreeItemViewModel parent, List<ArticleDto> children)
+    public async Task LoadChildrenAsync(ArticleTreeItemViewModel parent, List<ArticleTreeDto> children)
     {
         parent.Children = children.Select(c =>
         {
-            var vm = MapToViewModel(c);
+            var vm = MapToTreeViewModel(c);
             vm.ParentId = parent.Id;
             return vm;
         }).ToList();
@@ -129,6 +130,20 @@ public class TreeStateService
         }
 
         return null;
+    }
+
+    private ArticleTreeItemViewModel MapToTreeViewModel(ArticleTreeDto dto)
+    {
+        return new ArticleTreeItemViewModel
+        {
+            Id = dto.Id,
+            Title = dto.Title,
+            ParentId = dto.ParentId,
+            HasChildren = dto.HasChildren,
+            Children = dto.Children?.Select(c => MapToTreeViewModel(c)).ToList() ?? new List<ArticleTreeItemViewModel>(),  // Add recursive mapping
+            IsExpanded = false,
+            IsSelected = false
+        };
     }
 
     private ArticleTreeItemViewModel MapToViewModel(ArticleDto dto)
