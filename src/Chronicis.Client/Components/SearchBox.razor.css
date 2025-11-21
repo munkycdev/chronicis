@@ -1,0 +1,18 @@
+.search-box {
+    padding: 12px;
+    background-color: var(--mud-palette-background-grey);
+    border-bottom: 1px solid var(--mud-palette-divider);
+}
+
+.search-input {
+    width: 100%;
+}
+
+/* Make the search input more prominent */
+.search-box .mud-input-root {
+    background-color: var(--mud-palette-surface);
+}
+
+.search-box .mud-input-root:hover {
+    background-color: var(--mud-palette-surface);
+}
