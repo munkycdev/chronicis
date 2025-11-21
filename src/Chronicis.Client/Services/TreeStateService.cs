@@ -70,6 +70,7 @@ public class TreeStateService
             _rootItems.Add(viewModel);
         }
 
+        SelectArticle(viewModel);
         NotifyStateChanged();
     }
 
@@ -80,6 +81,8 @@ public class TreeStateService
         {
             existing.Title = article.Title;
             existing.Body = article.Body;
+
+            SelectArticle(MapToViewModel(article));
             NotifyStateChanged();
         }
     }
@@ -140,7 +143,8 @@ public class TreeStateService
             Title = dto.Title,
             ParentId = dto.ParentId,
             HasChildren = dto.HasChildren,
-            Children = dto.Children?.Select(c => MapToTreeViewModel(c)).ToList() ?? new List<ArticleTreeItemViewModel>(),  // Add recursive mapping
+            Children = dto.Children?.Select(c => MapToTreeViewModel(c)).ToList() 
+                ?? new List<ArticleTreeItemViewModel>(),
             IsExpanded = false,
             IsSelected = false
         };
@@ -155,7 +159,8 @@ public class TreeStateService
             ParentId = dto.ParentId,
             Body = dto.Body,
             HasChildren = dto.HasChildren,
-            Children = dto.Children?.Select(c => MapToViewModel(c)).ToList() ?? new List<ArticleTreeItemViewModel>(),  // Add recursive mapping
+            Children = dto.Children?.Select(c => MapToViewModel(c)).ToList() 
+                ?? new List<ArticleTreeItemViewModel>(),  // Add recursive mapping
             IsExpanded = false,
             IsSelected = false
         };

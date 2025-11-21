@@ -75,12 +75,6 @@ public class ArticleValidationService
             return result;
         }
 
-        // Article must not have children
-        if (article.Children.Any())
-        {
-            result.AddError("Children", "Cannot delete article with children");
-        }
-
         return result;
     }
 }
