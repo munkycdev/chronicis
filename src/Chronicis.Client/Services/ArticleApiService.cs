@@ -1,4 +1,5 @@
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Models;
 using System.Net.Http.Json;
 
 namespace Chronicis.Client.Services
@@ -21,13 +22,31 @@ namespace Chronicis.Client.Services
         /// <summary>
         /// Fetch all root-level articles.
         /// </summary>
-        public async Task<List<ArticleTreeDto>> GetRootArticlesAsync()
+        public async Task<List<ArticleTreeDto>> GetRootArticlesTreeAsync()
         {
             try
             {
                 _logger.LogInformation("Fetching root articles from API");
                 var articles = await _httpClient.GetFromJsonAsync<List<ArticleTreeDto>>("api/articles");
                 return articles ?? new List<ArticleTreeDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching root articles");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Fetch all root-level articles.
+        /// </summary>
+        public async Task<List<ArticleDto>> GetRootArticlesAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Fetching root articles from API");
+                var articles = await _httpClient.GetFromJsonAsync<List<ArticleDto>>("api/articles");
+                return articles ?? new List<ArticleDto>();
             }
             catch (Exception ex)
             {
@@ -95,6 +114,19 @@ namespace Chronicis.Client.Services
         {
             var response = await _httpClient.DeleteAsync($"/api/articles/{id}");
             response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<List<ArticleSearchResultDto>> SearchArticlesAsync(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return new List<ArticleSearchResultDto>();
+            }
+
+            var results = await _httpClient.GetFromJsonAsync<List<ArticleSearchResultDto>>(
+                $"api/articles/search?query={Uri.EscapeDataString(query)}");
+
+            return results ?? new List<ArticleSearchResultDto>();
         }
     }
 }

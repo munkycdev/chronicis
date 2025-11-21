@@ -21,7 +21,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var rootArticles = await ArticleApiService.GetRootArticlesAsync();
+        var rootArticles = await ArticleApiService.GetRootArticlesTreeAsync();
 
         TreeStateService.Initialize(rootArticles);
 

@@ -6,18 +6,33 @@ namespace Chronicis.Client.Services;
 
 public class TreeStateService
 {
+    private readonly ArticleApiService _apiService;
+    
     private List<ArticleTreeItemViewModel> _rootItems = new();
     private ArticleTreeItemViewModel? _selectedArticle;
+
+    // Search state
+    private string _searchQuery = string.Empty;
+    private List<ArticleSearchResultDto> _searchResults = new();
+    private HashSet<int> _visibleNodeIds = new();
 
     public event Action? OnStateChanged;
 
     public List<ArticleTreeItemViewModel> RootItems => _rootItems;
     public ArticleTreeItemViewModel? SelectedArticle => _selectedArticle;
+    
+    // Search properties
+    public string SearchQuery => _searchQuery;
+    public bool IsSearchActive => !string.IsNullOrWhiteSpace(_searchQuery);
+
+    public TreeStateService(ArticleApiService apiService)
+    {
+        _apiService = apiService;
+    }
 
     public void Initialize(List<ArticleTreeDto> rootArticles)
     {
         _rootItems = rootArticles.Select(MapToTreeViewModel).ToList();
-
         NotifyStateChanged();
     }
 
@@ -48,7 +63,7 @@ public class TreeStateService
         NotifyStateChanged();
     }
 
-    // NEW METHODS FOR PHASE 2
+    // PHASE 2 METHODS
     public async Task AddArticleAsync(ArticleDto article)
     {
         var viewModel = MapToViewModel(article);
@@ -82,7 +97,7 @@ public class TreeStateService
             existing.Title = article.Title;
             existing.Body = article.Body;
 
-            SelectArticle(MapToViewModel(article));
+            SelectArticle(existing);
             NotifyStateChanged();
         }
     }
@@ -100,6 +115,68 @@ public class TreeStateService
         }
     }
 
+    // PHASE 3: SEARCH METHODS
+    public async Task SearchAsync(string query)
+    {
+        _searchQuery = query ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            ClearSearch();
+            return;
+        }
+
+        // Execute search
+        _searchResults = await _apiService.SearchArticlesAsync(_searchQuery);
+
+        // Build set of visible node IDs (matches + all ancestors)
+        _visibleNodeIds.Clear();
+        foreach (var result in _searchResults)
+        {
+            // Add all nodes in the ancestor path
+            foreach (var ancestor in result.AncestorPath)
+            {
+                _visibleNodeIds.Add(ancestor.Id);
+            }
+        }
+
+        // Auto-expand all ancestors
+        foreach (var result in _searchResults)
+        {
+            // Expand all ancestors except the leaf (the match itself)
+            for (int i = 0; i < result.AncestorPath.Count - 1; i++)
+            {
+                var ancestorId = result.AncestorPath[i].Id;
+                var ancestor = FindArticleById(_rootItems, ancestorId);
+                if (ancestor != null && !ancestor.IsExpanded)
+                {
+                    ancestor.IsExpanded = true;
+                }
+            }
+        }
+
+        NotifyStateChanged();
+    }
+
+    public void ClearSearch()
+    {
+        _searchQuery = string.Empty;
+        _searchResults.Clear();
+        _visibleNodeIds.Clear();
+        NotifyStateChanged();
+    }
+
+    public bool IsNodeVisible(int articleId)
+    {
+        // If no search active, all nodes are visible
+        if (!IsSearchActive)
+            return true;
+
+        // During search, only visible nodes show
+        return _visibleNodeIds.Contains(articleId);
+    }
+
+    // HELPER METHODS
     private bool RemoveArticleRecursive(List<ArticleTreeItemViewModel> items, int articleId)
     {
         var item = items.FirstOrDefault(i => i.Id == articleId);
@@ -160,7 +237,7 @@ public class TreeStateService
             Body = dto.Body,
             HasChildren = dto.HasChildren,
             Children = dto.Children?.Select(c => MapToViewModel(c)).ToList() 
-                ?? new List<ArticleTreeItemViewModel>(),  // Add recursive mapping
+                ?? new List<ArticleTreeItemViewModel>(),
             IsExpanded = false,
             IsSelected = false
         };
