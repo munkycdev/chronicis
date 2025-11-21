@@ -140,7 +140,7 @@ public class TreeStateService
             ParentId = dto.ParentId,
             Body = dto.Body,
             HasChildren = dto.HasChildren,
-            Children = new List<ArticleTreeItemViewModel>(),
+            Children = dto.Children?.Select(c => MapToViewModel(c)).ToList() ?? new List<ArticleTreeItemViewModel>(),  // Add recursive mapping
             IsExpanded = false,
             IsSelected = false
         };

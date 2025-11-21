@@ -35,18 +35,15 @@ namespace Chronicis.Api.Services
         {
             _logger.LogInformation("Fetching root articles");
 
-            return await _context.Articles
+            var rootArticles = await _context.Articles
                 .Where(a => a.ParentId == null)
                 .OrderBy(a => a.Title)
-                .Select(a => new ArticleTreeDto
-                {
-                    Id = a.Id,
-                    Title = a.Title,
-                    ParentId = a.ParentId,
-                    HasChildren = a.Children.Any(),
-                    CreatedDate = a.CreatedDate
-                })
+                .Include(a => a.Children)
+                    .ThenInclude(c => c.Children)
+                    .OrderBy(a => a.Title)
                 .ToListAsync();
+
+            return rootArticles.Select(a => MapToDto(a)).ToList();
         }
 
         /// <summary>
@@ -131,6 +128,19 @@ namespace Chronicis.Api.Services
             }
 
             return breadcrumbs;
+        }
+
+        private ArticleTreeDto MapToDto(Article article)
+        {
+            return new ArticleTreeDto
+            {
+                Id = article.Id,
+                Title = article.Title,
+                ParentId = article.ParentId,
+                HasChildren = article.Children?.Any() ?? false,
+                Children = article.Children?.Select(c => MapToDto(c)).ToList() ?? new List<ArticleTreeDto>(),
+                CreatedDate = article.CreatedDate
+            };
         }
     }
 }

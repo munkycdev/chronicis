@@ -1,7 +1,42 @@
 @page "/"
-@using Chronicis.Client.Components 
-@using Chronicis.Client.Components.Articles
+@using Chronicis.Client.ViewModels
+@inject TreeStateService TreeStateService
+@inject ArticleApiService ArticleApiService
 
-<PageTitle>Chronicis - Campaign Knowledge Management</PageTitle>
+<PageTitle>Chronicis</PageTitle>
 
-<ArticleDetail />
+@if (_selectedArticle != null)
+{
+    <h1>@_selectedArticle.Title</h1>
+    <p>@_selectedArticle.Body</p>
+}
+else
+{
+    <h1>Welcome to Chronicis</h1>
+    <p>Select an article from the tree to view it.</p>
+}
+
+@code {
+    private ArticleTreeItemViewModel? _selectedArticle;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("Index page loading...");
+        var rootArticles = await ArticleApiService.GetRootArticlesAsync();
+        Console.WriteLine($"Got {rootArticles.Count} articles");
+        TreeStateService.Initialize(rootArticles);
+
+        TreeStateService.OnStateChanged += OnTreeStateChanged;
+    }
+
+    private void OnTreeStateChanged()
+    {
+        _selectedArticle = TreeStateService.SelectedArticle;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        TreeStateService.OnStateChanged -= OnTreeStateChanged;
+    }
+}

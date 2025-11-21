@@ -10,6 +10,7 @@ namespace Chronicis.Shared.DTOs
     public class ArticleDto : ArticleDetailDto
     {
         public bool HasChildren { get; set; } = false;
+        public ICollection<ArticleDto> Children { get; set; } = [];
     }
 
     public class ArticleCreateDto : BaseArticleDto
@@ -34,6 +35,7 @@ namespace Chronicis.Shared.DTOs
         public string Title { get; set; } = string.Empty;
         public int? ParentId { get; set; }
         public bool HasChildren { get; set; }
+        public ICollection<ArticleTreeDto> Children { get; set; } = [];
         public DateTime CreatedDate { get; set; }
     }
 

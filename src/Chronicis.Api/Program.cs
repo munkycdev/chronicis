@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Diagnostics;
+using System.Text.Json;
 
 StartLocalDB();
 
@@ -15,6 +16,10 @@ var host = new HostBuilder()
     {
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
+        services.Configure<JsonSerializerOptions>(options =>
+        {
+            options.PropertyNameCaseInsensitive = true;
+        });
 
         // Database configuration
         var connectionString = context.Configuration.GetConnectionString("ChronicisDb")
@@ -25,6 +30,7 @@ var host = new HostBuilder()
 
         // Register services
         services.AddScoped<IArticleService, ArticleService>();
+        services.AddScoped<ArticleValidationService>();
     })
     .Build();
 

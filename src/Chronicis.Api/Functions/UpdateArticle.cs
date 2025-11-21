@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace Chronicis.Api.Functions;
 
-public class UpdateArticle
+public class UpdateArticle : ArticleBaseClass
 {
     private readonly ChronicisDbContext _context;
     private readonly ArticleValidationService _validationService;
@@ -28,7 +28,7 @@ public class UpdateArticle
         try
         {
             // Parse request body
-            var dto = await JsonSerializer.DeserializeAsync<ArticleUpdateDto>(req.Body);
+            var dto = await JsonSerializer.DeserializeAsync<ArticleUpdateDto>(req.Body, _options);
             
             if (dto == null)
             {

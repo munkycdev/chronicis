@@ -10,7 +10,7 @@ using System.Text.Json;
 
 namespace Chronicis.Api.Functions;
 
-public class CreateArticle
+public class CreateArticle : ArticleBaseClass
 {
     private readonly ChronicisDbContext _context;
     private readonly ArticleValidationService _validationService;
@@ -28,7 +28,8 @@ public class CreateArticle
         try
         {
             // Parse request body
-            var dto = await JsonSerializer.DeserializeAsync<ArticleCreateDto>(req.Body);
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var dto = await JsonSerializer.DeserializeAsync<ArticleCreateDto>(req.Body, _options);
             
             if (dto == null)
             {

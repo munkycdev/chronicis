@@ -1,3 +1,52 @@
+<style>
+    .article-tree {
+        width: 100%;
+    }
+
+    .tree-item {
+        width: 100%;
+    }
+
+    .tree-item-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+    }
+
+        .tree-item-content:hover {
+            background-color: rgba(196, 175, 142, 0.1); /* Beige-gold with opacity */
+        }
+
+        .tree-item-content .selected-item {
+            font-weight: 600;
+            color: #C4AF8E; /* Beige-gold */
+        }
+
+    .tree-item-menu {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .tree-item:hover .tree-item-menu,
+    .tree-item-content:hover .tree-item-menu {
+        opacity: 1;
+    }
+
+    /* Ensure menu button is small and unobtrusive */
+    .tree-item-menu button {
+        padding: 4px;
+        min-width: unset;
+    }
+
+    /* Add subtle hover glow effect */
+    .tree-item-content:hover {
+        box-shadow: 0 0 8px rgba(196, 175, 142, 0.3);
+    }
+</style>
 @using Chronicis.Shared.Models
 @using Chronicis.Client.ViewModels
 @inject IJSRuntime JSRuntime
@@ -47,6 +96,12 @@
     [Parameter]
     public EventCallback<ArticleTreeItemViewModel> OnArticleSelected { get; set; }
 
+    protected override void OnInitialized()
+    {
+        // Register keyboard shortcuts
+        JSRuntime.InvokeVoidAsync("registerKeyboardShortcuts");
+    }
+
     private List<TreeItemData<ArticleTreeItemViewModel>> GetTreeItemData()
     {
         var treeItemData = new List<TreeItemData<ArticleTreeItemViewModel>>();
@@ -65,6 +120,7 @@
         {
             Value = viewModel,
             Expanded = viewModel.IsExpanded,
+            Expandable = viewModel.HasChildren || viewModel.Children.Any(),
             Children = new List<TreeItemData<ArticleTreeItemViewModel>>()
         };
 
@@ -204,12 +260,5 @@
                 Snackbar.Add($"Failed to delete article: {ex.Message}", Severity.Error);
             }
         }
-    }
-}
-@code {
-    protected override void OnInitialized()
-    {
-        // Register keyboard shortcuts
-        JSRuntime.InvokeVoidAsync("registerKeyboardShortcuts");
     }
 }
