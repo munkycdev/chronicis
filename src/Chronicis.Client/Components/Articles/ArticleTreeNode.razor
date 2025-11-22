@@ -30,12 +30,12 @@
         @foreach (var child in children)
         {
             <ArticleTreeNode Article="@child"
-                             Level="@(Level + 1)"
-                             OnArticleSelected="@OnArticleSelected"
-                             OnLoadChildren="@OnLoadChildren"
-                             ExpandedNodes="@ExpandedNodes"
-                             SelectedId="@SelectedId"
-                             ChildrenCache="@ChildrenCache" />
+            Level="@(Level + 1)"
+            OnArticleSelected="@OnArticleSelected"
+            OnLoadChildren="@OnLoadChildren"
+            ExpandedNodes="@ExpandedNodes"
+            SelectedId="@SelectedId"
+            ChildrenCache="@ChildrenCache" />
         }
     }
     else
@@ -46,37 +46,6 @@
         </div>
     }
 }
-
-<style>
-    .tree-item {
-        padding: 8px 4px;
-        display: flex;
-        align-items: center;
-        transition: background-color 0.2s;
-    }
-
-        .tree-item:hover {
-            background-color: rgba(196, 175, 142, 0.1);
-        }
-
-        .tree-item.selected {
-            background-color: rgba(196, 175, 142, 0.2);
-            font-weight: 500;
-        }
-
-    .expand-button {
-        display: inline-flex;
-        margin-right: 4px;
-    }
-
-    .article-icon {
-        margin-right: 8px;
-    }
-
-    .article-title {
-        flex: 1;
-    }
-</style>
 
 @code {
     [Parameter] public ArticleTreeDto Article { get; set; } = null!;

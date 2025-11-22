@@ -3,7 +3,7 @@
 
 <div class="search-box">
     <MudTextField @bind-Value="_searchText"
-                  Placeholder="Search articles..."
+                  Placeholder="Search entries..."
                   Variant="Variant.Outlined"
                   Margin="Margin.Dense"
                   Adornment="Adornment.End"
@@ -11,7 +11,8 @@
                   OnAdornmentClick="OnAdornmentClick"
                   @onkeydown="OnKeyDown"
                   Immediate="true"
-                  Class="search-input" />
+                  Class="search-input" 
+                  tabindex="1" />
 </div>
 
 @code {

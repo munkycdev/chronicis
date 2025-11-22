@@ -73,6 +73,7 @@
                         @context.Value?.Title
                     </span>
                     <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                            IconColor=Color.Warning
                              Size="Size.Small"
                              Class="tree-item-menu"
                              AnchorOrigin="Origin.BottomRight"
@@ -145,7 +146,7 @@
         var treeItem = new TreeItemData<ArticleTreeItemViewModel>
         {
             Value = viewModel,
-            Expanded = true,
+            Expanded = viewModel.IsSelected,
             Expandable = viewModel.HasChildren || viewModel.Children.Any(),
             Children = children
         };
