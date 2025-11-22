@@ -1,4 +1,7 @@
 <style>
+    body {
+    }
+
     .article-tree {
         width: 100%;
     }
@@ -17,15 +20,15 @@
         transition: background-color 0.2s ease;
     }
 
-    .tree-item-content:hover {
-        background-color: rgba(196, 175, 142, 0.1); /* Beige-gold with opacity */
-    }
+        .tree-item-content:hover {
+            background-color: rgba(196, 175, 142, 0.1); /* Beige-gold with opacity */
+        }
 
-    .tree-item-content .selected-item {
-        font-weight: 600;
-        color: #C4AF8E; /* Beige-gold */
-        background-color: rgba(196, 175, 142, 0.2);
-    }
+        .tree-item-content .selected-item {
+            font-weight: 600;
+            color: #C4AF8E; /* Beige-gold */
+            background-color: rgba(196, 175, 142, 0.2);
+        }
 
     .tree-item-menu {
         opacity: 0;
@@ -60,20 +63,24 @@
 <MudTreeView T="ArticleTreeItemViewModel" 
              Items="@GetTreeItemData()"
              Hover="true"
-             Dense="true"
+             Dense="false"
              Class="article-tree">
     <ItemTemplate>
         <MudTreeViewItem @bind-Expanded="@context.Expanded"
                          Value="@context.Value"
                          Items="@context.Children"
-                         Selected="@(context.Value?.IsSelected == true)">
+                         Selected="@(context.Value?.IsSelected == true)"
+                         Class="article-tree-view-item"
+        >
             <Content>
                 <div class="tree-item-content" @onclick ="@(() => OnArticleSelectedInternal(context.Value))">
                     <span>
+                        <MudMenu Icon="@GetTreeViewIcon(context.Expanded)"
+                                 Color="Color.Primary" />
                         @context.Value?.Title
                     </span>
                     <MudMenu Icon="@Icons.Material.Filled.MoreVert"
-                            IconColor=Color.Warning
+                             Color=Color.Primary
                              Size="Size.Small"
                              Class="tree-item-menu"
                              AnchorOrigin="Origin.BottomRight"
@@ -100,11 +107,11 @@
 </MudTreeView>
 
 @code {
-    [Parameter]
-    public List<ArticleTreeItemViewModel> TreeItems { get; set; } = new();
+        [Parameter]
+        public List<ArticleTreeItemViewModel> TreeItems { get; set; } = new();
 
-    [Parameter]
-    public EventCallback<ArticleTreeItemViewModel> OnArticleSelected { get; set; }
+        [Parameter]
+        public EventCallback<ArticleTreeItemViewModel> OnArticleSelected { get; set; }
 
     protected override void OnInitialized()
     {
@@ -116,6 +123,18 @@
     public void Dispose()
     {
         TreeStateService.OnStateChanged -= StateHasChanged;
+    }
+
+    private string GetTreeViewIcon(bool expanded)
+    {
+        if (expanded)
+        {
+            return Icons.Material.Filled.ArrowDropDown;
+        }
+        else
+        {
+            return Icons.Material.Filled.ArrowRight;
+        }
     }
 
     private List<TreeItemData<ArticleTreeItemViewModel>> GetTreeItemData()

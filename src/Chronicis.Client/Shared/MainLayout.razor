@@ -1,10 +1,13 @@
+
+
 @implements IDisposable
 @inherits LayoutComponentBase
 @inject TreeStateService TreeStateService
 @inject ArticleApiService ArticleApiService
+@using Chronicis.Client.Themes
 @using Chronicis.Client.ViewModels
 
-<MudThemeProvider />
+<MudThemeProvider Theme="@_chronicisMudTheme" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
@@ -23,14 +26,16 @@
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen"
-               Elevation="1"
                Variant="@DrawerVariant.Persistent"
+               Elevation="0"
+               Fixed="true"
+               ClipMode=DrawerClipMode.Docked
                Width="320px">
         <MudDrawerHeader>
             <SearchBox />
         </MudDrawerHeader>
-        <ArticleTreeView TreeItems="@_treeItems"
-                         OnArticleSelected="@OnArticleSelected" />
+        <ArticleTreeView TreeItems="@_treeItems" 
+            OnArticleSelected="@OnArticleSelected" />
     </MudDrawer>
 
     <MudMainContent>
@@ -44,6 +49,7 @@
     private bool _drawerOpen = true;
     private string _searchQuery = string.Empty;
     private List<ArticleTreeItemViewModel> _treeItems = new();
+    private MudTheme _chronicisMudTheme = new ChronicisMudTheme();
 
     protected override void OnInitialized()
     {

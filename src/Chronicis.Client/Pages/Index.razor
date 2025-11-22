@@ -7,8 +7,7 @@
 
 @if (_selectedArticle != null)
 {
-    <h1>@_selectedArticle.Title</h1>
-    <p>@_selectedArticle.Body</p>
+    <ArticleDetail />
 }
 else
 {
@@ -16,7 +15,8 @@ else
     <p>Select an article from the tree to view it.</p>
 }
 
-@code {
+@code 
+{
     private ArticleTreeItemViewModel? _selectedArticle;
 
     protected override async Task OnInitializedAsync()

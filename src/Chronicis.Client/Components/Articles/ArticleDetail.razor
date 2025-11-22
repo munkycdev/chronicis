@@ -4,7 +4,7 @@
 @inject TreeStateService TreeState
 @inject ILogger<ArticleDetail> Logger
 
-<MudPaper Class="pa-6" Elevation="1">
+<MudPaper Elevation="0">
     @if (_isLoading)
     {
         <MudProgressLinear Indeterminate="true" />
@@ -39,7 +39,7 @@
 
         @* Article Header *@
         <div class="d-flex justify-space-between align-center mb-4">
-            <MudText Typo="Typo.h4">@_article.Title</MudText>
+            <MudText Typo="Typo.h1">@_article.Title</MudText>
             <div>
                 @* Placeholder for Edit/Delete buttons - Phase 2 *@
             </div>
