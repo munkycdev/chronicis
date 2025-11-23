@@ -48,6 +48,26 @@
     .tree-item-content:hover {
         box-shadow: 0 0 8px rgba(196, 175, 142, 0.3);
     }
+
+    /* PHASE 3: Empty state styling */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 24px;
+        text-align: center;
+        color: var(--mud-palette-text-secondary);
+    }
+
+    .empty-state .mud-icon-root {
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state .mud-typography-h6 {
+        margin-bottom: 8px;
+    }
 </style>
 @using Chronicis.Shared.Models
 @using Chronicis.Client.ViewModels
@@ -58,58 +78,74 @@
 @inject ISnackbar Snackbar
 @implements IDisposable
 
-<MudTreeView T="ArticleTreeItemViewModel" 
-             Items="@GetTreeItemData()"
-             Hover="true"
-             Dense="false"
-             Class="article-tree">
-    <ItemTemplate>
-        <MudTreeViewItem @bind-Expanded="@context.Expanded"
-                         Value="@context.Value"
-                         Items="@context.Children"
-                         Selected="@(context.Value?.IsSelected == true)"
-                         Class="article-tree-view-item"
-        >
-            <Content>
-                <div class="tree-item-content" @onclick ="@(() => OnArticleSelectedInternal(context.Value))">
-                    <span>
-                        <MudMenu Icon="@GetTreeViewIcon(context.Expanded)"
-                                 Color="Color.Primary" />
-                        @context.Value?.Title
-                    </span>
-                    <MudMenu Icon="@Icons.Material.Filled.MoreVert"
-                             Color=Color.Primary
-                             Size="Size.Small"
-                             Class="tree-item-menu"
-                             AnchorOrigin="Origin.BottomRight"
-                             TransformOrigin="Origin.TopRight"
-                             @onclick:stopPropagation="true">
-                        <MudMenuItem OnClick="@(() => OnAddChild(context.Value))">
-                            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
-                            Add Child
-                        </MudMenuItem>
-                        <MudMenuItem OnClick="@(() => OnEdit(context.Value))">
-                            <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-2" />
-                            Edit
-                        </MudMenuItem>
-                        <MudDivider />
-                        <MudMenuItem OnClick="@(() => OnDelete(context.Value))">
-                            <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Class="mr-2" />
-                            <span style="color: var(--mud-palette-error);">Delete</span>
-                        </MudMenuItem>
-                    </MudMenu>
-                </div>
-            </Content>
-        </MudTreeViewItem>
-    </ItemTemplate>
-</MudTreeView>
+@* PHASE 3: Show empty state if search returns no results *@
+@if (TreeStateService.IsSearchActive && !GetFilteredTreeItems().Any())
+{
+    <div class="empty-state">
+        <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" />
+        <MudText Typo="Typo.h6">No results found</MudText>
+        <MudText Typo="Typo.body2">Try a different search term</MudText>
+    </div>
+}
+else
+{
+    <MudTreeView T="ArticleTreeItemViewModel" 
+                 Items="@GetTreeItemData()"
+                 Hover="true"
+                 Dense="false"
+                 Class="article-tree">
+        <ItemTemplate>
+            <MudTreeViewItem @bind-Expanded="@context.Expanded"
+                             Value="@context.Value"
+                             Items="@context.Children"
+                             Selected="@(context.Value?.IsSelected == true)"
+                             Class="article-tree-view-item"
+            >
+                <Content>
+                    <div class="tree-item-content" @onclick ="@(() => OnArticleSelectedInternal(context.Value))">
+                        <span>
+                            <MudMenu Icon="@GetTreeViewIcon(context.Expanded)"
+                                     Color="Color.Primary" />
+                            @context.Value?.Title
+                        </span>
+                        @* PHASE 3: Hide context menu during search for cleaner UI *@
+                        @if (!TreeStateService.IsSearchActive)
+                        {
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                     Color=Color.Primary
+                                     Size="Size.Small"
+                                     Class="tree-item-menu"
+                                     AnchorOrigin="Origin.BottomRight"
+                                     TransformOrigin="Origin.TopRight"
+                                     @onclick:stopPropagation="true">
+                                <MudMenuItem OnClick="@(() => OnAddChild(context.Value))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
+                                    Add Child
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OnEdit(context.Value))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-2" />
+                                    Edit
+                                </MudMenuItem>
+                                <MudDivider />
+                                <MudMenuItem OnClick="@(() => OnDelete(context.Value))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Class="mr-2" />
+                                    <span style="color: var(--mud-palette-error);">Delete</span>
+                                </MudMenuItem>
+                            </MudMenu>
+                        }
+                    </div>
+                </Content>
+            </MudTreeViewItem>
+        </ItemTemplate>
+    </MudTreeView>
+}
 
 @code {
-        [Parameter]
-        public List<ArticleTreeItemViewModel> TreeItems { get; set; } = new();
+    [Parameter]
+    public List<ArticleTreeItemViewModel> TreeItems { get; set; } = new();
 
-        [Parameter]
-        public EventCallback<ArticleTreeItemViewModel> OnArticleSelected { get; set; }
+    [Parameter]
+    public EventCallback<ArticleTreeItemViewModel> OnArticleSelected { get; set; }
 
     protected override void OnInitialized()
     {
@@ -135,11 +171,23 @@
         }
     }
 
+    // PHASE 3: Filter tree items based on search visibility
+    private List<ArticleTreeItemViewModel> GetFilteredTreeItems()
+    {
+        if (!TreeStateService.IsSearchActive)
+        {
+            return TreeItems;
+        }
+
+        return TreeItems.Where(item => TreeStateService.IsNodeVisible(item.Id)).ToList();
+    }
+
     private List<TreeItemData<ArticleTreeItemViewModel>> GetTreeItemData()
     {
         var treeItemData = new List<TreeItemData<ArticleTreeItemViewModel>>();
 
-        foreach (var item in TreeItems)
+        // PHASE 3: Use filtered items instead of all items
+        foreach (var item in GetFilteredTreeItems())
         {
             treeItemData.Add(ConvertToTreeItemData(item));
         }
@@ -156,14 +204,22 @@
         {
             foreach (var child in viewModel.Children)
             {
-                children.Add(ConvertToTreeItemData(child));
+                // ALWAYS show children when search is not active
+                // Only filter when search IS active
+                if (!TreeStateService.IsSearchActive || TreeStateService.IsNodeVisible(child.Id))
+                {
+                    children.Add(ConvertToTreeItemData(child));
+                }
             }
         }
 
         var treeItem = new TreeItemData<ArticleTreeItemViewModel>
         {
             Value = viewModel,
-            Expanded = viewModel.IsSelected,
+            // Don't override expansion during normal use - only during search
+            Expanded = TreeStateService.IsSearchActive
+                ? (viewModel.IsExpanded || children.Any())
+                : viewModel.IsSelected,  // <-- CHANGED: Use IsSelected like your original
             Expandable = viewModel.HasChildren || viewModel.Children.Any(),
             Children = children
         };

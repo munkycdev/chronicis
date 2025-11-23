@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Chronicis.Api.Data;
 using Chronicis.Shared.Models;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http; // Add this
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System.Web; // For query string parsing
 
 namespace Chronicis.Api.Functions;
 
@@ -20,16 +20,22 @@ public class ArticleSearchFunction
     }
 
     [Function("SearchArticles")]
-    public async Task<IActionResult> SearchArticles(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/search")] HttpRequest req)
+    public async Task<HttpResponseData> SearchArticles(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/search")] HttpRequestData req)
     {
+        _logger.LogInformation("SearchArticles endpoint called");
+
         try
         {
-            var query = req.Query["query"].ToString();
+            // Parse query string
+            var queryString = HttpUtility.ParseQueryString(req.Url.Query);
+            var query = queryString["query"] ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(query))
             {
-                return new OkObjectResult(new List<ArticleSearchResultDto>());
+                var emptyResponse = req.CreateResponse(System.Net.HttpStatusCode.OK);
+                await emptyResponse.WriteAsJsonAsync(new List<ArticleSearchResultDto>());
+                return emptyResponse;
             }
 
             _logger.LogInformation("Searching articles with query: {Query}", query);
@@ -53,7 +59,7 @@ public class ArticleSearchFunction
             foreach (var article in matchingArticles)
             {
                 var ancestorPath = await BuildAncestorPath(article.Id);
-                
+
                 results.Add(new ArticleSearchResultDto
                 {
                     Id = article.Id,
@@ -67,12 +73,15 @@ public class ArticleSearchFunction
 
             _logger.LogInformation("Found {Count} matching articles", results.Count);
 
-            return new OkObjectResult(results);
+            var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(results);
+            return response;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error searching articles");
-            return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            var errorResponse = req.CreateResponse(System.Net.HttpStatusCode.InternalServerError);
+            return errorResponse;
         }
     }
 
