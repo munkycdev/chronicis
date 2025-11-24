@@ -11,7 +11,7 @@ window.addEventListener('tiptap-ready', function () {
     console.log('📝 tipTapIntegration: TipTap is ready');
 });
 
-window.initTipTapEditor = (editorId, initialContent, dotNetHelper) => {
+window.initializeTipTapEditor = (editorId, initialContent, dotNetHelper) => {
     console.log('🎯 initTipTapEditor called for:', editorId);
 
     // Check if TipTap is ready

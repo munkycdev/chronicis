@@ -1,1 +1,324 @@
-﻿
+/* ============================================
+   Chronicis Base Application Styles
+   ============================================ */
+
+html, body {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #F4F0EA;
+    color: #1A1A1A;
+}
+
+/* ============================================
+   Loading Screen (shown while Blazor loads)
+   ============================================ */
+
+.chronicis-loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #1F2A33 0%, #3A4750 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.chronicis-loading-container {
+    text-align: center;
+}
+
+.chronicis-logo-animated {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 24px;
+}
+
+.chronicis-logo-pulse {
+    animation: chronicis-pulse 2s ease-in-out infinite;
+    transform-origin: center;
+}
+
+@keyframes chronicis-pulse {
+    0%, 100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+}
+
+.chronicis-loading-text {
+    font-family: 'Libre+Baskerville', Georgia, serif; font-size: 1.25rem;
+    color: #C4AF8E;
+    letter-spacing: 1px;
+    animation: chronicis-fade 1.5s ease-in-out infinite;
+}
+
+@keyframes chronicis-fade {
+    0%, 100% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   Error UI (Blazor default error banner)
+   ============================================ */
+
+#blazor-error-ui {
+    background: #EF5350;
+    bottom: 0;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.5rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .chronicis-error-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+}
+
+#blazor-error-ui .chronicis-error-icon {
+    font-size: 1.5rem;
+}
+
+#blazor-error-ui .chronicis-error-text {
+    flex: 1;
+    font-size: 0.95rem;
+}
+
+#blazor-error-ui .reload {
+    color: white;
+    text-decoration: underline;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+#blazor-error-ui .reload:hover {
+    color: #FFE082;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    font-size: 1.25rem;
+    opacity: 0.7;
+    transition: opacity 150ms;
+}
+
+#blazor-error-ui .dismiss:hover {
+    opacity: 1;
+}
+
+/* ============================================
+   Typography Utilities
+   ============================================ */
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Libre+Baskerville', Georgia, serif;
+    font-weight: 500;
+    color: #1A1A1A;
+    margin: 0;
+}
+
+h1 {
+    font-size: 2.5rem;
+    line-height: 1.2;
+}
+
+h2 {
+    font-size: 2rem;
+    line-height: 1.3;
+}
+
+h3 {
+    font-size: 1.5rem;
+    line-height: 1.4;
+}
+
+h4 {
+    font-size: 1.25rem;
+    line-height: 1.4;
+}
+
+h5 {
+    font-size: 1.125rem;
+    line-height: 1.5;
+}
+
+h6 {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+p {
+    line-height: 1.7;
+    margin: 0 0 1rem 0;
+}
+
+/* ============================================
+   Layout Utilities
+   ============================================ */
+
+.chronicis-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.chronicis-section {
+    padding: 32px 0;
+}
+
+.chronicis-flex {
+    display: flex;
+}
+
+.chronicis-flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chronicis-flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ============================================
+   Spacing Utilities
+   ============================================ */
+
+.mt-0 { margin-top: 0 !important; }
+.mt-1 { margin-top: 8px !important; }
+.mt-2 { margin-top: 16px !important; }
+.mt-3 { margin-top: 24px !important; }
+.mt-4 { margin-top: 32px !important; }
+
+.mb-0 { margin-bottom: 0 !important; }
+.mb-1 { margin-bottom: 8px !important; }
+.mb-2 { margin-bottom: 16px !important; }
+.mb-3 { margin-bottom: 24px !important; }
+.mb-4 { margin-bottom: 32px !important; }
+
+.p-0 { padding: 0 !important; }
+.p-1 { padding: 8px !important; }
+.p-2 { padding: 16px !important; }
+.p-3 { padding: 24px !important; }
+.p-4 { padding: 32px !important; }
+
+/* ============================================
+   Animation Utilities
+   ============================================ */
+
+.chronicis-fade-in {
+    animation: chronicis-fadeIn 400ms ease-in-out;
+}
+
+@keyframes chronicis-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chronicis-slide-in-right {
+    animation: chronicis-slideInRight 300ms ease-out;
+}
+
+@keyframes chronicis-slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(-16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ============================================
+   Focus Styles
+   ============================================ */
+
+:focus-visible {
+    outline: 2px solid #C4AF8E;
+    outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible {
+    box-shadow: 0 0 0 3px rgba(196, 175, 142, 0.3);
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+    .mud-appbar,
+    .mud-drawer,
+    .chronicis-save-status,
+    button {
+        display: none !important;
+    }
+
+    .chronicis-article-card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 960px) {
+    .chronicis-title {
+        font-size: 1.25rem;
+    }
+
+    .chronicis-article-title {
+        font-size: 1.75rem;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .chronicis-container {
+        padding: 0 16px;
+    }
+
+    .chronicis-article-card {
+        padding: 16px;
+    }
+
+    .chronicis-loading-text {
+        font-size: 1rem;
+    }
+}

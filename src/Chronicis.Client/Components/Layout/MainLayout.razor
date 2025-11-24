@@ -1,0 +1,143 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="2">
+        <MudIconButton 
+            Icon="@Icons.Material.Filled.Menu" 
+            Color="Color.Inherit" 
+            Edge="Edge.Start" 
+            OnClick="@ToggleDrawer" />
+        
+        <img src="/images/logo.png" alt="Chronicis" class="chronicis-logo" />
+        <MudText Typo="Typo.h6" Class="chronicis-title">Chronicis</MudText>
+        
+        <MudSpacer />
+        
+        <!-- Global Search (Phase 9) -->
+        <MudTextField 
+            @bind-Value="_globalSearch"
+            Placeholder="Search all content..."
+            Adornment="Adornment.Start"
+            AdornmentIcon="@Icons.Material.Filled.Search"
+            Variant="Variant.Outlined"
+            Margin="Margin.Dense"
+            Style="max-width: 400px; background-color: rgba(255,255,255,0.05);"
+            Class="mr-4"
+            @onkeyup="OnGlobalSearchKeyUp" />
+        
+        <MudIconButton 
+            Icon="@Icons.Material.Filled.Settings" 
+            Color="Color.Inherit" 
+            Title="Settings" />
+        <MudIconButton 
+            Icon="@Icons.Material.Filled.AccountCircle" 
+            Color="Color.Inherit" 
+            Title="Profile" />
+    </MudAppBar>
+
+    <MudDrawer 
+        @bind-Open="_drawerOpen" 
+        Elevation="2" 
+        ClipMode="DrawerClipMode.Always"
+        Width="320px">
+        
+        <!-- Drawer Header with Search -->
+        <div class="chronicis-search-box">
+            <MudTextField 
+                @bind-Value="_treeSearch"
+                Placeholder="Search articles..."
+                Adornment="Adornment.End"
+                AdornmentIcon="@(_treeSearch?.Length > 0 ? Icons.Material.Filled.Clear : Icons.Material.Filled.Search)"
+                OnAdornmentClick="ClearSearch"
+                Variant="Variant.Outlined"
+                Margin="Margin.Dense"
+                @onkeyup="OnTreeSearchKeyUp"
+                Class="mb-2" />
+        </div>
+
+        <!-- Article Tree View -->
+        <ArticleTreeView />
+    </MudDrawer>
+
+    <MudMainContent Class="mud-main-content">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+            <ErrorBoundary>
+                <ChildContent>
+                    @Body
+                </ChildContent>
+                <ErrorContent Context="exception">
+                    <div class="chronicis-error-state">
+                        <MudPaper Elevation="3" Class="pa-4">
+                            <div class="chronicis-empty-state">
+                                <div class="chronicis-empty-state-icon">⚠️</div>
+                                <MudText Typo="Typo.h5" Class="chronicis-empty-state-title mb-3">
+                                    Something went wrong
+                                </MudText>
+                                <MudText Typo="Typo.body1" Class="chronicis-empty-state-message mb-4">
+                                    An unexpected error occurred. Please try refreshing the page.
+                                </MudText>
+                                <MudButton 
+                                    Variant="Variant.Filled" 
+                                    Color="Color.Primary"
+                                    OnClick="@(() => Navigation.NavigateTo(Navigation.Uri, forceLoad: true))">
+                                    Refresh Page
+                                </MudButton>
+                                <details class="mt-4" style="text-align: left; max-width: 600px; margin: 0 auto;">
+                                    <summary style="cursor: pointer; color: var(--chronicis-slate-grey);">
+                                        Technical Details
+                                    </summary>
+                                    <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 0.875rem; color: var(--chronicis-charcoal); background: rgba(0,0,0,0.05); padding: 12px; border-radius: 4px; margin-top: 12px;">@exception.ToString()</pre>
+                                </details>
+                            </div>
+                        </MudPaper>
+                    </div>
+                </ErrorContent>
+            </ErrorBoundary>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private string? _treeSearch;
+    private string? _globalSearch;
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void ClearSearch()
+    {
+        _treeSearch = null;
+        // Trigger tree view to show all articles
+        // Implementation depends on your TreeStateService
+    }
+
+    private async Task OnTreeSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            // Trigger tree search
+            // Implementation depends on your TreeStateService
+        }
+    }
+
+    private async Task OnGlobalSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            // Navigate to search results page (Phase 9)
+            if (!string.IsNullOrWhiteSpace(_globalSearch))
+            {
+                Navigation.NavigateTo($"/search?q={Uri.EscapeDataString(_globalSearch)}");
+            }
+        }
+    }
+}

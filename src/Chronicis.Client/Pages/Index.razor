@@ -1,7 +1,7 @@
 @page "/"
 @using Chronicis.Client.ViewModels
-@inject TreeStateService TreeStateService
-@inject ArticleApiService ArticleApiService
+@inject ITreeStateService TreeStateService
+@inject IArticleApiService ArticleApiService
 
 <PageTitle>Chronicis</PageTitle>
 
@@ -21,7 +21,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var rootArticles = await ArticleApiService.GetRootArticlesTreeAsync();
+        var rootArticles = await ArticleApiService.GetRootArticlesAsync();
 
         TreeStateService.Initialize(rootArticles);
 

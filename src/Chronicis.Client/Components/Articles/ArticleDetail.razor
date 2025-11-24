@@ -1,116 +1,123 @@
-@using Chronicis.Shared.DTOs
-@using Chronicis.Shared.Models
-@using Chronicis.Client.Services
-@using Microsoft.JSInterop
-@inject ArticleApiService ArticleApi
-@inject TreeStateService TreeState
+@inject IArticleApiService ArticleApi
+@inject ITreeStateService TreeState
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
-@inject ILogger<ArticleDetail> Logger
 @inject IJSRuntime JSRuntime
 @implements IDisposable
 
-<MudPaper Elevation="0" Class="article-detail-container">
-    @if (_isLoading)
-    {
-        <MudProgressLinear Indeterminate="true" />
-        <MudSkeleton SkeletonType="SkeletonType.Text" Height="60px" Class="mt-4" />
-        <MudSkeleton SkeletonType="SkeletonType.Text" Height="40px" Class="mt-2" />
-        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" Class="mt-4" />
-    }
-    else if (_error != null)
-    {
-        <MudAlert Severity="Severity.Error">@_error</MudAlert>
-    }
-    else if (_article == null)
-    {
-        <MudText Typo="Typo.h5" Class="mb-4">Welcome to Chronicis</MudText>
-        <MudText Typo="Typo.body1" Class="mb-2">
-            Select an article from the navigation tree to view its details.
-        </MudText>
-        <MudText Typo="Typo.body2" Color="Color.Default">
-            Or create a new article to start building your campaign knowledge base.
-        </MudText>
-    }
-    else
-    {
-        @* Breadcrumb Navigation *@
-        <MudBreadcrumbs Items="_breadcrumbItems" Class="mb-4">
-            <ItemTemplate Context="item">
-                <MudLink Href="#" OnClick="@(() => NavigateToBreadcrumb(item))">
-                    @item.Text
-                </MudLink>
-            </ItemTemplate>
-        </MudBreadcrumbs>
+@if (_isLoading)
+{
+    <LoadingSkeleton />
+}
+else if (_article == null)
+{
+    <EmptyState 
+        Icon="📝"
+        Title="No Article Selected"
+        Message="Select an article from the tree to view and edit its content."
+        ActionText="Create New Article"
+        OnActionClick="CreateRootArticle" />
+}
+else
+{
+    <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
+        <!-- Breadcrumbs -->
+        @if (_breadcrumbs != null && _breadcrumbs.Any())
+        {
+            <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4">
+                <ItemTemplate Context="item">
+                    <MudLink Href="@item.Href" Class="chronicis-breadcrumb-link">
+                        @item.Text
+                    </MudLink>
+                </ItemTemplate>
+            </MudBreadcrumbs>
+        }
 
-        @* Article Title - Always Editable *@
-        <MudTextField @bind-Value="_editTitle"
-                      Variant="Variant.Text"
-                      Margin="Margin.Dense"
-                      Immediate="true"
-                      Placeholder="Article Title"
-                      Class="article-title-input mb-2"
-                      OnKeyUp="OnTitleChanged"
-                      Style="font-size: 2.5rem; font-weight: 500;" />
+        <!-- Title (Always Editable) -->
+        <MudTextField 
+            @bind-Value="_editTitle"
+            Variant="Variant.Text"
+            Placeholder="Untitled Article"
+            Class="chronicis-article-title mb-3"
+            Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
+            @onkeyup="@(() => OnContentChanged())"
+            DisableUnderLine="true" />
 
-        @* Metadata & Save Status *@
-        <div class="d-flex justify-space-between align-center mb-4">
-            <MudText Typo="Typo.body2" Color="Color.Default">
-                Created: @_article.CreatedDate.ToLocalTime().ToString("MMM dd, yyyy 'at' h:mm tt")
-                @if (_article.ModifiedDate.HasValue)
+        <!-- Metadata -->
+        <div class="chronicis-article-meta mb-4">
+            <MudText Typo="Typo.body2">
+                @if (_article.CreatedDate != default)
                 {
-                    <span> • Modified: @_article.ModifiedDate.Value.ToLocalTime().ToString("MMM dd, yyyy 'at' h:mm tt")</span>
+                    <span>Created @_article.CreatedDate.ToString("MMMM d, yyyy 'at' h:mm tt")</span>
+                }
+                @if (_article.ModifiedDate != null)
+                {
+                    <span class="ml-3">• Modified @_article.ModifiedDate.Value.ToString("MMMM d, yyyy 'at' h:mm tt")</span>
                 }
             </MudText>
-
-            @* Save Status Indicator *@
-            <MudText Typo="Typo.caption" Color="@GetSaveStatusColor()" Class="save-status">
-                @_saveStatus
-            </MudText>
         </div>
 
-        @* TipTap Editor Container *@
-        <MudDivider Class="mb-4" />
+        <!-- Divider -->
+        <div class="chronicis-rune-divider mb-4"></div>
 
-        <div id="tiptap-editor-@_article.Id" class="tiptap-editor-container mb-4"></div>
+        <!-- TipTap Editor Container (from Phase 4) -->
+        <div id="tiptap-editor-@_article.Id" class="chronicis-editor-container mb-4"></div>
 
-        @* Action Buttons *@
-        <div class="d-flex justify-end gap-2 mt-4">
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Error"
-                       StartIcon="@Icons.Material.Filled.Delete"
-                       OnClick="OnDelete"
-                       Disabled="_isSaving">
-                Delete
-            </MudButton>
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       StartIcon="@Icons.Material.Filled.Save"
-                       OnClick="SaveNow"
-                       Disabled="_isSaving || !_hasUnsavedChanges">
-                @(_isSaving ? "Saving..." : "Save")
-            </MudButton>
+        <!-- Save Status -->
+        <div class="chronicis-flex-between mt-4">
+            <div class="chronicis-save-status @_saveStatusClass">
+                @if (_isSaving)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    <span>Saving...</span>
+                }
+                else if (_hasUnsavedChanges)
+                {
+                    <span>⚠️ Unsaved changes</span>
+                }
+                else
+                {
+                    <span>✓ Saved @_lastSaveTime</span>
+                }
+            </div>
+
+            <div class="chronicis-flex" style="gap: 8px;">
+                <MudButton 
+                    Variant="Variant.Filled" 
+                    Color="Color.Primary"
+                    OnClick="SaveArticle"
+                    Disabled="_isSaving"
+                    StartIcon="@Icons.Material.Filled.Save">
+                    Save
+                </MudButton>
+                
+                <MudButton 
+                    Variant="Variant.Outlined" 
+                    Color="Color.Error"
+                    OnClick="DeleteArticle"
+                    StartIcon="@Icons.Material.Filled.Delete">
+                    Delete
+                </MudButton>
+            </div>
         </div>
-    }
-</MudPaper>
+    </MudPaper>
+}
 
 @code {
-    private ArticleDetailDto? _article;
-    private List<BreadcrumbItem> _breadcrumbItems = new();
-    private bool _isLoading;
-    private string? _error;
-
-    // Editing state
+    private ArticleDto? _article;
+    private List<BreadcrumbItem>? _breadcrumbs;
     private string _editTitle = string.Empty;
     private string _editBody = string.Empty;
-    private bool _hasUnsavedChanges = false;
+    private bool _isLoading = false;
     private bool _isSaving = false;
-    private string _saveStatus = string.Empty;
-    private System.Threading.Timer? _autoSaveTimer;
-    private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
+    private bool _hasUnsavedChanges = false;
     private bool _editorInitialized = false;
+    private string _lastSaveTime = "just now";
+    private Timer? _autoSaveTimer;
+    private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
 
-    protected override void OnInitialized()
+    private string _saveStatusClass => _isSaving ? "saving" : _hasUnsavedChanges ? "unsaved" : "saved";
+
+    protected override async Task OnInitializedAsync()
     {
         TreeState.OnStateChanged += OnTreeStateChanged;
         _dotNetHelper = DotNetObjectReference.Create(this);
@@ -118,6 +125,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // ONLY handle first render
         if (firstRender && TreeState.SelectedArticle != null)
         {
             await LoadArticleAsync(TreeState.SelectedArticle.Id);
@@ -125,30 +133,87 @@
             await Task.Delay(100);
             await InitializeEditor();
         }
+    }
 
-        // Don't auto-initialize on subsequent renders - we handle it manually in OnTreeStateChanged
+    private async void OnTreeStateChanged()
+    {
+        // Handle all subsequent article switches
+        await InvokeAsync(async () =>
+        {
+            if (_editorInitialized && _article != null)
+            {
+                await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{_article.Id}");
+            }
+            
+            _editorInitialized = false;
+            
+            if (TreeState.SelectedArticle != null)
+            {
+                await LoadArticleAsync(TreeState.SelectedArticle.Id);
+            }
+            else
+            {
+                _article = null;
+            }
+            
+            StateHasChanged();
+            await Task.Delay(100);
+            await InitializeEditor();
+        });
+    }
+
+    private async Task LoadArticleAsync(int articleId)
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _article = await ArticleApi.GetArticleAsync(articleId);
+            _editTitle = _article.Title ?? string.Empty;
+            _editBody = _article.Body ?? string.Empty;
+            _hasUnsavedChanges = false;
+            await LoadBreadcrumbsAsync(articleId);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load article: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadBreadcrumbsAsync(int articleId)
+    {
+        // Load article path from API and build breadcrumb items
+        // Implementation depends on your API
+        _breadcrumbs = new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem("Home", href: "/"),
+            new BreadcrumbItem(_article?.Title ?? "Article", href: null, disabled: true)
+        };
     }
 
     private async Task InitializeEditor()
     {
-        if (_article == null || _editorInitialized) return;
-
-        var editorId = $"tiptap-editor-{_article.Id}";
-        Logger.LogInformation("Attempting to initialize editor: {EditorId}", editorId);
-
-        try
+        if (_article != null && !_editorInitialized)
         {
-            await JSRuntime.InvokeVoidAsync("initTipTapEditor",
-                editorId,
-                _editBody,
-                _dotNetHelper);
-            _editorInitialized = true;
-            Logger.LogInformation("Editor initialized successfully: {EditorId}", editorId);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to initialize TipTap editor: {EditorId}", editorId);
-            Snackbar.Add("Failed to initialize editor", Severity.Error);
+            try
+            {
+                await JSRuntime.InvokeVoidAsync(
+                    "initializeTipTapEditor",
+                    $"tiptap-editor-{_article.Id}",
+                    _editBody,
+                    _dotNetHelper
+                );
+                _editorInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Failed to initialize editor: {ex.Message}", Severity.Warning);
+            }
         }
     }
 
@@ -159,226 +224,60 @@
         OnContentChanged();
     }
 
-    private async void OnTreeStateChanged()
-    {
-        await InvokeAsync(async () =>
-        {
-            if (TreeState.SelectedArticle != null)
-            {
-                if (_article == null || _article.Id != TreeState.SelectedArticle.Id)
-                {
-                    var newArticleId = TreeState.SelectedArticle.Id;
-                    Logger.LogInformation("Switching to article: {ArticleId}", newArticleId);
-
-                    // Cleanup old editor
-                    if (_editorInitialized && _article != null)
-                    {
-                        try
-                        {
-                            await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{_article.Id}");
-                            Logger.LogInformation("Destroyed old editor: tiptap-editor-{ArticleId}", _article.Id);
-                        }
-                        catch { }
-                    }
-
-                    _editorInitialized = false;
-
-                    // Wait for LoadArticleAsync to FULLY complete
-                    await LoadArticleAsync(newArticleId);
-
-                    // NOW _article has the new data
-                    Logger.LogInformation("Article loaded, _article.Id is now: {ArticleId}", _article?.Id);
-
-                    // Force re-render to create new DOM container
-                    StateHasChanged();
-
-                    // Wait for DOM to update
-                    await Task.Delay(100);
-
-                    // Initialize editor with NEW article
-                    Logger.LogInformation("About to initialize editor for article: {ArticleId}", _article?.Id);
-                    await InitializeEditor();
-                }
-                else
-                {
-                    StateHasChanged();
-                }
-            }
-            else
-            {
-                _article = null;
-                _editorInitialized = false;
-                StateHasChanged();
-            }
-        });
-    }
-
-    private async Task LoadArticleAsync(int articleId)
-    {
-        try
-        {
-            _autoSaveTimer?.Dispose();
-
-            _isLoading = true;
-            _error = null;
-            _hasUnsavedChanges = false;
-            StateHasChanged();
-
-            _article = await ArticleApi.GetArticleDetailAsync(articleId);
-
-            if (_article != null)
-            {
-                _editTitle = _article.Title;
-                _editBody = _article.Body ?? string.Empty;
-                _saveStatus = string.Empty;
-
-                BuildBreadcrumbs();
-            }
-            else
-            {
-                _error = "Article not found.";
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to load article {ArticleId}", articleId);
-            _error = "Failed to load article. Please try again.";
-        }
-        finally
-        {
-            _isLoading = false;
-            StateHasChanged();
-        }
-    }
-
-    private void BuildBreadcrumbs()
-    {
-        _breadcrumbItems = _article?.Breadcrumbs
-            .Select(b => new BreadcrumbItem(b.Title, null, false, b.Id.ToString()))
-            .ToList() ?? new();
-    }
-
-    private void NavigateToBreadcrumb(BreadcrumbItem item)
-    {
-        if (int.TryParse(item.Href, out var articleId))
-        {
-            var articleToSelect = FindArticleInTree(TreeState.RootItems, articleId);
-            if (articleToSelect != null)
-            {
-                TreeState.SelectArticle(articleToSelect);
-            }
-        }
-    }
-
-    private ViewModels.ArticleTreeItemViewModel? FindArticleInTree(List<ViewModels.ArticleTreeItemViewModel> items, int id)
-    {
-        foreach (var item in items)
-        {
-            if (item.Id == id)
-                return item;
-
-            var found = FindArticleInTree(item.Children, id);
-            if (found != null)
-                return found;
-        }
-        return null;
-    }
-
-    private void OnTitleChanged()
-    {
-        OnContentChanged();
-    }
-
     private void OnContentChanged()
     {
-        var titleChanged = _editTitle != _article?.Title;
-        var bodyChanged = _editBody != (_article?.Body ?? string.Empty);
-
-        _hasUnsavedChanges = titleChanged || bodyChanged;
-
-        if (_hasUnsavedChanges)
-        {
-            _saveStatus = "Unsaved changes";
-
-            _autoSaveTimer?.Dispose();
-            _autoSaveTimer = new System.Threading.Timer(async _ => await AutoSave(), null, 500, Timeout.Infinite);
-        }
-
-        StateHasChanged();
+        _hasUnsavedChanges = true;
+        _autoSaveTimer?.Dispose();
+        _autoSaveTimer = new Timer(async _ => await AutoSave(), null, 500, Timeout.Infinite);
     }
 
     private async Task AutoSave()
     {
-        if (_hasUnsavedChanges && !_isSaving && _article != null)
+        await InvokeAsync(async () =>
         {
-            await InvokeAsync(async () =>
+            if (_hasUnsavedChanges && !_isSaving)
             {
                 await SaveArticle();
-            });
-        }
-    }
-
-    private async Task SaveNow()
-    {
-        if (_article != null)
-        {
-            // Get current markdown from TipTap editor
-            if (_editorInitialized)
-            {
-                try
-                {
-                    var markdown = await JSRuntime.InvokeAsync<string>("getTipTapMarkdown", $"tiptap-editor-{_article.Id}");
-                    _editBody = markdown ?? _editBody;
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Failed to get editor content");
-                }
             }
-            await SaveArticle();
-        }
+        });
     }
 
     private async Task SaveArticle()
     {
         if (_article == null || _isSaving) return;
 
+        _isSaving = true;
+        StateHasChanged();
+
         try
         {
-            _isSaving = true;
-            _saveStatus = "Saving...";
-            StateHasChanged();
-
+            // Create update DTO from current state
             var updateDto = new ArticleUpdateDto
             {
-                Title = _editTitle.Trim(),
-                Body = _editBody
+                Title = _editTitle,
+                Body = _editBody,
+                EffectiveDate = _article.EffectiveDate,  // Preserve effective date
+                IconEmoji = _article.IconEmoji  // Preserve icon
             };
 
-            var updated = await ArticleApi.UpdateArticleAsync(_article.Id, updateDto);
+            await ArticleApi.UpdateArticleAsync(_article.Id, updateDto);
 
-            var titleChanged = _article.Title != updated.Title;
-            _article.Title = updated.Title;
-            _article.Body = updated.Body;
-            _article.ModifiedDate = updated.ModifiedDate;
+            // Update local article with changes
+            _article.Title = _editTitle;
+            _article.Body = _editBody;
+            _article.ModifiedDate = DateTime.Now;
 
             _hasUnsavedChanges = false;
-            _saveStatus = $"Saved {GetTimeAgo(DateTime.Now)}";
+            _lastSaveTime = "just now";
 
-            await TreeState.UpdateArticleAsync(updated);
+            // Update tree if title changed
+            TreeState.RefreshTree();
 
-            if (titleChanged)
-            {
-                await ReloadBreadcrumbs();
-            }
-
-            StateHasChanged();
+            Snackbar.Add("Article saved successfully", Severity.Success);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to save article {ArticleId}", _article.Id);
-            _saveStatus = "Error saving";
-            Snackbar.Add("Failed to save article", Severity.Error);
+            Snackbar.Add($"Failed to save: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -387,77 +286,54 @@
         }
     }
 
-    private async Task ReloadBreadcrumbs()
+    private async Task DeleteArticle()
     {
         if (_article == null) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>(
+            "confirm",
+            $"Are you sure you want to delete '{_article.Title}'? This action cannot be undone."
+        );
+
+        if (!confirmed) return;
 
         try
         {
-            var refreshed = await ArticleApi.GetArticleDetailAsync(_article.Id);
-            if (refreshed != null)
-            {
-                _article.Breadcrumbs = refreshed.Breadcrumbs;
-                BuildBreadcrumbs();
-            }
+            await ArticleApi.DeleteArticleAsync(_article.Id);
+            Snackbar.Add("Article deleted successfully", Severity.Success);
+            TreeState.RefreshTree();
+            _article = null;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to reload breadcrumbs for article {ArticleId}", _article.Id);
+            Snackbar.Add($"Failed to delete: {ex.Message}", Severity.Error);
         }
     }
 
-    private async Task OnDelete()
+    private async Task CreateRootArticle()
     {
-        if (_article == null) return;
-
-        var confirmed = await DialogService.ShowMessageBox(
-            "Delete Article",
-            $"Are you sure you want to delete '{_article.Title}'? This action cannot be undone.",
-            yesText: "Delete",
-            cancelText: "Cancel");
-
-        if (confirmed == true)
+        try
         {
-            try
+        // Create proper DTO
+            var createDto = new ArticleCreateDto
             {
-                // Cleanup editor first
-                if (_editorInitialized)
-                {
-                    try
-                    {
-                        await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{_article.Id}");
-                    }
-                    catch { }
-                }
+                Title = "Untitled",
+                Body = string.Empty,
+                ParentId = null,
+                EffectiveDate = DateTime.Now  // Default to now
+            };
 
-                await ArticleApi.DeleteArticleAsync(_article.Id);
-                await TreeState.RemoveArticleAsync(_article.Id);
-                Snackbar.Add("Article deleted successfully", Severity.Success);
-
-                _article = null;
-                _editorInitialized = false;
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to delete article {ArticleId}", _article.Id);
-                Snackbar.Add("Failed to delete article", Severity.Error);
-            }
+            var created = await ArticleApi.CreateArticleAsync(createDto);
+        
+            // SelectArticle expects ArticleTreeItemViewModel, not ArticleDto
+            // This needs fixing too - see below
+            TreeState.RefreshTree();
+            Snackbar.Add("Article created", Severity.Success);
         }
-    }
-
-    private Color GetSaveStatusColor()
-    {
-        if (_saveStatus.StartsWith("Error")) return Color.Error;
-        if (_saveStatus.StartsWith("Saving")) return Color.Info;
-        if (_saveStatus.StartsWith("Saved")) return Color.Success;
-        if (_saveStatus.StartsWith("Unsaved")) return Color.Warning;
-        return Color.Default;
-    }
-
-    private string GetTimeAgo(DateTime time)
-    {
-        return "just now";
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
+        }
     }
 
     public void Dispose()
@@ -465,15 +341,5 @@
         TreeState.OnStateChanged -= OnTreeStateChanged;
         _autoSaveTimer?.Dispose();
         _dotNetHelper?.Dispose();
-
-        // Cleanup TipTap editor
-        if (_article != null && _editorInitialized)
-        {
-            try
-            {
-                JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{_article.Id}");
-            }
-            catch { }
-        }
     }
 }

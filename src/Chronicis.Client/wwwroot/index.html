@@ -1,50 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chronicis</title>
     <base href="/" />
-    <link href="css/app.css" rel="stylesheet" />
-    <link href="Chronicis.Client.styles.css" rel="stylesheet" />
+
+    <!-- MudBlazor CSS -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-    <link href="css/tipTapStyles.css" rel="stylesheet" />
-</head>
-<body>
-    <div id="app">
-        <div style="position:absolute;top:30vh;width:100%;text-align:center">
-            <h1>Loading...</h1>
-        </div>
-    </div>
 
-    <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="" class="reload">Reload</a>
-        <a class="dismiss">🗙</a>
-    </div>
+    <!-- Chronicis Custom Theme (must load after MudBlazor) -->
+    <link href="css/chronicis-theme.css" rel="stylesheet" />
+    <link href="css/chronicis-nav.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
 
-    <!-- Blazor -->
-    <script src="_framework/blazor.webassembly.js"></script>
-
-    <!-- MudBlazor -->
-    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
-
-    <!-- TipTap via ES Modules -->
+    <!-- TipTap Editor (from Phase 4) -->
     <script type="module">
         import { Editor } from 'https://esm.sh/@tiptap/core@3.11.0';
         import StarterKit from 'https://esm.sh/@tiptap/starter-kit@3.11.0';
 
-        // Make available globally for Blazor
-        window.TipTap = {
-            Editor: Editor,
-            StarterKit: StarterKit
-        };
-
-        // Notify that TipTap is ready
+        window.TipTap = { Editor, StarterKit };
         window.dispatchEvent(new Event('tiptap-ready'));
     </script>
 
-    <!-- Our Integration Script -->
+    <link href="css/tipTapStyles.css" rel="stylesheet" />
+
+    <!-- Chronicis Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png" />
+</head>
+
+<body>
+    <div id="app">
+        <div class="chronicis-loading-screen">
+            <div class="chronicis-loading-container">
+                <span class="chronicis-logo-animated">
+                    <img src="/images/logo.png" alt="Chronicis logo - a stylized book with a dragon head emerging out of it" class="chronicis-logo-pulse" height="50px" width="50px" />
+                </span>
+                <div class="chronicis-loading-text">Loading Chronicis...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        <div class="chronicis-error-container">
+            <div class="chronicis-error-icon">⚠️</div>
+            <div class="chronicis-error-text">
+                An error has occurred.
+                <a href="" class="reload">Reload</a>
+                <span class="dismiss">✕</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="js/tipTapIntegration.js"></script>
 </body>
+
 </html>

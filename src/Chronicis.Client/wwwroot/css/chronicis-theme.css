@@ -1,0 +1,466 @@
+/* ============================================
+   Chronicis Custom MudBlazor Theme
+   Based on Chronicis Style Guide v1.0
+   ============================================ */
+
+:root {
+    /* Primary Colors */
+    --chronicis-deep-blue-grey: #1F2A33;
+    --chronicis-beige-gold: #C4AF8E;
+    /* Secondary Colors */
+    --chronicis-slate-grey: #3A4750;
+    --chronicis-soft-off-white: #F4F0EA;
+    /* Accents */
+    --chronicis-muted-gold: #D9C9A7;
+    --chronicis-charcoal: #1A1A1A;
+    /* Semantic Colors */
+    --chronicis-success: #4CAF50;
+    --chronicis-warning: #FFA726;
+    --chronicis-error: #EF5350;
+    --chronicis-info: #29B6F6;
+    /* Typography */
+    --chronicis-font-heading: 'Libre+Baskerville', Georgia, serif;
+    --chronicis-font-body: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    /* Spacing */
+    --chronicis-space-xs: 4px;
+    --chronicis-space-sm: 8px;
+    --chronicis-space-md: 16px;
+    --chronicis-space-lg: 24px;
+    --chronicis-space-xl: 32px;
+    /* Shadows */
+    --chronicis-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --chronicis-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
+    --chronicis-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
+    --chronicis-glow-gold: 0 0 12px rgba(196, 175, 142, 0.4);
+    /* Animations */
+    --chronicis-transition-fast: 150ms ease-in-out;
+    --chronicis-transition-normal: 250ms ease-in-out;
+    --chronicis-transition-slow: 400ms ease-in-out;
+}
+
+/* ============================================
+   Font Face Declarations
+   ============================================ */
+
+@font-face {
+    font-family: 'Libre+Baskerville';
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Libre+Baskerville';
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ============================================
+   Global MudBlazor Overrides
+   ============================================ */
+
+.mud-theme-primary {
+    color: var(--chronicis-beige-gold) !important;
+}
+
+.mud-primary {
+    color: var(--chronicis-beige-gold) !important;
+}
+
+.mud-primary-text {
+    color: var(--chronicis-beige-gold) !important;
+}
+
+/* AppBar Styling */
+.mud-appbar {
+    background-color: var(--chronicis-deep-blue-grey) !important;
+    box-shadow: var(--chronicis-shadow-md);
+}
+
+.mud-appbar .mud-toolbar {
+    padding: 0 var(--chronicis-space-lg);
+}
+
+/* Drawer Styling */
+.mud-drawer {
+    background-color: var(--chronicis-deep-blue-grey) !important;
+    border-right: 1px solid var(--chronicis-slate-grey);
+}
+
+.mud-drawer-paper {
+    background-color: var(--chronicis-deep-blue-grey) !important;
+}
+
+.mud-drawer-content {
+    background-color: var(--chronicis-deep-blue-grey);
+}
+
+/* Main Content Area */
+.mud-main-content {
+    background-color: var(--chronicis-soft-off-white);
+    min-height: 100vh;
+}
+
+/* Card Styling */
+.mud-paper {
+    background-color: var(--chronicis-soft-off-white) !important;
+    border-radius: 8px;
+    box-shadow: var(--chronicis-shadow-sm);
+    transition: box-shadow var(--chronicis-transition-normal);
+}
+
+.mud-paper:hover {
+    box-shadow: var(--chronicis-shadow-md);
+}
+
+/* Button Styling */
+.mud-button-root {
+    border-radius: 6px;
+    transition: all var(--chronicis-transition-fast);
+    text-transform: none;
+    font-weight: 500;
+}
+
+.mud-button-filled.mud-button-filled-primary {
+    background-color: var(--chronicis-beige-gold);
+    color: var(--chronicis-deep-blue-grey);
+}
+
+.mud-button-filled.mud-button-filled-primary:hover {
+    background-color: var(--chronicis-muted-gold);
+    box-shadow: var(--chronicis-glow-gold);
+}
+
+.mud-button-outlined.mud-button-outlined-primary {
+    border-color: var(--chronicis-beige-gold);
+    color: var(--chronicis-beige-gold);
+}
+
+.mud-button-outlined.mud-button-outlined-primary:hover {
+    background-color: rgba(196, 175, 142, 0.08);
+    box-shadow: var(--chronicis-glow-gold);
+}
+
+/* Input Styling */
+.mud-input-root {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+.mud-input-underline:before {
+    border-bottom-color: var(--chronicis-slate-grey);
+}
+
+.mud-input-underline:after {
+    border-bottom-color: var(--chronicis-beige-gold);
+}
+
+.mud-input-label {
+    color: var(--chronicis-muted-gold);
+}
+
+.mud-input-label-inputcontrol {
+    color: var(--chronicis-muted-gold);
+}
+
+/* Tree View Styling */
+.mud-treeview {
+    color: var(--chronicis-soft-off-white);
+}
+
+.mud-treeview-item {
+    transition: all var(--chronicis-transition-fast);
+    border-radius: 6px;
+    padding: var(--chronicis-space-xs) var(--chronicis-space-sm);
+    margin: 2px 0;
+}
+
+.mud-treeview-item:hover {
+    background-color: rgba(196, 175, 142, 0.1);
+    box-shadow: var(--chronicis-glow-gold);
+}
+
+.mud-treeview-item-selected {
+    background-color: rgba(196, 175, 142, 0.15) !important;
+    color: var(--chronicis-beige-gold) !important;
+}
+
+.mud-treeview-item-content {
+    color: var(--chronicis-soft-off-white);
+}
+
+/* Icon Styling */
+.mud-icon-root {
+    color: var(--chronicis-muted-gold);
+}
+
+.mud-icon-button:hover .mud-icon-root {
+    color: var(--chronicis-beige-gold);
+}
+
+/* Snackbar / Toast Styling */
+.mud-snackbar {
+    border-radius: 8px;
+    box-shadow: var(--chronicis-shadow-lg);
+}
+
+.mud-snackbar.mud-snackbar-success {
+    background-color: var(--chronicis-success);
+}
+
+.mud-snackbar.mud-snackbar-error {
+    background-color: var(--chronicis-error);
+}
+
+.mud-snackbar.mud-snackbar-warning {
+    background-color: var(--chronicis-warning);
+}
+
+.mud-snackbar.mud-snackbar-info {
+    background-color: var(--chronicis-info);
+}
+
+/* Dialog Styling */
+.mud-dialog {
+    background-color: var(--chronicis-soft-off-white);
+    border-radius: 12px;
+}
+
+.mud-dialog-title {
+    font-family: var(--chronicis-font-heading);
+    color: var(--chronicis-charcoal);
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+
+/* Menu Styling */
+.mud-menu {
+    background-color: var(--chronicis-deep-blue-grey);
+    border-radius: 8px;
+    box-shadow: var(--chronicis-shadow-lg);
+}
+
+.mud-menu-item {
+    color: var(--chronicis-soft-off-white);
+    transition: all var(--chronicis-transition-fast);
+}
+
+.mud-menu-item:hover {
+    background-color: rgba(196, 175, 142, 0.1);
+    color: var(--chronicis-beige-gold);
+}
+
+/* Breadcrumbs Styling */
+.mud-breadcrumbs {
+    color: var(--chronicis-slate-grey);
+}
+
+.mud-breadcrumb-item {
+    color: var(--chronicis-slate-grey);
+}
+
+.mud-breadcrumb-item:hover {
+    color: var(--chronicis-beige-gold);
+}
+
+.mud-breadcrumb-separator {
+    color: var(--chronicis-muted-gold);
+}
+
+/* ============================================
+   Custom Chronicis Components
+   ============================================ */
+
+/* Logo in AppBar */
+.chronicis-logo {
+    width: 32px;
+    height: 32px;
+    margin-right: var(--chronicis-space-md);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.chronicis-title {
+    font-family: var(--chronicis-font-heading);
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--chronicis-beige-gold);
+    letter-spacing: 0.5px;
+}
+
+/* Search Box in Drawer */
+.chronicis-search-box {
+    padding: var(--chronicis-space-md);
+    background-color: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--chronicis-slate-grey);
+}
+
+.chronicis-search-box .mud-input-root {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Article Card */
+.chronicis-article-card {
+    background-color: var(--chronicis-soft-off-white);
+    border-radius: 8px;
+    padding: var(--chronicis-space-xl);
+    box-shadow: var(--chronicis-shadow-sm);
+    transition: all var(--chronicis-transition-normal);
+}
+
+.chronicis-article-card:hover {
+    box-shadow: var(--chronicis-shadow-md);
+}
+
+.chronicis-article-title {
+    font-family: var(--chronicis-font-heading);
+    font-size: 2rem;
+    font-weight: 500;
+    color: var(--chronicis-charcoal);
+    margin-bottom: var(--chronicis-space-md);
+}
+
+.chronicis-article-meta {
+    color: var(--chronicis-slate-grey);
+    font-size: 0.875rem;
+    margin-bottom: var(--chronicis-space-lg);
+}
+
+.chronicis-article-body {
+    color: var(--chronicis-charcoal);
+    line-height: 1.7;
+    font-size: 1rem;
+}
+
+/* Empty States */
+.chronicis-empty-state {
+    text-align: center;
+    padding: var(--chronicis-space-xl);
+    color: var(--chronicis-slate-grey);
+}
+
+.chronicis-empty-state-icon {
+    font-size: 4rem;
+    opacity: 0.3;
+    margin-bottom: var(--chronicis-space-md);
+}
+
+.chronicis-empty-state-title {
+    font-family: var(--chronicis-font-heading);
+    font-size: 1.5rem;
+    color: var(--chronicis-slate-grey);
+    margin-bottom: var(--chronicis-space-sm);
+}
+
+.chronicis-empty-state-message {
+    color: var(--chronicis-slate-grey);
+    opacity: 0.7;
+}
+
+/* Loading States */
+.chronicis-loading-skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(196, 175, 142, 0.1) 25%,
+        rgba(196, 175, 142, 0.2) 50%,
+        rgba(196, 175, 142, 0.1) 75%
+    );
+    background-size: 200% 100%;
+    animation: chronicis-shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes chronicis-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Save Status Indicator */
+.chronicis-save-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--chronicis-space-xs);
+    padding: var(--chronicis-space-xs) var(--chronicis-space-sm);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    transition: all var(--chronicis-transition-fast);
+}
+
+.chronicis-save-status.saving {
+    background-color: rgba(255, 167, 38, 0.1);
+    color: var(--chronicis-warning);
+}
+
+.chronicis-save-status.saved {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: var(--chronicis-success);
+}
+
+.chronicis-save-status.unsaved {
+    background-color: rgba(239, 83, 80, 0.1);
+    color: var(--chronicis-error);
+}
+
+/* Hover Glow Effect */
+.chronicis-glow-hover {
+    transition: all var(--chronicis-transition-fast);
+}
+
+.chronicis-glow-hover:hover {
+    box-shadow: var(--chronicis-glow-gold);
+}
+
+/* Rune-inspired decorative elements */
+.chronicis-rune-divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--chronicis-beige-gold),
+        transparent
+    );
+    margin: var(--chronicis-space-lg) 0;
+    position: relative;
+}
+
+.chronicis-rune-divider::before,
+.chronicis-rune-divider::after {
+    content: '◆';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--chronicis-beige-gold);
+    font-size: 0.75rem;
+}
+
+.chronicis-rune-divider::before {
+    left: 0;
+}
+
+.chronicis-rune-divider::after {
+    right: 0;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--chronicis-deep-blue-grey);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--chronicis-slate-grey);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--chronicis-beige-gold);
+}

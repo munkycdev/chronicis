@@ -1,255 +1,216 @@
-<style>
-    .article-tree {
-        width: 100%;
-    }
-
-    .tree-item {
-        width: 100%;
-    }
-
-    .tree-item-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        padding: 4px 8px;
-        border-radius: 4px;
-        transition: background-color 0.2s ease;
-        font-size: 1.5rem;
-    }
-
-        .tree-item-content:hover {
-            background-color: rgba(196, 175, 142, 0.1); /* Beige-gold with opacity */
-        }
-
-        .tree-item-content .selected-item {
-            font-weight: 600;
-            color: #C4AF8E; /* Beige-gold */
-            background-color: rgba(196, 175, 142, 0.2);
-        }
-
-    .tree-item-menu {
-        opacity: 0;
-        transition: opacity 0.2s ease;
-    }
-
-    .tree-item:hover .tree-item-menu,
-    .tree-item-content:hover .tree-item-menu {
-        opacity: 1;
-    }
-
-    /* Ensure menu button is small and unobtrusive */
-    .tree-item-menu button {
-        padding: 4px;
-        min-width: unset;
-    }
-
-    /* Add subtle hover glow effect */
-    .tree-item-content:hover {
-        box-shadow: 0 0 8px rgba(196, 175, 142, 0.3);
-    }
-
-    /* PHASE 3: Empty state styling */
-    .empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 48px 24px;
-        text-align: center;
-        color: var(--mud-palette-text-secondary);
-    }
-
-    .empty-state .mud-icon-root {
-        margin-bottom: 16px;
-        opacity: 0.5;
-    }
-
-    .empty-state .mud-typography-h6 {
-        margin-bottom: 8px;
-    }
-</style>
-@using Chronicis.Shared.Models
-@using Chronicis.Client.ViewModels
-@inject IJSRuntime JSRuntime
-@inject ArticleApiService ArticleApiService
-@inject TreeStateService TreeStateService
-@inject IDialogService DialogService
+@inject ITreeStateService TreeState
+@inject IArticleApiService ArticleApi
 @inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
 @implements IDisposable
 
-@* PHASE 3: Show empty state if search returns no results *@
-@if (TreeStateService.IsSearchActive && !GetFilteredTreeItems().Any())
-{
-    <div class="empty-state">
-        <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" />
-        <MudText Typo="Typo.h6">No results found</MudText>
-        <MudText Typo="Typo.body2">Try a different search term</MudText>
-    </div>
-}
-else
-{
-    <MudTreeView T="ArticleTreeItemViewModel" 
-                 Items="@GetTreeItemData()"
-                 Hover="true"
-                 Dense="false"
-                 Class="article-tree">
-        <ItemTemplate>
-            <MudTreeViewItem @bind-Expanded="@context.Expanded"
-                             Value="@context.Value"
-                             Items="@context.Children"
-                             Selected="@(context.Value?.IsSelected == true)"
-                             Class="article-tree-view-item"
-            >
-                <Content>
-                    <div class="tree-item-content" @onclick ="@(() => OnArticleSelectedInternal(context.Value))">
-                        <span>
-                            <MudMenu Icon="@GetTreeViewIcon(context.Expanded)"
-                                     Color="Color.Primary" />
-                            @context.Value?.Title
-                        </span>
-                        @* PHASE 3: Hide context menu during search for cleaner UI *@
-                        @if (!TreeStateService.IsSearchActive)
+<div class="chronicis-nav-menu">
+    @if (_isLoading)
+    {
+        <div class="pa-4">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+            <MudText Typo="Typo.body2" Class="ml-2" Style="display: inline;">
+                Loading articles...
+            </MudText>
+        </div>
+    }
+    else if (_rootArticles == null || !_rootArticles.Any())
+    {
+        <div class="pa-4 text-center">
+            <div style="opacity: 0.5; font-size: 3rem;">📚</div>
+            <MudText Typo="Typo.body2" Color="Color.Default" Class="mt-2 mb-3">
+                No articles yet
+            </MudText>
+            <MudButton 
+                Variant="Variant.Text" 
+                Color="Color.Primary"
+                Size="Size.Small"
+                StartIcon="@Icons.Material.Filled.Add"
+                OnClick="CreateRootArticle">
+                Create First Article
+            </MudButton>
+        </div>
+    }
+    else
+    {
+        <MudNavMenu Class="chronicis-nav-menu-items">
+            @foreach (var article in _rootArticles)
+            {
+                @RenderArticleNavItem(article)
+            }
+        </MudNavMenu>
+    }
+</div>
+
+@code {
+    private RenderFragment RenderArticleNavItem(ArticleTreeNode node) => __builder =>
+    {
+        <div class="chronicis-nav-item-container" 
+             @onmouseenter="@(() => node.IsHovered = true)"
+             @onmouseleave="@(() => node.IsHovered = false)">
+            
+            @if (node.HasChildren)
+            {
+                // Article with children - use MudNavGroup
+                <MudNavGroup Title="@node.Title"
+                             Icon="@GetNodeIcon(node)"
+                             IconColor="Color.Primary"
+                             Expanded="@node.IsExpanded"
+                             ExpandedChanged="@(async (expanded) => await OnExpandedChanged(node, expanded))"
+                             Class="@GetNavItemClass(node)">
+
+                    <ChildContent>
+                        @if (node.Children != null)
                         {
-                            <MudMenu Icon="@Icons.Material.Filled.MoreVert"
-                                     Color=Color.Primary
-                                     Size="Size.Small"
-                                     Class="tree-item-menu"
-                                     AnchorOrigin="Origin.BottomRight"
-                                     TransformOrigin="Origin.TopRight"
-                                     @onclick:stopPropagation="true">
-                                <MudMenuItem OnClick="@(() => OnAddChild(context.Value))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
-                                    Add Child
-                                </MudMenuItem>
-                                <MudDivider />
-                                <MudMenuItem OnClick="@(() => OnDelete(context.Value))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Class="mr-2" />
-                                    <span style="color: var(--mud-palette-error);">Delete</span>
-                                </MudMenuItem>
+                            @foreach (var child in node.Children)
+                            {
+                                @RenderArticleNavItem(child)
+                            }
+                        }
+                    </ChildContent>
+                </MudNavGroup>
+            }
+            else
+            {
+                // Leaf article - use MudNavLink
+                <MudNavLink 
+                    OnClick="@(() => SelectArticle(node))"
+                    Icon="@GetNodeIcon(node)"
+                    IconColor="Color.Primary"
+                    Class="@GetNavItemClass(node)">
+                    
+                    <div class="d-flex align-center justify-space-between" style="width: 100%;">
+                        <span>@node.Title</span>
+                        @if (node.IsHovered)
+                        {
+                            <MudMenu 
+                                AnchorOrigin="Origin.BottomRight"
+                                TransformOrigin="Origin.TopRight"
+                                Dense="true">
+                                <ActivatorContent>
+                                    <MudIconButton 
+                                        Icon="@Icons.Material.Filled.MoreVert" 
+                                        Size="Size.Small"
+                                        Class="chronicis-nav-item-menu"
+                                        @onclick:stopPropagation="true" />
+                                </ActivatorContent>
+                                <ChildContent>
+                                    <MudMenuItem 
+                                        Icon="@Icons.Material.Filled.Add"
+                                        OnClick="@(() => CreateChildArticle(node))">
+                                        Add Child
+                                    </MudMenuItem>
+                                    <MudMenuItem 
+                                        Icon="@Icons.Material.Filled.Delete"
+                                        OnClick="@(() => DeleteArticle(node))">
+                                        Delete
+                                    </MudMenuItem>
+                                </ChildContent>
                             </MudMenu>
                         }
                     </div>
-                </Content>
-            </MudTreeViewItem>
-        </ItemTemplate>
-    </MudTreeView>
-}
+                </MudNavLink>
+            }
+        </div>
+    };
+    }
 
 @code {
-    [Parameter]
-    public List<ArticleTreeItemViewModel> TreeItems { get; set; } = new();
+    private List<ArticleTreeNode>? _rootArticles;
+    private ArticleTreeNode? _selectedNode;
+    private bool _isLoading = true;
 
-    [Parameter]
-    public EventCallback<ArticleTreeItemViewModel> OnArticleSelected { get; set; }
-
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // Register keyboard shortcuts
-        JSRuntime.InvokeVoidAsync("registerKeyboardShortcuts");
-        TreeStateService.OnStateChanged += StateHasChanged;
+        await LoadRootArticles();
+        TreeState.OnRefreshRequested += OnRefreshRequested;
     }
 
-    public void Dispose()
+    private async Task LoadRootArticles()
     {
-        TreeStateService.OnStateChanged -= StateHasChanged;
-    }
-
-    private string GetTreeViewIcon(bool expanded)
-    {
-        if (expanded)
-        {
-            return Icons.Material.Filled.ArrowDropDown;
-        }
-        else
-        {
-            return Icons.Material.Filled.ArrowRight;
-        }
-    }
-
-    // PHASE 3: Filter tree items based on search visibility
-    private List<ArticleTreeItemViewModel> GetFilteredTreeItems()
-    {
-        if (!TreeStateService.IsSearchActive)
-        {
-            return TreeItems;
-        }
-
-        return TreeItems.Where(item => TreeStateService.IsNodeVisible(item.Id)).ToList();
-    }
-
-    private List<TreeItemData<ArticleTreeItemViewModel>> GetTreeItemData()
-    {
-        var treeItemData = new List<TreeItemData<ArticleTreeItemViewModel>>();
-
-        // PHASE 3: Use filtered items instead of all items
-        foreach (var item in GetFilteredTreeItems())
-        {
-            treeItemData.Add(ConvertToTreeItemData(item));
-        }
-
-        return treeItemData;
-    }
-
-    private TreeItemData<ArticleTreeItemViewModel> ConvertToTreeItemData(ArticleTreeItemViewModel viewModel)
-    {
-        var children = new List<TreeItemData<ArticleTreeItemViewModel>>();
-
-        // Recursively convert all children that are already loaded
-        if (viewModel.Children?.Any() == true)
-        {
-            foreach (var child in viewModel.Children)
-            {
-                // ALWAYS show children when search is not active
-                // Only filter when search IS active
-                if (!TreeStateService.IsSearchActive || TreeStateService.IsNodeVisible(child.Id))
-                {
-                    children.Add(ConvertToTreeItemData(child));
-                }
-            }
-        }
-
-        var treeItem = new TreeItemData<ArticleTreeItemViewModel>
-        {
-            Value = viewModel,
-            // Don't override expansion during normal use - only during search
-            Expanded = TreeStateService.IsSearchActive
-                ? (viewModel.IsExpanded || children.Any())
-                : viewModel.IsSelected,  // <-- CHANGED: Use IsSelected like your original
-            Expandable = viewModel.HasChildren || viewModel.Children.Any(),
-            Children = children
-        };
-
-        return treeItem;
-    }
-
-    private async Task OnArticleSelectedInternal(ArticleTreeItemViewModel? item)
-    {
-        if (item != null)
-        {
-            await OnArticleSelected.InvokeAsync(item);
-        }
-    }
-
-    private async Task OnAddChild(ArticleTreeItemViewModel? parent)
-    {
-        if (parent == null) return;
+        _isLoading = true;
+        StateHasChanged();
 
         try
         {
-            // Create blank article immediately
-            var created = await ArticleApiService.CreateArticleAsync(new ArticleCreateDto
+            var articles = await ArticleApi.GetRootArticlesAsync();
+            _rootArticles = articles.Select(a => new ArticleTreeNode(a)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load articles: {ex.Message}", Severity.Error);
+            _rootArticles = new List<ArticleTreeNode>();
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async void OnRefreshRequested()
+    {
+        await InvokeAsync(async () =>
+        {
+            await LoadRootArticles();
+            StateHasChanged();
+        });
+    }
+
+    private void SelectArticle(ArticleTreeNode node)
+    {
+        _selectedNode = node;
+        TreeState.SelectArticle(node.Article.Id);
+        StateHasChanged();
+    }
+
+    private string GetNavItemClass(ArticleTreeNode node)
+    {
+        return _selectedNode?.Article.Id == node.Article.Id 
+            ? "chronicis-nav-item-selected" 
+            : "chronicis-nav-item";
+    }
+
+    private string GetNodeIcon(ArticleTreeNode node)
+    {
+        if (!string.IsNullOrEmpty(node.IconEmoji))
+        {
+            return node.IconEmoji;
+        }
+        
+        return node.HasChildren 
+            ? Icons.Material.Filled.Folder 
+            : Icons.Material.Filled.Description;
+    }
+
+    private async Task OnExpandedChanged(ArticleTreeNode node, bool expanded)
+    {
+        node.IsExpanded = expanded;
+        
+        if (expanded && (node.Children == null || !node.Children.Any()))
+        {
+            await LoadChildrenForNode(node);
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task CreateRootArticle()
+    {
+        try
+        {
+            var createDto = new ArticleCreateDto  // Changed
             {
                 Title = "Untitled",
-                ParentId = parent.Id,
-                Body = string.Empty
-            });
+                Body = string.Empty,
+                ParentId = null,
+                EffectiveDate = DateTime.Now
+            };
 
-            // Add to tree
-            await TreeStateService.AddArticleAsync(created);
-
-            // The article is now selected and ArticleDetail will show it for editing
-            Snackbar.Add("New article created", Severity.Success);
+            var created = await ArticleApi.CreateArticleAsync(createDto);
+            await LoadRootArticles();
+            // Remove TreeState.SelectArticle(created) - wrong type
+            Snackbar.Add("Article created", Severity.Success);
         }
         catch (Exception ex)
         {
@@ -257,38 +218,108 @@ else
         }
     }
 
-    private async Task OnDelete(ArticleTreeItemViewModel? item)
+    private async Task CreateChildArticle(ArticleTreeNode parent)
     {
-        if (item == null) return;
-
-        string message;
-        if (item.Children?.Any() == true)
+        try
         {
-            message = $"'{item.Title}' has {item.Children.Count} child article(s). Deleting it will also delete all children. This action cannot be undone. Are you sure?";
-        }
-        else
-        {
-            message = $"Are you sure you want to delete '{item.Title}'? This action cannot be undone.";
-        }
-
-        var result = await DialogService.ShowMessageBox(
-            "Delete Article",
-            message,
-            yesText: "Delete",
-            cancelText: "Cancel");
-
-        if (result == true)
-        {
-            try
+            var createDto = new ArticleCreateDto  // Changed
             {
-                await ArticleApiService.DeleteArticleAsync(item.Id);
-                await TreeStateService.RemoveArticleAsync(item.Id);
-                Snackbar.Add("Article deleted successfully!", Severity.Success);
-            }
-            catch (Exception ex)
+                Title = "Untitled",
+                Body = string.Empty,
+                ParentId = parent.Article.Id,
+                EffectiveDate = DateTime.Now
+            };
+
+            var created = await ArticleApi.CreateArticleAsync(createDto);
+
+            // Expand parent and refresh
+            parent.IsExpanded = true;
+            await LoadChildrenForNode(parent);
+            // Remove TreeState.SelectArticle(created) - wrong type
+
+            Snackbar.Add("Child article created", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to create child article: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task LoadChildrenForNode(ArticleTreeNode node)
+    {
+        try
+        {
+            var children = await ArticleApi.GetChildrenAsync(node.Article.Id);
+            node.Children = children.Select(c => new ArticleTreeNode(c)).ToList();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load children: {ex.Message}", Severity.Warning);
+        }
+    }
+
+    private async Task DeleteArticle(ArticleTreeNode node)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>(
+            "confirm",
+            $"Are you sure you want to delete '{node.Title}'? This action cannot be undone."
+        );
+
+        if (!confirmed) return;
+
+        try
+        {
+            await ArticleApi.DeleteArticleAsync(node.Article.Id);
+            await LoadRootArticles();
+            Snackbar.Add("Article deleted", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to delete: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public void Dispose()
+    {
+        TreeState.OnRefreshRequested -= OnRefreshRequested;
+    }
+
+    // Helper class for tree nodes
+    private class ArticleTreeNode
+    {
+        public ArticleDto Article { get; set; }
+        public string Title => Article.Title ?? "New Article";
+        public string? IconEmoji => Article.IconEmoji;
+        public bool HasChildren { get; set; }
+        public bool IsExpanded { get; set; }
+        public bool IsHovered { get; set; }
+        public List<ArticleTreeNode>? Children { get; set; }
+
+        // Constructor for ArticleDto (from GetRootArticlesAsync)
+        public ArticleTreeNode(ArticleDto article)
+        {
+            Article = article;
+            HasChildren = article.ChildCount > 0;
+        }
+
+        // Constructor for ArticleTreeDto (from GetChildrenAsync)
+        public ArticleTreeNode(ArticleTreeDto treeDto)
+        {
+            // Convert ArticleTreeDto to ArticleDto
+            Article = new ArticleDto
             {
-                Snackbar.Add($"Failed to delete article: {ex.Message}", Severity.Error);
-            }
+                Id = treeDto.Id,
+                Title = treeDto.Title,
+                ParentId = treeDto.ParentId,
+                HasChildren = treeDto.HasChildren,
+                ChildCount = treeDto.ChildCount,
+                CreatedDate = treeDto.CreatedDate,
+                EffectiveDate = treeDto.EffectiveDate,
+                IconEmoji = treeDto.IconEmoji,
+                Body = string.Empty  // TreeDto doesn't have body
+            };
+            HasChildren = treeDto.ChildCount > 0;
         }
     }
 }

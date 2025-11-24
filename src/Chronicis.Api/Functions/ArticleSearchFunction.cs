@@ -1,10 +1,11 @@
 using Chronicis.Api.Data;
+using Chronicis.Shared.DTOs; 
 using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http; // Add this
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Web; // For query string parsing
+using System.Web;
 
 namespace Chronicis.Api.Functions;
 
@@ -27,7 +28,6 @@ public class ArticleSearchFunction
 
         try
         {
-            // Parse query string
             var queryString = HttpUtility.ParseQueryString(req.Url.Query);
             var query = queryString["query"] ?? string.Empty;
 
@@ -40,34 +40,39 @@ public class ArticleSearchFunction
 
             _logger.LogInformation("Searching articles with query: {Query}", query);
 
-            // Search for articles with titles containing the query (case-insensitive)
+            // Search for articles with titles OR body containing the query
             var matchingArticles = await _context.Articles
-                .Where(a => EF.Functions.Like(a.Title, $"%{query}%"))
+                .Where(a => EF.Functions.Like(a.Title, $"%{query}%") ||
+                           EF.Functions.Like(a.Body, $"%{query}%"))
                 .Select(a => new
                 {
                     a.Id,
                     a.Title,
+                    a.Body,
                     a.ParentId,
                     a.CreatedDate,
-                    a.ModifiedDate
+                    a.EffectiveDate  // Use new field
                 })
                 .ToListAsync();
 
-            // Build results with ancestor paths
             var results = new List<ArticleSearchResultDto>();
 
             foreach (var article in matchingArticles)
             {
                 var ancestorPath = await BuildAncestorPath(article.Id);
 
+                // Create snippet showing where match was found
+                var matchSnippet = GetMatchSnippet(article.Title, article.Body, query);
+
                 results.Add(new ArticleSearchResultDto
                 {
                     Id = article.Id,
                     Title = article.Title,
-                    ParentId = article.ParentId,
+                    Body = article.Body,
+                    MatchSnippet = matchSnippet,
+                    AncestorPath = ancestorPath,  // Changed from AncestorDto to BreadcrumbDto
                     CreatedDate = article.CreatedDate,
-                    ModifiedDate = article.ModifiedDate,
-                    AncestorPath = ancestorPath
+                    EffectiveDate = article.EffectiveDate
                 });
             }
 
@@ -85,9 +90,9 @@ public class ArticleSearchFunction
         }
     }
 
-    private async Task<List<AncestorDto>> BuildAncestorPath(int articleId)
+    private async Task<List<BreadcrumbDto>> BuildAncestorPath(int articleId)  // Changed return type
     {
-        var ancestors = new List<AncestorDto>();
+        var ancestors = new List<BreadcrumbDto>();  // Changed type
         var currentId = articleId;
 
         while (true)
@@ -100,7 +105,7 @@ public class ArticleSearchFunction
             if (article == null)
                 break;
 
-            ancestors.Insert(0, new AncestorDto
+            ancestors.Insert(0, new BreadcrumbDto  // Changed type
             {
                 Id = article.Id,
                 Title = article.Title
@@ -113,5 +118,27 @@ public class ArticleSearchFunction
         }
 
         return ancestors;
+    }
+
+    private string GetMatchSnippet(string title, string? body, string query)
+    {
+        // Check title first
+        if (title.Contains(query, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Title: {title}";
+        }
+
+        // Then check body
+        if (!string.IsNullOrEmpty(body) && body.Contains(query, StringComparison.OrdinalIgnoreCase))
+        {
+            var index = body.IndexOf(query, StringComparison.OrdinalIgnoreCase);
+            var start = Math.Max(0, index - 50);
+            var length = Math.Min(100, body.Length - start);
+            var snippet = body.Substring(start, length);
+
+            return start > 0 ? $"...{snippet}..." : $"{snippet}...";
+        }
+
+        return string.Empty;
     }
 }

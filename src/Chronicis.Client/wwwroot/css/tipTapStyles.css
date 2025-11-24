@@ -56,7 +56,7 @@
     .chronicis-editor-content h4,
     .chronicis-editor-content h5,
     .chronicis-editor-content h6 {
-        font-family: 'Spellweaver Display', serif;
+        font-family: 'Libre+Baskerville', serif;
         color: #1F2A33;
         margin-top: 24px;
         margin-bottom: 16px;
@@ -301,7 +301,7 @@
     .chronicis-editor-content th {
         padding: 12px;
         text-align: left;
-        font-family: 'Spellweaver Display', serif;
+        font-family: 'Libre+Baskerville', serif;
         font-weight: 500;
         border-bottom: 2px solid #C4AF8E;
     }

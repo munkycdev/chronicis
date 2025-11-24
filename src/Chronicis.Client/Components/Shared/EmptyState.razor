@@ -1,0 +1,47 @@
+<!-- EmptyState.razor -->
+<MudPaper Elevation="2" Class="chronicis-article-card">
+    <div class="chronicis-empty-state">
+        <div class="chronicis-empty-state-icon">
+            @Icon
+        </div>
+        
+        <MudText Typo="Typo.h5" Class="chronicis-empty-state-title">
+            @Title
+        </MudText>
+        
+        <MudText Typo="Typo.body1" Class="chronicis-empty-state-message mb-4">
+            @Message
+        </MudText>
+        
+        @if (!string.IsNullOrEmpty(ActionText))
+        {
+            <MudButton 
+                Variant="Variant.Filled" 
+                Color="Color.Primary"
+                OnClick="@OnActionClick"
+                StartIcon="@ActionIcon">
+                @ActionText
+            </MudButton>
+        }
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public string Icon { get; set; } = "📄";
+
+    [Parameter]
+    public string Title { get; set; } = "Nothing Here Yet";
+
+    [Parameter]
+    public string Message { get; set; } = "Get started by creating your first item.";
+
+    [Parameter]
+    public string? ActionText { get; set; }
+
+    [Parameter]
+    public string ActionIcon { get; set; } = Icons.Material.Filled.Add;
+
+    [Parameter]
+    public EventCallback OnActionClick { get; set; }
+}

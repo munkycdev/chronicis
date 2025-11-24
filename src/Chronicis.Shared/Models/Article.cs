@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Chronicis.Shared.Models
 {
@@ -11,27 +12,22 @@ namespace Chronicis.Shared.Models
     public class Article
     {
         public int Id { get; set; }
-
-        [Required]
-        [MaxLength(500)]
         public string Title { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Parent article ID. Null indicates root-level article.
-        /// </summary>
         public int? ParentId { get; set; }
+        public string? Body { get; set; }
 
-        /// <summary>
-        /// Article content in plain text (Phase 1) or Markdown (Phase 4+).
-        /// </summary>
-        public string Body { get; set; } = string.Empty;
-
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
-
+        public DateTime CreatedDate { get; set; }
         public DateTime? ModifiedDate { get; set; }
+        public DateTime EffectiveDate { get; set; }  // NEW - user-editable campaign date
 
-        // Navigation properties for EF Core hierarchy
+        public string? IconEmoji { get; set; }  // NEW
+
+        // Navigation properties
         public Article? Parent { get; set; }
-        public ICollection<Article> Children { get; set; } = new List<Article>();
+        public ICollection<Article>? Children { get; set; }
+
+        // Computed
+        [NotMapped]
+        public int ChildCount => Children?.Count ?? 0;
     }
 }

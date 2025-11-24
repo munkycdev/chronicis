@@ -4,10 +4,12 @@ using Chronicis.Shared.Models;
 
 namespace Chronicis.Client.Services;
 
-public class TreeStateService
+public class TreeStateService : ITreeStateService
 {
-    private readonly ArticleApiService _apiService;
-    
+    private readonly IArticleApiService _apiService;
+
+    public event Action? OnRefreshRequested;
+
     private List<ArticleTreeItemViewModel> _rootItems = new();
     private ArticleTreeItemViewModel? _selectedArticle;
 
@@ -20,12 +22,12 @@ public class TreeStateService
 
     public List<ArticleTreeItemViewModel> RootItems => _rootItems;
     public ArticleTreeItemViewModel? SelectedArticle => _selectedArticle;
-    
+
     // Search properties
     public string SearchQuery => _searchQuery;
     public bool IsSearchActive => !string.IsNullOrWhiteSpace(_searchQuery);
 
-    public TreeStateService(ArticleApiService apiService)
+    public TreeStateService(IArticleApiService apiService)
     {
         _apiService = apiService;
     }
@@ -49,7 +51,7 @@ public class TreeStateService
         NotifyStateChanged();
     }
 
-    public void SelectArticle(ArticleTreeItemViewModel article)
+    public void SelectArticle(int articleId)
     {
         // Deselect previous
         if (_selectedArticle != null)
@@ -57,9 +59,14 @@ public class TreeStateService
             _selectedArticle.IsSelected = false;
         }
 
-        // Select new
-        _selectedArticle = article;
-        article.IsSelected = true;
+        // Find and select new
+        var article = FindArticleById(_rootItems, articleId);
+        if (article != null)
+        {
+            _selectedArticle = article;
+            article.IsSelected = true;
+        }
+
         NotifyStateChanged();
     }
 
@@ -85,7 +92,7 @@ public class TreeStateService
             _rootItems.Add(viewModel);
         }
 
-        SelectArticle(viewModel);
+        SelectArticle(viewModel.Id);
         NotifyStateChanged();
     }
 
@@ -97,7 +104,7 @@ public class TreeStateService
             existing.Title = article.Title;
             existing.Body = article.Body;
 
-            SelectArticle(existing);
+            SelectArticle(existing.Id);
             NotifyStateChanged();
         }
     }
@@ -220,7 +227,7 @@ public class TreeStateService
             Title = dto.Title,
             ParentId = dto.ParentId,
             HasChildren = dto.HasChildren,
-            Children = dto.Children?.Select(c => MapToTreeViewModel(c)).ToList() 
+            Children = dto.Children?.Select(c => MapToTreeViewModel(c)).ToList()
                 ?? new List<ArticleTreeItemViewModel>(),
             IsExpanded = false,
             IsSelected = false
@@ -236,7 +243,7 @@ public class TreeStateService
             ParentId = dto.ParentId,
             Body = dto.Body,
             HasChildren = dto.HasChildren,
-            Children = dto.Children?.Select(c => MapToViewModel(c)).ToList() 
+            Children = dto.Children?.Select(c => MapToViewModel(c)).ToList()
                 ?? new List<ArticleTreeItemViewModel>(),
             IsExpanded = false,
             IsSelected = false
@@ -246,5 +253,10 @@ public class TreeStateService
     private void NotifyStateChanged()
     {
         OnStateChanged?.Invoke();
+    }
+
+    public void RefreshTree()
+    {
+        OnRefreshRequested?.Invoke();
     }
 }

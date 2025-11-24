@@ -3,63 +3,86 @@ using System.Collections.Generic;
 
 namespace Chronicis.Shared.DTOs
 {
-    public class BaseArticleDto
+    /// <summary>
+    /// Full article with all details and optional children.
+    /// Used for detailed views, editing, and full CRUD operations.
+    /// </summary>
+    public class ArticleDto
     {
-
-    }
-    public class ArticleDto : ArticleDetailDto
-    {
-        public bool HasChildren { get; set; } = false;
-        public ICollection<ArticleDto> Children { get; set; } = [];
-    }
-
-    public class ArticleCreateDto : BaseArticleDto
-    {
+        public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public int? ParentId { get; set; }
         public string Body { get; set; } = string.Empty;
-    }
 
-    public class ArticleUpdateDto : BaseArticleDto
-    {
-        public string Title { get; set; } = string.Empty;
-        public string Body { get; set; } = string.Empty;
+        // Timestamps
+        public DateTime CreatedDate { get; set; }
+        public DateTime? ModifiedDate { get; set; }
+        public DateTime EffectiveDate { get; set; }
+
+        // Tree/hierarchy support
+        public bool HasChildren { get; set; } = false;
+        public int ChildCount { get; set; } = 0;
+        public ICollection<ArticleDto>? Children { get; set; }
+
+        // Navigation
+        public List<BreadcrumbDto> Breadcrumbs { get; set; } = new();
+
+        // Phase 11: Custom icons
+        public string? IconEmoji { get; set; }
     }
 
     /// <summary>
-    /// Lightweight DTO for tree view display - only includes essential fields.
+    /// Lightweight DTO for tree view display.
+    /// Contains only essential fields for efficient navigation rendering.
     /// </summary>
     public class ArticleTreeDto
     {
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public int? ParentId { get; set; }
+
+        // Tree/hierarchy support
         public bool HasChildren { get; set; }
-        public ICollection<ArticleTreeDto> Children { get; set; } = [];
+        public int ChildCount { get; set; } = 0;
+        public ICollection<ArticleTreeDto>? Children { get; set; }
+
+        // Timestamps
         public DateTime CreatedDate { get; set; }
+        public DateTime EffectiveDate { get; set; }
+
+        // Phase 11: Custom icons
+        public string? IconEmoji { get; set; }
     }
 
     /// <summary>
-    /// Full article details with breadcrumb path for navigation.
+    /// Request DTO for creating new articles.
     /// </summary>
-    public class ArticleDetailDto
+    public class ArticleCreateDto
     {
-        public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public int? ParentId { get; set; }
         public string Body { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; }
-        public DateTime? ModifiedDate { get; set; }
-        
+
         /// <summary>
-        /// Breadcrumb trail from root to current article.
-        /// Example: ["World", "Sword Coast", "Waterdeep"]
+        /// Optional effective date. If null, defaults to CreatedDate.
         /// </summary>
-        public List<BreadcrumbDto> Breadcrumbs { get; set; } = new();
+        public DateTime? EffectiveDate { get; set; }
+    }
+
+    /// <summary>
+    /// Request DTO for updating existing articles.
+    /// </summary>
+    public class ArticleUpdateDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Body { get; set; } = string.Empty;
+        public DateTime? EffectiveDate { get; set; }
+        public string? IconEmoji { get; set; }
     }
 
     /// <summary>
     /// Breadcrumb item for navigation path display.
+    /// Used to show the path from root to current article.
     /// </summary>
     public class BreadcrumbDto
     {
@@ -68,21 +91,28 @@ namespace Chronicis.Shared.DTOs
     }
 
     /// <summary>
-    /// Request DTO for creating new articles.
+    /// Search result DTO containing matched article and its ancestor path.
+    /// Used in Phase 3 search functionality.
     /// </summary>
-    public class CreateArticleDto
+    public class ArticleSearchResultDto
     {
+        public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
-        public int? ParentId { get; set; }
-        public string Body { get; set; } = string.Empty;
-    }
+        public string? Body { get; set; }
 
-    /// <summary>
-    /// Request DTO for updating existing articles.
-    /// </summary>
-    public class UpdateArticleDto
-    {
-        public string Title { get; set; } = string.Empty;
-        public string Body { get; set; } = string.Empty;
+        /// <summary>
+        /// Text snippet showing where the search term was found.
+        /// </summary>
+        public string? MatchSnippet { get; set; }
+
+        /// <summary>
+        /// Ancestor path from root to this article.
+        /// Used to show where the article is located in the tree.
+        /// Example: ["World", "Sword Coast", "Waterdeep"]
+        /// </summary>
+        public List<BreadcrumbDto> AncestorPath { get; set; } = new();
+
+        public DateTime CreatedDate { get; set; }
+        public DateTime EffectiveDate { get; set; }
     }
 }

@@ -14,7 +14,7 @@ namespace Chronicis.Api.Services
     {
         Task<List<ArticleTreeDto>> GetRootArticlesAsync();
         Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId);
-        Task<ArticleDetailDto?> GetArticleDetailAsync(int id);
+        Task<ArticleDto?> GetArticleDetailAsync(int id);
     }
 
     public class ArticleService : IArticleService
@@ -70,7 +70,7 @@ namespace Chronicis.Api.Services
         /// <summary>
         /// Get full article details including breadcrumb path from root.
         /// </summary>
-        public async Task<ArticleDetailDto?> GetArticleDetailAsync(int id)
+        public async Task<ArticleDto?> GetArticleDetailAsync(int id)
         {
             _logger.LogInformation("Fetching article detail for {ArticleId}", id);
 
@@ -87,7 +87,7 @@ namespace Chronicis.Api.Services
             // Build breadcrumb path by walking up the hierarchy
             var breadcrumbs = await BuildBreadcrumbsAsync(article);
 
-            return new ArticleDetailDto
+            return new ArticleDto
             {
                 Id = article.Id,
                 Title = article.Title,

@@ -1,0 +1,52 @@
+<!-- LoadingSkeleton.razor -->
+<MudPaper Elevation="2" Class="chronicis-article-card">
+    <!-- Breadcrumb Skeleton -->
+    <div class="mb-4" style="display: flex; gap: 8px; align-items: center;">
+        <div class="chronicis-loading-skeleton" style="width: 60px; height: 20px;"></div>
+        <span style="color: var(--chronicis-muted-gold);">›</span>
+        <div class="chronicis-loading-skeleton" style="width: 100px; height: 20px;"></div>
+        <span style="color: var(--chronicis-muted-gold);">›</span>
+        <div class="chronicis-loading-skeleton" style="width: 120px; height: 20px;"></div>
+    </div>
+
+    <!-- Title Skeleton -->
+    <div class="chronicis-loading-skeleton mb-3" style="width: 60%; height: 48px;"></div>
+
+    <!-- Metadata Skeleton -->
+    <div class="mb-4" style="display: flex; gap: 16px;">
+        <div class="chronicis-loading-skeleton" style="width: 200px; height: 16px;"></div>
+        <div class="chronicis-loading-skeleton" style="width: 180px; height: 16px;"></div>
+    </div>
+
+    <!-- Divider -->
+    <div class="chronicis-rune-divider mb-4"></div>
+
+    <!-- Body Skeleton Lines -->
+    <div class="mb-4">
+        <div class="chronicis-loading-skeleton mb-2" style="width: 100%; height: 20px;"></div>
+        <div class="chronicis-loading-skeleton mb-2" style="width: 95%; height: 20px;"></div>
+        <div class="chronicis-loading-skeleton mb-2" style="width: 98%; height: 20px;"></div>
+        <div class="chronicis-loading-skeleton mb-2" style="width: 90%; height: 20px;"></div>
+        <div class="chronicis-loading-skeleton mb-2" style="width: 96%; height: 20px;"></div>
+        
+        <div class="mt-4 mb-2"></div>
+        
+        <div class="chronicis-loading-skeleton mb-2" style="width: 100%; height: 20px;"></div>
+        <div class="chronicis-loading-skeleton mb-2" style="width: 92%; height: 20px;"></div>
+        <div class="chronicis-loading-skeleton mb-2" style="width: 97%; height: 20px;"></div>
+        <div class="chronicis-loading-skeleton mb-2" style="width: 88%; height: 20px;"></div>
+    </div>
+
+    <!-- Action Buttons Skeleton -->
+    <div class="mt-4" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="chronicis-loading-skeleton" style="width: 150px; height: 36px;"></div>
+        <div style="display: flex; gap: 8px;">
+            <div class="chronicis-loading-skeleton" style="width: 100px; height: 36px;"></div>
+            <div class="chronicis-loading-skeleton" style="width: 100px; height: 36px;"></div>
+        </div>
+    </div>
+</MudPaper>
+
+@code {
+    // No code needed - this is a pure presentation component
+}

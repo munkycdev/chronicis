@@ -1,0 +1,190 @@
+/* ============================================
+   Chronicis Navigation Menu Enhanced Styles
+   ============================================ */
+
+.chronicis-nav-menu {
+    padding: 8px;
+}
+
+/* Navigation Menu Items */
+.chronicis-nav-menu-items {
+    padding: 0;
+}
+
+.chronicis-nav-menu-items .mud-nav-item {
+    border-radius: 6px;
+    transition: all 150ms ease-in-out;
+    margin: 2px 0;
+    color: var(--chronicis-soft-off-white);
+}
+
+.chronicis-nav-menu-items .mud-nav-link {
+    border-radius: 6px;
+    transition: all 150ms ease-in-out;
+    margin: 2px 0;
+    padding: 8px 12px;
+    color: var(--chronicis-soft-off-white);
+}
+
+.chronicis-nav-menu-items .mud-nav-link:hover {
+    background-color: rgba(196, 175, 142, 0.12);
+    box-shadow: 0 0 12px rgba(196, 175, 142, 0.25);
+    color: var(--chronicis-beige-gold);
+}
+
+/* Navigation Groups (expandable items) */
+.chronicis-nav-menu-items .mud-nav-group {
+    border-radius: 6px;
+    margin: 2px 0;
+}
+
+.chronicis-nav-menu-items .mud-nav-group .mud-nav-group-header {
+    border-radius: 6px;
+    transition: all 150ms ease-in-out;
+    padding: 8px 12px;
+    color: var(--chronicis-soft-off-white);
+}
+
+.chronicis-nav-menu-items .mud-nav-group .mud-nav-group-header:hover {
+    background-color: rgba(196, 175, 142, 0.12);
+    box-shadow: 0 0 12px rgba(196, 175, 142, 0.25);
+    color: var(--chronicis-beige-gold);
+}
+
+/* Selected State */
+.chronicis-nav-item-selected .mud-nav-link,
+.chronicis-nav-item-selected .mud-nav-group-header {
+    background-color: rgba(196, 175, 142, 0.2) !important;
+    border-left: 3px solid var(--chronicis-beige-gold);
+    padding-left: 9px;
+    color: var(--chronicis-beige-gold);
+    font-weight: 500;
+}
+
+/* Nav Item Container */
+.chronicis-nav-item-container {
+    position: relative;
+}
+
+.chronicis-nav-item-menu {
+    opacity: 0;
+    transition: opacity 150ms ease-in-out;
+}
+
+.chronicis-nav-item-container:hover .chronicis-nav-item-menu {
+    opacity: 1;
+}
+
+/* Expand/Collapse Icons */
+.mud-nav-group .mud-expand-icon {
+    color: var(--chronicis-muted-gold) !important;
+}
+
+.mud-nav-group .mud-expand-icon:hover {
+    color: var(--chronicis-beige-gold) !important;
+}
+
+/* Nested navigation items */
+.mud-nav-group .mud-navmenu {
+    padding-left: 16px;
+    border-left: 1px solid rgba(196, 175, 142, 0.2);
+    margin-left: 12px;
+}
+
+/* Navigation item text */
+.mud-nav-link-text,
+.mud-nav-group-header-text {
+    color: var(--chronicis-soft-off-white);
+    font-size: 0.9375rem;
+    transition: color 150ms ease-in-out;
+}
+
+.chronicis-nav-item-selected .mud-nav-link-text,
+.chronicis-nav-item-selected .mud-nav-group-header-text {
+    color: var(--chronicis-beige-gold);
+}
+
+.mud-nav-link:hover .mud-nav-link-text,
+.mud-nav-group-header:hover .mud-nav-group-header-text {
+    color: var(--chronicis-beige-gold);
+}
+
+/* Navigation item icons */
+.mud-nav-link .mud-icon-root,
+.mud-nav-group-header .mud-icon-root {
+    color: var(--chronicis-muted-gold);
+    transition: all 150ms ease-in-out;
+}
+
+.chronicis-nav-item-selected .mud-icon-root {
+    color: var(--chronicis-beige-gold);
+}
+
+.mud-nav-link:hover .mud-icon-root,
+.mud-nav-group-header:hover .mud-icon-root {
+    color: var(--chronicis-beige-gold);
+    transform: scale(1.1);
+}
+
+/* Context menu styling */
+.mud-menu-item {
+    transition: all 150ms ease-in-out;
+}
+
+.mud-menu-item:hover {
+    background-color: rgba(196, 175, 142, 0.1);
+}
+
+.mud-menu-item .mud-icon-root {
+    color: var(--chronicis-muted-gold);
+}
+
+.mud-menu-item:hover .mud-icon-root {
+    color: var(--chronicis-beige-gold);
+}
+
+/* Smooth expand/collapse animation */
+.mud-nav-group .mud-navmenu {
+    animation: chronicis-expand 200ms ease-out;
+}
+
+@keyframes chronicis-expand {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Empty state in nav menu */
+.chronicis-nav-menu .chronicis-empty-state {
+    padding: 24px 16px;
+}
+
+.chronicis-nav-menu .chronicis-empty-state-icon {
+    font-size: 2.5rem;
+    opacity: 0.4;
+}
+
+/* Loading state in nav menu */
+.chronicis-nav-menu .mud-progress-circular {
+    color: var(--chronicis-beige-gold);
+}
+
+/* Remove default MudNavMenu padding */
+.mud-navmenu {
+    padding: 0 !important;
+}
+
+/* Ensure proper spacing in nested items */
+.mud-nav-group .mud-nav-group {
+    margin-top: 2px;
+}
+
+/* Hover state for entire nav item */
+.chronicis-nav-item:hover {
+    background-color: rgba(196, 175, 142, 0.12);
+}
