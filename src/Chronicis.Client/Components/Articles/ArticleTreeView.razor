@@ -44,80 +44,77 @@
 
 @code {
     private RenderFragment RenderArticleNavItem(ArticleTreeNode node) => __builder =>
-    {
-        <div class="chronicis-nav-item-container"
-             @onmouseenter="@(() => node.IsHovered = true)"
-             @onmouseleave="@(() => node.IsHovered = false)">
-
-            @if (node.HasChildren)
-            {
-                // Article with children - use MudNavGroup
-                <div class="chronicis-nav-group-wrapper">
-                    <MudNavGroup Title="@node.Title"
-                                 Icon="@GetNodeIcon(node)"
-                                 IconColor="Color.Primary"
-                                 Expanded="@node.IsExpanded"
-                                 ExpandedChanged="@(async (expanded) => await OnExpandedChanged(node, expanded))"
-                                 Class="@GetNavItemClass(node)"
-                                 ExpandIcon="@Icons.Material.Filled.ExpandMore">
-                        <!-- ADD THIS -->
-
-                        <ChildContent>
-                            @if (node.Children != null)
-                            {
-                                @foreach (var child in node.Children)
-                                {
-                                    @RenderArticleNavItem(child)
-                                }
-                            }
-                        </ChildContent>
-                    </MudNavGroup>
-
-                    <!-- Clickable overlay on title to select article -->
-                    <div class="chronicis-nav-group-click-handler"
-                         @onclick="@(() => SelectArticle(node))"
-                         @onclick:stopPropagation="true">
-                    </div>
+{
+    <div class="chronicis-nav-item-container" 
+         @onmouseenter="@(() => node.IsHovered = true)"
+         @onmouseleave="@(() => node.IsHovered = false)">
+        
+        <MudNavLink 
+            OnClick="@(() => SelectArticle(node))"
+            Class="@GetNavItemClass(node)">
+            
+            <div class="d-flex align-center justify-space-between" style="width: 100%;">
+                <div class="d-flex align-center">
+                    <!-- Custom expand arrow for parent nodes -->
+                    @if (node.HasChildren)
+                    {
+                        <MudIconButton 
+                            Icon="@(node.IsExpanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)"
+                            Size="Size.Small"
+                            OnClick="@(async (e) => await ToggleExpand(node))"
+                            Style="margin-right: 4px;" />
+                    }
+                    <MudIcon Icon="@GetNodeIcon(node)"
+                             IconColor="Color.Primary"
+                        Size="Size.Small" 
+                        Class="chronicis-nav-item-icon"                         
+                        Style="margin-right: 8px;" />
+                    <span>@node.Title</span>
                 </div>
-            }
-            else
-            {
-                // Leaf article - use MudNavLink
-                <MudNavLink OnClick="@(() => SelectArticle(node))"
-                            Icon="@GetNodeIcon(node)"
-                            IconColor="Color.Primary"
-                            Class="@GetNavItemClass(node)">
-
-                    <div class="d-flex align-center justify-space-between" style="width: 100%;">
-                        <span>@node.Title</span>
-                        @if (node.IsHovered)
-                        {
-                            <MudMenu AnchorOrigin="Origin.BottomRight"
-                                     TransformOrigin="Origin.TopRight"
-                                     Dense="true">
-                                <ActivatorContent>
-                                    <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
-                                                   Size="Size.Small"
-                                                   Class="chronicis-nav-item-menu"
-                                                   @onclick:stopPropagation="true" />
-                                </ActivatorContent>
-                                <ChildContent>
-                                    <MudMenuItem Icon="@Icons.Material.Filled.Add"
-                                                 OnClick="@(() => CreateChildArticle(node))">
-                                        Add Child
-                                    </MudMenuItem>
-                                    <MudMenuItem Icon="@Icons.Material.Filled.Delete"
-                                                 OnClick="@(() => DeleteArticle(node))">
-                                        Delete
-                                    </MudMenuItem>
-                                </ChildContent>
-                            </MudMenu>
-                        }
-                    </div>
-                </MudNavLink>
-            }
-        </div>
-    };
+                
+                <!-- Context menu (three dots) -->
+                @if (node.IsHovered)
+                {
+                    <MudMenu 
+                        AnchorOrigin="Origin.BottomRight"
+                        TransformOrigin="Origin.TopRight"
+                        Dense="true">
+                        <ActivatorContent>
+                            <MudIconButton 
+                                Icon="@Icons.Material.Filled.MoreVert" 
+                                Size="Size.Small"
+                                Class="chronicis-nav-item-menu"
+                                @onclick:stopPropagation="true" />
+                        </ActivatorContent>
+                        <ChildContent>
+                            <MudMenuItem 
+                                Icon="@Icons.Material.Filled.Add"
+                                OnClick="@(() => CreateChildArticle(node))">
+                                Add Child
+                            </MudMenuItem>
+                            <MudMenuItem 
+                                Icon="@Icons.Material.Filled.Delete"
+                                OnClick="@(() => DeleteArticle(node))">
+                                Delete
+                            </MudMenuItem>
+                        </ChildContent>
+                    </MudMenu>
+                }
+            </div>
+        </MudNavLink>
+        
+        <!-- Render children if expanded -->
+        @if (node.HasChildren && node.IsExpanded && node.Children != null)
+        {
+            <div class="chronicis-nav-children" style="margin-left: 20px;">
+                @foreach (var child in node.Children)
+                {
+                    @RenderArticleNavItem(child)
+                }
+            </div>
+        }
+    </div>
+};
 }
 
 @code {
@@ -157,6 +154,18 @@
             StateHasChanged();
         }
     }
+
+    private async Task ToggleExpand(ArticleTreeNode node)
+{
+    node.IsExpanded = !node.IsExpanded;
+    
+    if (node.IsExpanded && (node.Children == null || !node.Children.Any()))
+    {
+        await LoadChildrenForNode(node);
+    }
+    
+    StateHasChanged();
+}
 
     private async void OnRefreshRequested()
     {
