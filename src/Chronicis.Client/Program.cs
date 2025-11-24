@@ -23,6 +23,7 @@ builder.Services.AddMudServices();
 // Register application services
 builder.Services.AddScoped<ArticleApiService>();
 builder.Services.AddScoped<TreeStateService>();
+builder.Services.AddScoped<MarkdownService>();
 
 // Add toast notification configuration
 builder.Services.AddMudServices(config =>

@@ -1,0 +1,143 @@
+@* MarkdownToolbar.razor *@
+
+<div class="markdown-toolbar">
+    <MudButtonGroup Variant="Variant.Text" Size="Size.Small" Class="toolbar-group">
+        <!-- Text Formatting -->
+        <MudTooltip Text="Bold">
+            <MudIconButton Icon="@Icons.Material.Filled.FormatBold" 
+                           OnClick="@(() => InsertSyntax("**", "**", "bold text"))" />
+        </MudTooltip>
+        
+        <MudTooltip Text="Italic">
+            <MudIconButton Icon="@Icons.Material.Filled.FormatItalic" 
+                           OnClick="@(() => InsertSyntax("*", "*", "italic text"))" />
+        </MudTooltip>
+        
+        <MudTooltip Text="Strikethrough">
+            <MudIconButton Icon="@Icons.Material.Filled.FormatStrikethrough" 
+                           OnClick="@(() => InsertSyntax("~~", "~~", "strikethrough"))" />
+        </MudTooltip>
+
+        <MudDivider Vertical="true" FlexItem="true" />
+
+        <!-- Headers -->
+        <MudTooltip Text="Heading 1">
+            <MudIconButton Icon="@Icons.Material.Filled.LooksOne" 
+                           OnClick="@(() => InsertSyntax("# ", "", "Heading 1"))" />
+        </MudTooltip>
+        
+        <MudTooltip Text="Heading 2">
+            <MudIconButton Icon="@Icons.Material.Filled.LooksTwo" 
+                           OnClick="@(() => InsertSyntax("## ", "", "Heading 2"))" />
+        </MudTooltip>
+        
+        <MudTooltip Text="Heading 3">
+            <MudIconButton Icon="@Icons.Material.Filled.Looks3" 
+                           OnClick="@(() => InsertSyntax("### ", "", "Heading 3"))" />
+        </MudTooltip>
+
+        <MudDivider Vertical="true" FlexItem="true" />
+
+        <!-- Lists -->
+        <MudTooltip Text="Bullet List">
+            <MudIconButton Icon="@Icons.Material.Filled.FormatListBulleted" 
+                           OnClick="@(() => InsertSyntax("- ", "", "List item"))" />
+        </MudTooltip>
+        
+        <MudTooltip Text="Numbered List">
+            <MudIconButton Icon="@Icons.Material.Filled.FormatListNumbered" 
+                           OnClick="@(() => InsertSyntax("1. ", "", "List item"))" />
+        </MudTooltip>
+        
+        <MudTooltip Text="Task List">
+            <MudIconButton Icon="@Icons.Material.Filled.CheckBox" 
+                           OnClick="@(() => InsertSyntax("- [ ] ", "", "Task"))" />
+        </MudTooltip>
+
+        <MudDivider Vertical="true" FlexItem="true" />
+
+        <!-- Special Elements -->
+        <MudTooltip Text="Link">
+            <MudIconButton Icon="@Icons.Material.Filled.Link" 
+                           OnClick="@(() => InsertSyntax("[", "](url)", "link text"))" />
+        </MudTooltip>
+        
+        <MudTooltip Text="Image">
+            <MudIconButton Icon="@Icons.Material.Filled.Image" 
+                           OnClick="@(() => InsertSyntax("![", "](image-url)", "alt text"))" />
+        </MudTooltip>
+        
+        <MudTooltip Text="Code Block">
+            <MudIconButton Icon="@Icons.Material.Filled.Code" 
+                           OnClick="@(() => InsertSyntax("```\n", "\n```", "code"))" />
+        </MudTooltip>
+        
+        <MudTooltip Text="Inline Code">
+            <MudIconButton Icon="@Icons.Material.Filled.DataObject" 
+                           OnClick="@(() => InsertSyntax("`", "`", "code"))" />
+        </MudTooltip>
+        
+        <MudTooltip Text="Quote">
+            <MudIconButton Icon="@Icons.Material.Filled.FormatQuote" 
+                           OnClick="@(() => InsertSyntax("> ", "", "Quote"))" />
+        </MudTooltip>
+        
+        <MudTooltip Text="Horizontal Rule">
+            <MudIconButton Icon="@Icons.Material.Filled.HorizontalRule" 
+                           OnClick="@(() => InsertSyntax("\n---\n", "", ""))" />
+        </MudTooltip>
+
+        <MudDivider Vertical="true" FlexItem="true" />
+
+        <!-- Table -->
+        <MudTooltip Text="Table">
+            <MudIconButton Icon="@Icons.Material.Filled.TableChart" 
+                           OnClick="InsertTable" />
+        </MudTooltip>
+    </MudButtonGroup>
+
+    <MudSpacer />
+
+    <!-- Preview Toggle -->
+    <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
+        <MudTooltip Text="@(IsPreviewMode ? "Edit" : "Preview")">
+            <MudIconButton Icon="@(IsPreviewMode ? Icons.Material.Filled.Edit : Icons.Material.Filled.Preview)" 
+                           OnClick="OnTogglePreview"
+                           Color="@(IsPreviewMode ? Color.Primary : Color.Default)" />
+        </MudTooltip>
+        
+        <MudTooltip Text="Markdown Guide">
+            <MudIconButton Icon="@Icons.Material.Filled.Help" 
+                           Href="https://www.markdownguide.org/cheat-sheet/" 
+                           Target="_blank" />
+        </MudTooltip>
+    </MudButtonGroup>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<string> OnInsertMarkdown { get; set; }
+
+    [Parameter]
+    public bool IsPreviewMode { get; set; }
+
+    [Parameter]
+    public EventCallback OnTogglePreview { get; set; }
+
+    private void InsertSyntax(string before, string after, string placeholder)
+    {
+        var markdown = before + placeholder + after;
+        OnInsertMarkdown.InvokeAsync(markdown);
+    }
+
+    private void InsertTable()
+    {
+        var table = @"
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Cell 1   | Cell 2   | Cell 3   |
+| Cell 4   | Cell 5   | Cell 6   |
+";
+        OnInsertMarkdown.InvokeAsync(table);
+    }
+}
