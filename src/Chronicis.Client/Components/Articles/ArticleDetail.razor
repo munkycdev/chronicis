@@ -1,10 +1,14 @@
 @using Chronicis.Shared.DTOs
+@using Chronicis.Shared.Models
 @using Chronicis.Client.Services
 @inject ArticleApiService ArticleApi
 @inject TreeStateService TreeState
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @inject ILogger<ArticleDetail> Logger
+@implements IDisposable
 
-<MudPaper Elevation="0">
+<MudPaper Elevation="0" Class="article-detail-container">
     @if (_isLoading)
     {
         <MudProgressLinear Indeterminate="true" />
@@ -37,38 +41,60 @@
             </ItemTemplate>
         </MudBreadcrumbs>
 
-        @* Article Header *@
+        @* Article Title - Always Editable *@
+        <MudTextField @bind-Value="_editTitle"
+                      Variant="Variant.Text"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      Placeholder="Article Title"
+                      Class="article-title-input mb-2"
+                      OnKeyUp="OnFieldChanged"
+                      Style="font-size: 2.5rem; font-weight: 500;" />
+
+        @* Metadata & Save Status *@
         <div class="d-flex justify-space-between align-center mb-4">
-            <MudText Typo="Typo.h1">@_article.Title</MudText>
-            <div>
-                @* Placeholder for Edit/Delete buttons - Phase 2 *@
-            </div>
+            <MudText Typo="Typo.body2" Color="Color.Default">
+                Created: @_article.CreatedDate.ToLocalTime().ToString("MMM dd, yyyy 'at' h:mm tt")
+                @if (_article.ModifiedDate.HasValue)
+                {
+                    <span> • Modified: @_article.ModifiedDate.Value.ToLocalTime().ToString("MMM dd, yyyy 'at' h:mm tt")</span>
+                }
+            </MudText>
+            
+            @* Save Status Indicator *@
+            <MudText Typo="Typo.caption" Color="@GetSaveStatusColor()" Class="save-status">
+                @_saveStatus
+            </MudText>
         </div>
 
-        @* Metadata *@
-        <MudText Typo="Typo.body2" Color="Color.Default" Class="mb-4">
-            Created: @_article.CreatedDate.ToLocalTime().ToString("MMM dd, yyyy 'at' h:mm tt")
-            @if (_article.ModifiedDate.HasValue)
-            {
-                <span> • Modified: @_article.ModifiedDate.Value.ToLocalTime().ToString("MMM dd, yyyy 'at' h:mm tt")</span>
-            }
-        </MudText>
-
-        @* Article Body *@
+        @* Article Body - Always Editable *@
         <MudDivider Class="mb-4" />
         
-        @if (string.IsNullOrWhiteSpace(_article.Body))
-        {
-            <MudText Typo="Typo.body2" Color="Color.Default" Class="font-italic">
-                This article has no content yet. Click Edit to add content.
-            </MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.body1" Style="white-space: pre-wrap;">
-                @_article.Body
-            </MudText>
-        }
+        <MudTextField @bind-Value="_editBody"
+                      Variant="Variant.Outlined"
+                      Lines="20"
+                      Immediate="true"
+                      Placeholder="Write your article content here..."
+                      Class="article-body-input mb-4"
+                      OnKeyUp="OnFieldChanged" />
+
+        @* Action Buttons *@
+        <div class="d-flex justify-end gap-2">
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Error"
+                       StartIcon="@Icons.Material.Filled.Delete"
+                       OnClick="OnDelete"
+                       Disabled="_isSaving">
+                Delete
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       OnClick="SaveNow"
+                       Disabled="_isSaving || !_hasUnsavedChanges">
+                @(_isSaving ? "Saving..." : "Save")
+            </MudButton>
+        </div>
     }
 </MudPaper>
 
@@ -77,6 +103,14 @@
     private List<BreadcrumbItem> _breadcrumbItems = new();
     private bool _isLoading;
     private string? _error;
+
+    // Editing state
+    private string _editTitle = string.Empty;
+    private string _editBody = string.Empty;
+    private bool _hasUnsavedChanges = false;
+    private bool _isSaving = false;
+    private string _saveStatus = string.Empty;
+    private System.Threading.Timer? _autoSaveTimer;
 
     protected override void OnInitialized()
     {
@@ -95,7 +129,16 @@
     {
         if (TreeState.SelectedArticle != null)
         {
-            await LoadArticleAsync(TreeState.SelectedArticle.Id);
+            // Only reload if it's a different article
+            if (_article == null || _article.Id != TreeState.SelectedArticle.Id)
+            {
+                await LoadArticleAsync(TreeState.SelectedArticle.Id);
+            }
+            // If it's the same article, just update the state without reloading
+            else
+            {
+                StateHasChanged();
+            }
         }
         else
         {
@@ -108,14 +151,23 @@
     {
         try
         {
+            // Cancel any pending auto-save
+            _autoSaveTimer?.Dispose();
+            
             _isLoading = true;
             _error = null;
+            _hasUnsavedChanges = false;
             StateHasChanged();
 
             _article = await ArticleApi.GetArticleDetailAsync(articleId);
             
             if (_article != null)
             {
+                // Initialize edit fields
+                _editTitle = _article.Title;
+                _editBody = _article.Body ?? string.Empty;
+                _saveStatus = string.Empty;
+                
                 BuildBreadcrumbs();
             }
             else
@@ -146,12 +198,185 @@
     {
         if (int.TryParse(item.Href, out var articleId))
         {
-            TreeState.SelectedArticle?.Id = articleId;
+            var articleToSelect = FindArticleInTree(TreeState.RootItems, articleId);
+            if (articleToSelect != null)
+            {
+                TreeState.SelectArticle(articleToSelect);
+            }
         }
+    }
+
+    private ViewModels.ArticleTreeItemViewModel? FindArticleInTree(List<ViewModels.ArticleTreeItemViewModel> items, int id)
+    {
+        foreach (var item in items)
+        {
+            if (item.Id == id)
+                return item;
+
+            var found = FindArticleInTree(item.Children, id);
+            if (found != null)
+                return found;
+        }
+        return null;
+    }
+
+    private void OnFieldChanged()
+    {
+        // Check if there are actual changes
+        var titleChanged = _editTitle != _article?.Title;
+        var bodyChanged = _editBody != (_article?.Body ?? string.Empty);
+        
+        _hasUnsavedChanges = titleChanged || bodyChanged;
+
+        if (_hasUnsavedChanges)
+        {
+            _saveStatus = "Unsaved changes";
+            
+            // Reset auto-save timer
+            _autoSaveTimer?.Dispose();
+            _autoSaveTimer = new System.Threading.Timer(async _ => await AutoSave(), null, 500, Timeout.Infinite);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task AutoSave()
+    {
+        if (_hasUnsavedChanges && !_isSaving && _article != null)
+        {
+            await InvokeAsync(async () =>
+            {
+                await SaveArticle();
+            });
+        }
+    }
+
+    private async Task SaveNow()
+    {
+        if (_article != null)
+        {
+            await SaveArticle();
+        }
+    }
+
+    private async Task SaveArticle()
+    {
+        if (_article == null || _isSaving) return;
+
+        try
+        {
+            _isSaving = true;
+            _saveStatus = "Saving...";
+            StateHasChanged();
+
+            var updateDto = new ArticleUpdateDto
+            {
+                Title = _editTitle.Trim(),
+                Body = _editBody
+            };
+
+            var updated = await ArticleApi.UpdateArticleAsync(_article.Id, updateDto);
+
+            // Update only the necessary fields
+            var titleChanged = _article.Title != updated.Title;
+            _article.Title = updated.Title;
+            _article.Body = updated.Body;
+            _article.ModifiedDate = updated.ModifiedDate;
+            
+            _hasUnsavedChanges = false;
+            _saveStatus = $"Saved {GetTimeAgo(DateTime.Now)}";
+
+            // Update tree state (this will trigger OnTreeStateChanged, but we handle that now)
+            await TreeState.UpdateArticleAsync(updated);
+
+            // Only reload breadcrumbs if title actually changed
+            if (titleChanged)
+            {
+                await ReloadBreadcrumbs();
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save article {ArticleId}", _article.Id);
+            _saveStatus = "Error saving";
+            Snackbar.Add("Failed to save article", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ReloadBreadcrumbs()
+    {
+        if (_article == null) return;
+
+        try
+        {
+            // Reload article to get updated breadcrumbs
+            var refreshed = await ArticleApi.GetArticleDetailAsync(_article.Id);
+            if (refreshed != null)
+            {
+                _article.Breadcrumbs = refreshed.Breadcrumbs;
+                BuildBreadcrumbs();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to reload breadcrumbs for article {ArticleId}", _article.Id);
+        }
+    }
+
+    private async Task OnDelete()
+    {
+        if (_article == null) return;
+
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete Article",
+            $"Are you sure you want to delete '{_article.Title}'? This action cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            try
+            {
+                await ArticleApi.DeleteArticleAsync(_article.Id);
+                await TreeState.RemoveArticleAsync(_article.Id);
+                Snackbar.Add("Article deleted successfully", Severity.Success);
+                
+                // Clear the view
+                _article = null;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to delete article {ArticleId}", _article.Id);
+                Snackbar.Add("Failed to delete article", Severity.Error);
+            }
+        }
+    }
+
+    private Color GetSaveStatusColor()
+    {
+        if (_saveStatus.StartsWith("Error")) return Color.Error;
+        if (_saveStatus.StartsWith("Saving")) return Color.Info;
+        if (_saveStatus.StartsWith("Saved")) return Color.Success;
+        if (_saveStatus.StartsWith("Unsaved")) return Color.Warning;
+        return Color.Default;
+    }
+
+    private string GetTimeAgo(DateTime time)
+    {
+        return "just now";
     }
 
     public void Dispose()
     {
         TreeState.OnStateChanged -= OnTreeStateChanged;
+        _autoSaveTimer?.Dispose();
     }
 }

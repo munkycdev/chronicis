@@ -122,10 +122,6 @@ else
                                     <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
                                     Add Child
                                 </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => OnEdit(context.Value))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-2" />
-                                    Edit
-                                </MudMenuItem>
                                 <MudDivider />
                                 <MudMenuItem OnClick="@(() => OnDelete(context.Value))">
                                     <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Class="mr-2" />
@@ -239,83 +235,26 @@ else
     {
         if (parent == null) return;
 
-        var parameters = new DialogParameters
+        try
         {
-            { "Mode", ArticleEditor.EditorMode.Create },
-            { "ParentId", parent.Id },
-            { "OnSaved", EventCallback.Factory.Create<(string Title, string Body)>(this, async (data) => 
+            // Create blank article immediately
+            var created = await ArticleApiService.CreateArticleAsync(new ArticleCreateDto
             {
-                try
-                {
-                    var created = await ArticleApiService.CreateArticleAsync(new ArticleCreateDto
-                    {
-                        Title = data.Title,
-                        ParentId = parent.Id,
-                        Body = data.Body
-                    });
-                    
-                    await TreeStateService.AddArticleAsync(created);
-                    Snackbar.Add("Article created successfully!", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
-                }
-            }) }
-        };
+                Title = "Untitled",
+                ParentId = parent.Id,
+                Body = string.Empty
+            });
 
-        var options = new DialogOptions 
-        { 
-            CloseButton = true, 
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true 
-        };
+            // Add to tree
+            await TreeStateService.AddArticleAsync(created);
 
-        await DialogService.ShowAsync<ArticleEditor>("Create Article", parameters, options);
-    }
-
-    private async Task OnEdit(ArticleTreeItemViewModel? item)
-    {
-        if (item == null) return;
-
-        var parameters = new DialogParameters
+            // The article is now selected and ArticleDetail will show it for editing
+            Snackbar.Add("New article created", Severity.Success);
+        }
+        catch (Exception ex)
         {
-            { "Mode", ArticleEditor.EditorMode.Edit },
-            { "Article", new ArticleDto 
-            { 
-                Id = item.Id, 
-                Title = item.Title,
-                Body = item.Body ?? string.Empty,
-                ParentId = item.ParentId
-            } },
-            { "OnSaved", EventCallback.Factory.Create<(string Title, string Body)>(this, async (data) => 
-            {
-                try
-                {
-                    var updated = await ArticleApiService.UpdateArticleAsync(item.Id, new ArticleUpdateDto
-                    {
-                        Title = data.Title,
-                        Body = data.Body
-                    });
-                    
-                    await TreeStateService.UpdateArticleAsync(updated);
-                    Snackbar.Add("Article updated successfully!", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add($"Failed to update article: {ex.Message}", Severity.Error);
-                }
-            }) }
-        };
-
-        var options = new DialogOptions 
-        { 
-            CloseButton = true, 
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true 
-        };
-
-        await DialogService.ShowAsync<ArticleEditor>("Edit Article", parameters, options);
+            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
+        }
     }
 
     private async Task OnDelete(ArticleTreeItemViewModel? item)
