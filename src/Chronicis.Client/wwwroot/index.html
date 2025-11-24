@@ -1,34 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chronicis</title>
     <base href="/" />
-    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="Chronicis.Client.styles.css" rel="stylesheet" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-    <link href="/css/app.css" rel="stylesheet" />
-
-    <!--<script type="text/javascript">
-        window.registerKeyboardShortcuts = () => {
-            document.addEventListener('keydown', (e) => {
-                // Ctrl+N for new child article
-                if (e.ctrlKey && e.key === 'n') {
-                    e.preventDefault();
-                    DotNet.invokeMethodAsync('Chronicis.Client', 'HandleNewChild');
-                }
-            });
-        };
-    </script>-->
+    <link href="css/tipTapStyles.css" rel="stylesheet" />
 </head>
-
 <body>
-    <div id="app" class="chronicis-body">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
-            <h1 stule="font-size:100px;">CHRONICIS</h1>
-            <br/>
-            <h4>Your adventues deserve memories...</h4>
+    <div id="app">
+        <div style="position:absolute;top:30vh;width:100%;text-align:center">
+            <h1>Loading...</h1>
         </div>
     </div>
 
@@ -37,8 +22,29 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
-    <script src="_framework/blazor.webassembly.js"></script>
-    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
-</body>
 
+    <!-- Blazor -->
+    <script src="_framework/blazor.webassembly.js"></script>
+
+    <!-- MudBlazor -->
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+
+    <!-- TipTap via ES Modules -->
+    <script type="module">
+        import { Editor } from 'https://esm.sh/@tiptap/core@3.11.0';
+        import StarterKit from 'https://esm.sh/@tiptap/starter-kit@3.11.0';
+
+        // Make available globally for Blazor
+        window.TipTap = {
+            Editor: Editor,
+            StarterKit: StarterKit
+        };
+
+        // Notify that TipTap is ready
+        window.dispatchEvent(new Event('tiptap-ready'));
+    </script>
+
+    <!-- Our Integration Script -->
+    <script src="js/tipTapIntegration.js"></script>
+</body>
 </html>

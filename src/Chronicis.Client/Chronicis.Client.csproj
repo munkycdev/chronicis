@@ -23,4 +23,8 @@
 		<ProjectReference Include="..\Chronicis.Shared\Chronicis.Shared.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="wwwroot\lib\" />
+	</ItemGroup>
+
 </Project>

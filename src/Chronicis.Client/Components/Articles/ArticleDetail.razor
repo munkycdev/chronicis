@@ -1,11 +1,13 @@
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.Models
 @using Chronicis.Client.Services
+@using Microsoft.JSInterop
 @inject ArticleApiService ArticleApi
 @inject TreeStateService TreeState
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject ILogger<ArticleDetail> Logger
+@inject IJSRuntime JSRuntime
 @implements IDisposable
 
 <MudPaper Elevation="0" Class="article-detail-container">
@@ -48,7 +50,7 @@
                       Immediate="true"
                       Placeholder="Article Title"
                       Class="article-title-input mb-2"
-                      OnKeyUp="OnFieldChanged"
+                      OnKeyUp="OnTitleChanged"
                       Style="font-size: 2.5rem; font-weight: 500;" />
 
         @* Metadata & Save Status *@
@@ -60,26 +62,20 @@
                     <span> • Modified: @_article.ModifiedDate.Value.ToLocalTime().ToString("MMM dd, yyyy 'at' h:mm tt")</span>
                 }
             </MudText>
-            
+
             @* Save Status Indicator *@
             <MudText Typo="Typo.caption" Color="@GetSaveStatusColor()" Class="save-status">
                 @_saveStatus
             </MudText>
         </div>
 
-        @* Article Body - Always Editable *@
+        @* TipTap Editor Container *@
         <MudDivider Class="mb-4" />
-        
-        <MudTextField @bind-Value="_editBody"
-                      Variant="Variant.Outlined"
-                      Lines="20"
-                      Immediate="true"
-                      Placeholder="Write your article content here..."
-                      Class="article-body-input mb-4"
-                      OnKeyUp="OnFieldChanged" />
+
+        <div id="tiptap-editor-@_article.Id" class="tiptap-editor-container mb-4"></div>
 
         @* Action Buttons *@
-        <div class="d-flex justify-end gap-2">
+        <div class="d-flex justify-end gap-2 mt-4">
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Error"
                        StartIcon="@Icons.Material.Filled.Delete"
@@ -111,10 +107,13 @@
     private bool _isSaving = false;
     private string _saveStatus = string.Empty;
     private System.Threading.Timer? _autoSaveTimer;
+    private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
+    private bool _editorInitialized = false;
 
     protected override void OnInitialized()
     {
         TreeState.OnStateChanged += OnTreeStateChanged;
+        _dotNetHelper = DotNetObjectReference.Create(this);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -122,52 +121,117 @@
         if (firstRender && TreeState.SelectedArticle != null)
         {
             await LoadArticleAsync(TreeState.SelectedArticle.Id);
+            StateHasChanged();
+            await Task.Delay(100);
+            await InitializeEditor();
         }
+
+        // Don't auto-initialize on subsequent renders - we handle it manually in OnTreeStateChanged
+    }
+
+    private async Task InitializeEditor()
+    {
+        if (_article == null || _editorInitialized) return;
+
+        var editorId = $"tiptap-editor-{_article.Id}";
+        Logger.LogInformation("Attempting to initialize editor: {EditorId}", editorId);
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("initTipTapEditor",
+                editorId,
+                _editBody,
+                _dotNetHelper);
+            _editorInitialized = true;
+            Logger.LogInformation("Editor initialized successfully: {EditorId}", editorId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize TipTap editor: {EditorId}", editorId);
+            Snackbar.Add("Failed to initialize editor", Severity.Error);
+        }
+    }
+
+    [JSInvokable]
+    public void OnEditorUpdate(string markdown)
+    {
+        _editBody = markdown;
+        OnContentChanged();
     }
 
     private async void OnTreeStateChanged()
     {
-        if (TreeState.SelectedArticle != null)
+        await InvokeAsync(async () =>
         {
-            // Only reload if it's a different article
-            if (_article == null || _article.Id != TreeState.SelectedArticle.Id)
+            if (TreeState.SelectedArticle != null)
             {
-                await LoadArticleAsync(TreeState.SelectedArticle.Id);
+                if (_article == null || _article.Id != TreeState.SelectedArticle.Id)
+                {
+                    var newArticleId = TreeState.SelectedArticle.Id;
+                    Logger.LogInformation("Switching to article: {ArticleId}", newArticleId);
+
+                    // Cleanup old editor
+                    if (_editorInitialized && _article != null)
+                    {
+                        try
+                        {
+                            await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{_article.Id}");
+                            Logger.LogInformation("Destroyed old editor: tiptap-editor-{ArticleId}", _article.Id);
+                        }
+                        catch { }
+                    }
+
+                    _editorInitialized = false;
+
+                    // Wait for LoadArticleAsync to FULLY complete
+                    await LoadArticleAsync(newArticleId);
+
+                    // NOW _article has the new data
+                    Logger.LogInformation("Article loaded, _article.Id is now: {ArticleId}", _article?.Id);
+
+                    // Force re-render to create new DOM container
+                    StateHasChanged();
+
+                    // Wait for DOM to update
+                    await Task.Delay(100);
+
+                    // Initialize editor with NEW article
+                    Logger.LogInformation("About to initialize editor for article: {ArticleId}", _article?.Id);
+                    await InitializeEditor();
+                }
+                else
+                {
+                    StateHasChanged();
+                }
             }
-            // If it's the same article, just update the state without reloading
             else
             {
+                _article = null;
+                _editorInitialized = false;
                 StateHasChanged();
             }
-        }
-        else
-        {
-            _article = null;
-            StateHasChanged();
-        }
+        });
     }
 
     private async Task LoadArticleAsync(int articleId)
     {
         try
         {
-            // Cancel any pending auto-save
             _autoSaveTimer?.Dispose();
-            
+
             _isLoading = true;
             _error = null;
             _hasUnsavedChanges = false;
             StateHasChanged();
 
             _article = await ArticleApi.GetArticleDetailAsync(articleId);
-            
+
             if (_article != null)
             {
-                // Initialize edit fields
                 _editTitle = _article.Title;
                 _editBody = _article.Body ?? string.Empty;
                 _saveStatus = string.Empty;
-                
+
                 BuildBreadcrumbs();
             }
             else
@@ -220,19 +284,22 @@
         return null;
     }
 
-    private void OnFieldChanged()
+    private void OnTitleChanged()
     {
-        // Check if there are actual changes
+        OnContentChanged();
+    }
+
+    private void OnContentChanged()
+    {
         var titleChanged = _editTitle != _article?.Title;
         var bodyChanged = _editBody != (_article?.Body ?? string.Empty);
-        
+
         _hasUnsavedChanges = titleChanged || bodyChanged;
 
         if (_hasUnsavedChanges)
         {
             _saveStatus = "Unsaved changes";
-            
-            // Reset auto-save timer
+
             _autoSaveTimer?.Dispose();
             _autoSaveTimer = new System.Threading.Timer(async _ => await AutoSave(), null, 500, Timeout.Infinite);
         }
@@ -255,6 +322,19 @@
     {
         if (_article != null)
         {
+            // Get current markdown from TipTap editor
+            if (_editorInitialized)
+            {
+                try
+                {
+                    var markdown = await JSRuntime.InvokeAsync<string>("getTipTapMarkdown", $"tiptap-editor-{_article.Id}");
+                    _editBody = markdown ?? _editBody;
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Failed to get editor content");
+                }
+            }
             await SaveArticle();
         }
     }
@@ -277,19 +357,16 @@
 
             var updated = await ArticleApi.UpdateArticleAsync(_article.Id, updateDto);
 
-            // Update only the necessary fields
             var titleChanged = _article.Title != updated.Title;
             _article.Title = updated.Title;
             _article.Body = updated.Body;
             _article.ModifiedDate = updated.ModifiedDate;
-            
+
             _hasUnsavedChanges = false;
             _saveStatus = $"Saved {GetTimeAgo(DateTime.Now)}";
 
-            // Update tree state (this will trigger OnTreeStateChanged, but we handle that now)
             await TreeState.UpdateArticleAsync(updated);
 
-            // Only reload breadcrumbs if title actually changed
             if (titleChanged)
             {
                 await ReloadBreadcrumbs();
@@ -316,7 +393,6 @@
 
         try
         {
-            // Reload article to get updated breadcrumbs
             var refreshed = await ArticleApi.GetArticleDetailAsync(_article.Id);
             if (refreshed != null)
             {
@@ -344,12 +420,22 @@
         {
             try
             {
+                // Cleanup editor first
+                if (_editorInitialized)
+                {
+                    try
+                    {
+                        await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{_article.Id}");
+                    }
+                    catch { }
+                }
+
                 await ArticleApi.DeleteArticleAsync(_article.Id);
                 await TreeState.RemoveArticleAsync(_article.Id);
                 Snackbar.Add("Article deleted successfully", Severity.Success);
-                
-                // Clear the view
+
                 _article = null;
+                _editorInitialized = false;
                 StateHasChanged();
             }
             catch (Exception ex)
@@ -378,5 +464,16 @@
     {
         TreeState.OnStateChanged -= OnTreeStateChanged;
         _autoSaveTimer?.Dispose();
+        _dotNetHelper?.Dispose();
+
+        // Cleanup TipTap editor
+        if (_article != null && _editorInitialized)
+        {
+            try
+            {
+                JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{_article.Id}");
+            }
+            catch { }
+        }
     }
 }
