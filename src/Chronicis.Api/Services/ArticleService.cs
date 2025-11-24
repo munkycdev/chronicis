@@ -138,8 +138,11 @@ namespace Chronicis.Api.Services
                 Title = article.Title,
                 ParentId = article.ParentId,
                 HasChildren = article.Children?.Any() ?? false,
+                ChildCount = article.Children?.Count ?? 0,  // ADD THIS LINE
                 Children = article.Children?.Select(c => MapToDto(c)).ToList() ?? new List<ArticleTreeDto>(),
-                CreatedDate = article.CreatedDate
+                CreatedDate = article.CreatedDate,
+                EffectiveDate = article.EffectiveDate,  // ADD THIS TOO
+                IconEmoji = article.IconEmoji  // AND THIS
             };
         }
     }

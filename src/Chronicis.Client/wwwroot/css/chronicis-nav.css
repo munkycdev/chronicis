@@ -188,3 +188,22 @@
 .chronicis-nav-item:hover {
     background-color: rgba(196, 175, 142, 0.12);
 }
+
+/* Nav group wrapper for clickable title */
+.chronicis-nav-group-wrapper {
+    position: relative;
+}
+
+.chronicis-nav-group-click-handler {
+    position: absolute;
+    top: 0;
+    left: 40px; /* After the expand arrow */
+    right: 40px; /* Before the context menu */
+    height: 48px;
+    cursor: pointer;
+    z-index: 1;
+}
+
+    .chronicis-nav-group-click-handler:hover {
+        background-color: rgba(196, 175, 142, 0.08);
+    }

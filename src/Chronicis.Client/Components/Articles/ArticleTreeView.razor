@@ -45,64 +45,69 @@
 @code {
     private RenderFragment RenderArticleNavItem(ArticleTreeNode node) => __builder =>
     {
-        <div class="chronicis-nav-item-container" 
+        <div class="chronicis-nav-item-container"
              @onmouseenter="@(() => node.IsHovered = true)"
              @onmouseleave="@(() => node.IsHovered = false)">
-            
+
             @if (node.HasChildren)
             {
                 // Article with children - use MudNavGroup
-                <MudNavGroup Title="@node.Title"
-                             Icon="@GetNodeIcon(node)"
-                             IconColor="Color.Primary"
-                             Expanded="@node.IsExpanded"
-                             ExpandedChanged="@(async (expanded) => await OnExpandedChanged(node, expanded))"
-                             Class="@GetNavItemClass(node)">
+                <div class="chronicis-nav-group-wrapper">
+                    <MudNavGroup Title="@node.Title"
+                                 Icon="@GetNodeIcon(node)"
+                                 IconColor="Color.Primary"
+                                 Expanded="@node.IsExpanded"
+                                 ExpandedChanged="@(async (expanded) => await OnExpandedChanged(node, expanded))"
+                                 Class="@GetNavItemClass(node)"
+                                 ExpandIcon="@Icons.Material.Filled.ExpandMore">
+                        <!-- ADD THIS -->
 
-                    <ChildContent>
-                        @if (node.Children != null)
-                        {
-                            @foreach (var child in node.Children)
+                        <ChildContent>
+                            @if (node.Children != null)
                             {
-                                @RenderArticleNavItem(child)
+                                @foreach (var child in node.Children)
+                                {
+                                    @RenderArticleNavItem(child)
+                                }
                             }
-                        }
-                    </ChildContent>
-                </MudNavGroup>
+                        </ChildContent>
+                    </MudNavGroup>
+
+                    <!-- Clickable overlay on title to select article -->
+                    <div class="chronicis-nav-group-click-handler"
+                         @onclick="@(() => SelectArticle(node))"
+                         @onclick:stopPropagation="true">
+                    </div>
+                </div>
             }
             else
             {
                 // Leaf article - use MudNavLink
-                <MudNavLink 
-                    OnClick="@(() => SelectArticle(node))"
-                    Icon="@GetNodeIcon(node)"
-                    IconColor="Color.Primary"
-                    Class="@GetNavItemClass(node)">
-                    
+                <MudNavLink OnClick="@(() => SelectArticle(node))"
+                            Icon="@GetNodeIcon(node)"
+                            IconColor="Color.Primary"
+                            Class="@GetNavItemClass(node)">
+
                     <div class="d-flex align-center justify-space-between" style="width: 100%;">
                         <span>@node.Title</span>
                         @if (node.IsHovered)
                         {
-                            <MudMenu 
-                                AnchorOrigin="Origin.BottomRight"
-                                TransformOrigin="Origin.TopRight"
-                                Dense="true">
+                            <MudMenu AnchorOrigin="Origin.BottomRight"
+                                     TransformOrigin="Origin.TopRight"
+                                     Dense="true">
                                 <ActivatorContent>
-                                    <MudIconButton 
-                                        Icon="@Icons.Material.Filled.MoreVert" 
-                                        Size="Size.Small"
-                                        Class="chronicis-nav-item-menu"
-                                        @onclick:stopPropagation="true" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
+                                                   Size="Size.Small"
+                                                   Class="chronicis-nav-item-menu"
+                                                   @onclick:stopPropagation="true" />
                                 </ActivatorContent>
                                 <ChildContent>
-                                    <MudMenuItem 
-                                        Icon="@Icons.Material.Filled.Add"
-                                        OnClick="@(() => CreateChildArticle(node))">
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Add"
+                                                 OnClick="@(() => CreateChildArticle(node))">
                                         Add Child
                                     </MudMenuItem>
-                                    <MudMenuItem 
-                                        Icon="@Icons.Material.Filled.Delete"
-                                        OnClick="@(() => DeleteArticle(node))">
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Delete"
+                                                 OnClick="@(() => DeleteArticle(node))">
                                         Delete
                                     </MudMenuItem>
                                 </ChildContent>
@@ -113,7 +118,7 @@
             }
         </div>
     };
-    }
+}
 
 @code {
     private List<ArticleTreeNode>? _rootArticles;
@@ -135,6 +140,11 @@
         {
             var articles = await ArticleApi.GetRootArticlesAsync();
             _rootArticles = articles.Select(a => new ArticleTreeNode(a)).ToList();
+
+            foreach (var article in _rootArticles)
+            {
+                Console.WriteLine($"Article: {article.Title}, HasChildren: {article.HasChildren}, ChildCount: {article.Article.ChildCount}");
+            }
         }
         catch (Exception ex)
         {
