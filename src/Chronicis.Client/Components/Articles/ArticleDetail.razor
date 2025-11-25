@@ -217,6 +217,9 @@ else
             {
                 Console.WriteLine("No article selected (or selection cleared), clearing article");
                 _article = null;
+                
+                // Reset page title to default
+                await JSRuntime.InvokeVoidAsync("eval", "document.title = 'Chronicis'");
             }
 
             StateHasChanged();
@@ -242,6 +245,12 @@ else
             _hasUnsavedChanges = false;
             await LoadBreadcrumbsAsync(articleId);
 
+            // Update browser page title
+            var pageTitle = string.IsNullOrEmpty(_article.Title) 
+                ? "Untitled - Chronicis" 
+                : $"{_article.Title} - Chronicis";
+            await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(pageTitle)}'");
+
             // Focus title if it's empty (new article)
             if (string.IsNullOrEmpty(_editTitle))
             {
@@ -257,6 +266,12 @@ else
         {
             _isLoading = false;
         }
+    }
+
+    // Helper to escape strings for JavaScript
+    private static string EscapeForJs(string text)
+    {
+        return text.Replace("'", "\\'").Replace("\n", "\\n").Replace("\r", "\\r");
     }
 
     private async Task LoadBreadcrumbsAsync(int articleId)
@@ -360,10 +375,12 @@ else
             if (titleChanged)
             {
                 var newSlug = CreateSlug(newTitle);
-                Console.WriteLine($"=== TITLE CHANGED ===");
-                Console.WriteLine($"Old: '{originalTitle}' -> New: '{newTitle}'");
-                Console.WriteLine($"New slug: {newSlug}");
-                Console.WriteLine($"Article ID: {_article.Id}");
+                
+                // Update browser page title
+                var pageTitle = string.IsNullOrEmpty(newTitle) 
+                    ? "Untitled - Chronicis" 
+                    : $"{newTitle} - Chronicis";
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(pageTitle)}'");
                 
                 // Refresh tree first
                 Console.WriteLine("Calling TreeState.RefreshTree()");
