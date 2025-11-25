@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.Http;
 using MudBlazor;
 using MudBlazor.Services;
 using Chronicis.Client;
@@ -172,5 +173,11 @@ builder.Services.AddSingleton(chronicisTheme);
 // Application Services
 builder.Services.AddScoped<IArticleApiService, ArticleApiService>();
 builder.Services.AddScoped<ITreeStateService, TreeStateService>();
+
+builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.quotable.io/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 
 await builder.Build().RunAsync();
