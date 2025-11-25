@@ -7,7 +7,7 @@
 @implements IDisposable
 
 <div class="chronicis-home">
-    @if (TreeStateService.SelectedArticleId.HasValue)
+    @if (TreeStateService.SelectedArticleId.HasValue && TreeStateService.SelectedArticleId.Value > 0)
     {
         <ArticleDetail />
     }
@@ -319,6 +319,7 @@
                 // (This prevents flickering when the article is already loaded)
                 if (!TreeStateService.SelectedArticleId.HasValue)
                 {
+                    Console.WriteLine($"Article not found for slug: {slug}");
                     Navigation.NavigateTo("/", replace: true);
                 }
                 else
@@ -329,6 +330,7 @@
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Error loading article by slug: {ex.Message}");
             // Only redirect on error if no article is selected
             if (!TreeStateService.SelectedArticleId.HasValue)
             {
@@ -374,6 +376,7 @@
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Error loading quote: {ex.Message}");
             // Fallback quote already handled in service
         }
         finally
