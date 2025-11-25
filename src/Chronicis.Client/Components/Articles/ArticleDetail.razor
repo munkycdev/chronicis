@@ -24,7 +24,6 @@ else
         .metadata-drawer,
         .metadata-drawer .mud-drawer-content {
             background-color: transparent !important;
-            margin-right:12px !important;
             border-right-color: transparent;
         }
             .metadata-drawer .mud-drawer-content {
@@ -34,46 +33,25 @@ else
             .metadata-drawer.mud-drawer-persistent {
                 height:auto !important;
             }
+
+        .mud-input.mud-input-underline:before,
+        .mud-input.mud-input-underline:after,
+        .mud-input.mud-input-underline:hover:not(.mud-disabled):before,
+        .mud-input.mud-input-underline:hover:not(.mud-disabled):after {
+            border-bottom: none !important;        
+        }
+
+        .mud-input,
+        .chronicis-editor-content {
+            border: solid 1px #c7c7c4;
+            padding:8px;
+            border-radius: 4px;
+        }
     </style>
 
     <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
-        <!-- Metadata Toggle Button -->
-        <div class="chronicis-flex" style="gap: 8px;">
-        <MudTooltip Text="Metadata">
-            <MudIconButton Color="Color.Inherit"
-                           OnClick="@ToggleMetadata"
-                           Icon="@Icons.Material.Filled.ChromeReaderMode"
-                           Class="mt-0">
-            </MudIconButton>
-        </MudTooltip>
-        </div>
 
-        <!-- Metadata -->
-        <MudDrawer @bind-Open="@_openMetadata"
-            Fixed="true"
-            Anchor="Anchor.End" 
-            Elevation="9999" 
-            Variant="@DrawerVariant.Persistent" 
-            ClipMode="@DrawerClipMode.Always"
-            Class="metadata-drawer"
-        >
-            <MudDrawerHeader>
-                <MudText Typo="Typo.h6">Metadata</MudText>
-            </MudDrawerHeader>
-            <MudDrawerContainer>
-                <ul class="ml-3">
-                    @if (_article.CreatedDate != default)
-                    {
-                        <li>• Created @_article.CreatedDate.ToString("MMMM d, yyyy 'at' h:mm tt")</li>
-                    }
-                    @if (_article.ModifiedDate != null)
-                    {
-                        <li>• Modified @_article.ModifiedDate.Value.ToString("MMMM d, yyyy 'at' h:mm tt")</li>
-                    }
-                </ul>
-            </MudDrawerContainer>
-        </MudDrawer>
-
+        <div class="mud-toolbar">
         <!-- Breadcrumbs -->
         @if (_breadcrumbs != null && _breadcrumbs.Any())
         {
@@ -85,6 +63,17 @@ else
                 </ItemTemplate>
             </MudBreadcrumbs>
         }
+        <MudSpacer />
+    <!-- Metadata Toggle Button -->
+            <MudTooltip Text="Metadata">
+                <MudIconButton Color="Color.Inherit"
+                               OnClick="@ToggleMetadata"
+                               Icon="@Icons.Material.Filled.ChromeReaderMode"
+                               Class="mt-0"
+                Edge="Edge.End">
+                </MudIconButton>
+            </MudTooltip>
+        </div>
 
         <!-- Title (Always Editable) -->
         <MudTextField @ref="_titleField"
@@ -97,7 +86,7 @@ else
                       DisableUnderLine="true" />
 
         <!-- Divider -->
-        <div class="chronicis-rune-divider mb-4"></div>
+        <div class="chronicis-rune-divider mb-3"></div>
 
         <!-- TipTap Editor Container (from Phase 4) -->
         <div id="tiptap-editor-@_article.Id" class="chronicis-editor-container mb-4"></div>
@@ -140,6 +129,30 @@ else
             </div>
         </div>
     </MudPaper>
+    <!-- Metadata -->
+    <MudDrawer @bind-Open="@_openMetadata"
+               Fixed="true"
+               Anchor="Anchor.End"
+               Elevation="9999"
+               Variant="@DrawerVariant.Persistent"
+               ClipMode="@DrawerClipMode.Always"
+               Class="metadata-drawer">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">Metadata</MudText>
+        </MudDrawerHeader>
+        <MudDrawerContainer>
+            <ul class="ml-3">
+                @if (_article.CreatedDate != default)
+                {
+                    <li>• Created @_article.CreatedDate.ToString("MMMM d, yyyy 'at' h:mm tt")</li>
+                }
+                @if (_article.ModifiedDate != null)
+                {
+                    <li>• Modified @_article.ModifiedDate.Value.ToString("MMMM d, yyyy 'at' h:mm tt")</li>
+                }
+            </ul>
+        </MudDrawerContainer>
+    </MudDrawer>
 }
 
 @code {

@@ -13,6 +13,7 @@
     /* Accents */
     --chronicis-muted-gold: #D9C9A7;
     --chronicis-charcoal: #1A1A1A;
+    --chronicis-beige: #cabda3;
     /* Semantic Colors */
     --chronicis-success: #4CAF50;
     --chronicis-warning: #FFA726;
@@ -102,7 +103,7 @@
 
 /* Main Content Area */
 .mud-main-content {
-    background-color: var(--chronicis-soft-off-white);
+    background-color: var(--chronicis-beige);
     min-height: 100vh;
 }
 

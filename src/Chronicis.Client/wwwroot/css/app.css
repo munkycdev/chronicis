@@ -54,7 +54,19 @@ html, body {
 }
 
 .chronicis-loading-text {
-    font-family: 'Libre+Baskerville', Georgia, serif; font-size: 1.25rem;
+    font-family: 'Libre+Baskerville', Georgia, serif;
+    color: #C4AF8E;
+    letter-spacing: 1px;
+    font-size: 2rem;
+    text-transform: uppercase;
+    animation: chronicis-fade 1.5s ease-in-out infinite;
+}
+.chronicis-loading-text::first-letter {
+    font-size:2.25rem;
+}
+.chronicis-loading-subtext {
+    font-family: 'Libre+Baskerville', Georgia, serif;
+    font-size: 1.25rem;
     color: #C4AF8E;
     letter-spacing: 1px;
     animation: chronicis-fade 1.5s ease-in-out infinite;
@@ -64,6 +76,7 @@ html, body {
     0%, 100% {
         opacity: 0.5;
     }
+
     50% {
         opacity: 1;
     }
