@@ -1,4 +1,4 @@
-﻿// tipTapIntegration.js - UPDATED with ready check
+﻿// tipTapIntegration.js - UPDATED with hashtag extension support (Phase 6)
 // Place this in wwwroot/js/tipTapIntegration.js
 
 // Store editor instances
@@ -11,7 +11,7 @@ window.addEventListener('tiptap-ready', function () {
     console.log('📝 tipTapIntegration: TipTap is ready');
 });
 
-window.initializeTipTapEditor = (editorId, initialContent, dotNetHelper) => {
+window.initializeTipTapEditor = async (editorId, initialContent, dotNetHelper) => {
     console.log('🎯 initTipTapEditor called for:', editorId);
 
     // Check if TipTap is ready
@@ -39,10 +39,10 @@ window.initializeTipTapEditor = (editorId, initialContent, dotNetHelper) => {
     }
 
     // TipTap is ready, create editor immediately
-    createEditor(editorId, initialContent, dotNetHelper);
+    await createEditor(editorId, initialContent, dotNetHelper);
 };
 
-function createEditor(editorId, initialContent, dotNetHelper) {
+async function createEditor(editorId, initialContent, dotNetHelper) {
     const container = document.getElementById(editorId);
     if (!container) {
         console.error('❌ Editor container not found:', editorId);
@@ -57,20 +57,40 @@ function createEditor(editorId, initialContent, dotNetHelper) {
     }
 
     try {
-        console.log('🔨 Creating TipTap editor...');
+        console.log('🔨 Creating TipTap editor with hashtag support...');
         console.log('   Container:', container);
         console.log('   Initial content length:', initialContent ? initialContent.length : 0);
+
+        // Dynamically import hashtag extension
+        let HashtagExtension = null;
+        try {
+            const hashtagModule = await import('./tipTapHashtagExtension.js');
+            HashtagExtension = hashtagModule.createHashtagExtension();
+            console.log('✅ Hashtag extension loaded');
+        } catch (error) {
+            console.warn('⚠️ Could not load hashtag extension:', error.message);
+            console.warn('   Editor will work without hashtag support');
+        }
+
+        // Build extensions array
+        const extensions = [
+            window.TipTap.StarterKit.configure({
+                heading: {
+                    levels: [1, 2, 3, 4, 5, 6],
+                },
+            })
+        ];
+
+        // Add hashtag extension if loaded
+        if (HashtagExtension) {
+            extensions.push(HashtagExtension);
+            console.log('✅ Hashtag extension added to editor');
+        }
 
         // Initialize TipTap
         const editor = new window.TipTap.Editor({
             element: container,
-            extensions: [
-                window.TipTap.StarterKit.configure({
-                    heading: {
-                        levels: [1, 2, 3, 4, 5, 6],
-                    },
-                }),
-            ],
+            extensions: extensions,
             content: initialContent ? markdownToHTML(initialContent) : '<p></p>',
             editorProps: {
                 attributes: {
@@ -96,7 +116,7 @@ function createEditor(editorId, initialContent, dotNetHelper) {
         // Store instance
         editorInstances[editorId] = editor;
 
-        console.log('✅ TipTap editor created successfully!');
+        console.log('✅ TipTap editor created successfully with hashtag support!');
     } catch (error) {
         console.error('❌ Error creating TipTap editor:', error);
         console.error('   Stack:', error.stack);
@@ -133,6 +153,7 @@ window.destroyTipTapEditor = (editorId) => {
 };
 
 // Simple markdown to HTML conversion
+// Note: Hashtags are preserved as plain text and the TipTap extension handles them
 function markdownToHTML(markdown) {
     if (!markdown) return '<p></p>';
 
@@ -198,10 +219,16 @@ function markdownToHTML(markdown) {
 }
 
 // Simple HTML to markdown conversion
+// Note: Hashtag spans are converted back to plain #hashtag text
 function htmlToMarkdown(html) {
     if (!html) return '';
 
     let markdown = html;
+
+    // Phase 6: Convert hashtag spans back to plain text
+    // The TipTap extension wraps hashtags in <span data-hashtag>
+    markdown = markdown.replace(/<span[^>]*data-hashtag[^>]*data-hashtag-name="([^"]*)"[^>]*>.*?<\/span>/gi, '#$1');
+    markdown = markdown.replace(/<span[^>]*class="chronicis-hashtag"[^>]*>.*?#(\w+).*?<\/span>/gi, '#$1');
 
     // Headers
     markdown = markdown.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
@@ -251,4 +278,4 @@ function htmlToMarkdown(html) {
     return markdown;
 }
 
-console.log('📝 tipTapIntegration.js loaded');
+console.log('📝 tipTapIntegration.js loaded with hashtag support');
