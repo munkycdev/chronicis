@@ -50,7 +50,7 @@ else
 
         <!-- Metadata -->
         <MudDrawer @bind-Open="@_openMetadata"
-                   @bind-Fixed="@_fixedMetadata"
+            Fixed="true"
             Anchor="Anchor.End" 
             Elevation="9999" 
             Variant="@DrawerVariant.Persistent" 
@@ -156,7 +156,6 @@ else
     private MudTextField<string>? _titleField;
     private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
     private bool _openMetadata = false;
-    private bool _fixedMetadata = true;
 
     private string _saveStatusClass => _isSaving ? "saving" : _hasUnsavedChanges ? "unsaved" : "saved";
 
@@ -395,7 +394,6 @@ else
     private void ToggleMetadata()
     {
         _openMetadata = !_openMetadata;
-        _fixedMetadata = !_openMetadata;
     }
 
     public void Dispose()
