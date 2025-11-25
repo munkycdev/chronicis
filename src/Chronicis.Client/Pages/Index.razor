@@ -1,4 +1,5 @@
 @page "/"
+@page "/article/{ArticleSlug}"
 @inject ITreeStateService TreeStateService
 @inject IArticleApiService ArticleApi
 @inject IQuoteService QuoteService
@@ -244,6 +245,9 @@
 </div>
 
 @code {
+    [Parameter]
+    public string? ArticleSlug { get; set; }
+
     private CampaignStats? _stats;
     private List<ArticleDto>? _recentArticles;
     private bool _isLoadingRecent = true;
@@ -253,10 +257,110 @@
     protected override async Task OnInitializedAsync()
     {
         TreeStateService.OnStateChanged += OnTreeStateChanged;
+        
+        // If URL has article slug, find and load it
+        if (!string.IsNullOrEmpty(ArticleSlug))
+        {
+            await LoadArticleBySlug(ArticleSlug);
+        }
+        
         await Task.WhenAll(
             LoadDashboardData(),
             LoadQuote()
         );
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Handle URL changes (browser back/forward)
+        // Only load if the slug changed AND it's different from what we have selected
+        if (!string.IsNullOrEmpty(ArticleSlug))
+        {
+            var currentSlug = TreeStateService.SelectedArticleId.HasValue 
+                ? CreateSlug(GetArticleTitleById(TreeStateService.SelectedArticleId.Value))
+                : null;
+            
+            // Only load if slug actually changed (not from our own navigation)
+            if (currentSlug != ArticleSlug)
+            {
+                _ = LoadArticleBySlug(ArticleSlug);
+            }
+        }
+    }
+    
+    private string? GetArticleTitleById(int articleId)
+    {
+        // Try to find title in recent articles cache
+        return _recentArticles?.FirstOrDefault(a => a.Id == articleId)?.Title;
+    }
+
+    private async Task LoadArticleBySlug(string slug)
+    {
+        try
+        {
+            // Search for article by title
+            var results = await ArticleApi.SearchArticlesAsync(slug);
+            
+            // Try exact match first (case-insensitive)
+            var exactMatch = results.FirstOrDefault(r => 
+                CreateSlug(r.Title) == slug.ToLowerInvariant());
+            
+            if (exactMatch != null)
+            {
+                if (exactMatch.Id != TreeStateService.SelectedArticleId)
+                {
+                    TreeStateService.NotifySelectionChanged(exactMatch.Id);
+                }
+            }
+            else
+            {
+                // Article not found by search
+                // Only redirect if we don't already have an article selected
+                // (This prevents flickering when the article is already loaded)
+                if (!TreeStateService.SelectedArticleId.HasValue)
+                {
+                    Navigation.NavigateTo("/", replace: true);
+                }
+                else
+                {
+                    Console.WriteLine($"Article not found by search for slug: {slug}, but article already selected");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Only redirect on error if no article is selected
+            if (!TreeStateService.SelectedArticleId.HasValue)
+            {
+                Navigation.NavigateTo("/", replace: true);
+            }
+        }
+    }
+
+    private static string CreateSlug(string title)
+    {
+        if (string.IsNullOrEmpty(title))
+            return "untitled";
+        
+        // Convert to lowercase
+        var slug = title.ToLowerInvariant();
+        
+        // Replace spaces with hyphens
+        slug = slug.Replace(" ", "-");
+        
+        // Remove invalid characters (keep only letters, numbers, hyphens)
+        slug = new string(slug.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
+        
+        // Replace multiple consecutive hyphens with single hyphen
+        while (slug.Contains("--"))
+        {
+            slug = slug.Replace("--", "-");
+        }
+        
+        // Trim hyphens from start and end
+        slug = slug.Trim('-');
+        
+        return string.IsNullOrEmpty(slug) ? "untitled" : slug;
     }
 
     private async Task LoadQuote()
@@ -270,7 +374,6 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading quote: {ex.Message}");
             // Fallback quote already handled in service
         }
         finally
@@ -361,7 +464,13 @@
 
     private void NavigateToArticle(int articleId)
     {
-        TreeStateService.NotifySelectionChanged(articleId);
+        // Find the article to get its title for the slug
+        var article = _recentArticles?.FirstOrDefault(a => a.Id == articleId);
+        if (article != null)
+        {
+            var slug = CreateSlug(article.Title);
+            Navigation.NavigateTo($"/article/{slug}");
+        }
     }
 
     private async Task CreateFirstArticle()

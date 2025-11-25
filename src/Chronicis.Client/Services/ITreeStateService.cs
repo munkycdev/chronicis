@@ -5,6 +5,8 @@ namespace Chronicis.Client.Services
 {
     public interface ITreeStateService
     {
+        void ExpandAndSelectArticle(int articleId);
+        event Action<int>? OnExpandAndSelect;
         void NotifySelectionChanged(int articleId);
         int? SelectedArticleId { get; }
         bool IsSearchActive { get; }

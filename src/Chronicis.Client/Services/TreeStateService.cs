@@ -12,7 +12,9 @@ public class TreeStateService : ITreeStateService
 
     private List<ArticleTreeItemViewModel> _rootItems = new();
     private ArticleTreeItemViewModel? _selectedArticle;
+    public event Action<int>? OnExpandAndSelect;
 
+   
     // Search state
     private string _searchQuery = string.Empty;
     private List<ArticleSearchResultDto> _searchResults = new();
@@ -37,6 +39,13 @@ public class TreeStateService : ITreeStateService
     public void NotifySelectionChanged(int articleId)
     {
         SelectedArticleId = articleId;
+        NotifyStateChanged();
+    }
+    public void ExpandAndSelectArticle(int articleId)
+    {
+
+        SelectedArticleId = articleId;
+        OnExpandAndSelect?.Invoke(articleId);
         NotifyStateChanged();
     }
 
@@ -260,13 +269,10 @@ public class TreeStateService : ITreeStateService
 
     private void NotifyStateChanged()
     {
-        Console.WriteLine($"NotifyStateChanged called, OnStateChanged is {(OnStateChanged == null ? "null" : "not null")}");
 
         if (OnStateChanged != null)
         {
-            Console.WriteLine($"About to invoke OnStateChanged, subscriber count: {OnStateChanged.GetInvocationList().Length}");
             OnStateChanged.Invoke();
-            Console.WriteLine($"OnStateChanged invoked");
         }
     }
 

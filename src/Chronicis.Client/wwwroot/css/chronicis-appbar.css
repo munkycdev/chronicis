@@ -1,0 +1,30 @@
+/* Clickable Home Link in AppBar */
+.chronicis-home-link {
+    transition: all 0.2s ease;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-left: -12px; /* Adjust for padding */
+    text-decoration: none !important;
+}
+
+    .chronicis-home-link:hover {
+        background-color: rgba(196, 175, 142, 0.1) !important;
+        text-decoration: none !important;
+    }
+
+    .chronicis-home-link:active {
+        transform: scale(0.98);
+    }
+
+    /* Make logo and title unselectable */
+    .chronicis-home-link img,
+    .chronicis-home-link .mud-typography {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+    }
+
+    /* Override MudLink default styles */
+    .chronicis-home-link.mud-link {
+        color: inherit !important;
+    }

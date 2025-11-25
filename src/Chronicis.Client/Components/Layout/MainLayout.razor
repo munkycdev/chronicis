@@ -15,15 +15,18 @@
             Edge="Edge.Start" 
             OnClick="@ToggleDrawer" />
         
-        <img src="/images/logo.png" alt="Chronicis" class="chronicis-logo" />
-        <MudText Typo="Typo.h6" Class="chronicis-title">Chronicis</MudText>
+        <!-- Clickable logo and title to go home - Using MudLink for reliability -->
+        <MudLink Href="/" Underline="Underline.None" Color="Color.Inherit" Class="d-flex align-center chronicis-home-link" Style="cursor: pointer;">
+            <img src="/images/logo.png" alt="Chronicis" class="chronicis-logo" />
+            <MudText Typo="Typo.h6" Class="chronicis-title">Chronicis</MudText>
+        </MudLink>
         
         <MudSpacer />
         
         <!-- Global Search (Phase 9) -->
         <MudTextField 
             @bind-Value="_globalSearch"
-            Placeholder="Coming in phase 9..."
+            Placeholder="Search all content..."
             Adornment="Adornment.Start"
             AdornmentIcon="@Icons.Material.Filled.Search"
             Variant="Variant.Outlined"
