@@ -29,6 +29,8 @@ var host = new HostBuilder()
         // Register services
         services.AddScoped<IArticleService, ArticleService>();
         services.AddScoped<ArticleValidationService>();
+        services.AddScoped<IHashtagParser, HashtagParser>();
+        services.AddScoped<IHashtagSyncService, HashtagSyncService>();
     })
     .Build();
 
