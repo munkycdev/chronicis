@@ -173,6 +173,7 @@ builder.Services.AddSingleton(chronicisTheme);
 // Application Services
 builder.Services.AddScoped<IArticleApiService, ArticleApiService>();
 builder.Services.AddScoped<ITreeStateService, TreeStateService>();
+builder.Services.AddScoped<IHashtagApiService, HashtagApiService>();
 
 builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
 {
