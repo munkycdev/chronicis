@@ -83,7 +83,9 @@ else
                       Placeholder="Untitled Article"
                       Class="chronicis-article-title mb-3"
                       Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
+                      Immediate="true"
                       @onkeyup="@(() => OnTitleChanged())"
+                      @onkeydown="@OnTitleKeyDown"
                       DisableUnderLine="true" />
 
         <!-- Divider -->
@@ -318,6 +320,17 @@ else
         // No auto-save timer for title changes
     }
 
+    // NEW: Handle Enter key in title field
+    private async Task OnTitleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            Console.WriteLine("Enter pressed in title field, saving...");
+            Console.WriteLine($"Current _editTitle value: '{_editTitle}'");
+            await SaveArticle();
+        }
+    }
+
     // UPDATED: Only body content triggers auto-save
     private void OnContentChanged()
     {
@@ -375,6 +388,10 @@ else
             if (titleChanged)
             {
                 var newSlug = CreateSlug(newTitle);
+                Console.WriteLine($"=== TITLE CHANGED ===");
+                Console.WriteLine($"Old: '{originalTitle}' -> New: '{newTitle}'");
+                Console.WriteLine($"New slug: {newSlug}");
+                Console.WriteLine($"Article ID: {_article.Id}");
                 
                 // Update browser page title
                 var pageTitle = string.IsNullOrEmpty(newTitle) 
