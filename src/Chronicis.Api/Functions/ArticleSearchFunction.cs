@@ -5,6 +5,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Net;
 using System.Web;
 
 namespace Chronicis.Api.Functions;
@@ -44,6 +45,76 @@ public class ArticleSearchFunction
             var matchingArticles = await _context.Articles
                 .Where(a => EF.Functions.Like(a.Title, $"%{query}%") ||
                            EF.Functions.Like(a.Body, $"%{query}%"))
+                .Select(a => new
+                {
+                    a.Id,
+                    a.Title,
+                    a.Body,
+                    a.ParentId,
+                    a.CreatedDate,
+                    a.EffectiveDate  // Use new field
+                })
+                .ToListAsync();
+
+            var results = new List<ArticleSearchResultDto>();
+
+            foreach (var article in matchingArticles)
+            {
+                var ancestorPath = await BuildAncestorPath(article.Id);
+
+                // Create snippet showing where match was found
+                var matchSnippet = GetMatchSnippet(article.Title, article.Body, query);
+
+                results.Add(new ArticleSearchResultDto
+                {
+                    Id = article.Id,
+                    Title = article.Title,
+                    Body = article.Body,
+                    MatchSnippet = matchSnippet,
+                    AncestorPath = ancestorPath,  // Changed from AncestorDto to BreadcrumbDto
+                    CreatedDate = article.CreatedDate,
+                    EffectiveDate = article.EffectiveDate
+                });
+            }
+
+            _logger.LogInformation("Found {Count} matching articles", results.Count);
+
+            var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(results);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching articles");
+            var errorResponse = req.CreateResponse(System.Net.HttpStatusCode.InternalServerError);
+            return errorResponse;
+        }
+    }
+
+    [Function("SearchArticlesByTitle")]
+public async Task<HttpResponseData> SearchArticlesByTitle(
+    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/search/title")] HttpRequestData req)
+    {
+        _logger.LogInformation("Searching articles by title");
+
+        try
+        {
+            var queryString = HttpUtility.ParseQueryString(req.Url.Query);
+            var query = queryString["query"] ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                var emptyResponse = req.CreateResponse(System.Net.HttpStatusCode.OK);
+                await emptyResponse.WriteAsJsonAsync(new List<ArticleSearchResultDto>());
+                return emptyResponse;
+            }
+
+            _logger.LogInformation("Searching articles with query: {Query}", query);
+            Console.WriteLine(query);
+
+            // Search for articles with titles OR body containing the query
+            var matchingArticles = await _context.Articles
+                .Where(a => EF.Functions.Like(a.Title, $"%{query}%"))
                 .Select(a => new
                 {
                     a.Id,

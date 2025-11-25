@@ -151,7 +151,7 @@ public class TreeStateService : ITreeStateService
         }
 
         // Execute search
-        _searchResults = await _apiService.SearchArticlesAsync(_searchQuery);
+        _searchResults = await _apiService.SearchArticlesByTitleAsync(_searchQuery);
 
         // Build set of visible node IDs (matches + all ancestors)
         _visibleNodeIds.Clear();

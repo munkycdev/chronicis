@@ -166,5 +166,29 @@ namespace Chronicis.Client.Services
                 throw;
             }
         }
+
+        /// <summary>
+        /// Search articles by title only (for tree navigation).
+        /// </summary>
+        public async Task<List<ArticleSearchResultDto>> SearchArticlesByTitleAsync(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return new List<ArticleSearchResultDto>();
+            }
+
+            try
+            {
+                _logger.LogInformation("Searching articles by title: {Query}", query);
+                var results = await _httpClient.GetFromJsonAsync<List<ArticleSearchResultDto>>(
+                    $"api/articles/search/title?query={Uri.EscapeDataString(query)}");
+                return results ?? new List<ArticleSearchResultDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching articles by title");
+                throw;
+            }
+        }
     }
 }
