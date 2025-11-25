@@ -28,7 +28,7 @@
             Variant="Variant.Outlined"
             Margin="Margin.Dense"
             Style="max-width: 400px; background-color: rgba(255,255,255,0.05);"
-            Class="mr-4"
+            Class="global-search-input"
             @onkeyup="OnGlobalSearchKeyUp" />
         
         <MudIconButton 
@@ -54,6 +54,7 @@
                 Placeholder="Search articles..."
                 Adornment="Adornment.End"
                 AdornmentIcon="@(_treeSearch?.Length > 0 ? Icons.Material.Filled.Clear : Icons.Material.Filled.Search)"
+                AdornmentColor="Color.Primary"
                 OnAdornmentClick="ClearSearch"
                 Variant="Variant.Outlined"
                 Margin="Margin.Dense"

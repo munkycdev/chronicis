@@ -72,6 +72,10 @@
     color: var(--chronicis-beige-gold) !important;
 }
 
+.mud-input-outlined-border {
+    border-color: var(--chronicis-slate-grey) !important;
+}
+
 /* AppBar Styling */
 .mud-appbar {
     background-color: var(--chronicis-deep-blue-grey) !important;
@@ -297,6 +301,15 @@
 
 .chronicis-search-box .mud-input-root {
     background-color: rgba(255, 255, 255, 0.05);
+}
+
+    .chronicis-search-box .mud-input-slot {
+        background-color: rgba(243, 240, 235, 0.8) !important;
+    }
+
+.global-search-input .mud-input-slot {
+    background-color: rgba(243, 240, 235, 0.8) !important;
+    padding-left:8px !important;
 }
 
 /* Article Card */

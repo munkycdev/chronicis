@@ -33,14 +33,14 @@ else
         }
 
         <!-- Title (Always Editable) -->
-        <MudTextField 
-            @bind-Value="_editTitle"
-            Variant="Variant.Text"
-            Placeholder="Untitled Article"
-            Class="chronicis-article-title mb-3"
-            Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
-            @onkeyup="@(() => OnContentChanged())"
-            DisableUnderLine="true" />
+        <MudTextField @ref="_titleField"
+                      @bind-Value="_editTitle"
+                      Variant="Variant.Text"
+                      Placeholder="Untitled Article"
+                      Class="chronicis-article-title mb-3"
+                      Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
+                      @onkeyup="@(() => OnContentChanged())"
+                      DisableUnderLine="true" />
 
         <!-- Metadata -->
         <div class="chronicis-article-meta mb-4">
@@ -113,6 +113,7 @@ else
     private bool _editorInitialized = false;
     private string _lastSaveTime = "just now";
     private Timer? _autoSaveTimer;
+    private MudTextField<string>? _titleField;
     private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
 
     private string _saveStatusClass => _isSaving ? "saving" : _hasUnsavedChanges ? "unsaved" : "saved";
@@ -180,6 +181,13 @@ else
             _editBody = _article.Body ?? string.Empty;
             _hasUnsavedChanges = false;
             await LoadBreadcrumbsAsync(articleId);
+
+            // Focus title if it's empty (new article)
+            if (string.IsNullOrEmpty(_editTitle))
+            {
+                await Task.Delay(100); // Give UI time to render
+                _titleField?.FocusAsync().GetAwaiter().GetResult();
+            }
         }
         catch (Exception ex)
         {
