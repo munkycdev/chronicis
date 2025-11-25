@@ -13,11 +13,13 @@ public class UpdateArticle : ArticleBaseClass
 {
     private readonly ChronicisDbContext _context;
     private readonly ArticleValidationService _validationService;
+    private readonly IHashtagSyncService _hashtagSync;
 
-    public UpdateArticle(ChronicisDbContext context, ArticleValidationService validationService)
+    public UpdateArticle(ChronicisDbContext context, ArticleValidationService validationService, IHashtagSyncService hashtagSync)
     {
         _context = context;
         _validationService = validationService;
+        _hashtagSync = hashtagSync;
     }
 
     [Function("UpdateArticle")]
@@ -29,7 +31,7 @@ public class UpdateArticle : ArticleBaseClass
         {
             // Parse request body
             var dto = await JsonSerializer.DeserializeAsync<ArticleUpdateDto>(req.Body, _options);
-            
+
             if (dto == null)
             {
                 var badRequest = req.CreateResponse(HttpStatusCode.BadRequest);
