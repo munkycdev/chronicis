@@ -14,6 +14,15 @@
             </MudText>
         </div>
     }
+    else if (TreeState.IsSearchActive && !HasVisibleArticles())
+    {
+        <div class="pa-4 text-center">
+            <div style="opacity: 0.5; font-size: 2rem;">🔍</div>
+            <MudText Typo="Typo.body2" Color="Color.Default" Class="mt-2">
+                No articles match "@TreeState.SearchQuery"
+            </MudText>
+        </div>
+    }
     else if (_rootArticles == null || !_rootArticles.Any())
     {
         <div class="pa-4 text-center">
@@ -45,6 +54,12 @@
 @code {
     private RenderFragment RenderArticleNavItem(ArticleTreeNode node) => __builder =>
     {
+        // Hide nodes that don't match search filter
+        if (TreeState.IsSearchActive && !TreeState.IsNodeVisible(node.Article.Id))
+        {
+            return;
+        }
+
         <div class="chronicis-nav-item-container" 
              @onmouseenter="@(() => node.IsHovered = true)"
              @onmouseleave="@(() => node.IsHovered = false)">
@@ -130,6 +145,7 @@
     {
         await LoadRootArticles();
         TreeState.OnRefreshRequested += OnRefreshRequested;
+        TreeState.OnStateChanged += OnTreeStateChanged;
     }
 
     private async Task LoadRootArticles()
@@ -161,6 +177,71 @@
             await LoadRootArticles();
             StateHasChanged();
         });
+    }
+
+    private async void OnTreeStateChanged()
+    {
+        await InvokeAsync(() =>
+        {
+            // When search state changes, auto-expand matching ancestors
+            if (TreeState.IsSearchActive)
+            {
+                ExpandSearchMatches();
+            }
+            StateHasChanged();
+        });
+    }
+
+    private void ExpandSearchMatches()
+    {
+        if (_rootArticles == null) return;
+
+        // Expand all nodes that are visible in the search
+        ExpandVisibleNodes(_rootArticles);
+    }
+
+    private void ExpandVisibleNodes(List<ArticleTreeNode> nodes)
+    {
+        foreach (var node in nodes)
+        {
+            if (TreeState.IsNodeVisible(node.Article.Id))
+            {
+                // If this node is visible and has children, expand it
+                if (node.HasChildren)
+                {
+                    node.IsExpanded = true;
+                    
+                    // Load children if not already loaded
+                    if (node.Children == null || !node.Children.Any())
+                    {
+                        _ = LoadChildrenForNode(node);
+                    }
+                    else if (node.Children != null)
+                    {
+                        ExpandVisibleNodes(node.Children);
+                    }
+                }
+            }
+        }
+    }
+
+    private bool HasVisibleArticles()
+    {
+        if (_rootArticles == null) return false;
+        return HasVisibleArticlesRecursive(_rootArticles);
+    }
+
+    private bool HasVisibleArticlesRecursive(List<ArticleTreeNode> nodes)
+    {
+        foreach (var node in nodes)
+        {
+            if (TreeState.IsNodeVisible(node.Article.Id))
+                return true;
+            
+            if (node.Children != null && HasVisibleArticlesRecursive(node.Children))
+                return true;
+        }
+        return false;
     }
 
     private void SelectArticle(ArticleTreeNode node)
@@ -410,6 +491,7 @@
     public void Dispose()
     {
         TreeState.OnRefreshRequested -= OnRefreshRequested;
+        TreeState.OnStateChanged -= OnTreeStateChanged;
     }
 
     // Helper class for tree nodes

@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
+@inject ITreeStateService TreeState
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -58,6 +59,7 @@
                 OnAdornmentClick="ClearSearch"
                 Variant="Variant.Outlined"
                 Margin="Margin.Dense"
+                Immediate="true"
                 @onkeyup="OnTreeSearchKeyUp"
                 Class="mb-2" />
         </div>
@@ -114,19 +116,21 @@
         _drawerOpen = !_drawerOpen;
     }
 
-    private void ClearSearch()
+    private async Task ClearSearch()
     {
         _treeSearch = null;
-        // Trigger tree view to show all articles
-        // Implementation depends on your TreeStateService
+        TreeState.ClearSearch();
     }
 
     private async Task OnTreeSearchKeyUp(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter")
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_treeSearch))
         {
-            // Trigger tree search
-            // Implementation depends on your TreeStateService
+            await TreeState.SearchAsync(_treeSearch);
+        }
+        else if (string.IsNullOrWhiteSpace(_treeSearch))
+        {
+            TreeState.ClearSearch();
         }
     }
 
