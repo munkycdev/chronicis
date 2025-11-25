@@ -255,10 +255,17 @@
     color: var(--chronicis-beige-gold);
 }
 
-/* Breadcrumbs Styling */
-.mud-breadcrumbs {
-    color: var(--chronicis-slate-grey);
+.chronicis-nav-children {
+    margin-left: 13px;
 }
+
+.chronicis-nav-children span {
+    font-size: 0.8rem;
+}
+    /* Breadcrumbs Styling */
+    .mud-breadcrumbs {
+        color: var(--chronicis-slate-grey);
+    }
 
 .mud-breadcrumb-item {
     color: var(--chronicis-slate-grey);
@@ -290,14 +297,17 @@
     font-weight: 500;
     color: var(--chronicis-beige-gold);
     letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
-
-/* Search Box in Drawer */
-.chronicis-search-box {
-    padding: var(--chronicis-space-md);
-    background-color: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid var(--chronicis-slate-grey);
-}
+    .chronicis-title::first-letter {
+        font-size: 1.4em;
+    }
+    /* Search Box in Drawer */
+    .chronicis-search-box {
+        padding: var(--chronicis-space-md);
+        background-color: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid var(--chronicis-slate-grey);
+    }
 
 .chronicis-search-box .mud-input-root {
     background-color: rgba(255, 255, 255, 0.05);

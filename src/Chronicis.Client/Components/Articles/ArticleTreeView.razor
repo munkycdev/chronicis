@@ -112,7 +112,7 @@
             <!-- Render children if expanded -->
             @if (node.HasChildren && node.IsExpanded && node.Children != null)
             {
-                <div class="chronicis-nav-children" style="margin-left: 20px;">
+                <div class="chronicis-nav-children">
                     @foreach (var child in node.Children)
                     {
                         @RenderArticleNavItem(child)

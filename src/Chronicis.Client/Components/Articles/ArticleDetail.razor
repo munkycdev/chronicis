@@ -1,3 +1,4 @@
+@using MudBlazor.Charts
 @inject IArticleApiService ArticleApi
 @inject ITreeStateService TreeState
 @inject ISnackbar Snackbar
@@ -19,11 +20,64 @@ else if (_article == null)
 }
 else
 {
+    <style>
+        .metadata-drawer,
+        .metadata-drawer .mud-drawer-content {
+            background-color: transparent !important;
+            margin-right:12px !important;
+            border-right-color: transparent;
+        }
+            .metadata-drawer .mud-drawer-content {
+                padding: 8px;
+                background-color: var(--chronicis-soft-off-white) !important;
+            }
+            .metadata-drawer.mud-drawer-persistent {
+                height:auto !important;
+            }
+    </style>
+
     <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
+        <!-- Metadata Toggle Button -->
+        <div class="chronicis-flex" style="gap: 8px;">
+        <MudTooltip Text="Metadata">
+            <MudIconButton Color="Color.Inherit"
+                           OnClick="@ToggleMetadata"
+                           Icon="@Icons.Material.Filled.ChromeReaderMode"
+                           Class="mt-0">
+            </MudIconButton>
+        </MudTooltip>
+        </div>
+
+        <!-- Metadata -->
+        <MudDrawer @bind-Open="@_openMetadata"
+                   @bind-Fixed="@_fixedMetadata"
+            Anchor="Anchor.End" 
+            Elevation="9999" 
+            Variant="@DrawerVariant.Persistent" 
+            ClipMode="@DrawerClipMode.Always"
+            Class="metadata-drawer"
+        >
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">Metadata</MudText>
+            </MudDrawerHeader>
+            <MudDrawerContainer>
+                <ul class="ml-3">
+                    @if (_article.CreatedDate != default)
+                    {
+                        <li>• Created @_article.CreatedDate.ToString("MMMM d, yyyy 'at' h:mm tt")</li>
+                    }
+                    @if (_article.ModifiedDate != null)
+                    {
+                        <li>• Modified @_article.ModifiedDate.Value.ToString("MMMM d, yyyy 'at' h:mm tt")</li>
+                    }
+                </ul>
+            </MudDrawerContainer>
+        </MudDrawer>
+
         <!-- Breadcrumbs -->
         @if (_breadcrumbs != null && _breadcrumbs.Any())
         {
-            <MudBreadcrumbs Items="_breadcrumbs" Class="mb-4">
+            <MudBreadcrumbs Items="_breadcrumbs">
                 <ItemTemplate Context="item">
                     <MudLink Href="@item.Href" Class="chronicis-breadcrumb-link">
                         @item.Text
@@ -41,20 +95,6 @@ else
                       Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
                       @onkeyup="@(() => OnContentChanged())"
                       DisableUnderLine="true" />
-
-        <!-- Metadata -->
-        <div class="chronicis-article-meta mb-4">
-            <MudText Typo="Typo.body2">
-                @if (_article.CreatedDate != default)
-                {
-                    <span>Created @_article.CreatedDate.ToString("MMMM d, yyyy 'at' h:mm tt")</span>
-                }
-                @if (_article.ModifiedDate != null)
-                {
-                    <span class="ml-3">• Modified @_article.ModifiedDate.Value.ToString("MMMM d, yyyy 'at' h:mm tt")</span>
-                }
-            </MudText>
-        </div>
 
         <!-- Divider -->
         <div class="chronicis-rune-divider mb-4"></div>
@@ -115,6 +155,8 @@ else
     private Timer? _autoSaveTimer;
     private MudTextField<string>? _titleField;
     private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
+    private bool _openMetadata = false;
+    private bool _fixedMetadata = true;
 
     private string _saveStatusClass => _isSaving ? "saving" : _hasUnsavedChanges ? "unsaved" : "saved";
 
@@ -328,7 +370,7 @@ else
     {
         try
         {
-        // Create proper DTO
+            // Create proper DTO
             var createDto = new ArticleCreateDto
             {
                 Title = "Untitled",
@@ -338,7 +380,7 @@ else
             };
 
             var created = await ArticleApi.CreateArticleAsync(createDto);
-        
+
             // SelectArticle expects ArticleTreeItemViewModel, not ArticleDto
             // This needs fixing too - see below
             TreeState.RefreshTree();
@@ -348,6 +390,12 @@ else
         {
             Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
         }
+    }
+
+    private void ToggleMetadata()
+    {
+        _openMetadata = !_openMetadata;
+        _fixedMetadata = !_openMetadata;
     }
 
     public void Dispose()

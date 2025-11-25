@@ -226,5 +226,5 @@
         }
         /* Also remove padding from the ripple effect div */
         .mud-nav-link.mud-ripple {
-            padding: 8px 0px !important; /* Top/bottom: 8px, Left/right: 4px */
+            padding: 0px 0px !important; /* Top/bottom: 8px, Left/right: 4px */
         }
