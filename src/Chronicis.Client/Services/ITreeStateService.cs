@@ -5,6 +5,8 @@ namespace Chronicis.Client.Services
 {
     public interface ITreeStateService
     {
+        void NotifySelectionChanged(int articleId);
+        int? SelectedArticleId { get; }
         bool IsSearchActive { get; }
         List<ArticleTreeItemViewModel> RootItems { get; }
         string SearchQuery { get; }

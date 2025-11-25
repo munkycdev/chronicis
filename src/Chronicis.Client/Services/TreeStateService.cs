@@ -19,6 +19,7 @@ public class TreeStateService : ITreeStateService
     private HashSet<int> _visibleNodeIds = new();
 
     public event Action? OnStateChanged;
+    public int? SelectedArticleId { get; private set; }
 
     public List<ArticleTreeItemViewModel> RootItems => _rootItems;
     public ArticleTreeItemViewModel? SelectedArticle => _selectedArticle;
@@ -27,9 +28,16 @@ public class TreeStateService : ITreeStateService
     public string SearchQuery => _searchQuery;
     public bool IsSearchActive => !string.IsNullOrWhiteSpace(_searchQuery);
 
+
     public TreeStateService(IArticleApiService apiService)
     {
         _apiService = apiService;
+    }
+
+    public void NotifySelectionChanged(int articleId)
+    {
+        SelectedArticleId = articleId;
+        NotifyStateChanged();
     }
 
     public void Initialize(List<ArticleTreeDto> rootArticles)
@@ -252,7 +260,14 @@ public class TreeStateService : ITreeStateService
 
     private void NotifyStateChanged()
     {
-        OnStateChanged?.Invoke();
+        Console.WriteLine($"NotifyStateChanged called, OnStateChanged is {(OnStateChanged == null ? "null" : "not null")}");
+
+        if (OnStateChanged != null)
+        {
+            Console.WriteLine($"About to invoke OnStateChanged, subscriber count: {OnStateChanged.GetInvocationList().Length}");
+            OnStateChanged.Invoke();
+            Console.WriteLine($"OnStateChanged invoked");
+        }
     }
 
     public void RefreshTree()

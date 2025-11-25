@@ -53,18 +53,13 @@ namespace Chronicis.Api.Services
         {
             _logger.LogInformation("Fetching children for article {ParentId}", parentId);
 
-            return await _context.Articles
+            var children = await _context.Articles
                 .Where(a => a.ParentId == parentId)
+                .Include(a => a.Children)  // Load children for recursive mapping
                 .OrderBy(a => a.Title)
-                .Select(a => new ArticleTreeDto
-                {
-                    Id = a.Id,
-                    Title = a.Title,
-                    ParentId = a.ParentId,
-                    HasChildren = a.Children.Any(),
-                    CreatedDate = a.CreatedDate
-                })
                 .ToListAsync();
+
+            return children.Select(a => MapToDtoWithChildCount(a)).ToList();
         }
 
         /// <summary>
@@ -130,7 +125,7 @@ namespace Chronicis.Api.Services
             return breadcrumbs;
         }
 
-        private ArticleTreeDto MapToDto(Article article)
+        private static ArticleTreeDto MapToDto(Article article)
         {
             return new ArticleTreeDto
             {
@@ -143,6 +138,25 @@ namespace Chronicis.Api.Services
                 CreatedDate = article.CreatedDate,
                 EffectiveDate = article.EffectiveDate,  // ADD THIS TOO
                 IconEmoji = article.IconEmoji  // AND THIS
+            };
+        }
+
+        private ArticleTreeDto MapToDtoWithChildCount(Article article)
+        {
+            // Count children from database, not from loaded collection
+            var childCount = _context.Articles.Count(a => a.ParentId == article.Id);
+
+            return new ArticleTreeDto
+            {
+                Id = article.Id,
+                Title = article.Title,
+                ParentId = article.ParentId,
+                HasChildren = childCount > 0,
+                ChildCount = childCount,
+                Children = article.Children?.Select(c => MapToDtoWithChildCount(c)).ToList() ?? new List<ArticleTreeDto>(),
+                CreatedDate = article.CreatedDate,
+                EffectiveDate = article.EffectiveDate,
+                IconEmoji = article.IconEmoji
             };
         }
     }

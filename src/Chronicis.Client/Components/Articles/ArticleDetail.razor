@@ -126,9 +126,9 @@ else
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         // ONLY handle first render
-        if (firstRender && TreeState.SelectedArticle != null)
+        if (firstRender && TreeState.SelectedArticleId.HasValue)
         {
-            await LoadArticleAsync(TreeState.SelectedArticle.Id);
+            await LoadArticleAsync(TreeState.SelectedArticleId.Value);
             StateHasChanged();
             await Task.Delay(100);
             await InitializeEditor();
@@ -137,25 +137,31 @@ else
 
     private async void OnTreeStateChanged()
     {
-        // Handle all subsequent article switches
+        Console.WriteLine($"!!! OnTreeStateChanged HIT !!!");  // Very obvious log
+        Console.WriteLine($"=== OnTreeStateChanged triggered ===");
+        Console.WriteLine($"TreeState.SelectedArticleId: {TreeState.SelectedArticleId}");
+
         await InvokeAsync(async () =>
         {
             if (_editorInitialized && _article != null)
             {
+                Console.WriteLine($"Destroying editor for article {_article.Id}");
                 await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{_article.Id}");
             }
-            
+
             _editorInitialized = false;
-            
-            if (TreeState.SelectedArticle != null)
+
+            if (TreeState.SelectedArticleId.HasValue)
             {
-                await LoadArticleAsync(TreeState.SelectedArticle.Id);
+                Console.WriteLine($"Loading article {TreeState.SelectedArticleId.Value}");
+                await LoadArticleAsync(TreeState.SelectedArticleId.Value);
             }
             else
             {
+                Console.WriteLine("No article selected, clearing");
                 _article = null;
             }
-            
+
             StateHasChanged();
             await Task.Delay(100);
             await InitializeEditor();

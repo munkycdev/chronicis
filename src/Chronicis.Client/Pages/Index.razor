@@ -1,37 +1,34 @@
 @page "/"
-@using Chronicis.Client.ViewModels
 @inject ITreeStateService TreeStateService
 @inject IArticleApiService ArticleApiService
+@implements IDisposable
 
 <PageTitle>Chronicis</PageTitle>
 
-@if (_selectedArticle != null)
+@if (TreeStateService.SelectedArticleId.HasValue)
 {
     <ArticleDetail />
 }
 else
 {
-    <h1>Welcome to Chronicis</h1>
-    <p>Select an article from the tree to view it.</p>
+    <div class="chronicis-welcome">
+        <h1>Welcome to Chronicis</h1>
+        <p>Select an article from the tree to view it.</p>
+    </div>
 }
 
-@code 
+@code
 {
-    private ArticleTreeItemViewModel? _selectedArticle;
-
     protected override async Task OnInitializedAsync()
     {
         var rootArticles = await ArticleApiService.GetRootArticlesAsync();
-
         TreeStateService.Initialize(rootArticles);
-
         TreeStateService.OnStateChanged += OnTreeStateChanged;
     }
 
     private void OnTreeStateChanged()
     {
-        _selectedArticle = TreeStateService.SelectedArticle;
-        StateHasChanged();
+        StateHasChanged();  // Just trigger re-render, ArticleDetail handles the rest
     }
 
     public void Dispose()

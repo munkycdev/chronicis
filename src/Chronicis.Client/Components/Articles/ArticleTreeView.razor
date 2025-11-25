@@ -44,41 +44,48 @@
 
 @code {
     private RenderFragment RenderArticleNavItem(ArticleTreeNode node) => __builder =>
-{
-    <div class="chronicis-nav-item-container" 
-         @onmouseenter="@(() => node.IsHovered = true)"
-         @onmouseleave="@(() => node.IsHovered = false)">
-        
-        <MudNavLink 
-            OnClick="@(() => SelectArticle(node))"
-            Class="@GetNavItemClass(node)">
+    {
+        <div class="chronicis-nav-item-container" 
+             @onmouseenter="@(() => node.IsHovered = true)"
+             @onmouseleave="@(() => node.IsHovered = false)">
             
-            <div class="d-flex align-center justify-space-between" style="width: 100%;">
-                <div class="d-flex align-center">
-                    <!-- Custom expand arrow for parent nodes -->
-                    @if (node.HasChildren)
-                    {
-                        <MudIconButton 
-                            Icon="@(node.IsExpanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)"
-                            Size="Size.Small"
-                            OnClick="@(async (e) => await ToggleExpand(node))"
-                            Style="margin-right: 4px;" />
-                    }
-                    <MudIcon Icon="@GetNodeIcon(node)"
-                             IconColor="Color.Primary"
-                        Size="Size.Small" 
-                        Class="chronicis-nav-item-icon"                         
-                        Style="margin-right: 8px;" />
-                    <span>@node.Title</span>
-                </div>
+            <MudNavLink 
+                OnClick="@(() => SelectArticle(node))"
+                Class="@GetNavItemClass(node)">
                 
-                <!-- Context menu (three dots) -->
-                @if (node.IsHovered)
-                {
+                <div class="d-flex align-center justify-space-between" style="width: 100%;">
+                    <div class="d-flex align-center">
+                        <!-- Custom expand arrow BEFORE everything -->
+                        @if (node.HasChildren)
+                        {
+                            <MudIconButton 
+                                Icon="@(node.IsExpanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)"
+                                Size="Size.Small"
+                                OnClick="@(async (e) => await ToggleExpand(node))"
+                                Style="margin-right: 4px;" />
+                        }
+                        else
+                        {
+                            <!-- Spacer for alignment when no arrow -->
+                            <div style="width: 40px;"></div>
+                        }
+                        
+                        <!-- Article icon -->
+                        <MudIcon 
+                            Icon="@GetNodeIcon(node)" 
+                            Color="Color.Primary" 
+                            Size="Size.Small" 
+                            Style="margin-right: 8px;" />
+                        
+                        <span>@node.Title</span>
+                    </div>
+                    
+                    <!-- Context menu (three dots) - always show, style with opacity -->
                     <MudMenu 
                         AnchorOrigin="Origin.BottomRight"
                         TransformOrigin="Origin.TopRight"
-                        Dense="true">
+                        Dense="true"
+                        Style="@(node.IsHovered ? "opacity: 1;" : "opacity: 0.3;")">
                         <ActivatorContent>
                             <MudIconButton 
                                 Icon="@Icons.Material.Filled.MoreVert" 
@@ -99,25 +106,22 @@
                             </MudMenuItem>
                         </ChildContent>
                     </MudMenu>
-                }
-            </div>
-        </MudNavLink>
-        
-        <!-- Render children if expanded -->
-        @if (node.HasChildren && node.IsExpanded && node.Children != null)
-        {
-            <div class="chronicis-nav-children" style="margin-left: 20px;">
-                @foreach (var child in node.Children)
-                {
-                    @RenderArticleNavItem(child)
-                }
-            </div>
-        }
-    </div>
-};
-}
+                </div>
+            </MudNavLink>
+            
+            <!-- Render children if expanded -->
+            @if (node.HasChildren && node.IsExpanded && node.Children != null)
+            {
+                <div class="chronicis-nav-children" style="margin-left: 20px;">
+                    @foreach (var child in node.Children)
+                    {
+                        @RenderArticleNavItem(child)
+                    }
+                </div>
+            }
+        </div>
+    };
 
-@code {
     private List<ArticleTreeNode>? _rootArticles;
     private ArticleTreeNode? _selectedNode;
     private bool _isLoading = true;
@@ -137,11 +141,6 @@
         {
             var articles = await ArticleApi.GetRootArticlesAsync();
             _rootArticles = articles.Select(a => new ArticleTreeNode(a)).ToList();
-
-            foreach (var article in _rootArticles)
-            {
-                Console.WriteLine($"Article: {article.Title}, HasChildren: {article.HasChildren}, ChildCount: {article.Article.ChildCount}");
-            }
         }
         catch (Exception ex)
         {
@@ -155,18 +154,6 @@
         }
     }
 
-    private async Task ToggleExpand(ArticleTreeNode node)
-{
-    node.IsExpanded = !node.IsExpanded;
-    
-    if (node.IsExpanded && (node.Children == null || !node.Children.Any()))
-    {
-        await LoadChildrenForNode(node);
-    }
-    
-    StateHasChanged();
-}
-
     private async void OnRefreshRequested()
     {
         await InvokeAsync(async () =>
@@ -178,8 +165,27 @@
 
     private void SelectArticle(ArticleTreeNode node)
     {
+        Console.WriteLine($"=== SelectArticle called ===");
+        Console.WriteLine($"Node: {node.Title} (ID: {node.Article.Id})");
+
         _selectedNode = node;
-        TreeState.SelectArticle(node.Article.Id);
+
+        Console.WriteLine($"Calling TreeState.NotifySelectionChanged({node.Article.Id})");
+        TreeState.NotifySelectionChanged(node.Article.Id);
+
+        Console.WriteLine($"TreeState.SelectedArticleId is now: {TreeState.SelectedArticleId}");
+
+        // Auto-expand if has children
+        if (node.HasChildren && !node.IsExpanded)
+        {
+            node.IsExpanded = true;
+
+            if (node.Children == null || !node.Children.Any())
+            {
+                _ = LoadChildrenForNode(node);
+            }
+        }
+
         StateHasChanged();
     }
 
@@ -202,11 +208,11 @@
             : Icons.Material.Filled.Description;
     }
 
-    private async Task OnExpandedChanged(ArticleTreeNode node, bool expanded)
+    private async Task ToggleExpand(ArticleTreeNode node)
     {
-        node.IsExpanded = expanded;
+        node.IsExpanded = !node.IsExpanded;
         
-        if (expanded && (node.Children == null || !node.Children.Any()))
+        if (node.IsExpanded && (node.Children == null || !node.Children.Any()))
         {
             await LoadChildrenForNode(node);
         }
@@ -218,9 +224,9 @@
     {
         try
         {
-            var createDto = new ArticleCreateDto  // Changed
+            var createDto = new ArticleCreateDto
             {
-                Title = "Untitled",
+                Title = string.Empty,
                 Body = string.Empty,
                 ParentId = null,
                 EffectiveDate = DateTime.Now
@@ -228,7 +234,14 @@
 
             var created = await ArticleApi.CreateArticleAsync(createDto);
             await LoadRootArticles();
-            // Remove TreeState.SelectArticle(created) - wrong type
+            
+            // Select the new article
+            var newNode = _rootArticles?.FirstOrDefault(a => a.Article.Id == created.Id);
+            if (newNode != null)
+            {
+                SelectArticle(newNode);
+            }
+            
             Snackbar.Add("Article created", Severity.Success);
         }
         catch (Exception ex)
@@ -241,9 +254,9 @@
     {
         try
         {
-            var createDto = new ArticleCreateDto  // Changed
+            var createDto = new ArticleCreateDto
             {
-                Title = "Untitled",
+                Title = string.Empty,
                 Body = string.Empty,
                 ParentId = parent.Article.Id,
                 EffectiveDate = DateTime.Now
@@ -251,12 +264,25 @@
 
             var created = await ArticleApi.CreateArticleAsync(createDto);
 
-            // Expand parent and refresh
-            parent.IsExpanded = true;
+            // Reload children to get updated list
             await LoadChildrenForNode(parent);
-            // Remove TreeState.SelectArticle(created) - wrong type
+            
+            // Update parent's HasChildren flag
+            parent.HasChildren = parent.Children?.Any() ?? false;
+            parent.Article.ChildCount = parent.Children?.Count ?? 0;
+            
+            // Expand parent to show new child
+            parent.IsExpanded = true;
+            
+            // Find and select the newly created child
+            var newChild = parent.Children?.FirstOrDefault(c => c.Article.Id == created.Id);
+            if (newChild != null)
+            {
+                SelectArticle(newChild);
+            }
 
             Snackbar.Add("Child article created", Severity.Success);
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -289,14 +315,96 @@
 
         try
         {
+            var parentId = node.Article.ParentId;
+            
             await ArticleApi.DeleteArticleAsync(node.Article.Id);
             await LoadRootArticles();
+            
+            // If there was a parent, select it and expand the path to it
+            if (parentId.HasValue)
+            {
+                await ExpandAndSelectNode(parentId.Value);
+            }
+            else
+            {
+                _selectedNode = null;
+            }
+            
             Snackbar.Add("Article deleted", Severity.Success);
+            StateHasChanged();
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Failed to delete: {ex.Message}", Severity.Error);
         }
+    }
+
+    private async Task ExpandAndSelectNode(int targetId)
+    {
+        // Get the full article to get its breadcrumbs
+        var article = await ArticleApi.GetArticleAsync(targetId);
+        if (article == null)
+        {
+            return;
+        }
+        
+        // Expand each ancestor in the breadcrumb path
+        List<ArticleTreeNode>? currentLevel = _rootArticles;
+        ArticleTreeNode? targetNode = null;
+        
+        // Go through each breadcrumb (these are the ancestors)
+        foreach (var breadcrumb in article.Breadcrumbs)
+        {
+            var node = FindNodeById(currentLevel, breadcrumb.Id);
+            
+            if (node == null)
+            {
+                return;
+            }
+            
+            node.IsExpanded = true;
+            
+            // Load children if needed
+            if (node.HasChildren && (node.Children == null || !node.Children.Any()))
+            {
+                await LoadChildrenForNode(node);
+            }
+            
+            // If this breadcrumb IS the target, we're done
+            if (breadcrumb.Id == targetId)
+            {
+                targetNode = node;
+                break;
+            }
+            
+            // Move down to children for next iteration
+            currentLevel = node.Children;
+        }
+        
+        // Select the target node
+        if (targetNode != null)
+        {
+            _selectedNode = targetNode;
+            TreeState.NotifySelectionChanged(targetId);
+            StateHasChanged();
+        }
+    }
+
+    private ArticleTreeNode? FindNodeById(List<ArticleTreeNode>? nodes, int id)
+    {
+        if (nodes == null) return null;
+        
+        foreach (var node in nodes)
+        {
+            if (node.Article.Id == id)
+                return node;
+            
+            var found = FindNodeById(node.Children, id);
+            if (found != null)
+                return found;
+        }
+        
+        return null;
     }
 
     public void Dispose()
@@ -308,7 +416,7 @@
     private class ArticleTreeNode
     {
         public ArticleDto Article { get; set; }
-        public string Title => Article.Title ?? "New Article";
+        public string Title => string.IsNullOrEmpty(Article.Title) ? "(Untitled)" : Article.Title;
         public string? IconEmoji => Article.IconEmoji;
         public bool HasChildren { get; set; }
         public bool IsExpanded { get; set; }
@@ -336,7 +444,7 @@
                 CreatedDate = treeDto.CreatedDate,
                 EffectiveDate = treeDto.EffectiveDate,
                 IconEmoji = treeDto.IconEmoji,
-                Body = string.Empty  // TreeDto doesn't have body
+                Body = string.Empty
             };
             HasChildren = treeDto.ChildCount > 0;
         }

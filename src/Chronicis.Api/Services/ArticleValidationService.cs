@@ -17,12 +17,6 @@ public class ArticleValidationService
     {
         var result = new ValidationResult();
 
-        // Title is required
-        if (string.IsNullOrWhiteSpace(dto.Title))
-        {
-            result.AddError("Title", "Title is required");
-        }
-
         // Parent must exist if specified
         if (dto.ParentId.HasValue)
         {
