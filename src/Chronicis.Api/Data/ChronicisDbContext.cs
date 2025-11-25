@@ -8,12 +8,14 @@ namespace Chronicis.Api.Data
     /// </summary>
     public class ChronicisDbContext : DbContext
     {
+        public DbSet<Hashtag> Hashtags { get; set; } = null!;
+        public DbSet<ArticleHashtag> ArticleHashtags { get; set; } = null!;
+        public DbSet<Article> Articles { get; set; } = null!;
+
         public ChronicisDbContext(DbContextOptions<ChronicisDbContext> options)
             : base(options)
         {
         }
-
-        public DbSet<Article> Articles { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -43,6 +45,56 @@ namespace Chronicis.Api.Data
                 // Index for performance
                 entity.HasIndex(a => a.ParentId);
                 entity.HasIndex(a => a.Title);
+            });
+
+            // Hashtag configuration
+            modelBuilder.Entity<Hashtag>(entity =>
+            {
+                entity.HasKey(h => h.Id);
+
+                entity.Property(h => h.Name)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                // Create unique index on Name (case-insensitive)
+                entity.HasIndex(h => h.Name)
+                    .IsUnique();
+
+                entity.Property(h => h.CreatedDate)
+                    .HasDefaultValueSql("GETUTCDATE()");
+
+                // Optional foreign key to linked article
+                entity.HasOne(h => h.LinkedArticle)
+                    .WithMany()
+                    .HasForeignKey(h => h.LinkedArticleId)
+                    .OnDelete(DeleteBehavior.SetNull); // If article deleted, unlink hashtag
+            });
+
+            // ArticleHashtag junction configuration
+            modelBuilder.Entity<ArticleHashtag>(entity =>
+            {
+                entity.HasKey(ah => ah.Id);
+
+                // Foreign key to Article
+                entity.HasOne(ah => ah.Article)
+                    .WithMany(a => a.ArticleHashtags)
+                    .HasForeignKey(ah => ah.ArticleId)
+                    .OnDelete(DeleteBehavior.Cascade); // Delete hashtag references when article deleted
+
+                // Foreign key to Hashtag
+                entity.HasOne(ah => ah.Hashtag)
+                    .WithMany(h => h.ArticleHashtags)
+                    .HasForeignKey(ah => ah.HashtagId)
+                    .OnDelete(DeleteBehavior.Cascade); // Delete references when hashtag deleted
+
+                // Composite index for performance
+                entity.HasIndex(ah => new { ah.ArticleId, ah.HashtagId });
+
+                entity.Property(ah => ah.Position)
+                    .IsRequired();
+
+                entity.Property(ah => ah.CreatedDate)
+                    .HasDefaultValueSql("GETUTCDATE()");
             });
 
             // Seed data for development
@@ -131,5 +183,6 @@ namespace Chronicis.Api.Data
                 }
             );
         }
+
     }
 }

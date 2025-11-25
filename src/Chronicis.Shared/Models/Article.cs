@@ -15,6 +15,7 @@ namespace Chronicis.Shared.Models
         public string Title { get; set; } = string.Empty;
         public int? ParentId { get; set; }
         public string? Body { get; set; }
+        public ICollection<ArticleHashtag> ArticleHashtags { get; set; } = new List<ArticleHashtag>();
 
         public DateTime CreatedDate { get; set; }
         public DateTime? ModifiedDate { get; set; }
