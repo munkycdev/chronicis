@@ -1,0 +1,47 @@
+/* Hashtag Tooltip */
+.hashtag-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background-color: #fff;
+    border: 1px solid #C4AF8E;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(31, 42, 51, 0.15);
+    max-width: 320px;
+    animation: tooltipFadeIn 0.2s ease;
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hashtag-tooltip-content {
+    padding: 12px;
+}
+
+.hashtag-tooltip-title {
+    font-family: 'Spellweaver Display', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1A1A1A;
+    margin-bottom: 8px;
+}
+
+.hashtag-tooltip-text {
+    font-size: 0.875rem;
+    color: #3A4750;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.hashtag-tooltip-meta {
+    font-size: 0.75rem;
+    color: #C4AF8E;
+    font-style: italic;
+}

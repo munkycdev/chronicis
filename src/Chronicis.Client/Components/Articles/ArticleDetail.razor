@@ -144,16 +144,47 @@ else
             <MudText Typo="Typo.h6">Metadata</MudText>
         </MudDrawerHeader>
         <MudDrawerContainer>
-            <ul class="ml-3">
-                @if (_article.CreatedDate != default)
-                {
-                    <li>• Created @_article.CreatedDate.ToString("MMMM d, yyyy 'at' h:mm tt")</li>
-                }
-                @if (_article.ModifiedDate != null)
-                {
-                    <li>• Modified @_article.ModifiedDate.Value.ToString("MMMM d, yyyy 'at' h:mm tt")</li>
-                }
-            </ul>
+            <MudList T="string">
+                <MudListItem>
+                    <MudListItemContent>
+                        <MudText Typo="Typo.subtitle1">Article ID</MudText>
+                        <MudText Typo="Typo.body2">@_article.Id</MudText>
+                    </MudListItemContent>
+                </MudListItem>
+                <MudListItem>
+                    <MudListItemContent>
+                        <MudText Typo="Typo.subtitle1">Effective Date</MudText>
+                        <MudText Typo="Typo.body2">
+                            @_article.EffectiveDate.ToString("MMMM d, yyyy 'at' h:mm tt")
+                        </MudText>
+                    </MudListItemContent>
+                </MudListItem>
+                <MudListItem>
+                    <MudListItemContent>
+                        <MudText Typo="Typo.subtitle1">Created Date</MudText>
+                        <MudText Typo="Typo.body2">
+                            @_article.CreatedDate.ToString("MMMM d, yyyy 'at' h:mm tt")
+                        </MudText>
+                    </MudListItemContent>
+                </MudListItem>
+                <MudListItem>
+                    <MudListItemContent>
+                        <MudText Typo="Typo.subtitle1">Modified Date</MudText>
+                        <MudText Typo="Typo.body2">
+                            @_article.ModifiedDate?.ToString("MMMM d, yyyy 'at' h:mm tt")
+                        </MudText>
+                    </MudListItemContent>
+                </MudListItem>
+                <MudListItem>
+                    <MudListItemContent>
+                        <MudText Typo="Typo.subtitle1">Icon Emoji</MudText>
+                        <MudText Typo="Typo.body2">
+                            @(_article.IconEmoji ?? "(None)")
+                        </MudText>
+                    </MudListItemContent>
+                </MudListItem>
+            </MudList>
+            <BacklinksPanel ArticleId="@_article.Id" />
         </MudDrawerContainer>
     </MudDrawer>
 }

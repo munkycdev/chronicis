@@ -6,31 +6,19 @@
  * This properly integrates with TipTap without breaking cursor position
  */
 export async function createHashtagExtension() {
-    // Import Mark from the CDN
     const { Mark } = await import('https://esm.sh/@tiptap/core@3.11.0');
     const { markInputRule, markPasteRule } = await import('https://esm.sh/@tiptap/core@3.11.0');
 
     return Mark.create({
         name: 'hashtag',
-
         priority: 1000,
-
-        // Prevent hashtag mark from being inclusive (don't extend to next characters)
         inclusive: false,
-
-        // Prevent marks from being extended when typing
         exitable: true,
 
-        // How to parse HTML containing hashtags
         parseHTML() {
-            return [
-                {
-                    tag: 'span[data-type="hashtag"]',
-                },
-            ];
+            return [{ tag: 'span[data-type="hashtag"]' }];
         },
 
-        // How to render hashtags as HTML
         renderHTML({ HTMLAttributes }) {
             return [
                 'span',
@@ -38,31 +26,40 @@ export async function createHashtagExtension() {
                     ...HTMLAttributes,
                     'data-type': 'hashtag',
                     'class': 'chronicis-hashtag',
-                    'title': 'Hashtag (not yet linked)',
+                    'title': 'Click to navigate (if linked)',
                 },
-                0, // Content goes here
+                0,
             ];
         },
 
-        // Define attributes
         addAttributes() {
             return {
                 'data-hashtag-name': {
                     default: null,
                     parseHTML: element => element.getAttribute('data-hashtag-name'),
                     renderHTML: attributes => {
-                        if (!attributes['data-hashtag-name']) {
-                            return {};
-                        }
-                        return {
-                            'data-hashtag-name': attributes['data-hashtag-name'],
-                        };
+                        if (!attributes['data-hashtag-name']) return {};
+                        return { 'data-hashtag-name': attributes['data-hashtag-name'] };
+                    },
+                },
+                'data-linked': {
+                    default: 'false',
+                    parseHTML: element => element.getAttribute('data-linked') || 'false',
+                    renderHTML: attributes => {
+                        return { 'data-linked': attributes['data-linked'] || 'false' };
+                    },
+                },
+                'data-article-slug': {
+                    default: null,
+                    parseHTML: element => element.getAttribute('data-article-slug'),
+                    renderHTML: attributes => {
+                        if (!attributes['data-article-slug']) return {};
+                        return { 'data-article-slug': attributes['data-article-slug'] };
                     },
                 },
             };
         },
 
-        // Detect hashtags as you type (triggers when you type space after hashtag)
         addInputRules() {
             return [
                 markInputRule({
@@ -70,14 +67,14 @@ export async function createHashtagExtension() {
                     type: this.type,
                     getAttributes: (match) => {
                         return {
-                            'data-hashtag-name': match[1].substring(1).toLowerCase(), // Remove # and lowercase
+                            'data-hashtag-name': match[1].substring(1).toLowerCase(),
+                            'data-linked': 'false',
                         };
                     },
                 }),
             ];
         },
 
-        // Detect hashtags when pasting
         addPasteRules() {
             return [
                 markPasteRule({
@@ -86,6 +83,7 @@ export async function createHashtagExtension() {
                     getAttributes: (match) => {
                         return {
                             'data-hashtag-name': match[1].substring(1).toLowerCase(),
+                            'data-linked': 'false',
                         };
                     },
                 }),
@@ -93,5 +91,3 @@ export async function createHashtagExtension() {
         },
     });
 }
-
-console.log('??? tipTapHashtagExtension.js loaded (TipTap Mark extension)');

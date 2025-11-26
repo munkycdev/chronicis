@@ -5,6 +5,10 @@
 let editorInstances = {};
 let tiptapReady = false;
 
+// Global storage for editor instances and tooltips
+window.tipTapEditors = window.tipTapEditors || {};
+window.activeTooltip = null;
+
 // Listen for TipTap ready event
 window.addEventListener('tiptap-ready', function () {
     tiptapReady = true;
@@ -117,11 +121,16 @@ async function createEditor(editorId, initialContent, dotNetHelper) {
         // Store instance
         editorInstances[editorId] = editor;
 
+
+        setupHashtagClickHandler(editorId, editor);
+        setupHashtagHoverHandler(editorId, editor);
+
         console.log('✅ TipTap editor created successfully!');
     } catch (error) {
         console.error('❌ Error creating TipTap editor:', error);
         console.error('   Stack:', error.stack);
     }
+
 }
 
 window.getTipTapMarkdown = (editorId) => {
@@ -286,6 +295,138 @@ function htmlToMarkdown(html) {
     markdown = markdown.trim();
 
     return markdown;
+}
+
+function setupHashtagClickHandler(editorId, editor) {
+    const editorElement = document.getElementById(editorId);
+    if (!editorElement) return;
+
+    editorElement.addEventListener('click', async (e) => {
+        const target = e.target;
+
+        // Check if clicked element is a hashtag
+        if (target.classList.contains('chronicis-hashtag')) {
+            const hashtagName = target.getAttribute('data-hashtag-name');
+            const isLinked = target.getAttribute('data-linked') === 'true';
+            const articleSlug = target.getAttribute('data-article-slug');
+
+            if (isLinked && articleSlug) {
+                // Navigate to linked article
+                window.location.href = `/article/${articleSlug}`;
+            } else if (hashtagName) {
+                // Show linking UI (Phase 7.3)
+                console.log(`Hashtag #${hashtagName} is not linked to an article`);
+                // TODO: Show linking dialog
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+}
+
+function setupHashtagHoverHandler(editorId, editor) {
+    const editorElement = document.getElementById(editorId);
+    if (!editorElement) return;
+
+    let hoverTimeout;
+
+    editorElement.addEventListener('mouseover', async (e) => {
+        const target = e.target;
+
+        if (target.classList.contains('chronicis-hashtag')) {
+            const hashtagName = target.getAttribute('data-hashtag-name');
+
+            // Clear existing timeout
+            if (hoverTimeout) clearTimeout(hoverTimeout);
+
+            // Wait 300ms before showing tooltip
+            hoverTimeout = setTimeout(async () => {
+                await showHashtagTooltip(target, hashtagName);
+            }, 300);
+        }
+    });
+
+    editorElement.addEventListener('mouseout', (e) => {
+        const target = e.target;
+
+        if (target.classList.contains('chronicis-hashtag')) {
+            // Clear timeout
+            if (hoverTimeout) clearTimeout(hoverTimeout);
+
+            // Hide tooltip after a delay
+            setTimeout(() => {
+                hideHashtagTooltip();
+            }, 200);
+        }
+    });
+}
+
+async function showHashtagTooltip(element, hashtagName) {
+    // Remove existing tooltip
+    hideHashtagTooltip();
+
+    try {
+        // Fetch hashtag preview from API
+        const response = await fetch(`/api/hashtags/${encodeURIComponent(hashtagName)}/preview`);
+        if (!response.ok) return;
+
+        const preview = await response.json();
+
+        if (!preview.hasArticle) {
+            // Show "not linked" tooltip
+            createTooltip(element, `
+                <div class="hashtag-tooltip-content">
+                    <div class="hashtag-tooltip-title">#${hashtagName}</div>
+                    <div class="hashtag-tooltip-text">Not linked to an article</div>
+                </div>
+            `);
+            return;
+        }
+
+        // Show article preview tooltip
+        createTooltip(element, `
+            <div class="hashtag-tooltip-content">
+                <div class="hashtag-tooltip-title">${preview.articleTitle || '(Untitled)'}</div>
+                <div class="hashtag-tooltip-text">${preview.previewText || 'No content'}</div>
+                <div class="hashtag-tooltip-meta">Click to open</div>
+            </div>
+        `);
+
+    } catch (error) {
+        console.error('Error fetching hashtag preview:', error);
+    }
+}
+
+function createTooltip(element, htmlContent) {
+    const tooltip = document.createElement('div');
+    tooltip.className = 'hashtag-tooltip';
+    tooltip.innerHTML = htmlContent;
+
+    // Position tooltip
+    const rect = element.getBoundingClientRect();
+    tooltip.style.position = 'fixed';
+    tooltip.style.left = `${rect.left}px`;
+    tooltip.style.top = `${rect.bottom + 8}px`;
+
+    document.body.appendChild(tooltip);
+    window.activeTooltip = tooltip;
+
+    // Add hover handlers to keep tooltip visible
+    tooltip.addEventListener('mouseenter', () => {
+        clearTimeout(window.tooltipHideTimeout);
+    });
+
+    tooltip.addEventListener('mouseleave', () => {
+        hideHashtagTooltip();
+    });
+}
+
+function hideHashtagTooltip() {
+    if (window.activeTooltip) {
+        window.activeTooltip.remove();
+        window.activeTooltip = null;
+    }
 }
 
 console.log('📝 tipTapIntegration.js loaded with hashtag support');
