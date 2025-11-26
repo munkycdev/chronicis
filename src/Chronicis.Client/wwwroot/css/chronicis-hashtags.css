@@ -1,78 +1,52 @@
 /* wwwroot/css/chronicis-hashtags.css */
-/* Hashtag styling for Phase 6 */
+/* Hashtag styling for Phase 6 - TipTap Mark Extension */
 
 /* Base hashtag style */
 .chronicis-hashtag {
     color: #C4AF8E; /* Beige-Gold from style guide */
     font-weight: 500;
     cursor: default; /* Phase 6: not clickable yet */
-    padding: 1px 2px;
+    padding: 0 2px;
     border-radius: 2px;
     transition: background-color 0.2s ease;
     position: relative;
 }
 
-/* Hover effect - subtle gold glow */
-.chronicis-hashtag:hover {
-    background-color: rgba(196, 175, 142, 0.1); /* 10% opacity beige-gold */
-}
+    /* Hover effect - subtle gold glow */
+    .chronicis-hashtag:hover {
+        background-color: rgba(196, 175, 142, 0.15); /* Subtle highlight */
+    }
 
-/* Visual indicator for unlinked hashtags (Phase 6: all are unlinked) */
-.chronicis-hashtag::before {
-    content: '#';
-    color: #C4AF8E;
-    font-weight: 600;
-}
+    /* Phase 7+: Linked vs Unlinked states */
+    .chronicis-hashtag[data-linked="true"] {
+        cursor: pointer;
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-decoration-color: rgba(196, 175, 142, 0.5);
+    }
 
-/* Phase 7+: Linked vs Unlinked states */
-/* These classes will be used when we implement linking */
-.chronicis-hashtag[data-linked="true"] {
-    cursor: pointer;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-decoration-color: rgba(196, 175, 142, 0.5);
-}
+        .chronicis-hashtag[data-linked="true"]:hover {
+            background-color: rgba(196, 175, 142, 0.25);
+            text-decoration-style: solid;
+        }
 
-.chronicis-hashtag[data-linked="true"]:hover {
-    background-color: rgba(196, 175, 142, 0.2);
-    text-decoration-style: solid;
-}
+    .chronicis-hashtag[data-linked="false"] {
+        opacity: 0.8;
+    }
 
-.chronicis-hashtag[data-linked="false"] {
-    opacity: 0.7;
-}
-
-/* Tooltip styling for Phase 6 */
-.chronicis-hashtag-tooltip {
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #1F2A33; /* Deep Blue-Grey */
-    color: #F4F0EA; /* Soft Off-White */
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    z-index: 1000;
-    margin-bottom: 4px;
-}
-
-.chronicis-hashtag:hover .chronicis-hashtag-tooltip {
-    opacity: 1;
-}
-
-/* TipTap editor integration */
-.tiptap .chronicis-hashtag {
-    /* Ensure hashtags are visible in edit mode */
+/* Ensure hashtags display inline */
+.ProseMirror .chronicis-hashtag {
     display: inline;
 }
 
-/* Ensure hashtags work well with markdown rendering */
-.tiptap p .chronicis-hashtag,
-.tiptap li .chronicis-hashtag {
+/* Ensure hashtags work in all contexts */
+.ProseMirror p .chronicis-hashtag,
+.ProseMirror li .chronicis-hashtag,
+.ProseMirror h1 .chronicis-hashtag,
+.ProseMirror h2 .chronicis-hashtag,
+.ProseMirror h3 .chronicis-hashtag,
+.ProseMirror h4 .chronicis-hashtag,
+.ProseMirror h5 .chronicis-hashtag,
+.ProseMirror h6 .chronicis-hashtag {
     display: inline;
 }

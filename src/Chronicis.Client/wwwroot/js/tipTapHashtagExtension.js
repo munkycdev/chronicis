@@ -1,78 +1,91 @@
 // wwwroot/js/tipTapHashtagExtension.js
-// TipTap extension for rendering hashtags with visual styling
+// Proper TipTap Mark extension for hashtags (Phase 6)
 
 /**
- * Hashtag TipTap Extension
- * Detects #word patterns and renders them as styled nodes
+ * Create hashtag mark extension using TipTap's Mark API
+ * This properly integrates with TipTap without breaking cursor position
  */
-export function createHashtagExtension() {
-    const { Mark } = window.TipTap;
+export async function createHashtagExtension() {
+    // Import Mark from the CDN
+    const { Mark } = await import('https://esm.sh/@tiptap/core@3.11.0');
+    const { markInputRule, markPasteRule } = await import('https://esm.sh/@tiptap/core@3.11.0');
 
     return Mark.create({
         name: 'hashtag',
 
-        // Define the schema for how hashtags are represented
+        priority: 1000,
+
+        // Prevent hashtag mark from being inclusive (don't extend to next characters)
+        inclusive: false,
+
+        // Prevent marks from being extended when typing
+        exitable: true,
+
+        // How to parse HTML containing hashtags
         parseHTML() {
             return [
                 {
-                    tag: 'span[data-hashtag]',
+                    tag: 'span[data-type="hashtag"]',
                 },
             ];
         },
 
+        // How to render hashtags as HTML
         renderHTML({ HTMLAttributes }) {
-            return ['span', {
-                ...HTMLAttributes,
-                'data-hashtag': '',
-                'class': 'chronicis-hashtag',
-                'title': 'Hashtag (not yet linked)' // Phase 6: no linking yet
-            }, 0];
+            return [
+                'span',
+                {
+                    ...HTMLAttributes,
+                    'data-type': 'hashtag',
+                    'class': 'chronicis-hashtag',
+                    'title': 'Hashtag (not yet linked)',
+                },
+                0, // Content goes here
+            ];
         },
 
-        // Define attributes that can be stored
+        // Define attributes
         addAttributes() {
             return {
-                hashtagName: {
+                'data-hashtag-name': {
                     default: null,
                     parseHTML: element => element.getAttribute('data-hashtag-name'),
                     renderHTML: attributes => {
+                        if (!attributes['data-hashtag-name']) {
+                            return {};
+                        }
                         return {
-                            'data-hashtag-name': attributes.hashtagName,
+                            'data-hashtag-name': attributes['data-hashtag-name'],
                         };
                     },
                 },
             };
         },
 
-        // Parse hashtags from plain text input
+        // Detect hashtags as you type (triggers when you type space after hashtag)
         addInputRules() {
-            const { markInputRule } = window.TipTap;
-            
             return [
-                // Match #word pattern as user types
                 markInputRule({
-                    find: /#(\w+)/g,
+                    find: /(?:^|\s)(#[a-zA-Z0-9_]+)\s$/,
                     type: this.type,
                     getAttributes: (match) => {
                         return {
-                            hashtagName: match[1].toLowerCase(),
+                            'data-hashtag-name': match[1].substring(1).toLowerCase(), // Remove # and lowercase
                         };
                     },
                 }),
             ];
         },
 
-        // Parse hashtags from pasted content
+        // Detect hashtags when pasting
         addPasteRules() {
-            const { markPasteRule } = window.TipTap;
-            
             return [
                 markPasteRule({
-                    find: /#(\w+)/g,
+                    find: /(?:^|\s)(#[a-zA-Z0-9_]+)(?=\s|$)/g,
                     type: this.type,
                     getAttributes: (match) => {
                         return {
-                            hashtagName: match[1].toLowerCase(),
+                            'data-hashtag-name': match[1].substring(1).toLowerCase(),
                         };
                     },
                 }),
@@ -81,16 +94,4 @@ export function createHashtagExtension() {
     });
 }
 
-/**
- * Initialize hashtag extension with the editor
- */
-window.initializeHashtagExtension = function(editor) {
-    if (!editor || !window.TipTap) {
-        console.error('TipTap editor or library not available');
-        return;
-    }
-
-    // Hashtag extension is already added during editor creation
-    // This function is here for future enhancements
-    console.log('Hashtag extension initialized');
-};
+console.log('??? tipTapHashtagExtension.js loaded (TipTap Mark extension)');

@@ -67,6 +67,8 @@ public class UpdateArticle : ArticleBaseClass
 
             await _context.SaveChangesAsync();
 
+            await _hashtagSync.SyncHashtagsAsync(article.Id, article.Body);
+
             // Map to DTO
             var responseDto = new ArticleDto
             {

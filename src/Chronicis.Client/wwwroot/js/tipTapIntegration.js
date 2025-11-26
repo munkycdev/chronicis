@@ -61,17 +61,6 @@ async function createEditor(editorId, initialContent, dotNetHelper) {
         console.log('   Container:', container);
         console.log('   Initial content length:', initialContent ? initialContent.length : 0);
 
-        // Dynamically import hashtag extension
-        let HashtagExtension = null;
-        try {
-            const hashtagModule = await import('./tipTapHashtagExtension.js');
-            HashtagExtension = hashtagModule.createHashtagExtension();
-            console.log('✅ Hashtag extension loaded');
-        } catch (error) {
-            console.warn('⚠️ Could not load hashtag extension:', error.message);
-            console.warn('   Editor will work without hashtag support');
-        }
-
         // Build extensions array
         const extensions = [
             window.TipTap.StarterKit.configure({
@@ -81,10 +70,15 @@ async function createEditor(editorId, initialContent, dotNetHelper) {
             })
         ];
 
-        // Add hashtag extension if loaded
-        if (HashtagExtension) {
+        // Try to load hashtag extension
+        try {
+            const hashtagModule = await import('/js/tipTapHashtagExtension.js');
+            const HashtagExtension = await hashtagModule.createHashtagExtension();
             extensions.push(HashtagExtension);
-            console.log('✅ Hashtag extension added to editor');
+            console.log('✅ Hashtag extension loaded and added');
+        } catch (error) {
+            console.warn('⚠️ Could not load hashtag extension:', error.message);
+            console.warn('   Editor will work without hashtag styling');
         }
 
         // Initialize TipTap
@@ -104,7 +98,14 @@ async function createEditor(editorId, initialContent, dotNetHelper) {
             },
             onUpdate: ({ editor }) => {
                 // Convert HTML back to markdown
-                const markdown = htmlToMarkdown(editor.getHTML());
+                const html = editor.getHTML();
+                const markdown = htmlToMarkdown(html);
+
+                // Debug: Log conversion (remove after testing)
+                if (html.includes('hashtag')) {
+                    console.log('🔍 HTML contains hashtag span:', html.substring(0, 500));
+                    console.log('🔍 Converted to markdown:', markdown.substring(0, 500));
+                }
 
                 // Notify Blazor
                 if (dotNetHelper) {
@@ -116,7 +117,7 @@ async function createEditor(editorId, initialContent, dotNetHelper) {
         // Store instance
         editorInstances[editorId] = editor;
 
-        console.log('✅ TipTap editor created successfully with hashtag support!');
+        console.log('✅ TipTap editor created successfully!');
     } catch (error) {
         console.error('❌ Error creating TipTap editor:', error);
         console.error('   Stack:', error.stack);
@@ -158,6 +159,10 @@ function markdownToHTML(markdown) {
     if (!markdown) return '<p></p>';
 
     let html = markdown;
+
+    // Phase 6: Convert hashtags to spans FIRST (before other markdown processing)
+    // This ensures hashtags are properly styled when loading existing content
+    html = html.replace(/#(\w+)/g, '<span data-type="hashtag" class="chronicis-hashtag" data-hashtag-name="$1" title="Hashtag (not yet linked)">#$1</span>');
 
     // Headers (must be done in order from h6 to h1)
     html = html.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
@@ -226,9 +231,14 @@ function htmlToMarkdown(html) {
     let markdown = html;
 
     // Phase 6: Convert hashtag spans back to plain text
-    // The TipTap extension wraps hashtags in <span data-hashtag>
-    markdown = markdown.replace(/<span[^>]*data-hashtag[^>]*data-hashtag-name="([^"]*)"[^>]*>.*?<\/span>/gi, '#$1');
-    markdown = markdown.replace(/<span[^>]*class="chronicis-hashtag"[^>]*>.*?#(\w+).*?<\/span>/gi, '#$1');
+    // The TipTap extension wraps hashtags in <span data-type="hashtag">
+    // Match: <span data-type="hashtag" ... data-hashtag-name="waterdeep">#Waterdeep</span>
+    // Convert to: #waterdeep (use the data attribute, not the visible text)
+    markdown = markdown.replace(/<span[^>]*data-type="hashtag"[^>]*data-hashtag-name="([^"]*)"[^>]*>.*?<\/span>/gi, '#$1');
+
+    // Fallback: If no data-hashtag-name attribute, extract from content
+    markdown = markdown.replace(/<span[^>]*data-type="hashtag"[^>]*>(#\w+)<\/span>/gi, '$1');
+    markdown = markdown.replace(/<span[^>]*class="chronicis-hashtag"[^>]*>(#\w+)<\/span>/gi, '$1');
 
     // Headers
     markdown = markdown.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
