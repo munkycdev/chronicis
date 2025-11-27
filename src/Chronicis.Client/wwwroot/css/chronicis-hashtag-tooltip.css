@@ -1,3 +1,7 @@
+/* ================================================
+   PHASE 7.3: Hashtag Tooltip Styles
+   ================================================ */
+
 /* Hashtag Tooltip */
 .hashtag-tooltip {
     position: fixed;
@@ -8,6 +12,7 @@
     box-shadow: 0 4px 12px rgba(31, 42, 51, 0.15);
     max-width: 320px;
     animation: tooltipFadeIn 0.2s ease;
+    pointer-events: auto; /* Allow hovering over tooltip */
 }
 
 @keyframes tooltipFadeIn {
@@ -44,4 +49,57 @@
     font-size: 0.75rem;
     color: #C4AF8E;
     font-style: italic;
+}
+
+.hashtag-tooltip-action {
+    font-size: 0.75rem;
+    color: #C4AF8E;
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+/* ================================================
+   PHASE 7.3: Enhanced Hashtag Styles
+   ================================================ */
+
+/* Base hashtag style (unchanged from Phase 6) */
+.chronicis-hashtag {
+    color: #C4AF8E;
+    font-weight: 500;
+    cursor: pointer; /* Changed from default to pointer */
+    padding: 0 2px;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+/* Hover effect */
+.chronicis-hashtag:hover {
+    background-color: rgba(196, 175, 142, 0.15);
+}
+
+/* Linked hashtags (Phase 7.3) */
+.chronicis-hashtag[data-linked="true"] {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: rgba(196, 175, 142, 0.5);
+}
+
+.chronicis-hashtag[data-linked="true"]:hover {
+    background-color: rgba(196, 175, 142, 0.25);
+    text-decoration-style: solid;
+}
+
+/* Unlinked hashtags */
+.chronicis-hashtag[data-linked="false"] {
+    opacity: 0.8;
+}
+
+.chronicis-hashtag[data-linked="false"]:hover {
+    opacity: 1;
+}
+
+/* Ensure hashtags display inline in all contexts */
+.ProseMirror .chronicis-hashtag {
+    display: inline;
 }

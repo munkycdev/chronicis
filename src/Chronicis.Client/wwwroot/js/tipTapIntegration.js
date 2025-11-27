@@ -1,301 +1,99 @@
-﻿// tipTapIntegration.js - UPDATED with hashtag extension support (Phase 6)
-// Place this in wwwroot/js/tipTapIntegration.js
-
-// Store editor instances
-let editorInstances = {};
-let tiptapReady = false;
+// ================================================
+// TipTap Integration - Phase 7.3 Complete
+// ================================================
 
 // Global storage for editor instances and tooltips
 window.tipTapEditors = window.tipTapEditors || {};
 window.activeTooltip = null;
+window.tooltipHideTimeout = null;
 
-// Listen for TipTap ready event
-window.addEventListener('tiptap-ready', function () {
-    tiptapReady = true;
-    console.log('📝 tipTapIntegration: TipTap is ready');
+// Wait for TipTap to be ready
+window.addEventListener('tiptap-ready', function() {
+    console.log('✅ TipTap ready event received');
 });
 
-window.initializeTipTapEditor = async (editorId, initialContent, dotNetHelper) => {
-    console.log('🎯 initTipTapEditor called for:', editorId);
-
-    // Check if TipTap is ready
-    if (!tiptapReady || typeof window.TipTap === 'undefined') {
-        console.log('⏳ TipTap not ready yet, waiting...');
-
-        // Wait for TipTap to be ready
-        var readyCheckInterval = setInterval(function () {
-            if (window.TipTap && typeof window.TipTap.Editor !== 'undefined') {
-                clearInterval(readyCheckInterval);
-                console.log('✅ TipTap now ready, initializing editor...');
-                createEditor(editorId, initialContent, dotNetHelper);
-            }
-        }, 100);
-
-        // Safety timeout
-        setTimeout(function () {
-            clearInterval(readyCheckInterval);
-            if (!window.TipTap) {
-                console.error('❌ Timeout waiting for TipTap');
-            }
-        }, 5000);
-
-        return;
+async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
+    console.log(`Initializing TipTap editor: ${editorId}`);
+    
+    // Check if TipTap is loaded
+    if (!window.TipTap || !window.TipTap.Editor) {
+        console.error('TipTap not loaded yet, waiting...');
+        await new Promise(resolve => {
+            window.addEventListener('tiptap-ready', resolve, { once: true });
+        });
     }
 
-    // TipTap is ready, create editor immediately
-    await createEditor(editorId, initialContent, dotNetHelper);
-};
-
-async function createEditor(editorId, initialContent, dotNetHelper) {
     const container = document.getElementById(editorId);
     if (!container) {
-        console.error('❌ Editor container not found:', editorId);
+        console.error(`Container not found: ${editorId}`);
         return;
     }
 
-    // Destroy existing instance if any
-    if (editorInstances[editorId]) {
-        console.log('🗑️ Destroying existing editor instance');
-        editorInstances[editorId].destroy();
-        delete editorInstances[editorId];
-    }
+    // Build extensions array
+    const extensions = [
+        window.TipTap.StarterKit.configure({
+            heading: {
+                levels: [1, 2, 3, 4, 5, 6]
+            },
+            bulletList: {
+                HTMLAttributes: {
+                    class: 'chronicis-bullet-list'
+                }
+            },
+            orderedList: {
+                HTMLAttributes: {
+                    class: 'chronicis-ordered-list'
+                }
+            }
+        })
+    ];
 
+    // Load hashtag extension
     try {
-        console.log('🔨 Creating TipTap editor with hashtag support...');
-        console.log('   Container:', container);
-        console.log('   Initial content length:', initialContent ? initialContent.length : 0);
-
-        // Build extensions array
-        const extensions = [
-            window.TipTap.StarterKit.configure({
-                heading: {
-                    levels: [1, 2, 3, 4, 5, 6],
-                },
-            })
-        ];
-
-        // Try to load hashtag extension
-        try {
-            const hashtagModule = await import('/js/tipTapHashtagExtension.js');
-            const HashtagExtension = await hashtagModule.createHashtagExtension();
-            extensions.push(HashtagExtension);
-            console.log('✅ Hashtag extension loaded and added');
-        } catch (error) {
-            console.warn('⚠️ Could not load hashtag extension:', error.message);
-            console.warn('   Editor will work without hashtag styling');
-        }
-
-        // Initialize TipTap
-        const editor = new window.TipTap.Editor({
-            element: container,
-            extensions: extensions,
-            content: initialContent ? markdownToHTML(initialContent) : '<p></p>',
-            editorProps: {
-                attributes: {
-                    class: 'chronicis-editor-content',
-                    'data-placeholder': 'Start typing your campaign notes...',
-                },
-            },
-            onCreate: ({ editor }) => {
-                // Focus after editor is fully created
-                editor.commands.focus('end');
-            },
-            onUpdate: ({ editor }) => {
-                // Convert HTML back to markdown
-                const html = editor.getHTML();
-                const markdown = htmlToMarkdown(html);
-
-                // Debug: Log conversion (remove after testing)
-                if (html.includes('hashtag')) {
-                    console.log('🔍 HTML contains hashtag span:', html.substring(0, 500));
-                    console.log('🔍 Converted to markdown:', markdown.substring(0, 500));
-                }
-
-                // Notify Blazor
-                if (dotNetHelper) {
-                    dotNetHelper.invokeMethodAsync('OnEditorUpdate', markdown);
-                }
-            },
-        });
-
-        // Store instance
-        editorInstances[editorId] = editor;
-
-
-        setupHashtagClickHandler(editorId, editor);
-        setupHashtagHoverHandler(editorId, editor);
-
-        console.log('✅ TipTap editor created successfully!');
+        const hashtagModule = await import('/js/tipTapHashtagExtension.js');
+        const HashtagExtension = await hashtagModule.createHashtagExtension();
+        extensions.push(HashtagExtension);
+        console.log('✅ Hashtag extension loaded and added');
     } catch (error) {
-        console.error('❌ Error creating TipTap editor:', error);
-        console.error('   Stack:', error.stack);
+        console.warn('⚠️ Could not load hashtag extension:', error.message);
     }
 
-}
-
-window.getTipTapMarkdown = (editorId) => {
-    const editor = editorInstances[editorId];
-    if (!editor) {
-        console.warn('⚠️ No editor found for:', editorId);
-        return '';
-    }
-
-    return htmlToMarkdown(editor.getHTML());
-};
-
-window.setTipTapContent = (editorId, markdown) => {
-    const editor = editorInstances[editorId];
-    if (!editor) {
-        console.warn('⚠️ No editor found for:', editorId);
-        return;
-    }
-
-    editor.commands.setContent(markdownToHTML(markdown));
-};
-
-window.destroyTipTapEditor = (editorId) => {
-    const editor = editorInstances[editorId];
-    if (editor) {
-        console.log('🗑️ Destroying editor:', editorId);
-        editor.destroy();
-        delete editorInstances[editorId];
-    }
-};
-
-// Simple markdown to HTML conversion
-// Note: Hashtags are preserved as plain text and the TipTap extension handles them
-function markdownToHTML(markdown) {
-    if (!markdown) return '<p></p>';
-
-    let html = markdown;
-
-    // Phase 6: Convert hashtags to spans FIRST (before other markdown processing)
-    // This ensures hashtags are properly styled when loading existing content
-    html = html.replace(/#(\w+)/g, '<span data-type="hashtag" class="chronicis-hashtag" data-hashtag-name="$1" title="Hashtag (not yet linked)">#$1</span>');
-
-    // Headers (must be done in order from h6 to h1)
-    html = html.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
-    html = html.replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>');
-    html = html.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
-    html = html.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
-    html = html.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
-    html = html.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
-
-    // Bold
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
-
-    // Italic
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    html = html.replace(/_(.+?)_/g, '<em>$1</em>');
-
-    // Inline code
-    html = html.replace(/`(.+?)`/g, '<code>$1</code>');
-
-    // Code blocks
-    html = html.replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre><code>$2</code></pre>');
-
-    // Links
-    html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
-
-    // Blockquotes
-    html = html.replace(/^>\s+(.+)$/gm, '<blockquote><p>$1</p></blockquote>');
-
-    // Unordered lists
-    html = html.replace(/^\-\s+(.+)$/gm, '<li>$1</li>');
-    html = html.replace(/^\*\s+(.+)$/gm, '<li>$1</li>');
-
-    // Wrap consecutive <li> in <ul>
-    html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
-
-    // Ordered lists
-    html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
-
-    // Horizontal rule
-    html = html.replace(/^---$/gm, '<hr>');
-
-    // Paragraphs
-    const lines = html.split('\n');
-    const processed = lines.map(line => {
-        line = line.trim();
-        if (!line) return '';
-        if (line.match(/^<[^>]+>/)) return line;
-        return `<p>${line}</p>`;
+    // Create editor
+    const editor = new window.TipTap.Editor({
+        element: container,
+        extensions: extensions,
+        content: initialContent ? markdownToHTML(initialContent) : '<p></p>',
+        editable: true,
+        onUpdate: ({ editor }) => {
+            const html = editor.getHTML();
+            const markdown = htmlToMarkdown(html);
+            dotNetHelper.invokeMethodAsync('OnEditorUpdate', markdown);
+        },
     });
 
-    html = processed.join('\n');
+    // Store editor instance
+    window.tipTapEditors[editorId] = editor;
 
-    // Clean up
-    html = html.replace(/<p><\/p>/g, '');
-    html = html.replace(/\n{3,}/g, '\n\n');
+    // Setup hashtag interactions (Phase 7.3)
+    setupHashtagClickHandler(editorId, editor);
+    setupHashtagHoverHandler(editorId, editor);
 
-    return html || '<p></p>';
+    console.log(`✅ TipTap editor created with ID: ${editorId}`);
+    return editor;
 }
 
-// Simple HTML to markdown conversion
-// Note: Hashtag spans are converted back to plain #hashtag text
-function htmlToMarkdown(html) {
-    if (!html) return '';
-
-    let markdown = html;
-
-    // Phase 6: Convert hashtag spans back to plain text
-    // The TipTap extension wraps hashtags in <span data-type="hashtag">
-    // Match: <span data-type="hashtag" ... data-hashtag-name="waterdeep">#Waterdeep</span>
-    // Convert to: #waterdeep (use the data attribute, not the visible text)
-    markdown = markdown.replace(/<span[^>]*data-type="hashtag"[^>]*data-hashtag-name="([^"]*)"[^>]*>.*?<\/span>/gi, '#$1');
-
-    // Fallback: If no data-hashtag-name attribute, extract from content
-    markdown = markdown.replace(/<span[^>]*data-type="hashtag"[^>]*>(#\w+)<\/span>/gi, '$1');
-    markdown = markdown.replace(/<span[^>]*class="chronicis-hashtag"[^>]*>(#\w+)<\/span>/gi, '$1');
-
-    // Headers
-    markdown = markdown.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
-    markdown = markdown.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n');
-    markdown = markdown.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n');
-    markdown = markdown.replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n\n');
-    markdown = markdown.replace(/<h5[^>]*>(.*?)<\/h5>/gi, '##### $1\n\n');
-    markdown = markdown.replace(/<h6[^>]*>(.*?)<\/h6>/gi, '###### $1\n\n');
-
-    // Bold
-    markdown = markdown.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**');
-    markdown = markdown.replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**');
-
-    // Italic
-    markdown = markdown.replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*');
-    markdown = markdown.replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*');
-
-    // Code
-    markdown = markdown.replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`');
-
-    // Code blocks
-    markdown = markdown.replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```\n\n');
-
-    // Links
-    markdown = markdown.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)');
-
-    // Blockquotes
-    markdown = markdown.replace(/<blockquote[^>]*><p[^>]*>(.*?)<\/p><\/blockquote>/gi, '> $1\n\n');
-
-    // Lists
-    markdown = markdown.replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n');
-    markdown = markdown.replace(/<\/?[uo]l[^>]*>/gi, '');
-
-    // Horizontal rule
-    markdown = markdown.replace(/<hr[^>]*>/gi, '---\n\n');
-
-    // Paragraphs
-    markdown = markdown.replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n');
-
-    // Remove remaining HTML
-    markdown = markdown.replace(/<[^>]+>/g, '');
-
-    // Clean up
-    markdown = markdown.replace(/\n{3,}/g, '\n\n');
-    markdown = markdown.trim();
-
-    return markdown;
+function destroyTipTapEditor(editorId) {
+    const editor = window.tipTapEditors[editorId];
+    if (editor) {
+        editor.destroy();
+        delete window.tipTapEditors[editorId];
+        console.log(`Editor destroyed: ${editorId}`);
+    }
 }
+
+// ================================================
+// PHASE 7.3: HASHTAG CLICK HANDLER
+// ================================================
 
 function setupHashtagClickHandler(editorId, editor) {
     const editorElement = document.getElementById(editorId);
@@ -310,20 +108,34 @@ function setupHashtagClickHandler(editorId, editor) {
             const isLinked = target.getAttribute('data-linked') === 'true';
             const articleSlug = target.getAttribute('data-article-slug');
 
+            console.log(`Hashtag clicked: #${hashtagName}, linked: ${isLinked}`);
+
             if (isLinked && articleSlug) {
                 // Navigate to linked article
+                console.log(`Navigating to: /article/${articleSlug}`);
                 window.location.href = `/article/${articleSlug}`;
             } else if (hashtagName) {
-                // Show linking UI (Phase 7.3)
-                console.log(`Hashtag #${hashtagName} is not linked to an article`);
-                // TODO: Show linking dialog
+                // Trigger linking dialog (Phase 7.3)
+                console.log(`Triggering link dialog for #${hashtagName}`);
+                
+                // Dispatch event that Blazor can listen to
+                const event = new CustomEvent('hashtag-link-requested', {
+                    detail: { hashtagName: hashtagName }
+                });
+                document.dispatchEvent(event);
             }
 
             e.preventDefault();
             e.stopPropagation();
         }
     });
+
+    console.log(`✅ Click handler setup for ${editorId}`);
 }
+
+// ================================================
+// PHASE 7.3: HASHTAG HOVER HANDLER
+// ================================================
 
 function setupHashtagHoverHandler(editorId, editor) {
     const editorElement = document.getElementById(editorId);
@@ -354,12 +166,14 @@ function setupHashtagHoverHandler(editorId, editor) {
             // Clear timeout
             if (hoverTimeout) clearTimeout(hoverTimeout);
 
-            // Hide tooltip after a delay
-            setTimeout(() => {
+            // Hide tooltip after a delay (allows moving to tooltip)
+            window.tooltipHideTimeout = setTimeout(() => {
                 hideHashtagTooltip();
             }, 200);
         }
     });
+
+    console.log(`✅ Hover handler setup for ${editorId}`);
 }
 
 async function showHashtagTooltip(element, hashtagName) {
@@ -369,7 +183,10 @@ async function showHashtagTooltip(element, hashtagName) {
     try {
         // Fetch hashtag preview from API
         const response = await fetch(`/api/hashtags/${encodeURIComponent(hashtagName)}/preview`);
-        if (!response.ok) return;
+        if (!response.ok) {
+            console.error('Failed to fetch hashtag preview');
+            return;
+        }
 
         const preview = await response.json();
 
@@ -379,6 +196,7 @@ async function showHashtagTooltip(element, hashtagName) {
                 <div class="hashtag-tooltip-content">
                     <div class="hashtag-tooltip-title">#${hashtagName}</div>
                     <div class="hashtag-tooltip-text">Not linked to an article</div>
+                    <div class="hashtag-tooltip-action">Click to link</div>
                 </div>
             `);
             return;
@@ -387,8 +205,8 @@ async function showHashtagTooltip(element, hashtagName) {
         // Show article preview tooltip
         createTooltip(element, `
             <div class="hashtag-tooltip-content">
-                <div class="hashtag-tooltip-title">${preview.articleTitle || '(Untitled)'}</div>
-                <div class="hashtag-tooltip-text">${preview.previewText || 'No content'}</div>
+                <div class="hashtag-tooltip-title">${escapeHtml(preview.articleTitle || '(Untitled)')}</div>
+                <div class="hashtag-tooltip-text">${escapeHtml(preview.previewText || 'No content')}</div>
                 <div class="hashtag-tooltip-meta">Click to open</div>
             </div>
         `);
@@ -408,6 +226,7 @@ function createTooltip(element, htmlContent) {
     tooltip.style.position = 'fixed';
     tooltip.style.left = `${rect.left}px`;
     tooltip.style.top = `${rect.bottom + 8}px`;
+    tooltip.style.zIndex = '10000';
 
     document.body.appendChild(tooltip);
     window.activeTooltip = tooltip;
@@ -429,4 +248,132 @@ function hideHashtagTooltip() {
     }
 }
 
-console.log('📝 tipTapIntegration.js loaded with hashtag support');
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ================================================
+// MARKDOWN <-> HTML CONVERSION
+// ================================================
+
+function markdownToHTML(markdown) {
+    if (!markdown) return '<p></p>';
+
+    let html = markdown;
+
+    // Convert hashtags FIRST (before headers to avoid confusion)
+    // This will be enhanced in Phase 7.3 to check if hashtags are linked
+    html = html.replace(
+        /#(\w+)/g,
+        '<span data-type="hashtag" class="chronicis-hashtag" data-hashtag-name="$1" data-linked="false" title="Hashtag">#$1</span>'
+    );
+
+    // Headers (# = h1, ## = h2, etc.)
+    html = html.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
+    html = html.replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>');
+    html = html.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
+    html = html.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+
+    // Bold and Italic
+    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    // Links [text](url)
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+    // Code blocks ```
+    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+    // Inline code `
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Bullet lists
+    html = html.replace(/^[\*\-]\s+(.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>)/s, '<ul class="chronicis-bullet-list">$1</ul>');
+
+    // Ordered lists
+    html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+
+    // Line breaks
+    html = html.replace(/\n\n/g, '</p><p>');
+    html = html.replace(/\n/g, '<br>');
+
+    // Wrap in paragraph if not already in a block element
+    if (!html.match(/^<(h[1-6]|ul|ol|pre|blockquote|div)/)) {
+        html = '<p>' + html + '</p>';
+    }
+
+    return html || '<p></p>';
+}
+
+function htmlToMarkdown(html) {
+    if (!html) return '';
+
+    let markdown = html;
+
+    // Convert hashtag spans back to plain text
+    markdown = markdown.replace(
+        /<span[^>]*data-type="hashtag"[^>]*data-hashtag-name="([^"]*)"[^>]*>.*?<\/span>/gi,
+        '#$1'
+    );
+
+    // Fallback patterns
+    markdown = markdown.replace(/<span[^>]*data-type="hashtag"[^>]*>(#\w+)<\/span>/gi, '$1');
+    markdown = markdown.replace(/<span[^>]*class="chronicis-hashtag"[^>]*>(#\w+)<\/span>/gi, '$1');
+
+    // Headers
+    markdown = markdown.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
+    markdown = markdown.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n');
+    markdown = markdown.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n');
+    markdown = markdown.replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n\n');
+    markdown = markdown.replace(/<h5[^>]*>(.*?)<\/h5>/gi, '##### $1\n\n');
+    markdown = markdown.replace(/<h6[^>]*>(.*?)<\/h6>/gi, '###### $1\n\n');
+
+    // Bold and italic
+    markdown = markdown.replace(/<strong[^>]*><em[^>]*>(.*?)<\/em><\/strong>/gi, '***$1***');
+    markdown = markdown.replace(/<em[^>]*><strong[^>]*>(.*?)<\/strong><\/em>/gi, '***$1***');
+    markdown = markdown.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**');
+    markdown = markdown.replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**');
+    markdown = markdown.replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*');
+    markdown = markdown.replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*');
+
+    // Links
+    markdown = markdown.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)');
+
+    // Code blocks
+    markdown = markdown.replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```\n\n');
+
+    // Inline code
+    markdown = markdown.replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`');
+
+    // Lists
+    markdown = markdown.replace(/<ul[^>]*>[\s\S]*?<\/ul>/gi, (match) => {
+        return match.replace(/<li[^>]*>(.*?)<\/li>/gi, '* $1\n');
+    });
+
+    markdown = markdown.replace(/<ol[^>]*>[\s\S]*?<\/ol>/gi, (match) => {
+        let counter = 1;
+        return match.replace(/<li[^>]*>(.*?)<\/li>/gi, () => {
+            return `${counter++}. $1\n`;
+        });
+    });
+
+    // Remove remaining HTML tags
+    markdown = markdown.replace(/<p[^>]*>/gi, '');
+    markdown = markdown.replace(/<\/p>/gi, '\n\n');
+    markdown = markdown.replace(/<br\s*\/?>/gi, '\n');
+    markdown = markdown.replace(/<[^>]+>/g, '');
+
+    // Clean up extra whitespace
+    markdown = markdown.replace(/\n{3,}/g, '\n\n');
+    markdown = markdown.trim();
+
+    return markdown;
+}
+
+console.log('✅ TipTap integration script loaded (Phase 7.3)');

@@ -1,10 +1,7 @@
-// wwwroot/js/tipTapHashtagExtension.js
-// Proper TipTap Mark extension for hashtags (Phase 6)
+// ================================================
+// TipTap Hashtag Extension - Phase 7.3
+// ================================================
 
-/**
- * Create hashtag mark extension using TipTap's Mark API
- * This properly integrates with TipTap without breaking cursor position
- */
 export async function createHashtagExtension() {
     const { Mark } = await import('https://esm.sh/@tiptap/core@3.11.0');
     const { markInputRule, markPasteRule } = await import('https://esm.sh/@tiptap/core@3.11.0');
@@ -26,7 +23,7 @@ export async function createHashtagExtension() {
                     ...HTMLAttributes,
                     'data-type': 'hashtag',
                     'class': 'chronicis-hashtag',
-                    'title': 'Click to navigate (if linked)',
+                    'title': 'Click to navigate or link',
                 },
                 0,
             ];
@@ -55,6 +52,14 @@ export async function createHashtagExtension() {
                     renderHTML: attributes => {
                         if (!attributes['data-article-slug']) return {};
                         return { 'data-article-slug': attributes['data-article-slug'] };
+                    },
+                },
+                'data-article-id': {
+                    default: null,
+                    parseHTML: element => element.getAttribute('data-article-id'),
+                    renderHTML: attributes => {
+                        if (!attributes['data-article-id']) return {};
+                        return { 'data-article-id': attributes['data-article-id'] };
                     },
                 },
             };
@@ -91,3 +96,5 @@ export async function createHashtagExtension() {
         },
     });
 }
+
+console.log('✅ Hashtag extension module loaded (Phase 7.3)');
