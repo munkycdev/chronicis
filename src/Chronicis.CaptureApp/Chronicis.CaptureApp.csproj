@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net6.0-windows</TargetFramework>
+		<UseWindowsForms>true</UseWindowsForms>
+		<Nullable>enable</Nullable>
+		<StartupObject>Chronicis.CaptureApp.Program</StartupObject>
+		<AssemblyName>Chronicis.CaptureApp</AssemblyName>
+		<RootNamespace>Chronicis.CaptureApp</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="NAudio" Version="2.2.1" />
+		<PackageReference Include="Whisper.net" Version="1.7.0" />
+		<PackageReference Include="Whisper.net.Runtime" Version="1.7.0" />
+		<PackageReference Include="Guna.UI2.WinForms" Version="2.0.4.6" />
+	</ItemGroup>
+
+</Project>
