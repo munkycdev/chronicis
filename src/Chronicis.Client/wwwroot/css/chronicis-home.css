@@ -1,6 +1,7 @@
 /* Chronicis Enhanced Home Page Styles */
 
 .chronicis-welcome-page {
+    padding: 24px;
     animation: fadeIn 0.5s ease-in;
 }
 
@@ -9,6 +10,7 @@
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -21,21 +23,22 @@
     overflow: hidden;
 }
 
-.chronicis-hero::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(196, 175, 142, 0.1) 0%, transparent 70%);
-    animation: heroGlow 20s linear infinite;
-}
+    .chronicis-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(196, 175, 142, 0.1) 0%, transparent 70%);
+        animation: heroGlow 20s linear infinite;
+    }
 
 @keyframes heroGlow {
     0% {
         transform: translate(0, 0) rotate(0deg);
     }
+
     100% {
         transform: translate(50px, 50px) rotate(360deg);
     }
@@ -47,11 +50,11 @@
     border: 1px solid rgba(196, 175, 142, 0.2);
 }
 
-.chronicis-stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(196, 175, 142, 0.3) !important;
-    border-color: rgba(196, 175, 142, 0.4);
-}
+    .chronicis-stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(196, 175, 142, 0.3) !important;
+        border-color: rgba(196, 175, 142, 0.4);
+    }
 
 /* Recent Articles List */
 .chronicis-welcome-page .mud-list-item {
@@ -60,15 +63,15 @@
     margin-bottom: 4px;
 }
 
-.chronicis-welcome-page .mud-list-item:hover {
-    background-color: rgba(196, 175, 142, 0.1) !important;
-    padding-left: 20px;
-}
+    .chronicis-welcome-page .mud-list-item:hover {
+        background-color: rgba(196, 175, 142, 0.1) !important;
+        padding-left: 20px;
+    }
 
-.chronicis-welcome-page .mud-list-item:hover .mud-icon {
-    color: var(--mud-palette-primary) !important;
-    transform: scale(1.1);
-}
+        .chronicis-welcome-page .mud-list-item:hover .mud-icon {
+            color: var(--mud-palette-primary) !important;
+            transform: scale(1.1);
+        }
 
 /* Quick Actions Buttons */
 .chronicis-welcome-page .mud-button-outlined {
@@ -76,11 +79,11 @@
     border-width: 1.5px;
 }
 
-.chronicis-welcome-page .mud-button-outlined:hover {
-    transform: translateX(4px);
-    border-width: 2px;
-    background-color: rgba(196, 175, 142, 0.05);
-}
+    .chronicis-welcome-page .mud-button-outlined:hover {
+        transform: translateX(4px);
+        border-width: 2px;
+        background-color: rgba(196, 175, 142, 0.05);
+    }
 
 /* Tips Card */
 .chronicis-welcome-page .mud-divider {
@@ -93,9 +96,9 @@
         padding: 32px 24px !important;
     }
 
-    .chronicis-hero .mud-typography-h2 {
-        font-size: 2rem;
-    }
+        .chronicis-hero .mud-typography-h2 {
+            font-size: 2rem;
+        }
 
     .chronicis-stat-card {
         margin-bottom: 12px;
@@ -117,15 +120,50 @@
     transition: all 0.3s ease;
 }
 
-.chronicis-quote-footer .mud-icon-button {
-    transition: all 0.3s ease;
+    .chronicis-quote-footer .mud-icon-button {
+        transition: all 0.3s ease;
+    }
+
+        .chronicis-quote-footer .mud-icon-button:hover {
+            opacity: 1 !important;
+            transform: rotate(180deg);
+        }
+
+    .chronicis-quote-footer .mud-text {
+        transition: opacity 0.3s ease;
+    }
+
+/* ========================================
+   PHASE 7: BACKLINKS PANEL LAYOUT
+   ======================================== */
+
+
+
+/* Scrollbar styling for article area */
+.home-article-area::-webkit-scrollbar {
+    width: 8px;
 }
 
-.chronicis-quote-footer .mud-icon-button:hover {
-    opacity: 1 !important;
-    transform: rotate(180deg);
+.home-article-area::-webkit-scrollbar-track {
+    background: rgba(58, 71, 80, 0.05);
 }
 
-.chronicis-quote-footer .mud-text {
-    transition: opacity 0.3s ease;
+.home-article-area::-webkit-scrollbar-thumb {
+    background: rgba(196, 175, 142, 0.5);
+    border-radius: 4px;
+}
+
+    .home-article-area::-webkit-scrollbar-thumb:hover {
+        background: #C4AF8E;
+    }
+
+/* Responsive: Hide backlinks on small screens */
+@media (max-width: 960px) {
+    .home-article-area {
+        padding-right: 24px; /* Remove extra padding on mobile */
+    }
+
+    .home-backlinks-area {
+        display: none; /* Hide backlinks panel on mobile */
+    }
 }

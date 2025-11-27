@@ -1,0 +1,126 @@
+@using Chronicis.Client.Services
+@using Chronicis.Shared.DTOs
+@inject IArticleApiService ArticleApi
+@inject NavigationManager Navigation
+
+    <div class="backlinks-header">
+        <MudText Typo="Typo.h6" Class="backlinks-title">
+            <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" />
+            Backlinks
+        </MudText>
+        @if (_isLoading)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+        }
+    </div>
+
+    @if (_backlinks.Count == 0 && !_isLoading)
+    {
+        <div class="backlinks-empty">
+            <MudText Typo="Typo.body2" Color="Color.Dark">
+                No articles reference this page yet.
+            </MudText>
+            <MudText Typo="Typo.caption" Color="Color.Dark" Class="mt-2">
+                Other articles will appear here when they mention hashtags linked to this article.
+            </MudText>
+        </div>
+    }
+    else
+    {
+        <div class="backlinks-list">
+            @foreach (var backlink in _backlinks)
+            {
+                <div class="backlink-item" @onclick="() => NavigateToArticle(backlink)">
+                    <MudText Typo="Typo.body2" Class="backlink-title">
+                        @(string.IsNullOrWhiteSpace(backlink.ArticleTitle) ? "(Untitled)" : backlink.ArticleTitle)
+                    </MudText>
+                    
+                    <div class="backlink-meta">
+                        <MudText Typo="Typo.caption" Color="Color.Dark">
+                            @backlink.MentionCount @(backlink.MentionCount == 1 ? "mention" : "mentions")
+                        </MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Dark">
+                            @GetRelativeTime(backlink.LastModified)
+                        </MudText>
+                    </div>
+
+                    @if (backlink.Hashtags.Any())
+                    {
+                        <div class="backlink-hashtags">
+                            @foreach (var hashtag in backlink.Hashtags)
+                            {
+                                <span class="backlink-hashtag">#@hashtag</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+@code {
+    [Parameter]
+    public int? ArticleId { get; set; }
+
+    private List<BacklinkDto> _backlinks = new();
+    private bool _isLoading = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ArticleId.HasValue && ArticleId.Value > 0)
+        {
+            await LoadBacklinksAsync();
+        }
+        else
+        {
+            _backlinks.Clear();
+        }
+    }
+
+    private async Task LoadBacklinksAsync()
+    {
+        if (!ArticleId.HasValue) return;
+
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _backlinks = await ArticleApi.GetArticleBacklinksAsync(ArticleId.Value);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading backlinks: {ex.Message}");
+            _backlinks = new();
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void NavigateToArticle(BacklinkDto backlink)
+    {
+        Navigation.NavigateTo($"/article/{backlink.ArticleSlug}");
+    }
+
+    private string GetRelativeTime(DateTime dateTime)
+    {
+        var now = DateTime.UtcNow;
+        var diff = now - dateTime;
+
+        if (diff.TotalMinutes < 1)
+            return "just now";
+        if (diff.TotalMinutes < 60)
+            return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24)
+            return $"{(int)diff.TotalHours}h ago";
+        if (diff.TotalDays < 7)
+            return $"{(int)diff.TotalDays}d ago";
+        if (diff.TotalDays < 30)
+            return $"{(int)(diff.TotalDays / 7)}w ago";
+        
+        return dateTime.ToString("MMM d, yyyy");
+    }
+}

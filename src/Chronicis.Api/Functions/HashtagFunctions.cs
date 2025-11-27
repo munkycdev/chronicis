@@ -167,4 +167,81 @@ public class HashtagFunctions
             return errorResponse;
         }
     }
+
+    [Function("GetHashtagPreview")]
+    public async Task<HttpResponseData> GetHashtagPreview(
+    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "hashtags/{name}/preview")]
+    HttpRequestData req,
+    string name)
+    {
+        var response = req.CreateResponse();
+
+        try
+        {
+            var normalizedName = name.ToLowerInvariant();
+
+            var hashtag = await _context.Hashtags
+                .Include(h => h.LinkedArticle)
+                .FirstOrDefaultAsync(h => h.Name == normalizedName);
+
+            if (hashtag == null)
+            {
+                response.StatusCode = HttpStatusCode.NotFound;
+                await response.WriteAsJsonAsync(new { error = "Hashtag not found" });
+                return response;
+            }
+
+            if (hashtag.LinkedArticleId == null || hashtag.LinkedArticle == null)
+            {
+                response.StatusCode = HttpStatusCode.OK;
+                await response.WriteAsJsonAsync(new
+                {
+                    hasArticle = false,
+                    hashtagName = hashtag.Name
+                });
+                return response;
+            }
+
+            // Get first 200 characters of body for preview
+            var previewText = hashtag.LinkedArticle.Body.Length > 200
+                ? hashtag.LinkedArticle.Body.Substring(0, 200) + "..."
+                : hashtag.LinkedArticle.Body;
+
+            var preview = new HashtagPreviewDto
+            {
+                HasArticle = true,
+                HashtagName = hashtag.Name,
+                ArticleId = hashtag.LinkedArticle.Id,
+                ArticleTitle = hashtag.LinkedArticle.Title,
+                ArticleSlug = CreateSlug(hashtag.LinkedArticle.Title),
+                PreviewText = previewText,
+                LastModified = hashtag.LinkedArticle.ModifiedDate ?? hashtag.LinkedArticle.CreatedDate
+            };
+
+            response.StatusCode = HttpStatusCode.OK;
+            await response.WriteAsJsonAsync(preview);
+        }
+        catch (Exception ex)
+        {
+            response.StatusCode = HttpStatusCode.InternalServerError;
+            await response.WriteAsJsonAsync(new { error = ex.Message });
+        }
+
+        return response;
+    }
+
+    private static string CreateSlug(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            return "untitled";
+
+        return title.ToLowerInvariant()
+            .Replace(" ", "-")
+            .Replace(":", "")
+            .Replace("!", "")
+            .Replace("?", "")
+            .Replace("'", "")
+            .Replace("\"", "");
+    }
+
 }

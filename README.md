@@ -1,322 +1,108 @@
-# Chronicis - Phase 0: Infrastructure & Setup
-
-Welcome to Chronicis! This is your Phase 0 starter package with everything you need to get up and running.
-
-## 🎯 Phase 0 Goals
-
-- ✅ Establish Azure infrastructure  
-- ✅ Create working Blazor WASM + Azure Functions skeleton
-- ✅ Configure MudBlazor with Chronicis theme
-- ✅ Implement health check endpoint
-- ✅ Verify end-to-end connectivity
-
-## 📋 Prerequisites
-
-Before you begin, ensure you have:
-
-1. **.NET 8 SDK** - [Download](https://dotnet.microsoft.com/download/dotnet/8.0)
-2. **Azure Functions Core Tools** - [Install Guide](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local)
-3. **Visual Studio 2022** or **VS Code** with C# extension
-4. **Azure CLI** (for infrastructure setup) - [Install](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
-5. **SQL Server** - LocalDB, Express, or Docker
-
-### Verify Prerequisites
-
-```bash
-dotnet --version          # Should be 8.0.x or higher
-func --version            # Should be 4.x
-az --version              # Azure CLI
-```
-
-## 🚀 Quick Start (Local Development)
-
-### Step 1: Restore Dependencies
-
-```bash
-# From the chronicis-phase0 directory
-dotnet restore
-```
-
-### Step 2: Start the Azure Functions API
-
-```bash
-# Open a terminal
-cd src/Chronicis.Api
-func start
-```
-
-You should see:
-```
-Functions:
-    Health: [GET] http://localhost:7071/api/health
-```
-
-### Step 3: Start the Blazor Client
-
-```bash
-# Open a NEW terminal
-cd src/Chronicis.Client
-dotnet run
-```
-
-You should see:
-```
-Now listening on: https://localhost:5001
-```
-
-### Step 4: Test the Application
-
-1. Open your browser to `https://localhost:5001`
-2. You should see the Chronicis welcome page
-3. The health check should show "✓ API is healthy!"
-
-If you see the success message, **Phase 0 is complete!** 🎉
-
-## 🏗️ Project Structure
-
-```
-chronicis-phase0/
-├── Chronicis.sln                    # Solution file
-├── src/
-│   ├── Chronicis.Client/            # Blazor WebAssembly
-│   │   ├── Layout/
-│   │   │   └── MainLayout.razor     # App layout with MudBlazor theme
-│   │   ├── Pages/
-│   │   │   └── Home.razor           # Home page with health check
-│   │   ├── wwwroot/
-│   │   │   ├── index.html
-│   │   │   └── appsettings.json     # API URL configuration
-│   │   └── Program.cs               # Client startup
-│   │
-│   ├── Chronicis.Api/               # Azure Functions
-│   │   ├── Functions/
-│   │   │   └── HealthFunction.cs    # Health check endpoint
-│   │   ├── host.json
-│   │   ├── local.settings.json      # Local configuration
-│   │   └── Program.cs               # API startup
-│   │
-│   └── Chronicis.Shared/            # Shared models
-│       └── Models/
-│           └── HealthCheckResponse.cs
-```
-
-## 🎨 Chronicis Theme
-
-The MudBlazor theme is configured in `MainLayout.razor` with these colors:
-
-- **Primary (Beige-Gold):** `#C4AF8E`
-- **Secondary (Slate Grey):** `#3A4750`  
-- **AppBar/Drawer (Deep Blue-Grey):** `#1F2A33`
-- **Background (Soft Off-White):** `#F4F0EA`
-
-## ☁️ Azure Infrastructure Setup (Optional for Phase 0)
-
-For local development, you don't need Azure yet. When you're ready to deploy:
-
-### Create Azure Resources
-
-```bash
-# Login to Azure
-az login
-
-# Set variables
-RESOURCE_GROUP="rg-chronicis-dev"
-LOCATION="eastus"
-SQL_SERVER="sql-chronicis-dev"
-SQL_DB="Chronicis"
-KEYVAULT="kv-chronicis-dev"
-
-# Create resource group
-az group create --name $RESOURCE_GROUP --location $LOCATION
-
-# Create SQL Server
-az sql server create \
-  --name $SQL_SERVER \
-  --resource-group $RESOURCE_GROUP \
-  --location $LOCATION \
-  --admin-user chronicis-admin \
-  --admin-password 'YourSecurePassword123!'
-
-# Create database
-az sql db create \
-  --resource-group $RESOURCE_GROUP \
-  --server $SQL_SERVER \
-  --name $SQL_DB \
-  --service-objective Basic
-
-# Allow Azure services
-az sql server firewall-rule create \
-  --resource-group $RESOURCE_GROUP \
-  --server $SQL_SERVER \
-  --name AllowAzureServices \
-  --start-ip-address 0.0.0.0 \
-  --end-ip-address 0.0.0.0
-
-# Create Key Vault
-az keyvault create \
-  --name $KEYVAULT \
-  --resource-group $RESOURCE_GROUP \
-  --location $LOCATION
-```
-
-### Create Static Web App
-
-Use the Azure Portal or GitHub integration to create a Static Web App. It will auto-configure GitHub Actions for deployment.
-
-## 🗄️ Database Setup
-
-### Option 1: SQL Server LocalDB (Windows)
-
-Already configured in `local.settings.json`:
-
-```json
-"ConnectionStrings:ChronicisDb": "Server=(localdb)\\mssqllocaldb;Database=Chronicis;Trusted_Connection=True;MultipleActiveResultSets=true"
-```
-
-Start LocalDB:
-```bash
-sqllocaldb start mssqllocaldb
-```
-
-### Option 2: SQL Server Express
-
-Install SQL Server Express, then update connection string in `local.settings.json`:
-
-```json
-"ConnectionStrings:ChronicisDb": "Server=localhost\\SQLEXPRESS;Database=Chronicis;Trusted_Connection=True;MultipleActiveResultSets=true"
-```
-
-### Option 3: Docker SQL Server
-
-```bash
-docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
-   -p 1433:1433 --name sql-server \
-   -d mcr.microsoft.com/mssql/server:2022-latest
-```
-
-Connection string:
-```json
-"ConnectionStrings:ChronicisDb": "Server=localhost,1433;Database=Chronicis;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True"
-```
-
-### Option 4: Azure SQL Database
-
-Get connection string from Azure Portal and add to `local.settings.json`.
-
-## 🧪 Testing the Health Check
-
-### Via Browser
-Navigate to: `http://localhost:7071/api/health`
-
-Expected response:
-```json
-{
-  "status": "Healthy",
-  "message": "API is healthy!",
-  "timestamp": "2025-11-18T12:34:56.789Z"
-}
-```
-
-### Via curl
-```bash
-curl http://localhost:7071/api/health
-```
-
-### Via the Blazor App
-The home page automatically calls the health check and displays the result.
-
-## 🔧 Common Issues & Solutions
-
-### Issue: "dotnet command not found"
-**Solution:** Install .NET 8 SDK and restart your terminal.
-
-### Issue: "func: command not found"  
-**Solution:** Install Azure Functions Core Tools:
-```bash
-npm install -g azure-functions-core-tools@4
-```
-
-### Issue: Port 5001 or 7071 already in use
-**Solution:** Kill the process or use different ports:
-```bash
-# Kill process on Windows
-netstat -ano | findstr :7071
-taskkill /PID <PID> /F
-
-# Kill process on Mac/Linux
-lsof -i :7071
-kill -9 <PID>
-```
-
-### Issue: SQL Server connection failed
-**Solution:** 
-1. Verify SQL Server is running
-2. Check connection string in `local.settings.json`
-3. Ensure database exists
-
-### Issue: CORS error when calling API
-**Solution:** Azure Functions automatically handles CORS for Static Web Apps. For local dev, it should work by default. If not, ensure both are running.
-
-### Issue: "Cannot find MudBlazor components"
-**Solution:** Ensure you ran `dotnet restore`. Try:
-```bash
-dotnet clean
-dotnet restore
-dotnet build
-```
-
-## 📝 Development Workflow
-
-1. **Start Functions API first** (in one terminal)
-2. **Start Blazor Client** (in another terminal)  
-3. **Make changes** to code
-4. **Hot reload** should work for Blazor
-5. **Restart Functions** if you change API code
-6. **Commit frequently** to Git
-
-## ✅ Phase 0 Success Criteria
-
-You've completed Phase 0 when:
-
-- [x] Blazor app runs at `https://localhost:5001`
-- [x] Azure Functions at `http://localhost:7071`
-- [x] Health check endpoint returns "Healthy"
-- [x] Client successfully calls API
-- [x] MudBlazor theme displays correctly
-- [x] No console errors
-
-## 🎯 Next Steps: Phase 1
-
-Once Phase 0 is complete, you're ready for **Phase 1: Core Data Model & Tree Navigation**!
-
-Phase 1 will add:
-- Article entity and database
-- Hierarchical tree structure  
-- Read-only tree navigation
-- Article detail view
-
-## 📚 Useful Resources
-
-- [Blazor WebAssembly Docs](https://learn.microsoft.com/en-us/aspnet/core/blazor/)
-- [Azure Functions Docs](https://learn.microsoft.com/en-us/azure/azure-functions/)
-- [MudBlazor Components](https://mudblazor.com/components/list)
-- [Entity Framework Core](https://learn.microsoft.com/en-us/ef/core/)
-
-## 🤝 Getting Help
-
-If you encounter issues:
-
-1. Check the troubleshooting section above
-2. Review the implementation plan
-3. Check the specs in `/mnt/project/`
-4. Ask Claude for help with specific errors
-
-## 📄 License
-
-Part of the Chronicis project - modify as needed!
+# Chronicis
+
+<div align="center">
+  <img src="docs/images/logo.png" alt="Chronicis Logo" width="200"/>
+  
+  **Your Chronicle Awaits**
+  
+  A modern knowledge management platform for tabletop RPG campaigns
+  
+  [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+  [![Blazor](https://img.shields.io/badge/Blazor-WebAssembly-512BD4?logo=blazor)](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor)
+  [![Azure](https://img.shields.io/badge/Azure-Functions-0078D4?logo=microsoftazure)](https://azure.microsoft.com/en-us/services/functions/)
+  [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+</div>
 
 ---
 
-**Ready to start Phase 1?** Create a new chat with Claude, upload the implementation plan and specs, and say: *"I've completed Phase 0 and I'm ready to start Phase 1."*
+## ⚠️ About This Project
 
-Good luck! 🐉📖
+**This is a learning exercise in AI-assisted development ("vibe coding").** The entire codebase has been generated through iterative conversations with Claude AI as part of exploring how software engineering managers can effectively guide and collaborate with AI coding assistants.
+
+**What this means:**
+- 🤖 All code is Claude-generated
+- 🎓 Primary goal is learning AI-assisted development workflows
+- 🔬 Experimental approach to architecture and implementation
+- 📚 Not production-ready or following all best practices
+- 🚧 Code quality reflects AI generation patterns, not human engineering standards
+
+**Please judge accordingly!** This is about the journey of learning to work with AI tools, not about showcasing perfect code. If you're looking for examples of production-quality .NET applications, this probably isn't it. But if you're curious about what AI can build with the right guidance, read on!
+
+---
+
+## 📖 About
+
+Chronicis is a web-based knowledge management application designed specifically for Dungeons & Dragons and other tabletop RPG campaigns. Built with modern web technologies, it provides an elegant, efficient way to organize campaign notes, track entities, and discover connections across your game world.
+
+### Key Features
+
+- **✅ Hierarchical Article Organization** - Nest articles infinitely deep to mirror your campaign structure
+- **✅ Tree Navigation** - Expandable sidebar with visual hierarchy and search
+- **✅ Inline WYSIWYG Editor** - Real-time markdown rendering with TipTap
+- **✅ Auto-Save** - Never lose your work (0.5s delay on content changes)
+- **✅ Enhanced Dashboard** - Campaign statistics, recent articles, quick actions
+- **✅ URL Routing** - Readable URLs with article slugs for bookmarking
+- **✅ Hashtag System** - Automatic entity detection and visual styling (#NPC, #Location)
+- **✅ Smart Search** - Title-based tree filtering with ancestor expansion
+
+### Coming Soon
+
+- **🔜 Backlinks & Graph** - Discover which articles reference current entity
+- **🔜 AI Summaries** - Generate comprehensive entity summaries from mentions
+- **🔜 Content Search** - Full-text search across article bodies
+- **🔜 Drag & Drop** - Reorganize hierarchy with mouse
+- **🔜 Custom Icons** - Emoji icons for visual distinction
+
+---
+
+## 🎨 Design Philosophy
+
+Chronicis follows an **Obsidian-inspired inline editing paradigm**:
+
+- **Always Editable** - No modal dialogs; edit directly in place
+- **Auto-Save** - Changes save automatically after 0.5s (no more lost work)
+- **Hierarchical** - Infinitely nested articles mirror campaign structure
+- **Connected** - Hashtags create automatic relationships between entities
+- **Fast** - Optimized for quick note-taking during game sessions
+
+### Visual Style
+
+- **Color Palette**: Deep blue-grey, beige-gold, slate grey
+- **Typography**: Spellweaver Display (headings), Roboto (body)
+- **Effects**: Soft gold glows, smooth transitions, subtle shadows
+- **Inspiration**: Fantasy aesthetic meets modern UI
+
+---
+
+## 🐛 Known Issues & Quirks
+
+As AI-generated code, there are some expected quirks:
+
+- **Occasional over-engineering** - AI sometimes adds unnecessary abstractions
+- **Inconsistent patterns** - Code style varies based on conversation context
+- **Verbose comments** - AI loves to explain everything
+- **Conservative error handling** - Lots of try-catch blocks and null checks
+- **Testing gaps** - AI-generated tests tend to be happy-path focused
+
+These are features, not bugs! They're part of understanding how AI generates code.
+
+---
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **Claude by Anthropic** - For generating all the code you see here
+- **MudBlazor** - Excellent Blazor component library
+- **TipTap** - Beautiful WYSIWYG editor
+- **The D&D Community** - Inspiration for campaign management needs
+
+---
+
+<div align="center">
+  <sub>Built with Claude AI | Learning to vibe code, one feature at a time 🤖✨</sub>
+</div>

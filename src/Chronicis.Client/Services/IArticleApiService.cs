@@ -13,7 +13,6 @@ namespace Chronicis.Client.Services
         Task<List<ArticleSearchResultDto>> SearchArticlesAsync(string query);
         Task<List<ArticleSearchResultDto>> SearchArticlesByTitleAsync(string query);
         Task<ArticleDto> UpdateArticleAsync(int id, ArticleUpdateDto dto);
-
-
+        Task<List<BacklinkDto>> GetArticleBacklinksAsync(int articleId);
     }
 }

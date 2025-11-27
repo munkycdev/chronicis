@@ -190,5 +190,19 @@ namespace Chronicis.Client.Services
                 throw;
             }
         }
+
+        public async Task<List<BacklinkDto>> GetArticleBacklinksAsync(int articleId)
+        {
+            try
+            {
+                var backlinks = await _httpClient.GetFromJsonAsync<List<BacklinkDto>>($"api/articles/{articleId}/backlinks");
+                return backlinks ?? new List<BacklinkDto>();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error fetching backlinks: {ex.Message}");
+                return new List<BacklinkDto>();
+            }
+        }
     }
 }

@@ -71,4 +71,18 @@ public class HashtagApiService : IHashtagApiService
             return false;
         }
     }
+
+    public async Task<HashtagPreviewDto?> GetHashtagPreviewAsync(string name)
+    {
+        try
+        {
+            var encodedName = Uri.EscapeDataString(name);
+            return await _httpClient.GetFromJsonAsync<HashtagPreviewDto>($"api/hashtags/{encodedName}/preview");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error fetching hashtag preview: {ex.Message}");
+            return null;
+        }
+    }
 }

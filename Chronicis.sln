@@ -1,13 +1,14 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11222.16 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.Client", "src\Chronicis.Client\Chronicis.Client.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.Api", "src\Chronicis.Api\Chronicis.Api.csproj", "{B2C3D4E5-F678-90AB-CDEF-123456789012}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.Shared", "src\Chronicis.Shared\Chronicis.Shared.csproj", "{C3D4E5F6-7890-ABCD-EF12-34567890ABCD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.CaptureApp", "src\Chronicis.CaptureApp\Chronicis.CaptureApp.csproj", "{9DB5E161-E6B5-278E-6003-FE74DB7AF1EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,5 +28,12 @@ Global
 		{C3D4E5F6-7890-ABCD-EF12-34567890ABCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C3D4E5F6-7890-ABCD-EF12-34567890ABCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C3D4E5F6-7890-ABCD-EF12-34567890ABCD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DB5E161-E6B5-278E-6003-FE74DB7AF1EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DB5E161-E6B5-278E-6003-FE74DB7AF1EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DB5E161-E6B5-278E-6003-FE74DB7AF1EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DB5E161-E6B5-278E-6003-FE74DB7AF1EA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal
