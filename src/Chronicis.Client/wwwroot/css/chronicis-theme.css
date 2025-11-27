@@ -314,14 +314,22 @@
     background-color: rgba(255, 255, 255, 0.05);
 }
 
-    .chronicis-search-box .mud-input-slot {
-        background-color: rgba(243, 240, 235, 0.8) !important;
-    }
+        .chronicis-search-box .mud-input-slot {
+            background-color: rgba(243, 240, 235, 0.8) !important;
+            margin: 8px !important;
+        }
+        .chronicis-search-box .mud-input-adornment-end {
+            margin-left:0px;
+        }
+        .chronicis-search-box .mb-2 {
+            margin-bottom: 0px !important;
+        }
 
-.global-search-input .mud-input-slot {
-    background-color: rgba(243, 240, 235, 0.8) !important;
-    padding-left:8px !important;
-}
+        .global-search-input .mud-input-slot {
+            background-color: rgba(243, 240, 235, 0.8) !important;
+            padding-left: 8px !important;
+            margin: 8px !important;
+        }
 
 /* Article Card */
 .chronicis-article-card {
