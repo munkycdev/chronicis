@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.3.11222.16 d18.3
+VisualStudioVersion = 18.3.11222.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.Client", "src\Chronicis.Client\Chronicis.Client.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
@@ -9,6 +9,17 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.Shared", "src\Chronicis.Shared\Chronicis.Shared.csproj", "{C3D4E5F6-7890-ABCD-EF12-34567890ABCD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.CaptureApp", "src\Chronicis.CaptureApp\Chronicis.CaptureApp.csproj", "{9DB5E161-E6B5-278E-6003-FE74DB7AF1EA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CCF2D62F-B692-471A-9D94-AABE41CC11BE}"
+	ProjectSection(SolutionItems) = preProject
+		docs\Chronicis Feature Specification.pdf = docs\Chronicis Feature Specification.pdf
+		docs\Chronicis Style Guide.pdf = docs\Chronicis Style Guide.pdf
+		docs\ChronicisPlatformSpec.md.pdf = docs\ChronicisPlatformSpec.md.pdf
+		docs\Chronicis_Implementation_Plan_FULL_v1_5.md = docs\Chronicis_Implementation_Plan_FULL_v1_5.md
+		docs\features-bugs.md = docs\features-bugs.md
+		docs\logo.png = docs\logo.png
+		docs\ScreenshotDemo.png = docs\ScreenshotDemo.png
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
