@@ -43,6 +43,7 @@ public class MainForm : MaterialForm
     private StringBuilder _fullTranscript = new();
     private List<AudioSource> _audioSources = new();
     private TranscriptWithSpeakers _transcriptWithSpeakers = new();
+    private string? _sessionAudioPath;
 
     public MainForm(
         IAudioSourceProvider audioSourceProvider,
@@ -107,6 +108,7 @@ public class MainForm : MaterialForm
         _audioCaptureService.ChunkReady += OnChunkReady;
         _audioCaptureService.QueueStatsUpdated += OnQueueStatsUpdated;
         _audioCaptureService.RecordingStopped += OnRecordingStopped;
+        _audioCaptureService.SessionAudioReady += OnSessionAudioReady;
 
         Task.Run(async () => await InitializeWhisperAsync());
     }
@@ -632,6 +634,16 @@ public class MainForm : MaterialForm
         });
     }
 
+    private void OnSessionAudioReady(object? sender, string audioPath)
+    {
+        _sessionAudioPath = audioPath;
+
+        this.Invoke(new Action(() =>
+        {
+            UpdateStatus($"✓ Audio file ready: {Path.GetFileName(audioPath)}");
+        }));
+    }
+
     private void BtnEditSpeakers_Click(object? sender, EventArgs e)
     {
         var speakerIds = _transcriptWithSpeakers.Segments
@@ -746,24 +758,49 @@ public class MainForm : MaterialForm
             return;
         }
 
-        UpdateStatus("Ready to save transcript");
+        UpdateStatus("Ready to save transcript and audio");
 
         this.Invoke(new Action(() =>
         {
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            string defaultFileName = $"transcript_{timestamp}.md";
+            string defaultFileName = $"session_{timestamp}";
 
-            using (var saveDialog = new SaveFileDialog())
+            // NEW: Use FolderBrowserDialog to let user choose save location
+            using (var folderDialog = new FolderBrowserDialog())
             {
-                saveDialog.Filter = "Markdown Files (*.md)|*.md|Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
-                saveDialog.DefaultExt = "md";
-                saveDialog.FileName = defaultFileName;
-                saveDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                saveDialog.Title = "Save Transcript";
+                folderDialog.Description = "Select folder to save transcript and audio";
+                folderDialog.SelectedPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-                if (saveDialog.ShowDialog() == DialogResult.OK)
+                if (folderDialog.ShowDialog() == DialogResult.OK)
                 {
-                    SaveTranscriptToFile(saveDialog.FileName, transcription);
+                    string folder = folderDialog.SelectedPath;
+
+                    // Save transcript
+                    string transcriptPath = Path.Combine(folder, $"{defaultFileName}.md");
+                    SaveTranscriptToFile(transcriptPath, transcription);
+
+                    // Save audio
+                    if (!string.IsNullOrEmpty(_sessionAudioPath) && File.Exists(_sessionAudioPath))
+                    {
+                        string audioExtension = Path.GetExtension(_sessionAudioPath);
+                        string audioDestination = Path.Combine(folder, $"{defaultFileName}{audioExtension}");
+
+                        try
+                        {
+                            File.Move(_sessionAudioPath, audioDestination);
+                            UpdateStatus($"✓ Saved transcript and audio to {folder}");
+                            MessageBox.Show(
+                                $"Session saved successfully!\n\nTranscript: {Path.GetFileName(transcriptPath)}\nAudio: {Path.GetFileName(audioDestination)}\n\nLocation: {folder}",
+                                "Success",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Error saving audio: {ex.Message}", "Error",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
                 }
                 else
                 {
@@ -778,9 +815,18 @@ public class MainForm : MaterialForm
         try
         {
             var markdown = new StringBuilder();
-            markdown.AppendLine("# Audio Transcript");
+            markdown.AppendLine("# D&D Session Transcript");
             markdown.AppendLine();
             markdown.AppendLine($"**Date:** {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+
+            // NEW: Include audio file reference
+            if (!string.IsNullOrEmpty(_sessionAudioPath))
+            {
+                string audioFileName = Path.GetFileName(_sessionAudioPath)
+                    .Replace(Path.GetExtension(_sessionAudioPath), Path.GetExtension(_sessionAudioPath));
+                markdown.AppendLine($"**Audio:** {audioFileName}");
+            }
+
             markdown.AppendLine();
 
             if (_chkEnableSpeakerDetection.Checked && _transcriptWithSpeakers.Segments.Count > 0)
@@ -798,10 +844,6 @@ public class MainForm : MaterialForm
             markdown.AppendLine(transcription);
 
             File.WriteAllText(filePath, markdown.ToString());
-
-            UpdateStatus($"✓ Saved to {Path.GetFileName(filePath)}");
-            MessageBox.Show($"Transcript saved successfully!\n\nLocation: {filePath}",
-                "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {
