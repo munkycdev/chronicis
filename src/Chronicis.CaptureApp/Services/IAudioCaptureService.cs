@@ -1,11 +1,10 @@
 ﻿using Chronicis.CaptureApp.Models;
-using System;
 
 namespace Chronicis.CaptureApp.Services;
 
 public interface IAudioCaptureService
 {
-    event EventHandler<string>? ChunkReady;
+    event EventHandler<(string audioPath, TimeSpan timestamp)>? ChunkReady; // UPDATED: Added timestamp
     event EventHandler<QueueStatistics>? QueueStatsUpdated;
     event EventHandler? RecordingStopped;
 

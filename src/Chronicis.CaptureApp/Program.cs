@@ -1,7 +1,6 @@
-﻿using Chronicis.CaptureApp.Services;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Chronicis.CaptureApp.Services;
 using Chronicis.CaptureApp.UI;
-using Microsoft.Extensions.DependencyInjection;
-using System;
 
 namespace Chronicis.CaptureApp;
 
@@ -33,6 +32,7 @@ static class Program
         services.AddSingleton<ITranscriptionService, WhisperTranscriptionService>();
         services.AddSingleton<IAudioCaptureService, AudioCaptureService>();
         services.AddSingleton<ISystemTrayService, SystemTrayService>();
+        services.AddSingleton<ISpeakerDetectionService, SpeakerDetectionService>(); // NEW
 
         // UI
         services.AddSingleton<MainForm>();

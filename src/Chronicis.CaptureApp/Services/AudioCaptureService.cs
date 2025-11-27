@@ -1,11 +1,7 @@
 ﻿using Chronicis.CaptureApp.Models;
 using NAudio.CoreAudioApi;
-using NAudio.MediaFoundation;
 using NAudio.Wave;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
+using NAudio.MediaFoundation;
 
 namespace Chronicis.CaptureApp.Services;
 
@@ -19,11 +15,13 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
     private int _chunkDurationSeconds;
     private int _bytesPerChunk;
     private int _currentChunkBytes;
+    private DateTime _recordingStartTime; // NEW
+    private DateTime _currentChunkStartTime; // NEW
 
-    private Queue<string> _pendingChunks = new();
+    private Queue<(string path, TimeSpan timestamp)> _pendingChunks = new(); // UPDATED
     private bool _isProcessing;
 
-    public event EventHandler<string>? ChunkReady;
+    public event EventHandler<(string audioPath, TimeSpan timestamp)>? ChunkReady; // UPDATED
     public event EventHandler<QueueStatistics>? QueueStatsUpdated;
     public event EventHandler? RecordingStopped;
 
@@ -35,6 +33,8 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
         if (IsRecording) return;
 
         _chunkDurationSeconds = settings.ChunkDurationSeconds;
+        _recordingStartTime = DateTime.Now; // NEW
+        _currentChunkStartTime = _recordingStartTime; // NEW
         QueueStats.Reset();
 
         var enumerator = new MMDeviceEnumerator();
@@ -91,6 +91,7 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
         _currentChunkStream = new MemoryStream();
         _currentChunkWriter = new WaveFileWriter(_currentChunkStream, _captureFormat!);
         _currentChunkBytes = 0;
+        _currentChunkStartTime = DateTime.Now; // NEW
     }
 
     private void ProcessCurrentChunk()
@@ -99,6 +100,8 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
 
         string chunkPath = Path.Combine(Path.GetTempPath(), $"chunk_{Guid.NewGuid()}.wav");
         File.WriteAllBytes(chunkPath, _currentChunkStream!.ToArray());
+
+        var timestamp = _currentChunkStartTime - _recordingStartTime; // NEW
 
         _currentChunkWriter?.Dispose();
         _currentChunkStream?.Dispose();
@@ -111,7 +114,7 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
             return;
         }
 
-        _pendingChunks.Enqueue(chunkPath);
+        _pendingChunks.Enqueue((chunkPath, timestamp)); // UPDATED
         QueueStats.PendingChunks = _pendingChunks.Count;
         NotifyQueueStats();
 
@@ -127,14 +130,14 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
 
         while (_pendingChunks.Count > 0)
         {
-            var chunkPath = _pendingChunks.Dequeue();
+            var (chunkPath, timestamp) = _pendingChunks.Dequeue(); // UPDATED
             QueueStats.PendingChunks = _pendingChunks.Count;
             NotifyQueueStats();
 
             try
             {
                 var whisperPath = ConvertToWhisperFormat(chunkPath);
-                ChunkReady?.Invoke(this, whisperPath);
+                ChunkReady?.Invoke(this, (whisperPath, timestamp)); // UPDATED
 
                 QueueStats.ProcessedChunks++;
                 NotifyQueueStats();

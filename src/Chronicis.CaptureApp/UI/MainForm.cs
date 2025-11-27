@@ -20,8 +20,11 @@ public class MainForm : Form
     private readonly ITranscriptionService _transcriptionService;
     private readonly ISettingsService _settingsService;
     private readonly ISystemTrayService _systemTrayService;
+    private readonly ISpeakerDetectionService _speakerDetectionService;
 
     // UI Controls
+    private Guna2CheckBox _chkEnableSpeakerDetection = null!;
+    private Guna2Button _btnEditSpeakers = null!;
     private Guna2ComboBox _cmbAudioSources = null!;
     private Guna2Button _btnStart = null!;
     private Guna2Button _btnStop = null!;
@@ -45,19 +48,22 @@ public class MainForm : Form
     private AppSettings _settings = null!;
     private StringBuilder _fullTranscript = new();
     private List<AudioSource> _audioSources = new();
+    private TranscriptWithSpeakers _transcriptWithSpeakers = new();
 
     public MainForm(
-        IAudioSourceProvider audioSourceProvider,
-        IAudioCaptureService audioCaptureService,
-        ITranscriptionService transcriptionService,
-        ISettingsService settingsService,
-        ISystemTrayService systemTrayService)
+    IAudioSourceProvider audioSourceProvider,
+    IAudioCaptureService audioCaptureService,
+    ITranscriptionService transcriptionService,
+    ISettingsService settingsService,
+    ISystemTrayService systemTrayService,
+    ISpeakerDetectionService speakerDetectionService)
     {
         _audioSourceProvider = audioSourceProvider;
         _audioCaptureService = audioCaptureService;
         _transcriptionService = transcriptionService;
         _settingsService = settingsService;
         _systemTrayService = systemTrayService;
+        _speakerDetectionService = speakerDetectionService;
 
         InitializeComponent();
         InitializeServices();
@@ -198,6 +204,23 @@ public class MainForm : Form
         };
         _controlPanel.Controls.Add(_cmbAudioSources);
 
+        // Enable Speaker Detection checkbox
+        _chkEnableSpeakerDetection = new Guna2CheckBox
+        {
+            Location = new Point(25, 95),
+            Size = new Size(200, 20),
+            Text = "Enable Speaker Detection",
+            Font = new Font("Segoe UI", 9F),
+            ForeColor = Color.FromArgb(196, 175, 142),
+            Checked = true,
+            CheckedState =
+        {
+            BorderColor = Color.FromArgb(196, 175, 142),
+            FillColor = Color.FromArgb(196, 175, 142)
+        }
+        };
+        _controlPanel.Controls.Add(_chkEnableSpeakerDetection);
+
         // Model label
         _lblModel = new Label
         {
@@ -305,6 +328,33 @@ public class MainForm : Form
         };
         _transcriptPanel.Controls.Add(_lblTranscriptTitle);
 
+        _lblTranscriptTitle = new Label
+        {
+            Text = "Live Transcription",
+            Location = new Point(25, 25),
+            AutoSize = true,
+            Font = new Font("Segoe UI", 13F, FontStyle.Bold),
+            ForeColor = Color.FromArgb(196, 175, 142)
+        };
+        _transcriptPanel.Controls.Add(_lblTranscriptTitle);
+
+        // NEW: Edit Speakers Button
+        _btnEditSpeakers = new Guna2Button
+        {
+            Location = new Point(600, 20),
+            Size = new Size(155, 35),
+            Text = "✏️ Edit Speakers",
+            Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+            ForeColor = Color.FromArgb(26, 26, 26),
+            FillColor = Color.FromArgb(196, 175, 142),
+            BorderRadius = 6,
+            Cursor = Cursors.Hand,
+            Visible = false // Show only when speaker detection is on
+        };
+        _btnEditSpeakers.Click += BtnEditSpeakers_Click;
+        _transcriptPanel.Controls.Add(_btnEditSpeakers);
+
+
         _txtTranscript = new Guna2TextBox
         {
             Location = new Point(25, 60),
@@ -397,6 +447,9 @@ public class MainForm : Form
         {
             _cmbAudioSources.SelectedIndex = sourceIndex;
         }
+
+        // Restore speaker detection setting
+        _chkEnableSpeakerDetection.Checked = _settings.EnableSpeakerDetection;
     }
 
     private void SaveCurrentSettings()
@@ -420,6 +473,8 @@ public class MainForm : Form
         {
             _settings.LastAudioSource = _cmbAudioSources.SelectedItem.ToString()!;
         }
+
+        _settings.EnableSpeakerDetection = _chkEnableSpeakerDetection.Checked; // NEW
 
         _settingsService.Save(_settings);
     }
@@ -480,7 +535,16 @@ public class MainForm : Form
         }
 
         _fullTranscript.Clear();
+        _transcriptWithSpeakers = new TranscriptWithSpeakers(); // NEW
+        _speakerDetectionService.Reset(); // NEW
         _txtTranscript.Text = "";
+        _btnEditSpeakers.Visible = false; // NEW
+
+        // Restore saved speaker names
+        foreach (var kvp in _settings.SpeakerNames)
+        {
+            _transcriptWithSpeakers.SpeakerNames[kvp.Key] = kvp.Value;
+        }
 
         var settings = new TranscriptionSettings
         {
@@ -503,9 +567,12 @@ public class MainForm : Form
         _cmbChunkSize.Enabled = false;
         _cmbModel.Enabled = false;
         _btnRefresh.Enabled = false;
+        _chkEnableSpeakerDetection.Enabled = false; // NEW
 
         _systemTrayService.SetRecordingState(true);
-        UpdateStatus($"🔴 Recording from '{_cmbAudioSources.Text}' ({settings.ChunkDurationSeconds}s chunks)...");
+
+        var speakerStatus = _chkEnableSpeakerDetection.Checked ? " with speaker detection" : "";
+        UpdateStatus($"🔴 Recording from '{_cmbAudioSources.Text}' ({settings.ChunkDurationSeconds}s chunks{speakerStatus})...");
 
         SaveCurrentSettings();
     }
@@ -526,26 +593,145 @@ public class MainForm : Form
         UpdateStatus("Audio sources refreshed");
     }
 
-    private async void OnChunkReady(object? sender, string audioFilePath)
+    private async void OnChunkReady(object? sender, (string audioPath, TimeSpan timestamp) data)
     {
         try
         {
-            var transcription = await _transcriptionService.TranscribeAsync(audioFilePath);
+            var transcription = await _transcriptionService.TranscribeAsync(data.audioPath);
 
             if (!string.IsNullOrWhiteSpace(transcription))
             {
-                _fullTranscript.Append(" ");
-                _fullTranscript.Append(transcription);
-
-                this.Invoke(new Action(() =>
+                if (_chkEnableSpeakerDetection.Checked)
                 {
-                    _txtTranscript.Text = _fullTranscript.ToString().Trim();
-                }));
+                    // Analyze speaker
+                    var segment = _speakerDetectionService.AnalyzeAudioSegment(
+                        data.audioPath,
+                        transcription,
+                        data.timestamp);
+
+                    _transcriptWithSpeakers.Segments.Add(segment);
+
+                    // Update speaker names from saved settings
+                    foreach (var kvp in _settings.SpeakerNames)
+                    {
+                        _transcriptWithSpeakers.SpeakerNames[kvp.Key] = kvp.Value;
+                    }
+
+                    this.Invoke(new Action(() =>
+                    {
+                        _txtTranscript.Text = _transcriptWithSpeakers.GetFormattedTranscript();
+                        _btnEditSpeakers.Visible = true;
+                    }));
+                }
+                else
+                {
+                    // No speaker detection - simple append
+                    _fullTranscript.Append(" ");
+                    _fullTranscript.Append(transcription);
+
+                    this.Invoke(new Action(() =>
+                    {
+                        _txtTranscript.Text = _fullTranscript.ToString().Trim();
+                    }));
+                }
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error transcribing chunk: {ex.Message}");
+        }
+    }
+
+    private void BtnEditSpeakers_Click(object? sender, EventArgs e)
+    {
+        var speakerIds = _transcriptWithSpeakers.Segments
+            .Select(s => s.SpeakerId)
+            .Distinct()
+            .OrderBy(id => id)
+            .ToList();
+
+        if (speakerIds.Count == 0)
+        {
+            MessageBox.Show("No speakers detected yet.", "Info",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var form = new Form
+        {
+            Text = "Edit Speaker Names",
+            Size = new Size(400, 300),
+            StartPosition = FormStartPosition.CenterParent,
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            MaximizeBox = false,
+            MinimizeBox = false,
+            BackColor = Color.FromArgb(244, 240, 234)
+        };
+
+        var panel = new Panel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(20),
+            AutoScroll = true
+        };
+        form.Controls.Add(panel);
+
+        var textBoxes = new Dictionary<int, TextBox>();
+        int yPos = 10;
+
+        foreach (var speakerId in speakerIds)
+        {
+            var currentName = _transcriptWithSpeakers.SpeakerNames.ContainsKey(speakerId)
+                ? _transcriptWithSpeakers.SpeakerNames[speakerId]
+                : $"Speaker {speakerId}";
+
+            var label = new Label
+            {
+                Text = $"Speaker {speakerId}:",
+                Location = new Point(10, yPos),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(31, 42, 51)
+            };
+            panel.Controls.Add(label);
+
+            var textBox = new TextBox
+            {
+                Location = new Point(120, yPos - 3),
+                Size = new Size(220, 25),
+                Text = currentName,
+                Font = new Font("Segoe UI", 10F)
+            };
+            textBoxes[speakerId] = textBox;
+            panel.Controls.Add(textBox);
+
+            yPos += 40;
+        }
+
+        var btnSave = new Button
+        {
+            Text = "Save",
+            Location = new Point(150, yPos + 20),
+            Size = new Size(100, 35),
+            DialogResult = DialogResult.OK
+        };
+        panel.Controls.Add(btnSave);
+
+        if (form.ShowDialog() == DialogResult.OK)
+        {
+            foreach (var kvp in textBoxes)
+            {
+                var newName = kvp.Value.Text.Trim();
+                if (!string.IsNullOrEmpty(newName))
+                {
+                    _transcriptWithSpeakers.SpeakerNames[kvp.Key] = newName;
+                    _settings.SpeakerNames[kvp.Key] = newName;
+                }
+            }
+
+            _settingsService.Save(_settings);
+            _txtTranscript.Text = _transcriptWithSpeakers.GetFormattedTranscript();
+            UpdateStatus("Speaker names updated");
         }
     }
 
@@ -567,6 +753,7 @@ public class MainForm : Form
             _cmbChunkSize.Enabled = true;
             _cmbModel.Enabled = true;
             _btnRefresh.Enabled = true;
+            _chkEnableSpeakerDetection.Enabled = true; // NEW
 
             _systemTrayService.SetRecordingState(false);
             UpdateStatus("⏳ Processing remaining audio...");
@@ -620,14 +807,30 @@ public class MainForm : Form
     {
         try
         {
-            var markdown = new StringBuilder();
+            var markdown = new System.Text.StringBuilder();
             markdown.AppendLine("# Audio Transcript");
             markdown.AppendLine();
             markdown.AppendLine($"**Date:** {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             markdown.AppendLine();
-            markdown.AppendLine("## Transcription");
-            markdown.AppendLine();
-            markdown.AppendLine(transcription);
+
+            if (_chkEnableSpeakerDetection.Checked && _transcriptWithSpeakers.Segments.Count > 0)
+            {
+                markdown.AppendLine("## Speakers");
+                foreach (var kvp in _transcriptWithSpeakers.SpeakerNames.OrderBy(k => k.Key))
+                {
+                    markdown.AppendLine($"- **Speaker {kvp.Key}:** {kvp.Value}");
+                }
+                markdown.AppendLine();
+                markdown.AppendLine("## Transcription");
+                markdown.AppendLine();
+                markdown.AppendLine(_transcriptWithSpeakers.GetFormattedTranscript());
+            }
+            else
+            {
+                markdown.AppendLine("## Transcription");
+                markdown.AppendLine();
+                markdown.AppendLine(transcription);
+            }
 
             File.WriteAllText(filePath, markdown.ToString());
 

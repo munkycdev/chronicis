@@ -6,7 +6,12 @@
 		<UseWindowsForms>true</UseWindowsForms>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<ApplicationIcon>chronicis.ico</ApplicationIcon>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <Content Include="chronicis.ico" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Guna.UI2.WinForms" Version="2.0.4.6" />
