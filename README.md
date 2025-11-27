@@ -1,7 +1,7 @@
 # Chronicis
 
 <div align="center">
-  <img src="docs/images/logo.png" alt="Chronicis Logo" width="200"/>
+  <img src="https://raw.githubusercontent.com/munkycdev/chronicis/refs/heads/main/src/Chronicis.Client/wwwroot/images/logo.png" alt="Chronicis Logo" width="200"/>
   
   **Your Chronicle Awaits**
   
