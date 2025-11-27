@@ -1,18 +1,13 @@
-﻿using Chronicis.CaptureApp.Models;
+﻿using System.Text;
+using MaterialSkin;
+using MaterialSkin.Controls;
+using Chronicis.CaptureApp.Models;
 using Chronicis.CaptureApp.Services;
-using Guna.UI2.WinForms;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using Whisper.net.Ggml;
 
 namespace Chronicis.CaptureApp.UI;
 
-public class MainForm : Form
+public class MainForm : MaterialForm
 {
     // Services (injected)
     private readonly IAudioSourceProvider _audioSourceProvider;
@@ -23,26 +18,25 @@ public class MainForm : Form
     private readonly ISpeakerDetectionService _speakerDetectionService;
 
     // UI Controls
-    private Guna2CheckBox _chkEnableSpeakerDetection = null!;
-    private Guna2Button _btnEditSpeakers = null!;
-    private Guna2ComboBox _cmbAudioSources = null!;
-    private Guna2Button _btnStart = null!;
-    private Guna2Button _btnStop = null!;
-    private Guna2Button _btnRefresh = null!;
-    private Label _lblStatus = null!;
-    private Guna2TextBox _txtTranscript = null!;
-    private Label _lblTranscriptTitle = null!;
-    private Label _lblSourceLabel = null!;
-    private Label _lblInfo = null!;
-    private Guna2Panel _mainPanel = null!;
-    private Guna2ShadowPanel _controlPanel = null!;
-    private Guna2ShadowPanel _transcriptPanel = null!;
-    private Label _lblHeader = null!;
-    private Guna2ComboBox _cmbChunkSize = null!;
-    private Label _lblChunkSize = null!;
-    private Guna2ComboBox _cmbModel = null!;
-    private Label _lblModel = null!;
-    private Label _lblQueueStatus = null!;
+    private readonly MaterialSkinManager _materialSkinManager;
+    private ComboBox _cmbAudioSources = null!;
+    private MaterialButton _btnStart = null!;
+    private MaterialButton _btnStop = null!;
+    private MaterialButton _btnRefresh = null!;
+    private MaterialLabel _lblStatus = null!;
+    private MaterialMultiLineTextBox _txtTranscript = null!;
+    private MaterialLabel _lblTranscriptTitle = null!;
+    private MaterialLabel _lblSourceLabel = null!;
+    private ComboBox _cmbChunkSize = null!;
+    private MaterialLabel _lblChunkSize = null!;
+    private ComboBox _cmbModel = null!;
+    private MaterialLabel _lblModel = null!;
+    private MaterialLabel _lblQueueStatus = null!;
+    private MaterialCheckbox _chkEnableSpeakerDetection = null!;
+    private MaterialButton _btnEditSpeakers = null!;
+    private Panel _mainPanel = null!;
+    private MaterialCard _controlCard = null!;
+    private MaterialCard _transcriptCard = null!;
 
     // State
     private AppSettings _settings = null!;
@@ -51,359 +45,329 @@ public class MainForm : Form
     private TranscriptWithSpeakers _transcriptWithSpeakers = new();
 
     public MainForm(
-    IAudioSourceProvider audioSourceProvider,
-    IAudioCaptureService audioCaptureService,
-    ITranscriptionService transcriptionService,
-    ISettingsService settingsService,
-    ISystemTrayService systemTrayService,
-    ISpeakerDetectionService speakerDetectionService)
+        IAudioSourceProvider audioSourceProvider,
+        IAudioCaptureService audioCaptureService,
+        ITranscriptionService transcriptionService,
+        ISettingsService settingsService,
+        ISystemTrayService systemTrayService,
+        ISpeakerDetectionService speakerDetectionService)
     {
         _audioSourceProvider = audioSourceProvider;
         _audioCaptureService = audioCaptureService;
         _transcriptionService = transcriptionService;
         _settingsService = settingsService;
         _systemTrayService = systemTrayService;
-        _speakerDetectionService = speakerDetectionService;
+        _speakerDetectionService = speakerDetectionService; 
+        _materialSkinManager = MaterialSkinManager.Instance;
 
         InitializeComponent();
         InitializeServices();
     }
+
 
     private void InitializeComponent()
     {
         this.SuspendLayout();
 
         // Form settings
-        this.ClientSize = new Size(820, 750);
+        this.ClientSize = new Size(900, 800);
         this.Text = "Chronicis Audio Capture";
         this.StartPosition = FormStartPosition.CenterScreen;
-        this.BackColor = Color.FromArgb(240, 242, 245);
-        this.Font = new Font("Segoe UI", 9F);
-        this.FormBorderStyle = FormBorderStyle.FixedSingle;
-        this.MaximizeBox = false;
+        this.MaximizeBox = true;  // Changed to true
+        this.MinimizeBox = true;  // NEW - explicitly enable
+        this.FormBorderStyle = FormBorderStyle.Sizable;  // Changed from FixedSingle
+        this.AutoScroll = true;
+        this.BackColor = Color.FromArgb(45, 45, 48);  // Dark grey background
 
-        CreateModernUI();
+        try
+        {
+            string iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chronicis.ico");
+            if (File.Exists(iconPath))
+            {
+                this.Icon = new Icon(iconPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Could not load icon: {ex.Message}");
+        }
+
+        CreateMaterialUI();
 
         this.ResumeLayout(false);
     }
 
     private void InitializeServices()
     {
-        // Load settings
         _settings = _settingsService.Load();
-
-        // Initialize system tray
         _systemTrayService.Initialize(this);
-
-        // Load audio sources
         LoadAudioSources();
-
-        // Restore saved settings
         RestoreSettings();
 
-        // Hook up events
         _audioCaptureService.ChunkReady += OnChunkReady;
         _audioCaptureService.QueueStatsUpdated += OnQueueStatsUpdated;
         _audioCaptureService.RecordingStopped += OnRecordingStopped;
 
-        // Initialize Whisper
         Task.Run(async () => await InitializeWhisperAsync());
     }
 
-    private void CreateModernUI()
+    private void CreateMaterialUI()
     {
-        // Main container panel
-        _mainPanel = new Guna2Panel
+        _mainPanel = new Panel
         {
             Dock = DockStyle.Fill,
-            FillColor = Color.FromArgb(244, 240, 234),
-            Padding = new Padding(20)
+            AutoScroll = true,
+            Padding = new Padding(20, 80, 20, 20)
         };
         this.Controls.Add(_mainPanel);
 
         int yPos = 10;
 
-        // Header
-        _lblHeader = new Label
+        // Control Card
+        _controlCard = new MaterialCard
         {
-            Text = "🐉 Chronicis Audio Capture",
-            Location = new Point(10, yPos),
-            AutoSize = true,
-            Font = new Font("Segoe UI", 20F, FontStyle.Bold),
-            ForeColor = Color.FromArgb(196, 175, 142)
+            Location = new Point(20, yPos),
+            Size = new Size(840, 320),
+            BackColor = Color.FromArgb(40, 40, 40)
         };
-        _mainPanel.Controls.Add(_lblHeader);
-        yPos += 55;
+        _mainPanel.Controls.Add(_controlCard);
 
-        // Control Panel
-        _controlPanel = new Guna2ShadowPanel
-        {
-            Location = new Point(10, yPos),
-            Size = new Size(780, 250),
-            FillColor = Color.FromArgb(31, 42, 51),
-            ShadowColor = Color.Black,
-            ShadowDepth = 50,
-            ShadowShift = 3
-        };
-        _mainPanel.Controls.Add(_controlPanel);
+        CreateControlCardControls();
 
-        CreateControlPanelControls();
-
-        yPos += 270;
+        yPos += 340;
 
         // Status
-        _lblStatus = new Label
+        _lblStatus = new MaterialLabel
         {
             Text = "Status: Initializing...",
-            Location = new Point(15, yPos),
+            Location = new Point(20, yPos),
             AutoSize = true,
-            Font = new Font("Segoe UI", 10F),
-            ForeColor = Color.FromArgb(196, 175, 142)
+            FontType = MaterialSkinManager.fontType.Subtitle2,
+            HighEmphasis = true
         };
         _mainPanel.Controls.Add(_lblStatus);
-        yPos += 35;
+        yPos += 40;
 
-        // Transcript Panel
-        _transcriptPanel = new Guna2ShadowPanel
+        // Transcript Card
+        _transcriptCard = new MaterialCard
         {
-            Location = new Point(10, yPos),
-            Size = new Size(780, 380),
-            FillColor = Color.FromArgb(31, 42, 51),
-            ShadowColor = Color.Black,
-            ShadowDepth = 50,
-            ShadowShift = 3
+            Location = new Point(20, yPos),
+            Size = new Size(840, 380),
+            BackColor = Color.FromArgb(40, 40, 40)
         };
-        _mainPanel.Controls.Add(_transcriptPanel);
+        _mainPanel.Controls.Add(_transcriptCard);
 
-        CreateTranscriptPanelControls();
+        CreateTranscriptCardControls();
     }
 
-    private void CreateControlPanelControls()
+    private void CreateControlCardControls()
     {
+        int yPos = 20;
+
         // Source label
-        _lblSourceLabel = new Label
+        _lblSourceLabel = new MaterialLabel
         {
             Text = "Audio Source",
-            Location = new Point(25, 25),
+            Location = new Point(20, yPos),
             AutoSize = true,
-            Font = new Font("Segoe UI", 11F, FontStyle.Bold),
-            ForeColor = Color.FromArgb(196, 175, 142)
+            FontType = MaterialSkinManager.fontType.H6,
+            HighEmphasis = true
         };
-        _controlPanel.Controls.Add(_lblSourceLabel);
+        _controlCard.Controls.Add(_lblSourceLabel);
+        yPos += 35;
 
         // Source dropdown
-        _cmbAudioSources = new Guna2ComboBox
+        _cmbAudioSources = new ComboBox
         {
-            Location = new Point(25, 52),
-            Size = new Size(340, 36),
+            Location = new Point(20, yPos),
+            Size = new Size(400, 30),
             Font = new Font("Segoe UI", 10F),
-            ForeColor = Color.FromArgb(244, 240, 234),
-            FillColor = Color.FromArgb(58, 71, 80),
-            BorderRadius = 8,
-            BorderColor = Color.FromArgb(196, 175, 142)
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            BackColor = Color.FromArgb(55, 55, 55),
+            ForeColor = Color.White
         };
-        _controlPanel.Controls.Add(_cmbAudioSources);
-
-        // Enable Speaker Detection checkbox
-        _chkEnableSpeakerDetection = new Guna2CheckBox
-        {
-            Location = new Point(25, 95),
-            Size = new Size(200, 20),
-            Text = "Enable Speaker Detection",
-            Font = new Font("Segoe UI", 9F),
-            ForeColor = Color.FromArgb(196, 175, 142),
-            Checked = true,
-            CheckedState =
-        {
-            BorderColor = Color.FromArgb(196, 175, 142),
-            FillColor = Color.FromArgb(196, 175, 142)
-        }
-        };
-        _controlPanel.Controls.Add(_chkEnableSpeakerDetection);
+        _controlCard.Controls.Add(_cmbAudioSources);
 
         // Model label
-        _lblModel = new Label
+        _lblModel = new MaterialLabel
         {
             Text = "Model Quality",
-            Location = new Point(390, 25),
+            Location = new Point(440, 20),
             AutoSize = true,
-            Font = new Font("Segoe UI", 11F, FontStyle.Bold),
-            ForeColor = Color.FromArgb(196, 175, 142)
+            FontType = MaterialSkinManager.fontType.H6,
+            HighEmphasis = true
         };
-        _controlPanel.Controls.Add(_lblModel);
+        _controlCard.Controls.Add(_lblModel);
 
         // Model dropdown
-        _cmbModel = new Guna2ComboBox
+        _cmbModel = new ComboBox
         {
-            Location = new Point(390, 52),
-            Size = new Size(170, 36),
+            Location = new Point(440, 55),
+            Size = new Size(180, 30),
             Font = new Font("Segoe UI", 10F),
-            ForeColor = Color.FromArgb(244, 240, 234),
-            FillColor = Color.FromArgb(58, 71, 80),
-            BorderRadius = 8,
-            BorderColor = Color.FromArgb(196, 175, 142)
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            BackColor = Color.FromArgb(55, 55, 55),
+            ForeColor = Color.White
         };
         _cmbModel.Items.AddRange(new object[] { "Tiny (Fast)", "Base (Balanced)", "Small (Accurate)" });
         _cmbModel.SelectedIndex = 1;
         _cmbModel.SelectedIndexChanged += CmbModel_SelectedIndexChanged;
-        _controlPanel.Controls.Add(_cmbModel);
+        _controlCard.Controls.Add(_cmbModel);
 
         // Chunk size label
-        _lblChunkSize = new Label
+        _lblChunkSize = new MaterialLabel
         {
             Text = "Chunk Size",
-            Location = new Point(585, 25),
+            Location = new Point(640, 20),
             AutoSize = true,
-            Font = new Font("Segoe UI", 11F, FontStyle.Bold),
-            ForeColor = Color.FromArgb(196, 175, 142)
+            FontType = MaterialSkinManager.fontType.H6,
+            HighEmphasis = true
         };
-        _controlPanel.Controls.Add(_lblChunkSize);
+        _controlCard.Controls.Add(_lblChunkSize);
 
         // Chunk size dropdown
-        _cmbChunkSize = new Guna2ComboBox
+        _cmbChunkSize = new ComboBox
         {
-            Location = new Point(585, 52),
-            Size = new Size(170, 36),
+            Location = new Point(640, 55),
+            Size = new Size(180, 30),
             Font = new Font("Segoe UI", 10F),
-            ForeColor = Color.FromArgb(244, 240, 234),
-            FillColor = Color.FromArgb(58, 71, 80),
-            BorderRadius = 8,
-            BorderColor = Color.FromArgb(196, 175, 142)
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            BackColor = Color.FromArgb(55, 55, 55),
+            ForeColor = Color.White
         };
         _cmbChunkSize.Items.AddRange(new object[] { "5 seconds", "10 seconds", "15 seconds", "20 seconds" });
         _cmbChunkSize.SelectedIndex = 0;
-        _controlPanel.Controls.Add(_cmbChunkSize);
+        _controlCard.Controls.Add(_cmbChunkSize);
+
+        yPos = 100;
+
+        // Speaker detection checkbox
+        _chkEnableSpeakerDetection = new MaterialCheckbox
+        {
+            Text = "Enable Speaker Detection (Free, Local AI)",
+            Location = new Point(20, yPos),
+            AutoSize = true,
+            Checked = true
+        };
+        _controlCard.Controls.Add(_chkEnableSpeakerDetection);
+
+        yPos = 140;
 
         // Buttons
-        int btnY = 110;
-
-        _btnStart = CreateGunaButton("▶  Start Recording", new Point(25, btnY), Color.FromArgb(196, 175, 142));
+        _btnStart = new MaterialButton
+        {
+            Location = new Point(20, yPos),
+            Size = new Size(200, 45),
+            Text = "▶  START RECORDING",
+            Type = MaterialButton.MaterialButtonType.Contained,
+            UseAccentColor = true
+        };
         _btnStart.Click += BtnStart_Click;
-        _controlPanel.Controls.Add(_btnStart);
+        _controlCard.Controls.Add(_btnStart);
 
-        _btnStop = CreateGunaButton("⏹  Stop Recording", new Point(230, btnY), Color.FromArgb(217, 201, 167));
+        _btnStop = new MaterialButton
+        {
+            Location = new Point(230, yPos),
+            Size = new Size(200, 45),
+            Text = "⏹  STOP RECORDING",
+            Type = MaterialButton.MaterialButtonType.Contained,
+            Enabled = false
+        };
         _btnStop.Click += BtnStop_Click;
-        _btnStop.Enabled = false;
-        _controlPanel.Controls.Add(_btnStop);
+        _controlCard.Controls.Add(_btnStop);
 
-        _btnRefresh = CreateGunaButton("🔄  Refresh", new Point(435, btnY), Color.FromArgb(58, 71, 80));
+        _btnRefresh = new MaterialButton
+        {
+            Location = new Point(440, yPos),
+            Size = new Size(150, 45),
+            Text = "🔄 REFRESH",
+            Type = MaterialButton.MaterialButtonType.Outlined
+        };
         _btnRefresh.Click += BtnRefresh_Click;
-        _controlPanel.Controls.Add(_btnRefresh);
+        _controlCard.Controls.Add(_btnRefresh);
+
+        yPos = 200;
 
         // Queue status
-        _lblQueueStatus = new Label
+        _lblQueueStatus = new MaterialLabel
         {
             Text = "Queue: 0 pending | 0 processed | 0 skipped",
-            Location = new Point(25, 170),
-            AutoSize = false,
-            Size = new Size(730, 25),
-            Font = new Font("Segoe UI", 9F),
-            ForeColor = Color.FromArgb(217, 201, 167),
-            TextAlign = ContentAlignment.MiddleCenter
+            Location = new Point(20, yPos),
+            AutoSize = true,
+            FontType = MaterialSkinManager.fontType.Body2
         };
-        _controlPanel.Controls.Add(_lblQueueStatus);
+        _controlCard.Controls.Add(_lblQueueStatus);
 
-        // Performance info
-        var lblPerfInfo = new Label
+        yPos += 30;
+
+        // Info labels
+        var lblInfo1 = new MaterialLabel
         {
-            Text = "💡 Tiny = 4x faster, less accurate | Base = balanced | Small = slower, more accurate\n⚡ Larger chunks = less CPU usage | Queue skips chunks if falling behind",
-            Location = new Point(25, 200),
-            AutoSize = false,
-            Size = new Size(730, 40),
-            Font = new Font("Segoe UI", 8F),
-            ForeColor = Color.FromArgb(217, 201, 167)
+            Text = "💡 Tiny = 4x faster, less accurate | Base = balanced | Small = slower, more accurate",
+            Location = new Point(20, yPos),
+            AutoSize = true,
+            FontType = MaterialSkinManager.fontType.Caption
         };
-        _controlPanel.Controls.Add(lblPerfInfo);
+        _controlCard.Controls.Add(lblInfo1);
+
+        yPos += 25;
+
+        var lblInfo2 = new MaterialLabel
+        {
+            Text = "⚡ Larger chunks = less CPU usage | Queue skips chunks if falling behind",
+            Location = new Point(20, yPos),
+            AutoSize = true,
+            FontType = MaterialSkinManager.fontType.Caption
+        };
+        _controlCard.Controls.Add(lblInfo2);
     }
 
-    private void CreateTranscriptPanelControls()
+    private void CreateTranscriptCardControls()
     {
-        _lblTranscriptTitle = new Label
+        // Title
+        _lblTranscriptTitle = new MaterialLabel
         {
             Text = "Live Transcription",
-            Location = new Point(25, 25),
+            Location = new Point(20, 20),
             AutoSize = true,
-            Font = new Font("Segoe UI", 13F, FontStyle.Bold),
-            ForeColor = Color.FromArgb(196, 175, 142)
+            FontType = MaterialSkinManager.fontType.H5,
+            HighEmphasis = true
         };
-        _transcriptPanel.Controls.Add(_lblTranscriptTitle);
+        _transcriptCard.Controls.Add(_lblTranscriptTitle);
 
-        _lblTranscriptTitle = new Label
+        // Edit speakers button
+        _btnEditSpeakers = new MaterialButton
         {
-            Text = "Live Transcription",
-            Location = new Point(25, 25),
-            AutoSize = true,
-            Font = new Font("Segoe UI", 13F, FontStyle.Bold),
-            ForeColor = Color.FromArgb(196, 175, 142)
-        };
-        _transcriptPanel.Controls.Add(_lblTranscriptTitle);
-
-        // NEW: Edit Speakers Button
-        _btnEditSpeakers = new Guna2Button
-        {
-            Location = new Point(600, 20),
-            Size = new Size(155, 35),
-            Text = "✏️ Edit Speakers",
-            Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-            ForeColor = Color.FromArgb(26, 26, 26),
-            FillColor = Color.FromArgb(196, 175, 142),
-            BorderRadius = 6,
-            Cursor = Cursors.Hand,
-            Visible = false // Show only when speaker detection is on
+            Location = new Point(660, 15),
+            Size = new Size(160, 40),
+            Text = "✏️ EDIT SPEAKERS",
+            Type = MaterialButton.MaterialButtonType.Outlined,
+            Visible = false
         };
         _btnEditSpeakers.Click += BtnEditSpeakers_Click;
-        _transcriptPanel.Controls.Add(_btnEditSpeakers);
+        _transcriptCard.Controls.Add(_btnEditSpeakers);
 
-
-        _txtTranscript = new Guna2TextBox
+        // Transcript text box
+        _txtTranscript = new MaterialMultiLineTextBox
         {
-            Location = new Point(25, 60),
-            Size = new Size(730, 250),
-            Multiline = true,
+            Location = new Point(20, 70),
+            Size = new Size(800, 250),
             ReadOnly = true,
+            BackColor = Color.FromArgb(50, 50, 50),
             Font = new Font("Segoe UI", 10F),
-            BorderRadius = 8,
-            BorderColor = Color.FromArgb(196, 175, 142),
-            FillColor = Color.FromArgb(58, 71, 80),
-            ForeColor = Color.FromArgb(244, 240, 234),
-            PlaceholderText = "Transcription will appear here as you record...",
-            ScrollBars = ScrollBars.Vertical
+            Hint = "Transcription will appear here as you record..."
         };
-        _transcriptPanel.Controls.Add(_txtTranscript);
+        _transcriptCard.Controls.Add(_txtTranscript);
 
-        _lblInfo = new Label
+        // Info label
+        var lblInfo = new MaterialLabel
         {
             Text = "💡 Transcription appears in real-time based on chunk size\n⚠️ First run downloads selected Whisper model",
-            Location = new Point(25, 320),
-            AutoSize = false,
-            Size = new Size(730, 45),
-            Font = new Font("Segoe UI", 9F),
-            ForeColor = Color.FromArgb(217, 201, 167)
+            Location = new Point(20, 330),
+            AutoSize = true,
+            FontType = MaterialSkinManager.fontType.Caption
         };
-        _transcriptPanel.Controls.Add(_lblInfo);
-    }
-
-    private Guna2Button CreateGunaButton(string text, Point location, Color color)
-    {
-        var btn = new Guna2Button
-        {
-            Location = location,
-            Size = new Size(195, 45),
-            Text = text,
-            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-            ForeColor = Color.FromArgb(26, 26, 26),
-            FillColor = color,
-            BorderRadius = 8,
-            Cursor = Cursors.Hand
-        };
-
-        btn.HoverState.FillColor = Color.FromArgb(
-            Math.Min(255, color.R + 15),
-            Math.Min(255, color.G + 15),
-            Math.Min(255, color.B + 15)
-        );
-
-        return btn;
+        _transcriptCard.Controls.Add(lblInfo);
     }
 
     private void LoadAudioSources()
@@ -424,7 +388,6 @@ public class MainForm : Form
 
     private void RestoreSettings()
     {
-        // Restore model selection
         _cmbModel.SelectedIndex = _settings.SelectedModel switch
         {
             GgmlType.Tiny => 0,
@@ -432,7 +395,6 @@ public class MainForm : Form
             _ => 1
         };
 
-        // Restore chunk size
         _cmbChunkSize.SelectedIndex = _settings.ChunkDurationSeconds switch
         {
             10 => 1,
@@ -441,14 +403,12 @@ public class MainForm : Form
             _ => 0
         };
 
-        // Restore audio source if available
         var sourceIndex = _cmbAudioSources.Items.IndexOf(_settings.LastAudioSource);
         if (sourceIndex >= 0)
         {
             _cmbAudioSources.SelectedIndex = sourceIndex;
         }
 
-        // Restore speaker detection setting
         _chkEnableSpeakerDetection.Checked = _settings.EnableSpeakerDetection;
     }
 
@@ -474,7 +434,7 @@ public class MainForm : Form
             _settings.LastAudioSource = _cmbAudioSources.SelectedItem.ToString()!;
         }
 
-        _settings.EnableSpeakerDetection = _chkEnableSpeakerDetection.Checked; // NEW
+        _settings.EnableSpeakerDetection = _chkEnableSpeakerDetection.Checked;
 
         _settingsService.Save(_settings);
     }
@@ -535,12 +495,11 @@ public class MainForm : Form
         }
 
         _fullTranscript.Clear();
-        _transcriptWithSpeakers = new TranscriptWithSpeakers(); // NEW
-        _speakerDetectionService.Reset(); // NEW
+        _transcriptWithSpeakers = new TranscriptWithSpeakers();
+        _speakerDetectionService.Reset();
         _txtTranscript.Text = "";
-        _btnEditSpeakers.Visible = false; // NEW
+        _btnEditSpeakers.Visible = false;
 
-        // Restore saved speaker names
         foreach (var kvp in _settings.SpeakerNames)
         {
             _transcriptWithSpeakers.SpeakerNames[kvp.Key] = kvp.Value;
@@ -567,7 +526,7 @@ public class MainForm : Form
         _cmbChunkSize.Enabled = false;
         _cmbModel.Enabled = false;
         _btnRefresh.Enabled = false;
-        _chkEnableSpeakerDetection.Enabled = false; // NEW
+        _chkEnableSpeakerDetection.Enabled = false;
 
         _systemTrayService.SetRecordingState(true);
 
@@ -592,7 +551,6 @@ public class MainForm : Form
         LoadAudioSources();
         UpdateStatus("Audio sources refreshed");
     }
-
     private async void OnChunkReady(object? sender, (string audioPath, TimeSpan timestamp) data)
     {
         try
@@ -603,7 +561,6 @@ public class MainForm : Form
             {
                 if (_chkEnableSpeakerDetection.Checked)
                 {
-                    // Analyze speaker
                     var segment = _speakerDetectionService.AnalyzeAudioSegment(
                         data.audioPath,
                         transcription,
@@ -611,7 +568,6 @@ public class MainForm : Form
 
                     _transcriptWithSpeakers.Segments.Add(segment);
 
-                    // Update speaker names from saved settings
                     foreach (var kvp in _settings.SpeakerNames)
                     {
                         _transcriptWithSpeakers.SpeakerNames[kvp.Key] = kvp.Value;
@@ -620,18 +576,21 @@ public class MainForm : Form
                     this.Invoke(new Action(() =>
                     {
                         _txtTranscript.Text = _transcriptWithSpeakers.GetFormattedTranscript();
+                        _txtTranscript.SelectionStart = _txtTranscript.Text.Length;  // NEW
+                        _txtTranscript.ScrollToCaret();  // NEW
                         _btnEditSpeakers.Visible = true;
                     }));
                 }
                 else
                 {
-                    // No speaker detection - simple append
                     _fullTranscript.Append(" ");
                     _fullTranscript.Append(transcription);
 
                     this.Invoke(new Action(() =>
                     {
                         _txtTranscript.Text = _fullTranscript.ToString().Trim();
+                        _txtTranscript.SelectionStart = _txtTranscript.Text.Length;  // NEW
+                        _txtTranscript.ScrollToCaret();  // NEW
                     }));
                 }
             }
@@ -639,99 +598,6 @@ public class MainForm : Form
         catch (Exception ex)
         {
             Console.WriteLine($"Error transcribing chunk: {ex.Message}");
-        }
-    }
-
-    private void BtnEditSpeakers_Click(object? sender, EventArgs e)
-    {
-        var speakerIds = _transcriptWithSpeakers.Segments
-            .Select(s => s.SpeakerId)
-            .Distinct()
-            .OrderBy(id => id)
-            .ToList();
-
-        if (speakerIds.Count == 0)
-        {
-            MessageBox.Show("No speakers detected yet.", "Info",
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-
-        using var form = new Form
-        {
-            Text = "Edit Speaker Names",
-            Size = new Size(400, 300),
-            StartPosition = FormStartPosition.CenterParent,
-            FormBorderStyle = FormBorderStyle.FixedDialog,
-            MaximizeBox = false,
-            MinimizeBox = false,
-            BackColor = Color.FromArgb(244, 240, 234)
-        };
-
-        var panel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(20),
-            AutoScroll = true
-        };
-        form.Controls.Add(panel);
-
-        var textBoxes = new Dictionary<int, TextBox>();
-        int yPos = 10;
-
-        foreach (var speakerId in speakerIds)
-        {
-            var currentName = _transcriptWithSpeakers.SpeakerNames.ContainsKey(speakerId)
-                ? _transcriptWithSpeakers.SpeakerNames[speakerId]
-                : $"Speaker {speakerId}";
-
-            var label = new Label
-            {
-                Text = $"Speaker {speakerId}:",
-                Location = new Point(10, yPos),
-                AutoSize = true,
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(31, 42, 51)
-            };
-            panel.Controls.Add(label);
-
-            var textBox = new TextBox
-            {
-                Location = new Point(120, yPos - 3),
-                Size = new Size(220, 25),
-                Text = currentName,
-                Font = new Font("Segoe UI", 10F)
-            };
-            textBoxes[speakerId] = textBox;
-            panel.Controls.Add(textBox);
-
-            yPos += 40;
-        }
-
-        var btnSave = new Button
-        {
-            Text = "Save",
-            Location = new Point(150, yPos + 20),
-            Size = new Size(100, 35),
-            DialogResult = DialogResult.OK
-        };
-        panel.Controls.Add(btnSave);
-
-        if (form.ShowDialog() == DialogResult.OK)
-        {
-            foreach (var kvp in textBoxes)
-            {
-                var newName = kvp.Value.Text.Trim();
-                if (!string.IsNullOrEmpty(newName))
-                {
-                    _transcriptWithSpeakers.SpeakerNames[kvp.Key] = newName;
-                    _settings.SpeakerNames[kvp.Key] = newName;
-                }
-            }
-
-            _settingsService.Save(_settings);
-            _txtTranscript.Text = _transcriptWithSpeakers.GetFormattedTranscript();
-            UpdateStatus("Speaker names updated");
         }
     }
 
@@ -753,7 +619,7 @@ public class MainForm : Form
             _cmbChunkSize.Enabled = true;
             _cmbModel.Enabled = true;
             _btnRefresh.Enabled = true;
-            _chkEnableSpeakerDetection.Enabled = true; // NEW
+            _chkEnableSpeakerDetection.Enabled = true;
 
             _systemTrayService.SetRecordingState(false);
             UpdateStatus("⏳ Processing remaining audio...");
@@ -766,9 +632,113 @@ public class MainForm : Form
         });
     }
 
+    private void BtnEditSpeakers_Click(object? sender, EventArgs e)
+    {
+        var speakerIds = _transcriptWithSpeakers.Segments
+            .Select(s => s.SpeakerId)
+            .Distinct()
+            .OrderBy(id => id)
+            .ToList();
+
+        if (speakerIds.Count == 0)
+        {
+            MessageBox.Show("No speakers detected yet.", "Info",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var form = new Form
+        {
+            Text = "Edit Speaker Names",
+            Size = new Size(450, 350),
+            StartPosition = FormStartPosition.CenterParent,
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            MaximizeBox = false,
+            MinimizeBox = false,
+            BackColor = Color.FromArgb(50, 50, 50)
+        };
+
+        var panel = new Panel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(20),
+            AutoScroll = true,
+            BackColor = Color.FromArgb(50, 50, 50)
+        };
+        form.Controls.Add(panel);
+
+        var textBoxes = new Dictionary<int, TextBox>();
+        int yPos = 10;
+
+        foreach (var speakerId in speakerIds)
+        {
+            var currentName = _transcriptWithSpeakers.SpeakerNames.ContainsKey(speakerId)
+                ? _transcriptWithSpeakers.SpeakerNames[speakerId]
+                : $"Speaker {speakerId}";
+
+            var label = new Label
+            {
+                Text = $"Speaker {speakerId}:",
+                Location = new Point(10, yPos + 5),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = Color.White
+            };
+            panel.Controls.Add(label);
+
+            var textBox = new TextBox
+            {
+                Location = new Point(140, yPos),
+                Size = new Size(270, 30),
+                Text = currentName,
+                Font = new Font("Segoe UI", 11F),
+                BackColor = Color.FromArgb(70, 70, 70),
+                ForeColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            textBoxes[speakerId] = textBox;
+            panel.Controls.Add(textBox);
+
+            yPos += 45;
+        }
+
+        var btnSave = new Button
+        {
+            Text = "Save Changes",
+            Location = new Point(160, yPos + 20),
+            Size = new Size(130, 40),
+            DialogResult = DialogResult.OK,
+            BackColor = Color.FromArgb(255, 193, 7),
+            ForeColor = Color.Black,
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Segoe UI", 10F, FontStyle.Bold)
+        };
+        btnSave.FlatAppearance.BorderSize = 0;
+        panel.Controls.Add(btnSave);
+
+        if (form.ShowDialog() == DialogResult.OK)
+        {
+            foreach (var kvp in textBoxes)
+            {
+                var newName = kvp.Value.Text.Trim();
+                if (!string.IsNullOrEmpty(newName))
+                {
+                    _transcriptWithSpeakers.SpeakerNames[kvp.Key] = newName;
+                    _settings.SpeakerNames[kvp.Key] = newName;
+                }
+            }
+
+            _settingsService.Save(_settings);
+            _txtTranscript.Text = _transcriptWithSpeakers.GetFormattedTranscript();
+            UpdateStatus("Speaker names updated");
+        }
+    }
+
     private void PromptToSaveTranscript()
     {
-        string transcription = _fullTranscript.ToString().Trim();
+        string transcription = _chkEnableSpeakerDetection.Checked && _transcriptWithSpeakers.Segments.Count > 0
+            ? _transcriptWithSpeakers.GetFormattedTranscript()
+            : _fullTranscript.ToString().Trim();
 
         if (string.IsNullOrWhiteSpace(transcription))
         {
@@ -807,7 +777,7 @@ public class MainForm : Form
     {
         try
         {
-            var markdown = new System.Text.StringBuilder();
+            var markdown = new StringBuilder();
             markdown.AppendLine("# Audio Transcript");
             markdown.AppendLine();
             markdown.AppendLine($"**Date:** {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
@@ -821,16 +791,11 @@ public class MainForm : Form
                     markdown.AppendLine($"- **Speaker {kvp.Key}:** {kvp.Value}");
                 }
                 markdown.AppendLine();
-                markdown.AppendLine("## Transcription");
-                markdown.AppendLine();
-                markdown.AppendLine(_transcriptWithSpeakers.GetFormattedTranscript());
             }
-            else
-            {
-                markdown.AppendLine("## Transcription");
-                markdown.AppendLine();
-                markdown.AppendLine(transcription);
-            }
+
+            markdown.AppendLine("## Transcription");
+            markdown.AppendLine();
+            markdown.AppendLine(transcription);
 
             File.WriteAllText(filePath, markdown.ToString());
 
@@ -857,8 +822,6 @@ public class MainForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        // SystemTrayService handles minimize-to-tray
-        // This only fires on actual exit
         if (e.CloseReason != CloseReason.UserClosing)
         {
             SaveCurrentSettings();

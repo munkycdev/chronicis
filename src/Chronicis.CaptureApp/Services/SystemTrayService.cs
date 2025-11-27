@@ -1,6 +1,6 @@
 ﻿using Chronicis.CaptureApp.UI;
-using Chronicis.CaptureApp.Utilities;
 using System;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace Chronicis.CaptureApp.Services;
@@ -38,7 +38,7 @@ public class SystemTrayService : ISystemTrayService, IDisposable
         // Create tray icon
         _trayIcon = new NotifyIcon
         {
-            Icon = IconHelper.CreateDragonIcon(false),
+            Icon = CreateChronicisIcon(false),
             Text = "Chronicis Audio Capture",
             ContextMenuStrip = _contextMenu,
             Visible = true
@@ -56,7 +56,7 @@ public class SystemTrayService : ISystemTrayService, IDisposable
 
         if (_trayIcon != null)
         {
-            _trayIcon.Icon = IconHelper.CreateDragonIcon(isRecording);
+            _trayIcon.Icon = CreateChronicisIcon(isRecording);
         }
 
         if (_contextMenu != null)
@@ -72,6 +72,36 @@ public class SystemTrayService : ISystemTrayService, IDisposable
     public void ShowBalloonTip(string title, string message)
     {
         _trayIcon?.ShowBalloonTip(3000, title, message, ToolTipIcon.Info);
+    }
+
+    public static Icon CreateChronicisIcon(bool isRecording)
+    {
+        string iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chronicis.ico");
+
+        if (!isRecording)
+        {
+            // Not recording - just use the base icon
+            return new Icon(iconPath);
+        }
+
+        // Recording - add red dot overlay
+        using var baseIcon = new Icon(iconPath, 32, 32);
+        using var bitmap = baseIcon.ToBitmap();
+        using var g = Graphics.FromImage(bitmap);
+
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+
+        // Draw red recording indicator dot in bottom-right
+        using (var redBrush = new SolidBrush(Color.Red))
+        {
+            g.FillEllipse(redBrush, 20, 20, 12, 12);
+        }
+
+        // Convert bitmap back to icon
+        IntPtr hIcon = bitmap.GetHicon();
+        Icon icon = Icon.FromHandle(hIcon);
+
+        return icon;
     }
 
     private void OnStartRecording(object? sender, EventArgs e)
