@@ -11,13 +11,11 @@ namespace Chronicis.Api.Functions;
 
 public class UpdateArticle : ArticleBaseClass
 {
-    private readonly ChronicisDbContext _context;
     private readonly ArticleValidationService _validationService;
     private readonly IHashtagSyncService _hashtagSync;
 
-    public UpdateArticle(ChronicisDbContext context, ArticleValidationService validationService, IHashtagSyncService hashtagSync)
+    public UpdateArticle(ChronicisDbContext context, ArticleValidationService validationService, IHashtagSyncService hashtagSync) : base (context)
     {
-        _context = context;
         _validationService = validationService;
         _hashtagSync = hashtagSync;
     }
@@ -78,7 +76,7 @@ public class UpdateArticle : ArticleBaseClass
                 Body = article.Body,
                 CreatedDate = article.CreatedDate,
                 ModifiedDate = article.ModifiedDate,
-                HasChildren = article.Children.Any()
+                HasChildren = article?.Children?.Count > 0
             };
 
             var response = req.CreateResponse(HttpStatusCode.OK);

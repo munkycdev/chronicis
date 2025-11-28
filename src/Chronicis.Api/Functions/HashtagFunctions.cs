@@ -203,8 +203,8 @@ public class HashtagFunctions
             }
 
             // Get first 200 characters of body for preview
-            var previewText = hashtag.LinkedArticle.Body.Length > 200
-                ? hashtag.LinkedArticle.Body.Substring(0, 200) + "..."
+            var previewText = hashtag.LinkedArticle.Body?.Length > 200
+                ? string.Concat(hashtag.LinkedArticle.Body.AsSpan(0, 200), "...")
                 : hashtag.LinkedArticle.Body;
 
             var preview = new HashtagPreviewDto

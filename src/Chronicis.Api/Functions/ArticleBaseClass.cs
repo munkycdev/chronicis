@@ -11,13 +11,10 @@ namespace Chronicis.Api.Functions
         protected readonly JsonSerializerOptions _options;
         protected readonly ChronicisDbContext? _context;
 
-        public ArticleBaseClass()
+        public ArticleBaseClass(ChronicisDbContext context)
         {
-            _options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        }
+            ArgumentNullException.ThrowIfNull(context);
 
-        public ArticleBaseClass(ChronicisDbContext context) : this()
-        {
             _options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             _context = context;
         }

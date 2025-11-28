@@ -28,7 +28,7 @@ public class HashtagSyncService : IHashtagSyncService
         Console.WriteLine($"??? Body content: {body?.Substring(0, Math.Min(100, body?.Length ?? 0))}...");
 
         // Parse hashtags from the body
-        var parsedHashtags = _parser.ExtractHashtags(body);
+        var parsedHashtags = _parser.ExtractHashtags(body ?? string.Empty);
 
         Console.WriteLine($"??? Found {parsedHashtags.Count} hashtags: {string.Join(", ", parsedHashtags.Select(h => h.Name))}");
 

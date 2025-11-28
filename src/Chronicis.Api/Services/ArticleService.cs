@@ -87,9 +87,9 @@ namespace Chronicis.Api.Services
                 Id = article.Id,
                 Title = article.Title,
                 ParentId = article.ParentId,
-                Body = article.Body,
-                CreatedDate = article.CreatedDate,
-                ModifiedDate = article.ModifiedDate,
+                Body = article?.Body ?? string.Empty,
+                CreatedDate = article?.CreatedDate ?? DateTime.UtcNow,
+                ModifiedDate = article?.ModifiedDate ?? DateTime.UtcNow,
                 Breadcrumbs = breadcrumbs
             };
         }

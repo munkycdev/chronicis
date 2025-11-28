@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
+using Microsoft.VisualBasic;
 
 namespace Chronicis.Api.Functions;
 
@@ -105,19 +106,19 @@ public class ArticleSearchFunction
         
         foreach (var article in articles)
         {
-            var snippet = ExtractSnippet(article.Body, query, 200);
-            var breadcrumbs = await BuildBreadcrumbs(article.Id);
-            var slug = CreateSlug(article.Title);
+            var snippet = ExtractSnippet(article?.Body ?? string.Empty, query, 200);
+            var breadcrumbs = await BuildBreadcrumbs(article?.Id ?? 0);
+            var slug = CreateSlug(article?.Title ?? string.Empty);
             
             results.Add(new ArticleSearchResultDto
             {
-                Id = article.Id,
-                Title = string.IsNullOrEmpty(article.Title) ? "(Untitled)" : article.Title,
+                Id = article?.Id ?? 0,
+                Title = string.IsNullOrEmpty(article?.Title) ? "(Untitled)" : article.Title,
                 Slug = slug,
                 MatchSnippet = snippet,
                 MatchType = matchType,
                 AncestorPath = breadcrumbs,
-                LastModified = article.ModifiedDate ?? article.CreatedDate
+                LastModified = article?.ModifiedDate ?? article?.CreatedDate ?? DateTime.MinValue,
             });
         }
         

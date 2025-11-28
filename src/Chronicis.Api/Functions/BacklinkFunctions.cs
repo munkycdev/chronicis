@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Net;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Models;
 
 namespace Chronicis.Api.Functions;
 
@@ -25,8 +26,10 @@ public class BacklinkFunctions : ArticleBaseClass
 
         try
         {
+            if (_context == null)  throw new SystemException();
+
             // Get the target article
-            var targetArticle = await _context.Articles
+            Article? targetArticle = await _context.Articles
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (targetArticle == null)

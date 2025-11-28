@@ -12,12 +12,10 @@ namespace Chronicis.Api.Functions;
 
 public class CreateArticle : ArticleBaseClass
 {
-    private readonly ChronicisDbContext _context;
     private readonly ArticleValidationService _validationService;
 
-    public CreateArticle(ChronicisDbContext context, ArticleValidationService validationService)
+    public CreateArticle(ChronicisDbContext context, ArticleValidationService validationService) : base(context)
     {
-        _context = context;
         _validationService = validationService;
     }
 
@@ -28,9 +26,8 @@ public class CreateArticle : ArticleBaseClass
         try
         {
             // Parse request body
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var dto = await JsonSerializer.DeserializeAsync<ArticleCreateDto>(req.Body, _options);
-            
+
             if (dto == null)
             {
                 var badRequest = req.CreateResponse(HttpStatusCode.BadRequest);
