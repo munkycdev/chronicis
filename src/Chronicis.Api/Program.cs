@@ -27,6 +27,8 @@ var host = new HostBuilder()
             options.UseSqlServer(configuration.GetConnectionString("ChronicisDb")));
 
         // Your services
+        services.AddScoped<IArticleService, ArticleService>();
+        services.AddScoped<ArticleValidationService>();
         services.AddScoped<IHashtagParser, HashtagParser>();
         services.AddScoped<IHashtagSyncService, HashtagSyncService>();
         services.AddScoped<IAISummaryService, AISummaryService>();
