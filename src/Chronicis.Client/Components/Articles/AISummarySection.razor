@@ -1,0 +1,240 @@
+@using Chronicis.Shared.DTOs
+@inject IAISummaryApiService SummaryApi
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+
+<div class="ai-summary-section">
+    <div class="ai-summary-header" @onclick="ToggleExpanded">
+        <div class="header-left">
+            <MudIcon Icon="@(IsExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" 
+                     Size="Size.Small" />
+            <MudText Typo="Typo.h6">AI Summary</MudText>
+            @if (_summaryData?.HasSummary == true)
+            {
+                <MudText Typo="Typo.caption" Class="summary-timestamp">
+                    Generated @GetRelativeTime(_summaryData.GeneratedDate!.Value)
+                </MudText>
+            }
+        </div>
+        @if (!IsExpanded && _summaryData?.HasSummary == true)
+        {
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" 
+                     Color="Color.Success" 
+                     Size="Size.Small" />
+        }
+    </div>
+
+    @if (IsExpanded)
+    {
+        <div class="ai-summary-content">
+            @if (_isLoading)
+            {
+                <div class="loading-container">
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                    <MudText Typo="Typo.body2">@_loadingMessage</MudText>
+                </div>
+            }
+            else if (_summaryData?.HasSummary == true)
+            {
+                <div class="summary-text">
+                    <MudText Typo="Typo.body1">@_summaryData.Summary</MudText>
+                </div>
+                <div class="summary-actions">
+                    <MudButton StartIcon="@Icons.Material.Filled.Refresh"
+                               Size="Size.Small"
+                               Variant="Variant.Text"
+                               Color="Color.Primary"
+                               OnClick="RegenerateSummary">
+                        Regenerate
+                    </MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.ContentCopy"
+                               Size="Size.Small"
+                               Variant="Variant.Text"
+                               OnClick="CopySummary">
+                        Copy
+                    </MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Delete"
+                               Size="Size.Small"
+                               Variant="Variant.Text"
+                               Color="Color.Error"
+                               OnClick="ClearSummary">
+                        Clear
+                    </MudButton>
+                </div>
+            }
+            else if (_estimate != null)
+            {
+                <div class="generate-prompt">
+                    <MudText Typo="Typo.body2" Class="mb-2">
+                        No summary generated yet.
+                    </MudText>
+                    
+                    @if (_estimate.BacklinkCount == 0)
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+                            This article is not referenced by any other articles yet. 
+                            Add hashtags linking to this article in your campaign notes to generate a summary.
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <div class="estimate-info">
+                            <MudText Typo="Typo.caption">
+                                <strong>Backlinks:</strong> @_estimate.BacklinkCount article@(_estimate.BacklinkCount == 1 ? "" : "s")
+                            </MudText>
+                            <MudText Typo="Typo.caption">
+                                <strong>Estimated tokens:</strong> ~@_estimate.EstimatedInputTokens input, ~@_estimate.EstimatedOutputTokens output
+                            </MudText>
+                            <MudText Typo="Typo.caption">
+                                <strong>Estimated cost:</strong> ~$@_estimate.EstimatedCostUSD.ToString("F4")
+                            </MudText>
+                        </div>
+
+                        <MudButton StartIcon="@Icons.Material.Filled.Psychology"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Class="mt-3"
+                                   OnClick="GenerateSummary"
+                                   Disabled="_isLoading">
+                            Generate AI Summary
+                        </MudButton>
+                    }
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">
+                    @_errorMessage
+                </MudAlert>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int ArticleId { get; set; }
+
+    [Parameter]
+    public bool IsExpanded { get; set; } = false;
+
+    [Parameter]
+    public EventCallback<bool> IsExpandedChanged { get; set; }
+
+    private ArticleSummaryDto? _summaryData;
+    private SummaryEstimateDto? _estimate;
+    private bool _isLoading = false;
+    private string _loadingMessage = "";
+    private string _errorMessage = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadSummaryData();
+    }
+
+    private async Task LoadSummaryData()
+    {
+        _errorMessage = "";
+        
+        // Load existing summary
+        _summaryData = await SummaryApi.GetSummaryAsync(ArticleId);
+        
+        // Load estimate if no summary exists
+        if (_summaryData?.HasSummary != true)
+        {
+            _estimate = await SummaryApi.GetEstimateAsync(ArticleId);
+        }
+    }
+
+    private async Task GenerateSummary()
+    {
+        _isLoading = true;
+        _loadingMessage = "Analyzing backlinks and generating summary...";
+        _errorMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            var result = await SummaryApi.GenerateSummaryAsync(ArticleId);
+            
+            if (result?.Success == true)
+            {
+                _summaryData = new ArticleSummaryDto
+                {
+                    ArticleId = ArticleId,
+                    Summary = result.Summary,
+                    GeneratedDate = result.GeneratedDate
+                };
+                
+                Snackbar.Add(
+                    $"Summary generated! Tokens: {result.TokensUsed}, Cost: ${result.ActualCostUSD:F4}", 
+                    Severity.Success);
+            }
+            else
+            {
+                _errorMessage = result?.ErrorMessage ?? "Unknown error occurred";
+                Snackbar.Add(_errorMessage, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error: {ex.Message}";
+            Snackbar.Add(_errorMessage, Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RegenerateSummary()
+    {
+        // Clear and regenerate
+        await ClearSummary();
+        await GenerateSummary();
+    }
+
+    private async Task ClearSummary()
+    {
+        var success = await SummaryApi.ClearSummaryAsync(ArticleId);
+        if (success)
+        {
+            _summaryData = null;
+            await LoadSummaryData();
+            Snackbar.Add("Summary cleared", Severity.Info);
+        }
+        else
+        {
+            Snackbar.Add("Error clearing summary", Severity.Error);
+        }
+    }
+
+    private async Task CopySummary()
+    {
+        if (_summaryData?.Summary != null)
+        {
+            // Note: Blazor WASM clipboard API
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", _summaryData.Summary);
+            Snackbar.Add("Summary copied to clipboard", Severity.Success);
+        }
+    }
+
+    private async Task ToggleExpanded()
+    {
+        IsExpanded = !IsExpanded;
+        await IsExpandedChanged.InvokeAsync(IsExpanded);
+    }
+
+    private string GetRelativeTime(DateTime date)
+    {
+        var span = DateTime.UtcNow - date;
+        
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        if (span.TotalDays < 7) return $"{(int)span.TotalDays}d ago";
+        
+        return date.ToLocalTime().ToString("MMM d, yyyy");
+    }
+}

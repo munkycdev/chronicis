@@ -97,6 +97,11 @@ else
         <!-- TipTap Editor Container (from Phase 4) -->
         <div id="tiptap-editor-@_article.Id" class="chronicis-editor-container mb-4"></div>
 
+        <!-- AI Summary Section -->
+        <AISummarySection ArticleId="@_article.Id"
+                          IsExpanded="@_isSummaryExpanded"
+                          IsExpandedChanged="@((expanded) => _isSummaryExpanded = expanded)" />
+
         <!-- Save Status -->
         <div class="chronicis-flex-between mt-4">
             <div class="chronicis-save-status @_saveStatusClass">
@@ -206,6 +211,7 @@ else
     private MudTextField<string>? _titleField;
     private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
     private bool _openMetadata = false;
+    private bool _isSummaryExpanded = false;
 
     private string _saveStatusClass => _isSaving ? "saving" : _hasUnsavedChanges ? "unsaved" : "saved";
 

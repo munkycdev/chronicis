@@ -1,0 +1,88 @@
+/* AI Summary Section Styles */
+/* Add to wwwroot/css/app.css or create new chronicis-ai-summary.css */
+
+.ai-summary-section {
+    margin-top: 2rem;
+    border: 1px solid rgba(196, 175, 142, 0.3);
+    border-radius: 8px;
+    background-color: rgba(244, 240, 234, 0.5);
+    overflow: hidden;
+}
+
+.ai-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.ai-summary-header:hover {
+    background-color: rgba(196, 175, 142, 0.1);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.summary-timestamp {
+    color: #666;
+    margin-left: 0.5rem;
+}
+
+.ai-summary-content {
+    padding: 1rem;
+    border-top: 1px solid rgba(196, 175, 142, 0.2);
+}
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+}
+
+.summary-text {
+    padding: 1rem;
+    background-color: white;
+    border-radius: 6px;
+    border-left: 4px solid #C4AF8E;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.summary-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    justify-content: flex-end;
+}
+
+.generate-prompt {
+    padding: 1rem;
+}
+
+.estimate-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    background-color: rgba(196, 175, 142, 0.1);
+    border-radius: 6px;
+    margin-top: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .summary-actions {
+        flex-direction: column;
+    }
+    
+    .summary-actions button {
+        width: 100%;
+    }
+}
