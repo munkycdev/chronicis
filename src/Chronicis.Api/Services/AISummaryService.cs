@@ -25,7 +25,7 @@ public class AISummaryService : IAISummaryService
 
     // Pricing constants (GPT-4 as of Nov 2024)
     private const decimal INPUT_TOKEN_COST_PER_1K = 0.00040m;   // Cost per 1K input tokens for gpt-4.1-mini
-    private const decimal OUTPUT_TOKEN_COST_PER_1K = 0.00160m;  // $0.06 per 1K output tokens for gpt-4.1-mini
+    private const decimal OUTPUT_TOKEN_COST_PER_1K = 0.00176m;  // $0.06 per 1K output tokens for gpt-4.1-mini
     private const int CHARS_PER_TOKEN = 4; // Rough estimate: 1 token ≈ 4 characters
 
     public AISummaryService(
