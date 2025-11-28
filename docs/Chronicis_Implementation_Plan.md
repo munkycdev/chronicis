@@ -1,7 +1,22 @@
 # Chronicis Implementation Plan - Complete Reference
 
-**Version:** 1.6 | **Date:** November 27, 2025  
+**Version:** 1.7 | **Date:** November 27, 2025  
 **Purpose:** Complete phase-by-phase implementation guide with detailed specifications
+
+**CHANGES IN v1.7:**
+- Phase 8: **COMPLETE** with full AI summary generation system
+- Phase 8: Azure OpenAI integration with GPT-4.1-mini deployment
+- Phase 8: Database migration for AI summary storage (AISummary, AISummaryGeneratedDate columns)
+- Phase 8: AISummaryService with cost estimation and generation
+- Phase 8: Configuration-driven prompts (easy to tune without redeployment)
+- Phase 8: Pre-generation cost estimates (tokens, USD)
+- Phase 8: Token limits and content truncation safeguards
+- Phase 8: Frontend UI with collapsible summary section
+- Phase 8: Copy, regenerate, and clear summary actions
+- Phase 8: Application Insights logging for usage tracking
+- Phase 8: Azure OpenAI SDK 2.1.0 compatibility
+- Phase 8: Proper IConfiguration injection in Azure Functions isolated worker
+- All Phase 8 features tested and working end-to-end
 
 **CHANGES IN v1.6:**
 - Phase 7: **COMPLETE** with full interactive hashtag system
@@ -45,30 +60,6 @@
 - Phase 3: Updated search to use title-only endpoint for tree navigation
 - All Phase 5 features tested and working
 
-**CHANGES IN v1.3:**
-- Phase 5: Complete implementation with all fixes from November 25 troubleshooting session
-- Phase 5: Custom navigation tree with expand arrows before icons
-- Phase 5: Fixed TreeStateService to use SelectedArticleId instead of SelectedArticle
-- Phase 5: Auto-focus title field for new articles
-- Phase 5: Auto-expand parent on selection
-- Phase 5: Delete article selects and expands parent
-- Phase 5: Context menu opacity solution for menu persistence
-- Phase 5: Fixed ChildCount calculation in API recursive mapping
-- Phase 5: Empty article titles show as "(Untitled)" in nav
-- Phase 5: Comprehensive CSS fixes for nav spacing
-
-**CHANGES IN v1.2:**
-- Phase 4: Complete rewrite using TipTap v3.11.0 WYSIWYG editor
-- Phase 4: ES modules via esm.sh CDN (no local downloads needed)
-- Phase 4: Added Blazor lifecycle solution for article switching
-- Phase 4: Documented CSS overrides for MudBlazor conflicts
-- Phase 4: Updated installation time and file requirements
-
-**CHANGES IN v1.1:**
-- Phase 2: Updated to reflect inline editing paradigm (no modal dialogs)
-- Phase 4: Updated to work with inline ArticleDetail editor
-- Added notes about ArticleEditor component removal
-
 ---
 
 ## Quick Navigation
@@ -108,9 +99,9 @@
 | 4 | Markdown & Rich Content | 1 | ? Complete | TipTap WYSIWYG editor, rendering |
 | 5 | Visual Design & Polish | 1 | ? Complete | Style guide, UX, dashboard, routing |
 | 6 | Hashtag System | 1 | ? Complete | Parsing, visual styling, storage, API |
-| 7 | Backlinks & Graph | 1 | ? **COMPLETE** | Backlinks panel, tooltips, navigation, linking UI |
-| 8 | AI Summaries | 2 | ?? Next | OpenAI integration, summary generation |
-| 9 | Advanced Search | 1 | ? Pending | Full-text, content search |
+| 7 | Backlinks & Graph | 1 | ? Complete | Backlinks panel, tooltips, navigation, linking UI |
+| 8 | AI Summaries | 2 | ? **COMPLETE** | Azure OpenAI integration, summary generation, cost controls |
+| 9 | Advanced Search | 1 | ?? Next | Full-text, content search |
 | 10 | Drag & Drop | 1 | ? Pending | Tree reorganization |
 | 11 | Icons & Polish | 1 | ? Pending | Custom icons, final touches |
 | 12 | Testing & Deploy | 2 | ? Pending | E2E tests, optimization, production |
@@ -279,32 +270,6 @@ public class Article {
 - Empty state for no results
 - **NEW in v1.4:** Uses title-only API endpoint for tree search
 
-### API Implementation
-
-**ArticleSearchFunction.cs:**
-```csharp
-[Function("SearchArticlesByTitle")]
-public async Task<HttpResponseData> SearchArticlesByTitle(
-    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/search/title")] 
-    HttpRequestData req)
-{
-    // SQL query: WHERE EF.Functions.Like(a.Title, $"%{query}%")
-    // Returns only articles with matching titles
-    // Builds ancestor paths for tree expansion
-}
-```
-
-**TreeStateService.cs:**
-```csharp
-public async Task SearchAsync(string query)
-{
-    // Uses SearchArticlesByTitleAsync instead of SearchArticlesAsync
-    _searchResults = await _apiService.SearchArticlesByTitleAsync(_searchQuery);
-    // Builds visible node set with ancestors
-    // Auto-expands ancestor paths
-}
-```
-
 ### Performance Benefits
 
 - 60% faster (database filtering vs client-side)
@@ -377,27 +342,6 @@ public async Task SearchAsync(string query)
    - Handle article switching with proper cleanup
    - Fix Blazor lifecycle race condition
 
-**Key Implementation Details:**
-
-**TipTap Integration:**
-```csharp
-[JSInvokable]
-public void OnEditorUpdate(string markdown) {
-    _editBody = markdown;
-    OnContentChanged(); // Triggers auto-save
-}
-
-protected override async Task OnAfterRenderAsync(bool firstRender) {
-    // ONLY handle first render
-    if (firstRender && TreeState.SelectedArticleId.HasValue) {
-        await LoadArticleAsync(TreeState.SelectedArticleId.Value);
-        StateHasChanged();
-        await Task.Delay(100);
-        await InitializeEditor();
-    }
-}
-```
-
 ### Success Criteria
 
 1. ? Type `**bold**` ? immediately becomes **bold**
@@ -439,21 +383,6 @@ protected override async Task OnAfterRenderAsync(bool firstRender) {
 - **Pro Tips Card:** Search, hierarchy, and auto-save tips
 - **Inspirational Quote:** Random quote from Quotable API with refresh button
 
-**Files:**
-- `Home.razor` - Complete dashboard with conditional rendering
-- `chronicis-home.css` - Animations, hover effects, stat cards
-
-**API Integration:**
-```csharp
-public interface IQuoteService
-{
-    Task<QuoteDto> GetRandomQuoteAsync();
-}
-
-// Uses: https://api.quotable.io/quotes/random?maxLength=200
-// No authentication required, no CORS issues
-```
-
 #### 2. URL-Based Routing with Slugs
 
 **Routes:**
@@ -471,192 +400,34 @@ private static string CreateSlug(string title)
 }
 ```
 
-**Features:**
-- Readable URLs: `/article/waterdeep` vs `/article/42`
-- SEO friendly
-- Bookmarkable and shareable
-- Deep linking works
-- URL updates when title changes
-
-**Navigation Flow:**
-```
-User clicks article ? 
-TreeStateService.NotifySelectionChanged(id) ? 
-ArticleTreeView navigates to slug ? 
-Home.razor loads article by slug ? 
-ArticleDetail displays content
-```
-
 #### 3. Browser Page Title Updates
 
-**Implementation:**
 ```csharp
 // In ArticleDetail.LoadArticleAsync()
 var pageTitle = string.IsNullOrEmpty(_article.Title) 
     ? "Untitled - Chronicis" 
     : $"{_article.Title} - Chronicis";
 await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(pageTitle)}'");
-
-// Resets to "Chronicis" when no article selected
 ```
 
-**Benefits:**
-- Browser tabs show article names
-- Easy to identify which article you're viewing
-- Works with bookmarks and browser history
-- Professional UX
-
 #### 4. Title Save Behavior (Manual Only)
-
-**Changed in v1.4:**
 
 **Title Field:**
 - No auto-save
 - Requires Save button click OR Enter key
 - `Immediate="true"` binding for instant updates
-- `@onkeydown` handler for Enter key
 
 **Body Field:**
 - Auto-save continues (0.5s delay)
 - No manual save needed
-- TipTap triggers `OnContentChanged()`
-
-**Implementation:**
-```csharp
-private void OnTitleChanged()
-{
-    _hasUnsavedChanges = true;
-    // NO auto-save timer
-}
-
-private void OnContentChanged()
-{
-    _hasUnsavedChanges = true;
-    _autoSaveTimer?.Dispose();
-    _autoSaveTimer = new Timer(async _ => await AutoSave(), null, 500, Timeout.Infinite);
-}
-
-private async Task OnTitleKeyDown(KeyboardEventArgs e)
-{
-    if (e.Key == "Enter")
-    {
-        await SaveArticle();
-    }
-}
-```
-
-**Benefits:**
-- Users can edit and revise titles before committing
-- No accidental saves while typing
-- URLs stay clean (don't change mid-edit)
-- Body convenience preserved (auto-save)
 
 #### 5. Tree Expansion After Title Change
 
-**Problem:** When title changed, tree refreshed but didn't expand to show the article.
-
-**Solution:** New `ExpandAndSelectArticle` event in TreeStateService
-
-**ITreeStateService.cs:**
-```csharp
-void ExpandAndSelectArticle(int articleId);
-event Action<int>? OnExpandAndSelect;
-```
-
-**TreeStateService.cs:**
-```csharp
-public void ExpandAndSelectArticle(int articleId)
-{
-    SelectedArticleId = articleId;
-    OnExpandAndSelect?.Invoke(articleId);
-    NotifyStateChanged();
-}
-```
-
-**ArticleTreeView.razor:**
-```csharp
-protected override async Task OnInitializedAsync()
-{
-    TreeState.OnExpandAndSelect += OnExpandAndSelectRequested;
-}
-
-private async void OnExpandAndSelectRequested(int articleId)
-{
-    await InvokeAsync(async () =>
-    {
-        await ExpandAndSelectNode(articleId); // Uses breadcrumbs!
-    });
-}
-```
-
-**ArticleDetail.SaveArticle():**
-```csharp
-if (titleChanged)
-{
-    TreeState.RefreshTree();
-    await Task.Delay(500);
-    TreeState.ExpandAndSelectArticle(_article.Id); // NEW!
-    Navigation.NavigateTo($"/article/{newSlug}", replace: true);
-}
-```
-
-**Why It Works:**
-- `ExpandAndSelectNode()` uses breadcrumbs API to get full ancestor path
-- Expands each ancestor in order
-- Loads children as needed
-- Same proven logic as delete-parent-selection
+**ExpandAndSelectArticle** event in TreeStateService ensures tree expands to show article after title changes.
 
 #### 6. Logo Navigation to Dashboard
 
-**MainLayout.razor:**
-```csharp
-<div class="d-flex align-center chronicis-home-link" 
-     @onclick="NavigateHome" 
-     style="cursor: pointer;">
-    <img src="/images/logo.png" />
-    <MudText>Chronicis</MudText>
-</div>
-
-private void NavigateHome()
-{
-    TreeState.NotifySelectionChanged(0); // 0 = no selection
-    Navigation.NavigateTo("/");
-}
-```
-
-**Home.razor:**
-```csharp
-@if (TreeStateService.SelectedArticleId.HasValue && 
-     TreeServiceService.SelectedArticleId.Value > 0)
-{
-    <ArticleDetail />
-}
-else
-{
-    <!-- Dashboard -->
-}
-```
-
-**ArticleDetail.OnTreeStateChanged():**
-```csharp
-if (TreeState.SelectedArticleId.HasValue && 
-    TreeState.SelectedArticleId.Value > 0)
-{
-    await LoadArticleAsync(TreeState.SelectedArticleId.Value);
-}
-else
-{
-    _article = null;
-    await JSRuntime.InvokeVoidAsync("eval", "document.title = 'Chronicis'");
-}
-```
-
-**Benefits:**
-- Natural navigation pattern
-- Clears article selection
-- Shows dashboard
-- Resets page title
-- No errors
+Clicking logo clears selection and returns to dashboard.
 
 #### 7. Title-Only Tree Search API
 
@@ -665,132 +436,18 @@ else
 GET /api/articles/search/title?query={term}
 ```
 
-**ArticleSearchFunction.cs:**
-```csharp
-[Function("SearchArticlesByTitle")]
-public async Task<HttpResponseData> SearchArticlesByTitle(...)
-{
-    var matchingArticles = await _context.Articles
-        .Where(a => EF.Functions.Like(a.Title, $"%{query}%")) // Title only!
-        .OrderBy(a => a.Title)
-        .Select(...)
-        .ToListAsync();
-    
-    // Build ancestor paths in-memory
-    foreach (var article in matchingArticles)
-    {
-        var ancestorPath = await BuildAncestorPath(article.Id);
-        // Add to results
-    }
-}
-```
-
-**Performance:**
-- 60% faster (database filtering)
-- 80% less data transferred
-- Scalable to thousands of articles
-- SQL can use indexes
-
-**TreeStateService Update:**
-```csharp
-public async Task SearchAsync(string query)
-{
-    // Changed from SearchArticlesAsync to SearchArticlesByTitleAsync
-    _searchResults = await _apiService.SearchArticlesByTitleAsync(_searchQuery);
-}
-```
-
-### DTO Model Updates
-
-**Complete DTO Cleanup:**
-All DTOs cleaned and consolidated in `Chronicis.Shared/DTOs/ArticleDto.cs`:
-
-1. **ArticleDto** (full article with all details)
-   - Id, Title, ParentId, Body
-   - CreatedDate, ModifiedDate, EffectiveDate
-   - HasChildren, ChildCount, Children (nullable)
-   - Breadcrumbs list
-   - IconEmoji (nullable)
-
-2. **ArticleTreeDto** (lightweight for tree navigation)
-   - Id, Title, ParentId
-   - HasChildren, ChildCount, Children (nullable)
-   - CreatedDate, EffectiveDate
-   - IconEmoji (nullable)
-
-3. **ArticleCreateDto** (POST requests)
-   - Title (can be empty string)
-   - ParentId (nullable)
-   - Body
-   - EffectiveDate (nullable, defaults to CreatedDate if null)
-
-4. **ArticleUpdateDto** (PUT requests)
-   - Title
-   - Body
-   - EffectiveDate (nullable)
-   - IconEmoji (nullable)
-
-5. **BreadcrumbDto** (navigation paths)
-   - Id, Title
-
-6. **ArticleSearchResultDto** (search results)
-   - Id, Title, Body
-   - MatchSnippet (search context)
-   - AncestorPath (breadcrumb list)
-   - CreatedDate, EffectiveDate
-
-### Visual Design
-
-**Custom MudBlazor theme:**
-```csharp
-var chronicisTheme = new MudTheme
-{
-    PaletteLight = new PaletteLight
-    {
-        Primary = "#C4AF8E",           // Beige-Gold
-        Secondary = "#3A4750",         // Slate Grey
-        Background = "#F4F0EA",        // Soft Off-White
-        AppbarBackground = "#1F2A33",  // Deep Blue-Grey
-        DrawerBackground = "#1F2A33",  // Deep Blue-Grey
-        // ... complete theme in Program.cs
-    }
-};
-```
-
-**Typography:**
-- Spellweaver Display for headings
-- Roboto for body text
-- Custom spacing and sizing
-
-**Shadows & Effects:**
-- Soft gold glow on hover
-- Smooth transitions (300ms)
-- Subtle elevation changes
-
-### Color Palette
-
-- **Deep Blue-Grey:** `#1F2A33`
-- **Beige-Gold:** `#C4AF8E`
-- **Slate Grey:** `#3A4750`
-- **Soft Off-White:** `#F4F0EA`
-- **Charcoal Text:** `#1A1A1A`
-
 ### Success Criteria
 
 1. ? App matches style guide visually
 2. ? All hover states work with gold glow
-3. ? Loading states prevent confusion
-4. ? Errors handled gracefully
-5. ? Inline editor feels polished and professional
-6. ? Enhanced dashboard provides campaign overview
-7. ? URL routing with slugs works perfectly
-8. ? Browser page titles update dynamically
-9. ? Title save requires manual action (Save button or Enter)
-10. ? Body auto-save continues to work
-11. ? Tree expands after title change
-12. ? Logo navigation returns to dashboard
-13. ? Tree search only searches titles (not body)
-14. ? All features tested and working
+3. ? Enhanced dashboard provides campaign overview
+4. ? URL routing with slugs works perfectly
+5. ? Browser page titles update dynamically
+6. ? Title save requires manual action
+7. ? Body auto-save continues to work
+8. ? Tree expands after title change
+9. ? Logo navigation returns to dashboard
+10. ? Tree search only searches titles
 
 ---
 
@@ -802,83 +459,57 @@ var chronicisTheme = new MudTheme
 
 **Goal:** Implement hashtag parsing, storage, and visual styling
 
-**Completed:** November 26, 2025  
-**Implementation Time:** ~4 hours (including troubleshooting)
-
-### Overview
-
-Complete hashtag infrastructure that automatically detects, styles, and stores hashtags from D&D campaign notes. Phase 6 focuses on the foundation: parsing, storage, and visual styling. Phase 7 adds interactivity.
+**Completed:** November 26, 2025
 
 ### Backend
 
 **Database Schema:**
 
 ```sql
--- Hashtags table
 CREATE TABLE Hashtags (
     Id INT PRIMARY KEY IDENTITY,
-    Name NVARCHAR(100) UNIQUE NOT NULL,  -- lowercase, case-insensitive
-    LinkedArticleId INT NULL,             -- Links to article
+    Name NVARCHAR(100) UNIQUE NOT NULL,
+    LinkedArticleId INT NULL,
     CreatedDate DATETIME2 NOT NULL
 );
 
--- ArticleHashtags junction (many-to-many)
 CREATE TABLE ArticleHashtags (
     Id INT PRIMARY KEY IDENTITY,
     ArticleId INT NOT NULL,
     HashtagId INT NOT NULL,
-    Position INT NOT NULL,                -- character position in text
-    CreatedDate DATETIME2 NOT NULL,
-    FOREIGN KEY (ArticleId) REFERENCES Articles(Id) ON DELETE CASCADE,
-    FOREIGN KEY (HashtagId) REFERENCES Hashtags(Id) ON DELETE CASCADE
+    Position INT NOT NULL,
+    CreatedDate DATETIME2 NOT NULL
 );
 ```
 
 **Services:**
-
-1. **HashtagParser** - Regex extraction of hashtags
-2. **HashtagSyncService** - Automatic sync on article save
+1. **HashtagParser** - Regex extraction
+2. **HashtagSyncService** - Automatic sync on save
 3. **HashtagFunctions** - API endpoints
-
-**API Endpoints:**
-
-- GET /api/hashtags - All hashtags with usage counts
-- GET /api/hashtags/{name} - Specific hashtag
-- POST /api/hashtags/{name}/link - Link hashtag to article
 
 ### Frontend
 
 **TipTap Mark Extension:**
-
 - Detects hashtags as you type
 - Triggers on space after hashtag
 - Renders styled `<span>` elements
-- Prevents mark from extending
 
 **Visual Styling:**
-
 - Beige-gold color (#C4AF8E)
 - Hover effects with gold glow
 - Smooth transitions
-
-**HTML ? Markdown Conversion:**
-
-- Hashtags preserved through round-trip
-- Markdown: `#waterdeep`
-- HTML: `<span data-type="hashtag">#waterdeep</span>`
 
 ### Success Criteria
 
 1. ? Type `#Waterdeep ` ? Styles in beige-gold after space
 2. ? Type after hashtag ? Plain text (not styled)
-3. ? Auto-save (0.5s) ? Saves to database correctly
+3. ? Auto-save ? Saves to database correctly
 4. ? Multiple hashtags ? All styled and saved
-5. ? Case insensitive ? `#Waterdeep` = `#waterdeep` in database
+5. ? Case insensitive ? `#Waterdeep` = `#waterdeep`
 6. ? Reload page ? Hashtags appear styled
-7. ? Edit/remove hashtag ? Database updates correctly
-8. ? Cursor works perfectly ? No jumping or freezing
-9. ? Hover effect ? Subtle gold glow
-10. ? Works in all contexts ? Paragraphs, lists, headers
+7. ? Cursor works perfectly
+8. ? Hover effect ? Gold glow
+9. ? Works in all contexts
 
 ---
 
@@ -886,388 +517,54 @@ CREATE TABLE ArticleHashtags (
 
 ## Phase 7: Backlinks & Entity Graph
 
-**Status:** ? **COMPLETE** (v1.6)
+**Status:** ? Complete (v1.6)
 
 **Goal:** Display article relationships and enable hashtag linking
 
-**Completed:** November 27, 2025  
-**Implementation Time:** ~3 hours  
-**Result:** Worked on first implementation! ??
-
-### Overview
-
-Phase 7 makes hashtags fully interactive, showing which articles reference each other and providing a complete UI for managing hashtag relationships. No SQL required!
+**Completed:** November 27, 2025
 
 ### Backend
 
 **API Endpoints:**
-
-1. **GET /api/articles/{id}/backlinks**
-   - Returns articles that reference this article via hashtags
-   - Includes hashtag names and mention counts
-   - Filters out the source article itself
-   - Orders by last modified date
-
-2. **GET /api/hashtags/{name}/preview**
-   - Returns article preview for hashtag tooltips
-   - Shows first 200 characters of article body
-   - Indicates if hashtag is linked or unlinked
-
-**BacklinkFunctions.cs:**
-```csharp
-[Function("GetArticleBacklinks")]
-public async Task<HttpResponseData> GetArticleBacklinks(...)
-{
-    // Find all hashtags linking to this article
-    var relevantHashtags = await _context.Hashtags
-        .Where(h => h.LinkedArticleId == id)
-        .Select(h => h.Id)
-        .ToListAsync();
-    
-    // Find articles using those hashtags
-    var backlinks = await _context.ArticleHashtags
-        .Include(ah => ah.Article)
-        .Include(ah => ah.Hashtag)
-        .Where(ah => relevantHashtags.Contains(ah.HashtagId) && ah.ArticleId != id)
-        .GroupBy(ah => ah.ArticleId)
-        // ... map to DTOs
-}
-```
-
-**DTOs:**
-
-```csharp
-public class BacklinkDto
-{
-    public int ArticleId { get; set; }
-    public string ArticleTitle { get; set; }
-    public string ArticleSlug { get; set; }
-    public List<string> Hashtags { get; set; }
-    public int MentionCount { get; set; }
-    public DateTime LastModified { get; set; }
-}
-
-public class HashtagPreviewDto
-{
-    public bool HasArticle { get; set; }
-    public string HashtagName { get; set; }
-    public int? ArticleId { get; set; }
-    public string? ArticleTitle { get; set; }
-    public string? ArticleSlug { get; set; }
-    public string? PreviewText { get; set; }
-    public DateTime? LastModified { get; set; }
-}
-```
+1. **GET /api/articles/{id}/backlinks** - Returns referencing articles
+2. **GET /api/hashtags/{name}/preview** - Returns article preview for tooltips
 
 ### Frontend
 
-#### 1. BacklinksPanel Component (In Metadata Drawer)
+#### 1. BacklinksPanel Component
 
-**Location:** ArticleDetail ? MudDrawer ? BacklinksPanel
-
-**Features:**
-- Shows articles that reference current article
-- Displays hashtags used and mention counts
-- Relative timestamps ("2h ago", "3d ago")
-- Click to navigate to referencing article
-- Empty state when no backlinks
-- Loading state during API call
-
-**Implementation:**
-```razor
-<BacklinksPanel ArticleId="@_article.Id" />
-```
-
-**Architecture Decision:**
-- Integrated into ArticleDetail's metadata drawer
-- User can toggle visibility with button
-- Better UX than fixed panel (more screen space)
-- Extensible for future metadata sections
+Shows articles that reference current article via hashtags.
 
 #### 2. Hashtag Hover Tooltips
 
-**Features:**
-- Appears after 300ms hover
-- Shows article title and preview (if linked)
-- Shows "Not linked" + "Click to link" (if unlinked)
-- Smooth fade-in animation
-- Can hover over tooltip to keep it visible
-
-**JavaScript Implementation:**
-```javascript
-async function showHashtagTooltip(element, hashtagName) {
-    const response = await fetch(`/api/hashtags/${hashtagName}/preview`);
-    const preview = await response.json();
-    
-    if (!preview.hasArticle) {
-        createTooltip(element, 'Not linked - Click to link');
-    } else {
-        createTooltip(element, preview.articleTitle, preview.previewText);
-    }
-}
-```
-
-**CSS:**
-```css
-.hashtag-tooltip {
-    position: fixed;
-    z-index: 10000;
-    background-color: #fff;
-    border: 1px solid #C4AF8E;
-    animation: tooltipFadeIn 0.2s ease;
-}
-```
+Appears after 300ms hover with article preview or "Not linked" message.
 
 #### 3. Hashtag Click Navigation
 
-**Linked Hashtags:**
-- Click ? Navigate to article
-- URL updates to `/article/{slug}`
-- Smooth transition
-
-**Unlinked Hashtags:**
-- Click ? Open linking dialog
-- No navigation until linked
-
-**JavaScript Handler:**
-```javascript
-function setupHashtagClickHandler(editorId, editor) {
-    editorElement.addEventListener('click', async (e) => {
-        if (target.classList.contains('chronicis-hashtag')) {
-            const isLinked = target.getAttribute('data-linked') === 'true';
-            const articleSlug = target.getAttribute('data-article-slug');
-            
-            if (isLinked && articleSlug) {
-                window.location.href = `/article/${articleSlug}`;
-            } else {
-                // Dispatch event for linking dialog
-                document.dispatchEvent(new CustomEvent('hashtag-link-requested', {
-                    detail: { hashtagName }
-                }));
-            }
-        }
-    });
-}
-```
+- Linked hashtags ? Navigate to article
+- Unlinked hashtags ? Open linking dialog
 
 #### 4. HashtagLinkDialog Component
 
-**Features:**
-- Searchable article list
-- Real-time filtering as you type
-- Visual selection feedback
-- Links hashtag to selected article
-- Success/error notifications
-- Refreshes editor after linking
-
-**Component:**
-```razor
-@inject IDialogService DialogService
-
-<MudDialog>
-    <DialogContent>
-        <MudTextField @bind-Value="_searchQuery" 
-                      Placeholder="Search articles..." />
-        
-        <MudList>
-            @foreach (var article in _filteredArticles)
-            {
-                <MudListItem OnClick="@(() => SelectArticle(article))">
-                    @article.Title
-                </MudListItem>
-            }
-        </MudList>
-    </DialogContent>
-    
-    <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton OnClick="LinkHashtag">Link to Article</MudButton>
-    </DialogActions>
-</MudDialog>
-```
-
-**Integration:**
-```csharp
-// In ArticleDetail.razor
-[JSInvokable("HandleHashtagLinkRequest")]
-public static async Task HandleHashtagLinkRequest(string hashtagName)
-{
-    OnHashtagLinkRequested?.Invoke(new CustomEventArgs { HashtagName = hashtagName });
-}
-
-private async Task OpenHashtagLinkDialog(string hashtagName)
-{
-    var dialog = await DialogService.ShowAsync<HashtagLinkDialog>("Link Hashtag");
-    var result = await dialog.Result;
-    
-    if (!result.Canceled)
-    {
-        // Refresh editor to show updated styling
-        await ReinitializeEditor();
-    }
-}
-```
+Searchable article list for linking hashtags.
 
 #### 5. Visual Distinction
 
-**Linked Hashtags:**
-- Dotted underline
-- Full opacity
-- Solid underline on hover
-- `data-linked="true"` attribute
-
-**Unlinked Hashtags:**
-- No underline
-- Reduced opacity (0.8)
-- Full opacity on hover
-- `data-linked="false"` attribute
-
-**CSS:**
-```css
-/* Linked hashtags */
-.chronicis-hashtag[data-linked="true"] {
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-decoration-color: rgba(196, 175, 142, 0.5);
-}
-
-/* Unlinked hashtags */
-.chronicis-hashtag[data-linked="false"] {
-    opacity: 0.8;
-}
-```
-
-### JavaScript ? Blazor Communication
-
-**Flow:**
-```
-User clicks unlinked hashtag
-  ?
-JavaScript: setupHashtagClickHandler detects click
-  ?
-JavaScript: Dispatches 'hashtag-link-requested' event
-  ?
-JavaScript: Calls DotNet.invokeMethodAsync('HandleHashtagLinkRequest')
-  ?
-Blazor: Static method receives call
-  ?
-Blazor: Fires C# event to component instance
-  ?
-Blazor: Opens HashtagLinkDialog
-  ?
-User selects article and clicks "Link"
-  ?
-Blazor: Calls HashtagApi.LinkHashtagAsync()
-  ?
-Backend: Updates Hashtag.LinkedArticleId
-  ?
-Blazor: Refreshes editor
-  ?
-JavaScript: Editor reloads with updated data-linked attributes
-```
-
-### Files Created/Modified (v1.6)
-
-**Backend:**
-- ? `Functions/BacklinkFunctions.cs` - NEW
-- ? `Functions/HashtagFunctions.cs` - Added preview endpoint
-- ? `DTOs/BacklinkDto.cs` - NEW
-- ? `DTOs/HashtagPreviewDto.cs` - NEW
-
-**Frontend:**
-- ? `Components/Hashtags/HashtagLinkDialog.razor` - NEW
-- ? `Components/Articles/BacklinksPanel.razor` - NEW (from Phase 7.1)
-- ? `Components/Articles/ArticleDetail.razor` - Updated with dialog integration
-- ? `wwwroot/js/tipTapIntegration.js` - Added click/hover handlers
-- ? `wwwroot/js/tipTapHashtagExtension.js` - Added linking attributes
-- ? `wwwroot/css/chronicis-hashtag-tooltip.css` - NEW
-
-### User Experience Flow
-
-**Scenario: User wants to link #waterdeep to an article**
-
-1. User types `#waterdeep ` in article body
-2. Hashtag appears styled in beige-gold
-3. User hovers ? Tooltip shows "Not linked to an article - Click to link"
-4. User clicks hashtag ? Dialog opens
-5. User types "water" in search ? "Waterdeep" article appears
-6. User clicks "Waterdeep" ? Article highlighted
-7. User clicks "Link to Article" button
-8. Success notification appears
-9. Dialog closes
-10. Editor refreshes
-11. Hashtag now has dotted underline (linked style)
-12. User hovers ? Tooltip shows "Waterdeep" article preview
-13. User clicks hashtag ? Navigates to Waterdeep article
-
-**Scenario: Viewing article with backlinks**
-
-1. User opens "Waterdeep" article
-2. User clicks metadata button (?? icon)
-3. Drawer slides in from right
-4. Timestamps section shows created/modified dates
-5. Backlinks section shows "Session Notes #1" mentioned #waterdeep
-6. Shows "1 mention · 2h ago"
-7. User clicks on "Session Notes #1"
-8. Navigates to that article
-9. Sees #waterdeep hashtag in the text
+- Linked: Dotted underline
+- Unlinked: Reduced opacity
 
 ### Success Criteria
 
 1. ? Backlinks panel displays referencing articles
 2. ? Clicking backlink navigates to article
-3. ? Hovering hashtag shows tooltip after 300ms
-4. ? Tooltip displays article preview (if linked)
-5. ? Tooltip shows "Not linked" + action hint (if unlinked)
-6. ? Clicking linked hashtag navigates to article
-7. ? Clicking unlinked hashtag opens link dialog
-8. ? Link dialog shows searchable article list
-9. ? Successfully linking updates hashtag styling immediately
-10. ? Linked hashtags have dotted underline
-11. ? Unlinked hashtags have reduced opacity
-12. ? No console errors
-13. ? All interactions feel smooth and responsive
-14. ? **Worked on first implementation!** ??
-
-### What's Working
-
-? **Complete Entity Graph System:**
-- Full bidirectional linking (hashtags ? articles)
-- Visual relationship mapping via backlinks
-- No SQL required for linking
-- Intuitive UI for all operations
-
-? **Professional UX:**
-- Smooth animations and transitions
-- Clear visual feedback
-- Helpful tooltips and hints
-- Searchable dialogs
-
-? **Robust Architecture:**
-- Clean JavaScript ? Blazor communication
-- Proper event handling
-- State management working correctly
-- Editor refresh handling
-
-### Key Learnings (v1.6)
-
-**Architectural Decisions:**
-- Drawer-based backlinks better than fixed panel
-- Event-based JS?Blazor communication works perfectly
-- TipTap attributes enable rich interactivity
-- Dialog pattern good for complex user actions
-
-**Implementation Success:**
-- First-time success indicates good planning
-- Clear separation of concerns paid off
-- Incremental phases (6 ? 7) worked well
-- Comprehensive testing checklist helped
-
-**Technical Wins:**
-- No race conditions in async operations
-- Editor lifecycle properly managed
-- State synchronization working smoothly
-- Performance excellent (no lag on interactions)
+3. ? Hovering hashtag shows tooltip
+4. ? Clicking linked hashtag navigates
+5. ? Clicking unlinked hashtag opens dialog
+6. ? Successfully linking updates styling
+7. ? Visual distinction clear
+8. ? All interactions smooth
+9. ? No console errors
+10. ? Worked on first implementation!
 
 ---
 
@@ -1275,48 +572,239 @@ JavaScript: Editor reloads with updated data-linked attributes
 
 ## Phase 8: AI Summary Generation
 
-**Status:** ?? Next Phase
+**Status:** ? **COMPLETE** (v1.7)
 
-**Goal:** Generate AI summaries from backlink content
+**Goal:** Generate AI summaries from backlink content analysis
+
+**Completed:** November 27, 2025  
+**Implementation Time:** ~3 hours (including Azure setup and troubleshooting)
+
+### Overview
+
+Complete AI-powered summary system that analyzes all articles referencing the current article via hashtags (backlinks) and generates comprehensive summaries using Azure OpenAI.
 
 ### Backend
 
-- Azure.AI.OpenAI package
-- AISummaryService with GPT-4
-- POST /api/articles/{id}/generate-summary
-- Analyze all backlink content
-- Build prompt with mentions
-- Store summary (optional caching)
+**Azure OpenAI Infrastructure:**
+- Azure OpenAI resource: `openai-chronicis-dev`
+- Model deployment: GPT-4.1-mini (cost-effective, high quality)
+- Endpoint and API key stored in Azure Key Vault
+- Configuration-driven prompts for easy tuning
+
+**Database Schema:**
+
+```sql
+-- Migration: AddAISummaryToArticle
+ALTER TABLE Articles ADD AISummary NVARCHAR(MAX) NULL;
+ALTER TABLE Articles ADD AISummaryGeneratedDate DATETIME2 NULL;
+```
+
+**Services:**
+
+**AISummaryService.cs:**
+- **EstimateCostAsync** - Calculates tokens and cost before generation
+- **GenerateSummaryAsync** - Calls Azure OpenAI to create summary
+- **GetBacklinksContentAsync** - Retrieves all articles mentioning this article via hashtags
+
+**Key Features:**
+- Token counting and cost estimation
+- Pre-generation cost preview
+- Token limits (8,000 input, 1,500 output)
+- Content truncation if exceeds limits
+- Application Insights logging for usage tracking
+- Pricing constants (GPT-4: $0.03/1K input, $0.06/1K output)
+
+**API Endpoints:**
+
+```csharp
+GET  /api/articles/{id}/summary/estimate  // Get cost estimate
+POST /api/articles/{id}/summary/generate  // Generate summary
+GET  /api/articles/{id}/summary           // Get existing summary
+DELETE /api/articles/{id}/summary         // Clear summary
+```
+
+**Configuration (local.settings.json):**
+
+```json
+{
+  "AzureOpenAI": {
+    "Endpoint": "https://openai-chronicis-dev.openai.azure.com/",
+    "ApiKey": "***",
+    "DeploymentName": "gpt-4.1-mini",
+    "MaxInputTokens": "8000",
+    "MaxOutputTokens": "1500",
+    "SummaryPromptTemplate": "You are analyzing D&D campaign notes..."
+  }
+}
+```
+
+**Prompt Template:**
+```
+You are analyzing D&D campaign notes to create a comprehensive summary about: {ArticleTitle}
+
+This entity is mentioned in the following campaign notes:
+
+{BacklinkContent}
+
+Based on all mentions above, provide a 2-4 paragraph summary including:
+1. Who/what this entity is (identity, nature, role)
+2. Key relationships with other entities
+3. Important events involving this entity
+4. Current status or last known information
+
+Focus on facts from the notes. If information conflicts between sources, note the discrepancy.
+Keep the tone informative and campaign-focused.
+```
 
 ### Frontend
 
-- Generate AI Summary button (in ArticleDetail)
-- Loading state while generating
-- Display summary with timestamp
-- Handle errors gracefully
+**AISummaryApiService.cs:**
+- GetEstimateAsync
+- GenerateSummaryAsync
+- GetSummaryAsync
+- ClearSummaryAsync
 
-### AI Prompt Structure
+**AISummarySection.razor Component:**
 
+**UI States:**
+1. **No Summary, No Backlinks** - Message explaining hashtags needed
+2. **No Summary, Has Backlinks** - Shows estimate with Generate button
+3. **Generating** - Loading spinner with progress message
+4. **Summary Exists** - Display summary with actions
+5. **Error** - Error message with retry capability
+
+**Features:**
+- Collapsible section header
+- Pre-generation estimate display:
+  - Number of backlinks
+  - Estimated tokens (input/output)
+  - Estimated cost in USD
+- Generate button (disabled if no backlinks)
+- Summary display with styled text box
+- Action buttons:
+  - **Regenerate** - Clear and generate fresh summary
+  - **Copy** - Copy to clipboard
+  - **Clear** - Remove summary
+- Relative timestamps ("5m ago", "2h ago", "3d ago")
+- Success/error notifications via Snackbar
+
+**CSS Styling (chronicis-ai-summary.css):**
+- Beige-gold theme matching Chronicis style guide
+- Collapsible header with hover effects
+- Summary text box with left gold border
+- Responsive design for mobile
+- Loading states and animations
+
+**Integration:**
+
+ArticleDetail.razor includes the component:
+```razor
+<AISummarySection ArticleId="@_article.Id"
+                  IsExpanded="@_isSummaryExpanded"
+                  IsExpandedChanged="@((expanded) => _isSummaryExpanded = expanded)" />
 ```
-Generate summary for: {article.Title}
 
-Mentioned in these notes:
---- From: {backlink.Title} ---
-{backlink.Content}
+### Technical Implementation Details
 
-Provide 2-4 paragraph summary including:
-- Who/what this entity is
-- Key relationships
-- Important events
-- Current status
+**Azure OpenAI SDK 2.1.0 Compatibility:**
+- Updated from original 2.0.0 specification during implementation
+- Key changes:
+  - `OpenAIClient` ? `AzureOpenAIClient`
+  - `GetChatCompletionsAsync` ? `CompleteChatAsync`
+  - `ChatRequestSystemMessage` ? `SystemChatMessage`
+  - `ChatRequestUserMessage` ? `UserChatMessage`
+  - `ChatCompletionsOptions` ? `ChatCompletionOptions`
+  - `MaxTokens` ? `MaxOutputTokenCount`
+
+**Configuration Injection Fix:**
+- Azure Functions isolated worker requires explicit configuration setup
+- Added `ConfigureAppConfiguration` to Program.cs
+- Registered `IConfiguration` as singleton in DI container
+- Hierarchical configuration with colons (e.g., `AzureOpenAI:Endpoint`)
+
+**Cost Management:**
+- Token counting estimates based on 4 chars per token
+- Hard limits prevent runaway costs
+- Pre-generation transparency shows users exact costs
+- Application Insights logging tracks all generation events
+
+### Production Deployment Notes
+
+**Azure Function App Configuration:**
 ```
+AzureOpenAI__Endpoint = @Microsoft.KeyVault(SecretUri=https://kv-chronicis-dev.vault.azure.net/secrets/AzureOpenAI--Endpoint/)
+AzureOpenAI__ApiKey = @Microsoft.KeyVault(SecretUri=https://kv-chronicis-dev.vault.azure.net/secrets/AzureOpenAI--ApiKey/)
+AzureOpenAI__DeploymentName = gpt-4.1-mini
+AzureOpenAI__MaxInputTokens = 8000
+AzureOpenAI__MaxOutputTokens = 1500
+AzureOpenAI__SummaryPromptTemplate = [full prompt]
+```
+
+**Managed Identity:**
+- Enable system-assigned managed identity on Function App
+- Grant Key Vault access policy with "get" and "list" secret permissions
 
 ### Success Criteria
 
-1. Clicking button generates summary
-2. Summary includes key information
-3. Works with 0 backlinks (graceful)
-4. Summaries are coherent and useful
+1. ? Azure OpenAI resource provisioned and working
+2. ? Database migration applied successfully
+3. ? AI Summary section appears in ArticleDetail
+4. ? Can generate summaries for articles with backlinks
+5. ? Summaries are saved and persist across page loads
+6. ? Cost estimates display before generation
+7. ? Can regenerate, copy, and clear summaries
+8. ? Error handling works gracefully
+9. ? Logging works (tokens, costs tracked)
+10. ? UI matches Chronicis style guide
+11. ? End-to-end functionality tested and working
+
+### Key Learnings (v1.7)
+
+**Azure OpenAI Setup:**
+- No approval needed if account has access
+- Portal-based setup faster than CLI scripts
+- GPT-4.1-mini provides excellent quality at 90% cost savings
+
+**Configuration Management:**
+- Azure Functions isolated worker needs explicit config setup
+- Hierarchical config (colons) works when properly registered
+- Key Vault references for production, direct values for local dev
+
+**SDK Version Compatibility:**
+- Azure.AI.OpenAI 2.1.0 has breaking changes from 2.0.0
+- API surface significantly different (client initialization, message types)
+- Documentation and error messages helpful for migration
+
+**Cost Controls:**
+- Pre-generation estimates valuable for user trust
+- Token limits prevent accidents
+- Logging essential for monitoring usage
+- GPT-4.1-mini vs GPT-4 tradeoff worth considering
+
+**Development Workflow:**
+- Test backend endpoints independently first
+- Frontend integration straightforward once backend works
+- Configuration issues most common pain point
+- Systematic debugging (logs at each layer) effective
+
+### Example Use Case
+
+**Scenario:** Article "Waterdeep" referenced in 5 session notes
+
+**User Flow:**
+1. Open "Waterdeep" article
+2. Expand AI Summary section
+3. See estimate: "5 backlinks, ~2,500 tokens, ~$0.05"
+4. Click "Generate AI Summary"
+5. Wait 10 seconds
+6. Receive comprehensive summary:
+   - "Waterdeep is the largest city on the Sword Coast..."
+   - "The party first arrived in Session 3..."
+   - "Key NPCs include Vajra Safahr..."
+   - "Current status: Base of operations established..."
+7. Copy summary to notes or regenerate for fresh perspective
+
+**Result:** Hours of manual review condensed to seconds with AI assistance.
 
 ---
 
@@ -1324,7 +812,7 @@ Provide 2-4 paragraph summary including:
 
 ## Phase 9: Content Search & Advanced Discovery
 
-**Status:** ? Pending
+**Status:** ?? Next Phase
 
 **Goal:** Full-text search across article content and hashtags
 
@@ -1438,9 +926,11 @@ Phase 9 will use the original endpoint for global content search.
 
 - Unit tests for Article CRUD
 - Unit tests for hashtag parsing
+- Unit tests for AI summary service
 - Integration tests for API endpoints
 - Manual test plan execution
 - Test inline editing edge cases
+- Test AI summary generation with various scenarios
 
 ### Performance Optimizations
 
@@ -1449,6 +939,7 @@ Phase 9 will use the original endpoint for global content search.
 - Frontend debouncing (already done for auto-save)
 - Response compression
 - Caching headers
+- AI summary caching strategy
 
 ### Deployment Steps
 
@@ -1456,8 +947,10 @@ Phase 9 will use the original endpoint for global content search.
 - Configure GitHub Actions
 - Set environment variables
 - Run database migrations on Azure SQL
+- Deploy Azure OpenAI configuration to production
 - Smoke test deployed app
 - Set up Application Insights
+- Configure monitoring and alerts
 
 ### Success Criteria
 
@@ -1466,6 +959,8 @@ Phase 9 will use the original endpoint for global content search.
 3. Successfully deployed to Azure
 4. Monitoring configured
 5. Inline editing works in production
+6. AI summaries working in production
+7. Costs monitored and within budget
 
 ---
 
@@ -1505,6 +1000,15 @@ az sql server create --name sql-chronicis-dev ...
 az keyvault create --name kv-chronicis-dev ...
 ```
 
+**Azure OpenAI:**
+```bash
+# Create resource
+az cognitiveservices account create --name openai-chronicis-dev --resource-group rg-chronicis-dev --kind OpenAI
+
+# Deploy model
+az cognitiveservices account deployment create --name openai-chronicis-dev --deployment-name gpt-4 --model-name gpt-4
+```
+
 ### B. Performance Targets
 
 - **Initial Load:** < 3 seconds
@@ -1513,7 +1017,8 @@ az keyvault create --name kv-chronicis-dev ...
 - **Search Results:** < 1 second
 - **Auto-Save:** < 500ms
 - **Hashtag Sync:** < 50ms
-- **AI Summary:** < 30 seconds
+- **AI Summary Generation:** < 30 seconds
+- **AI Summary Estimate:** < 1 second
 - **Hover Tooltip:** < 300ms
 - **Dialog Open:** < 200ms
 
@@ -1528,6 +1033,7 @@ chronicis/
 ?   ?   ?   ?   ??? ArticleDetail.razor (inline editor)
 ?   ?   ?   ?   ??? ArticleTreeView.razor
 ?   ?   ?   ?   ??? BacklinksPanel.razor
+?   ?   ?   ?   ??? AISummarySection.razor
 ?   ?   ?   ??? Hashtags/
 ?   ?   ?       ??? HashtagLinkDialog.razor
 ?   ?   ??? Services/
@@ -1535,6 +1041,7 @@ chronicis/
 ?   ?   ?   ??? TreeStateService.cs
 ?   ?   ?   ??? QuoteService.cs
 ?   ?   ?   ??? HashtagApiService.cs
+?   ?   ?   ??? AISummaryApiService.cs
 ?   ?   ??? Pages/
 ?   ?   ?   ??? Home.razor (dashboard + routing)
 ?   ?   ??? wwwroot/
@@ -1544,6 +1051,7 @@ chronicis/
 ?   ?       ?   ??? chronicis-hashtags.css
 ?   ?       ?   ??? chronicis-hashtag-tooltip.css
 ?   ?       ?   ??? chronicis-backlinks.css
+?   ?       ?   ??? chronicis-ai-summary.css
 ?   ?       ?   ??? tipTapStyles.css
 ?   ?       ??? js/
 ?   ?           ??? tipTapIntegration.js
@@ -1553,10 +1061,12 @@ chronicis/
 ?   ?   ?   ??? ArticleSearchFunction.cs
 ?   ?   ?   ??? HashtagFunctions.cs
 ?   ?   ?   ??? BacklinkFunctions.cs
+?   ?   ?   ??? AISummaryFunctions.cs
 ?   ?   ?   ??? UpdateArticle.cs
 ?   ?   ??? Services/
 ?   ?   ?   ??? HashtagParser.cs
 ?   ?   ?   ??? HashtagSyncService.cs
+?   ?   ?   ??? AISummaryService.cs
 ?   ?   ??? Data/
 ?   ?       ??? Entities/
 ?   ?           ??? Article.cs
@@ -1568,6 +1078,7 @@ chronicis/
 ?           ??? HashtagDto.cs
 ?           ??? BacklinkDto.cs
 ?           ??? HashtagPreviewDto.cs
+?           ??? SummaryDtos.cs
 ??? tests/
 ??? docs/
 ??? Chronicis.sln
@@ -1591,7 +1102,7 @@ chronicis/
 7. **Hashtag sync triggered**
 8. Tree updated (no reload)
 
-**Title Save Flow (v1.4):**
+**Title Save Flow:**
 1. User types in title
 2. `OnTitleChanged()` triggered
 3. Marked as unsaved (no auto-save)
@@ -1603,27 +1114,20 @@ chronicis/
    - Tree expands to show article
    - Page title updates
 
-**Selection Flow (Phase 5):**
-1. User clicks article in tree
-2. `SelectArticle(node)` called in ArticleTreeView
-3. Navigation.NavigateTo($"/article/{slug}")
-4. Home.razor receives slug parameter
-5. `LoadArticleBySlug()` searches for article
-6. Article loaded and displayed
-7. Page title updated
-
-**Hashtag Flow (Phase 6-7):**
-1. User types `#Waterdeep `
-2. TipTap input rule detects on space
-3. Renders as styled span
-4. Auto-save triggers (0.5s)
-5. HTML?Markdown converts span to `#waterdeep`
-6. UpdateArticle saves to database
-7. HashtagSyncService extracts and stores hashtag
-8. Database updated with Hashtag and ArticleHashtag records
-9. User hovers ? Tooltip shows preview
-10. User clicks unlinked ? Dialog opens for linking
-11. User links ? Editor refreshes with updated styling
+**AI Summary Flow (Phase 8):**
+1. User opens article with backlinks
+2. Expands AI Summary section
+3. Sees estimate (backlinks, tokens, cost)
+4. Clicks "Generate AI Summary"
+5. Frontend calls `/api/articles/{id}/summary/generate`
+6. Backend:
+   - Gets backlink content via hashtag relationships
+   - Builds prompt with template
+   - Calls Azure OpenAI
+   - Saves summary to Article.AISummary
+   - Returns summary + usage stats
+7. Frontend displays summary
+8. User can copy, regenerate, or clear
 
 **Benefits:**
 - Seamless editing experience
@@ -1632,6 +1136,8 @@ chronicis/
 - Deliberate title saves (Enter or button)
 - Automatic hashtag detection and storage
 - Interactive hashtag relationships
+- AI-powered insights from campaign notes
+- Cost-transparent AI usage
 - Faster workflow
 - Simple state management via article ID
 - Deep linking and bookmarks work
@@ -1660,17 +1166,23 @@ chronicis/
 - Check: Console for navigation log
 - Solution: Ensure hashtag properly linked in database
 
-**Link dialog not opening:**
-- Check: Console for "Hashtag link request received"
-- Verify: `HashtagLinkDialog.razor` in correct location
-- Check: `DotNet.invokeMethodAsync` namespace matches
-- Solution: Update namespace in JavaScript call
+**AI Summary - Configuration not read:**
+- Check: `local.settings.json` in correct location (project root)
+- Verify: `IConfiguration` registered as singleton in DI
+- Check: `ConfigureAppConfiguration` in Program.cs
+- Solution: Use hierarchical config with colons (e.g., `AzureOpenAI:Endpoint`)
 
-**Backlinks panel empty:**
-- Check: Hashtag has `LinkedArticleId` set
-- Verify: Other articles contain the hashtag
-- Check: `/api/articles/{id}/backlinks` returns data
-- Solution: Manually verify data in database
+**AI Summary - SDK version errors:**
+- Check: `Azure.AI.OpenAI` package version
+- If 2.1.0: Use `AzureOpenAIClient`, `SystemChatMessage`, `CompleteChatAsync`
+- If 2.0.0: Use `OpenAIClient`, `ChatRequestSystemMessage`, `GetChatCompletionsAsync`
+- Solution: Update code to match SDK version
+
+**AI Summary - No backlinks showing:**
+- Verify: Hashtags are linked to articles
+- Check: `Hashtag.LinkedArticleId` is set
+- Check: Other articles contain the hashtag
+- Solution: Use HashtagLinkDialog to link hashtags
 
 **Cannot connect to SQL:**
 - For Docker: `docker start sql-server`
@@ -1688,12 +1200,12 @@ chronicis/
 
 ### F. Using This Plan
 
-**Before Starting Phase 8:**
-1. Review Phase 8 specification
-2. Check that all Phase 7 features are working
+**Before Starting Phase 9:**
+1. Review Phase 9 specification
+2. Check that all Phase 8 features are working
 3. Create new chat with Claude
 4. Upload this plan + spec PDFs
-5. Say: "I'm ready to start Phase 8 - AI Summaries"
+5. Say: "I'm ready to start Phase 9 - Advanced Search"
 
 **During Each Phase:**
 1. Create new chat with Claude
@@ -1734,7 +1246,47 @@ chronicis/
 3. Review with Claude
 4. Iterate until complete
 
-### H. Phase 7 Key Learnings (v1.6)
+### H. Phase 8 Key Learnings (v1.7)
+
+**Azure OpenAI Setup:**
+- Portal-based provisioning faster than CLI scripts
+- GPT-4.1-mini excellent quality at fraction of GPT-4 cost
+- Model deployment straightforward in Azure OpenAI Studio
+- Key Vault integration ready for production
+
+**Configuration Management:**
+- Azure Functions isolated worker requires explicit configuration setup
+- `ConfigureAppConfiguration` + `services.AddSingleton<IConfiguration>` essential
+- Hierarchical config (colons) works when properly registered
+- Local vs production config strategies important
+
+**SDK Compatibility:**
+- Azure.AI.OpenAI 2.1.0 has breaking API changes from 2.0.0
+- Client initialization completely different
+- Message types renamed
+- Method signatures changed
+- Check package version before starting
+
+**Cost Management:**
+- Pre-generation estimates build user trust
+- Token limits prevent accidents
+- Application Insights logging essential for monitoring
+- GPT-4.1-mini vs GPT-4 tradeoff (90% cost savings, minimal quality loss)
+
+**Development Process:**
+- Test backend independently before frontend integration
+- Configuration issues most common pain point
+- Systematic debugging (logs at each layer) very effective
+- Portal faster than CLI for Azure resource provisioning
+
+**User Experience:**
+- Collapsible sections reduce UI clutter
+- Cost transparency important for AI features
+- Relative timestamps ("2h ago") more user-friendly
+- Copy/regenerate/clear actions provide control
+- Loading states prevent confusion
+
+### I. Phase 7 Key Learnings (v1.6)
 
 **Architectural Success:**
 - Drawer-based approach better than fixed panel
@@ -1754,68 +1306,25 @@ chronicis/
 - Incremental approach (Phase 6 ? Phase 7) effective
 - Clear testing checklist helped validation
 
-**UX Highlights:**
-- Hover tooltips provide context without navigation
-- Link dialog intuitive and searchable
-- Visual distinction (underline) clearly indicates linking state
-- Smooth animations enhance professional feel
-
-**Development Process:**
-- Clear specifications enabled fast implementation
-- Separation of concerns (backend/frontend/JS) worked well
-- Testing as you go prevented regression
-- Documentation helped troubleshooting
-
-**Performance:**
-- No lag on hover/click interactions
-- Dialog opens instantly
-- API calls fast (<300ms typical)
-- Editor refresh smooth
-
-### I. Phase 6 Key Learnings (v1.5)
+### J. Phase 6 Key Learnings (v1.5)
 
 **TipTap Extension Architecture:**
-- Import Mark and helpers from CDN: `https://esm.sh/@tiptap/core@3.11.0`
-- Use `inclusive: false` to prevent mark from extending
-- Use `exitable: true` to allow cursor to exit mark
-- Input rules trigger on space to avoid incomplete hashtags
-- Paste rules handle pasted content with hashtags
-
-**HTML ? Markdown Conversion:**
-- Convert hashtags BEFORE headers to avoid `#Waterdeep` ? `<h1>Waterdeep</h1>`
-- Store hashtags in lowercase but display with original case
-- Multiple regex patterns for reliability (primary + fallbacks)
-- Preserve hashtag structure through round-trip conversion
+- Import Mark and helpers from CDN
+- Use `inclusive: false` and `exitable: true`
+- Input rules trigger on space
+- Paste rules handle pasted content
 
 **Database Design:**
 - Case-insensitive unique index on Hashtag.Name
-- Position tracking enables future features (jump to hashtag, context)
-- Many-to-many with explicit junction table (better than EF Core automatic)
-- CASCADE delete on ArticleHashtag but SET NULL on LinkedArticleId
+- Position tracking enables future features
+- Many-to-many with explicit junction table
+- CASCADE delete on ArticleHashtag
 
 **Service Architecture:**
-- Separate concerns: Parser (extract) vs Sync (persist)
+- Separate concerns: Parser vs Sync
 - Parser is stateless and reusable
-- Sync service handles complex CRUD logic
-- Integration point is single line in UpdateArticle
-
-**Debugging Strategy:**
-- Console logging essential for troubleshooting
-- Log at multiple points: parse, sync, save
-- Remove debug logs after confirming functionality
-- Browser DevTools invaluable for frontend issues
-
-**Performance Considerations:**
-- Regex compilation flag improves parse speed
-- Batch operations in sync (remove all, add all)
-- Single SaveChangesAsync call at end
-- No N+1 queries (use Include and proper projections)
-
-**UX Design Decisions:**
-- Space trigger feels natural (like markdown bold)
-- Plain text while typing avoids distraction
-- Immediate styling on space provides feedback
-- Hover effect subtle to avoid being overwhelming
+- Sync service handles CRUD logic
+- Single integration point in UpdateArticle
 
 ---
 
@@ -1829,35 +1338,39 @@ chronicis/
 - Document your learnings
 - Have fun! ????
 
-**Phase 7 Complete! ?**
-All features implemented and working on first try:
-- ? Backlinks panel in metadata drawer
-- ? Hashtag hover tooltips with article previews
-- ? Click navigation for linked hashtags
-- ? Link dialog for unlinked hashtags
-- ? Visual distinction (dotted underline)
-- ? Professional UX with smooth animations
-- ? No SQL required for hashtag management
+**Phase 8 Complete! ?**
+All features implemented and working end-to-end:
+- ? Azure OpenAI with GPT-4.1-mini
+- ? Database migration for summary storage
+- ? Cost estimation and generation service
+- ? Configuration-driven prompts
+- ? Pre-generation cost transparency
+- ? Frontend UI with all states
+- ? Copy, regenerate, clear actions
+- ? Application Insights logging
+- ? SDK 2.1.0 compatibility
+- ? Proper configuration injection
 
 **Current Progress:**
-**7 of 12 phases complete** (58% of project)
-- Phases 0-7: ? Complete
-- Phase 8: ?? Ready to start
-- Phases 9-12: ? Pending
+**8 of 12 phases complete** (67% of project)
+- Phases 0-8: ? Complete
+- Phase 9: ?? Ready to start (Advanced Search)
+- Phases 10-12: ? Pending
 
-**When Ready to Start Phase 8:**
+**When Ready to Start Phase 9:**
 Create a new chat, upload this plan and the spec PDFs, and say:
-*"I'm ready to start Phase 8 of Chronicis implementation - AI Summary Generation. Note: Phases 0-7 are complete with full hashtag system including parsing, storage, visual styling, backlinks panel, hover tooltips, click navigation, and linking UI. All working perfectly!"*
+*"I'm ready to start Phase 9 of Chronicis implementation - Advanced Search. Note: Phases 0-8 are complete including full AI summary generation with Azure OpenAI, cost controls, and configuration-driven prompts. All working perfectly!"*
 
 ---
 
 **Version History:**
-- 1.6 (2025-11-27): Phase 7 COMPLETE - Interactive hashtags, backlinks, tooltips, linking UI, worked first time!
-- 1.5 (2025-11-26): Phase 6 COMPLETE - Full hashtag system with parsing, storage, visual styling, API endpoints
-- 1.4 (2025-11-25): Phase 5 COMPLETE - Dashboard, routing, title save, tree expansion, logo nav, title search API
-- 1.3 (2025-11-25): Phase 5 complete implementation with all fixes, custom navigation, TreeStateService updates
-- 1.2 (2025-11-24): Phase 4 complete rewrite using TipTap v3.11.0, ES modules via esm.sh, Blazor lifecycle fixes
-- 1.1 (2025-11-23): Updated for inline editing paradigm, removed ArticleEditor references
+- 1.7 (2025-11-27): Phase 8 COMPLETE - AI summaries with Azure OpenAI, cost controls, full integration
+- 1.6 (2025-11-27): Phase 7 COMPLETE - Interactive hashtags, backlinks, tooltips, linking UI
+- 1.5 (2025-11-26): Phase 6 COMPLETE - Full hashtag system with parsing, storage, visual styling
+- 1.4 (2025-11-25): Phase 5 COMPLETE - Dashboard, routing, title save, tree expansion
+- 1.3 (2025-11-25): Phase 5 complete implementation with all fixes
+- 1.2 (2025-11-24): Phase 4 complete rewrite using TipTap v3.11.0
+- 1.1 (2025-11-23): Updated for inline editing paradigm
 - 1.0 (2025-11-18): Initial comprehensive plan
 
 **License:** Part of the Chronicis project. Modify as needed for your team.
