@@ -1,215 +1,197 @@
-using Chronicis.Api.Data;
-using Chronicis.Shared.DTOs; 
-using Chronicis.Shared.Models;
+using System.Net;
+using System.Web;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Net;
-using System.Web;
+using Chronicis.Api.Data;
+using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Models;
 
 namespace Chronicis.Api.Functions;
 
 public class ArticleSearchFunction
 {
     private readonly ChronicisDbContext _context;
-    private readonly ILogger<ArticleSearchFunction> _logger;
 
-    public ArticleSearchFunction(ChronicisDbContext context, ILogger<ArticleSearchFunction> logger)
+    public ArticleSearchFunction(ChronicisDbContext context)
     {
         _context = context;
-        _logger = logger;
     }
 
     [Function("SearchArticles")]
     public async Task<HttpResponseData> SearchArticles(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/search")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/search")]
+        HttpRequestData req)
     {
-        _logger.LogInformation("SearchArticles endpoint called");
-
+        var logger = req.FunctionContext.GetLogger("SearchArticles");
+        
+        // Get query parameter
+        var query = HttpUtility.ParseQueryString(req.Url.Query).Get("query");
+        
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            var badRequest = req.CreateResponse(HttpStatusCode.BadRequest);
+            await badRequest.WriteAsJsonAsync(new { error = "Query parameter is required" });
+            return badRequest;
+        }
+        
+        logger.LogInformation("Searching for: {Query}", query);
+        
         try
         {
-            var queryString = HttpUtility.ParseQueryString(req.Url.Query);
-            var query = queryString["query"] ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                var emptyResponse = req.CreateResponse(System.Net.HttpStatusCode.OK);
-                await emptyResponse.WriteAsJsonAsync(new List<ArticleSearchResultDto>());
-                return emptyResponse;
-            }
-
-            _logger.LogInformation("Searching articles with query: {Query}", query);
-
-            // Search for articles with titles OR body containing the query
-            var matchingArticles = await _context.Articles
-                .Where(a => EF.Functions.Like(a.Title, $"%{query}%") ||
-                           EF.Functions.Like(a.Body, $"%{query}%"))
-                .Select(a => new
-                {
-                    a.Id,
-                    a.Title,
-                    a.Body,
-                    a.ParentId,
-                    a.CreatedDate,
-                    a.EffectiveDate  // Use new field
-                })
-                .ToListAsync();
-
-            var results = new List<ArticleSearchResultDto>();
-
-            foreach (var article in matchingArticles)
-            {
-                var ancestorPath = await BuildAncestorPath(article.Id);
-
-                // Create snippet showing where match was found
-                var matchSnippet = GetMatchSnippet(article.Title, article.Body, query);
-
-                results.Add(new ArticleSearchResultDto
-                {
-                    Id = article.Id,
-                    Title = article.Title,
-                    Body = article.Body,
-                    MatchSnippet = matchSnippet,
-                    AncestorPath = ancestorPath,  // Changed from AncestorDto to BreadcrumbDto
-                    CreatedDate = article.CreatedDate,
-                    EffectiveDate = article.EffectiveDate
-                });
-            }
-
-            _logger.LogInformation("Found {Count} matching articles", results.Count);
-
-            var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(results);
-            return response;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error searching articles");
-            var errorResponse = req.CreateResponse(System.Net.HttpStatusCode.InternalServerError);
-            return errorResponse;
-        }
-    }
-
-    [Function("SearchArticlesByTitle")]
-public async Task<HttpResponseData> SearchArticlesByTitle(
-    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/search/title")] HttpRequestData req)
-    {
-        _logger.LogInformation("Searching articles by title");
-
-        try
-        {
-            var queryString = HttpUtility.ParseQueryString(req.Url.Query);
-            var query = queryString["query"] ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                var emptyResponse = req.CreateResponse(System.Net.HttpStatusCode.OK);
-                await emptyResponse.WriteAsJsonAsync(new List<ArticleSearchResultDto>());
-                return emptyResponse;
-            }
-
-            _logger.LogInformation("Searching articles with query: {Query}", query);
-            Console.WriteLine(query);
-
-            // Search for articles with titles OR body containing the query
-            var matchingArticles = await _context.Articles
+            // Search titles
+            var titleMatches = await _context.Articles
                 .Where(a => EF.Functions.Like(a.Title, $"%{query}%"))
-                .Select(a => new
-                {
-                    a.Id,
-                    a.Title,
-                    a.Body,
-                    a.ParentId,
-                    a.CreatedDate,
-                    a.EffectiveDate  // Use new field
-                })
+                .OrderBy(a => a.Title)
+                .Take(20)
                 .ToListAsync();
-
-            var results = new List<ArticleSearchResultDto>();
-
-            foreach (var article in matchingArticles)
+            
+            logger.LogInformation("Found {Count} title matches", titleMatches.Count);
+            
+            // Search bodies (exclude articles already matched by title)
+            var titleMatchIds = titleMatches.Select(a => a.Id).ToList();
+            var bodyMatches = await _context.Articles
+                .Where(a => EF.Functions.Like(a.Body, $"%{query}%") 
+                         && !titleMatchIds.Contains(a.Id))
+                .OrderByDescending(a => a.ModifiedDate ?? a.CreatedDate)
+                .Take(20)
+                .ToListAsync();
+            
+            logger.LogInformation("Found {Count} body matches", bodyMatches.Count);
+            
+            // Search hashtags
+            var hashtagMatches = await _context.ArticleHashtags
+                .Include(ah => ah.Article)
+                .Include(ah => ah.Hashtag)
+                .Where(ah => EF.Functions.Like(ah.Hashtag.Name, $"%{query}%"))
+                .Select(ah => ah.Article)
+                .Distinct()
+                .OrderBy(a => a.Title)
+                .Take(20)
+                .ToListAsync();
+            
+            logger.LogInformation("Found {Count} hashtag matches", hashtagMatches.Count);
+            
+            // Build results with context snippets
+            var results = new GlobalSearchResultsDto
             {
-                var ancestorPath = await BuildAncestorPath(article.Id);
-
-                // Create snippet showing where match was found
-                var matchSnippet = GetMatchSnippet(article.Title, article.Body, query);
-
-                results.Add(new ArticleSearchResultDto
-                {
-                    Id = article.Id,
-                    Title = article.Title,
-                    Body = article.Body,
-                    MatchSnippet = matchSnippet,
-                    AncestorPath = ancestorPath,  // Changed from AncestorDto to BreadcrumbDto
-                    CreatedDate = article.CreatedDate,
-                    EffectiveDate = article.EffectiveDate
-                });
-            }
-
-            _logger.LogInformation("Found {Count} matching articles", results.Count);
-
-            var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+                Query = query,
+                TitleMatches = await BuildSearchResults(titleMatches, query, "title"),
+                BodyMatches = await BuildSearchResults(bodyMatches, query, "content"),
+                HashtagMatches = await BuildSearchResults(hashtagMatches, query, "hashtag"),
+                TotalResults = titleMatches.Count + bodyMatches.Count + hashtagMatches.Count
+            };
+            
+            var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(results);
             return response;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error searching articles");
-            var errorResponse = req.CreateResponse(System.Net.HttpStatusCode.InternalServerError);
+            logger.LogError(ex, "Error searching articles");
+            var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
+            await errorResponse.WriteAsJsonAsync(new { error = "Internal server error" });
             return errorResponse;
         }
     }
 
-    private async Task<List<BreadcrumbDto>> BuildAncestorPath(int articleId)  // Changed return type
+    private async Task<List<ArticleSearchResultDto>> BuildSearchResults(
+        List<Article> articles, 
+        string query, 
+        string matchType)
     {
-        var ancestors = new List<BreadcrumbDto>();  // Changed type
-        var currentId = articleId;
-
-        while (true)
+        var results = new List<ArticleSearchResultDto>();
+        
+        foreach (var article in articles)
         {
-            var article = await _context.Articles
-                .Where(a => a.Id == currentId)
-                .Select(a => new { a.Id, a.Title, a.ParentId })
-                .FirstOrDefaultAsync();
-
-            if (article == null)
-                break;
-
-            ancestors.Insert(0, new BreadcrumbDto  // Changed type
+            var snippet = ExtractSnippet(article.Body, query, 200);
+            var breadcrumbs = await BuildBreadcrumbs(article.Id);
+            var slug = CreateSlug(article.Title);
+            
+            results.Add(new ArticleSearchResultDto
             {
                 Id = article.Id,
-                Title = article.Title
+                Title = string.IsNullOrEmpty(article.Title) ? "(Untitled)" : article.Title,
+                Slug = slug,
+                MatchSnippet = snippet,
+                MatchType = matchType,
+                AncestorPath = breadcrumbs,
+                LastModified = article.ModifiedDate ?? article.CreatedDate
             });
-
-            if (article.ParentId == null)
-                break;
-
-            currentId = article.ParentId.Value;
         }
-
-        return ancestors;
+        
+        return results;
     }
 
-    private string GetMatchSnippet(string title, string? body, string query)
+    private string ExtractSnippet(string content, string query, int maxLength)
     {
-        // Check title first
-        if (title.Contains(query, StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrEmpty(content))
+            return "";
+            
+        // Find the position of the query in the content
+        var index = content.IndexOf(query, StringComparison.OrdinalIgnoreCase);
+        
+        if (index < 0)
         {
-            return $"Title: {title}";
+            // Query not found in content (shouldn't happen), return start
+            return content.Length <= maxLength 
+                ? content 
+                : content.Substring(0, maxLength) + "...";
         }
+        
+        // Calculate snippet window
+        var startBuffer = 50;
+        var endBuffer = maxLength - query.Length - startBuffer;
+        
+        var start = Math.Max(0, index - startBuffer);
+        var length = Math.Min(content.Length - start, maxLength);
+        
+        var snippet = content.Substring(start, length);
+        
+        // Add ellipsis
+        if (start > 0)
+            snippet = "..." + snippet;
+        if (start + length < content.Length)
+            snippet = snippet + "...";
+            
+        return snippet.Trim();
+    }
 
-        // Then check body
-        if (!string.IsNullOrEmpty(body) && body.Contains(query, StringComparison.OrdinalIgnoreCase))
+    private async Task<List<BreadcrumbDto>> BuildBreadcrumbs(int articleId)
+    {
+        var breadcrumbs = new List<BreadcrumbDto>();
+        var current = await _context.Articles.FindAsync(articleId);
+        
+        while (current != null)
         {
-            var index = body.IndexOf(query, StringComparison.OrdinalIgnoreCase);
-            var start = Math.Max(0, index - 50);
-            var length = Math.Min(100, body.Length - start);
-            var snippet = body.Substring(start, length);
-
-            return start > 0 ? $"...{snippet}..." : $"{snippet}...";
+            breadcrumbs.Insert(0, new BreadcrumbDto
+            {
+                Id = current.Id,
+                Title = string.IsNullOrEmpty(current.Title) ? "(Untitled)" : current.Title
+            });
+            
+            if (current.ParentId.HasValue)
+                current = await _context.Articles.FindAsync(current.ParentId.Value);
+            else
+                break;
         }
+        
+        return breadcrumbs;
+    }
 
-        return string.Empty;
+    private static string CreateSlug(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            return "untitled";
+            
+        return title.ToLowerInvariant()
+            .Replace(" ", "-")
+            .Replace(":", "")
+            .Replace("!", "")
+            .Replace("?", "")
+            .Replace("'", "")
+            .Replace("\"", "")
+            .Trim('-');
     }
 }

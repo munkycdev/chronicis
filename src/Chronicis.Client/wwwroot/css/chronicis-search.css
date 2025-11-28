@@ -1,0 +1,69 @@
+/* Search Results Styling */
+
+.search-result-card {
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    background-color: #F4F0EA;
+}
+
+.search-result-card:hover {
+    border-left-color: #C4AF8E;
+    box-shadow: 0 4px 12px rgba(196, 175, 142, 0.3) !important;
+    transform: translateX(4px);
+}
+
+.search-snippet {
+    color: #666;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.search-highlight {
+    background-color: #D9C9A7;
+    color: #1A1A1A;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+/* Search group headers */
+.search-group-header {
+    color: #C4AF8E;
+    border-bottom: 2px solid #C4AF8E;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+}
+
+.search-group {
+    margin-top: 32px;
+}
+
+/* Global search box in app bar */
+.mud-input-outlined .mud-input-root {
+    color: #F4F0EA;
+}
+
+.mud-input-outlined .mud-input-root::placeholder {
+    color: rgba(244, 240, 234, 0.6);
+}
+
+.mud-input-outlined.mud-input-adorned-start .mud-input-adornment-start {
+    color: rgba(244, 240, 234, 0.7);
+}
+
+/* Search page empty states */
+.search-empty-state {
+    padding: 64px 32px;
+    text-align: center;
+}
+
+/* Breadcrumbs in search results */
+.search-result-card .mud-breadcrumbs {
+    opacity: 0.7;
+}
+
+.search-result-card:hover .mud-breadcrumbs {
+    opacity: 0.9;
+}

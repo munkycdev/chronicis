@@ -175,6 +175,7 @@ builder.Services.AddScoped<IArticleApiService, ArticleApiService>();
 builder.Services.AddScoped<ITreeStateService, TreeStateService>();
 builder.Services.AddScoped<IHashtagApiService, HashtagApiService>();
 builder.Services.AddScoped<IAISummaryApiService, AISummaryApiService>();
+builder.Services.AddScoped<ISearchApiService, SearchApiService>();
 
 builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
 {

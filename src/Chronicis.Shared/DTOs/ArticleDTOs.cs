@@ -89,30 +89,4 @@ namespace Chronicis.Shared.DTOs
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
     }
-
-    /// <summary>
-    /// Search result DTO containing matched article and its ancestor path.
-    /// Used in Phase 3 search functionality.
-    /// </summary>
-    public class ArticleSearchResultDto
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string? Body { get; set; }
-
-        /// <summary>
-        /// Text snippet showing where the search term was found.
-        /// </summary>
-        public string? MatchSnippet { get; set; }
-
-        /// <summary>
-        /// Ancestor path from root to this article.
-        /// Used to show where the article is located in the tree.
-        /// Example: ["World", "Sword Coast", "Waterdeep"]
-        /// </summary>
-        public List<BreadcrumbDto> AncestorPath { get; set; } = new();
-
-        public DateTime CreatedDate { get; set; }
-        public DateTime EffectiveDate { get; set; }
-    }
 }

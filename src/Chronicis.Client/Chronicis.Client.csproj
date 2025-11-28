@@ -8,7 +8,9 @@
 
 	<ItemGroup>
 		<Content Remove="Components\Articles\ArticleTreeView-Simple.razor" />
+		<Content Remove="Components\Search\SearchResultCard.razor" />
 		<Content Remove="Pages\Home.razor" />
+		<Content Remove="Pages\SearchResults.razor" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -26,6 +28,11 @@
 
 	<ItemGroup>
 	  <Folder Include="wwwroot\lib\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="Components\Search\SearchResultCard.razor" />
+	  <None Include="Pages\SearchResults.razor" />
 	</ItemGroup>
 
 </Project>

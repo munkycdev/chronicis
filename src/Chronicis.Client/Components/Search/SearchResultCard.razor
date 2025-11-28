@@ -1,0 +1,117 @@
+@using Chronicis.Shared.DTOs
+@using System.Text.RegularExpressions
+
+<MudCard Class="mb-3 search-result-card" @onclick="OnClick" Style="cursor: pointer;" Elevation="2">
+    <MudCardContent>
+        <div class="d-flex align-center mb-2">
+            <MudChip Size="Size.Small" 
+                     Color="@GetMatchTypeColor()" 
+                     Variant="Variant.Text"
+                     Style="font-weight: 500;">
+                @GetMatchTypeDisplay()
+            </MudChip>
+            
+            <MudSpacer />
+            
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                @GetRelativeTime()
+            </MudText>
+        </div>
+        
+        <MudText Typo="Typo.h6" Class="mb-2" Style="color: #C4AF8E;">
+            @((MarkupString)HighlightMatch(Result.Title, Query))
+        </MudText>
+        
+        @if (Result.AncestorPath.Any())
+        {
+            <MudBreadcrumbs Items="@GetBreadcrumbItems()" 
+                           Class="mb-2"
+                           Style="font-size: 0.875rem; color: #666;" />
+        }
+        
+        @if (!string.IsNullOrEmpty(Result.MatchSnippet))
+        {
+            <MudText Typo="Typo.body2" Class="search-snippet mt-2">
+                @((MarkupString)HighlightMatch(Result.MatchSnippet, Query))
+            </MudText>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired]
+    public ArticleSearchResultDto Result { get; set; } = null!;
+    
+    [Parameter, EditorRequired]
+    public string Query { get; set; } = string.Empty;
+    
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    private string GetMatchTypeDisplay()
+    {
+        return Result.MatchType switch
+        {
+            "title" => "Title Match",
+            "content" => "Content Match",
+            "hashtag" => "Hashtag Match",
+            _ => "Match"
+        };
+    }
+
+    private Color GetMatchTypeColor()
+    {
+        return Result.MatchType switch
+        {
+            "title" => Color.Primary,
+            "content" => Color.Info,
+            "hashtag" => Color.Success,
+            _ => Color.Default
+        };
+    }
+
+    private string GetRelativeTime()
+    {
+        var diff = DateTime.UtcNow - Result.LastModified;
+        
+        if (diff.TotalMinutes < 1)
+            return "Just now";
+        if (diff.TotalMinutes < 60)
+            return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24)
+            return $"{(int)diff.TotalHours}h ago";
+        if (diff.TotalDays < 7)
+            return $"{(int)diff.TotalDays}d ago";
+        if (diff.TotalDays < 30)
+            return $"{(int)(diff.TotalDays / 7)}w ago";
+        
+        return Result.LastModified.ToString("MMM d, yyyy");
+    }
+
+    private List<BreadcrumbItem> GetBreadcrumbItems()
+    {
+        return Result.AncestorPath.Select(b => 
+            new BreadcrumbItem(b.Title, href: null, disabled: true)
+        ).ToList();
+    }
+
+    private string HighlightMatch(string text, string query)
+    {
+        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(query))
+            return text;
+        
+        try
+        {
+            var regex = new Regex(
+                Regex.Escape(query),
+                RegexOptions.IgnoreCase);
+                
+            return regex.Replace(text, match => 
+                $"<mark class=\"search-highlight\">{match.Value}</mark>");
+        }
+        catch
+        {
+            return text;
+        }
+    }
+}

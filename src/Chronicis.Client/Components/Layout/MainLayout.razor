@@ -9,64 +9,65 @@
 
 <MudLayout>
     <MudAppBar Elevation="2">
-        <MudIconButton 
-            Icon="@Icons.Material.Filled.Menu" 
-            Color="Color.Inherit" 
-            Edge="Edge.Start" 
-            OnClick="@ToggleDrawer" />
-        
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="@ToggleDrawer" />
+
         <!-- Clickable logo and title to go home -->
-        <div class="d-flex align-center chronicis-home-link" 
-             @onclick="NavigateHome" 
+        <div class="d-flex align-center chronicis-home-link"
+             @onclick="NavigateHome"
              style="cursor: pointer;">
             <img src="/images/logo.png" alt="Chronicis" class="chronicis-logo" />
             <MudText Typo="Typo.h6" Class="chronicis-title">Chronicis</MudText>
         </div>
-        
+
         <MudSpacer />
-        
-        <!-- Global Search (Phase 9) -->
-        <MudTextField 
-            @bind-Value="_globalSearch"
-            Placeholder="Coming in Phase 9"
-            Adornment="Adornment.Start"
-            AdornmentIcon="@Icons.Material.Filled.Search"
-            Variant="Variant.Outlined"
-            Margin="Margin.Dense"
-            Style="max-width: 400px; background-color: rgba(255,255,255,0.05);"
-            Class="global-search-input"
-            @onkeyup="OnGlobalSearchKeyUp" />
-        
-        <MudIconButton 
-            Icon="@Icons.Material.Filled.Settings" 
-            Color="Color.Inherit" 
-            Title="Settings" />
-        <MudIconButton 
-            Icon="@Icons.Material.Filled.AccountCircle" 
-            Color="Color.Inherit" 
-            Title="Profile" />
+
+        <!-- Global Content Search (Phase 9) -->
+        <MudTextField @bind-Value="_globalSearchQuery"
+                      Placeholder="Search content..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Style="max-width: 400px; background-color: rgba(255,255,255,0.1);"
+                      Class="global-search-input"
+                      Immediate="true"
+                      @onkeydown="OnGlobalSearchKeyDown" />
+
+        <MudIconButton Icon="@Icons.Material.Filled.Search"
+                       Color="Color.Inherit"
+                       OnClick="ExecuteGlobalSearch"
+                       Title="Search"
+                       Class="ml-2" />
+
+        <MudIconButton Icon="@Icons.Material.Filled.Settings"
+                       Color="Color.Inherit"
+                       Title="Settings" />
+        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle"
+                       Color="Color.Inherit"
+                       Title="Profile" />
     </MudAppBar>
 
-    <MudDrawer 
-        @bind-Open="_drawerOpen" 
-        Elevation="2" 
-        ClipMode="DrawerClipMode.Always"
-        Width="320px">
-        
+    <MudDrawer @bind-Open="_drawerOpen"
+               Elevation="2"
+               ClipMode="DrawerClipMode.Always"
+               Width="320px">
+
         <!-- Drawer Header with Search -->
         <div class="chronicis-search-box">
-            <MudTextField 
-                @bind-Value="_treeSearch"
-                Placeholder="Search articles..."
-                Adornment="Adornment.End"
-                AdornmentIcon="@(_treeSearch?.Length > 0 ? Icons.Material.Filled.Clear : Icons.Material.Filled.Search)"
-                AdornmentColor="Color.Primary"
-                OnAdornmentClick="ClearSearch"
-                Variant="Variant.Outlined"
-                Margin="Margin.Dense"
-                Immediate="true"
-                @onkeyup="OnTreeSearchKeyUp"
-                Class="mb-2" />
+            <MudTextField @bind-Value="_treeSearch"
+                          Placeholder="Search articles..."
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@(_treeSearch?.Length > 0 ? Icons.Material.Filled.Clear : Icons.Material.Filled.Search)"
+                          AdornmentColor="Color.Primary"
+                          OnAdornmentClick="ClearSearch"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Immediate="true"
+                          @onkeyup="OnTreeSearchKeyUp"
+                          Class="mb-2" />
         </div>
 
         <!-- Article Tree View -->
@@ -90,10 +91,9 @@
                                 <MudText Typo="Typo.body1" Class="chronicis-empty-state-message mb-4">
                                     An unexpected error occurred. Please try refreshing the page.
                                 </MudText>
-                                <MudButton 
-                                    Variant="Variant.Filled" 
-                                    Color="Color.Primary"
-                                    OnClick="@(() => Navigation.NavigateTo(Navigation.Uri, forceLoad: true))">
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           OnClick="@(() => Navigation.NavigateTo(Navigation.Uri, forceLoad: true))">
                                     Refresh Page
                                 </MudButton>
                                 <details class="mt-4" style="text-align: left; max-width: 600px; margin: 0 auto;">
@@ -114,7 +114,7 @@
 @code {
     private bool _drawerOpen = true;
     private string? _treeSearch;
-    private string? _globalSearch;
+    private string _globalSearchQuery = string.Empty;
 
     private void ToggleDrawer()
     {
@@ -124,13 +124,13 @@
     private void NavigateHome()
     {
         Console.WriteLine("=== NavigateHome clicked ===");
-        
+
         // Clear article selection first
         TreeState.NotifySelectionChanged(0); // 0 means no selection
-        
+
         // Navigate to home
         Navigation.NavigateTo("/");
-        
+
         Console.WriteLine("Navigated to home, selection cleared");
     }
 
@@ -152,15 +152,20 @@
         }
     }
 
-    private async Task OnGlobalSearchKeyUp(KeyboardEventArgs e)
+    // Phase 9: Global Content Search
+    private async Task OnGlobalSearchKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            // Navigate to search results page (Phase 9)
-            if (!string.IsNullOrWhiteSpace(_globalSearch))
-            {
-                Navigation.NavigateTo($"/search?q={Uri.EscapeDataString(_globalSearch)}");
-            }
+            await ExecuteGlobalSearch();
+        }
+    }
+
+    private async Task ExecuteGlobalSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(_globalSearchQuery))
+        {
+            Navigation.NavigateTo($"/search?q={Uri.EscapeDataString(_globalSearchQuery)}");
         }
     }
 }
