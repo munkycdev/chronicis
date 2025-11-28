@@ -98,7 +98,7 @@ else
                     }
                     else if (_recentArticles?.Any() ?? false)
                     {
-                        <MudList T="string" Clickable="true">
+                        <MudList T="string">
                             @foreach (var article in _recentArticles)
                             {
                                 <MudListItem T="string" OnClick="@(() => NavigateToArticle(article.Id))">
@@ -337,7 +337,7 @@ else
         }
     }
 
-    private static string CreateSlug(string title)
+    private static string CreateSlug(string? title)
     {
         if (string.IsNullOrEmpty(title))
             return "untitled";

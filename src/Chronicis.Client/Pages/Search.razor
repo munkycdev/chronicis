@@ -1,4 +1,4 @@
-﻿@page "/search"
+@page "/search"
 @using Chronicis.Shared.DTOs
 @using Chronicis.Client.Components.Search
 @inject ISearchApiService SearchApi
@@ -49,9 +49,7 @@
                 
                 @foreach (var result in _results.TitleMatches)
                 {
-                    <SearchResultCard Result="@result" 
-                                     Query="@_results.Query" 
-                                     OnClick="@(() => NavigateToArticle(result))" />
+                    <SearchResultCard Result="@result" Query="@_results.Query" OnClick="@(() => NavigateToArticle(result))" />
                 }
             </div>
         }
@@ -67,9 +65,7 @@
                 
                 @foreach (var result in _results.BodyMatches)
                 {
-                    <SearchResultCard Result="@result" 
-                                     Query="@_results.Query" 
-                                     OnClick="@(() => NavigateToArticle(result))" />
+                    <SearchResultCard Result="@result" Query="@_results.Query" OnClick="@(() => NavigateToArticle(result))" />
                 }
             </div>
         }
@@ -85,9 +81,7 @@
                 
                 @foreach (var result in _results.HashtagMatches)
                 {
-                    <SearchResultCard Result="@result" 
-                                     Query="@_results.Query" 
-                                     OnClick="@(() => NavigateToArticle(result))" />
+                    <SearchResultCard Result="@result" Query="@_results.Query" OnClick="@(() => NavigateToArticle(result))" />
                 }
             </div>
         }

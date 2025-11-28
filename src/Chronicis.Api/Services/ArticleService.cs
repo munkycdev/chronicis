@@ -36,12 +36,10 @@ namespace Chronicis.Api.Services
             _logger.LogInformation("Fetching root articles");
 
             var rootArticles = await _context.Articles
-                .Where(a => a.ParentId == null)
-                .OrderBy(a => a.Title)
-                .Include(a => a.Children)
-                    .ThenInclude(c => c.Children)
-                    .OrderBy(a => a.Title)
-                .ToListAsync();
+            .Where(a => a.ParentId == null)
+            .Include(a => a.Children)
+            .OrderBy(a => a.Title)
+            .ToListAsync();
 
             return rootArticles.Select(a => MapToDto(a)).ToList();
         }

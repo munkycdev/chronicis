@@ -34,7 +34,7 @@
             <!-- Article list -->
             @if (_filteredArticles?.Any() ?? false)
             {
-                <MudList T="string" Clickable="true" Dense="true" Style="max-height: 400px; overflow-y: auto;">
+                <MudList T="string" Dense="true" Style="max-height: 400px; overflow-y: auto;">
                     @foreach (var article in _filteredArticles)
                     {
                         <MudListItem T="string" 

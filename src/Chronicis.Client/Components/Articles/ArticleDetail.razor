@@ -1,3 +1,4 @@
+@using Chronicis.Client.Components.Shared
 @using MudBlazor.Charts
 @using Chronicis.Client.Components.Hashtags
 @inject IArticleApiService ArticleApi
@@ -89,7 +90,7 @@ else
                       Immediate="true"
                       @onkeyup="@(() => OnTitleChanged())"
                       @onkeydown="@OnTitleKeyDown"
-                      DisableUnderLine="true" />
+                      Underline="false"/>
 
         <!-- Divider -->
         <div class="chronicis-rune-divider mb-3"></div>
@@ -154,42 +155,32 @@ else
         <MudDrawerContainer>
             <MudList T="string">
                 <MudListItem>
-                    <MudListItemContent>
                         <MudText Typo="Typo.subtitle1">Article ID</MudText>
                         <MudText Typo="Typo.body2">@_article.Id</MudText>
-                    </MudListItemContent>
                 </MudListItem>
                 <MudListItem>
-                    <MudListItemContent>
                         <MudText Typo="Typo.subtitle1">Effective Date</MudText>
                         <MudText Typo="Typo.body2">
                             @_article.EffectiveDate.ToString("MMMM d, yyyy 'at' h:mm tt")
                         </MudText>
-                    </MudListItemContent>
                 </MudListItem>
                 <MudListItem>
-                    <MudListItemContent>
                         <MudText Typo="Typo.subtitle1">Created Date</MudText>
                         <MudText Typo="Typo.body2">
                             @_article.CreatedDate.ToString("MMMM d, yyyy 'at' h:mm tt")
                         </MudText>
-                    </MudListItemContent>
                 </MudListItem>
                 <MudListItem>
-                    <MudListItemContent>
                         <MudText Typo="Typo.subtitle1">Modified Date</MudText>
                         <MudText Typo="Typo.body2">
                             @_article.ModifiedDate?.ToString("MMMM d, yyyy 'at' h:mm tt")
                         </MudText>
-                    </MudListItemContent>
                 </MudListItem>
                 <MudListItem>
-                    <MudListItemContent>
                         <MudText Typo="Typo.subtitle1">Icon Emoji</MudText>
                         <MudText Typo="Typo.body2">
                             @(_article.IconEmoji ?? "(None)")
                         </MudText>
-                    </MudListItemContent>
                 </MudListItem>
             </MudList>
             <BacklinksPanel ArticleId="@_article.Id" />
@@ -289,13 +280,13 @@ else
         try
         {
             _article = await ArticleApi.GetArticleAsync(articleId);
-            _editTitle = _article.Title ?? string.Empty;
-            _editBody = _article.Body ?? string.Empty;
+            _editTitle = _article?.Title ?? string.Empty;
+            _editBody = _article?.Body ?? string.Empty;
             _hasUnsavedChanges = false;
             await LoadBreadcrumbsAsync(articleId);
 
             // Update browser page title
-            var pageTitle = string.IsNullOrEmpty(_article.Title) 
+            var pageTitle = string.IsNullOrEmpty(_article?.Title) 
                 ? "Untitled - Chronicis" 
                 : $"{_article.Title} - Chronicis";
             await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(pageTitle)}'");
@@ -597,7 +588,7 @@ else
 
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result?.Canceled ?? true)
         {
             // Hashtag was linked, refresh editor
             if (_article != null && _editorInitialized)

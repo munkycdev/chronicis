@@ -225,6 +225,6 @@ public class AISummaryService : IAISummaryService
             .Distinct()
             .ToListAsync();
 
-        return backlinks.Select(b => (b.Title, b.Body)).ToList();
+        return backlinks.Select(b => (b.Title, b.Body ?? string.Empty)).ToList();
     }
 }

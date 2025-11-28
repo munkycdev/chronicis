@@ -9,7 +9,7 @@ namespace Chronicis.Api.Functions
     public class ArticleBaseClass
     {
         protected readonly JsonSerializerOptions _options;
-        protected readonly ChronicisDbContext? _context;
+        protected readonly ChronicisDbContext _context;
 
         public ArticleBaseClass(ChronicisDbContext context)
         {
