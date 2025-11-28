@@ -10,7 +10,6 @@
 		<Content Remove="Components\Articles\ArticleTreeView-Simple.razor" />
 		<Content Remove="Components\Search\SearchResultCard.razor" />
 		<Content Remove="Pages\Home.razor" />
-		<Content Remove="Pages\SearchResults.razor" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -27,12 +26,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Folder Include="Components\Search\" />
 	  <Folder Include="wwwroot\lib\" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Include="Components\Search\SearchResultCard.razor" />
-	  <None Include="Pages\SearchResults.razor" />
+	  <None Include="Components\Articles\SearchResultCard.razor" />
 	</ItemGroup>
 
 </Project>

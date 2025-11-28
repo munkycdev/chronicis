@@ -1,16 +1,16 @@
-/* Search Results Styling */
+/* Search Results Styling - Chronicis Theme */
 
 .search-result-card {
     transition: all 0.3s ease;
     border-left: 3px solid transparent;
-    background-color: #F4F0EA;
+    background-color: #FFFFFF !important; /* White background for cards */
 }
 
-.search-result-card:hover {
-    border-left-color: #C4AF8E;
-    box-shadow: 0 4px 12px rgba(196, 175, 142, 0.3) !important;
-    transform: translateX(4px);
-}
+    .search-result-card:hover {
+        border-left-color: #C4AF8E;
+        box-shadow: 0 4px 12px rgba(196, 175, 142, 0.3) !important;
+        transform: translateX(4px);
+    }
 
 .search-snippet {
     color: #666;
@@ -28,7 +28,7 @@
 
 /* Search group headers */
 .search-group-header {
-    color: #C4AF8E;
+    color: #C4AF8E !important;
     border-bottom: 2px solid #C4AF8E;
     padding-bottom: 8px;
     margin-bottom: 16px;
@@ -41,15 +41,15 @@
 }
 
 /* Global search box in app bar */
-.mud-input-outlined .mud-input-root {
-    color: #F4F0EA;
+.global-search-input .mud-input-outlined .mud-input-root {
+    color: var(--chronicis-deep-blue-grey);
 }
 
-.mud-input-outlined .mud-input-root::placeholder {
-    color: rgba(244, 240, 234, 0.6);
-}
+    .global-search-input .mud-input-outlined .mud-input-root::placeholder {
+        color: rgba(244, 240, 234, 0.6);
+    }
 
-.mud-input-outlined.mud-input-adorned-start .mud-input-adornment-start {
+.global-search-input .mud-input-outlined.mud-input-adorned-start .mud-input-adornment-start {
     color: rgba(244, 240, 234, 0.7);
 }
 
@@ -66,4 +66,14 @@
 
 .search-result-card:hover .mud-breadcrumbs {
     opacity: 0.9;
+}
+
+/* Fix text visibility */
+.search-result-card .mud-typography {
+    color: #1A1A1A !important;
+}
+
+.search-result-card .mud-chip {
+    background-color: rgba(196, 175, 142, 0.2) !important;
+    color: #C4AF8E !important;
 }

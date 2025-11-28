@@ -1,10 +1,11 @@
+@namespace Chronicis.Client.Components.Search
 @using Chronicis.Shared.DTOs
 @using System.Text.RegularExpressions
 
 <MudCard Class="mb-3 search-result-card" @onclick="OnClick" Style="cursor: pointer;" Elevation="2">
     <MudCardContent>
         <div class="d-flex align-center mb-2">
-            <MudChip Size="Size.Small" 
+            <MudChip T="string" Size="Size.Small" 
                      Color="@GetMatchTypeColor()" 
                      Variant="Variant.Text"
                      Style="font-weight: 500;">
