@@ -328,7 +328,7 @@
 .global-search-input .mud-input-slot {
     background-color: rgba(243, 240, 235, 0.8) !important;
     padding-left: 8px !important;
-    margin: 0px 8px !important;
+    margin: 8px !important;
 }
 
 /* Article Card */

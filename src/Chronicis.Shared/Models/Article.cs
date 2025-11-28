@@ -30,5 +30,8 @@ namespace Chronicis.Shared.Models
         // Computed
         [NotMapped]
         public int ChildCount => Children?.Count ?? 0;
+
+        public string? AISummary { get; set; }
+        public DateTime? AISummaryGeneratedDate { get; set; }
     }
 }
