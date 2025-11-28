@@ -10,28 +10,30 @@ using System.Text.Json;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
+    .ConfigureAppConfiguration((context, config) =>
+    {
+        config.AddJsonFile("local.settings.json", optional: true, reloadOnChange: true);
+        config.AddEnvironmentVariables();
+    })
     .ConfigureServices((context, services) =>
     {
-        services.AddApplicationInsightsTelemetryWorkerService();
-        services.ConfigureFunctionsApplicationInsights();
-        services.Configure<JsonSerializerOptions>(options =>
-        {
-            options.PropertyNameCaseInsensitive = true;
-        });
+        var configuration = context.Configuration;
 
-        // Database configuration
-        var connectionString = context.Configuration.GetConnectionString("ChronicisDb")
-            ?? throw new InvalidOperationException("Connection string 'ChronicisDb' not found.");
+        // Register IConfiguration so it can be injected
+        services.AddSingleton<IConfiguration>(configuration);
 
+        // Database
         services.AddDbContext<ChronicisDbContext>(options =>
-            options.UseSqlServer(connectionString));
+            options.UseSqlServer(configuration.GetConnectionString("ChronicisDb")));
 
-        // Register services
-        services.AddScoped<IArticleService, ArticleService>();
-        services.AddScoped<ArticleValidationService>();
+        // Your services
         services.AddScoped<IHashtagParser, HashtagParser>();
         services.AddScoped<IHashtagSyncService, HashtagSyncService>();
         services.AddScoped<IAISummaryService, AISummaryService>();
+
+        // Application Insights (if you have it)
+        services.AddApplicationInsightsTelemetryWorkerService();
+        services.ConfigureFunctionsApplicationInsights();
     })
     .Build();
 

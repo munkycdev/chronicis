@@ -37,12 +37,16 @@ public class AISummaryService : IAISummaryService
         _configuration = configuration;
         _logger = logger;
 
-        var endpoint = _configuration["AzureOpenAI:Endpoint"]
-            ?? throw new InvalidOperationException("AzureOpenAI:Endpoint not configured");
-        var apiKey = _configuration["AzureOpenAI:ApiKey"]
-            ?? throw new InvalidOperationException("AzureOpenAI:ApiKey not configured");
-        var deploymentName = _configuration["AzureOpenAI:DeploymentName"]
-            ?? throw new InvalidOperationException("AzureOpenAI:DeploymentName not configured");
+        var endpoint = _configuration["AzureOpenAI__Endpoint"];
+        var apiKey = _configuration["AzureOpenAI__ApiKey"];
+        var deploymentName = _configuration["AzureOpenAI__DeploymentName"];
+
+        if (string.IsNullOrEmpty(endpoint))
+            throw new InvalidOperationException("AzureOpenAI__Endpoint not configured");
+        if (string.IsNullOrEmpty(apiKey))
+            throw new InvalidOperationException("AzureOpenAI__ApiKey not configured");
+        if (string.IsNullOrEmpty(deploymentName))
+            throw new InvalidOperationException("AzureOpenAI__DeploymentName not configured");
 
         _openAIClient = new AzureOpenAIClient(new Uri(endpoint), new AzureKeyCredential(apiKey));
         _chatClient = _openAIClient.GetChatClient(deploymentName);
