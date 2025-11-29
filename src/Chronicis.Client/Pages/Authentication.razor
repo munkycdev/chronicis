@@ -1,4 +1,4 @@
-@page "/authentication/{action}"
+﻿@page "/authentication/{action}"
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @inject NavigationManager Navigation
 
@@ -14,7 +14,7 @@
             </MudPaper>
         </MudContainer>
     </LoggingIn>
-    
+
     <CompletingLoggingIn>
         <MudContainer Class="auth-container">
             <MudPaper Elevation="3" Class="auth-paper">
@@ -25,7 +25,7 @@
             </MudPaper>
         </MudContainer>
     </CompletingLoggingIn>
-    
+
     <LogOut>
         <MudContainer Class="auth-container">
             <MudPaper Elevation="3" Class="auth-paper">
@@ -36,7 +36,7 @@
             </MudPaper>
         </MudContainer>
     </LogOut>
-    
+
     <CompletingLogOut>
         <MudContainer Class="auth-container">
             <MudPaper Elevation="3" Class="auth-paper">
@@ -47,7 +47,7 @@
             </MudPaper>
         </MudContainer>
     </CompletingLogOut>
-    
+
     <LogInFailed>
         <MudContainer Class="auth-container">
             <MudPaper Elevation="3" Class="auth-paper">
@@ -57,9 +57,10 @@
                     <MudText Typo="Typo.body2" Class="mt-2">
                         There was a problem signing you in. Please try again.
                     </MudText>
-                    <MudButton Variant="Variant.Filled" 
-                               Color="Color.Primary" 
-                               Href="/login"
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Href="authentication/login"
                                Class="mt-4">
                         Return to Login
                     </MudButton>
@@ -77,14 +78,14 @@
         min-height: 100vh;
         background: linear-gradient(135deg, #1F2A33 0%, #3A4750 100%);
     }
-    
+
     .auth-paper {
         padding: 3rem;
-        max-width: 400px;
+        max-width: 500px;
         width: 100%;
         background-color: #3A4750 !important;
     }
-    
+
     .auth-content {
         display: flex;
         flex-direction: column;

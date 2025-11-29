@@ -34,6 +34,9 @@ public class UpdateArticle : ArticleBaseClass
         [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "articles/{id}")] HttpRequestData req,
         int id)
     {
+        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+        if (authErrorResponse != null) return authErrorResponse;
+
         try
         {
             // Parse request body

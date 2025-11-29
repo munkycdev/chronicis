@@ -33,6 +33,9 @@ public class BacklinkFunctions : ArticleBaseClass
 
         try
         {
+            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+            if (authErrorResponse != null) return authErrorResponse;
+
             if (_context == null)  throw new SystemException();
 
             // Get the target article

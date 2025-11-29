@@ -20,32 +20,57 @@ namespace Chronicis.Api.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
-
-            // Configure self-referencing hierarchy
+            // Article configuration
             modelBuilder.Entity<Article>(entity =>
             {
                 entity.HasKey(a => a.Id);
 
+                entity.Ignore("UserId1");
+
+                // Title configuration
                 entity.Property(a => a.Title)
-                    .IsRequired()
                     .HasMaxLength(500);
 
-                entity.Property(a => a.Body)
-                    .IsRequired(false);
-
-                entity.Property(a => a.CreatedDate)
-                    .IsRequired();
-
-                // Self-referencing relationship
+                // Self-referencing hierarchy
                 entity.HasOne(a => a.Parent)
                     .WithMany(a => a.Children)
                     .HasForeignKey(a => a.ParentId)
-                    .OnDelete(DeleteBehavior.Restrict); // Prevent cascade deletes
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                // Index for performance
+                // User relationship - FIXED
+                entity.HasOne(a => a.User)
+                    .WithMany()  // User doesn't have a collection of Articles
+                    .HasForeignKey(a => a.UserId)
+                    .IsRequired()
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Metadata.RemoveProperty("UserId1");
+
+                // Indexes
                 entity.HasIndex(a => a.ParentId);
+                entity.HasIndex(a => a.UserId);
                 entity.HasIndex(a => a.Title);
+            });
+
+            // User configuration
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(u => u.Id);
+
+                entity.Property(u => u.Auth0UserId)
+                    .HasMaxLength(256)
+                    .IsRequired();
+
+                entity.Property(u => u.Email)
+                    .HasMaxLength(256)
+                    .IsRequired();
+
+                entity.Property(u => u.DisplayName)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.HasIndex(u => u.Auth0UserId)
+                    .IsUnique();
             });
 
             // Hashtag configuration
@@ -54,69 +79,36 @@ namespace Chronicis.Api.Data
                 entity.HasKey(h => h.Id);
 
                 entity.Property(h => h.Name)
-                    .IsRequired()
-                    .HasMaxLength(100);
+                    .HasMaxLength(100)
+                    .IsRequired();
 
-                // Create unique index on Name (case-insensitive)
-                entity.HasIndex(h => h.Name)
-                    .IsUnique();
-
-                entity.Property(h => h.CreatedDate)
-                    .HasDefaultValueSql("GETUTCDATE()");
-
-                // Optional foreign key to linked article
                 entity.HasOne(h => h.LinkedArticle)
                     .WithMany()
                     .HasForeignKey(h => h.LinkedArticleId)
-                    .OnDelete(DeleteBehavior.SetNull); // If article deleted, unlink hashtag
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(h => h.Name)
+                    .IsUnique();
             });
 
-            // ArticleHashtag junction configuration
+            // ArticleHashtag (junction table) configuration
             modelBuilder.Entity<ArticleHashtag>(entity =>
             {
                 entity.HasKey(ah => ah.Id);
 
-                // Foreign key to Article
                 entity.HasOne(ah => ah.Article)
                     .WithMany(a => a.ArticleHashtags)
                     .HasForeignKey(ah => ah.ArticleId)
-                    .OnDelete(DeleteBehavior.Cascade); // Delete hashtag references when article deleted
+                    .OnDelete(DeleteBehavior.Cascade);
 
-                // Foreign key to Hashtag
                 entity.HasOne(ah => ah.Hashtag)
                     .WithMany(h => h.ArticleHashtags)
                     .HasForeignKey(ah => ah.HashtagId)
-                    .OnDelete(DeleteBehavior.Cascade); // Delete references when hashtag deleted
+                    .OnDelete(DeleteBehavior.Cascade);
 
-                // Composite index for performance
-                entity.HasIndex(ah => new { ah.ArticleId, ah.HashtagId });
-
-                entity.Property(ah => ah.Position)
-                    .IsRequired();
-
-                entity.Property(ah => ah.CreatedDate)
-                    .HasDefaultValueSql("GETUTCDATE()");
+                entity.HasIndex(ah => new { ah.ArticleId, ah.HashtagId })
+                    .IsUnique();
             });
-
-            // User configuration
-            modelBuilder.Entity<User>(entity =>
-            {
-                entity.HasKey(u => u.Id);
-                entity.HasIndex(u => u.Auth0UserId).IsUnique();
-                entity.Property(u => u.Auth0UserId).IsRequired().HasMaxLength(256);
-                entity.Property(u => u.Email).IsRequired().HasMaxLength(256);
-                entity.Property(u => u.DisplayName).IsRequired().HasMaxLength(100);
-            });
-
-            // Article-User relationship
-            modelBuilder.Entity<Article>()
-                .HasOne(a => a.User)
-                .WithMany(u => u.Articles)
-                .HasForeignKey(a => a.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Seed data for development
-            SeedData(modelBuilder);
         }
 
         private void SeedData(ModelBuilder modelBuilder)

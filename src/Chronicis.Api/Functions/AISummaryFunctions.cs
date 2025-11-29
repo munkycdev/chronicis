@@ -35,6 +35,9 @@ public class AISummaryFunctions : BaseAuthenticatedFunction
         int id)
     {
         _logger.LogInformation("Getting summary estimate for article {ArticleId}", id);
+        
+        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+        if (authErrorResponse != null) return authErrorResponse;
 
         try
         {
@@ -67,6 +70,9 @@ public class AISummaryFunctions : BaseAuthenticatedFunction
         int id)
     {
         _logger.LogInformation("Generating AI summary for article {ArticleId}", id);
+
+        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+        if (authErrorResponse != null) return authErrorResponse;
 
         try
         {
@@ -104,6 +110,9 @@ public class AISummaryFunctions : BaseAuthenticatedFunction
         int id)
     {
         _logger.LogInformation("Getting summary for article {ArticleId}", id);
+
+        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+        if (authErrorResponse != null) return authErrorResponse;
 
         try
         {
@@ -145,6 +154,9 @@ public class AISummaryFunctions : BaseAuthenticatedFunction
         int id)
     {
         _logger.LogInformation("Clearing summary for article {ArticleId}", id);
+
+        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+        if (authErrorResponse != null) return authErrorResponse;
 
         try
         {

@@ -9,12 +9,12 @@ namespace Chronicis.Client.Services
     /// </summary>
     public class ArticleApiService : IArticleApiService
     {
-        private readonly HttpClient _httpClient;
+        private readonly AuthHttpClient _authHttpClient;
         private readonly ILogger<ArticleApiService> _logger;
 
-        public ArticleApiService(HttpClient httpClient, ILogger<ArticleApiService> logger)
+        public ArticleApiService(AuthHttpClient httpClient, ILogger<ArticleApiService> logger)
         {
-            _httpClient = httpClient;
+            _authHttpClient = httpClient;
             _logger = logger;
         }
 
@@ -23,6 +23,11 @@ namespace Chronicis.Client.Services
         /// </summary>
         public async Task<List<ArticleTreeDto>> GetRootArticlesAsync()
         {
+            var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
+
+            _logger.LogInformation("=== ArticleApiService Constructor ===");
+            _logger.LogInformation("HttpClient BaseAddress: {BaseAddress}", _httpClient.BaseAddress);
+            _logger.LogInformation("HttpClient has {Count} default headers", _httpClient.DefaultRequestHeaders.Count());
             try
             {
                 _logger.LogInformation("Fetching root articles from API");
@@ -41,6 +46,7 @@ namespace Chronicis.Client.Services
         /// </summary>
         public async Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId)
         {
+            var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
             try
             {
                 _logger.LogInformation("Fetching children for article {ParentId}", parentId);
@@ -59,6 +65,7 @@ namespace Chronicis.Client.Services
         /// </summary>
         public async Task<ArticleDto?> GetArticleDetailAsync(int id)
         {
+            var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
             try
             {
                 _logger.LogInformation("Fetching article detail for {ArticleId}", id);
@@ -90,6 +97,7 @@ namespace Chronicis.Client.Services
         /// </summary>
         public async Task<ArticleDto> CreateArticleAsync(ArticleCreateDto dto)
         {
+            var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
             try
             {
                 _logger.LogInformation("Creating new article: {Title}", dto.Title);
@@ -110,6 +118,7 @@ namespace Chronicis.Client.Services
         /// </summary>
         public async Task<ArticleDto> UpdateArticleAsync(int id, ArticleUpdateDto dto)
         {
+            var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
             try
             {
                 _logger.LogInformation("Updating article {ArticleId}", id);
@@ -130,6 +139,7 @@ namespace Chronicis.Client.Services
         /// </summary>
         public async Task DeleteArticleAsync(int id)
         {
+            var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
             try
             {
                 _logger.LogInformation("Deleting article {ArticleId}", id);
@@ -155,6 +165,8 @@ namespace Chronicis.Client.Services
 
             try
             {
+                var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
+
                 _logger.LogInformation("Searching articles with query: {Query}", query);
                 var results = await _httpClient.GetFromJsonAsync<List<ArticleSearchResultDto>>(
                     $"api/articles/search?query={Uri.EscapeDataString(query)}");
@@ -179,6 +191,8 @@ namespace Chronicis.Client.Services
 
             try
             {
+                var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
+
                 _logger.LogInformation("Searching articles by title: {Query}", query);
                 var results = await _httpClient.GetFromJsonAsync<List<ArticleSearchResultDto>>(
                     $"api/articles/search/title?query={Uri.EscapeDataString(query)}");
@@ -195,6 +209,8 @@ namespace Chronicis.Client.Services
         {
             try
             {
+                var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
+
                 var backlinks = await _httpClient.GetFromJsonAsync<List<BacklinkDto>>($"api/articles/{articleId}/backlinks");
                 return backlinks ?? new List<BacklinkDto>();
             }

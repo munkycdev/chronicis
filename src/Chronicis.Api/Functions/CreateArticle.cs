@@ -33,6 +33,9 @@ public class CreateArticle : ArticleBaseClass
     {
         try
         {
+            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+            if (authErrorResponse != null) return authErrorResponse;
+
             // Parse request body
             var dto = await JsonSerializer.DeserializeAsync<ArticleCreateDto>(req.Body, _options);
 

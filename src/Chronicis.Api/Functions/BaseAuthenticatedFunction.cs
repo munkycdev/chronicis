@@ -26,6 +26,9 @@ public abstract class BaseAuthenticatedFunction
 
     protected async Task<(User? user, HttpResponseData? errorResponse)> AuthenticateRequestAsync(HttpRequestData req)
     {
+        _logger.LogInformation("DEBUG: Auth0 Config - Domain: {Domain}, Audience: {Audience}",
+    _auth0Config.Domain, _auth0Config.Audience);
+
         // Extract and validate user info from JWT token
         var principal = await Auth0AuthenticationHelper.GetUserFromTokenAsync(
             req,

@@ -31,6 +31,9 @@ public class ArticleSearchFunction : BaseAuthenticatedFunction
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/search")]
         HttpRequestData req)
     {
+        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+        if (authErrorResponse != null) return authErrorResponse;
+
         var logger = req.FunctionContext.GetLogger("SearchArticles");
         
         // Get query parameter

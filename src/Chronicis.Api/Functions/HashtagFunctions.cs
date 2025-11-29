@@ -38,6 +38,9 @@ public class HashtagFunctions : BaseAuthenticatedFunction
     {
         try
         {
+            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+            if (authErrorResponse != null) return authErrorResponse;
+
             var hashtags = await _context.Hashtags
                 .Include(h => h.LinkedArticle)
                 .Include(h => h.ArticleHashtags)
@@ -76,6 +79,9 @@ public class HashtagFunctions : BaseAuthenticatedFunction
     {
         try
         {
+            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+            if (authErrorResponse != null) return authErrorResponse;
+
             var hashtagName = name.ToLowerInvariant();
 
             var hashtag = await _context.Hashtags
@@ -123,6 +129,9 @@ public class HashtagFunctions : BaseAuthenticatedFunction
     {
         try
         {
+            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+            if (authErrorResponse != null) return authErrorResponse;
+
             var linkDto = await JsonSerializer.DeserializeAsync<LinkHashtagDto>(
                 req.Body,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
@@ -185,6 +194,9 @@ public class HashtagFunctions : BaseAuthenticatedFunction
 
         try
         {
+            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+            if (authErrorResponse != null) return authErrorResponse;
+
             var normalizedName = name.ToLowerInvariant();
 
             var hashtag = await _context.Hashtags

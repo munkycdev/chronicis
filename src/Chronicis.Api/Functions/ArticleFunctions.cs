@@ -37,9 +37,14 @@ namespace Chronicis.Api.Functions
         {
             _logger.LogInformation("GetRootArticles endpoint called");
 
+            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+            if (authErrorResponse != null) return authErrorResponse;
+
             try
             {
-                var articles = await _articleService.GetRootArticlesAsync();
+                _logger.LogInformation("Fetching root articles for user {UserId}", user!.Id);
+                
+                var articles = await _articleService.GetRootArticlesAsync(user.Id);
 
                 var response = req.CreateResponse(HttpStatusCode.OK);
                 await response.WriteAsJsonAsync(articles);
@@ -65,9 +70,12 @@ namespace Chronicis.Api.Functions
         {
             _logger.LogInformation("GetArticleDetail endpoint called for ID: {ArticleId}", id);
 
+            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+            if (authErrorResponse != null) return authErrorResponse;
+
             try
             {
-                var article = await _articleService.GetArticleDetailAsync(id);
+                var article = await _articleService.GetArticleDetailAsync(id, user!.Id);
 
                 if (article == null)
                 {
@@ -100,9 +108,12 @@ namespace Chronicis.Api.Functions
         {
             _logger.LogInformation("GetArticleChildren endpoint called for parent ID: {ParentId}", id);
 
+            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+            if (authErrorResponse != null) return authErrorResponse;
+
             try
             {
-                var children = await _articleService.GetChildrenAsync(id);
+                var children = await _articleService.GetChildrenAsync(id, user!.Id);
 
                 var response = req.CreateResponse(HttpStatusCode.OK);
                 await response.WriteAsJsonAsync(children);

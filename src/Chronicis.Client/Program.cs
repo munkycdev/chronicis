@@ -13,20 +13,31 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddLogging();
 
-// HTTP Client for API calls
-builder.Services.AddScoped(sp => new HttpClient 
-{
-    BaseAddress = new Uri("http://localhost:7071")
-    //BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) 
-});
-
-// Auth0 Authentication
+// Auth0 Authentication - FIXED
 builder.Services.AddOidcAuthentication(options =>
 {
-    builder.Configuration.Bind("Auth0", options.ProviderOptions);
+    // Get Auth0 settings from configuration
+    var auth0Domain = builder.Configuration["Auth0:Authority"];
+    var auth0ClientId = builder.Configuration["Auth0:ClientId"];
+    var auth0Audience = builder.Configuration["Auth0:Audience"];
+
+    options.ProviderOptions.Authority = "https://dev-843pl5nrwg3p1xkq.us.auth0.com";
+    options.ProviderOptions.ClientId = "Itq22vH9FBHKlYHL1j0A9EgVjA9f6NZQ";  // ? PUT YOUR CLIENT ID HERE
     options.ProviderOptions.ResponseType = "code";
-    options.ProviderOptions.AdditionalProviderParameters.Add("audience",
-        builder.Configuration["Auth0:Audience"] ?? "");
+
+    // Set the redirect URIs explicitly
+    options.ProviderOptions.RedirectUri = "https://localhost:5001/authentication/login-callback";
+    options.ProviderOptions.PostLogoutRedirectUri = "https://localhost:5001";
+
+    // Add audience parameter for Auth0 API
+    options.ProviderOptions.AdditionalProviderParameters.Add("audience", "https://api.chronicis.app");
+
+
+    // Request scopes
+    options.ProviderOptions.DefaultScopes.Clear();
+    options.ProviderOptions.DefaultScopes.Add("openid");
+    options.ProviderOptions.DefaultScopes.Add("profile");
+    options.ProviderOptions.DefaultScopes.Add("email");
 });
 
 // MudBlazor with custom Chronicis theme
@@ -71,7 +82,7 @@ var chronicisTheme = new MudTheme
         Error = "#EF5350",
         Info = "#29B6F6"
     },
-    
+
     PaletteDark = new PaletteDark
     {
         Primary = "#C4AF8E",
@@ -91,7 +102,7 @@ var chronicisTheme = new MudTheme
         Error = "#EF5350",
         Info = "#29B6F6"
     },
-    
+
     Typography = new Typography
     {
         Default = new Default
@@ -144,7 +155,7 @@ var chronicisTheme = new MudTheme
             FontWeight = 500
         }
     },
-    
+
     Shadows = new Shadow
     {
         Elevation = new string[]
@@ -158,14 +169,14 @@ var chronicisTheme = new MudTheme
             // ... continue as needed
         }
     },
-    
+
     LayoutProperties = new LayoutProperties
     {
         DrawerWidthLeft = "320px",
         DrawerWidthRight = "320px",
         AppbarHeight = "64px"
     },
-    
+
     ZIndex = new ZIndex
     {
         Drawer = 1200,
@@ -188,22 +199,19 @@ builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
 });
 
 // HTTP Client with authentication for Chronicis API
-builder.Services.AddHttpClient("Chronicis.Api", client =>
+builder.Services.AddHttpClient<AuthHttpClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-        ?? builder.HostEnvironment.BaseAddress);
-})
-.AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
-
-builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>()
-    .CreateClient("Chronicis.Api"));
+        ?? "http://localhost:7071");
+});
 
 // Application Services
 builder.Services.AddScoped<IArticleApiService, ArticleApiService>();
-builder.Services.AddScoped<ITreeStateService, TreeStateService>();
+builder.Services.AddScoped<ISearchApiService, SearchApiService>();
 builder.Services.AddScoped<IHashtagApiService, HashtagApiService>();
 builder.Services.AddScoped<IAISummaryApiService, AISummaryApiService>();
-builder.Services.AddScoped<ISearchApiService, SearchApiService>();
+
+builder.Services.AddScoped<ITreeStateService, TreeStateService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 await builder.Build().RunAsync();

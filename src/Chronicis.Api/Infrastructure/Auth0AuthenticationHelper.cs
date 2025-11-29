@@ -27,27 +27,43 @@ public static class Auth0AuthenticationHelper
         string auth0Domain,
         string auth0Audience)
     {
+        // DEBUG: Log all headers
+        Console.WriteLine("=== DEBUG: Headers ===");
+        foreach (var header in req.Headers)
+        {
+            Console.WriteLine($"{header.Key}: {string.Join(", ", header.Value)}");
+        }
+
         // Get Authorization header
         if (!req.Headers.TryGetValues("Authorization", out var authHeaderValues))
         {
+            Console.WriteLine("DEBUG: No Authorization header found");
             return null;
         }
 
         var authHeader = authHeaderValues.FirstOrDefault();
+        Console.WriteLine($"DEBUG: Authorization header = {authHeader?.Substring(0, Math.Min(50, authHeader?.Length ?? 0))}...");
+
         if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
+            Console.WriteLine("DEBUG: Authorization header is empty or doesn't start with 'Bearer'");
             return null;
         }
 
         // Extract token
         var token = authHeader.Substring("Bearer ".Length).Trim();
+        Console.WriteLine($"DEBUG: Token length = {token.Length}");
+
         if (string.IsNullOrEmpty(token))
         {
+            Console.WriteLine("DEBUG: Token is empty after extraction");
             return null;
         }
 
         try
         {
+            Console.WriteLine($"DEBUG: Attempting to validate token with domain={auth0Domain}, audience={auth0Audience}");
+
             // Validate the token
             var claimsPrincipal = await ValidateTokenAsync(token, auth0Domain, auth0Audience);
             if (claimsPrincipal == null)

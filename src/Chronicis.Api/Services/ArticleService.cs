@@ -12,9 +12,9 @@ namespace Chronicis.Api.Services
     /// </summary>
     public interface IArticleService
     {
-        Task<List<ArticleTreeDto>> GetRootArticlesAsync();
-        Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId);
-        Task<ArticleDto?> GetArticleDetailAsync(int id);
+        Task<List<ArticleTreeDto>> GetRootArticlesAsync(int userId);
+        Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId, int userId);
+        Task<ArticleDto?> GetArticleDetailAsync(int id, int userId);
     }
 
     public class ArticleService : IArticleService
@@ -29,133 +29,143 @@ namespace Chronicis.Api.Services
         }
 
         /// <summary>
-        /// Get all root-level articles (ParentId is null).
+        /// Get all root-level articles (ParentId is null) for a specific user.
         /// </summary>
-        public async Task<List<ArticleTreeDto>> GetRootArticlesAsync()
+        public async Task<List<ArticleTreeDto>> GetRootArticlesAsync(int userId)
         {
-            _logger.LogInformation("Fetching root articles");
+            _logger.LogInformation("Fetching root articles for user {UserId}", userId);
 
+            // Use AsNoTracking and direct projection to avoid User navigation issues
             var rootArticles = await _context.Articles
-            .Where(a => a.ParentId == null)
-            .Include(a => a.Children)
-            .OrderBy(a => a.Title)
-            .ToListAsync();
+                .AsNoTracking()
+                .Where(a => a.ParentId == null && a.UserId == userId)
+                .Select(a => new ArticleTreeDto
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    ParentId = a.ParentId,
+                    HasChildren = _context.Articles.Any(c => c.ParentId == a.Id),
+                    ChildCount = _context.Articles.Count(c => c.ParentId == a.Id),
+                    Children = new List<ArticleTreeDto>(),
+                    CreatedDate = a.CreatedDate,
+                    EffectiveDate = a.EffectiveDate,
+                    IconEmoji = a.IconEmoji
+                })
+                .OrderBy(a => a.Title)
+                .ToListAsync();
 
-            return rootArticles.Select(a => MapToDto(a)).ToList();
+            return rootArticles;
         }
 
         /// <summary>
         /// Get all child articles of a specific parent.
         /// </summary>
-        public async Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId)
+        public async Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId, int userId)
         {
-            _logger.LogInformation("Fetching children for article {ParentId}", parentId);
+            _logger.LogInformation("Fetching children for article {ParentId}, user {UserId}", parentId, userId);
 
+            // Use AsNoTracking and direct projection
             var children = await _context.Articles
-                .Where(a => a.ParentId == parentId)
-                .Include(a => a.Children)  // Load children for recursive mapping
+                .AsNoTracking()
+                .Where(a => a.ParentId == parentId && a.UserId == userId)
+                .Select(a => new ArticleTreeDto
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    ParentId = a.ParentId,
+                    HasChildren = _context.Articles.Any(c => c.ParentId == a.Id),
+                    ChildCount = _context.Articles.Count(c => c.ParentId == a.Id),
+                    Children = new List<ArticleTreeDto>(),
+                    CreatedDate = a.CreatedDate,
+                    EffectiveDate = a.EffectiveDate,
+                    IconEmoji = a.IconEmoji
+                })
                 .OrderBy(a => a.Title)
                 .ToListAsync();
 
-            return children.Select(a => MapToDtoWithChildCount(a)).ToList();
+            return children;
         }
 
         /// <summary>
         /// Get full article details including breadcrumb path from root.
         /// </summary>
-        public async Task<ArticleDto?> GetArticleDetailAsync(int id)
+        public async Task<ArticleDto?> GetArticleDetailAsync(int id, int userId)
         {
-            _logger.LogInformation("Fetching article detail for {ArticleId}", id);
+            _logger.LogInformation("Fetching article detail for {ArticleId}, user {UserId}", id, userId);
 
+            // Use AsNoTracking and direct projection
             var article = await _context.Articles
-                .Include(a => a.Parent)
-                .FirstOrDefaultAsync(a => a.Id == id);
+                .AsNoTracking()
+                .Where(a => a.Id == id && a.UserId == userId)
+                .Select(a => new ArticleDto
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    ParentId = a.ParentId,
+                    Body = a.Body ?? string.Empty,
+                    CreatedDate = a.CreatedDate,
+                    ModifiedDate = a.ModifiedDate,
+                    Breadcrumbs = new List<BreadcrumbDto>()  // Will populate separately
+                })
+                .FirstOrDefaultAsync();
 
             if (article == null)
             {
-                _logger.LogWarning("Article {ArticleId} not found", id);
+                _logger.LogWarning("Article {ArticleId} not found for user {UserId}", id, userId);
                 return null;
             }
 
             // Build breadcrumb path by walking up the hierarchy
-            var breadcrumbs = await BuildBreadcrumbsAsync(article);
+            article.Breadcrumbs = await BuildBreadcrumbsAsync(id, userId);
 
-            return new ArticleDto
-            {
-                Id = article.Id,
-                Title = article.Title,
-                ParentId = article.ParentId,
-                Body = article?.Body ?? string.Empty,
-                CreatedDate = article?.CreatedDate ?? DateTime.UtcNow,
-                ModifiedDate = article?.ModifiedDate ?? DateTime.UtcNow,
-                Breadcrumbs = breadcrumbs
-            };
+            return article;
         }
 
         /// <summary>
         /// Recursively build breadcrumb trail from root to current article.
         /// </summary>
-        private async Task<List<BreadcrumbDto>> BuildBreadcrumbsAsync(Article article)
+        private async Task<List<BreadcrumbDto>> BuildBreadcrumbsAsync(int articleId, int userId)
         {
             var breadcrumbs = new List<BreadcrumbDto>();
-            var current = article;
+            var currentId = (int?)articleId;
 
             // Walk up the tree to build path
-            while (current != null)
+            while (currentId.HasValue)
             {
+                var article = await _context.Articles
+                    .AsNoTracking()
+                    .Where(a => a.Id == currentId && a.UserId == userId)
+                    .Select(a => new { a.Id, a.Title, a.ParentId })
+                    .FirstOrDefaultAsync();
+
+                if (article == null) break;
+
                 breadcrumbs.Insert(0, new BreadcrumbDto
                 {
-                    Id = current.Id,
-                    Title = current.Title
+                    Id = article.Id,
+                    Title = article.Title ?? "(Untitled)"
                 });
 
-                if (current.ParentId.HasValue)
-                {
-                    current = await _context.Articles
-                        .FirstOrDefaultAsync(a => a.Id == current.ParentId.Value);
-                }
-                else
-                {
-                    current = null;
-                }
+                currentId = article.ParentId;
             }
 
             return breadcrumbs;
         }
 
-        private static ArticleTreeDto MapToDto(Article article)
+        private static string CreateSlug(string? title)
         {
-            return new ArticleTreeDto
+            if (string.IsNullOrWhiteSpace(title))
             {
-                Id = article.Id,
-                Title = article.Title,
-                ParentId = article.ParentId,
-                HasChildren = article.Children?.Any() ?? false,
-                ChildCount = article.Children?.Count ?? 0,  // ADD THIS LINE
-                Children = article.Children?.Select(c => MapToDto(c)).ToList() ?? new List<ArticleTreeDto>(),
-                CreatedDate = article.CreatedDate,
-                EffectiveDate = article.EffectiveDate,  // ADD THIS TOO
-                IconEmoji = article.IconEmoji  // AND THIS
-            };
-        }
+                return "untitled";
+            }
 
-        private ArticleTreeDto MapToDtoWithChildCount(Article article)
-        {
-            // Count children from database, not from loaded collection
-            var childCount = _context.Articles.Count(a => a.ParentId == article.Id);
-
-            return new ArticleTreeDto
-            {
-                Id = article.Id,
-                Title = article.Title,
-                ParentId = article.ParentId,
-                HasChildren = childCount > 0,
-                ChildCount = childCount,
-                Children = article.Children?.Select(c => MapToDtoWithChildCount(c)).ToList() ?? new List<ArticleTreeDto>(),
-                CreatedDate = article.CreatedDate,
-                EffectiveDate = article.EffectiveDate,
-                IconEmoji = article.IconEmoji
-            };
+            return title.ToLowerInvariant()
+                .Replace(" ", "-")
+                .Replace(":", "")
+                .Replace("!", "")
+                .Replace("?", "")
+                .Replace("'", "")
+                .Replace("\"", "");
         }
     }
 }

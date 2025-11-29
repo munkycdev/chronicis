@@ -1,6 +1,7 @@
-@page "/login"
+﻿@page "/login"
 @layout LandingLayout
 @inject NavigationManager Navigation
+@inject IConfiguration Configuration
 
 <div class="landing-container">
     <div class="landing-content">
@@ -14,23 +15,22 @@
             <h1>Welcome to Chronicis</h1>
             <p class="tagline">Your campaign chronicle awaits</p>
             <p class="description">
-                Organize your tabletop RPG campaigns with structured notes, 
+                Organize your tabletop RPG campaigns with structured notes,
                 AI-powered summaries, and interconnected lore.
             </p>
         </div>
 
         <!-- Login Button -->
         <div class="login-section">
-            <MudButton 
-                Variant="Variant.Filled" 
-                Color="Color.Primary"
-                Size="Size.Large"
-                Href="authentication/login"
-                StartIcon="@Icons.Material.Filled.Login"
-                Class="login-button-primary">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       Href="authentication/login"
+                       StartIcon="@Icons.Material.Filled.Login"
+                       Class="login-button-primary">
                 Sign In with Auth0
             </MudButton>
-            
+
             <p class="login-hint">
                 Sign in with Discord, Google, or Apple
             </p>
@@ -63,5 +63,15 @@
 </div>
 
 @code {
-    // No code needed - this is a pure presentation page
+    protected override void OnInitialized()
+    {
+        // TEMPORARY DEBUG - Check what configuration is loaded
+        var authority = Configuration["Auth0:Authority"];
+        var clientId = Configuration["Auth0:ClientId"];
+        var audience = Configuration["Auth0:Audience"];
+
+        Console.WriteLine($"DEBUG - Authority: {authority}");
+        Console.WriteLine($"DEBUG - ClientId: {clientId}");
+        Console.WriteLine($"DEBUG - Audience: {audience}");
+    }
 }

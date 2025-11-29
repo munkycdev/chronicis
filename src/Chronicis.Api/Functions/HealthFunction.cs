@@ -20,7 +20,10 @@ public class HealthFunction : BaseAuthenticatedFunction
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health")] HttpRequestData req)
     {
-        _logger.LogInformation("Health check endpoint called");
+        _logger.LogInformation("Health check endpoint called"); 
+        
+        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+        if (authErrorResponse != null) return authErrorResponse;
 
         var response = req.CreateResponse(HttpStatusCode.OK);
         

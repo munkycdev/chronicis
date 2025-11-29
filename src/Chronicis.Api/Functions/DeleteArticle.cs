@@ -32,6 +32,9 @@ public class DeleteArticle : BaseAuthenticatedFunction
     {
         try
         {
+            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
+            if (authErrorResponse != null) return authErrorResponse;
+
             // Validate
             var validationResult = await _validationService.ValidateDeleteAsync(id);
             if (!validationResult.IsValid)

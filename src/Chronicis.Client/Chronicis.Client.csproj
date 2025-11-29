@@ -9,17 +9,15 @@
 	<ItemGroup>
 		<Content Remove="Components\Articles\ArticleTreeView-Simple.razor" />
 		<Content Remove="Components\Search\SearchResultCard.razor" />
-		<Content Remove="Pages\Authentication.razor" />
 		<Content Remove="Pages\Home.razor" />
-		<Content Remove="Pages\Landing.razor" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="HtmlSanitizer" Version="8.1.870" />
 		<PackageReference Include="Markdig" Version="0.37.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all" />
-		<PackageReference Include="Microsoft.Authentication.WebAssembly.Msal" Version="10.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
 		<PackageReference Include="MudBlazor" Version="7.14.0" />
 	</ItemGroup>
@@ -35,8 +33,6 @@
 
 	<ItemGroup>
 	  <None Include="Components\Articles\SearchResultCard.razor" />
-	  <None Include="Pages\Authentication.razor" />
-	  <None Include="Pages\Landing.razor" />
 	</ItemGroup>
 
 </Project>

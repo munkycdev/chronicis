@@ -29,6 +29,10 @@ var host = new HostBuilder()
         services.Configure<Auth0Configuration>(
             configuration.GetSection("Auth0"));
 
+        var auth0Section = configuration.GetSection("Auth0");
+        Console.WriteLine($"DEBUG Program.cs - Auth0:Domain = {auth0Section["Domain"]}");
+        Console.WriteLine($"DEBUG Program.cs - Auth0:Audience = {auth0Section["Audience"]}");
+
         // Database
         services.AddDbContext<ChronicisDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("ChronicisDb")));
