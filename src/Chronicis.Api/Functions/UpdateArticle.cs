@@ -1,9 +1,12 @@
 using Chronicis.Api.Data;
+using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Net;
 using System.Text.Json;
 
@@ -14,7 +17,13 @@ public class UpdateArticle : ArticleBaseClass
     private readonly ArticleValidationService _validationService;
     private readonly IHashtagSyncService _hashtagSync;
 
-    public UpdateArticle(ChronicisDbContext context, ArticleValidationService validationService, IHashtagSyncService hashtagSync) : base (context)
+    public UpdateArticle(
+        ChronicisDbContext context, 
+        ArticleValidationService validationService, 
+        IHashtagSyncService hashtagSync,
+        IUserService userService,
+        ILogger<UpdateArticle> logger,
+        IOptions<Auth0Configuration> auth0Config) : base (context, userService, logger, auth0Config)
     {
         _validationService = validationService;
         _hashtagSync = hashtagSync;

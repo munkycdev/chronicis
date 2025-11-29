@@ -1,12 +1,11 @@
 ﻿using Chronicis.Api.Data;
+using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Diagnostics;
-using System.Text.Json;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
@@ -22,6 +21,14 @@ var host = new HostBuilder()
         // Register IConfiguration so it can be injected
         services.AddSingleton<IConfiguration>(configuration);
 
+        // Application Insights (if you have it)
+        services.AddApplicationInsightsTelemetryWorkerService();
+        services.ConfigureFunctionsApplicationInsights();
+
+        // Auth0 Configuration
+        services.Configure<Auth0Configuration>(
+            configuration.GetSection("Auth0"));
+
         // Database
         services.AddDbContext<ChronicisDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("ChronicisDb")));
@@ -32,10 +39,7 @@ var host = new HostBuilder()
         services.AddScoped<IHashtagParser, HashtagParser>();
         services.AddScoped<IHashtagSyncService, HashtagSyncService>();
         services.AddScoped<IAISummaryService, AISummaryService>();
-
-        // Application Insights (if you have it)
-        services.AddApplicationInsightsTelemetryWorkerService();
-        services.ConfigureFunctionsApplicationInsights();
+        services.AddScoped<IUserService, UserService>();
     })
     .Build();
 

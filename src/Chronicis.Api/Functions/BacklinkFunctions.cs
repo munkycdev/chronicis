@@ -1,16 +1,23 @@
+using Chronicis.Api.Data;
+using Chronicis.Api.Infrastructure;
+using Chronicis.Api.Services;
+using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Net;
-using Chronicis.Api.Data;
-using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Models;
 
 namespace Chronicis.Api.Functions;
 
 public class BacklinkFunctions : ArticleBaseClass
 {
-    public BacklinkFunctions(ChronicisDbContext context) : base(context) { }
+    public BacklinkFunctions(ChronicisDbContext context,
+        IUserService userService,
+        ILogger<BacklinkFunctions> logger,
+        IOptions<Auth0Configuration> auth0Config) : base(context, userService, logger, auth0Config) { }
 
     /// <summary>
     /// GET /api/articles/{id}/backlinks

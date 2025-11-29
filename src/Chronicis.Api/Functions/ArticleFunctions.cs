@@ -1,9 +1,11 @@
+using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Net;
 
 namespace Chronicis.Api.Functions
@@ -12,15 +14,17 @@ namespace Chronicis.Api.Functions
     /// Azure Functions HTTP endpoints for Article operations.
     /// Phase 1: Read-only operations (GET endpoints).
     /// </summary>
-    public class ArticleFunctions
+    public class ArticleFunctions : BaseAuthenticatedFunction
     {
         private readonly IArticleService _articleService;
-        private readonly ILogger<ArticleFunctions> _logger;
 
-        public ArticleFunctions(IArticleService articleService, ILogger<ArticleFunctions> logger)
+        public ArticleFunctions(
+            IArticleService articleService, 
+            ILogger<ArticleFunctions> logger, 
+            IUserService userService,
+            IOptions<Auth0Configuration> auth0Config) : base(userService, auth0Config, logger)
         {
             _articleService = articleService;
-            _logger = logger;
         }
 
         /// <summary>

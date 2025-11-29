@@ -1,10 +1,13 @@
 using Chronicis.Api.Data;
+using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Net;
 using System.Text.Json;
 
@@ -14,7 +17,12 @@ public class CreateArticle : ArticleBaseClass
 {
     private readonly ArticleValidationService _validationService;
 
-    public CreateArticle(ChronicisDbContext context, ArticleValidationService validationService) : base(context)
+    public CreateArticle(
+        ChronicisDbContext context, 
+        ArticleValidationService validationService,
+        IUserService userService,
+        ILogger<CreateArticle> logger,
+        IOptions<Auth0Configuration> auth0Config) : base(context, userService, logger, auth0Config)
     {
         _validationService = validationService;
     }

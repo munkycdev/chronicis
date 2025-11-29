@@ -1,21 +1,27 @@
-using System.Net;
-using System.Web;
+using Chronicis.Api.Data;
+using Chronicis.Api.Infrastructure;
+using Chronicis.Api.Services;
+using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Chronicis.Api.Data;
-using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Models;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualBasic;
+using System.Net;
+using System.Web;
 
 namespace Chronicis.Api.Functions;
 
-public class ArticleSearchFunction
+public class ArticleSearchFunction : BaseAuthenticatedFunction
 {
     private readonly ChronicisDbContext _context;
 
-    public ArticleSearchFunction(ChronicisDbContext context)
+    public ArticleSearchFunction(ChronicisDbContext context,
+            ILogger<ArticleSearchFunction> logger,
+            IUserService userService,
+            IOptions<Auth0Configuration> auth0Config) : base(userService, auth0Config, logger)
     {
         _context = context;
     }

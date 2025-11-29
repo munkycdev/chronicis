@@ -1,19 +1,20 @@
-using System.Net;
+using Chronicis.Api.Infrastructure;
+using Chronicis.Api.Services;
 using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System.Net;
 
 namespace Chronicis.Api.Functions;
 
-public class HealthFunction
+public class HealthFunction : BaseAuthenticatedFunction
 {
-    private readonly ILogger<HealthFunction> _logger;
-
-    public HealthFunction(ILogger<HealthFunction> logger)
-    {
-        _logger = logger;
-    }
+    public HealthFunction(
+            ILogger<HealthFunction> logger,
+            IUserService userService,
+            IOptions<Auth0Configuration> auth0Config) : base(userService, auth0Config, logger) { }
 
     [Function("Health")]
     public async Task<HttpResponseData> Run(

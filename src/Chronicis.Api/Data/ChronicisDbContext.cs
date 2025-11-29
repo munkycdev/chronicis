@@ -11,6 +11,7 @@ namespace Chronicis.Api.Data
         public DbSet<Hashtag> Hashtags { get; set; } = null!;
         public DbSet<ArticleHashtag> ArticleHashtags { get; set; } = null!;
         public DbSet<Article> Articles { get; set; } = null!;
+        public DbSet<User> Users { get; set; } = null!;
 
         public ChronicisDbContext(DbContextOptions<ChronicisDbContext> options)
             : base(options)
@@ -96,6 +97,23 @@ namespace Chronicis.Api.Data
                 entity.Property(ah => ah.CreatedDate)
                     .HasDefaultValueSql("GETUTCDATE()");
             });
+
+            // User configuration
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(u => u.Id);
+                entity.HasIndex(u => u.Auth0UserId).IsUnique();
+                entity.Property(u => u.Auth0UserId).IsRequired().HasMaxLength(256);
+                entity.Property(u => u.Email).IsRequired().HasMaxLength(256);
+                entity.Property(u => u.DisplayName).IsRequired().HasMaxLength(100);
+            });
+
+            // Article-User relationship
+            modelBuilder.Entity<Article>()
+                .HasOne(a => a.User)
+                .WithMany(u => u.Articles)
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Seed data for development
             SeedData(modelBuilder);

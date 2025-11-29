@@ -1,29 +1,31 @@
 using Chronicis.Api.Data;
+using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Net;
 using System.Text.Json;
 
 namespace Chronicis.Api.Functions;
 
-public class AISummaryFunctions
+public class AISummaryFunctions : BaseAuthenticatedFunction
 {
     private readonly ChronicisDbContext _context;
     private readonly IAISummaryService _summaryService;
-    private readonly ILogger<AISummaryFunctions> _logger;
 
     public AISummaryFunctions(
         ChronicisDbContext context,
         IAISummaryService summaryService,
-        ILogger<AISummaryFunctions> logger)
+        ILogger<AISummaryFunctions> logger,
+        IUserService userService,
+        IOptions<Auth0Configuration> auth0Config) : base(userService, auth0Config, logger)
     {
         _context = context;
         _summaryService = summaryService;
-        _logger = logger;
     }
 
     [Function("GetSummaryEstimate")]

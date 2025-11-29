@@ -1,18 +1,25 @@
 using Chronicis.Api.Data;
+using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Net;
 
 namespace Chronicis.Api.Functions;
 
-public class DeleteArticle
+public class DeleteArticle : BaseAuthenticatedFunction
 {
     private readonly ChronicisDbContext _context;
     private readonly ArticleValidationService _validationService;
 
-    public DeleteArticle(ChronicisDbContext context, ArticleValidationService validationService)
+    public DeleteArticle(ChronicisDbContext context, 
+            ArticleValidationService validationService,
+            ILogger<DeleteArticle> logger,
+            IUserService userService,
+            IOptions<Auth0Configuration> auth0Config) : base(userService, auth0Config, logger)
     {
         _context = context;
         _validationService = validationService;

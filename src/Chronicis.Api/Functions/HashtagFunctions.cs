@@ -1,9 +1,13 @@
 using Chronicis.Api.Data;
+using Chronicis.Api.Infrastructure;
+using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Net;
 using System.Text.Json;
 
@@ -12,11 +16,14 @@ namespace Chronicis.Api.Functions;
 /// <summary>
 /// Azure Functions for hashtag operations
 /// </summary>
-public class HashtagFunctions
+public class HashtagFunctions : BaseAuthenticatedFunction
 {
     private readonly ChronicisDbContext _context;
 
-    public HashtagFunctions(ChronicisDbContext context)
+    public HashtagFunctions(ChronicisDbContext context,
+            ILogger<HashtagFunctions> logger,
+            IUserService userService,
+            IOptions<Auth0Configuration> auth0Config) : base(userService, auth0Config, logger)
     {
         _context = context;
     }
