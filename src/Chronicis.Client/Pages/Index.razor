@@ -1,5 +1,6 @@
 @page "/"
 @page "/article/{ArticleSlug}"
+@attribute [Authorize]
 @inject ITreeStateService TreeStateService
 @inject IArticleApiService ArticleApi
 @inject IQuoteService QuoteService

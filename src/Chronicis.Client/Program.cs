@@ -5,6 +5,7 @@ using MudBlazor;
 using MudBlazor.Services;
 using Chronicis.Client;
 using Chronicis.Client.Services;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -17,6 +18,15 @@ builder.Services.AddScoped(sp => new HttpClient
 {
     BaseAddress = new Uri("http://localhost:7071")
     //BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) 
+});
+
+// Auth0 Authentication
+builder.Services.AddOidcAuthentication(options =>
+{
+    builder.Configuration.Bind("Auth0", options.ProviderOptions);
+    options.ProviderOptions.ResponseType = "code";
+    options.ProviderOptions.AdditionalProviderParameters.Add("audience",
+        builder.Configuration["Auth0:Audience"] ?? "");
 });
 
 // MudBlazor with custom Chronicis theme
@@ -170,17 +180,30 @@ var chronicisTheme = new MudTheme
 // Apply the theme
 builder.Services.AddSingleton(chronicisTheme);
 
+// Http Client for Quote Service
+builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.quotable.io/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
+// HTTP Client with authentication for Chronicis API
+builder.Services.AddHttpClient("Chronicis.Api", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
+        ?? builder.HostEnvironment.BaseAddress);
+})
+.AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
+
+builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>()
+    .CreateClient("Chronicis.Api"));
+
 // Application Services
 builder.Services.AddScoped<IArticleApiService, ArticleApiService>();
 builder.Services.AddScoped<ITreeStateService, TreeStateService>();
 builder.Services.AddScoped<IHashtagApiService, HashtagApiService>();
 builder.Services.AddScoped<IAISummaryApiService, AISummaryApiService>();
 builder.Services.AddScoped<ISearchApiService, SearchApiService>();
-
-builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
-{
-    client.BaseAddress = new Uri("https://api.quotable.io/");
-    client.Timeout = TimeSpan.FromSeconds(10);
-});
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 await builder.Build().RunAsync();

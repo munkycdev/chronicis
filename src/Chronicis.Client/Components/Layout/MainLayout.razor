@@ -1,6 +1,8 @@
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
 @inject ITreeStateService TreeState
+@inject IAuthService AuthService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -41,11 +43,40 @@
                        OnClick="ExecuteGlobalSearch"
                        Class="ml-2" />
 
-        <MudIconButton Icon="@Icons.Material.Filled.Settings"
-                       Color="Color.Inherit" />
 
-        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle"
-                       Color="Color.Inherit" />
+        <AuthorizeView>
+            <Authorized>
+                <MudMenu Icon="@Icons.Material.Filled.AccountCircle"
+                         Color="Color.Inherit"
+                         AnchorOrigin="Origin.BottomRight"
+                         TransformOrigin="Origin.TopRight">
+                    <ChildContent>
+                        <div class="user-info" style="padding: 12px 16px; min-width: 200px;">
+                            @if (!string.IsNullOrEmpty(_currentUser?.AvatarUrl))
+                            {
+                                <MudAvatar Size="Size.Medium" Style="margin-bottom: 8px;" /> <span>Avatar</span>
+                            }
+                            <div style="margin-top: 8px;">
+                                <div style="font-weight: 600; color: #C4AF8E;">@_currentUser?.DisplayName</div>
+                                <div style="font-size: 0.85rem; color: #D9C9A7; opacity: 0.8;">@_currentUser?.Email</div>
+                            </div>
+                        </div>
+                        <MudDivider />
+                        <MudMenuItem Icon="@Icons.Material.Filled.Logout"
+                                     Href="authentication/logout">
+                            Logout
+                        </MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
+            </Authorized>
+            <NotAuthorized>
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Inherit"
+                           Href="authentication/login">
+                    Login
+                </MudButton>
+            </NotAuthorized>
+        </AuthorizeView>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen"
@@ -113,6 +144,21 @@
     private bool _drawerOpen = true;
     private string? _treeSearch;
     private string _globalSearchQuery = string.Empty;
+    private UserInfo? _currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentUser = await AuthService.GetCurrentUserAsync();
+
+        // Subscribe to auth state changes
+        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+    }
+
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> task)
+    {
+        _currentUser = await AuthService.GetCurrentUserAsync();
+        await InvokeAsync(StateHasChanged);
+    }
 
     private void ToggleDrawer()
     {
@@ -165,5 +211,10 @@
         {
             Navigation.NavigateTo($"/search?q={Uri.EscapeDataString(_globalSearchQuery)}");
         }
+    }
+
+    public void Dispose()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
     }
 }

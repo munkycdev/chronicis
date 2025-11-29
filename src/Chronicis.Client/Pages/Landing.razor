@@ -1,0 +1,67 @@
+@page "/login"
+@layout LandingLayout
+@inject NavigationManager Navigation
+
+<div class="landing-container">
+    <div class="landing-content">
+        <!-- Logo -->
+        <div class="landing-logo">
+            <img src="/logo.png" alt="Chronicis" />
+        </div>
+
+        <!-- Hero Text -->
+        <div class="landing-hero">
+            <h1>Welcome to Chronicis</h1>
+            <p class="tagline">Your campaign chronicle awaits</p>
+            <p class="description">
+                Organize your tabletop RPG campaigns with structured notes, 
+                AI-powered summaries, and interconnected lore.
+            </p>
+        </div>
+
+        <!-- Login Button -->
+        <div class="login-section">
+            <MudButton 
+                Variant="Variant.Filled" 
+                Color="Color.Primary"
+                Size="Size.Large"
+                Href="authentication/login"
+                StartIcon="@Icons.Material.Filled.Login"
+                Class="login-button-primary">
+                Sign In with Auth0
+            </MudButton>
+            
+            <p class="login-hint">
+                Sign in with Discord, Google, or Apple
+            </p>
+        </div>
+
+        <!-- Features Preview -->
+        <div class="features-preview">
+            <div class="feature">
+                <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Large" Color="Color.Primary" />
+                <h3>Hierarchical Organization</h3>
+                <p>Structure your campaign knowledge like a wiki</p>
+            </div>
+            <div class="feature">
+                <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Large" Color="Color.Primary" />
+                <h3>AI Summaries</h3>
+                <p>Generate insights from your campaign notes</p>
+            </div>
+            <div class="feature">
+                <MudIcon Icon="@Icons.Material.Filled.Tag" Size="Size.Large" Color="Color.Primary" />
+                <h3>Entity Linking</h3>
+                <p>Connect characters, places, and events with hashtags</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="landing-footer">
+            <p>Free to use • Secure authentication • Your data stays private</p>
+        </div>
+    </div>
+</div>
+
+@code {
+    // No code needed - this is a pure presentation page
+}

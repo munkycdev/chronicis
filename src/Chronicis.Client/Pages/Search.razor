@@ -1,6 +1,5 @@
 @page "/search"
-@using Chronicis.Shared.DTOs
-@using Chronicis.Client.Components.Search
+@attribute [Authorize]
 @inject ISearchApiService SearchApi
 @inject NavigationManager Navigation
 @inject ITreeStateService TreeState

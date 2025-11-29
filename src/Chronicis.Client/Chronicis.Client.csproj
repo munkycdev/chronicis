@@ -9,7 +9,9 @@
 	<ItemGroup>
 		<Content Remove="Components\Articles\ArticleTreeView-Simple.razor" />
 		<Content Remove="Components\Search\SearchResultCard.razor" />
+		<Content Remove="Pages\Authentication.razor" />
 		<Content Remove="Pages\Home.razor" />
+		<Content Remove="Pages\Landing.razor" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -33,6 +35,8 @@
 
 	<ItemGroup>
 	  <None Include="Components\Articles\SearchResultCard.razor" />
+	  <None Include="Pages\Authentication.razor" />
+	  <None Include="Pages\Landing.razor" />
 	</ItemGroup>
 
 </Project>
