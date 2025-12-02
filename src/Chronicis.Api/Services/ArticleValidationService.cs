@@ -4,7 +4,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class ArticleValidationService
+/// <summary>
+/// Service for validating article operations.
+/// </summary>
+public interface IArticleValidationService
+{
+    Task<ValidationResult> ValidateCreateAsync(ArticleCreateDto dto);
+    Task<ValidationResult> ValidateUpdateAsync(int articleId, ArticleUpdateDto dto);
+    Task<ValidationResult> ValidateDeleteAsync(int articleId);
+}
+
+public class ArticleValidationService : IArticleValidationService
 {
     private readonly ChronicisDbContext _context;
 
@@ -73,11 +83,14 @@ public class ArticleValidationService
     }
 }
 
+/// <summary>
+/// Represents the result of a validation operation.
+/// </summary>
 public class ValidationResult
 {
     private readonly Dictionary<string, List<string>> _errors = new();
 
-    public bool IsValid => !_errors.Any();
+    public bool IsValid => _errors.Count == 0;
 
     public IReadOnlyDictionary<string, List<string>> Errors => _errors;
 

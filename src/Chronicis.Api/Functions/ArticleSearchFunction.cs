@@ -1,5 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
+using Chronicis.Shared;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
@@ -107,7 +108,7 @@ public class ArticleSearchFunction
         {
             var snippet = ExtractSnippet(article?.Body ?? string.Empty, query, 200);
             var breadcrumbs = await BuildBreadcrumbs(article?.Id ?? 0);
-            var slug = CreateSlug(article?.Title ?? string.Empty);
+            var slug = SlugUtility.CreateSlug(article?.Title);
             
             results.Add(new ArticleSearchResultDto
             {
@@ -172,20 +173,5 @@ public class ArticleSearchFunction
         }
         
         return breadcrumbs;
-    }
-
-    private static string CreateSlug(string title)
-    {
-        if (string.IsNullOrWhiteSpace(title))
-            return "untitled";
-            
-        return title.ToLowerInvariant()
-            .Replace(" ", "-")
-            .Replace(":", "")
-            .Replace("!", "")
-            .Replace("?", "")
-            .Replace("'", "")
-            .Replace("\"", "")
-            .Trim('-');
     }
 }

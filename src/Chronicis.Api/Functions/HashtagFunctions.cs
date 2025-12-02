@@ -1,5 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
+using Chronicis.Shared;
 using Chronicis.Shared.DTOs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -216,7 +217,7 @@ public class HashtagFunctions
                 HashtagName = hashtag.Name,
                 ArticleId = hashtag.LinkedArticle.Id,
                 ArticleTitle = hashtag.LinkedArticle.Title,
-                ArticleSlug = CreateSlug(hashtag.LinkedArticle.Title),
+                ArticleSlug = SlugUtility.CreateSlug(hashtag.LinkedArticle.Title),
                 PreviewText = previewText,
                 LastModified = hashtag.LinkedArticle.ModifiedDate ?? hashtag.LinkedArticle.CreatedDate
             };
@@ -232,19 +233,5 @@ public class HashtagFunctions
         }
 
         return response;
-    }
-
-    private static string CreateSlug(string title)
-    {
-        if (string.IsNullOrWhiteSpace(title))
-            return "untitled";
-
-        return title.ToLowerInvariant()
-            .Replace(" ", "-")
-            .Replace(":", "")
-            .Replace("!", "")
-            .Replace("?", "")
-            .Replace("'", "")
-            .Replace("\"", "");
     }
 }

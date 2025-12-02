@@ -268,21 +268,5 @@ namespace Chronicis.Api.Services
 
             return breadcrumbs;
         }
-
-        private static string CreateSlug(string? title)
-        {
-            if (string.IsNullOrWhiteSpace(title))
-            {
-                return "untitled";
-            }
-
-            return title.ToLowerInvariant()
-                .Replace(" ", "-")
-                .Replace(":", "")
-                .Replace("!", "")
-                .Replace("?", "")
-                .Replace("'", "")
-                .Replace("\"", "");
-        }
     }
 }

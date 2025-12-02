@@ -15,13 +15,13 @@ namespace Chronicis.Api.Functions;
 public class CreateArticle
 {
     private readonly ChronicisDbContext _context;
-    private readonly ArticleValidationService _validationService;
+    private readonly IArticleValidationService _validationService;
     private readonly ILogger<CreateArticle> _logger;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public CreateArticle(
         ChronicisDbContext context, 
-        ArticleValidationService validationService,
+        IArticleValidationService validationService,
         ILogger<CreateArticle> logger)
     {
         _context = context;

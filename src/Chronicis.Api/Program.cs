@@ -39,7 +39,7 @@ var host = new HostBuilder()
 
         // Services
         services.AddScoped<IArticleService, ArticleService>();
-        services.AddScoped<ArticleValidationService>();
+        services.AddScoped<IArticleValidationService, ArticleValidationService>();
         services.AddScoped<IHashtagParser, HashtagParser>();
         services.AddScoped<IHashtagSyncService, HashtagSyncService>();
         services.AddScoped<IAISummaryService, AISummaryService>();

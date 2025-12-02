@@ -1,7 +1,7 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
+using Chronicis.Shared;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
@@ -77,7 +77,7 @@ public class BacklinkFunctions
             {
                 ArticleId = b.ArticleId,
                 ArticleTitle = b.Article.Title,
-                ArticleSlug = CreateSlug(b.Article.Title),
+                ArticleSlug = SlugUtility.CreateSlug(b.Article.Title),
                 Hashtags = b.Hashtags,
                 MentionCount = b.MentionCount,
                 LastModified = b.Article.ModifiedDate ?? b.Article.CreatedDate
@@ -94,19 +94,5 @@ public class BacklinkFunctions
         }
 
         return response;
-    }
-
-    private static string CreateSlug(string title)
-    {
-        if (string.IsNullOrWhiteSpace(title))
-            return "untitled";
-
-        return title.ToLowerInvariant()
-            .Replace(" ", "-")
-            .Replace(":", "")
-            .Replace("!", "")
-            .Replace("?", "")
-            .Replace("'", "")
-            .Replace("\"", "");
     }
 }

@@ -14,14 +14,14 @@ namespace Chronicis.Api.Functions;
 public class UpdateArticle
 {
     private readonly ChronicisDbContext _context;
-    private readonly ArticleValidationService _validationService;
+    private readonly IArticleValidationService _validationService;
     private readonly IHashtagSyncService _hashtagSync;
     private readonly ILogger<UpdateArticle> _logger;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public UpdateArticle(
         ChronicisDbContext context, 
-        ArticleValidationService validationService, 
+        IArticleValidationService validationService, 
         IHashtagSyncService hashtagSync,
         ILogger<UpdateArticle> logger)
     {
