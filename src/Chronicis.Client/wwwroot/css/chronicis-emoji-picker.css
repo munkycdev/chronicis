@@ -1,0 +1,138 @@
+/**
+ * Chronicis Emoji Picker Styles
+ * Custom styling for emoji-mart picker integration
+ */
+
+/* Container for the emoji picker button and dropdown */
+.chronicis-emoji-picker-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* The clickable emoji/icon button */
+.chronicis-emoji-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    border: 2px dashed var(--chronicis-beige-gold, #C4AF8E);
+    background-color: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.75rem;
+    margin-right: 12px;
+}
+
+.chronicis-emoji-button:hover {
+    background-color: rgba(196, 175, 142, 0.1);
+    border-style: solid;
+}
+
+.chronicis-emoji-button.has-emoji {
+    border-style: solid;
+    border-color: var(--chronicis-beige-gold, #C4AF8E);
+}
+
+/* Placeholder icon when no emoji is set */
+.chronicis-emoji-button .placeholder-icon {
+    color: var(--chronicis-beige-gold, #C4AF8E);
+    opacity: 0.6;
+}
+
+.chronicis-emoji-button:hover .placeholder-icon {
+    opacity: 1;
+}
+
+/* Dropdown container for the picker */
+.chronicis-emoji-picker-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    margin-top: 8px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    background-color: var(--chronicis-soft-off-white, #F4F0EA);
+}
+
+/* Picmo picker styling */
+.chronicis-emoji-picker-dropdown .picmo__picker {
+    background-color: var(--chronicis-soft-off-white, #F4F0EA) !important;
+    border: 1px solid var(--chronicis-beige-gold, #C4AF8E);
+    border-radius: 12px;
+}
+
+.chronicis-emoji-picker-dropdown .picmo__header {
+    background-color: var(--chronicis-soft-off-white, #F4F0EA) !important;
+}
+
+.chronicis-emoji-picker-dropdown .picmo__categoryButtons {
+    background-color: var(--chronicis-soft-off-white, #F4F0EA) !important;
+}
+
+.chronicis-emoji-picker-dropdown .picmo__searchContainer {
+    background-color: var(--chronicis-soft-off-white, #F4F0EA) !important;
+}
+
+.chronicis-emoji-picker-dropdown .picmo__emojiArea {
+    background-color: var(--chronicis-soft-off-white, #F4F0EA) !important;
+}
+
+/* Override emoji-mart styles to match Chronicis theme */
+.chronicis-emoji-picker-dropdown em-emoji-picker {
+    --em-rgb-background: 244, 240, 234;
+    --em-rgb-input: 255, 255, 255;
+    --em-rgb-color: 31, 42, 51;
+    --em-rgb-accent: 196, 175, 142;
+    --border-radius: 12px;
+    --category-icon-size: 20px;
+    --font-family: 'Roboto', sans-serif;
+}
+
+/* Clear button to remove emoji */
+.chronicis-emoji-clear-button {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--chronicis-slate-grey, #3A4750);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.chronicis-emoji-picker-container:hover .chronicis-emoji-clear-button {
+    opacity: 1;
+}
+
+.chronicis-emoji-clear-button:hover {
+    background-color: #d32f2f;
+}
+
+/* Large emoji display in article header */
+.chronicis-article-icon-large {
+    font-size: 3rem;
+    line-height: 1;
+    margin-right: 16px;
+}
+
+/* Emoji in tree view */
+.chronicis-tree-emoji {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    text-align: center;
+}

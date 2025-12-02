@@ -124,12 +124,19 @@
                             Class="drag-handle"
                             Style="@(node.IsHovered || _isDragging ? "opacity: 0.6;" : "opacity: 0;")" />
                         
-                        <!-- Article icon -->
-                        <MudIcon 
-                            Icon="@GetNodeIcon(node)" 
-                            Color="Color.Primary" 
-                            Size="Size.Small" 
-                            Style="margin-right: 8px;" />
+                        <!-- Article icon (emoji or Material icon fallback) -->
+                        @if (!string.IsNullOrEmpty(node.IconEmoji))
+                        {
+                            <span class="chronicis-tree-emoji" style="margin-right: 8px; font-size: 1.1rem;">@node.IconEmoji</span>
+                        }
+                        else
+                        {
+                            <MudIcon 
+                                Icon="@(node.HasChildren ? Icons.Material.Filled.Folder : Icons.Material.Filled.Description)" 
+                                Color="Color.Primary" 
+                                Size="Size.Small" 
+                                Style="margin-right: 8px;" />
+                        }
                         
                         <span>@node.Title</span>
                     </div>
@@ -505,18 +512,6 @@
         return _selectedNode?.Article.Id == node.Article.Id 
             ? "chronicis-nav-item-selected" 
             : "chronicis-nav-item";
-    }
-
-    private string GetNodeIcon(ArticleTreeNode node)
-    {
-        if (!string.IsNullOrEmpty(node.IconEmoji))
-        {
-            return node.IconEmoji;
-        }
-        
-        return node.HasChildren 
-            ? Icons.Material.Filled.Folder 
-            : Icons.Material.Filled.Description;
     }
 
     private async Task ToggleExpand(ArticleTreeNode node)

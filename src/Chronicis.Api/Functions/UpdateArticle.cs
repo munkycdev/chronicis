@@ -73,6 +73,12 @@ public class UpdateArticle
             article.Title = dto.Title;
             article.Body = dto.Body;
             article.ModifiedDate = DateTime.UtcNow;
+            article.IconEmoji = dto.IconEmoji;
+            
+            if (dto.EffectiveDate.HasValue)
+            {
+                article.EffectiveDate = dto.EffectiveDate.Value;
+            }
 
             await _context.SaveChangesAsync();
             await _hashtagSync.SyncHashtagsAsync(article.Id, article.Body);
@@ -85,6 +91,8 @@ public class UpdateArticle
                 Body = article.Body,
                 CreatedDate = article.CreatedDate,
                 ModifiedDate = article.ModifiedDate,
+                EffectiveDate = article.EffectiveDate,
+                IconEmoji = article.IconEmoji,
                 HasChildren = article?.Children?.Count > 0
             };
 

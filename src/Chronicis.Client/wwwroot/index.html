@@ -18,6 +18,7 @@
     <link href="/css/chronicis-backlinks.css" rel="stylesheet" />
     <link href="/css/chronicis-hashtag-tooltip.css" rel="stylesheet" />
     <link href="/css/chronicis-search.css" rel="stylesheet" />
+    <link href="/css/chronicis-emoji-picker.css" rel="stylesheet" />
     <link href="/css/app.css" rel="stylesheet" />
 
     <!-- TipTap Editor (from Phase 4) -->
@@ -34,6 +35,14 @@
 
     <!-- Chronicis Favicon -->
     <link rel="icon" href="/favicon.ico" />
+
+    <!-- Emoji Picker (Picmo) -->
+    <script type="module">
+        import { createPicker } from 'https://unpkg.com/picmo@latest/dist/index.js';
+        window.Picmo = { createPicker };
+        window.dispatchEvent(new Event('picmo-ready'));
+        console.log('Picmo loaded');
+    </script>
 </head>
 
 <body>
@@ -63,6 +72,7 @@
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="/js/tipTapIntegration.js"></script>
+    <script src="/js/emojiPickerInterop.js"></script>
     <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
 </body>
 

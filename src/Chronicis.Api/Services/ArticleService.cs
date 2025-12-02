@@ -115,6 +115,8 @@ namespace Chronicis.Api.Services
                     Body = a.Body ?? string.Empty,
                     CreatedDate = a.CreatedDate,
                     ModifiedDate = a.ModifiedDate,
+                    EffectiveDate = a.EffectiveDate,
+                    IconEmoji = a.IconEmoji,
                     Breadcrumbs = new List<BreadcrumbDto>()  // Will populate separately
                 })
                 .FirstOrDefaultAsync();

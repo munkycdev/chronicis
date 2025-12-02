@@ -151,9 +151,18 @@ public class ArticleApiService : IArticleApiService
         try
         {
             _logger.LogInformation("Searching articles with query: {Query}", query);
-            var results = await _http.GetFromJsonAsync<List<ArticleSearchResultDto>>(
+            var results = await _http.GetFromJsonAsync<GlobalSearchResultsDto>(
                 $"api/articles/search?query={Uri.EscapeDataString(query)}");
-            return results ?? new List<ArticleSearchResultDto>();
+            
+            if (results == null)
+                return new List<ArticleSearchResultDto>();
+            
+            // Combine all match types into a single list
+            var allResults = new List<ArticleSearchResultDto>();
+            allResults.AddRange(results.TitleMatches);
+            allResults.AddRange(results.BodyMatches);
+            allResults.AddRange(results.HashtagMatches);
+            return allResults;
         }
         catch (Exception ex)
         {
@@ -170,9 +179,10 @@ public class ArticleApiService : IArticleApiService
         try
         {
             _logger.LogInformation("Searching articles by title: {Query}", query);
-            var results = await _http.GetFromJsonAsync<List<ArticleSearchResultDto>>(
-                $"api/articles/search/title?query={Uri.EscapeDataString(query)}");
-            return results ?? new List<ArticleSearchResultDto>();
+            // Use the global search endpoint and extract just title matches
+            var results = await _http.GetFromJsonAsync<GlobalSearchResultsDto>(
+                $"api/articles/search?query={Uri.EscapeDataString(query)}");
+            return results?.TitleMatches ?? new List<ArticleSearchResultDto>();
         }
         catch (Exception ex)
         {

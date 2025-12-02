@@ -80,17 +80,26 @@ else
             </MudTooltip>
         </div>
 
-        <!-- Title (Always Editable) - NO AUTO-SAVE -->
-        <MudTextField @ref="_titleField"
-                      @bind-Value="_editTitle"
-                      Variant="Variant.Text"
-                      Placeholder="Untitled Article"
-                      Class="chronicis-article-title mb-3"
-                      Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
-                      Immediate="true"
-                      @onkeyup="@(() => OnTitleChanged())"
-                      @onkeydown="@OnTitleKeyDown"
-                      Underline="false"/>
+        <!-- Title Row with Emoji Picker -->
+        <div class="d-flex align-center mb-3">
+            <!-- Emoji Picker Button -->
+            <EmojiPickerButton 
+                CurrentEmoji="@_article.IconEmoji"
+                OnEmojiChanged="OnIconEmojiChanged"
+                IsSaving="@_isSaving" />
+            
+            <!-- Title (Always Editable) - NO AUTO-SAVE -->
+            <MudTextField @ref="_titleField"
+                          @bind-Value="_editTitle"
+                          Variant="Variant.Text"
+                          Placeholder="Untitled Article"
+                          Class="chronicis-article-title flex-grow-1"
+                          Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
+                          Immediate="true"
+                          @onkeyup="@(() => OnTitleChanged())"
+                          @onkeydown="@OnTitleKeyDown"
+                          Underline="false"/>
+        </div>
 
         <!-- Divider -->
         <div class="chronicis-rune-divider mb-3"></div>
@@ -318,9 +327,25 @@ else
     {
         _breadcrumbs = new List<BreadcrumbItem>
         {
-            new BreadcrumbItem("Home", href: "/"),
-            new BreadcrumbItem(_article?.Title ?? "Article", href: null, disabled: true)
+            new BreadcrumbItem("Home", href: "/")
         };
+
+        // Add all ancestors from the API response (already includes current article)
+        if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
+        {
+            for (int i = 0; i < _article.Breadcrumbs.Count; i++)
+            {
+                var crumb = _article.Breadcrumbs[i];
+                var isLast = i == _article.Breadcrumbs.Count - 1;
+                var slug = CreateSlug(crumb.Title);
+                
+                _breadcrumbs.Add(new BreadcrumbItem(
+                    crumb.Title,
+                    href: isLast ? null : $"/article/{slug}",
+                    disabled: isLast
+                ));
+            }
+        }
     }
 
     private async Task InitializeEditor()
@@ -356,6 +381,49 @@ else
     {
         _hasUnsavedChanges = true;
         // No auto-save timer for title changes
+    }
+
+    // Handle emoji icon changes - auto-save immediately
+    private async Task OnIconEmojiChanged(string? newEmoji)
+    {
+        if (_article == null || _isSaving) return;
+
+        // Update local state
+        _article.IconEmoji = newEmoji;
+        
+        // Save immediately
+        _isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var updateDto = new ArticleUpdateDto
+            {
+                Title = _editTitle?.Trim() ?? string.Empty,
+                Body = _editBody,
+                EffectiveDate = _article.EffectiveDate,
+                IconEmoji = newEmoji
+            };
+
+            await ArticleApi.UpdateArticleAsync(_article.Id, updateDto);
+            _article.ModifiedDate = DateTime.Now;
+            _lastSaveTime = "just now";
+
+            // Refresh tree to show updated icon
+            TreeState.RefreshTree();
+
+            var action = string.IsNullOrEmpty(newEmoji) ? "removed" : "updated";
+            Snackbar.Add($"Icon {action}", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to save icon: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
     }
 
     // NEW: Handle Enter key in title field
