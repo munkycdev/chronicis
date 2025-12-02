@@ -7,28 +7,21 @@ public class TreeStateService : ITreeStateService
 {
     private readonly IArticleApiService _apiService;
 
-    public event Action? OnRefreshRequested;
-
     private List<ArticleTreeItemViewModel> _rootItems = new();
     private ArticleTreeItemViewModel? _selectedArticle;
-    public event Action<int>? OnExpandAndSelect;
-
-
-    // Search state
     private string _searchQuery = string.Empty;
     private List<ArticleSearchResultDto> _searchResults = new();
     private HashSet<int> _visibleNodeIds = new();
 
+    public event Action? OnRefreshRequested;
+    public event Action<int>? OnExpandAndSelect;
     public event Action? OnStateChanged;
-    public int? SelectedArticleId { get; private set; }
 
+    public int? SelectedArticleId { get; private set; }
     public List<ArticleTreeItemViewModel> RootItems => _rootItems;
     public ArticleTreeItemViewModel? SelectedArticle => _selectedArticle;
-
-    // Search properties
     public string SearchQuery => _searchQuery;
     public bool IsSearchActive => !string.IsNullOrWhiteSpace(_searchQuery);
-
 
     public TreeStateService(IArticleApiService apiService)
     {
@@ -40,9 +33,9 @@ public class TreeStateService : ITreeStateService
         SelectedArticleId = articleId;
         NotifyStateChanged();
     }
+
     public void ExpandAndSelectArticle(int articleId)
     {
-
         SelectedArticleId = articleId;
         OnExpandAndSelect?.Invoke(articleId);
         NotifyStateChanged();
@@ -69,13 +62,11 @@ public class TreeStateService : ITreeStateService
 
     public void SelectArticle(int articleId)
     {
-        // Deselect previous
         if (_selectedArticle != null)
         {
             _selectedArticle.IsSelected = false;
         }
 
-        // Find and select new
         var article = FindArticleById(_rootItems, articleId);
         if (article != null)
         {
@@ -86,25 +77,22 @@ public class TreeStateService : ITreeStateService
         NotifyStateChanged();
     }
 
-    // PHASE 2 METHODS
     public async Task AddArticleAsync(ArticleDto article)
     {
         var viewModel = MapToViewModel(article);
 
         if (article.ParentId.HasValue)
         {
-            // Find parent and add as child
             var parent = FindArticleById(_rootItems, article.ParentId.Value);
             if (parent != null)
             {
                 viewModel.ParentId = parent.Id;
                 parent.Children.Add(viewModel);
-                parent.IsExpanded = true; // Auto-expand to show new child
+                parent.IsExpanded = true;
             }
         }
         else
         {
-            // Add as root article
             _rootItems.Add(viewModel);
         }
 
@@ -129,7 +117,6 @@ public class TreeStateService : ITreeStateService
     {
         if (RemoveArticleRecursive(_rootItems, articleId))
         {
-            // If we deleted the selected article, clear selection
             if (_selectedArticle?.Id == articleId)
             {
                 _selectedArticle = null;
@@ -138,7 +125,6 @@ public class TreeStateService : ITreeStateService
         }
     }
 
-    // PHASE 3: SEARCH METHODS
     public async Task SearchAsync(string query)
     {
         _searchQuery = query ?? string.Empty;
@@ -149,24 +135,19 @@ public class TreeStateService : ITreeStateService
             return;
         }
 
-        // Execute search
         _searchResults = await _apiService.SearchArticlesByTitleAsync(_searchQuery);
 
-        // Build set of visible node IDs (matches + all ancestors)
         _visibleNodeIds.Clear();
         foreach (var result in _searchResults)
         {
-            // Add all nodes in the ancestor path
             foreach (var ancestor in result.AncestorPath)
             {
                 _visibleNodeIds.Add(ancestor.Id);
             }
         }
 
-        // Auto-expand all ancestors
         foreach (var result in _searchResults)
         {
-            // Expand all ancestors except the leaf (the match itself)
             for (int i = 0; i < result.AncestorPath.Count - 1; i++)
             {
                 var ancestorId = result.AncestorPath[i].Id;
@@ -191,15 +172,17 @@ public class TreeStateService : ITreeStateService
 
     public bool IsNodeVisible(int articleId)
     {
-        // If no search active, all nodes are visible
         if (!IsSearchActive)
             return true;
 
-        // During search, only visible nodes show
         return _visibleNodeIds.Contains(articleId);
     }
 
-    // HELPER METHODS
+    public void RefreshTree()
+    {
+        OnRefreshRequested?.Invoke();
+    }
+
     private bool RemoveArticleRecursive(List<ArticleTreeItemViewModel> items, int articleId)
     {
         var item = items.FirstOrDefault(i => i.Id == articleId);
@@ -268,15 +251,6 @@ public class TreeStateService : ITreeStateService
 
     private void NotifyStateChanged()
     {
-
-        if (OnStateChanged != null)
-        {
-            OnStateChanged.Invoke();
-        }
-    }
-
-    public void RefreshTree()
-    {
-        OnRefreshRequested?.Invoke();
+        OnStateChanged?.Invoke();
     }
 }
