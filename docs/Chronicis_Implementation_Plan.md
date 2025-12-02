@@ -1,19 +1,17 @@
 # Chronicis Implementation Plan - Complete Reference
 
-**Version:** 1.9 | **Date:** December 1, 2025  
+**Version:** 2.0 | **Date:** December 2, 2025  
 **Purpose:** Complete phase-by-phase implementation guide with detailed specifications
 
-**CHANGES IN v1.9:**
-- Phase 9.5: **COMPLETE** - Authentication Architecture Refactoring
-- Phase 9.5: Global authentication middleware for Azure Functions (no more per-function auth calls)
-- Phase 9.5: `AuthenticationMiddleware` with `IFunctionsWorkerMiddleware` pattern
-- Phase 9.5: `[AllowAnonymous]` attribute for public endpoints
-- Phase 9.5: `FunctionContextExtensions` for easy user access (`context.GetRequiredUser()`)
-- Phase 9.5: Centralized `HttpClient` configuration in Blazor client
-- Phase 9.5: `AuthorizationMessageHandler` with `IHttpClientFactory` pattern
-- Phase 9.5: Removed redundant base classes (`BaseAuthenticatedFunction`, `ArticleBaseClass`, `AuthHttpClient`)
-- Phase 9.5: All API services now use single named client with automatic token attachment
-- All Phase 9.5 features tested and working end-to-end
+**CHANGES IN v2.0:**
+- Phase 10: **COMPLETE** - Drag-and-Drop Reorganization
+- Phase 10: HTML5 drag API via Blazor events
+- Phase 10: "Drop to Root" zone for promoting articles to root level
+- Phase 10: Circular reference prevention (cannot drop on self or descendants)
+- Phase 10: PATCH `/api/articles/{id}/parent` endpoint
+- Phase 10: Stop propagation on all drag events to prevent bubbling
+- Phase 10: Pointer-events disabled on inner elements during drag for consistent highlighting
+- All Phase 10 features tested and working end-to-end
 
 ---
 
@@ -55,14 +53,12 @@
 | 7 | Backlinks & Graph | 1 | ✅ Complete | Backlinks panel, tooltips, navigation, linking UI |
 | 8 | AI Summaries | 2 | ✅ Complete | Azure OpenAI integration, summary generation, cost controls |
 | 9 | Advanced Search | 1 | ✅ Complete | Full-text content search, grouped results, global UI |
-| 9.5 | Auth Architecture | 0.5 | ✅ **COMPLETE** | Global middleware, centralized HttpClient |
-| 10 | Drag & Drop | 1 | 📜 Next | Tree reorganization |
-| 11 | Icons & Polish | 1 | ⏳ Pending | Custom icons, final touches |
+| 9.5 | Auth Architecture | 0.5 | ✅ Complete | Global middleware, centralized HttpClient |
+| 10 | Drag & Drop | 1 | ✅ **COMPLETE** | Tree reorganization |
+| 11 | Icons & Polish | 1 | 📜 Next | Custom icons, final touches |
 | 12 | Testing & Deploy | 2 | ⏳ Pending | E2E tests, optimization, production |
 
 ---
-
-<a name="phases-0-8-summary"></a>
 
 ## Phases 0-8: Completed Foundation
 
@@ -134,16 +130,7 @@
 - POST /api/articles/{id}/summary/generate
 - GET /api/articles/{id}/summary
 
-**Key Learnings from Phases 0-8:**
-- TipTap extensions enable rich interactive features
-- Configuration-driven AI prompts allow easy tuning
-- Drawer-based UI better than fixed panels
-- JavaScript ↔ Blazor communication works perfectly
-- First-time implementation success from good planning
-
 ---
-
-<a name="phase-9"></a>
 
 ## Phase 9: Advanced Search & Content Discovery
 
@@ -200,8 +187,6 @@ GET /api/articles/search?query={term}
 
 ---
 
-<a name="phase-9-5"></a>
-
 ## Phase 9.5: Authentication Architecture Refactoring
 
 **Status:** ✅ **COMPLETE** (v1.9)
@@ -215,19 +200,6 @@ GET /api/articles/search?query={term}
 
 Phase 9.5 refactors authentication across both backend (Azure Functions) and frontend (Blazor WASM) to use centralized patterns instead of per-function/per-service authentication calls.
 
-### Problem Statement
-
-**Before (Backend):** Every function had repetitive authentication code:
-```csharp
-var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-if (authErrorResponse != null) return authErrorResponse;
-```
-
-**Before (Frontend):** Inconsistent HttpClient usage:
-- Some services used `AuthHttpClient` wrapper
-- Some services used raw `HttpClient` (missing auth!)
-- Token attachment logic duplicated
-
 ### Backend Solution: Global Middleware
 
 **AuthenticationMiddleware.cs:**
@@ -237,197 +209,21 @@ Implements `IFunctionsWorkerMiddleware` to handle JWT validation globally:
 - Stores authenticated user in `FunctionContext.Items["User"]`
 - Returns 401 Unauthorized automatically for invalid/missing tokens
 
-**AllowAnonymousAttribute.cs:**
-Simple marker attribute for public endpoints:
-```csharp
-[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
-public class AllowAnonymousAttribute : Attribute { }
-```
-
 **FunctionContextExtensions.cs:**
 Extension methods for easy user access:
 ```csharp
-// In any function:
 var user = context.GetRequiredUser();  // Throws if not authenticated
 var user = context.GetUser();          // Returns null if not authenticated
-```
-
-**Program.cs Registration:**
-```csharp
-var host = new HostBuilder()
-    .ConfigureFunctionsWorkerDefaults(builder =>
-    {
-        builder.UseMiddleware<AuthenticationMiddleware>();
-    })
-    // ...
-```
-
-**Function Code (After):**
-```csharp
-[Function("GetRootArticles")]
-public async Task<HttpResponseData> GetRootArticles(
-    [HttpTrigger(...)] HttpRequestData req,
-    FunctionContext context)
-{
-    var user = context.GetRequiredUser();  // That's it!
-    // ... rest of function
-}
-
-[AllowAnonymous]  // Public endpoint
-[Function("Health")]
-public async Task<HttpResponseData> Run(...) { }
 ```
 
 ### Frontend Solution: Centralized HttpClient
 
 **AuthorizationMessageHandler.cs:**
-`DelegatingHandler` that automatically attaches bearer tokens:
-```csharp
-public class AuthorizationMessageHandler : DelegatingHandler
-{
-    private readonly IAccessTokenProvider _tokenProvider;
-
-    protected override async Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request, 
-        CancellationToken cancellationToken)
-    {
-        var tokenResult = await _tokenProvider.RequestAccessToken();
-        if (tokenResult.TryGetToken(out var token))
-        {
-            request.Headers.Authorization = 
-                new AuthenticationHeaderValue("Bearer", token.Value);
-        }
-        return await base.SendAsync(request, cancellationToken);
-    }
-}
-```
+`DelegatingHandler` that automatically attaches bearer tokens to all requests.
 
 **Program.cs Registration:**
-```csharp
-// Register the auth handler
-builder.Services.AddScoped<AuthorizationMessageHandler>();
-
-// Named client with automatic auth
-builder.Services.AddHttpClient("ChronicisApi", client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-})
-.AddHttpMessageHandler<AuthorizationMessageHandler>();
-
-// All services use the named client
-builder.Services.AddScoped<IArticleApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<ArticleApiService>>();
-    return new ArticleApiService(factory.CreateClient("ChronicisApi"), logger);
-});
-```
-
-**Service Code (After):**
-```csharp
-public class ArticleApiService : IArticleApiService
-{
-    private readonly HttpClient _http;  // Just plain HttpClient!
-
-    public ArticleApiService(HttpClient http, ILogger<ArticleApiService> logger)
-    {
-        _http = http;
-    }
-
-    public async Task<List<ArticleTreeDto>> GetRootArticlesAsync()
-    {
-        // Token automatically attached by handler
-        return await _http.GetFromJsonAsync<List<ArticleTreeDto>>("api/articles");
-    }
-}
-```
-
-### Files Created (Backend)
-
-| File | Purpose |
-|------|---------|
-| `Infrastructure/AuthenticationMiddleware.cs` | Global JWT validation middleware |
-| `Infrastructure/AllowAnonymousAttribute.cs` | Marker for public endpoints |
-| `Infrastructure/FunctionContextExtensions.cs` | `GetUser()`, `GetRequiredUser()` helpers |
-
-### Files Modified (Backend)
-
-| File | Changes |
-|------|---------|
-| `Program.cs` | Added `UseMiddleware<AuthenticationMiddleware>()` |
-| `Functions/HealthFunction.cs` | Added `[AllowAnonymous]`, removed base class |
-| `Functions/ArticleFunctions.cs` | Uses `context.GetRequiredUser()` |
-| `Functions/CreateArticle.cs` | Uses `context.GetRequiredUser()` |
-| `Functions/UpdateArticle.cs` | Uses `context.GetRequiredUser()` |
-| `Functions/DeleteArticle.cs` | Uses `context.GetRequiredUser()` |
-| `Functions/ArticleSearchFunction.cs` | Uses `context.GetRequiredUser()` |
-| `Functions/HashtagFunctions.cs` | Uses `context.GetRequiredUser()` |
-| `Functions/BacklinkFunctions.cs` | Uses `context.GetRequiredUser()` |
-| `Functions/AISummaryFunctions.cs` | Uses `context.GetRequiredUser()` |
-
-### Files Deleted (Backend)
-
-| File | Reason |
-|------|--------|
-| `Functions/BaseAuthenticatedFunction.cs` | Replaced by middleware |
-| `Functions/ArticleBaseClass.cs` | Replaced by middleware |
-
-### Files Created (Frontend)
-
-| File | Purpose |
-|------|---------|
-| `Services/AuthorizationMessageHandler.cs` | Auto-attaches bearer tokens to requests |
-
-### Files Modified (Frontend)
-
-| File | Changes |
-|------|---------|
-| `Program.cs` | `IHttpClientFactory` with named client, factory registrations |
-| `Services/ArticleApiService.cs` | Uses plain `HttpClient` |
-
-### Files Deleted (Frontend)
-
-| File | Reason |
-|------|--------|
-| `Services/AuthHttpClient.cs` | Replaced by `AuthorizationMessageHandler` |
-
-### Benefits
-
-**Backend:**
-- Single point of authentication logic
-- Consistent error responses (401 Unauthorized)
-- Functions focus on business logic only
-- Easy to add new endpoints (auth is automatic)
-- `[AllowAnonymous]` clearly marks public endpoints
-
-**Frontend:**
-- All services automatically get auth tokens
-- No more forgetting to add auth to new services
-- Single configuration point in Program.cs
-- Consistent HttpClient setup across all services
-
-### Key Learnings (v1.9)
-
-**Azure Functions Middleware:**
-- `IFunctionsWorkerMiddleware` is the isolated worker pattern
-- `FunctionContext.Items` is the way to pass data to functions
-- Reflection needed to check for attributes on function methods
-- `context.GetInvocationResult().Value` to short-circuit with custom response
-
-**IHttpClientFactory Pattern:**
-- `DelegatingHandler` is the hook point for request modification
-- Named clients (`"ChronicisApi"`) allow different configs per use case
-- Factory pattern ensures proper `HttpClient` lifecycle management
-- Handler must be registered as `Scoped` (not Singleton)
-
-**Missing Using Directive:**
-- `IServiceProvider.CreateScope()` requires `Microsoft.Extensions.DependencyInjection`
-- Error message doesn't suggest the namespace - you have to know it
-
-**Model Capability:**
-- Claude Opus 4.5 completed this in ~1 hour
-- Previous attempts with Sonnet took multiple hours with more iteration
-- Upfront architecture discussion before coding saved significant time
+- Named client `"ChronicisApi"` with automatic auth
+- All services use `IHttpClientFactory.CreateClient("ChronicisApi")`
 
 ### Success Criteria
 
@@ -442,45 +238,117 @@ public class ArticleApiService : IArticleApiService
 
 ---
 
-<a name="phase-10"></a>
-
 ## Phase 10: Drag-and-Drop Reorganization
 
-**Status:** 📜 Next Phase
+**Status:** ✅ **COMPLETE** (v2.0)
 
 **Goal:** Allow dragging articles to reorganize hierarchy
 
-### Backend
+**Completed:** December 2, 2025  
+**Implementation Time:** ~2 hours with Claude Opus 4.5
 
-- PATCH /api/articles/{id}/parent
-- Update ParentId
-- Validate no circular references
-- Walk up tree to detect cycles
+### Overview
 
-### Frontend
+Phase 10 adds drag-and-drop functionality to the navigation tree, allowing users to reorganize their campaign knowledge structure by dragging articles to new parents or to root level.
 
-- Enable drag-and-drop on tree navigation
-- Validate drop targets
-- Prevent dropping on self/descendants
-- Visual feedback during drag
-- Toast notification on success
-- Optional: Undo functionality
+### Backend Implementation
+
+**New DTO:**
+```csharp
+public class ArticleMoveDto
+{
+    public int? NewParentId { get; set; }  // null = move to root
+}
+```
+
+**New Service Method:**
+```csharp
+Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(int articleId, int? newParentId, int userId);
+```
+
+**Circular Reference Detection:**
+- Walks up from target parent to root
+- If the article being moved appears in the ancestor chain, rejects the move
+- Prevents data corruption from circular hierarchies
+
+**New Endpoint:**
+```
+PATCH /api/articles/{id}/parent
+Body: { "newParentId": int | null }
+```
+
+### Frontend Implementation
+
+**HTML5 Drag API via Blazor:**
+- `@ondragstart`, `@ondragover`, `@ondrop` events on tree nodes
+- Stop propagation on all drag events to prevent bubbling to parent nodes
+- `pointer-events: none` on inner elements during drag for consistent drop targeting
+
+**"Drop to Root" Zone:**
+- Appears at top of tree only when dragging
+- Highlighted when hovering with valid drag source
+- Accepts drops to promote articles to root level
+
+**Visual Feedback:**
+- Dragged article fades to 50% opacity
+- Valid drop targets highlight with beige-gold glow and left border
+- "Drop to Root" zone pulses when active
+- Drag handle icon visible on hover
+
+**Post-Drop Behavior:**
+1. API call to move article
+2. Tree refreshes from server
+3. Moved article expanded and selected in new location
+4. Toast notification confirms success
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `Functions/MoveArticle.cs` | PATCH endpoint for moving articles |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `Shared/DTOs/ArticleDTOs.cs` | Added `ArticleMoveDto` class |
+| `Services/ArticleService.cs` | Added `MoveArticleAsync` with circular reference check |
+| `Services/IArticleApiService.cs` | Added `MoveArticleAsync` method |
+| `Services/ArticleApiService.cs` | Implemented `MoveArticleAsync` with `PatchAsJsonAsync` |
+| `Components/Articles/ArticleTreeView.razor` | Full drag-drop implementation |
+| `wwwroot/css/chronicis-nav.css` | Drag-drop visual styles |
+
+### Key Implementation Details
+
+**Event Propagation:**
+All drag events use `:stopPropagation="true"` to prevent parent nodes from capturing child drag operations:
+```razor
+@ondragstart:stopPropagation="true"
+@ondragend:stopPropagation="true"
+@ondragover:stopPropagation="true"
+@ondragleave:stopPropagation="true"
+@ondrop:stopPropagation="true"
+```
+
+**Consistent Drop Targeting:**
+A `chronicis-nav-menu--dragging` class is added during drag, which applies `pointer-events: none` to inner elements, ensuring only the container div receives drag events.
 
 ### Success Criteria
 
-1. Can drag article to new parent
-2. Cannot create circular references
-3. Tree updates immediately
-4. Clear visual feedback
-5. Article remains open in inline editor after move
+1. ✅ Can drag article to new parent
+2. ✅ Cannot create circular references
+3. ✅ Tree updates immediately after move
+4. ✅ Clear visual feedback during drag
+5. ✅ Article remains selected in new location after move
+6. ✅ "Drop to Root" zone works correctly
+7. ✅ Child articles stay attached when parent moves
+8. ✅ Consistent hover highlighting (no flicker)
 
 ---
 
-<a name="phase-11"></a>
-
 ## Phase 11: Custom Icons & Visual Enhancements
 
-**Status:** ⏳ Pending
+**Status:** 📜 Next Phase
 
 **Goal:** Allow custom emoji icons and final polish
 
@@ -509,8 +377,6 @@ public class ArticleApiService : IArticleApiService
 
 ---
 
-<a name="phase-12"></a>
-
 ## Phase 12: Testing, Performance & Deployment
 
 **Status:** ⏳ Pending
@@ -524,11 +390,11 @@ public class ArticleApiService : IArticleApiService
 - Unit tests for AI summary service
 - Unit tests for search functionality
 - Unit tests for authentication middleware
+- Unit tests for article move/circular reference detection
 - Integration tests for API endpoints
 - Manual test plan execution
 - Test inline editing edge cases
-- Test AI summary generation with various scenarios
-- Test search with large datasets
+- Test drag-and-drop edge cases
 
 ### Performance Optimizations
 
@@ -559,11 +425,10 @@ public class ArticleApiService : IArticleApiService
 5. Inline editing works in production
 6. AI summaries working in production
 7. Search performance acceptable
-8. Costs monitored and within budget
+8. Drag-and-drop works in production
+9. Costs monitored and within budget
 
 ---
-
-<a name="appendices"></a>
 
 ## Appendices
 
@@ -577,16 +442,18 @@ dotnet new func -n Chronicis.Api
 dotnet sln add src/Chronicis.Client src/Chronicis.Api
 ```
 
-**Development:**
-```bash
+**Development (PowerShell):**
+```powershell
 # Run Blazor client with hot reload
-cd src/Chronicis.Client && dotnet watch run
+cd src\Chronicis.Client
+dotnet watch run
 
 # Run Azure Functions
-cd src/Chronicis.Api && func start
+cd src\Chronicis.Api
+func start
 
 # EF Migrations
-cd src/Chronicis.Api
+cd src\Chronicis.Api
 dotnet ef migrations add MigrationName
 dotnet ef database update
 ```
@@ -610,6 +477,7 @@ az keyvault create --name kv-chronicis-dev ...
 - **AI Summary Generation:** < 30 seconds
 - **Hover Tooltip:** < 300ms
 - **Dialog Open:** < 200ms
+- **Drag-Drop Move:** < 500ms
 
 ### C. Project Structure
 
@@ -620,15 +488,16 @@ chronicis/
 │   │   ├── Components/
 │   │   │   ├── Articles/
 │   │   │   │   ├── ArticleDetail.razor
-│   │   │   │   ├── ArticleTreeView.razor
+│   │   │   │   ├── ArticleTreeView.razor      # Updated Phase 10
 │   │   │   │   ├── BacklinksPanel.razor
 │   │   │   │   ├── AISummarySection.razor
 │   │   │   │   └── SearchResultCard.razor
 │   │   │   └── Hashtags/
 │   │   │       └── HashtagLinkDialog.razor
 │   │   ├── Services/
-│   │   │   ├── ArticleApiService.cs
-│   │   │   ├── AuthorizationMessageHandler.cs  # NEW in 9.5
+│   │   │   ├── ArticleApiService.cs           # Updated Phase 10
+│   │   │   ├── IArticleApiService.cs          # Updated Phase 10
+│   │   │   ├── AuthorizationMessageHandler.cs
 │   │   │   ├── TreeStateService.cs
 │   │   │   ├── QuoteService.cs
 │   │   │   ├── HashtagApiService.cs
@@ -640,7 +509,7 @@ chronicis/
 │   │   └── wwwroot/
 │   │       ├── css/
 │   │       │   ├── chronicis-home.css
-│   │       │   ├── chronicis-nav.css
+│   │       │   ├── chronicis-nav.css          # Updated Phase 10
 │   │       │   ├── chronicis-hashtags.css
 │   │       │   ├── chronicis-hashtag-tooltip.css
 │   │       │   ├── chronicis-backlinks.css
@@ -660,18 +529,19 @@ chronicis/
 │   │   │   ├── CreateArticle.cs
 │   │   │   ├── UpdateArticle.cs
 │   │   │   ├── DeleteArticle.cs
+│   │   │   ├── MoveArticle.cs                 # NEW Phase 10
 │   │   │   └── HealthFunction.cs
 │   │   ├── Infrastructure/
-│   │   │   ├── AuthenticationMiddleware.cs     # NEW in 9.5
-│   │   │   ├── AllowAnonymousAttribute.cs      # NEW in 9.5
-│   │   │   ├── FunctionContextExtensions.cs    # NEW in 9.5
+│   │   │   ├── AuthenticationMiddleware.cs
+│   │   │   ├── AllowAnonymousAttribute.cs
+│   │   │   ├── FunctionContextExtensions.cs
 │   │   │   ├── Auth0Configuration.cs
 │   │   │   └── Auth0AuthenticationHelper.cs
 │   │   ├── Services/
 │   │   │   ├── HashtagParser.cs
 │   │   │   ├── HashtagSyncService.cs
 │   │   │   ├── AISummaryService.cs
-│   │   │   ├── ArticleService.cs
+│   │   │   ├── ArticleService.cs              # Updated Phase 10
 │   │   │   └── UserService.cs
 │   │   └── Data/
 │   │       └── Entities/
@@ -681,7 +551,7 @@ chronicis/
 │   │           └── User.cs
 │   └── Chronicis.Shared/           # DTOs
 │       └── DTOs/
-│           ├── ArticleDto.cs
+│           ├── ArticleDTOs.cs                 # Updated Phase 10
 │           ├── HashtagDto.cs
 │           ├── BacklinkDto.cs
 │           ├── HashtagPreviewDto.cs
@@ -693,49 +563,41 @@ chronicis/
 
 ### D. Troubleshooting
 
+**Drag events bubbling to parent nodes:**
+- Check: All drag events have `:stopPropagation="true"`
+- Solution: Add `@ondragstart:stopPropagation="true"` etc. to the container div
+
+**Inconsistent drop target highlighting:**
+- Check: `chronicis-nav-menu--dragging` class applied during drag
+- Check: Inner elements have `pointer-events: none` during drag
+- Solution: Add dragging class to parent and CSS rule for pointer-events
+
+**Article doesn't move:**
+- Check browser console for JavaScript errors
+- Check API terminal for HTTP errors
+- Verify the PATCH endpoint is registered
+
+**Circular reference error:**
+- This is correct behavior - cannot drop article onto itself or its descendants
+- The `WouldCreateCircularReferenceAsync` method walks up the ancestor chain
+
 **Authentication middleware not running:**
 - Check: `builder.UseMiddleware<AuthenticationMiddleware>()` in Program.cs
 - Verify: Middleware registered in `ConfigureFunctionsWorkerDefaults`
-- Solution: Must be inside the lambda, not after `.Build()`
 
 **401 Unauthorized on all endpoints:**
 - Check: Token being sent in Authorization header
 - Verify: Auth0 audience matches configuration
 - Check: `[AllowAnonymous]` attribute on public endpoints
-- Solution: Use browser dev tools to inspect request headers
-
-**`CreateScope` not found:**
-- Check: Missing `using Microsoft.Extensions.DependencyInjection;`
-- Solution: Add the using directive to AuthenticationMiddleware.cs
-
-**HttpClient not sending auth token:**
-- Check: `AuthorizationMessageHandler` registered as Scoped
-- Verify: `.AddHttpMessageHandler<AuthorizationMessageHandler>()` on client
-- Check: Service using factory-created client, not injected HttpClient
-- Solution: Use `IHttpClientFactory.CreateClient("ChronicisApi")`
-
-**Navigation tree not showing expand arrows:**
-- Check: API's `MapToDtoWithChildCount` sets ChildCount
-- Verify: `Include(a => a.Children)` in GetChildrenAsync
-- Solution: Use explicit DB count for ChildCount
-
-**Cannot connect to SQL:**
-- For Docker: `docker start sql-server`
-- Check connection string
-- Verify SQL Server is running
-
-**CORS errors:**
-- Add CORS policy in API Program.cs
-- Allow origin `https://localhost:5001`
 
 ### E. Using This Plan
 
-**Before Starting Phase 10:**
-1. Review Phase 10 specification
-2. Check that all Phase 9.5 features are working
+**Before Starting Phase 11:**
+1. Review Phase 11 specification
+2. Check that all Phase 10 features are working
 3. Create new chat with Claude
 4. Upload this plan + spec PDFs
-5. Say: "I'm ready to start Phase 10 - Drag & Drop Reorganization"
+5. Say: "I'm ready to start Phase 11 - Custom Icons & Visual Enhancements"
 
 **During Each Phase:**
 1. Create new chat with Claude
@@ -770,8 +632,8 @@ chronicis/
 - Refactoring
 - Quick syntax help
 
-**Model Selection (Key Learning from Phase 9.5):**
-- **Opus 4.5:** Best for architectural changes touching many files. Higher cost per message but fewer messages total. Completed auth refactoring in ~1 hour.
+**Model Selection:**
+- **Opus 4.5:** Best for architectural changes touching many files. Completed auth refactoring in ~1 hour, drag-drop in ~2 hours.
 - **Sonnet 4:** Good for focused implementation tasks. Lower cost, but may need more iteration for complex multi-file changes.
 
 **Workflow:**
@@ -792,32 +654,34 @@ chronicis/
 - Document your learnings
 - Have fun! 🎉🐉
 
-**Phase 9.5 Complete! ✅**
-Authentication architecture fully refactored:
-- ✅ Global middleware handles all JWT validation
-- ✅ `[AllowAnonymous]` for public endpoints
-- ✅ `context.GetRequiredUser()` in all functions
-- ✅ Centralized HttpClient with auto-auth
-- ✅ Removed all redundant base classes
-- ✅ Clean, maintainable code structure
+**Phase 10 Complete! ✅**
+Drag-and-drop reorganization fully implemented:
+- ✅ HTML5 drag API via Blazor events
+- ✅ "Drop to Root" zone for promoting articles
+- ✅ Circular reference prevention
+- ✅ PATCH `/api/articles/{id}/parent` endpoint
+- ✅ Visual feedback (opacity, highlighting, cursors)
+- ✅ Stop propagation prevents event bubbling
+- ✅ Consistent hover highlighting
 - ✅ End-to-end functionality verified
 
 **Current Progress:**
-**9.5 of 12 phases complete** (~80% of project)
-- Phases 0-9.5: ✅ Complete
-- Phase 10: 📜 Ready to start (Drag & Drop)
-- Phases 11-12: ⏳ Pending
+**10 of 12 phases complete** (~83% of project)
+- Phases 0-10: ✅ Complete
+- Phase 11: 📜 Ready to start (Icons & Polish)
+- Phase 12: ⏳ Pending (Testing & Deploy)
 
-**When Ready to Start Phase 10:**
+**When Ready to Start Phase 11:**
 Create a new chat, upload this plan and the spec PDFs, and say:
-*"I'm ready to start Phase 10 of Chronicis implementation - Drag & Drop Reorganization. Note: Phases 0-9.5 are complete including authentication architecture refactoring with global middleware and centralized HttpClient. All working perfectly!"*
+*"I'm ready to start Phase 11 of Chronicis implementation - Custom Icons & Visual Enhancements. Note: Phases 0-10 are complete including drag-and-drop reorganization. All working perfectly!"*
 
 ---
 
 **Version History:**
-- 1.9 (2025-12-01): Phase 9.5 COMPLETE - Auth architecture refactoring, global middleware, centralized HttpClient
-- 1.8 (2025-11-28): Phase 9 COMPLETE - Full-text content search, global UI, grouped results
-- 1.7 (2025-11-27): Phase 8 COMPLETE - AI summaries with Azure OpenAI, cost controls
+- 2.0 (2025-12-02): Phase 10 COMPLETE - Drag-and-drop reorganization with event propagation fixes
+- 1.9 (2025-12-01): Phase 9.5 COMPLETE - Auth architecture refactoring
+- 1.8 (2025-11-28): Phase 9 COMPLETE - Full-text content search
+- 1.7 (2025-11-27): Phase 8 COMPLETE - AI summaries with Azure OpenAI
 - 1.6 (2025-11-27): Phase 7 COMPLETE - Interactive hashtags, backlinks, tooltips
 - 1.5 (2025-11-26): Phase 6 COMPLETE - Full hashtag system
 - 1.4 (2025-11-25): Phase 5 COMPLETE - Dashboard, routing, title save
