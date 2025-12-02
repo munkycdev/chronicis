@@ -25,8 +25,6 @@ namespace Chronicis.Api.Data
             {
                 entity.HasKey(a => a.Id);
 
-                entity.Ignore("UserId1");
-
                 // Title configuration
                 entity.Property(a => a.Title)
                     .HasMaxLength(500);
@@ -37,14 +35,10 @@ namespace Chronicis.Api.Data
                     .HasForeignKey(a => a.ParentId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // User relationship - FIXED
                 entity.HasOne(a => a.User)
-                    .WithMany()  // User doesn't have a collection of Articles
-                    .HasForeignKey(a => a.UserId)
-                    .IsRequired()
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.Metadata.RemoveProperty("UserId1");
+                  .WithMany(u => u.Articles)
+                  .HasForeignKey(a => a.UserId)
+                  .OnDelete(DeleteBehavior.Restrict);
 
                 // Indexes
                 entity.HasIndex(a => a.ParentId);
@@ -52,7 +46,7 @@ namespace Chronicis.Api.Data
                 entity.HasIndex(a => a.Title);
             });
 
-            // User configuration
+            // User entity.HasIndex(a => a.User)
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(u => u.Id);

@@ -1,42 +1,37 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
-using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.VisualBasic;
 using System.Net;
 using System.Web;
 
 namespace Chronicis.Api.Functions;
 
-public class ArticleSearchFunction : BaseAuthenticatedFunction
+public class ArticleSearchFunction
 {
     private readonly ChronicisDbContext _context;
+    private readonly ILogger<ArticleSearchFunction> _logger;
 
-    public ArticleSearchFunction(ChronicisDbContext context,
-            ILogger<ArticleSearchFunction> logger,
-            IUserService userService,
-            IOptions<Auth0Configuration> auth0Config) : base(userService, auth0Config, logger)
+    public ArticleSearchFunction(
+        ChronicisDbContext context,
+        ILogger<ArticleSearchFunction> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     [Function("SearchArticles")]
     public async Task<HttpResponseData> SearchArticles(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/search")]
-        HttpRequestData req)
+        HttpRequestData req,
+        FunctionContext context)
     {
-        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-        if (authErrorResponse != null) return authErrorResponse;
-
-        var logger = req.FunctionContext.GetLogger("SearchArticles");
+        var user = context.GetRequiredUser();
         
-        // Get query parameter
         var query = HttpUtility.ParseQueryString(req.Url.Query).Get("query");
         
         if (string.IsNullOrWhiteSpace(query))
@@ -46,44 +41,39 @@ public class ArticleSearchFunction : BaseAuthenticatedFunction
             return badRequest;
         }
         
-        logger.LogInformation("Searching for: {Query}", query);
+        _logger.LogInformation("Searching for: {Query} by user {UserId}", query, user.Id);
         
         try
         {
             // Search titles
             var titleMatches = await _context.Articles
-                .Where(a => EF.Functions.Like(a.Title, $"%{query}%"))
+                .Where(a => a.UserId == user.Id && EF.Functions.Like(a.Title, $"%{query}%"))
                 .OrderBy(a => a.Title)
                 .Take(20)
                 .ToListAsync();
             
-            logger.LogInformation("Found {Count} title matches", titleMatches.Count);
-            
             // Search bodies (exclude articles already matched by title)
             var titleMatchIds = titleMatches.Select(a => a.Id).ToList();
             var bodyMatches = await _context.Articles
-                .Where(a => EF.Functions.Like(a.Body, $"%{query}%") 
+                .Where(a => a.UserId == user.Id 
+                         && EF.Functions.Like(a.Body, $"%{query}%") 
                          && !titleMatchIds.Contains(a.Id))
                 .OrderByDescending(a => a.ModifiedDate ?? a.CreatedDate)
                 .Take(20)
                 .ToListAsync();
             
-            logger.LogInformation("Found {Count} body matches", bodyMatches.Count);
-            
             // Search hashtags
             var hashtagMatches = await _context.ArticleHashtags
                 .Include(ah => ah.Article)
                 .Include(ah => ah.Hashtag)
-                .Where(ah => EF.Functions.Like(ah.Hashtag.Name, $"%{query}%"))
+                .Where(ah => ah.Article.UserId == user.Id 
+                          && EF.Functions.Like(ah.Hashtag.Name, $"%{query}%"))
                 .Select(ah => ah.Article)
                 .Distinct()
                 .OrderBy(a => a.Title)
                 .Take(20)
                 .ToListAsync();
             
-            logger.LogInformation("Found {Count} hashtag matches", hashtagMatches.Count);
-            
-            // Build results with context snippets
             var results = new GlobalSearchResultsDto
             {
                 Query = query,
@@ -99,7 +89,7 @@ public class ArticleSearchFunction : BaseAuthenticatedFunction
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error searching articles");
+            _logger.LogError(ex, "Error searching articles");
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
             await errorResponse.WriteAsJsonAsync(new { error = "Internal server error" });
             return errorResponse;
@@ -139,27 +129,21 @@ public class ArticleSearchFunction : BaseAuthenticatedFunction
         if (string.IsNullOrEmpty(content))
             return "";
             
-        // Find the position of the query in the content
         var index = content.IndexOf(query, StringComparison.OrdinalIgnoreCase);
         
         if (index < 0)
         {
-            // Query not found in content (shouldn't happen), return start
             return content.Length <= maxLength 
                 ? content 
                 : content.Substring(0, maxLength) + "...";
         }
         
-        // Calculate snippet window
         var startBuffer = 50;
-        var endBuffer = maxLength - query.Length - startBuffer;
-        
         var start = Math.Max(0, index - startBuffer);
         var length = Math.Min(content.Length - start, maxLength);
         
         var snippet = content.Substring(start, length);
         
-        // Add ellipsis
         if (start > 0)
             snippet = "..." + snippet;
         if (start + length < content.Length)

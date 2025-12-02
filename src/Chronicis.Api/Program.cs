@@ -1,4 +1,4 @@
-﻿using Chronicis.Api.Data;
+using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Microsoft.Azure.Functions.Worker;
@@ -8,7 +8,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 var host = new HostBuilder()
-    .ConfigureFunctionsWorkerDefaults()
+    .ConfigureFunctionsWorkerDefaults(builder =>
+    {
+        // Register global authentication middleware
+        builder.UseMiddleware<AuthenticationMiddleware>();
+    })
     .ConfigureAppConfiguration((context, config) =>
     {
         config.AddJsonFile("local.settings.json", optional: true, reloadOnChange: true);
@@ -21,7 +25,7 @@ var host = new HostBuilder()
         // Register IConfiguration so it can be injected
         services.AddSingleton<IConfiguration>(configuration);
 
-        // Application Insights (if you have it)
+        // Application Insights
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
 
@@ -29,15 +33,11 @@ var host = new HostBuilder()
         services.Configure<Auth0Configuration>(
             configuration.GetSection("Auth0"));
 
-        var auth0Section = configuration.GetSection("Auth0");
-        Console.WriteLine($"DEBUG Program.cs - Auth0:Domain = {auth0Section["Domain"]}");
-        Console.WriteLine($"DEBUG Program.cs - Auth0:Audience = {auth0Section["Audience"]}");
-
         // Database
         services.AddDbContext<ChronicisDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("ChronicisDb")));
 
-        // Your services
+        // Services
         services.AddScoped<IArticleService, ArticleService>();
         services.AddScoped<ArticleValidationService>();
         services.AddScoped<IHashtagParser, HashtagParser>();

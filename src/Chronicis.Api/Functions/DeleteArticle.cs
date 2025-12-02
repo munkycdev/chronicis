@@ -5,37 +5,37 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System.Net;
 
 namespace Chronicis.Api.Functions;
 
-public class DeleteArticle : BaseAuthenticatedFunction
+public class DeleteArticle
 {
     private readonly ChronicisDbContext _context;
     private readonly ArticleValidationService _validationService;
+    private readonly ILogger<DeleteArticle> _logger;
 
-    public DeleteArticle(ChronicisDbContext context, 
-            ArticleValidationService validationService,
-            ILogger<DeleteArticle> logger,
-            IUserService userService,
-            IOptions<Auth0Configuration> auth0Config) : base(userService, auth0Config, logger)
+    public DeleteArticle(
+        ChronicisDbContext context, 
+        ArticleValidationService validationService,
+        ILogger<DeleteArticle> logger)
     {
         _context = context;
         _validationService = validationService;
+        _logger = logger;
     }
 
     [Function("DeleteArticle")]
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "articles/{id}")] HttpRequestData req,
+        FunctionContext context,
         int id)
     {
+        var user = context.GetRequiredUser();
+        _logger.LogInformation("DeleteArticle {ArticleId} called by user {UserId}", id, user.Id);
+
         try
         {
-            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-            if (authErrorResponse != null) return authErrorResponse;
-
-            // Validate
             var validationResult = await _validationService.ValidateDeleteAsync(id);
             if (!validationResult.IsValid)
             {
@@ -44,8 +44,8 @@ public class DeleteArticle : BaseAuthenticatedFunction
                 return validationError;
             }
 
-            // Get article
-            var article = await _context.Articles.FindAsync(id);
+            var article = await _context.Articles
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == user.Id);
             
             if (article == null)
             {
@@ -54,15 +54,14 @@ public class DeleteArticle : BaseAuthenticatedFunction
                 return notFound;
             }
 
-            // Delete article
             _context.Articles.Remove(article);
             await _context.SaveChangesAsync();
 
-            var response = req.CreateResponse(HttpStatusCode.NoContent);
-            return response;
+            return req.CreateResponse(HttpStatusCode.NoContent);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error deleting article {ArticleId}", id);
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
             await errorResponse.WriteStringAsync($"Error deleting article: {ex.Message}");
             return errorResponse;

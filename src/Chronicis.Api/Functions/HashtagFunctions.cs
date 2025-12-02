@@ -1,46 +1,38 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
-using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System.Net;
 using System.Text.Json;
 
 namespace Chronicis.Api.Functions;
 
-/// <summary>
-/// Azure Functions for hashtag operations
-/// </summary>
-public class HashtagFunctions : BaseAuthenticatedFunction
+public class HashtagFunctions
 {
     private readonly ChronicisDbContext _context;
+    private readonly ILogger<HashtagFunctions> _logger;
 
-    public HashtagFunctions(ChronicisDbContext context,
-            ILogger<HashtagFunctions> logger,
-            IUserService userService,
-            IOptions<Auth0Configuration> auth0Config) : base(userService, auth0Config, logger)
+    public HashtagFunctions(
+        ChronicisDbContext context,
+        ILogger<HashtagFunctions> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
-    /// <summary>
-    /// GET /api/hashtags - Get all hashtags with usage counts
-    /// </summary>
     [Function("GetAllHashtags")]
     public async Task<HttpResponseData> GetAllHashtags(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "hashtags")] 
-        HttpRequestData req)
+        HttpRequestData req,
+        FunctionContext context)
     {
+        var user = context.GetRequiredUser();
+
         try
         {
-            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-            if (authErrorResponse != null) return authErrorResponse;
-
             var hashtags = await _context.Hashtags
                 .Include(h => h.LinkedArticle)
                 .Include(h => h.ArticleHashtags)
@@ -62,26 +54,24 @@ public class HashtagFunctions : BaseAuthenticatedFunction
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error retrieving hashtags");
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
             await errorResponse.WriteStringAsync($"Error retrieving hashtags: {ex.Message}");
             return errorResponse;
         }
     }
 
-    /// <summary>
-    /// GET /api/hashtags/{name} - Get specific hashtag by name
-    /// </summary>
     [Function("GetHashtagByName")]
     public async Task<HttpResponseData> GetHashtagByName(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "hashtags/{name}")] 
         HttpRequestData req,
+        FunctionContext context,
         string name)
     {
+        var user = context.GetRequiredUser();
+
         try
         {
-            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-            if (authErrorResponse != null) return authErrorResponse;
-
             var hashtagName = name.ToLowerInvariant();
 
             var hashtag = await _context.Hashtags
@@ -112,26 +102,24 @@ public class HashtagFunctions : BaseAuthenticatedFunction
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error retrieving hashtag {Name}", name);
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
             await errorResponse.WriteStringAsync($"Error retrieving hashtag: {ex.Message}");
             return errorResponse;
         }
     }
 
-    /// <summary>
-    /// POST /api/hashtags/{name}/link - Link a hashtag to an article
-    /// </summary>
     [Function("LinkHashtag")]
     public async Task<HttpResponseData> LinkHashtag(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "hashtags/{name}/link")] 
         HttpRequestData req,
+        FunctionContext context,
         string name)
     {
+        var user = context.GetRequiredUser();
+
         try
         {
-            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-            if (authErrorResponse != null) return authErrorResponse;
-
             var linkDto = await JsonSerializer.DeserializeAsync<LinkHashtagDto>(
                 req.Body,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
@@ -146,7 +134,6 @@ public class HashtagFunctions : BaseAuthenticatedFunction
 
             var hashtagName = name.ToLowerInvariant();
 
-            // Find hashtag
             var hashtag = await _context.Hashtags
                 .FirstOrDefaultAsync(h => h.Name == hashtagName);
 
@@ -157,9 +144,8 @@ public class HashtagFunctions : BaseAuthenticatedFunction
                 return notFound;
             }
 
-            // Verify article exists
             var articleExists = await _context.Articles
-                .AnyAsync(a => a.Id == linkDto.ArticleId);
+                .AnyAsync(a => a.Id == linkDto.ArticleId && a.UserId == user.Id);
 
             if (!articleExists)
             {
@@ -168,7 +154,6 @@ public class HashtagFunctions : BaseAuthenticatedFunction
                 return notFound;
             }
 
-            // Update the link
             hashtag.LinkedArticleId = linkDto.ArticleId;
             await _context.SaveChangesAsync();
 
@@ -178,6 +163,7 @@ public class HashtagFunctions : BaseAuthenticatedFunction
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error linking hashtag {Name}", name);
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
             await errorResponse.WriteStringAsync($"Error linking hashtag: {ex.Message}");
             return errorResponse;
@@ -186,17 +172,16 @@ public class HashtagFunctions : BaseAuthenticatedFunction
 
     [Function("GetHashtagPreview")]
     public async Task<HttpResponseData> GetHashtagPreview(
-    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "hashtags/{name}/preview")]
-    HttpRequestData req,
-    string name)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "hashtags/{name}/preview")]
+        HttpRequestData req,
+        FunctionContext context,
+        string name)
     {
+        var user = context.GetRequiredUser();
         var response = req.CreateResponse();
 
         try
         {
-            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-            if (authErrorResponse != null) return authErrorResponse;
-
             var normalizedName = name.ToLowerInvariant();
 
             var hashtag = await _context.Hashtags
@@ -221,7 +206,6 @@ public class HashtagFunctions : BaseAuthenticatedFunction
                 return response;
             }
 
-            // Get first 200 characters of body for preview
             var previewText = hashtag.LinkedArticle.Body?.Length > 200
                 ? string.Concat(hashtag.LinkedArticle.Body.AsSpan(0, 200), "...")
                 : hashtag.LinkedArticle.Body;
@@ -242,6 +226,7 @@ public class HashtagFunctions : BaseAuthenticatedFunction
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error getting hashtag preview for {Name}", name);
             response.StatusCode = HttpStatusCode.InternalServerError;
             await response.WriteAsJsonAsync(new { error = ex.Message });
         }
@@ -262,5 +247,4 @@ public class HashtagFunctions : BaseAuthenticatedFunction
             .Replace("'", "")
             .Replace("\"", "");
     }
-
 }

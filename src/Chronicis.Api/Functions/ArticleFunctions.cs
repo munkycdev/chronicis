@@ -1,131 +1,122 @@
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System.Net;
 
-namespace Chronicis.Api.Functions
+namespace Chronicis.Api.Functions;
+
+/// <summary>
+/// Azure Functions HTTP endpoints for Article operations.
+/// Authentication is handled globally by AuthenticationMiddleware.
+/// </summary>
+public class ArticleFunctions
 {
-    /// <summary>
-    /// Azure Functions HTTP endpoints for Article operations.
-    /// Phase 1: Read-only operations (GET endpoints).
-    /// </summary>
-    public class ArticleFunctions : BaseAuthenticatedFunction
+    private readonly IArticleService _articleService;
+    private readonly ILogger<ArticleFunctions> _logger;
+
+    public ArticleFunctions(
+        IArticleService articleService,
+        ILogger<ArticleFunctions> logger)
     {
-        private readonly IArticleService _articleService;
+        _articleService = articleService;
+        _logger = logger;
+    }
 
-        public ArticleFunctions(
-            IArticleService articleService, 
-            ILogger<ArticleFunctions> logger, 
-            IUserService userService,
-            IOptions<Auth0Configuration> auth0Config) : base(userService, auth0Config, logger)
+    /// <summary>
+    /// GET /api/articles
+    /// Returns all root-level articles (those without a parent).
+    /// </summary>
+    [Function("GetRootArticles")]
+    public async Task<HttpResponseData> GetRootArticles(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles")] HttpRequestData req,
+        FunctionContext context)
+    {
+        var user = context.GetRequiredUser();
+        _logger.LogInformation("GetRootArticles called for user {UserId}", user.Id);
+
+        try
         {
-            _articleService = articleService;
+            var articles = await _articleService.GetRootArticlesAsync(user.Id);
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(articles);
+            return response;
         }
-
-        /// <summary>
-        /// GET /api/articles
-        /// Returns all root-level articles (those without a parent).
-        /// </summary>
-        [Function("GetRootArticles")]
-        public async Task<HttpResponseData> GetRootArticles(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles")] HttpRequestData req)
+        catch (Exception ex)
         {
-            _logger.LogInformation("GetRootArticles endpoint called");
-
-            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-            if (authErrorResponse != null) return authErrorResponse;
-
-            try
-            {
-                _logger.LogInformation("Fetching root articles for user {UserId}", user!.Id);
-                
-                var articles = await _articleService.GetRootArticlesAsync(user.Id);
-
-                var response = req.CreateResponse(HttpStatusCode.OK);
-                await response.WriteAsJsonAsync(articles);
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching root articles");
-                var response = req.CreateResponse(HttpStatusCode.InternalServerError);
-                await response.WriteStringAsync("Internal server error");
-                return response;
-            }
+            _logger.LogError(ex, "Error fetching root articles");
+            var response = req.CreateResponse(HttpStatusCode.InternalServerError);
+            await response.WriteStringAsync("Internal server error");
+            return response;
         }
+    }
 
-        /// <summary>
-        /// GET /api/articles/{id}
-        /// Returns detailed information for a specific article including breadcrumbs.
-        /// </summary>
-        [Function("GetArticleDetail")]
-        public async Task<HttpResponseData> GetArticleDetail(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:int}")] HttpRequestData req,
-            int id)
+    /// <summary>
+    /// GET /api/articles/{id}
+    /// Returns detailed information for a specific article including breadcrumbs.
+    /// </summary>
+    [Function("GetArticleDetail")]
+    public async Task<HttpResponseData> GetArticleDetail(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:int}")] HttpRequestData req,
+        FunctionContext context,
+        int id)
+    {
+        var user = context.GetRequiredUser();
+        _logger.LogInformation("GetArticleDetail called for ID: {ArticleId}, user {UserId}", id, user.Id);
+
+        try
         {
-            _logger.LogInformation("GetArticleDetail endpoint called for ID: {ArticleId}", id);
+            var article = await _articleService.GetArticleDetailAsync(id, user.Id);
 
-            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-            if (authErrorResponse != null) return authErrorResponse;
-
-            try
+            if (article == null)
             {
-                var article = await _articleService.GetArticleDetailAsync(id, user!.Id);
-
-                if (article == null)
-                {
-                    var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
-                    await notFoundResponse.WriteAsJsonAsync(new { message = $"Article {id} not found" });
-                    return notFoundResponse;
-                }
-
-                var response = req.CreateResponse(HttpStatusCode.OK);
-                await response.WriteAsJsonAsync(article);
-                return response;
+                var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
+                await notFoundResponse.WriteAsJsonAsync(new { message = $"Article {id} not found" });
+                return notFoundResponse;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching article {ArticleId}", id);
-                var response = req.CreateResponse(HttpStatusCode.InternalServerError);
-                await response.WriteStringAsync("Internal server error");
-                return response;
-            }
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(article);
+            return response;
         }
-
-        /// <summary>
-        /// GET /api/articles/{id}/children
-        /// Returns all child articles of the specified parent article.
-        /// </summary>
-        [Function("GetArticleChildren")]
-        public async Task<HttpResponseData> GetArticleChildren(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:int}/children")] HttpRequestData req,
-            int id)
+        catch (Exception ex)
         {
-            _logger.LogInformation("GetArticleChildren endpoint called for parent ID: {ParentId}", id);
+            _logger.LogError(ex, "Error fetching article {ArticleId}", id);
+            var response = req.CreateResponse(HttpStatusCode.InternalServerError);
+            await response.WriteStringAsync("Internal server error");
+            return response;
+        }
+    }
 
-            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-            if (authErrorResponse != null) return authErrorResponse;
+    /// <summary>
+    /// GET /api/articles/{id}/children
+    /// Returns all child articles of the specified parent article.
+    /// </summary>
+    [Function("GetArticleChildren")]
+    public async Task<HttpResponseData> GetArticleChildren(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:int}/children")] HttpRequestData req,
+        FunctionContext context,
+        int id)
+    {
+        var user = context.GetRequiredUser();
+        _logger.LogInformation("GetArticleChildren called for parent ID: {ParentId}, user {UserId}", id, user.Id);
 
-            try
-            {
-                var children = await _articleService.GetChildrenAsync(id, user!.Id);
+        try
+        {
+            var children = await _articleService.GetChildrenAsync(id, user.Id);
 
-                var response = req.CreateResponse(HttpStatusCode.OK);
-                await response.WriteAsJsonAsync(children);
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching children for article {ParentId}", id);
-                var response = req.CreateResponse(HttpStatusCode.InternalServerError);
-                await response.WriteStringAsync("Internal server error");
-                return response;
-            }
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(children);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching children for article {ParentId}", id);
+            var response = req.CreateResponse(HttpStatusCode.InternalServerError);
+            await response.WriteStringAsync("Internal server error");
+            return response;
         }
     }
 }

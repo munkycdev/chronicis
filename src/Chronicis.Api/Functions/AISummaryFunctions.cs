@@ -6,39 +6,37 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System.Net;
 using System.Text.Json;
 
 namespace Chronicis.Api.Functions;
 
-public class AISummaryFunctions : BaseAuthenticatedFunction
+public class AISummaryFunctions
 {
     private readonly ChronicisDbContext _context;
     private readonly IAISummaryService _summaryService;
+    private readonly ILogger<AISummaryFunctions> _logger;
 
     public AISummaryFunctions(
         ChronicisDbContext context,
         IAISummaryService summaryService,
-        ILogger<AISummaryFunctions> logger,
-        IUserService userService,
-        IOptions<Auth0Configuration> auth0Config) : base(userService, auth0Config, logger)
+        ILogger<AISummaryFunctions> logger)
     {
         _context = context;
         _summaryService = summaryService;
+        _logger = logger;
     }
 
     [Function("GetSummaryEstimate")]
     public async Task<HttpResponseData> GetSummaryEstimate(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id}/summary/estimate")] 
         HttpRequestData req,
+        FunctionContext context,
         int id)
     {
-        _logger.LogInformation("Getting summary estimate for article {ArticleId}", id);
+        var user = context.GetRequiredUser();
+        _logger.LogInformation("Getting summary estimate for article {ArticleId}, user {UserId}", id, user.Id);
         
-        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-        if (authErrorResponse != null) return authErrorResponse;
-
         try
         {
             var estimate = await _summaryService.EstimateCostAsync(id);
@@ -67,16 +65,14 @@ public class AISummaryFunctions : BaseAuthenticatedFunction
     public async Task<HttpResponseData> GenerateSummary(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "articles/{id}/summary/generate")] 
         HttpRequestData req,
+        FunctionContext context,
         int id)
     {
-        _logger.LogInformation("Generating AI summary for article {ArticleId}", id);
-
-        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-        if (authErrorResponse != null) return authErrorResponse;
+        var user = context.GetRequiredUser();
+        _logger.LogInformation("Generating AI summary for article {ArticleId}, user {UserId}", id, user.Id);
 
         try
         {
-            // Parse request body (optional maxTokens)
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             var request = string.IsNullOrEmpty(requestBody)
                 ? new GenerateSummaryRequestDto { ArticleId = id }
@@ -107,18 +103,17 @@ public class AISummaryFunctions : BaseAuthenticatedFunction
     public async Task<HttpResponseData> GetArticleSummary(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id}/summary")] 
         HttpRequestData req,
+        FunctionContext context,
         int id)
     {
-        _logger.LogInformation("Getting summary for article {ArticleId}", id);
-
-        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-        if (authErrorResponse != null) return authErrorResponse;
+        var user = context.GetRequiredUser();
+        _logger.LogInformation("Getting summary for article {ArticleId}, user {UserId}", id, user.Id);
 
         try
         {
             var article = await _context.Articles
                 .AsNoTracking()
-                .Where(a => a.Id == id)
+                .Where(a => a.Id == id && a.UserId == user.Id)
                 .Select(a => new ArticleSummaryDto
                 {
                     ArticleId = a.Id,
@@ -151,16 +146,17 @@ public class AISummaryFunctions : BaseAuthenticatedFunction
     public async Task<HttpResponseData> ClearArticleSummary(
         [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "articles/{id}/summary")] 
         HttpRequestData req,
+        FunctionContext context,
         int id)
     {
-        _logger.LogInformation("Clearing summary for article {ArticleId}", id);
-
-        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-        if (authErrorResponse != null) return authErrorResponse;
+        var user = context.GetRequiredUser();
+        _logger.LogInformation("Clearing summary for article {ArticleId}, user {UserId}", id, user.Id);
 
         try
         {
-            var article = await _context.Articles.FindAsync(id);
+            var article = await _context.Articles
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == user.Id);
+                
             if (article == null)
             {
                 var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
@@ -172,8 +168,7 @@ public class AISummaryFunctions : BaseAuthenticatedFunction
             article.AISummaryGeneratedDate = null;
             await _context.SaveChangesAsync();
 
-            var response = req.CreateResponse(HttpStatusCode.NoContent);
-            return response;
+            return req.CreateResponse(HttpStatusCode.NoContent);
         }
         catch (Exception ex)
         {

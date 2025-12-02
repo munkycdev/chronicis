@@ -1,29 +1,27 @@
 using Chronicis.Api.Infrastructure;
-using Chronicis.Api.Services;
 using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System.Net;
 
 namespace Chronicis.Api.Functions;
 
-public class HealthFunction : BaseAuthenticatedFunction
+public class HealthFunction
 {
-    public HealthFunction(
-            ILogger<HealthFunction> logger,
-            IUserService userService,
-            IOptions<Auth0Configuration> auth0Config) : base(userService, auth0Config, logger) { }
+    private readonly ILogger<HealthFunction> _logger;
 
+    public HealthFunction(ILogger<HealthFunction> logger)
+    {
+        _logger = logger;
+    }
+
+    [AllowAnonymous]  // Public endpoint - no auth required
     [Function("Health")]
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health")] HttpRequestData req)
     {
-        _logger.LogInformation("Health check endpoint called"); 
-        
-        var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-        if (authErrorResponse != null) return authErrorResponse;
+        _logger.LogInformation("Health check endpoint called");
 
         var response = req.CreateResponse(HttpStatusCode.OK);
         

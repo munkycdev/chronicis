@@ -14,8 +14,6 @@ namespace Chronicis.Shared.Models
     {
         public int Id { get; set; }
 
-        // Auth0 User relationship
-        [ForeignKey("User")]
         public int UserId { get; set; }  // Foreign key
         public string Title { get; set; } = string.Empty;
         public int? ParentId { get; set; }
@@ -38,6 +36,7 @@ namespace Chronicis.Shared.Models
 
         public string? AISummary { get; set; }
         public DateTime? AISummaryGeneratedDate { get; set; }
+
         public User User { get; set; } = null!;
     }
 }

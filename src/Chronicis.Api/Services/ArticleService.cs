@@ -38,7 +38,7 @@ namespace Chronicis.Api.Services
             // Use AsNoTracking and direct projection to avoid User navigation issues
             var rootArticles = await _context.Articles
                 .AsNoTracking()
-                .Where(a => a.ParentId == null && a.UserId == userId)
+                .Where(a => a.ParentId == null && a.User.Id == userId)
                 .Select(a => new ArticleTreeDto
                 {
                     Id = a.Id,
@@ -67,7 +67,7 @@ namespace Chronicis.Api.Services
             // Use AsNoTracking and direct projection
             var children = await _context.Articles
                 .AsNoTracking()
-                .Where(a => a.ParentId == parentId && a.UserId == userId)
+                .Where(a => a.ParentId == parentId && a.User.Id == userId)
                 .Select(a => new ArticleTreeDto
                 {
                     Id = a.Id,
@@ -96,7 +96,7 @@ namespace Chronicis.Api.Services
             // Use AsNoTracking and direct projection
             var article = await _context.Articles
                 .AsNoTracking()
-                .Where(a => a.Id == id && a.UserId == userId)
+                .Where(a => a.Id == id && a.User.Id == userId)
                 .Select(a => new ArticleDto
                 {
                     Id = a.Id,
@@ -134,7 +134,7 @@ namespace Chronicis.Api.Services
             {
                 var article = await _context.Articles
                     .AsNoTracking()
-                    .Where(a => a.Id == currentId && a.UserId == userId)
+                    .Where(a => a.Id == currentId && a.User.Id == userId)
                     .Select(a => new { a.Id, a.Title, a.ParentId })
                     .FirstOrDefaultAsync();
 

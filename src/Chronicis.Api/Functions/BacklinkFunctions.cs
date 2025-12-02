@@ -1,46 +1,42 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
-using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System.Net;
 
 namespace Chronicis.Api.Functions;
 
-public class BacklinkFunctions : ArticleBaseClass
+public class BacklinkFunctions
 {
-    public BacklinkFunctions(ChronicisDbContext context,
-        IUserService userService,
-        ILogger<BacklinkFunctions> logger,
-        IOptions<Auth0Configuration> auth0Config) : base(context, userService, logger, auth0Config) { }
+    private readonly ChronicisDbContext _context;
+    private readonly ILogger<BacklinkFunctions> _logger;
 
-    /// <summary>
-    /// GET /api/articles/{id}/backlinks
-    /// Returns all articles that reference this article via hashtags
-    /// </summary>
+    public BacklinkFunctions(
+        ChronicisDbContext context,
+        ILogger<BacklinkFunctions> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
     [Function("GetArticleBacklinks")]
     public async Task<HttpResponseData> GetArticleBacklinks(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id}/backlinks")] 
         HttpRequestData req,
+        FunctionContext context,
         int id)
     {
+        var user = context.GetRequiredUser();
         var response = req.CreateResponse();
 
         try
         {
-            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-            if (authErrorResponse != null) return authErrorResponse;
-
-            if (_context == null)  throw new SystemException();
-
-            // Get the target article
-            Article? targetArticle = await _context.Articles
-                .FirstOrDefaultAsync(a => a.Id == id);
+            var targetArticle = await _context.Articles
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == user.Id);
 
             if (targetArticle == null)
             {
@@ -49,7 +45,6 @@ public class BacklinkFunctions : ArticleBaseClass
                 return response;
             }
 
-            // Find all hashtags that reference this article
             var relevantHashtags = await _context.Hashtags
                 .Where(h => h.LinkedArticleId == id)
                 .Select(h => h.Id)
@@ -57,17 +52,17 @@ public class BacklinkFunctions : ArticleBaseClass
 
             if (!relevantHashtags.Any())
             {
-                // No hashtags link to this article, return empty list
                 response.StatusCode = HttpStatusCode.OK;
                 await response.WriteAsJsonAsync(new List<BacklinkDto>());
                 return response;
             }
 
-            // Find all articles that use these hashtags (excluding the target article itself)
             var backlinks = await _context.ArticleHashtags
                 .Include(ah => ah.Article)
                 .Include(ah => ah.Hashtag)
-                .Where(ah => relevantHashtags.Contains(ah.HashtagId) && ah.ArticleId != id)
+                .Where(ah => relevantHashtags.Contains(ah.HashtagId) 
+                          && ah.ArticleId != id 
+                          && ah.Article.UserId == user.Id)
                 .GroupBy(ah => ah.ArticleId)
                 .Select(g => new
                 {
@@ -93,6 +88,7 @@ public class BacklinkFunctions : ArticleBaseClass
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error getting backlinks for article {ArticleId}", id);
             response.StatusCode = HttpStatusCode.InternalServerError;
             await response.WriteAsJsonAsync(new { error = ex.Message });
         }

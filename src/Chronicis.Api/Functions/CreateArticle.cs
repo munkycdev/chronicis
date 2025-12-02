@@ -7,37 +7,39 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System.Net;
 using System.Text.Json;
 
 namespace Chronicis.Api.Functions;
 
-public class CreateArticle : ArticleBaseClass
+public class CreateArticle
 {
+    private readonly ChronicisDbContext _context;
     private readonly ArticleValidationService _validationService;
+    private readonly ILogger<CreateArticle> _logger;
+    private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public CreateArticle(
         ChronicisDbContext context, 
         ArticleValidationService validationService,
-        IUserService userService,
-        ILogger<CreateArticle> logger,
-        IOptions<Auth0Configuration> auth0Config) : base(context, userService, logger, auth0Config)
+        ILogger<CreateArticle> logger)
     {
+        _context = context;
         _validationService = validationService;
+        _logger = logger;
     }
 
     [Function("CreateArticle")]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "articles")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "articles")] HttpRequestData req,
+        FunctionContext context)
     {
+        var user = context.GetRequiredUser();
+        _logger.LogInformation("CreateArticle called by user {UserId}", user.Id);
+
         try
         {
-            var (user, authErrorResponse) = await AuthenticateRequestAsync(req);
-            if (authErrorResponse != null) return authErrorResponse;
-
-            // Parse request body
-            var dto = await JsonSerializer.DeserializeAsync<ArticleCreateDto>(req.Body, _options);
+            var dto = await JsonSerializer.DeserializeAsync<ArticleCreateDto>(req.Body, _jsonOptions);
 
             if (dto == null)
             {
@@ -46,7 +48,6 @@ public class CreateArticle : ArticleBaseClass
                 return badRequest;
             }
 
-            // Validate
             var validationResult = await _validationService.ValidateCreateAsync(dto);
             if (!validationResult.IsValid)
             {
@@ -55,27 +56,23 @@ public class CreateArticle : ArticleBaseClass
                 return validationError;
             }
 
-            // Create article
             var article = new Article
             {
                 Title = dto.Title,
                 ParentId = dto.ParentId,
                 Body = dto.Body,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTime.UtcNow,
+                UserId = user.Id
             };
 
             _context.Articles.Add(article);
             await _context.SaveChangesAsync();
 
-            // Load parent if exists for response
             if (article.ParentId.HasValue)
             {
-                await _context.Entry(article)
-                    .Reference(a => a.Parent)
-                    .LoadAsync();
+                await _context.Entry(article).Reference(a => a.Parent).LoadAsync();
             }
 
-            // Map to DTO
             var responseDto = new ArticleDto
             {
                 Id = article.Id,
@@ -84,7 +81,7 @@ public class CreateArticle : ArticleBaseClass
                 Body = article.Body,
                 CreatedDate = article.CreatedDate,
                 ModifiedDate = article.ModifiedDate,
-                HasChildren = false // New article has no children
+                HasChildren = false
             };
 
             var response = req.CreateResponse(HttpStatusCode.Created);
@@ -93,6 +90,7 @@ public class CreateArticle : ArticleBaseClass
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error creating article");
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
             await errorResponse.WriteStringAsync($"Error creating article: {ex.Message}");
             return errorResponse;
