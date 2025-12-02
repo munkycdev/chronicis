@@ -5,7 +5,7 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
-<div class="chronicis-nav-menu">
+<div class="chronicis-nav-menu @(_isDragging ? "chronicis-nav-menu--dragging" : "")">
     @* Drop to Root Zone - shown when dragging *@
     @if (_isDragging)
     {
@@ -82,12 +82,17 @@
         <div class="chronicis-nav-item-container @(isDragSource ? "dragging" : "") @(isDropTargetActive ? "drop-target-active" : "")" 
              draggable="true"
              @ondragstart="@((e) => OnDragStart(e, node))"
+             @ondragstart:stopPropagation="true"
              @ondragend="OnDragEnd"
+             @ondragend:stopPropagation="true"
              @ondragover="@((e) => OnDragOver(e, node))"
              @ondragover:preventDefault="@isValidDropTarget"
+             @ondragover:stopPropagation="true"
              @ondragleave="@(() => OnDragLeave(node))"
+             @ondragleave:stopPropagation="true"
              @ondrop="@((e) => OnDrop(e, node))"
              @ondrop:preventDefault="true"
+             @ondrop:stopPropagation="true"
              @onmouseenter="@(() => node.IsHovered = true)"
              @onmouseleave="@(() => node.IsHovered = false)">
             

@@ -302,3 +302,8 @@
 .chronicis-nav-menu.dragging * {
     user-select: none;
 }
+
+/* During active drag, disable pointer events on inner elements so container is the only drop target */
+.chronicis-nav-menu--dragging .chronicis-nav-item-container .mud-nav-link > * {
+    pointer-events: none;
+}
