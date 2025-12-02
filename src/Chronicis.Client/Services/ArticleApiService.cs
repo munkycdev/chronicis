@@ -1,224 +1,171 @@
 using Chronicis.Shared.DTOs;
 using System.Net.Http.Json;
 
-namespace Chronicis.Client.Services
+namespace Chronicis.Client.Services;
+
+/// <summary>
+/// Service for communicating with the Article API.
+/// </summary>
+public class ArticleApiService : IArticleApiService
 {
-    /// <summary>
-    /// Service for communicating with the Article API.
-    /// Handles all HTTP requests to the backend Azure Functions.
-    /// </summary>
-    public class ArticleApiService : IArticleApiService
+    private readonly HttpClient _http;
+    private readonly ILogger<ArticleApiService> _logger;
+
+    public ArticleApiService(HttpClient http, ILogger<ArticleApiService> logger)
     {
-        private readonly AuthHttpClient _authHttpClient;
-        private readonly ILogger<ArticleApiService> _logger;
+        _http = http;
+        _logger = logger;
+    }
 
-        public ArticleApiService(AuthHttpClient httpClient, ILogger<ArticleApiService> logger)
+    public async Task<List<ArticleTreeDto>> GetRootArticlesAsync()
+    {
+        try
         {
-            _authHttpClient = httpClient;
-            _logger = logger;
+            _logger.LogInformation("Fetching root articles from API");
+            var articles = await _http.GetFromJsonAsync<List<ArticleTreeDto>>("api/articles");
+            return articles ?? new List<ArticleTreeDto>();
         }
-
-        /// <summary>
-        /// Fetch all root-level articles with their children.
-        /// </summary>
-        public async Task<List<ArticleTreeDto>> GetRootArticlesAsync()
+        catch (Exception ex)
         {
-            var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
-
-            _logger.LogInformation("=== ArticleApiService Constructor ===");
-            _logger.LogInformation("HttpClient BaseAddress: {BaseAddress}", _httpClient.BaseAddress);
-            _logger.LogInformation("HttpClient has {Count} default headers", _httpClient.DefaultRequestHeaders.Count());
-            try
-            {
-                _logger.LogInformation("Fetching root articles from API");
-                var articles = await _httpClient.GetFromJsonAsync<List<ArticleTreeDto>>("api/articles");
-                return articles ?? new List<ArticleTreeDto>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching root articles");
-                throw;
-            }
+            _logger.LogError(ex, "Error fetching root articles");
+            throw;
         }
+    }
 
-        /// <summary>
-        /// Fetch child articles for a specific parent.
-        /// </summary>
-        public async Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId)
+    public async Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId)
+    {
+        try
         {
-            var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
-            try
-            {
-                _logger.LogInformation("Fetching children for article {ParentId}", parentId);
-                var children = await _httpClient.GetFromJsonAsync<List<ArticleTreeDto>>($"api/articles/{parentId}/children");
-                return children ?? new List<ArticleTreeDto>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching children for article {ParentId}", parentId);
-                throw;
-            }
+            _logger.LogInformation("Fetching children for article {ParentId}", parentId);
+            var children = await _http.GetFromJsonAsync<List<ArticleTreeDto>>($"api/articles/{parentId}/children");
+            return children ?? new List<ArticleTreeDto>();
         }
-
-        /// <summary>
-        /// Fetch detailed information for a specific article.
-        /// </summary>
-        public async Task<ArticleDto?> GetArticleDetailAsync(int id)
+        catch (Exception ex)
         {
-            var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
-            try
-            {
-                _logger.LogInformation("Fetching article detail for {ArticleId}", id);
-                var article = await _httpClient.GetFromJsonAsync<ArticleDto>($"api/articles/{id}");
-                return article;
-            }
-            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                _logger.LogWarning("Article {ArticleId} not found", id);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching article detail for {ArticleId}", id);
-                throw;
-            }
+            _logger.LogError(ex, "Error fetching children for article {ParentId}", parentId);
+            throw;
         }
+    }
 
-        /// <summary>
-        /// Alias for GetArticleDetailAsync - used by Phase 5 components.
-        /// </summary>
-        public async Task<ArticleDto?> GetArticleAsync(int id)
+    public async Task<ArticleDto?> GetArticleDetailAsync(int id)
+    {
+        try
         {
-            return await GetArticleDetailAsync(id);
+            _logger.LogInformation("Fetching article detail for {ArticleId}", id);
+            return await _http.GetFromJsonAsync<ArticleDto>($"api/articles/{id}");
         }
-
-        /// <summary>
-        /// Create a new article.
-        /// </summary>
-        public async Task<ArticleDto> CreateArticleAsync(ArticleCreateDto dto)
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
-            try
-            {
-                _logger.LogInformation("Creating new article: {Title}", dto.Title);
-                var response = await _httpClient.PostAsJsonAsync("api/articles", dto);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadFromJsonAsync<ArticleDto>()
-                    ?? throw new Exception("Failed to deserialize created article");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating article");
-                throw;
-            }
+            _logger.LogWarning("Article {ArticleId} not found", id);
+            return null;
         }
-
-        /// <summary>
-        /// Update an existing article.
-        /// </summary>
-        public async Task<ArticleDto> UpdateArticleAsync(int id, ArticleUpdateDto dto)
+        catch (Exception ex)
         {
-            var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
-            try
-            {
-                _logger.LogInformation("Updating article {ArticleId}", id);
-                var response = await _httpClient.PutAsJsonAsync($"api/articles/{id}", dto);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadFromJsonAsync<ArticleDto>()
-                    ?? throw new Exception("Failed to deserialize updated article");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating article {ArticleId}", id);
-                throw;
-            }
+            _logger.LogError(ex, "Error fetching article detail for {ArticleId}", id);
+            throw;
         }
+    }
 
-        /// <summary>
-        /// Delete an article.
-        /// </summary>
-        public async Task DeleteArticleAsync(int id)
+    public async Task<ArticleDto?> GetArticleAsync(int id) => await GetArticleDetailAsync(id);
+
+    public async Task<ArticleDto> CreateArticleAsync(ArticleCreateDto dto)
+    {
+        try
         {
-            var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
-            try
-            {
-                _logger.LogInformation("Deleting article {ArticleId}", id);
-                var response = await _httpClient.DeleteAsync($"api/articles/{id}");
-                response.EnsureSuccessStatusCode();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting article {ArticleId}", id);
-                throw;
-            }
+            _logger.LogInformation("Creating new article: {Title}", dto.Title);
+            var response = await _http.PostAsJsonAsync("api/articles", dto);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<ArticleDto>()
+                ?? throw new Exception("Failed to deserialize created article");
         }
-
-        /// <summary>
-        /// Search articles by query string (Phase 3).
-        /// </summary>
-        public async Task<List<ArticleSearchResultDto>> SearchArticlesAsync(string query)
+        catch (Exception ex)
         {
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                return new List<ArticleSearchResultDto>();
-            }
-
-            try
-            {
-                var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
-
-                _logger.LogInformation("Searching articles with query: {Query}", query);
-                var results = await _httpClient.GetFromJsonAsync<List<ArticleSearchResultDto>>(
-                    $"api/articles/search?query={Uri.EscapeDataString(query)}");
-                return results ?? new List<ArticleSearchResultDto>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error searching articles");
-                throw;
-            }
+            _logger.LogError(ex, "Error creating article");
+            throw;
         }
+    }
 
-        /// <summary>
-        /// Search articles by title only (for tree navigation).
-        /// </summary>
-        public async Task<List<ArticleSearchResultDto>> SearchArticlesByTitleAsync(string query)
+    public async Task<ArticleDto> UpdateArticleAsync(int id, ArticleUpdateDto dto)
+    {
+        try
         {
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                return new List<ArticleSearchResultDto>();
-            }
-
-            try
-            {
-                var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
-
-                _logger.LogInformation("Searching articles by title: {Query}", query);
-                var results = await _httpClient.GetFromJsonAsync<List<ArticleSearchResultDto>>(
-                    $"api/articles/search/title?query={Uri.EscapeDataString(query)}");
-                return results ?? new List<ArticleSearchResultDto>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error searching articles by title");
-                throw;
-            }
+            _logger.LogInformation("Updating article {ArticleId}", id);
+            var response = await _http.PutAsJsonAsync($"api/articles/{id}", dto);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<ArticleDto>()
+                ?? throw new Exception("Failed to deserialize updated article");
         }
-
-        public async Task<List<BacklinkDto>> GetArticleBacklinksAsync(int articleId)
+        catch (Exception ex)
         {
-            try
-            {
-                var _httpClient = await _authHttpClient.GetAuthenticatedClientAsync();
+            _logger.LogError(ex, "Error updating article {ArticleId}", id);
+            throw;
+        }
+    }
 
-                var backlinks = await _httpClient.GetFromJsonAsync<List<BacklinkDto>>($"api/articles/{articleId}/backlinks");
-                return backlinks ?? new List<BacklinkDto>();
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error fetching backlinks: {ex.Message}");
-                return new List<BacklinkDto>();
-            }
+    public async Task DeleteArticleAsync(int id)
+    {
+        try
+        {
+            _logger.LogInformation("Deleting article {ArticleId}", id);
+            var response = await _http.DeleteAsync($"api/articles/{id}");
+            response.EnsureSuccessStatusCode();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting article {ArticleId}", id);
+            throw;
+        }
+    }
+
+    public async Task<List<ArticleSearchResultDto>> SearchArticlesAsync(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return new List<ArticleSearchResultDto>();
+
+        try
+        {
+            _logger.LogInformation("Searching articles with query: {Query}", query);
+            var results = await _http.GetFromJsonAsync<List<ArticleSearchResultDto>>(
+                $"api/articles/search?query={Uri.EscapeDataString(query)}");
+            return results ?? new List<ArticleSearchResultDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching articles");
+            throw;
+        }
+    }
+
+    public async Task<List<ArticleSearchResultDto>> SearchArticlesByTitleAsync(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return new List<ArticleSearchResultDto>();
+
+        try
+        {
+            _logger.LogInformation("Searching articles by title: {Query}", query);
+            var results = await _http.GetFromJsonAsync<List<ArticleSearchResultDto>>(
+                $"api/articles/search/title?query={Uri.EscapeDataString(query)}");
+            return results ?? new List<ArticleSearchResultDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching articles by title");
+            throw;
+        }
+    }
+
+    public async Task<List<BacklinkDto>> GetArticleBacklinksAsync(int articleId)
+    {
+        try
+        {
+            var backlinks = await _http.GetFromJsonAsync<List<BacklinkDto>>($"api/articles/{articleId}/backlinks");
+            return backlinks ?? new List<BacklinkDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching backlinks for article {ArticleId}", articleId);
+            return new List<BacklinkDto>();
         }
     }
 }
