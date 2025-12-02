@@ -17,14 +17,14 @@ public interface IUserService
     /// <param name="avatarUrl">User's avatar URL from Auth0 (optional)</param>
     /// <returns>The user entity from our database</returns>
     Task<User> GetOrCreateUserAsync(string auth0UserId, string email, string displayName, string? avatarUrl);
-    
+
     /// <summary>
     /// Gets a user by their internal database ID
     /// </summary>
     /// <param name="userId">Internal user ID</param>
     /// <returns>User entity or null if not found</returns>
     Task<User?> GetUserByIdAsync(int userId);
-    
+
     /// <summary>
     /// Updates the user's last login timestamp
     /// </summary>

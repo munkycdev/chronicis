@@ -1,6 +1,5 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +14,7 @@ namespace Chronicis.Api.Services
         Task<List<ArticleTreeDto>> GetRootArticlesAsync(int userId);
         Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId, int userId);
         Task<ArticleDto?> GetArticleDetailAsync(int id, int userId);
-        
+
         /// <summary>
         /// Move an article to a new parent (or to root if newParentId is null).
         /// Validates ownership and prevents circular references.
@@ -138,7 +137,7 @@ namespace Chronicis.Api.Services
         /// </summary>
         public async Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(int articleId, int? newParentId, int userId)
         {
-            _logger.LogInformation("Moving article {ArticleId} to parent {NewParentId} for user {UserId}", 
+            _logger.LogInformation("Moving article {ArticleId} to parent {NewParentId} for user {UserId}",
                 articleId, newParentId?.ToString() ?? "root", userId);
 
             // 1. Get the article to move
@@ -154,7 +153,7 @@ namespace Chronicis.Api.Services
             // 2. If moving to same parent, nothing to do
             if (article.ParentId == newParentId)
             {
-                _logger.LogInformation("Article {ArticleId} already has parent {ParentId}, no move needed", 
+                _logger.LogInformation("Article {ArticleId} already has parent {ParentId}, no move needed",
                     articleId, newParentId?.ToString() ?? "root");
                 return (true, null);
             }
@@ -175,7 +174,7 @@ namespace Chronicis.Api.Services
                 // 4. Check for circular reference - cannot move an article to be a child of itself or its descendants
                 if (await WouldCreateCircularReferenceAsync(articleId, newParentId.Value, userId))
                 {
-                    _logger.LogWarning("Moving article {ArticleId} to {NewParentId} would create circular reference", 
+                    _logger.LogWarning("Moving article {ArticleId} to {NewParentId} would create circular reference",
                         articleId, newParentId);
                     return (false, "Cannot move an article to be a child of itself or its descendants");
                 }
@@ -187,7 +186,7 @@ namespace Chronicis.Api.Services
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Successfully moved article {ArticleId} to parent {NewParentId}", 
+            _logger.LogInformation("Successfully moved article {ArticleId} to parent {NewParentId}",
                 articleId, newParentId?.ToString() ?? "root");
 
             return (true, null);

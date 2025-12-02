@@ -1,7 +1,5 @@
 ﻿using Chronicis.CaptureApp.UI;
-using System;
 using System.Drawing.Drawing2D;
-using System.Windows.Forms;
 
 namespace Chronicis.CaptureApp.Services;
 

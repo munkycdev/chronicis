@@ -20,8 +20,8 @@ public class UpdateArticle
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public UpdateArticle(
-        ChronicisDbContext context, 
-        IArticleValidationService validationService, 
+        ChronicisDbContext context,
+        IArticleValidationService validationService,
         IHashtagSyncService hashtagSync,
         ILogger<UpdateArticle> logger)
     {
@@ -74,7 +74,7 @@ public class UpdateArticle
             article.Body = dto.Body;
             article.ModifiedDate = DateTime.UtcNow;
             article.IconEmoji = dto.IconEmoji;
-            
+
             if (dto.EffectiveDate.HasValue)
             {
                 article.EffectiveDate = dto.EffectiveDate.Value;

@@ -1,6 +1,4 @@
-﻿using System.Windows.Forms;
-
-namespace Chronicis.CaptureApp.Services;
+﻿namespace Chronicis.CaptureApp.Services;
 
 public interface ISystemTrayService
 {

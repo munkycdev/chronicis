@@ -25,7 +25,7 @@ public class BacklinkFunctions
 
     [Function("GetArticleBacklinks")]
     public async Task<HttpResponseData> GetArticleBacklinks(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id}/backlinks")] 
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id}/backlinks")]
         HttpRequestData req,
         FunctionContext context,
         int id)
@@ -60,8 +60,8 @@ public class BacklinkFunctions
             var backlinks = await _context.ArticleHashtags
                 .Include(ah => ah.Article)
                 .Include(ah => ah.Hashtag)
-                .Where(ah => relevantHashtags.Contains(ah.HashtagId) 
-                          && ah.ArticleId != id 
+                .Where(ah => relevantHashtags.Contains(ah.HashtagId)
+                          && ah.ArticleId != id
                           && ah.Article.UserId == user.Id)
                 .GroupBy(ah => ah.ArticleId)
                 .Select(g => new

@@ -1,5 +1,5 @@
-using Markdig;
 using Ganss.Xss;
+using Markdig;
 
 namespace Chronicis.Client.Services;
 
@@ -25,7 +25,7 @@ public class MarkdownService
 
         // Configure HTML sanitizer to prevent XSS
         _sanitizer = new HtmlSanitizer();
-        
+
         // Allow common markdown HTML elements
         _sanitizer.AllowedTags.Add("h1");
         _sanitizer.AllowedTags.Add("h2");
@@ -45,14 +45,14 @@ public class MarkdownService
         _sanitizer.AllowedTags.Add("blockquote");
         _sanitizer.AllowedTags.Add("del");
         _sanitizer.AllowedTags.Add("ins");
-        
+
         // Allow necessary attributes
         _sanitizer.AllowedAttributes.Add("class");
         _sanitizer.AllowedAttributes.Add("src");
         _sanitizer.AllowedAttributes.Add("alt");
         _sanitizer.AllowedAttributes.Add("href");
         _sanitizer.AllowedAttributes.Add("title");
-        
+
         // Allow data attributes for syntax highlighting
         _sanitizer.AllowDataAttributes = true;
     }
@@ -69,7 +69,7 @@ public class MarkdownService
         {
             // Convert markdown to HTML
             var html = Markdown.ToHtml(markdown, _pipeline);
-            
+
             // Sanitize to prevent XSS
             return _sanitizer.Sanitize(html);
         }
@@ -106,10 +106,10 @@ public class MarkdownService
     public string GetPreview(string markdown, int maxLength = 200)
     {
         var plainText = ToPlainText(markdown);
-        
+
         if (plainText.Length <= maxLength)
             return plainText;
-        
+
         return plainText.Substring(0, maxLength) + "...";
     }
 }

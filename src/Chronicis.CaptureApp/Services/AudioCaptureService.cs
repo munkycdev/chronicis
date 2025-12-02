@@ -1,7 +1,6 @@
 ﻿using Chronicis.CaptureApp.Models;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
-using NAudio.MediaFoundation;
 
 namespace Chronicis.CaptureApp.Services;
 

@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Threading.Tasks;
-using Whisper.net;
+﻿using Whisper.net;
 using Whisper.net.Ggml;
 
 namespace Chronicis.CaptureApp.Services;

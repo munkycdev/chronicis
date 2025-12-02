@@ -44,7 +44,7 @@ public class AISummaryApiService : IAISummaryApiService
             };
 
             var response = await _http.PostAsJsonAsync($"/api/articles/{articleId}/summary/generate", request);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<SummaryGenerationDto>();

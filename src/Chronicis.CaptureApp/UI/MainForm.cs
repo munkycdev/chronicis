@@ -1,8 +1,8 @@
-﻿using System.Text;
+﻿using Chronicis.CaptureApp.Models;
+using Chronicis.CaptureApp.Services;
 using MaterialSkin;
 using MaterialSkin.Controls;
-using Chronicis.CaptureApp.Models;
-using Chronicis.CaptureApp.Services;
+using System.Text;
 using Whisper.net.Ggml;
 
 namespace Chronicis.CaptureApp.UI;
@@ -58,7 +58,7 @@ public class MainForm : MaterialForm
         _transcriptionService = transcriptionService;
         _settingsService = settingsService;
         _systemTrayService = systemTrayService;
-        _speakerDetectionService = speakerDetectionService; 
+        _speakerDetectionService = speakerDetectionService;
         _materialSkinManager = MaterialSkinManager.Instance;
 
         InitializeComponent();

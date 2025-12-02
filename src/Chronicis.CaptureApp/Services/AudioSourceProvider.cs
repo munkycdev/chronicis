@@ -1,7 +1,5 @@
 ﻿using Chronicis.CaptureApp.Models;
 using NAudio.CoreAudioApi;
-using System;
-using System.Collections.Generic;
 
 namespace Chronicis.CaptureApp.Services;
 

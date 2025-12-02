@@ -5,7 +5,6 @@ using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text.Json;
@@ -20,7 +19,7 @@ public class CreateArticle
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public CreateArticle(
-        ChronicisDbContext context, 
+        ChronicisDbContext context,
         IArticleValidationService validationService,
         ILogger<CreateArticle> logger)
     {

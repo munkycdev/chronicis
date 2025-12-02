@@ -16,7 +16,7 @@ public class DeleteArticle
     private readonly ILogger<DeleteArticle> _logger;
 
     public DeleteArticle(
-        ChronicisDbContext context, 
+        ChronicisDbContext context,
         ArticleValidationService validationService,
         ILogger<DeleteArticle> logger)
     {
@@ -46,7 +46,7 @@ public class DeleteArticle
 
             var article = await _context.Articles
                 .FirstOrDefaultAsync(a => a.Id == id && a.UserId == user.Id);
-            
+
             if (article == null)
             {
                 var notFound = req.CreateResponse(HttpStatusCode.NotFound);

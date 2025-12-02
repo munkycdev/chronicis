@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Chronicis.Api.Data;
 using Chronicis.Shared.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -20,9 +20,9 @@ public class UserService : IUserService
     }
 
     public async Task<User> GetOrCreateUserAsync(
-        string auth0UserId, 
-        string email, 
-        string displayName, 
+        string auth0UserId,
+        string email,
+        string displayName,
         string? avatarUrl)
     {
         // Try to find existing user
@@ -33,7 +33,7 @@ public class UserService : IUserService
         {
             // Create new user
             _logger.LogInformation("Creating new user for Auth0 ID: {Auth0UserId}", auth0UserId);
-            
+
             user = new User
             {
                 Auth0UserId = auth0UserId,
@@ -46,37 +46,37 @@ public class UserService : IUserService
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            
-            _logger.LogInformation("Created user {UserId} for Auth0 ID: {Auth0UserId}", 
+
+            _logger.LogInformation("Created user {UserId} for Auth0 ID: {Auth0UserId}",
                 user.Id, auth0UserId);
         }
         else
         {
             // Update user info in case it changed (e.g., user changed their name/avatar in Auth0)
             bool needsUpdate = false;
-            
+
             if (user.Email != email)
             {
                 user.Email = email;
                 needsUpdate = true;
             }
-            
+
             if (user.DisplayName != displayName)
             {
                 user.DisplayName = displayName;
                 needsUpdate = true;
             }
-            
+
             if (user.AvatarUrl != avatarUrl)
             {
                 user.AvatarUrl = avatarUrl;
                 needsUpdate = true;
             }
-            
+
             // Always update last login
             user.LastLoginDate = DateTime.UtcNow;
             needsUpdate = true;
-            
+
             if (needsUpdate)
             {
                 await _context.SaveChangesAsync();

@@ -32,7 +32,7 @@ public class ArticleValidationService : IArticleValidationService
         {
             var parentExists = await _context.Articles
                 .AnyAsync(a => a.Id == dto.ParentId.Value);
-            
+
             if (!parentExists)
             {
                 result.AddError("ParentId", "Parent article does not exist");
@@ -49,7 +49,7 @@ public class ArticleValidationService : IArticleValidationService
         // Article must exist
         var articleExists = await _context.Articles
             .AnyAsync(a => a.Id == articleId);
-        
+
         if (!articleExists)
         {
             result.AddError("Id", "Article not found");
@@ -72,7 +72,7 @@ public class ArticleValidationService : IArticleValidationService
         var article = await _context.Articles
             .Include(a => a.Children)
             .FirstOrDefaultAsync(a => a.Id == articleId);
-        
+
         if (article == null)
         {
             result.AddError("Id", "Article not found");

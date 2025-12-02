@@ -1,12 +1,12 @@
-using System.Net;
-using System.Reflection;
+using Chronicis.Api.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Chronicis.Api.Services;
+using System.Net;
+using System.Reflection;
 
 namespace Chronicis.Api.Infrastructure;
 
@@ -45,7 +45,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         // Check if function has [AllowAnonymous] attribute
         if (HasAllowAnonymousAttribute(context))
         {
-            _logger.LogDebug("Skipping authentication for {FunctionName} (AllowAnonymous)", 
+            _logger.LogDebug("Skipping authentication for {FunctionName} (AllowAnonymous)",
                 context.FunctionDefinition.Name);
             await next(context);
             return;
@@ -59,7 +59,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
 
         if (principal == null)
         {
-            _logger.LogWarning("Authentication failed for {FunctionName}: No valid token", 
+            _logger.LogWarning("Authentication failed for {FunctionName}: No valid token",
                 context.FunctionDefinition.Name);
             await SetUnauthorizedResponse(context, httpRequestData, "Authentication required. Please provide a valid Auth0 token.");
             return;
@@ -70,7 +70,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         {
             using var scope = _serviceProvider.CreateScope();
             var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
-            
+
             var user = await userService.GetOrCreateUserAsync(
                 principal.Auth0UserId,
                 principal.Email,
@@ -81,7 +81,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
             context.Items["User"] = user;
             context.Items["UserPrincipal"] = principal;
 
-            _logger.LogInformation("Authenticated user {UserId} ({Email}) for {FunctionName}", 
+            _logger.LogInformation("Authenticated user {UserId} ({Email}) for {FunctionName}",
                 user.Id, user.Email, context.FunctionDefinition.Name);
         }
         catch (Exception ex)
@@ -99,11 +99,11 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
     {
         // Get the method info for the function being executed
         var entryPoint = context.FunctionDefinition.EntryPoint;
-        
+
         // EntryPoint format: "Namespace.ClassName.MethodName"
         var lastDotIndex = entryPoint.LastIndexOf('.');
         if (lastDotIndex < 0) return false;
-        
+
         var typeName = entryPoint.Substring(0, lastDotIndex);
         var methodName = entryPoint.Substring(lastDotIndex + 1);
 
@@ -131,13 +131,13 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
     }
 
     private static async Task SetUnauthorizedResponse(
-        FunctionContext context, 
+        FunctionContext context,
         HttpRequestData httpRequestData,
         string message)
     {
         var response = httpRequestData.CreateResponse(HttpStatusCode.Unauthorized);
         await response.WriteAsJsonAsync(new { error = message });
-        
+
         var invocationResult = context.GetInvocationResult();
         invocationResult.Value = response;
     }

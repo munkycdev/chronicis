@@ -121,19 +121,19 @@ public class ArticleApiService : IArticleApiService
     {
         try
         {
-            _logger.LogInformation("Moving article {ArticleId} to parent {NewParentId}", 
+            _logger.LogInformation("Moving article {ArticleId} to parent {NewParentId}",
                 articleId, newParentId?.ToString() ?? "root");
-            
+
             var moveDto = new ArticleMoveDto { NewParentId = newParentId };
             var response = await _http.PatchAsJsonAsync($"api/articles/{articleId}/parent", moveDto);
-            
+
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 _logger.LogWarning("Failed to move article {ArticleId}: {Error}", articleId, errorContent);
                 return false;
             }
-            
+
             return true;
         }
         catch (Exception ex)
@@ -153,10 +153,10 @@ public class ArticleApiService : IArticleApiService
             _logger.LogInformation("Searching articles with query: {Query}", query);
             var results = await _http.GetFromJsonAsync<GlobalSearchResultsDto>(
                 $"api/articles/search?query={Uri.EscapeDataString(query)}");
-            
+
             if (results == null)
                 return new List<ArticleSearchResultDto>();
-            
+
             // Combine all match types into a single list
             var allResults = new List<ArticleSearchResultDto>();
             allResults.AddRange(results.TitleMatches);

@@ -40,7 +40,7 @@ public class MoveArticle
         {
             // Parse the request body
             var moveDto = await req.ReadFromJsonAsync<ArticleMoveDto>();
-            
+
             if (moveDto == null)
             {
                 var badRequestResponse = req.CreateResponse(HttpStatusCode.BadRequest);
@@ -48,7 +48,7 @@ public class MoveArticle
                 return badRequestResponse;
             }
 
-            _logger.LogInformation("Moving article {ArticleId} to parent {NewParentId}", 
+            _logger.LogInformation("Moving article {ArticleId} to parent {NewParentId}",
                 id, moveDto.NewParentId?.ToString() ?? "root");
 
             // Perform the move

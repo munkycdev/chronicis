@@ -26,7 +26,7 @@ public class HashtagFunctions
 
     [Function("GetAllHashtags")]
     public async Task<HttpResponseData> GetAllHashtags(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "hashtags")] 
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "hashtags")]
         HttpRequestData req,
         FunctionContext context)
     {
@@ -64,7 +64,7 @@ public class HashtagFunctions
 
     [Function("GetHashtagByName")]
     public async Task<HttpResponseData> GetHashtagByName(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "hashtags/{name}")] 
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "hashtags/{name}")]
         HttpRequestData req,
         FunctionContext context,
         string name)
@@ -112,7 +112,7 @@ public class HashtagFunctions
 
     [Function("LinkHashtag")]
     public async Task<HttpResponseData> LinkHashtag(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "hashtags/{name}/link")] 
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "hashtags/{name}/link")]
         HttpRequestData req,
         FunctionContext context,
         string name)

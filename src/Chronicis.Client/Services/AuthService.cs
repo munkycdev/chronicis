@@ -23,7 +23,7 @@ public interface IAuthService
     /// Gets the current authenticated user's information
     /// </summary>
     Task<UserInfo?> GetCurrentUserAsync();
-    
+
     /// <summary>
     /// Checks if the current user is authenticated
     /// </summary>

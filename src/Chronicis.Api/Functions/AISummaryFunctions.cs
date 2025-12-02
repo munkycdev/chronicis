@@ -29,14 +29,14 @@ public class AISummaryFunctions
 
     [Function("GetSummaryEstimate")]
     public async Task<HttpResponseData> GetSummaryEstimate(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id}/summary/estimate")] 
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id}/summary/estimate")]
         HttpRequestData req,
         FunctionContext context,
         int id)
     {
         var user = context.GetRequiredUser();
         _logger.LogInformation("Getting summary estimate for article {ArticleId}, user {UserId}", id, user.Id);
-        
+
         try
         {
             var estimate = await _summaryService.EstimateCostAsync(id);
@@ -63,7 +63,7 @@ public class AISummaryFunctions
 
     [Function("GenerateSummary")]
     public async Task<HttpResponseData> GenerateSummary(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "articles/{id}/summary/generate")] 
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "articles/{id}/summary/generate")]
         HttpRequestData req,
         FunctionContext context,
         int id)
@@ -76,7 +76,7 @@ public class AISummaryFunctions
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             var request = string.IsNullOrEmpty(requestBody)
                 ? new GenerateSummaryRequestDto { ArticleId = id }
-                : JsonSerializer.Deserialize<GenerateSummaryRequestDto>(requestBody, 
+                : JsonSerializer.Deserialize<GenerateSummaryRequestDto>(requestBody,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
                   ?? new GenerateSummaryRequestDto { ArticleId = id };
 
@@ -101,7 +101,7 @@ public class AISummaryFunctions
 
     [Function("GetArticleSummary")]
     public async Task<HttpResponseData> GetArticleSummary(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id}/summary")] 
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id}/summary")]
         HttpRequestData req,
         FunctionContext context,
         int id)
@@ -144,7 +144,7 @@ public class AISummaryFunctions
 
     [Function("ClearArticleSummary")]
     public async Task<HttpResponseData> ClearArticleSummary(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "articles/{id}/summary")] 
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "articles/{id}/summary")]
         HttpRequestData req,
         FunctionContext context,
         int id)
@@ -156,7 +156,7 @@ public class AISummaryFunctions
         {
             var article = await _context.Articles
                 .FirstOrDefaultAsync(a => a.Id == id && a.UserId == user.Id);
-                
+
             if (article == null)
             {
                 var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);

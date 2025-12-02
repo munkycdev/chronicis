@@ -1,5 +1,5 @@
-using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+using System.Net.Http.Headers;
 
 namespace Chronicis.Client.Services;
 
@@ -17,7 +17,7 @@ public class AuthorizationMessageHandler : DelegatingHandler
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request, 
+        HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
         var tokenResult = await _tokenProvider.RequestAccessToken();

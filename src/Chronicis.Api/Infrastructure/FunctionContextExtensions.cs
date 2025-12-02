@@ -1,5 +1,5 @@
-using Microsoft.Azure.Functions.Worker;
 using Chronicis.Shared.Models;
+using Microsoft.Azure.Functions.Worker;
 
 namespace Chronicis.Api.Infrastructure;
 
@@ -27,7 +27,7 @@ public static class FunctionContextExtensions
     /// </summary>
     public static User GetRequiredUser(this FunctionContext context)
     {
-        return context.GetUser() 
+        return context.GetUser()
             ?? throw new InvalidOperationException("User not found in context. Ensure this endpoint requires authentication.");
     }
 

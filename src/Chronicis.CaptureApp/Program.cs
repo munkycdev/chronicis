@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Chronicis.CaptureApp.Services;
+﻿using Chronicis.CaptureApp.Services;
 using Chronicis.CaptureApp.UI;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Chronicis.CaptureApp;
 

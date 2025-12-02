@@ -1,6 +1,5 @@
 using Chronicis.Client.ViewModels;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Models;
 
 namespace Chronicis.Client.Services;
 
@@ -14,7 +13,7 @@ public class TreeStateService : ITreeStateService
     private ArticleTreeItemViewModel? _selectedArticle;
     public event Action<int>? OnExpandAndSelect;
 
-   
+
     // Search state
     private string _searchQuery = string.Empty;
     private List<ArticleSearchResultDto> _searchResults = new();

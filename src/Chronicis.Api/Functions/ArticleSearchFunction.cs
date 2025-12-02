@@ -32,18 +32,18 @@ public class ArticleSearchFunction
         FunctionContext context)
     {
         var user = context.GetRequiredUser();
-        
+
         var query = HttpUtility.ParseQueryString(req.Url.Query).Get("query");
-        
+
         if (string.IsNullOrWhiteSpace(query))
         {
             var badRequest = req.CreateResponse(HttpStatusCode.BadRequest);
             await badRequest.WriteAsJsonAsync(new { error = "Query parameter is required" });
             return badRequest;
         }
-        
+
         _logger.LogInformation("Searching for: {Query} by user {UserId}", query, user.Id);
-        
+
         try
         {
             // Search titles
@@ -52,29 +52,29 @@ public class ArticleSearchFunction
                 .OrderBy(a => a.Title)
                 .Take(20)
                 .ToListAsync();
-            
+
             // Search bodies (exclude articles already matched by title)
             var titleMatchIds = titleMatches.Select(a => a.Id).ToList();
             var bodyMatches = await _context.Articles
-                .Where(a => a.UserId == user.Id 
-                         && EF.Functions.Like(a.Body, $"%{query}%") 
+                .Where(a => a.UserId == user.Id
+                         && EF.Functions.Like(a.Body, $"%{query}%")
                          && !titleMatchIds.Contains(a.Id))
                 .OrderByDescending(a => a.ModifiedDate ?? a.CreatedDate)
                 .Take(20)
                 .ToListAsync();
-            
+
             // Search hashtags
             var hashtagMatches = await _context.ArticleHashtags
                 .Include(ah => ah.Article)
                 .Include(ah => ah.Hashtag)
-                .Where(ah => ah.Article.UserId == user.Id 
+                .Where(ah => ah.Article.UserId == user.Id
                           && EF.Functions.Like(ah.Hashtag.Name, $"%{query}%"))
                 .Select(ah => ah.Article)
                 .Distinct()
                 .OrderBy(a => a.Title)
                 .Take(20)
                 .ToListAsync();
-            
+
             var results = new GlobalSearchResultsDto
             {
                 Query = query,
@@ -83,7 +83,7 @@ public class ArticleSearchFunction
                 HashtagMatches = await BuildSearchResults(hashtagMatches, query, "hashtag"),
                 TotalResults = titleMatches.Count + bodyMatches.Count + hashtagMatches.Count
             };
-            
+
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(results);
             return response;
@@ -98,18 +98,18 @@ public class ArticleSearchFunction
     }
 
     private async Task<List<ArticleSearchResultDto>> BuildSearchResults(
-        List<Article> articles, 
-        string query, 
+        List<Article> articles,
+        string query,
         string matchType)
     {
         var results = new List<ArticleSearchResultDto>();
-        
+
         foreach (var article in articles)
         {
             var snippet = ExtractSnippet(article?.Body ?? string.Empty, query, 200);
             var breadcrumbs = await BuildBreadcrumbs(article?.Id ?? 0);
             var slug = SlugUtility.CreateSlug(article?.Title);
-            
+
             results.Add(new ArticleSearchResultDto
             {
                 Id = article?.Id ?? 0,
@@ -121,7 +121,7 @@ public class ArticleSearchFunction
                 LastModified = article?.ModifiedDate ?? article?.CreatedDate ?? DateTime.MinValue,
             });
         }
-        
+
         return results;
     }
 
@@ -129,27 +129,27 @@ public class ArticleSearchFunction
     {
         if (string.IsNullOrEmpty(content))
             return "";
-            
+
         var index = content.IndexOf(query, StringComparison.OrdinalIgnoreCase);
-        
+
         if (index < 0)
         {
-            return content.Length <= maxLength 
-                ? content 
+            return content.Length <= maxLength
+                ? content
                 : content.Substring(0, maxLength) + "...";
         }
-        
+
         var startBuffer = 50;
         var start = Math.Max(0, index - startBuffer);
         var length = Math.Min(content.Length - start, maxLength);
-        
+
         var snippet = content.Substring(start, length);
-        
+
         if (start > 0)
             snippet = "..." + snippet;
         if (start + length < content.Length)
             snippet = snippet + "...";
-            
+
         return snippet.Trim();
     }
 
@@ -157,7 +157,7 @@ public class ArticleSearchFunction
     {
         var breadcrumbs = new List<BreadcrumbDto>();
         var current = await _context.Articles.FindAsync(articleId);
-        
+
         while (current != null)
         {
             breadcrumbs.Insert(0, new BreadcrumbDto
@@ -165,13 +165,13 @@ public class ArticleSearchFunction
                 Id = current.Id,
                 Title = string.IsNullOrEmpty(current.Title) ? "(Untitled)" : current.Title
             });
-            
+
             if (current.ParentId.HasValue)
                 current = await _context.Articles.FindAsync(current.ParentId.Value);
             else
                 break;
         }
-        
+
         return breadcrumbs;
     }
 }

@@ -1,6 +1,4 @@
 ﻿using Chronicis.CaptureApp.Models;
-using System;
-using System.IO;
 using System.Text.Json;
 
 namespace Chronicis.CaptureApp.Services;

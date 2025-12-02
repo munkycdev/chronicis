@@ -24,7 +24,7 @@ public class HealthFunction
         _logger.LogInformation("Health check endpoint called");
 
         var response = req.CreateResponse(HttpStatusCode.OK);
-        
+
         var healthCheck = new HealthCheckResponse
         {
             Status = "Healthy",
@@ -33,7 +33,7 @@ public class HealthFunction
         };
 
         await response.WriteAsJsonAsync(healthCheck);
-        
+
         return response;
     }
 }
