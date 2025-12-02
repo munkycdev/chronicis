@@ -117,6 +117,32 @@ public class ArticleApiService : IArticleApiService
         }
     }
 
+    public async Task<bool> MoveArticleAsync(int articleId, int? newParentId)
+    {
+        try
+        {
+            _logger.LogInformation("Moving article {ArticleId} to parent {NewParentId}", 
+                articleId, newParentId?.ToString() ?? "root");
+            
+            var moveDto = new ArticleMoveDto { NewParentId = newParentId };
+            var response = await _http.PatchAsJsonAsync($"api/articles/{articleId}/parent", moveDto);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("Failed to move article {ArticleId}: {Error}", articleId, errorContent);
+                return false;
+            }
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error moving article {ArticleId}", articleId);
+            throw;
+        }
+    }
+
     public async Task<List<ArticleSearchResultDto>> SearchArticlesAsync(string query)
     {
         if (string.IsNullOrWhiteSpace(query))

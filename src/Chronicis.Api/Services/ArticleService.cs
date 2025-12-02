@@ -15,6 +15,16 @@ namespace Chronicis.Api.Services
         Task<List<ArticleTreeDto>> GetRootArticlesAsync(int userId);
         Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId, int userId);
         Task<ArticleDto?> GetArticleDetailAsync(int id, int userId);
+        
+        /// <summary>
+        /// Move an article to a new parent (or to root if newParentId is null).
+        /// Validates ownership and prevents circular references.
+        /// </summary>
+        /// <param name="articleId">The article to move</param>
+        /// <param name="newParentId">The new parent ID, or null to make root-level</param>
+        /// <param name="userId">The user performing the operation</param>
+        /// <returns>True if successful, false if validation failed</returns>
+        Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(int articleId, int? newParentId, int userId);
     }
 
     public class ArticleService : IArticleService
@@ -119,6 +129,111 @@ namespace Chronicis.Api.Services
             article.Breadcrumbs = await BuildBreadcrumbsAsync(id, userId);
 
             return article;
+        }
+
+        /// <summary>
+        /// Move an article to a new parent (or to root if newParentId is null).
+        /// </summary>
+        public async Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(int articleId, int? newParentId, int userId)
+        {
+            _logger.LogInformation("Moving article {ArticleId} to parent {NewParentId} for user {UserId}", 
+                articleId, newParentId?.ToString() ?? "root", userId);
+
+            // 1. Get the article to move
+            var article = await _context.Articles
+                .FirstOrDefaultAsync(a => a.Id == articleId && a.UserId == userId);
+
+            if (article == null)
+            {
+                _logger.LogWarning("Article {ArticleId} not found for user {UserId}", articleId, userId);
+                return (false, "Article not found");
+            }
+
+            // 2. If moving to same parent, nothing to do
+            if (article.ParentId == newParentId)
+            {
+                _logger.LogInformation("Article {ArticleId} already has parent {ParentId}, no move needed", 
+                    articleId, newParentId?.ToString() ?? "root");
+                return (true, null);
+            }
+
+            // 3. If newParentId is specified, validate the target exists and belongs to user
+            if (newParentId.HasValue)
+            {
+                var targetParent = await _context.Articles
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.Id == newParentId.Value && a.UserId == userId);
+
+                if (targetParent == null)
+                {
+                    _logger.LogWarning("Target parent {NewParentId} not found for user {UserId}", newParentId, userId);
+                    return (false, "Target parent article not found");
+                }
+
+                // 4. Check for circular reference - cannot move an article to be a child of itself or its descendants
+                if (await WouldCreateCircularReferenceAsync(articleId, newParentId.Value, userId))
+                {
+                    _logger.LogWarning("Moving article {ArticleId} to {NewParentId} would create circular reference", 
+                        articleId, newParentId);
+                    return (false, "Cannot move an article to be a child of itself or its descendants");
+                }
+            }
+
+            // 5. Perform the move
+            article.ParentId = newParentId;
+            article.ModifiedDate = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Successfully moved article {ArticleId} to parent {NewParentId}", 
+                articleId, newParentId?.ToString() ?? "root");
+
+            return (true, null);
+        }
+
+        /// <summary>
+        /// Check if moving articleId to become a child of targetParentId would create a circular reference.
+        /// This happens if targetParentId is the article itself or any of its descendants.
+        /// </summary>
+        private async Task<bool> WouldCreateCircularReferenceAsync(int articleId, int targetParentId, int userId)
+        {
+            // If trying to move to self, that's circular
+            if (articleId == targetParentId)
+            {
+                return true;
+            }
+
+            // Walk up from targetParentId to root, checking if we encounter articleId
+            var currentId = (int?)targetParentId;
+            var visited = new HashSet<int>();
+
+            while (currentId.HasValue)
+            {
+                // Prevent infinite loops (shouldn't happen with valid data, but safety first)
+                if (visited.Contains(currentId.Value))
+                {
+                    _logger.LogError("Detected existing circular reference in hierarchy at article {ArticleId}", currentId.Value);
+                    return true;
+                }
+                visited.Add(currentId.Value);
+
+                // If we find the article we're trying to move in the ancestor chain, it's circular
+                if (currentId.Value == articleId)
+                {
+                    return true;
+                }
+
+                // Move up to parent
+                var parent = await _context.Articles
+                    .AsNoTracking()
+                    .Where(a => a.Id == currentId.Value && a.UserId == userId)
+                    .Select(a => new { a.ParentId })
+                    .FirstOrDefaultAsync();
+
+                currentId = parent?.ParentId;
+            }
+
+            return false;
         }
 
         /// <summary>

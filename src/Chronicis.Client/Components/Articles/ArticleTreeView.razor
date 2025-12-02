@@ -6,6 +6,20 @@
 @implements IDisposable
 
 <div class="chronicis-nav-menu">
+    @* Drop to Root Zone - shown when dragging *@
+    @if (_isDragging)
+    {
+        <div class="chronicis-drop-to-root @(_isOverDropToRoot ? "drop-target-active" : "")"
+             @ondragover="OnDragOverRoot"
+             @ondragover:preventDefault="true"
+             @ondragleave="OnDragLeaveRoot"
+             @ondrop="OnDropToRoot"
+             @ondrop:preventDefault="true">
+            <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Small" Class="mr-2" />
+            <span>Drop here to make root article</span>
+        </div>
+    }
+
     @if (_isLoading)
     {
         <div class="pa-4">
@@ -61,7 +75,19 @@
             return;
         }
 
-        <div class="chronicis-nav-item-container" 
+        var isDragSource = _draggedNode?.Article.Id == node.Article.Id;
+        var isValidDropTarget = _isDragging && !isDragSource && !IsDescendantOfDraggedNode(node);
+        var isDropTargetActive = _dropTargetNodeId == node.Article.Id;
+
+        <div class="chronicis-nav-item-container @(isDragSource ? "dragging" : "") @(isDropTargetActive ? "drop-target-active" : "")" 
+             draggable="true"
+             @ondragstart="@((e) => OnDragStart(e, node))"
+             @ondragend="OnDragEnd"
+             @ondragover="@((e) => OnDragOver(e, node))"
+             @ondragover:preventDefault="@isValidDropTarget"
+             @ondragleave="@(() => OnDragLeave(node))"
+             @ondrop="@((e) => OnDrop(e, node))"
+             @ondrop:preventDefault="true"
              @onmouseenter="@(() => node.IsHovered = true)"
              @onmouseleave="@(() => node.IsHovered = false)">
             
@@ -85,6 +111,13 @@
                             <!-- Spacer for alignment when no arrow -->
                             <div style="width: 30px;"></div>
                         }
+                        
+                        <!-- Drag handle icon (visible on hover or when dragging) -->
+                        <MudIcon 
+                            Icon="@Icons.Material.Filled.DragIndicator" 
+                            Size="Size.Small" 
+                            Class="drag-handle"
+                            Style="@(node.IsHovered || _isDragging ? "opacity: 0.6;" : "opacity: 0;")" />
                         
                         <!-- Article icon -->
                         <MudIcon 
@@ -142,6 +175,12 @@
     private ArticleTreeNode? _selectedNode;
     private bool _isLoading = true;
 
+    // Drag-and-drop state
+    private bool _isDragging = false;
+    private ArticleTreeNode? _draggedNode = null;
+    private int? _dropTargetNodeId = null;
+    private bool _isOverDropToRoot = false;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadRootArticles();
@@ -149,6 +188,156 @@
         TreeState.OnStateChanged += OnTreeStateChanged;
         TreeState.OnExpandAndSelect += OnExpandAndSelectRequested;
     }
+
+    #region Drag-and-Drop Handlers
+
+    private void OnDragStart(DragEventArgs e, ArticleTreeNode node)
+    {
+        _isDragging = true;
+        _draggedNode = node;
+        _dropTargetNodeId = null;
+        StateHasChanged();
+    }
+
+    private void OnDragEnd()
+    {
+        _isDragging = false;
+        _draggedNode = null;
+        _dropTargetNodeId = null;
+        _isOverDropToRoot = false;
+        StateHasChanged();
+    }
+
+    private void OnDragOver(DragEventArgs e, ArticleTreeNode node)
+    {
+        if (_draggedNode == null) return;
+        
+        // Can't drop on self
+        if (_draggedNode.Article.Id == node.Article.Id) return;
+        
+        // Can't drop on a descendant
+        if (IsDescendantOfDraggedNode(node)) return;
+        
+        _dropTargetNodeId = node.Article.Id;
+        StateHasChanged();
+    }
+
+    private void OnDragLeave(ArticleTreeNode node)
+    {
+        if (_dropTargetNodeId == node.Article.Id)
+        {
+            _dropTargetNodeId = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnDrop(DragEventArgs e, ArticleTreeNode targetNode)
+    {
+        if (_draggedNode == null) return;
+        
+        var draggedId = _draggedNode.Article.Id;
+        var targetId = targetNode.Article.Id;
+        
+        // Validate drop target
+        if (draggedId == targetId || IsDescendantOfDraggedNode(targetNode))
+        {
+            Snackbar.Add("Cannot move an article into itself or its children", Severity.Warning);
+            OnDragEnd();
+            return;
+        }
+        
+        // Perform the move via API
+        await MoveArticleToParent(draggedId, targetId);
+        OnDragEnd();
+    }
+
+    private void OnDragOverRoot(DragEventArgs e)
+    {
+        if (_draggedNode == null) return;
+        
+        // Only valid if article is not already a root
+        if (_draggedNode.Article.ParentId != null)
+        {
+            _isOverDropToRoot = true;
+            StateHasChanged();
+        }
+    }
+
+    private void OnDragLeaveRoot()
+    {
+        _isOverDropToRoot = false;
+        StateHasChanged();
+    }
+
+    private async Task OnDropToRoot(DragEventArgs e)
+    {
+        if (_draggedNode == null) return;
+        
+        var draggedId = _draggedNode.Article.Id;
+        
+        // Already a root article - no action needed
+        if (_draggedNode.Article.ParentId == null)
+        {
+            OnDragEnd();
+            return;
+        }
+        
+        // Perform the move via API (null = root level)
+        await MoveArticleToParent(draggedId, null);
+        OnDragEnd();
+    }
+
+    private bool IsDescendantOfDraggedNode(ArticleTreeNode node)
+    {
+        if (_draggedNode == null) return false;
+        
+        // Check if node is a descendant of the dragged node
+        return IsInSubtree(_draggedNode, node.Article.Id);
+    }
+
+    private bool IsInSubtree(ArticleTreeNode root, int targetId)
+    {
+        if (root.Article.Id == targetId) return true;
+        
+        if (root.Children != null)
+        {
+            foreach (var child in root.Children)
+            {
+                if (IsInSubtree(child, targetId)) return true;
+            }
+        }
+        
+        return false;
+    }
+
+    private async Task MoveArticleToParent(int articleId, int? newParentId)
+    {
+        try
+        {
+            var success = await ArticleApi.MoveArticleAsync(articleId, newParentId);
+            
+            if (success)
+            {
+                Snackbar.Add("Article moved successfully", Severity.Success);
+                
+                // Refresh the tree
+                await LoadRootArticles();
+                
+                // Expand path to and select the moved article
+                await ExpandAndSelectNode(articleId);
+            }
+            else
+            {
+                Snackbar.Add("Failed to move article", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error moving article: {ex.Message}", Severity.Error);
+        }
+    }
+
+    #endregion
 
     private async void OnExpandAndSelectRequested(int articleId)
     {
@@ -528,7 +717,7 @@
     {
         TreeState.OnRefreshRequested -= OnRefreshRequested;
         TreeState.OnStateChanged -= OnTreeStateChanged;
-        TreeState.OnExpandAndSelect -= OnExpandAndSelectRequested;  // NEW
+        TreeState.OnExpandAndSelect -= OnExpandAndSelectRequested;
     }
 
     // Helper class for tree nodes

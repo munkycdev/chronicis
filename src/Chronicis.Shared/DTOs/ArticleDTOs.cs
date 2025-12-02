@@ -89,4 +89,17 @@ namespace Chronicis.Shared.DTOs
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
     }
+
+    /// <summary>
+    /// Request DTO for moving an article to a new parent.
+    /// Used for drag-and-drop reorganization.
+    /// </summary>
+    public class ArticleMoveDto
+    {
+        /// <summary>
+        /// The new parent article ID. 
+        /// Set to null to move the article to root level.
+        /// </summary>
+        public int? NewParentId { get; set; }
+    }
 }

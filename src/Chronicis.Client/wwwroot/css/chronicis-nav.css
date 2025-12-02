@@ -228,3 +228,77 @@
         .mud-nav-link.mud-ripple {
             padding: 0px 0px !important; /* Top/bottom: 8px, Left/right: 4px */
         }
+
+/* ============================================
+   Chronicis Drag-and-Drop Styles (Phase 10)
+   ============================================ */
+
+/* Drop to Root Zone */
+.chronicis-drop-to-root {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 16px;
+    margin: 8px 12px;
+    border: 2px dashed rgba(196, 175, 142, 0.4);
+    border-radius: 6px;
+    background-color: rgba(196, 175, 142, 0.05);
+    color: var(--chronicis-muted-gold);
+    font-size: 0.85rem;
+    transition: all 200ms ease-in-out;
+    cursor: pointer;
+}
+
+.chronicis-drop-to-root.drop-target-active {
+    border-color: var(--chronicis-beige-gold);
+    background-color: rgba(196, 175, 142, 0.15);
+    color: var(--chronicis-beige-gold);
+    box-shadow: 0 0 12px rgba(196, 175, 142, 0.3);
+}
+
+/* Drag handle icon */
+.drag-handle {
+    margin-right: 4px;
+    cursor: grab;
+    transition: opacity 150ms ease-in-out;
+    color: var(--chronicis-muted-gold);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Article being dragged */
+.chronicis-nav-item-container.dragging {
+    opacity: 0.5;
+    background-color: rgba(196, 175, 142, 0.1);
+}
+
+.chronicis-nav-item-container.dragging .mud-nav-link {
+    pointer-events: none;
+}
+
+/* Valid drop target highlight */
+.chronicis-nav-item-container.drop-target-active {
+    background-color: rgba(196, 175, 142, 0.2);
+    border-left: 3px solid var(--chronicis-beige-gold);
+    box-shadow: 0 0 12px rgba(196, 175, 142, 0.25);
+}
+
+.chronicis-nav-item-container.drop-target-active .mud-nav-link {
+    color: var(--chronicis-beige-gold);
+}
+
+/* Draggable cursor */
+.chronicis-nav-item-container[draggable="true"] {
+    cursor: grab;
+}
+
+.chronicis-nav-item-container[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+/* Prevent text selection during drag */
+.chronicis-nav-menu.dragging * {
+    user-select: none;
+}
