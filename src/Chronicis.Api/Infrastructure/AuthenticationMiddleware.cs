@@ -1,3 +1,5 @@
+using System.Net;
+using System.Reflection;
 using Chronicis.Api.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -5,8 +7,6 @@ using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Net;
-using System.Reflection;
 
 namespace Chronicis.Api.Infrastructure;
 
@@ -102,7 +102,8 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
 
         // EntryPoint format: "Namespace.ClassName.MethodName"
         var lastDotIndex = entryPoint.LastIndexOf('.');
-        if (lastDotIndex < 0) return false;
+        if (lastDotIndex < 0)
+            return false;
 
         var typeName = entryPoint.Substring(0, lastDotIndex);
         var methodName = entryPoint.Substring(lastDotIndex + 1);
@@ -111,12 +112,14 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         var type = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(a =>
             {
-                try { return a.GetTypes(); }
+                try
+                { return a.GetTypes(); }
                 catch { return Array.Empty<Type>(); }
             })
             .FirstOrDefault(t => t.FullName == typeName);
 
-        if (type == null) return false;
+        if (type == null)
+            return false;
 
         // Check for attribute on method
         var method = type.GetMethod(methodName);

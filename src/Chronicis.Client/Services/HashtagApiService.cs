@@ -1,6 +1,6 @@
 // Services/HashtagApiService.cs
-using Chronicis.Shared.DTOs;
 using System.Net.Http.Json;
+using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Services;
 

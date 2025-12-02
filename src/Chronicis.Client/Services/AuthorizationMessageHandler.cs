@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 
 namespace Chronicis.Client.Services;
 

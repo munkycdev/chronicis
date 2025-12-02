@@ -1,4 +1,4 @@
-﻿using Whisper.net;
+using Whisper.net;
 using Whisper.net.Ggml;
 
 namespace Chronicis.CaptureApp.Services;
@@ -62,7 +62,9 @@ public class WhisperTranscriptionService : ITranscriptionService, IDisposable
         }
 
         // Cleanup temp file after transcription
-        try { File.Delete(audioFilePath); } catch { }
+        try
+        { File.Delete(audioFilePath); }
+        catch { }
 
         return transcription.Trim();
     }

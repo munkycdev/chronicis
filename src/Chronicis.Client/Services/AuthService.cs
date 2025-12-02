@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Chronicis.Client.Services;
 

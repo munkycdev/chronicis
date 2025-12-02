@@ -1,4 +1,4 @@
-﻿using Chronicis.CaptureApp.Models;
+using Chronicis.CaptureApp.Models;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
@@ -34,7 +34,8 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
 
     public void StartRecording(TranscriptionSettings settings)
     {
-        if (IsRecording) return;
+        if (IsRecording)
+            return;
 
         _chunkDurationSeconds = settings.ChunkDurationSeconds;
         _recordingStartTime = DateTime.Now;
@@ -63,7 +64,8 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
 
     public void StopRecording()
     {
-        if (!IsRecording) return;
+        if (!IsRecording)
+            return;
         _captureDevice?.StopRecording();
     }
 
@@ -81,7 +83,8 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
 
     private void OnDataAvailable(object? sender, WaveInEventArgs e)
     {
-        if (_currentChunkWriter == null) return;
+        if (_currentChunkWriter == null)
+            return;
 
         // Write to chunk
         _currentChunkWriter.Write(e.Buffer, 0, e.BytesRecorded);
@@ -124,7 +127,9 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
             string compressedPath = CompressToMp3(_sessionAudioPath);
 
             // Delete original WAV
-            try { File.Delete(_sessionAudioPath); } catch { }
+            try
+            { File.Delete(_sessionAudioPath); }
+            catch { }
 
             // Notify that audio is ready
             SessionAudioReady?.Invoke(this, compressedPath);
@@ -246,7 +251,8 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
 
     private void CleanupFile(string path)
     {
-        try { if (File.Exists(path)) File.Delete(path); }
+        try
+        { if (File.Exists(path)) File.Delete(path); }
         catch { }
     }
 

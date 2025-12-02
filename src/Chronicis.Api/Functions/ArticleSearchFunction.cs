@@ -1,3 +1,5 @@
+using System.Net;
+using System.Web;
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Shared;
@@ -7,8 +9,6 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Net;
-using System.Web;
 
 namespace Chronicis.Api.Functions;
 

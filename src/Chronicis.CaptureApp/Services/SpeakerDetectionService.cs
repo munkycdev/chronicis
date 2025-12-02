@@ -1,4 +1,4 @@
-﻿using Chronicis.CaptureApp.Models;
+using Chronicis.CaptureApp.Models;
 using NAudio.Wave;
 
 namespace Chronicis.CaptureApp.Services;
@@ -122,7 +122,8 @@ public class SpeakerDetectionService : ISpeakerDetectionService
 
     private double CalculateVariance(List<float> samples)
     {
-        if (samples.Count < 2) return 0;
+        if (samples.Count < 2)
+            return 0;
 
         double mean = samples.Average();
         double sumSquaredDiffs = samples.Sum(sample => Math.Pow(sample - mean, 2));

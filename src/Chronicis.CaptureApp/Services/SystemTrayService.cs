@@ -1,5 +1,5 @@
-﻿using Chronicis.CaptureApp.UI;
 using System.Drawing.Drawing2D;
+using Chronicis.CaptureApp.UI;
 
 namespace Chronicis.CaptureApp.Services;
 
@@ -62,8 +62,10 @@ public class SystemTrayService : ISystemTrayService, IDisposable
             var startItem = _contextMenu.Items["StartRecording"] as ToolStripMenuItem;
             var stopItem = _contextMenu.Items["StopRecording"] as ToolStripMenuItem;
 
-            if (startItem != null) startItem.Enabled = !isRecording;
-            if (stopItem != null) stopItem.Enabled = isRecording;
+            if (startItem != null)
+                startItem.Enabled = !isRecording;
+            if (stopItem != null)
+                stopItem.Enabled = isRecording;
         }
     }
 
@@ -121,7 +123,8 @@ public class SystemTrayService : ISystemTrayService, IDisposable
 
     private void OnShowHideWindow(object? sender, EventArgs e)
     {
-        if (_mainForm == null) return;
+        if (_mainForm == null)
+            return;
 
         if (_mainForm.Visible)
         {

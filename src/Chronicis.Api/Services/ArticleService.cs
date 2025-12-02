@@ -254,7 +254,8 @@ namespace Chronicis.Api.Services
                     .Select(a => new { a.Id, a.Title, a.ParentId })
                     .FirstOrDefaultAsync();
 
-                if (article == null) break;
+                if (article == null)
+                    break;
 
                 breadcrumbs.Insert(0, new BreadcrumbDto
                 {

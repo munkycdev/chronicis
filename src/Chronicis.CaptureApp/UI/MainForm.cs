@@ -1,8 +1,8 @@
-﻿using Chronicis.CaptureApp.Models;
+using System.Text;
+using Chronicis.CaptureApp.Models;
 using Chronicis.CaptureApp.Services;
 using MaterialSkin;
 using MaterialSkin.Controls;
-using System.Text;
 using Whisper.net.Ggml;
 
 namespace Chronicis.CaptureApp.UI;

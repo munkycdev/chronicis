@@ -1,6 +1,6 @@
-using Chronicis.Shared.DTOs;
 using System.Net.Http.Json;
 using System.Web;
+using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Services;
 
