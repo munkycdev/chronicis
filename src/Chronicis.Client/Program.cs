@@ -11,14 +11,17 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddLogging();
 
+// Determine base URL for redirects (works for both local and Azure)
+var baseUrl = builder.HostEnvironment.BaseAddress.TrimEnd('/');
+
 // Auth0 Authentication
 builder.Services.AddOidcAuthentication(options =>
 {
     options.ProviderOptions.Authority = "https://dev-843pl5nrwg3p1xkq.us.auth0.com";
     options.ProviderOptions.ClientId = "Itq22vH9FBHKlYHL1j0A9EgVjA9f6NZQ";
     options.ProviderOptions.ResponseType = "code";
-    options.ProviderOptions.RedirectUri = "https://localhost:5001/authentication/login-callback";
-    options.ProviderOptions.PostLogoutRedirectUri = "https://localhost:5001";
+    options.ProviderOptions.RedirectUri = $"{baseUrl}/authentication/login-callback";
+    options.ProviderOptions.PostLogoutRedirectUri = baseUrl;
     options.ProviderOptions.AdditionalProviderParameters.Add("audience", "https://api.chronicis.app");
 
     options.ProviderOptions.DefaultScopes.Clear();
@@ -47,7 +50,12 @@ builder.Services.AddSingleton(CreateChronicisTheme());
 // HTTP CLIENT CONFIGURATION (CENTRALIZED)
 // ============================================
 
-var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:7071";
+// For Azure Static Web Apps, the API is at /api (same origin)
+// For local dev, use the configured URL
+var isAzure = baseUrl.Contains("azurestaticapps.net");
+var apiBaseUrl = isAzure 
+    ? baseUrl  // Same origin - API is at /api
+    : (builder.Configuration["ApiBaseUrl"] ?? "http://localhost:7071");
 
 // Register the auth handler
 builder.Services.AddScoped<AuthorizationMessageHandler>();
