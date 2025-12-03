@@ -1,8 +1,8 @@
 using System.Net;
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
-using Chronicis.Shared;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Utilities;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;

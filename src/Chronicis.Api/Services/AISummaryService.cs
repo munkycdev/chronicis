@@ -10,27 +10,6 @@ using OpenAI.Chat;
 namespace Chronicis.Api.Services;
 
 /// <summary>
-/// Service interface for AI-powered summary generation.
-/// </summary>
-public interface IAISummaryService
-{
-    /// <summary>
-    /// Estimates the cost of generating an AI summary for an article.
-    /// </summary>
-    /// <param name="articleId">The article to estimate costs for</param>
-    /// <returns>Cost estimate including token counts and USD cost</returns>
-    Task<SummaryEstimateDto> EstimateCostAsync(int articleId);
-
-    /// <summary>
-    /// Generates an AI summary for an article based on its backlinks.
-    /// </summary>
-    /// <param name="articleId">The article to generate a summary for</param>
-    /// <param name="maxOutputTokens">Maximum tokens in the generated summary</param>
-    /// <returns>Generation result including the summary or error message</returns>
-    Task<SummaryGenerationDto> GenerateSummaryAsync(int articleId, int maxOutputTokens = 1500);
-}
-
-/// <summary>
 /// Azure OpenAI implementation of AI summary generation service.
 /// Analyzes backlinks to create comprehensive summaries of campaign entities.
 /// </summary>

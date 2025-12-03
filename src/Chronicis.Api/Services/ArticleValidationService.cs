@@ -4,16 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-/// <summary>
-/// Service for validating article operations.
-/// </summary>
-public interface IArticleValidationService
-{
-    Task<ValidationResult> ValidateCreateAsync(ArticleCreateDto dto);
-    Task<ValidationResult> ValidateUpdateAsync(int articleId, ArticleUpdateDto dto);
-    Task<ValidationResult> ValidateDeleteAsync(int articleId);
-}
-
 public class ArticleValidationService : IArticleValidationService
 {
     private readonly ChronicisDbContext _context;

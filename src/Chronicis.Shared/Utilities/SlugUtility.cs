@@ -1,4 +1,4 @@
-namespace Chronicis.Shared;
+namespace Chronicis.Shared.Utilities;
 
 /// <summary>
 /// Utility class for generating URL-friendly slugs from titles.

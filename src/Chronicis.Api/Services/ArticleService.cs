@@ -5,27 +5,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services
 {
-    /// <summary>
-    /// Repository service for Article entity operations.
-    /// Handles all database queries and business logic for articles.
-    /// </summary>
-    public interface IArticleService
-    {
-        Task<List<ArticleTreeDto>> GetRootArticlesAsync(int userId);
-        Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId, int userId);
-        Task<ArticleDto?> GetArticleDetailAsync(int id, int userId);
-
-        /// <summary>
-        /// Move an article to a new parent (or to root if newParentId is null).
-        /// Validates ownership and prevents circular references.
-        /// </summary>
-        /// <param name="articleId">The article to move</param>
-        /// <param name="newParentId">The new parent ID, or null to make root-level</param>
-        /// <param name="userId">The user performing the operation</param>
-        /// <returns>True if successful, false if validation failed</returns>
-        Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(int articleId, int? newParentId, int userId);
-    }
-
     public class ArticleService : IArticleService
     {
         private readonly ChronicisDbContext _context;
