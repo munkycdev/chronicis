@@ -51,6 +51,10 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
             return;
         }
 
+        // Log config for debugging
+        _logger.LogInformation("Auth0 Config - Domain: {Domain}, Audience: {Audience}", 
+            _auth0Config.Domain, _auth0Config.Audience);
+
         // Validate JWT and get user principal
         var principal = await Auth0AuthenticationHelper.GetUserFromTokenAsync(
             httpRequestData,
@@ -59,6 +63,18 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
 
         if (principal == null)
         {
+            // Log the token for debugging (first 50 chars only)
+            if (httpRequestData.Headers.TryGetValues("Authorization", out var authValues))
+            {
+                var authHeader = authValues.FirstOrDefault() ?? "";
+                _logger.LogWarning("Auth header present but validation failed. Header starts with: {HeaderStart}",
+                    authHeader.Length > 50 ? authHeader.Substring(0, 50) + "..." : authHeader);
+            }
+            else
+            {
+                _logger.LogWarning("No Authorization header present");
+            }
+            
             _logger.LogWarning("Authentication failed for {FunctionName}: No valid token",
                 context.FunctionDefinition.Name);
             await SetUnauthorizedResponse(context, httpRequestData, "Authentication required. Please provide a valid Auth0 token.");
