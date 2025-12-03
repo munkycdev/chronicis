@@ -1,0 +1,16 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div class="public-layout">
+    <PublicNav />
+    
+    <main class="public-main">
+        @Body
+    </main>
+    
+    <PublicFooter />
+</div>

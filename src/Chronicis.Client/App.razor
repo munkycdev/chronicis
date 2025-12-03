@@ -1,17 +1,33 @@
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
-            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(AuthenticatedLayout)">
                 <NotAuthorized>
                     <RedirectToLogin />
                 </NotAuthorized>
+                <Authorizing>
+                    <div class="auth-checking">
+                        <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+                    </div>
+                </Authorizing>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />
         </Found>
         <NotFound>
-            <PageTitle>Not found</PageTitle>
-            <LayoutView Layout="@typeof(MainLayout)">
-                <p role="alert">Sorry, there's nothing at this address.</p>
+            <LayoutView Layout="@typeof(PublicLayout)">
+                <div class="not-found-page">
+                    <div class="not-found-content">
+                        <div class="not-found-icon">🗺️</div>
+                        <h1>Page Not Found</h1>
+                        <p>Looks like this path leads to uncharted territory.</p>
+                        <MudButton Variant="Variant.Filled" 
+                                   Color="Color.Primary" 
+                                   Href="/"
+                                   StartIcon="@Icons.Material.Filled.Home">
+                            Return Home
+                        </MudButton>
+                    </div>
+                </div>
             </LayoutView>
         </NotFound>
     </Router>

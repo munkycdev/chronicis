@@ -1,0 +1,185 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject ITreeStateService TreeState
+@inject IAuthService AuthService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@implements IDisposable
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="2">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="@ToggleDrawer" />
+
+        <a href="/dashboard" class="d-flex align-center chronicis-home-link">
+            <img src="/images/logo.png" alt="Chronicis" class="chronicis-logo" />
+            <MudText Typo="Typo.h6" Class="chronicis-title">Chronicis</MudText>
+        </a>
+
+        <MudSpacer />
+
+        <MudTextField @bind-Value="_globalSearchQuery"
+                      Placeholder="Search content..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Style="max-width: 400px; background-color: rgba(255,255,255,0.1);"
+                      Class="global-search-input"
+                      Immediate="true"
+                      @onkeydown="OnGlobalSearchKeyDown" />
+
+        <MudIconButton Icon="@Icons.Material.Filled.Search"
+                       Color="Color.Inherit"
+                       OnClick="ExecuteGlobalSearch"
+                       Class="ml-2" />
+
+        <MudMenu Icon="@Icons.Material.Filled.AccountCircle"
+                 Color="Color.Inherit"
+                 AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight">
+            <ChildContent>
+                <div class="user-info" style="padding: 12px 16px; min-width: 200px;">
+                    @if (!string.IsNullOrEmpty(_currentUser?.AvatarUrl))
+                    {
+                        <MudAvatar Size="Size.Medium" Image="@_currentUser.AvatarUrl" Style="margin-bottom: 8px;" />
+                    }
+                    <div style="margin-top: 8px;">
+                        <div style="font-weight: 600; color: #C4AF8E;">@_currentUser?.DisplayName</div>
+                        <div style="font-size: 0.85rem; color: #D9C9A7; opacity: 0.8;">@_currentUser?.Email</div>
+                    </div>
+                </div>
+                <MudDivider />
+                <MudMenuItem Icon="@Icons.Material.Filled.Logout"
+                             Href="authentication/logout">
+                    Logout
+                </MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen"
+               Elevation="2"
+               ClipMode="DrawerClipMode.Always"
+               Width="320px">
+
+        <div class="chronicis-search-box">
+            <MudTextField @bind-Value="_treeSearch"
+                          Placeholder="Search articles..."
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@(_treeSearch?.Length > 0 ? Icons.Material.Filled.Clear : Icons.Material.Filled.Search)"
+                          AdornmentColor="Color.Primary"
+                          OnAdornmentClick="ClearSearch"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Immediate="true"
+                          @onkeyup="OnTreeSearchKeyUp"
+                          Class="mb-2" />
+        </div>
+
+        <ArticleTreeView />
+    </MudDrawer>
+
+    <MudMainContent Class="mud-main-content">
+        <div class="authenticated-content-wrapper">
+            <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+                <ErrorBoundary>
+                    <ChildContent>
+                        @Body
+                    </ChildContent>
+                    <ErrorContent Context="exception">
+                        <div class="chronicis-error-state">
+                            <MudPaper Elevation="3" Class="pa-4">
+                                <div class="chronicis-empty-state">
+                                    <div class="chronicis-empty-state-icon">⚠️</div>
+                                    <MudText Typo="Typo.h5" Class="chronicis-empty-state-title mb-3">
+                                        Something went wrong
+                                    </MudText>
+                                    <MudText Typo="Typo.body1" Class="chronicis-empty-state-message mb-4">
+                                        An unexpected error occurred. Please try refreshing the page.
+                                    </MudText>
+                                    <MudButton Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               OnClick="@(() => Navigation.NavigateTo(Navigation.Uri, forceLoad: true))">
+                                        Refresh Page
+                                    </MudButton>
+                                </div>
+                            </MudPaper>
+                        </div>
+                    </ErrorContent>
+                </ErrorBoundary>
+            </MudContainer>
+            
+            <PublicFooter />
+        </div>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private string? _treeSearch;
+    private string _globalSearchQuery = string.Empty;
+    private UserInfo? _currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentUser = await AuthService.GetCurrentUserAsync();
+        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+    }
+
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> task)
+    {
+        _currentUser = await AuthService.GetCurrentUserAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task ClearSearch()
+    {
+        _treeSearch = null;
+        TreeState.ClearSearch();
+    }
+
+    private async Task OnTreeSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_treeSearch))
+        {
+            await TreeState.SearchAsync(_treeSearch);
+        }
+        else if (string.IsNullOrWhiteSpace(_treeSearch))
+        {
+            TreeState.ClearSearch();
+        }
+    }
+
+    private async Task OnGlobalSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ExecuteGlobalSearch();
+        }
+    }
+
+    private async Task ExecuteGlobalSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(_globalSearchQuery))
+        {
+            Navigation.NavigateTo($"/search?q={Uri.EscapeDataString(_globalSearchQuery)}");
+        }
+    }
+
+    public void Dispose()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+    }
+}

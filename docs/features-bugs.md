@@ -1,7 +1,5 @@
 Feature ideas/bugs:
 
-
-
 Navbar:
     Add sections in navbar to other functionality
 
@@ -15,3 +13,4 @@ Hashtags:
 Articles:
     Ctrl+N to create a new article at the same level as the currently viewed article
     Error when deleting articles
+    On article add, default to the article title

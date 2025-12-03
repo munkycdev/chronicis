@@ -1,0 +1,66 @@
+@* Shared navigation component for public pages *@
+@inject NavigationManager Navigation
+
+<nav class="public-nav">
+    <div class="public-nav-content">
+        <a href="/" class="public-nav-brand">
+            <img src="/images/logo.png" alt="Chronicis" />
+            <span>Chronicis</span>
+        </a>
+        
+        <div class="public-nav-links">
+            @foreach (var link in NavLinks)
+            {
+                <a href="@link.Href" class="@(IsActive(link.Href) ? "active" : "")">
+                    @link.Label
+                </a>
+            }
+        </div>
+        
+        <div class="public-nav-actions">
+            <AuthorizeView>
+                <Authorized>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Href="/dashboard"
+                               Size="Size.Small"
+                               Class="public-nav-cta">
+                        Open Dashboard
+                    </MudButton>
+                </Authorized>
+                <NotAuthorized>
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Primary"
+                               Href="authentication/login"
+                               Size="Size.Small"
+                               Class="public-nav-login">
+                        Sign In
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Href="authentication/login"
+                               Size="Size.Small"
+                               Class="public-nav-cta">
+                        Get Started
+                    </MudButton>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</nav>
+
+@code {
+    private record NavLink(string Label, string Href);
+    
+    private static readonly NavLink[] NavLinks = 
+    {
+        new("About", "/about"),
+        new("Privacy", "/privacy")
+    };
+    
+    private bool IsActive(string href)
+    {
+        var currentPath = new Uri(Navigation.Uri).AbsolutePath;
+        return currentPath.Equals(href, StringComparison.OrdinalIgnoreCase);
+    }
+}

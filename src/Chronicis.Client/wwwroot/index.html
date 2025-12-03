@@ -2,54 +2,54 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chronicis - Your Adventures Deserve a Chronicle</title>
-  <base href="/" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chronicis — Campaign Notes for Tabletop RPGs</title>
+    <base href="/" />
+    
+    <meta name="description" content="Chronicis is the knowledge base built for tabletop RPGs. Organize your world, link your lore, and let AI help you remember what happened three sessions ago." />
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
 
-  <!-- MudBlazor -->
-  <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <!-- MudBlazor -->
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
 
-  <!-- Chronicis Theme (must load after MudBlazor) -->
-  <link href="/css/chronicis-theme.css" rel="stylesheet" />
-  <link href="/css/app.css" rel="stylesheet" />
+    <!-- Chronicis Theme (must load after MudBlazor) -->
+    <link href="/css/chronicis-theme.css" rel="stylesheet" />
+    <link href="/css/app.css" rel="stylesheet" />
 
-  <!-- Chronicis Components -->
-  <link href="/css/chronicis-landing.css" rel="stylesheet" />
-  <link href="/css/chronicis-appbar.css" rel="stylesheet" />
-  <link href="/css/chronicis-nav.css" rel="stylesheet" />
-  <link href="/css/chronicis-home.css" rel="stylesheet" />
-  <link href="/css/chronicis-landing.css" rel="stylesheet" />
-  <link href="/css/chronicis-search.css" rel="stylesheet" />
-  <link href="/css/chronicis-backlinks.css" rel="stylesheet" />
-  <link href="/css/chronicis-hashtags.css" rel="stylesheet" />
-  <link href="/css/chronicis-ai-summary.css" rel="stylesheet" />
-  <link href="/css/chronicis-emoji-picker.css" rel="stylesheet" />
-  <link href="/css/tipTapStyles.css" rel="stylesheet" />
+    <!-- Chronicis Components -->
+    <link href="/css/chronicis-public.css" rel="stylesheet" />
+    <link href="/css/chronicis-appbar.css" rel="stylesheet" />
+    <link href="/css/chronicis-nav.css" rel="stylesheet" />
+    <link href="/css/chronicis-home.css" rel="stylesheet" />
+    <link href="/css/chronicis-search.css" rel="stylesheet" />
+    <link href="/css/chronicis-backlinks.css" rel="stylesheet" />
+    <link href="/css/chronicis-hashtags.css" rel="stylesheet" />
+    <link href="/css/chronicis-ai-summary.css" rel="stylesheet" />
+    <link href="/css/chronicis-emoji-picker.css" rel="stylesheet" />
+    <link href="/css/tipTapStyles.css" rel="stylesheet" />
 
-  <!-- Chronicis Favicon -->
-  <link rel="icon" href="/favicon.ico" />
+    <!-- Chronicis Favicon -->
+    <link rel="icon" href="/favicon.ico" />
 
-  <!-- TipTap Editor -->
-  <script type="module">
-    import { Editor } from 'https://esm.sh/@tiptap/core@3.11.0';
-    import StarterKit from 'https://esm.sh/@tiptap/starter-kit@3.11.0';
+    <!-- TipTap Editor -->
+    <script type="module">
+        import { Editor } from 'https://esm.sh/@tiptap/core@3.11.0';
+        import StarterKit from 'https://esm.sh/@tiptap/starter-kit@3.11.0';
 
-    window.TipTap = { Editor, StarterKit };
-    window.dispatchEvent(new Event('tiptap-ready'));
-  </script>
+        window.TipTap = { Editor, StarterKit };
+        window.dispatchEvent(new Event('tiptap-ready'));
+    </script>
 
-  <!-- Emoji Picker (Picmo) -->
-  <script type="module">
-    import { createPicker } from 'https://unpkg.com/picmo@latest/dist/index.js';
-    window.Picmo = { createPicker };
-    window.dispatchEvent(new Event('picmo-ready'));
-    console.log('Picmo loaded');
-  </script>
+    <!-- Emoji Picker (Picmo) -->
+    <script type="module">
+        import { createPicker } from 'https://unpkg.com/picmo@latest/dist/index.js';
+        window.Picmo = { createPicker };
+        window.dispatchEvent(new Event('picmo-ready'));
+    </script>
 </head>
 
 <body>
@@ -57,7 +57,7 @@
         <div class="chronicis-loading-screen">
             <div class="chronicis-loading-container">
                 <span class="chronicis-logo-animated">
-                    <img src="/images/logo.png" alt="Chronicis logo" class="chronicis-logo-pulse" height="250" width="250" style="margin-bottom:25px;" />
+                    <img src="/images/logo.png" alt="Chronicis" class="chronicis-logo-pulse" height="250" width="250" style="margin-bottom:25px;" />
                 </span>
                 <h1 class="chronicis-loading-text">Loading Chronicis...</h1>
                 <h2 class="chronicis-loading-subtext">Your adventures deserve stories.</h2>

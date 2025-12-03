@@ -1,0 +1,96 @@
+@page "/privacy"
+@layout PublicLayout
+
+<PageTitle>Privacy Policy — Chronicis</PageTitle>
+
+<div class="static-page">
+    <div class="static-page-content">
+        <h1>Privacy Policy</h1>
+        <p class="last-updated">Last updated: @DateTime.Now.ToString("MMMM d, yyyy")</p>
+
+        <section class="policy-section">
+            <h2>Overview</h2>
+            <p>
+                At Chronicis, we take your privacy seriously. This policy explains what 
+                information we collect, how we use it, and your rights regarding your data.
+            </p>
+        </section>
+
+        <section class="policy-section">
+            <h2>Information We Collect</h2>
+            <h3>Account Information</h3>
+            <p>
+                When you create an account, we collect your email address, display name, 
+                and profile picture from your authentication provider (Google, Discord, or Apple).
+            </p>
+            
+            <h3>Content You Create</h3>
+            <p>
+                We store the articles, notes, and other content you create within Chronicis. 
+                This content is associated with your account and is not shared with other users 
+                unless you explicitly choose to share it.
+            </p>
+            
+            <h3>Usage Data</h3>
+            <p>
+                We collect basic usage data to improve our service, including page views, 
+                feature usage, and error logs. This data is anonymized and aggregated.
+            </p>
+        </section>
+
+        <section class="policy-section">
+            <h2>How We Use Your Information</h2>
+            <ul>
+                <li>To provide and maintain the Chronicis service</li>
+                <li>To authenticate your identity and secure your account</li>
+                <li>To improve our service based on usage patterns</li>
+                <li>To communicate important updates about the service</li>
+            </ul>
+        </section>
+
+        <section class="policy-section">
+            <h2>Data Storage & Security</h2>
+            <p>
+                Your data is stored securely on Microsoft Azure servers. We use industry-standard 
+                encryption for data in transit and at rest. We do not sell your data to third parties.
+            </p>
+        </section>
+
+        <section class="policy-section">
+            <h2>AI Features</h2>
+            <p>
+                When you use AI-powered features like summary generation, your article content 
+                is sent to Azure OpenAI for processing. This data is not used to train AI models 
+                and is not retained after processing.
+            </p>
+        </section>
+
+        <section class="policy-section">
+            <h2>Your Rights</h2>
+            <p>You have the right to:</p>
+            <ul>
+                <li>Access your personal data</li>
+                <li>Export your content</li>
+                <li>Delete your account and all associated data</li>
+                <li>Opt out of non-essential communications</li>
+            </ul>
+        </section>
+
+        <section class="policy-section">
+            <h2>Contact</h2>
+            <p>
+                If you have questions about this privacy policy or your data, please contact us 
+                through the feedback mechanisms in the application.
+            </p>
+        </section>
+
+        <div class="about-cta">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Href="/"
+                       StartIcon="@Icons.Material.Filled.Home">
+                Back to Home
+            </MudButton>
+        </div>
+    </div>
+</div>
