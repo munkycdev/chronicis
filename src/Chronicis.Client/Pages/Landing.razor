@@ -1,73 +1,253 @@
 @page "/"
 @layout LandingLayout
 @inject NavigationManager Navigation
-@inject IConfiguration Configuration
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
-<div class="landing-container">
-    <div class="landing-content">
-        <!-- Logo -->
-        <div class="landing-logo">
-            <img src="/logo.png" alt="Chronicis" />
-        </div>
 
-        <!-- Hero Text -->
-        <div class="landing-hero">
-            <h1>Welcome to Chronicis</h1>
-            <p class="tagline">Your campaign chronicle awaits</p>
-            <p class="description">
-                Organize your tabletop RPG campaigns with structured notes,
-                AI-powered summaries, and interconnected lore.
-            </p>
-        </div>
+<PageTitle>Chronicis - Campaign Knowledge Management for Tabletop RPGs</PageTitle>
 
-        <!-- Login Button -->
-        <div class="login-section">
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       Size="Size.Large"
-                       Href="authentication/login"
-                       StartIcon="@Icons.Material.Filled.Login"
-                       Class="login-button-primary">
-                Sign In with Auth0
-            </MudButton>
-
-            <p class="login-hint">
-                Sign in with Discord, Google, or Apple
-            </p>
-        </div>
-
-        <!-- Features Preview -->
-        <div class="features-preview">
-            <div class="feature">
-                <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Large" Color="Color.Primary" />
-                <h3>Hierarchical Organization</h3>
-                <p>Structure your campaign knowledge like a wiki</p>
+<div class="landing-page">
+    <!-- Navigation Bar -->
+    <nav class="landing-nav">
+        <div class="landing-nav-content">
+            <div class="landing-nav-brand">
+                <img src="/images/logo.png" alt="Chronicis" class="landing-nav-logo" />
+                <span class="landing-nav-title">Chronicis</span>
             </div>
-            <div class="feature">
-                <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Large" Color="Color.Primary" />
-                <h3>AI Summaries</h3>
-                <p>Generate insights from your campaign notes</p>
-            </div>
-            <div class="feature">
-                <MudIcon Icon="@Icons.Material.Filled.Tag" Size="Size.Large" Color="Color.Primary" />
-                <h3>Entity Linking</h3>
-                <p>Connect characters, places, and events with hashtags</p>
+            <div class="landing-nav-actions">
+                <AuthorizeView>
+                    <Authorized>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Href="/dashboard"
+                                   Class="landing-cta-button">
+                            Go to Dashboard
+                        </MudButton>
+                    </Authorized>
+                    <NotAuthorized>
+                        <MudButton Variant="Variant.Text"
+                                   Color="Color.Primary"
+                                   Href="authentication/login"
+                                   Class="landing-login-link">
+                            Sign In
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Href="authentication/login"
+                                   Class="landing-cta-button">
+                            Get Started Free
+                        </MudButton>
+                    </NotAuthorized>
+                </AuthorizeView>
             </div>
         </div>
+    </nav>
 
-        <!-- Footer -->
-        <div class="landing-footer">
-            <p>Free to use • Secure authentication • Your data stays private</p>
+    <!-- Hero Section -->
+    <section class="landing-hero">
+        <div class="landing-hero-background"></div>
+        <div class="landing-hero-content">
+            <div class="landing-hero-text">
+                <h1 class="landing-hero-title">
+                    Your Campaign Stories,<br />
+                    <span class="highlight">Beautifully Organized</span>
+                </h1>
+                <p class="landing-hero-subtitle">
+                    Chronicis helps dungeon masters and players capture, connect, and rediscover
+                    the moments that make tabletop adventures unforgettable.
+                </p>
+                <div class="landing-hero-cta">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               Href="authentication/login"
+                               StartIcon="@Icons.Material.Filled.AutoStories"
+                               Class="landing-hero-button">
+                        Start Your Chronicle
+                    </MudButton>
+                    <p class="landing-hero-hint">Free to use • No credit card required</p>
+                </div>
+            </div>
+            <div class="landing-hero-image">
+                <img src="/images/ScreenshotDemo.png" alt="Chronicis app screenshot" class="landing-screenshot" />
+            </div>
         </div>
-    </div>
+    </section>
+
+    <!-- Problem/Solution Section -->
+    <section class="landing-problem">
+        <div class="landing-section-content">
+            <h2 class="landing-section-title">Sound Familiar?</h2>
+            <div class="landing-problem-grid">
+                <div class="landing-problem-card">
+                    <div class="problem-icon">📝</div>
+                    <h3>Scattered Notes</h3>
+                    <p>Session notes in Google Docs, character details in Discord, maps somewhere on your desktop...</p>
+                </div>
+                <div class="landing-problem-card">
+                    <div class="problem-icon">🤔</div>
+                    <h3>"Wait, Who Was That?"</h3>
+                    <p>That NPC your party met three sessions ago? Good luck finding their name in your notes.</p>
+                </div>
+                <div class="landing-problem-card">
+                    <div class="problem-icon">📚</div>
+                    <h3>Lost Lore</h3>
+                    <p>You've built an amazing world, but the details are trapped in notebooks and forgotten threads.</p>
+                </div>
+            </div>
+            <div class="landing-solution">
+                <p class="landing-solution-text">
+                    <strong>Chronicis brings it all together.</strong> One place for your campaign's characters,
+                    locations, lore, and session notes—all connected, all searchable, all yours.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="landing-features">
+        <div class="landing-section-content">
+            <h2 class="landing-section-title">Built for the Way You Play</h2>
+            <div class="landing-features-grid">
+                <div class="landing-feature-card">
+                    <div class="feature-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Large" />
+                    </div>
+                    <h3>Nested Knowledge</h3>
+                    <p>
+                        Organize your world naturally. Nest locations within regions, NPCs within factions,
+                        spells within schools. Your campaign structure, your way.
+                    </p>
+                </div>
+                <div class="landing-feature-card">
+                    <div class="feature-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.Tag" Size="Size.Large" />
+                    </div>
+                    <h3>Hashtag Linking</h3>
+                    <p>
+                        Mention #Waterdeep in your session notes and it links automatically.
+                        Click any hashtag to jump to that article. Hover for a quick preview.
+                    </p>
+                </div>
+                <div class="landing-feature-card">
+                    <div class="feature-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Large" />
+                    </div>
+                    <h3>Backlinks</h3>
+                    <p>
+                        See everywhere an NPC, location, or concept is mentioned across your campaign.
+                        Discover connections you didn't know existed.
+                    </p>
+                </div>
+                <div class="landing-feature-card">
+                    <div class="feature-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Large" />
+                    </div>
+                    <h3>AI Summaries</h3>
+                    <p>
+                        Let AI read through all mentions of a character or place and generate
+                        a comprehensive summary. Perfect for session prep or recaps.
+                    </p>
+                </div>
+                <div class="landing-feature-card">
+                    <div class="feature-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.Search" Size="Size.Large" />
+                    </div>
+                    <h3>Powerful Search</h3>
+                    <p>
+                        Find anything instantly. Search by title, content, or hashtag.
+                        Results show exactly where your search term appears.
+                    </p>
+                </div>
+                <div class="landing-feature-card">
+                    <div class="feature-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.SaveAlt" Size="Size.Large" />
+                    </div>
+                    <h3>Auto-Save</h3>
+                    <p>
+                        Just start typing. Your work saves automatically as you go—no save button needed,
+                        no lost work, no stress.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases Section -->
+    <section class="landing-usecases">
+        <div class="landing-section-content">
+            <h2 class="landing-section-title">Perfect For</h2>
+            <div class="landing-usecases-grid">
+                <div class="landing-usecase-card">
+                    <div class="usecase-emoji">🎭</div>
+                    <h3>Dungeon Masters</h3>
+                    <p>Build your world, track your NPCs, and never lose a plot thread again.</p>
+                </div>
+                <div class="landing-usecase-card">
+                    <div class="usecase-emoji">⚔️</div>
+                    <h3>Players</h3>
+                    <p>Keep character notes, track relationships, and remember every important detail.</p>
+                </div>
+                <div class="landing-usecase-card">
+                    <div class="usecase-emoji">📖</div>
+                    <h3>Worldbuilders</h3>
+                    <p>Document your homebrew setting with interconnected lore and history.</p>
+                </div>
+                <div class="landing-usecase-card">
+                    <div class="usecase-emoji">🎲</div>
+                    <h3>Any TTRPG</h3>
+                    <p>D&D, Pathfinder, Call of Cthulhu, or your favorite indie game—Chronicis adapts to you.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="landing-final-cta">
+        <div class="landing-section-content">
+            <div class="landing-cta-box">
+                <h2>Ready to Remember Everything?</h2>
+                <p>
+                    Join fellow adventurers who've traded scattered notes for organized chronicles.
+                    Your next session will thank you.
+                </p>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           Href="authentication/login"
+                           StartIcon="@Icons.Material.Filled.RocketLaunch"
+                           Class="landing-final-button">
+                    Create Your Free Account
+                </MudButton>
+                <p class="landing-cta-subtext">
+                    Sign in with Google, Discord, or Apple
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="landing-footer-content">
+            <div class="landing-footer-brand">
+                <img src="/images/logo.png" alt="Chronicis" class="landing-footer-logo" />
+                <span>Chronicis</span>
+            </div>
+            <p class="landing-footer-tagline">Your adventures deserve to be remembered.</p>
+            <p class="landing-footer-copy">© @DateTime.Now.Year Chronicis. Made with ❤️ for tabletop gamers everywhere.</p>
+        </div>
+    </footer>
 </div>
 
 @code {
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TEMPORARY DEBUG - Check what configuration is loaded
-        var authority = Configuration["Auth0:Authority"];
-        var clientId = Configuration["Auth0:ClientId"];
-        var audience = Configuration["Auth0:Audience"];
+        // Check if user is already authenticated and redirect to dashboard
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            //Navigation.NavigateTo("/dashboard");
+        }
     }
 }
