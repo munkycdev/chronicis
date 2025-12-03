@@ -64,3 +64,4 @@ __azurite_db*__.json
 
 # EF Migrations
 Migrations
+/docs/features-bugs.md
