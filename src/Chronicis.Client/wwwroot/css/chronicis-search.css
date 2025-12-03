@@ -1,26 +1,28 @@
-/* Search Results Styling - Chronicis Theme */
+/* ============================================
+   Chronicis Search Results Styles
+   ============================================ */
 
 .search-result-card {
-    transition: all 0.3s ease;
+    transition: all var(--chronicis-transition-normal);
     border-left: 3px solid transparent;
-    background-color: #FFFFFF !important; /* White background for cards */
+    background-color: #fff !important;
 }
 
-    .search-result-card:hover {
-        border-left-color: #C4AF8E;
-        box-shadow: 0 4px 12px rgba(196, 175, 142, 0.3) !important;
-        transform: translateX(4px);
-    }
+.search-result-card:hover {
+    border-left-color: var(--chronicis-beige-gold);
+    box-shadow: var(--chronicis-shadow-md) !important;
+    transform: translateX(4px);
+}
 
 .search-snippet {
-    color: #666;
+    color: var(--chronicis-slate-grey);
     line-height: 1.6;
     font-size: 0.95rem;
 }
 
 .search-highlight {
-    background-color: #D9C9A7;
-    color: #1A1A1A;
+    background-color: var(--chronicis-muted-gold);
+    color: var(--chronicis-charcoal);
     padding: 2px 4px;
     border-radius: 3px;
     font-weight: 600;
@@ -28,16 +30,16 @@
 
 /* Search group headers */
 .search-group-header {
-    color: #C4AF8E !important;
-    border-bottom: 2px solid #C4AF8E;
-    padding-bottom: 8px;
-    margin-bottom: 16px;
+    color: var(--chronicis-beige-gold) !important;
+    border-bottom: 2px solid var(--chronicis-beige-gold);
+    padding-bottom: var(--chronicis-space-sm);
+    margin-bottom: var(--chronicis-space-md);
     display: flex;
     align-items: center;
 }
 
 .search-group {
-    margin-top: 32px;
+    margin-top: var(--chronicis-space-xl);
 }
 
 /* Global search box in app bar */
@@ -45,9 +47,9 @@
     color: var(--chronicis-deep-blue-grey);
 }
 
-    .global-search-input .mud-input-outlined .mud-input-root::placeholder {
-        color: rgba(244, 240, 234, 0.6);
-    }
+.global-search-input .mud-input-outlined .mud-input-root::placeholder {
+    color: rgba(244, 240, 234, 0.6);
+}
 
 .global-search-input .mud-input-outlined.mud-input-adorned-start .mud-input-adornment-start {
     color: rgba(244, 240, 234, 0.7);
@@ -55,7 +57,7 @@
 
 /* Search page empty states */
 .search-empty-state {
-    padding: 64px 32px;
+    padding: 64px var(--chronicis-space-xl);
     text-align: center;
 }
 
@@ -70,10 +72,10 @@
 
 /* Fix text visibility */
 .search-result-card .mud-typography {
-    color: #1A1A1A !important;
+    color: var(--chronicis-charcoal) !important;
 }
 
 .search-result-card .mud-chip {
     background-color: rgba(196, 175, 142, 0.2) !important;
-    color: #C4AF8E !important;
+    color: var(--chronicis-beige-gold) !important;
 }

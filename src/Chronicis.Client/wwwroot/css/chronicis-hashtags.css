@@ -1,45 +1,46 @@
-/* wwwroot/css/chronicis-hashtags.css */
-/* Hashtag styling for Phase 6 - TipTap Mark Extension */
+/* ============================================
+   Chronicis Hashtag Styles
+   Single source of truth for all hashtag styling
+   ============================================ */
 
 /* Base hashtag style */
 .chronicis-hashtag {
-    color: #C4AF8E; /* Beige-Gold from style guide */
+    color: var(--chronicis-beige-gold);
     font-weight: 500;
-    cursor: default; /* Phase 6: not clickable yet */
+    cursor: pointer;
     padding: 0 2px;
     border-radius: 2px;
-    transition: background-color 0.2s ease;
+    transition: all var(--chronicis-transition-fast);
     position: relative;
 }
 
-    /* Hover effect - subtle gold glow */
-    .chronicis-hashtag:hover {
-        background-color: rgba(196, 175, 142, 0.15); /* Subtle highlight */
-    }
-
-    /* Phase 7+: Linked vs Unlinked states */
-    .chronicis-hashtag[data-linked="true"] {
-        cursor: pointer;
-        text-decoration: underline;
-        text-decoration-style: dotted;
-        text-decoration-color: rgba(196, 175, 142, 0.5);
-    }
-
-        .chronicis-hashtag[data-linked="true"]:hover {
-            background-color: rgba(196, 175, 142, 0.25);
-            text-decoration-style: solid;
-        }
-
-    .chronicis-hashtag[data-linked="false"] {
-        opacity: 0.8;
-    }
-
-/* Ensure hashtags display inline */
-.ProseMirror .chronicis-hashtag {
-    display: inline;
+.chronicis-hashtag:hover {
+    background-color: rgba(196, 175, 142, 0.15);
 }
 
-/* Ensure hashtags work in all contexts */
+/* Linked hashtags */
+.chronicis-hashtag[data-linked="true"] {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: rgba(196, 175, 142, 0.5);
+}
+
+.chronicis-hashtag[data-linked="true"]:hover {
+    background-color: rgba(196, 175, 142, 0.25);
+    text-decoration-style: solid;
+}
+
+/* Unlinked hashtags */
+.chronicis-hashtag[data-linked="false"] {
+    opacity: 0.8;
+}
+
+.chronicis-hashtag[data-linked="false"]:hover {
+    opacity: 1;
+}
+
+/* Ensure hashtags display inline in all contexts */
+.ProseMirror .chronicis-hashtag,
 .ProseMirror p .chronicis-hashtag,
 .ProseMirror li .chronicis-hashtag,
 .ProseMirror h1 .chronicis-hashtag,
@@ -49,4 +50,52 @@
 .ProseMirror h5 .chronicis-hashtag,
 .ProseMirror h6 .chronicis-hashtag {
     display: inline;
+}
+
+/* ============================================
+   Hashtag Tooltip
+   ============================================ */
+
+.hashtag-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background-color: #fff;
+    border: 1px solid var(--chronicis-beige-gold);
+    border-radius: var(--chronicis-radius-sm);
+    box-shadow: var(--chronicis-shadow-md);
+    max-width: 320px;
+    animation: chronicis-tooltip-fade-in 0.2s ease;
+    pointer-events: auto;
+}
+
+.hashtag-tooltip-content {
+    padding: var(--chronicis-space-sm) var(--chronicis-space-md);
+}
+
+.hashtag-tooltip-title {
+    font-family: var(--chronicis-font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--chronicis-charcoal);
+    margin-bottom: var(--chronicis-space-sm);
+}
+
+.hashtag-tooltip-text {
+    font-size: 0.875rem;
+    color: var(--chronicis-slate-grey);
+    line-height: 1.4;
+    margin-bottom: var(--chronicis-space-sm);
+}
+
+.hashtag-tooltip-meta {
+    font-size: 0.75rem;
+    color: var(--chronicis-beige-gold);
+    font-style: italic;
+}
+
+.hashtag-tooltip-action {
+    font-size: 0.75rem;
+    color: var(--chronicis-beige-gold);
+    font-weight: 500;
+    margin-top: var(--chronicis-space-xs);
 }

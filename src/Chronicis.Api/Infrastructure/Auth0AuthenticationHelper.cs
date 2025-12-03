@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -23,7 +22,7 @@ public static class Auth0AuthenticationHelper
     /// <param name="auth0Audience">Auth0 audience (e.g., "https://api.chronicis.app")</param>
     /// <returns>User principal with Auth0 claims, or null if not authenticated or invalid</returns>
     public static async Task<UserPrincipal?> GetUserFromTokenAsync(
-        HttpRequestData req,
+        Microsoft.Azure.Functions.Worker.Http.HttpRequestData req,
         string auth0Domain,
         string auth0Audience)
     {

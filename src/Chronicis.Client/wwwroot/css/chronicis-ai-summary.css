@@ -1,10 +1,11 @@
-/* AI Summary Section Styles */
-/* Add to wwwroot/css/app.css or create new chronicis-ai-summary.css */
+/* ============================================
+   Chronicis AI Summary Section Styles
+   ============================================ */
 
 .ai-summary-section {
     margin-top: 2rem;
     border: 1px solid rgba(196, 175, 142, 0.3);
-    border-radius: 8px;
+    border-radius: var(--chronicis-radius-lg);
     background-color: rgba(244, 240, 234, 0.5);
     overflow: hidden;
 }
@@ -13,9 +14,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
+    padding: var(--chronicis-space-md);
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: background-color var(--chronicis-transition-fast);
 }
 
 .ai-summary-header:hover {
@@ -25,16 +26,16 @@
 .header-left {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--chronicis-space-sm);
 }
 
 .summary-timestamp {
-    color: #666;
-    margin-left: 0.5rem;
+    color: var(--chronicis-slate-grey);
+    margin-left: var(--chronicis-space-sm);
 }
 
 .ai-summary-content {
-    padding: 1rem;
+    padding: var(--chronicis-space-md);
     border-top: 1px solid rgba(196, 175, 142, 0.2);
 }
 
@@ -42,41 +43,44 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    gap: var(--chronicis-space-md);
     padding: 2rem;
 }
 
 .summary-text {
-    padding: 1rem;
+    padding: var(--chronicis-space-md);
     background-color: white;
-    border-radius: 6px;
-    border-left: 4px solid #C4AF8E;
+    border-radius: var(--chronicis-radius-md);
+    border-left: 4px solid var(--chronicis-beige-gold);
     line-height: 1.6;
     white-space: pre-wrap;
 }
 
 .summary-actions {
     display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    gap: var(--chronicis-space-sm);
+    margin-top: var(--chronicis-space-md);
     justify-content: flex-end;
 }
 
 .generate-prompt {
-    padding: 1rem;
+    padding: var(--chronicis-space-md);
 }
 
 .estimate-info {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    padding: 1rem;
+    gap: var(--chronicis-space-xs);
+    padding: var(--chronicis-space-md);
     background-color: rgba(196, 175, 142, 0.1);
-    border-radius: 6px;
-    margin-top: 1rem;
+    border-radius: var(--chronicis-radius-md);
+    margin-top: var(--chronicis-space-md);
 }
 
-/* Responsive adjustments */
+/* ============================================
+   Responsive
+   ============================================ */
+
 @media (max-width: 768px) {
     .summary-actions {
         flex-direction: column;

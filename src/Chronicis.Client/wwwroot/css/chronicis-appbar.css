@@ -1,30 +1,32 @@
-/* Clickable Home Link in AppBar */
+/* ============================================
+   Chronicis AppBar Styles
+   ============================================ */
+
+/* Clickable Home Link */
 .chronicis-home-link {
-    transition: all 0.2s ease;
-    padding: 8px 12px;
-    border-radius: 8px;
-    margin-left: -12px; /* Adjust for padding */
+    transition: all var(--chronicis-transition-fast);
+    padding: var(--chronicis-space-sm) var(--chronicis-space-md);
+    border-radius: var(--chronicis-radius-lg);
+    margin-left: calc(var(--chronicis-space-md) * -1);
     text-decoration: none !important;
 }
 
-    .chronicis-home-link:hover {
-        background-color: rgba(196, 175, 142, 0.1) !important;
-        text-decoration: none !important;
-    }
+.chronicis-home-link:hover {
+    background-color: rgba(196, 175, 142, 0.1) !important;
+    text-decoration: none !important;
+}
 
-    .chronicis-home-link:active {
-        transform: scale(0.98);
-    }
+.chronicis-home-link:active {
+    transform: scale(0.98);
+}
 
-    /* Make logo and title unselectable */
-    .chronicis-home-link img,
-    .chronicis-home-link .mud-typography {
-        user-select: none;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-    }
+/* Make logo and title unselectable */
+.chronicis-home-link img,
+.chronicis-home-link .mud-typography {
+    user-select: none;
+}
 
-    /* Override MudLink default styles */
-    .chronicis-home-link.mud-link {
-        color: inherit !important;
-    }
+/* Override MudLink default styles */
+.chronicis-home-link.mud-link {
+    color: inherit !important;
+}

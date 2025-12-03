@@ -3,15 +3,15 @@
    ============================================ */
 
 html, body {
-    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--chronicis-font-body);
     margin: 0;
     padding: 0;
-    background-color: #F4F0EA;
-    color: #1A1A1A;
+    background-color: var(--chronicis-soft-off-white);
+    color: var(--chronicis-charcoal);
 }
 
 /* ============================================
-   Loading Screen (shown while Blazor loads)
+   Loading Screen
    ============================================ */
 
 .chronicis-loading-screen {
@@ -20,7 +20,7 @@ html, body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #1F2A33 0%, #3A4750 100%);
+    background: linear-gradient(135deg, var(--chronicis-deep-blue-grey) 0%, var(--chronicis-slate-grey) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -34,7 +34,7 @@ html, body {
 .chronicis-logo-animated {
     width: 120px;
     height: 120px;
-    margin-bottom: 24px;
+    margin-bottom: var(--chronicis-space-lg);
 }
 
 .chronicis-logo-pulse {
@@ -42,52 +42,33 @@ html, body {
     transform-origin: center;
 }
 
-@keyframes chronicis-pulse {
-    0%, 100% {
-        opacity: 0.6;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1.05);
-    }
-}
-
 .chronicis-loading-text {
-    font-family: 'Libre+Baskerville', Georgia, serif;
-    color: #C4AF8E;
+    font-family: var(--chronicis-font-heading);
+    color: var(--chronicis-beige-gold);
     letter-spacing: 1px;
     font-size: 2rem;
     text-transform: uppercase;
-    animation: chronicis-fade 1.5s ease-in-out infinite;
+    animation: chronicis-pulse 1.5s ease-in-out infinite;
 }
+
 .chronicis-loading-text::first-letter {
-    font-size:2.25rem;
+    font-size: 2.25rem;
 }
+
 .chronicis-loading-subtext {
-    font-family: 'Libre+Baskerville', Georgia, serif;
+    font-family: var(--chronicis-font-heading);
     font-size: 1.25rem;
-    color: #C4AF8E;
+    color: var(--chronicis-beige-gold);
     letter-spacing: 1px;
-    animation: chronicis-fade 1.5s ease-in-out infinite;
-}
-
-@keyframes chronicis-fade {
-    0%, 100% {
-        opacity: 0.5;
-    }
-
-    50% {
-        opacity: 1;
-    }
+    animation: chronicis-pulse 1.5s ease-in-out infinite;
 }
 
 /* ============================================
-   Error UI (Blazor default error banner)
+   Error UI
    ============================================ */
 
 #blazor-error-ui {
-    background: #EF5350;
+    background: var(--chronicis-error);
     bottom: 0;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
     display: none;
@@ -129,7 +110,7 @@ html, body {
     cursor: pointer;
     font-size: 1.25rem;
     opacity: 0.7;
-    transition: opacity 150ms;
+    transition: opacity var(--chronicis-transition-fast);
 }
 
 #blazor-error-ui .dismiss:hover {
@@ -137,45 +118,22 @@ html, body {
 }
 
 /* ============================================
-   Typography Utilities
+   Typography
    ============================================ */
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Libre+Baskerville', Georgia, serif;
+    font-family: var(--chronicis-font-heading);
     font-weight: 500;
-    color: #1A1A1A;
+    color: var(--chronicis-charcoal);
     margin: 0;
 }
 
-h1 {
-    font-size: 2.5rem;
-    line-height: 1.2;
-}
-
-h2 {
-    font-size: 2rem;
-    line-height: 1.3;
-}
-
-h3 {
-    font-size: 1.5rem;
-    line-height: 1.4;
-}
-
-h4 {
-    font-size: 1.25rem;
-    line-height: 1.4;
-}
-
-h5 {
-    font-size: 1.125rem;
-    line-height: 1.5;
-}
-
-h6 {
-    font-size: 1rem;
-    line-height: 1.5;
-}
+h1 { font-size: 2.5rem; line-height: 1.2; }
+h2 { font-size: 2rem; line-height: 1.3; }
+h3 { font-size: 1.5rem; line-height: 1.4; }
+h4 { font-size: 1.25rem; line-height: 1.4; }
+h5 { font-size: 1.125rem; line-height: 1.5; }
+h6 { font-size: 1rem; line-height: 1.5; }
 
 p {
     line-height: 1.7;
@@ -189,11 +147,11 @@ p {
 .chronicis-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 0 var(--chronicis-space-lg);
 }
 
 .chronicis-section {
-    padding: 32px 0;
+    padding: var(--chronicis-space-xl) 0;
 }
 
 .chronicis-flex {
@@ -217,55 +175,41 @@ p {
    ============================================ */
 
 .mt-0 { margin-top: 0 !important; }
-.mt-1 { margin-top: 8px !important; }
-.mt-2 { margin-top: 16px !important; }
-.mt-3 { margin-top: 24px !important; }
-.mt-4 { margin-top: 32px !important; }
+.mt-1 { margin-top: var(--chronicis-space-sm) !important; }
+.mt-2 { margin-top: var(--chronicis-space-md) !important; }
+.mt-3 { margin-top: var(--chronicis-space-lg) !important; }
+.mt-4 { margin-top: var(--chronicis-space-xl) !important; }
 
 .mb-0 { margin-bottom: 0 !important; }
-.mb-1 { margin-bottom: 8px !important; }
-.mb-2 { margin-bottom: 16px !important; }
-.mb-3 { margin-bottom: 24px !important; }
-.mb-4 { margin-bottom: 32px !important; }
+.mb-1 { margin-bottom: var(--chronicis-space-sm) !important; }
+.mb-2 { margin-bottom: var(--chronicis-space-md) !important; }
+.mb-3 { margin-bottom: var(--chronicis-space-lg) !important; }
+.mb-4 { margin-bottom: var(--chronicis-space-xl) !important; }
 
 .p-0 { padding: 0 !important; }
-.p-1 { padding: 8px !important; }
-.p-2 { padding: 16px !important; }
-.p-3 { padding: 24px !important; }
-.p-4 { padding: 32px !important; }
+.p-1 { padding: var(--chronicis-space-sm) !important; }
+.p-2 { padding: var(--chronicis-space-md) !important; }
+.p-3 { padding: var(--chronicis-space-lg) !important; }
+.p-4 { padding: var(--chronicis-space-xl) !important; }
 
 /* ============================================
    Animation Utilities
    ============================================ */
 
 .chronicis-fade-in {
-    animation: chronicis-fadeIn 400ms ease-in-out;
+    animation: chronicis-fade-in 400ms ease-in-out;
 }
 
-@keyframes chronicis-fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.chronicis-fade-in-down {
+    animation: chronicis-fade-in-down 400ms ease-out;
+}
+
+.chronicis-fade-in-up {
+    animation: chronicis-fade-in-up 400ms ease-out;
 }
 
 .chronicis-slide-in-right {
-    animation: chronicis-slideInRight 300ms ease-out;
-}
-
-@keyframes chronicis-slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(-16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    animation: chronicis-slide-in-right 300ms ease-out;
 }
 
 /* ============================================
@@ -273,7 +217,7 @@ p {
    ============================================ */
 
 :focus-visible {
-    outline: 2px solid #C4AF8E;
+    outline: 2px solid var(--chronicis-beige-gold);
     outline-offset: 2px;
 }
 
@@ -305,30 +249,17 @@ a:focus-visible {
    ============================================ */
 
 @media (max-width: 960px) {
-    .chronicis-title {
-        font-size: 1.25rem;
-    }
-
-    .chronicis-article-title {
-        font-size: 1.75rem;
-    }
-
-    h1 {
-        font-size: 2rem;
-    }
-
-    h2 {
-        font-size: 1.75rem;
-    }
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.75rem; }
 }
 
 @media (max-width: 600px) {
     .chronicis-container {
-        padding: 0 16px;
+        padding: 0 var(--chronicis-space-md);
     }
 
     .chronicis-article-card {
-        padding: 16px;
+        padding: var(--chronicis-space-md);
     }
 
     .chronicis-loading-text {

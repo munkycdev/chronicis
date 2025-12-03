@@ -73,7 +73,10 @@ public class AISummaryFunctions
 
         try
         {
-            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            var reader = new StreamReader(req.Body);
+            var requestBody = await reader.ReadToEndAsync();
+            reader.Dispose();
+
             var request = string.IsNullOrEmpty(requestBody)
                 ? new GenerateSummaryRequestDto { ArticleId = id }
                 : JsonSerializer.Deserialize<GenerateSummaryRequestDto>(requestBody,

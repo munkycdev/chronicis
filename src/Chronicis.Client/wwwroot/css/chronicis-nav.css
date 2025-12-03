@@ -1,9 +1,9 @@
 /* ============================================
-   Chronicis Navigation Menu Enhanced Styles
+   Chronicis Navigation Menu Styles
    ============================================ */
 
 .chronicis-nav-menu {
-    padding: 8px 0px;
+    padding: var(--chronicis-space-sm) 0;
 }
 
 /* Navigation Menu Items */
@@ -12,225 +12,220 @@
 }
 
 .chronicis-nav-menu-items .mud-nav-item {
-    border-radius: 0px !important;
-    padding-right:0px;
-    transition: all 150ms ease-in-out;
+    border-radius: 0 !important;
+    padding-right: 0;
+    transition: all var(--chronicis-transition-fast);
     margin: 2px 0;
     color: var(--chronicis-soft-off-white);
 }
 
-    .chronicis-nav-menu-items .mud-nav-item .mud-menu{
-        margin-right:8px;
-    }
+.chronicis-nav-menu-items .mud-nav-item .mud-menu {
+    margin-right: var(--chronicis-space-sm);
+}
 
-        .chronicis-nav-menu-items .mud-nav-link {
-            border-radius: 0px;
-            transition: all 150ms ease-in-out;
-            margin: 2px 0;
-            padding: 8px 12px;
-            color: var(--chronicis-soft-off-white);
-        }
+.chronicis-nav-menu-items .mud-nav-link {
+    border-radius: 0;
+    transition: all var(--chronicis-transition-fast);
+    margin: 2px 0;
+    padding: var(--chronicis-space-sm) var(--chronicis-space-md);
+    color: var(--chronicis-soft-off-white);
+}
 
-            .chronicis-nav-menu-items .mud-nav-link:hover {
-                background-color: rgba(196, 175, 142, 0.12);
-                box-shadow: 0 0 12px rgba(196, 175, 142, 0.25);
-                color: var(--chronicis-beige-gold);
-            }
-        /* Navigation Groups (expandable items) */
-        .chronicis-nav-menu-items .mud-nav-group {
-            border-radius: 6px;
-            margin: 2px 0;
-        }
+.chronicis-nav-menu-items .mud-nav-link:hover {
+    background-color: rgba(196, 175, 142, 0.12);
+    box-shadow: var(--chronicis-glow-gold);
+    color: var(--chronicis-beige-gold);
+}
 
-            .chronicis-nav-menu-items .mud-nav-group .mud-nav-group-header {
-                border-radius: 6px;
-                transition: all 150ms ease-in-out;
-                padding: 8px 12px;
-                color: var(--chronicis-soft-off-white);
-            }
+/* Navigation Groups */
+.chronicis-nav-menu-items .mud-nav-group {
+    border-radius: var(--chronicis-radius-md);
+    margin: 2px 0;
+}
 
-                .chronicis-nav-menu-items .mud-nav-group .mud-nav-group-header:hover {
-                    background-color: rgba(196, 175, 142, 0.12);
-                    box-shadow: 0 0 12px rgba(196, 175, 142, 0.25);
-                    color: var(--chronicis-beige-gold);
-                }
-        /* Selected State */
-        .chronicis-nav-item-selected .mud-nav-link,
-        .chronicis-nav-item-selected .mud-nav-group-header {
-            background-color: rgba(196, 175, 142, 0.2) !important;
-            border-left: 3px solid var(--chronicis-beige-gold);
-            padding-left: 0px;
-            color: var(--chronicis-beige-gold);
-            font-weight: 500;
-        }
-        /* Nav Item Container */
-        .chronicis-nav-item-container {
-            position: relative;
-        }
+.chronicis-nav-menu-items .mud-nav-group .mud-nav-group-header {
+    border-radius: var(--chronicis-radius-md);
+    transition: all var(--chronicis-transition-fast);
+    padding: var(--chronicis-space-sm) var(--chronicis-space-md);
+    color: var(--chronicis-soft-off-white);
+}
 
-        .chronicis-nav-item-menu {
-            opacity: 0;
-            transition: opacity 150ms ease-in-out;
-        }
+.chronicis-nav-menu-items .mud-nav-group .mud-nav-group-header:hover {
+    background-color: rgba(196, 175, 142, 0.12);
+    box-shadow: var(--chronicis-glow-gold);
+    color: var(--chronicis-beige-gold);
+}
 
-        .chronicis-nav-item-container:hover .chronicis-nav-item-menu {
-            opacity: 1;
-        }
-        /* Expand/Collapse Icons */
-        .mud-nav-group .mud-expand-icon {
-            color: var(--chronicis-muted-gold) !important;
-        }
+/* Selected State */
+.chronicis-nav-item-selected .mud-nav-link,
+.chronicis-nav-item-selected .mud-nav-group-header {
+    background-color: rgba(196, 175, 142, 0.2) !important;
+    border-left: 3px solid var(--chronicis-beige-gold);
+    padding-left: 0;
+    color: var(--chronicis-beige-gold);
+    font-weight: 500;
+}
 
-            .mud-nav-group .mud-expand-icon:hover {
-                color: var(--chronicis-beige-gold) !important;
-            }
-        /* Nested navigation items */
-        .mud-nav-group .mud-navmenu {
-            padding-left: 16px;
-            border-left: 1px solid rgba(196, 175, 142, 0.2);
-            margin-left: 12px;
-        }
-        /* Navigation item text */
-        .mud-nav-link-text,
-        .mud-nav-group-header-text {
-            color: var(--chronicis-soft-off-white);
-            font-size: 0.9375rem;
-            transition: color 150ms ease-in-out;
-        }
+/* Nav Item Container */
+.chronicis-nav-item-container {
+    position: relative;
+}
 
-        .chronicis-nav-item-selected .mud-nav-link-text,
-        .chronicis-nav-item-selected .mud-nav-group-header-text {
-            color: var(--chronicis-beige-gold);
-        }
+.chronicis-nav-item-menu {
+    opacity: 0;
+    transition: opacity var(--chronicis-transition-fast);
+}
 
-        .mud-nav-link:hover .mud-nav-link-text,
-        .mud-nav-group-header:hover .mud-nav-group-header-text {
-            color: var(--chronicis-beige-gold);
-        }
-        /* Navigation item icons */
-        .mud-nav-link .mud-icon-root,
-        .mud-nav-group-header .mud-icon-root {
-            color: var(--chronicis-muted-gold);
-            transition: all 150ms ease-in-out;
-        }
+.chronicis-nav-item-container:hover .chronicis-nav-item-menu {
+    opacity: 1;
+}
 
-        .chronicis-nav-item-selected .mud-icon-root {
-            color: var(--chronicis-beige-gold);
-        }
+/* Expand/Collapse Icons */
+.mud-nav-group .mud-expand-icon {
+    color: var(--chronicis-muted-gold) !important;
+}
 
-        .mud-nav-link:hover .mud-icon-root,
-        .mud-nav-group-header:hover .mud-icon-root {
-            color: var(--chronicis-beige-gold);
-            transform: scale(1.1);
-        }
-        /* Context menu styling */
-        .mud-menu-item {
-            transition: all 150ms ease-in-out;
-        }
+.mud-nav-group .mud-expand-icon:hover {
+    color: var(--chronicis-beige-gold) !important;
+}
 
-            .mud-menu-item:hover {
-                background-color: rgba(196, 175, 142, 0.1);
-            }
+/* Nested navigation items */
+.mud-nav-group .mud-navmenu {
+    padding-left: var(--chronicis-space-md);
+    border-left: 1px solid rgba(196, 175, 142, 0.2);
+    margin-left: var(--chronicis-space-md);
+    animation: chronicis-expand 200ms ease-out;
+}
 
-            .mud-menu-item .mud-icon-root {
-                color: var(--chronicis-muted-gold);
-            }
+/* Navigation item text */
+.mud-nav-link-text,
+.mud-nav-group-header-text {
+    color: var(--chronicis-soft-off-white);
+    font-size: 0.9375rem;
+    transition: color var(--chronicis-transition-fast);
+}
 
-            .mud-menu-item:hover .mud-icon-root {
-                color: var(--chronicis-beige-gold);
-            }
-        /* Smooth expand/collapse animation */
-        .mud-nav-group .mud-navmenu {
-            animation: chronicis-expand 200ms ease-out;
-        }
+.chronicis-nav-item-selected .mud-nav-link-text,
+.chronicis-nav-item-selected .mud-nav-group-header-text {
+    color: var(--chronicis-beige-gold);
+}
 
-        @keyframes chronicis-expand {
-            from {
-                opacity: 0;
-                transform: translateY(-4px);
-            }
+.mud-nav-link:hover .mud-nav-link-text,
+.mud-nav-group-header:hover .mud-nav-group-header-text {
+    color: var(--chronicis-beige-gold);
+}
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        /* Empty state in nav menu */
-        .chronicis-nav-menu .chronicis-empty-state {
-            padding: 24px 16px;
-        }
+/* Navigation item icons */
+.mud-nav-link .mud-icon-root,
+.mud-nav-group-header .mud-icon-root {
+    color: var(--chronicis-muted-gold);
+    transition: all var(--chronicis-transition-fast);
+}
 
-        .chronicis-nav-menu .chronicis-empty-state-icon {
-            font-size: 2.5rem;
-            opacity: 0.4;
-        }
-        /* Loading state in nav menu */
-        .chronicis-nav-menu .mud-progress-circular {
-            color: var(--chronicis-beige-gold);
-        }
-        /* Remove default MudNavMenu padding */
-        .mud-navmenu {
-            padding: 0 !important;
-        }
-        /* Ensure proper spacing in nested items */
-        .mud-nav-group .mud-nav-group {
-            margin-top: 2px;
-        }
-        /* Hover state for entire nav item */
-        .chronicis-nav-item:hover {
-            background-color: rgba(196, 175, 142, 0.12);
-        }
-        /* Nav group wrapper for clickable title */
-        .chronicis-nav-group-wrapper {
-            position: relative;
-        }
+.chronicis-nav-item-selected .mud-icon-root {
+    color: var(--chronicis-beige-gold);
+}
 
-        .chronicis-nav-group-click-handler {
-            position: absolute;
-            top: 0;
-            left: 40px; /* After the expand arrow */
-            right: 40px; /* Before the context menu */
-            height: 48px;
-            cursor: pointer;
-            z-index: 1;
-        }
+.mud-nav-link:hover .mud-icon-root,
+.mud-nav-group-header:hover .mud-icon-root {
+    color: var(--chronicis-beige-gold);
+    transform: scale(1.1);
+}
 
-            .chronicis-nav-group-click-handler:hover {
-                background-color: rgba(196, 175, 142, 0.08);
-            }
+/* Context menu styling */
+.mud-menu-item {
+    transition: all var(--chronicis-transition-fast);
+}
 
-        .chronicis-nav-group-menu {
-            position: absolute;
-            top: 4px;
-            right: 8px;
-            z-index: 10;
-        }
+.mud-menu-item:hover {
+    background-color: rgba(196, 175, 142, 0.1);
+}
 
-        .mud-nav-link > .mud-nav-link-icon-default {
-            display: none !important;
-        }
-        /* Remove all default padding/margin from nav links */
-        .chronicis-nav-item-container .mud-nav-link {
-            padding-left: 0 !important;
-            margin-left: 0 !important;
-        }
-        /* Target the actual nav link content wrapper */
-        .mud-nav-item .mud-nav-link {
-            border-radius: 0px important;
-            padding-left: 0px !important;
-        }
+.mud-menu-item .mud-icon-root {
+    color: var(--chronicis-muted-gold);
+}
 
-        .mud-nav-link-text {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        /* Also remove padding from the ripple effect div */
-        .mud-nav-link.mud-ripple {
-            padding: 0px 0px !important; /* Top/bottom: 8px, Left/right: 4px */
-        }
+.mud-menu-item:hover .mud-icon-root {
+    color: var(--chronicis-beige-gold);
+}
+
+/* Empty state in nav menu */
+.chronicis-nav-menu .chronicis-empty-state {
+    padding: var(--chronicis-space-lg) var(--chronicis-space-md);
+}
+
+.chronicis-nav-menu .chronicis-empty-state-icon {
+    font-size: 2.5rem;
+    opacity: 0.4;
+}
+
+/* Loading state */
+.chronicis-nav-menu .mud-progress-circular {
+    color: var(--chronicis-beige-gold);
+}
+
+/* Nested item spacing */
+.mud-nav-group .mud-nav-group {
+    margin-top: 2px;
+}
+
+/* Hover state for nav items */
+.chronicis-nav-item:hover {
+    background-color: rgba(196, 175, 142, 0.12);
+}
+
+/* Nav group wrapper for clickable title */
+.chronicis-nav-group-wrapper {
+    position: relative;
+}
+
+.chronicis-nav-group-click-handler {
+    position: absolute;
+    top: 0;
+    left: 40px;
+    right: 40px;
+    height: 48px;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.chronicis-nav-group-click-handler:hover {
+    background-color: rgba(196, 175, 142, 0.08);
+}
+
+.chronicis-nav-group-menu {
+    position: absolute;
+    top: var(--chronicis-space-xs);
+    right: var(--chronicis-space-sm);
+    z-index: 10;
+}
+
+.mud-nav-link > .mud-nav-link-icon-default {
+    display: none !important;
+}
+
+/* Remove default padding from nav links */
+.chronicis-nav-item-container .mud-nav-link {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+}
+
+.mud-nav-item .mud-nav-link {
+    border-radius: 0 !important;
+    padding-left: 0 !important;
+}
+
+.mud-nav-link-text {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.mud-nav-link.mud-ripple {
+    padding: 0 !important;
+}
 
 /* ============================================
-   Chronicis Drag-and-Drop Styles (Phase 10)
+   Drag-and-Drop Styles
    ============================================ */
 
 /* Drop to Root Zone */
@@ -238,14 +233,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 12px 16px;
-    margin: 8px 12px;
+    padding: var(--chronicis-space-md);
+    margin: var(--chronicis-space-sm) var(--chronicis-space-md);
     border: 2px dashed rgba(196, 175, 142, 0.4);
-    border-radius: 6px;
+    border-radius: var(--chronicis-radius-md);
     background-color: rgba(196, 175, 142, 0.05);
     color: var(--chronicis-muted-gold);
     font-size: 0.85rem;
-    transition: all 200ms ease-in-out;
+    transition: all var(--chronicis-transition-fast);
     cursor: pointer;
 }
 
@@ -253,14 +248,14 @@
     border-color: var(--chronicis-beige-gold);
     background-color: rgba(196, 175, 142, 0.15);
     color: var(--chronicis-beige-gold);
-    box-shadow: 0 0 12px rgba(196, 175, 142, 0.3);
+    box-shadow: var(--chronicis-glow-gold);
 }
 
-/* Drag handle icon */
+/* Drag handle */
 .drag-handle {
-    margin-right: 4px;
+    margin-right: var(--chronicis-space-xs);
     cursor: grab;
-    transition: opacity 150ms ease-in-out;
+    transition: opacity var(--chronicis-transition-fast);
     color: var(--chronicis-muted-gold);
 }
 
@@ -282,7 +277,7 @@
 .chronicis-nav-item-container.drop-target-active {
     background-color: rgba(196, 175, 142, 0.2);
     border-left: 3px solid var(--chronicis-beige-gold);
-    box-shadow: 0 0 12px rgba(196, 175, 142, 0.25);
+    box-shadow: var(--chronicis-glow-gold);
 }
 
 .chronicis-nav-item-container.drop-target-active .mud-nav-link {
@@ -303,7 +298,7 @@
     user-select: none;
 }
 
-/* During active drag, disable pointer events on inner elements so container is the only drop target */
+/* Disable pointer events on inner elements during drag */
 .chronicis-nav-menu--dragging .chronicis-nav-item-container .mud-nav-link > * {
     pointer-events: none;
 }
