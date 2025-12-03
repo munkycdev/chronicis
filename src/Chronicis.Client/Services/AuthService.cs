@@ -15,22 +15,6 @@ public class UserInfo
 }
 
 /// <summary>
-/// Service for managing authentication state and user information
-/// </summary>
-public interface IAuthService
-{
-    /// <summary>
-    /// Gets the current authenticated user's information
-    /// </summary>
-    Task<UserInfo?> GetCurrentUserAsync();
-
-    /// <summary>
-    /// Checks if the current user is authenticated
-    /// </summary>
-    Task<bool> IsAuthenticatedAsync();
-}
-
-/// <summary>
 /// Implementation of authentication service using ASP.NET Core authentication
 /// </summary>
 public class AuthService : IAuthService

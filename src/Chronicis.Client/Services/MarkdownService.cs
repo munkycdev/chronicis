@@ -6,7 +6,7 @@ namespace Chronicis.Client.Services;
 /// <summary>
 /// Service for converting markdown to sanitized HTML
 /// </summary>
-public class MarkdownService
+public class MarkdownService : IMarkdownService
 {
     private readonly MarkdownPipeline _pipeline;
     private readonly HtmlSanitizer _sanitizer;

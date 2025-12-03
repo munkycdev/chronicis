@@ -4,11 +4,6 @@ using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Services;
 
-public interface ISearchApiService
-{
-    Task<GlobalSearchResultsDto?> SearchContentAsync(string query);
-}
-
 public class SearchApiService : ISearchApiService
 {
     private readonly HttpClient _httpClient;
@@ -32,7 +27,7 @@ public class SearchApiService : ISearchApiService
 
             if (!response.IsSuccessStatusCode)
             {
-                
+
                 _logger.LogError($"Search failed with status: {response.StatusCode}");
                 return null;
             }

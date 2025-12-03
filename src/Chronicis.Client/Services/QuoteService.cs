@@ -3,11 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace Chronicis.Client.Services;
 
-public interface IQuoteService
-{
-    Task<Quote?> GetRandomQuoteAsync();
-}
-
 public class QuoteService : IQuoteService
 {
     private readonly HttpClient _httpClient;
