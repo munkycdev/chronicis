@@ -12,10 +12,12 @@ public interface ISearchApiService
 public class SearchApiService : ISearchApiService
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<SearchApiService> _logger;
 
-    public SearchApiService(HttpClient httpClient)
+    public SearchApiService(HttpClient httpClient, ILogger<SearchApiService> logger)
     {
         _httpClient = httpClient;
+        _logger = logger;
     }
 
     public async Task<GlobalSearchResultsDto?> SearchContentAsync(string query)
@@ -30,7 +32,8 @@ public class SearchApiService : ISearchApiService
 
             if (!response.IsSuccessStatusCode)
             {
-                Console.WriteLine($"Search failed with status: {response.StatusCode}");
+                
+                _logger.LogError($"Search failed with status: {response.StatusCode}");
                 return null;
             }
 
@@ -38,7 +41,7 @@ public class SearchApiService : ISearchApiService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error searching content: {ex.Message}");
+            _logger.LogError($"Error searching content: {ex.Message}");
             return null;
         }
     }

@@ -42,8 +42,6 @@ public class ArticleSearchFunction
             return badRequest;
         }
 
-        _logger.LogInformation("Searching for: {Query} by user {UserId}", query, user.Id);
-
         try
         {
             // Search titles

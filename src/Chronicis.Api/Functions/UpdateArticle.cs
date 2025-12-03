@@ -38,7 +38,6 @@ public class UpdateArticle
         int id)
     {
         var user = context.GetRequiredUser();
-        _logger.LogInformation("UpdateArticle {ArticleId} called by user {UserId}", id, user.Id);
 
         try
         {

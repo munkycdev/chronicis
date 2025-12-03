@@ -21,8 +21,6 @@ public class HealthFunction
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health")] HttpRequestData req)
     {
-        _logger.LogInformation("Health check endpoint called");
-
         var response = req.CreateResponse(HttpStatusCode.OK);
 
         var healthCheck = new HealthCheckResponse

@@ -81,19 +81,22 @@ builder.Services.AddScoped<IArticleApiService>(sp =>
 builder.Services.AddScoped<ISearchApiService>(sp =>
 {
     var factory = sp.GetRequiredService<IHttpClientFactory>();
-    return new SearchApiService(factory.CreateClient("ChronicisApi"));
+    var logger = sp.GetRequiredService<ILogger<SearchApiService>>();
+    return new SearchApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
 builder.Services.AddScoped<IHashtagApiService>(sp =>
 {
     var factory = sp.GetRequiredService<IHttpClientFactory>();
-    return new HashtagApiService(factory.CreateClient("ChronicisApi"));
+    var logger = sp.GetRequiredService<ILogger<HashtagApiService>>();
+    return new HashtagApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
 builder.Services.AddScoped<IAISummaryApiService>(sp =>
 {
     var factory = sp.GetRequiredService<IHttpClientFactory>();
-    return new AISummaryApiService(factory.CreateClient("ChronicisApi"));
+    var logger = sp.GetRequiredService<ILogger<AISummaryApiService>>();
+    return new AISummaryApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
 // State & Auth services

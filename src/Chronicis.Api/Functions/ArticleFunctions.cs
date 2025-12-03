@@ -34,7 +34,6 @@ public class ArticleFunctions
         FunctionContext context)
     {
         var user = context.GetRequiredUser();
-        _logger.LogInformation("GetRootArticles called for user {UserId}", user.Id);
 
         try
         {
@@ -64,7 +63,6 @@ public class ArticleFunctions
         int id)
     {
         var user = context.GetRequiredUser();
-        _logger.LogInformation("GetArticleDetail called for ID: {ArticleId}, user {UserId}", id, user.Id);
 
         try
         {
@@ -101,7 +99,6 @@ public class ArticleFunctions
         int id)
     {
         var user = context.GetRequiredUser();
-        _logger.LogInformation("GetArticleChildren called for parent ID: {ParentId}, user {UserId}", id, user.Id);
 
         try
         {

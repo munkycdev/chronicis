@@ -34,7 +34,6 @@ public class MoveArticle
         int id)
     {
         var user = context.GetRequiredUser();
-        _logger.LogInformation("MoveArticle called for article {ArticleId} by user {UserId}", id, user.Id);
 
         try
         {
@@ -47,9 +46,6 @@ public class MoveArticle
                 await badRequestResponse.WriteAsJsonAsync(new { message = "Invalid request body" });
                 return badRequestResponse;
             }
-
-            _logger.LogInformation("Moving article {ArticleId} to parent {NewParentId}",
-                id, moveDto.NewParentId?.ToString() ?? "root");
 
             // Perform the move
             var (success, errorMessage) = await _articleService.MoveArticleAsync(id, moveDto.NewParentId, user.Id);

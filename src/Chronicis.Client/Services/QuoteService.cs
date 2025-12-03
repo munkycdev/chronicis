@@ -23,8 +23,6 @@ public class QuoteService : IQuoteService
     {
         try
         {
-            _logger.LogInformation("Fetching random quote from Zen Quotes API");
-
             // Use CORS proxy to bypass CORS restrictions
             var response = await _httpClient.GetFromJsonAsync<List<ZenQuote>>(
                 "https://corsproxy.io/?https://zenquotes.io/api/random");

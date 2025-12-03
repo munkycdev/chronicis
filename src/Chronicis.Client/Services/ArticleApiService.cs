@@ -21,7 +21,6 @@ public class ArticleApiService : IArticleApiService
     {
         try
         {
-            _logger.LogInformation("Fetching root articles from API");
             var articles = await _http.GetFromJsonAsync<List<ArticleTreeDto>>("api/articles");
             return articles ?? new List<ArticleTreeDto>();
         }
@@ -36,7 +35,6 @@ public class ArticleApiService : IArticleApiService
     {
         try
         {
-            _logger.LogInformation("Fetching children for article {ParentId}", parentId);
             var children = await _http.GetFromJsonAsync<List<ArticleTreeDto>>($"api/articles/{parentId}/children");
             return children ?? new List<ArticleTreeDto>();
         }
@@ -51,7 +49,6 @@ public class ArticleApiService : IArticleApiService
     {
         try
         {
-            _logger.LogInformation("Fetching article detail for {ArticleId}", id);
             return await _http.GetFromJsonAsync<ArticleDto>($"api/articles/{id}");
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -72,7 +69,6 @@ public class ArticleApiService : IArticleApiService
     {
         try
         {
-            _logger.LogInformation("Creating new article: {Title}", dto.Title);
             var response = await _http.PostAsJsonAsync("api/articles", dto);
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<ArticleDto>()
@@ -89,7 +85,6 @@ public class ArticleApiService : IArticleApiService
     {
         try
         {
-            _logger.LogInformation("Updating article {ArticleId}", id);
             var response = await _http.PutAsJsonAsync($"api/articles/{id}", dto);
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<ArticleDto>()
@@ -106,7 +101,6 @@ public class ArticleApiService : IArticleApiService
     {
         try
         {
-            _logger.LogInformation("Deleting article {ArticleId}", id);
             var response = await _http.DeleteAsync($"api/articles/{id}");
             response.EnsureSuccessStatusCode();
         }
@@ -121,9 +115,6 @@ public class ArticleApiService : IArticleApiService
     {
         try
         {
-            _logger.LogInformation("Moving article {ArticleId} to parent {NewParentId}",
-                articleId, newParentId?.ToString() ?? "root");
-
             var moveDto = new ArticleMoveDto { NewParentId = newParentId };
             var response = await _http.PatchAsJsonAsync($"api/articles/{articleId}/parent", moveDto);
 
@@ -150,7 +141,6 @@ public class ArticleApiService : IArticleApiService
 
         try
         {
-            _logger.LogInformation("Searching articles with query: {Query}", query);
             var results = await _http.GetFromJsonAsync<GlobalSearchResultsDto>(
                 $"api/articles/search?query={Uri.EscapeDataString(query)}");
 
@@ -178,7 +168,6 @@ public class ArticleApiService : IArticleApiService
 
         try
         {
-            _logger.LogInformation("Searching articles by title: {Query}", query);
             // Use the global search endpoint and extract just title matches
             var results = await _http.GetFromJsonAsync<GlobalSearchResultsDto>(
                 $"api/articles/search?query={Uri.EscapeDataString(query)}");

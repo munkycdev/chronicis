@@ -42,8 +42,6 @@ namespace Chronicis.Api.Services
         /// </summary>
         public async Task<List<ArticleTreeDto>> GetRootArticlesAsync(int userId)
         {
-            _logger.LogInformation("Fetching root articles for user {UserId}", userId);
-
             // Use AsNoTracking and direct projection to avoid User navigation issues
             var rootArticles = await _context.Articles
                 .AsNoTracking()
@@ -71,8 +69,6 @@ namespace Chronicis.Api.Services
         /// </summary>
         public async Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId, int userId)
         {
-            _logger.LogInformation("Fetching children for article {ParentId}, user {UserId}", parentId, userId);
-
             // Use AsNoTracking and direct projection
             var children = await _context.Articles
                 .AsNoTracking()
@@ -100,8 +96,6 @@ namespace Chronicis.Api.Services
         /// </summary>
         public async Task<ArticleDto?> GetArticleDetailAsync(int id, int userId)
         {
-            _logger.LogInformation("Fetching article detail for {ArticleId}, user {UserId}", id, userId);
-
             // Use AsNoTracking and direct projection
             var article = await _context.Articles
                 .AsNoTracking()
@@ -137,9 +131,6 @@ namespace Chronicis.Api.Services
         /// </summary>
         public async Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(int articleId, int? newParentId, int userId)
         {
-            _logger.LogInformation("Moving article {ArticleId} to parent {NewParentId} for user {UserId}",
-                articleId, newParentId?.ToString() ?? "root", userId);
-
             // 1. Get the article to move
             var article = await _context.Articles
                 .FirstOrDefaultAsync(a => a.Id == articleId && a.UserId == userId);
@@ -153,8 +144,6 @@ namespace Chronicis.Api.Services
             // 2. If moving to same parent, nothing to do
             if (article.ParentId == newParentId)
             {
-                _logger.LogInformation("Article {ArticleId} already has parent {ParentId}, no move needed",
-                    articleId, newParentId?.ToString() ?? "root");
                 return (true, null);
             }
 
@@ -185,9 +174,6 @@ namespace Chronicis.Api.Services
             article.ModifiedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Successfully moved article {ArticleId} to parent {NewParentId}",
-                articleId, newParentId?.ToString() ?? "root");
 
             return (true, null);
         }

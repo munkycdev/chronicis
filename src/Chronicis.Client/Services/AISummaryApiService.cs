@@ -3,21 +3,16 @@ using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Services;
 
-public interface IAISummaryApiService
-{
-    Task<SummaryEstimateDto?> GetEstimateAsync(int articleId);
-    Task<SummaryGenerationDto?> GenerateSummaryAsync(int articleId, int maxOutputTokens = 1500);
-    Task<ArticleSummaryDto?> GetSummaryAsync(int articleId);
-    Task<bool> ClearSummaryAsync(int articleId);
-}
 
 public class AISummaryApiService : IAISummaryApiService
 {
     private readonly HttpClient _http;
+    private readonly ILogger<AISummaryApiService> _logger;
 
-    public AISummaryApiService(HttpClient http)
+    public AISummaryApiService(HttpClient http, ILogger<AISummaryApiService> logger)
     {
         _http = http;
+        _logger = logger;
     }
 
     public async Task<SummaryEstimateDto?> GetEstimateAsync(int articleId)
@@ -28,7 +23,7 @@ public class AISummaryApiService : IAISummaryApiService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error getting summary estimate: {ex.Message}");
+            _logger.LogError($"Error getting summary estimate: {ex.Message}");
             return null;
         }
     }
@@ -52,13 +47,13 @@ public class AISummaryApiService : IAISummaryApiService
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error generating summary: {response.StatusCode} - {errorContent}");
+                _logger.LogError($"Error generating summary: {response.StatusCode} - {errorContent}");
                 return null;
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error generating summary: {ex.Message}");
+            _logger.LogError($"Error generating summary: {ex.Message}");
             return null;
         }
     }
@@ -75,7 +70,7 @@ public class AISummaryApiService : IAISummaryApiService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error getting summary: {ex.Message}");
+            _logger.LogError($"Error getting summary: {ex.Message}");
             return null;
         }
     }
@@ -89,7 +84,7 @@ public class AISummaryApiService : IAISummaryApiService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error clearing summary: {ex.Message}");
+            _logger.LogError($"Error clearing summary: {ex.Message}");
             return false;
         }
     }

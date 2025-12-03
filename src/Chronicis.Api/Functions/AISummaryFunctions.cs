@@ -35,7 +35,6 @@ public class AISummaryFunctions
         int id)
     {
         var user = context.GetRequiredUser();
-        _logger.LogInformation("Getting summary estimate for article {ArticleId}, user {UserId}", id, user.Id);
 
         try
         {
@@ -69,7 +68,6 @@ public class AISummaryFunctions
         int id)
     {
         var user = context.GetRequiredUser();
-        _logger.LogInformation("Generating AI summary for article {ArticleId}, user {UserId}", id, user.Id);
 
         try
         {
@@ -110,7 +108,6 @@ public class AISummaryFunctions
         int id)
     {
         var user = context.GetRequiredUser();
-        _logger.LogInformation("Getting summary for article {ArticleId}, user {UserId}", id, user.Id);
 
         try
         {
@@ -153,7 +150,6 @@ public class AISummaryFunctions
         int id)
     {
         var user = context.GetRequiredUser();
-        _logger.LogInformation("Clearing summary for article {ArticleId}, user {UserId}", id, user.Id);
 
         try
         {

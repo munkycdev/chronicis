@@ -10,10 +10,12 @@ namespace Chronicis.Client.Services;
 public class HashtagApiService : IHashtagApiService
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<HashtagApiService> _logger;
 
-    public HashtagApiService(HttpClient httpClient)
+    public HashtagApiService(HttpClient httpClient, ILogger<HashtagApiService> logger)
     {
         _httpClient = httpClient;
+        _logger = logger;
     }
 
     /// <summary>
@@ -28,7 +30,7 @@ public class HashtagApiService : IHashtagApiService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error fetching hashtags: {ex.Message}");
+            _logger.LogError($"Error fetching hashtags: {ex.Message}");
             return new List<HashtagDto>();
         }
     }
@@ -49,7 +51,7 @@ public class HashtagApiService : IHashtagApiService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error fetching hashtag '{name}': {ex.Message}");
+            _logger.LogError($"Error fetching hashtag '{name}': {ex.Message}");
             return null;
         }
     }
@@ -67,7 +69,7 @@ public class HashtagApiService : IHashtagApiService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error linking hashtag '{hashtagName}': {ex.Message}");
+            _logger.LogError($"Error linking hashtag '{hashtagName}': {ex.Message}");
             return false;
         }
     }
@@ -81,7 +83,7 @@ public class HashtagApiService : IHashtagApiService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error fetching hashtag preview: {ex.Message}");
+            _logger.LogError($"Error fetching hashtag preview: {ex.Message}");
             return null;
         }
     }

@@ -11,6 +11,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Functions;
 
+/// <summary>
+/// Azure Function for creating new articles.
+/// </summary>
 public class CreateArticle
 {
     private readonly ChronicisDbContext _context;
@@ -28,13 +31,15 @@ public class CreateArticle
         _logger = logger;
     }
 
+    /// <summary>
+    /// POST /api/articles - Creates a new article.
+    /// </summary>
     [Function("CreateArticle")]
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "articles")] HttpRequestData req,
         FunctionContext context)
     {
         var user = context.GetRequiredUser();
-        _logger.LogInformation("CreateArticle called by user {UserId}", user.Id);
 
         try
         {

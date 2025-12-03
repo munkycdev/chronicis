@@ -1,4 +1,4 @@
-﻿@page "/login"
+@page "/login"
 @layout LandingLayout
 @inject NavigationManager Navigation
 @inject IConfiguration Configuration
@@ -69,9 +69,5 @@
         var authority = Configuration["Auth0:Authority"];
         var clientId = Configuration["Auth0:ClientId"];
         var audience = Configuration["Auth0:Audience"];
-
-        Console.WriteLine($"DEBUG - Authority: {authority}");
-        Console.WriteLine($"DEBUG - ClientId: {clientId}");
-        Console.WriteLine($"DEBUG - Audience: {audience}");
     }
 }

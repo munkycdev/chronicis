@@ -9,12 +9,31 @@ using OpenAI.Chat;
 
 namespace Chronicis.Api.Services;
 
+/// <summary>
+/// Service interface for AI-powered summary generation.
+/// </summary>
 public interface IAISummaryService
 {
+    /// <summary>
+    /// Estimates the cost of generating an AI summary for an article.
+    /// </summary>
+    /// <param name="articleId">The article to estimate costs for</param>
+    /// <returns>Cost estimate including token counts and USD cost</returns>
     Task<SummaryEstimateDto> EstimateCostAsync(int articleId);
+
+    /// <summary>
+    /// Generates an AI summary for an article based on its backlinks.
+    /// </summary>
+    /// <param name="articleId">The article to generate a summary for</param>
+    /// <param name="maxOutputTokens">Maximum tokens in the generated summary</param>
+    /// <returns>Generation result including the summary or error message</returns>
     Task<SummaryGenerationDto> GenerateSummaryAsync(int articleId, int maxOutputTokens = 1500);
 }
 
+/// <summary>
+/// Azure OpenAI implementation of AI summary generation service.
+/// Analyzes backlinks to create comprehensive summaries of campaign entities.
+/// </summary>
 public class AISummaryService : IAISummaryService
 {
     private readonly ChronicisDbContext _context;
@@ -23,10 +42,9 @@ public class AISummaryService : IAISummaryService
     private readonly AzureOpenAIClient _openAIClient;
     private readonly ChatClient _chatClient;
 
-    // Pricing constants (GPT-4 as of Nov 2024)
-    private const decimal INPUT_TOKEN_COST_PER_1K = 0.00040m;   // Cost per 1K input tokens for gpt-4.1-mini
-    private const decimal OUTPUT_TOKEN_COST_PER_1K = 0.00176m;  // $0.06 per 1K output tokens for gpt-4.1-mini
-    private const int CHARS_PER_TOKEN = 4; // Rough estimate: 1 token ≈ 4 characters
+    private const decimal InputTokenCostPer1K = 0.00040m;
+    private const decimal OutputTokenCostPer1K = 0.00176m;
+    private const int CharsPerToken = 4;
 
     public AISummaryService(
         ChronicisDbContext context,
@@ -63,10 +81,8 @@ public class AISummaryService : IAISummaryService
             throw new InvalidOperationException($"Article {articleId} not found");
         }
 
-        // Get backlinks
         var backlinks = await GetBacklinksContentAsync(articleId);
 
-        // Estimate tokens
         var promptTemplate = _configuration["AzureOpenAI:SummaryPromptTemplate"] ?? string.Empty;
         var backlinksContent = string.Join("\n\n", backlinks.Select(b =>
             $"--- From: {b.Title} ---\n{b.Content}"));
@@ -75,13 +91,12 @@ public class AISummaryService : IAISummaryService
             .Replace("{ArticleTitle}", article.Title)
             .Replace("{BacklinkContent}", backlinksContent);
 
-        int estimatedInputTokens = fullPrompt.Length / CHARS_PER_TOKEN;
+        int estimatedInputTokens = fullPrompt.Length / CharsPerToken;
         int estimatedOutputTokens = int.Parse(_configuration["AzureOpenAI:MaxOutputTokens"] ?? "1500");
 
-        // Calculate cost
         decimal estimatedCost =
-            (estimatedInputTokens / 1000m * INPUT_TOKEN_COST_PER_1K) +
-            (estimatedOutputTokens / 1000m * OUTPUT_TOKEN_COST_PER_1K);
+            (estimatedInputTokens / 1000m * InputTokenCostPer1K) +
+            (estimatedOutputTokens / 1000m * OutputTokenCostPer1K);
 
         return new SummaryEstimateDto
         {
@@ -110,7 +125,6 @@ public class AISummaryService : IAISummaryService
                 };
             }
 
-            // Get backlinks
             var backlinks = await GetBacklinksContentAsync(articleId);
 
             if (backlinks.Count == 0)
@@ -122,7 +136,6 @@ public class AISummaryService : IAISummaryService
                 };
             }
 
-            // Build prompt
             var promptTemplate = _configuration["AzureOpenAI:SummaryPromptTemplate"]
                 ?? throw new InvalidOperationException("SummaryPromptTemplate not configured");
 
@@ -133,20 +146,17 @@ public class AISummaryService : IAISummaryService
                 .Replace("{ArticleTitle}", article.Title)
                 .Replace("{BacklinkContent}", backlinksContent);
 
-            // Check token limits
             var maxInputTokens = int.Parse(_configuration["AzureOpenAI:MaxInputTokens"] ?? "8000");
-            if (prompt.Length / CHARS_PER_TOKEN > maxInputTokens)
+            if (prompt.Length / CharsPerToken > maxInputTokens)
             {
                 _logger.LogWarning("Prompt exceeds max input tokens, truncating content");
-                // Truncate backlinks content to fit
-                var maxContentLength = maxInputTokens * CHARS_PER_TOKEN - (promptTemplate.Length - "{BacklinkContent}".Length);
+                var maxContentLength = maxInputTokens * CharsPerToken - (promptTemplate.Length - "{BacklinkContent}".Length);
                 backlinksContent = backlinksContent.Substring(0, Math.Min(backlinksContent.Length, maxContentLength));
                 prompt = promptTemplate
                     .Replace("{ArticleTitle}", article.Title)
                     .Replace("{BacklinkContent}", backlinksContent);
             }
 
-            // Call Azure OpenAI using new 2.1.0 API
             var messages = new List<ChatMessage>
             {
                 new SystemChatMessage("You are a helpful assistant that summarizes D&D campaign notes."),
@@ -159,9 +169,6 @@ public class AISummaryService : IAISummaryService
                 Temperature = 0.7f
             };
 
-            _logger.LogInformation("Generating AI summary for article {ArticleId} with {BacklinkCount} backlinks",
-                articleId, backlinks.Count);
-
             var completion = await _chatClient.CompleteChatAsync(messages, chatOptions);
 
             var summary = completion.Value.Content[0].Text;
@@ -169,20 +176,13 @@ public class AISummaryService : IAISummaryService
             var inputTokens = completion.Value.Usage.InputTokenCount;
             var outputTokens = completion.Value.Usage.OutputTokenCount;
 
-            // Calculate actual cost
             var actualCost =
-                (inputTokens / 1000m * INPUT_TOKEN_COST_PER_1K) +
-                (outputTokens / 1000m * OUTPUT_TOKEN_COST_PER_1K);
+                (inputTokens / 1000m * InputTokenCostPer1K) +
+                (outputTokens / 1000m * OutputTokenCostPer1K);
 
-            // Save summary to database
             article.AISummary = summary;
             article.AISummaryGeneratedDate = DateTime.UtcNow;
             await _context.SaveChangesAsync();
-
-            // Log to Application Insights
-            _logger.LogInformation(
-                "AI Summary generated for article {ArticleId}. Tokens: {Tokens}, Cost: ${Cost:F4}",
-                articleId, tokensUsed, actualCost);
 
             return new SummaryGenerationDto
             {
@@ -206,7 +206,6 @@ public class AISummaryService : IAISummaryService
 
     private async Task<List<(string Title, string Content)>> GetBacklinksContentAsync(int articleId)
     {
-        // Find hashtags that link to this article
         var linkedHashtags = await _context.Hashtags
             .Where(h => h.LinkedArticleId == articleId)
             .Select(h => h.Id)
@@ -217,7 +216,6 @@ public class AISummaryService : IAISummaryService
             return new List<(string, string)>();
         }
 
-        // Find articles that use those hashtags (excluding the source article)
         var backlinks = await _context.ArticleHashtags
             .Include(ah => ah.Article)
             .Where(ah => linkedHashtags.Contains(ah.HashtagId) && ah.ArticleId != articleId)

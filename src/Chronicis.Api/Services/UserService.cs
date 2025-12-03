@@ -32,8 +32,6 @@ public class UserService : IUserService
         if (user == null)
         {
             // Create new user
-            _logger.LogInformation("Creating new user for Auth0 ID: {Auth0UserId}", auth0UserId);
-
             user = new User
             {
                 Auth0UserId = auth0UserId,
@@ -46,9 +44,6 @@ public class UserService : IUserService
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Created user {UserId} for Auth0 ID: {Auth0UserId}",
-                user.Id, auth0UserId);
         }
         else
         {
@@ -80,7 +75,6 @@ public class UserService : IUserService
             if (needsUpdate)
             {
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Updated user {UserId} info", user.Id);
             }
         }
 

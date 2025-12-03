@@ -32,7 +32,6 @@ public class DeleteArticle
         int id)
     {
         var user = context.GetRequiredUser();
-        _logger.LogInformation("DeleteArticle {ArticleId} called by user {UserId}", id, user.Id);
 
         try
         {

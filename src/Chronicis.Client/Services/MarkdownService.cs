@@ -10,9 +10,12 @@ public class MarkdownService
 {
     private readonly MarkdownPipeline _pipeline;
     private readonly HtmlSanitizer _sanitizer;
+    private readonly ILogger<MarkdownService> _logger;
 
-    public MarkdownService()
+    public MarkdownService(ILogger<MarkdownService> logger)
     {
+        _logger = logger;
+
         // Configure Markdig pipeline with extensions
         _pipeline = new MarkdownPipelineBuilder()
             .UseAdvancedExtensions() // Tables, task lists, etc.
@@ -76,7 +79,7 @@ public class MarkdownService
         catch (Exception ex)
         {
             // Log error and return escaped text as fallback
-            Console.Error.WriteLine($"Markdown conversion error: {ex.Message}");
+            _logger.LogError($"Markdown conversion error: {ex.Message}");
             return $"<p>{System.Net.WebUtility.HtmlEncode(markdown)}</p>";
         }
     }

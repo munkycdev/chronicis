@@ -117,7 +117,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Search error: {ex.Message}");
+            Console.Error.WriteLine($"Search error: {ex.Message}");
             _results = null;
         }
         finally

@@ -80,9 +80,6 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
             // Store user in context for functions to access
             context.Items["User"] = user;
             context.Items["UserPrincipal"] = principal;
-
-            _logger.LogInformation("Authenticated user {UserId} ({Email}) for {FunctionName}",
-                user.Id, user.Email, context.FunctionDefinition.Name);
         }
         catch (Exception ex)
         {

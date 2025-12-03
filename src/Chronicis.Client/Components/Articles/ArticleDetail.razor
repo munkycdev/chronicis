@@ -242,15 +242,10 @@ else
 
     private async void OnTreeStateChanged()
     {
-        Console.WriteLine($"!!! OnTreeStateChanged HIT !!!");
-        Console.WriteLine($"=== OnTreeStateChanged triggered ===");
-        Console.WriteLine($"TreeState.SelectedArticleId: {TreeState.SelectedArticleId}");
-
         await InvokeAsync(async () =>
         {
             if (_editorInitialized && _article != null)
             {
-                Console.WriteLine($"Destroying editor for article {_article.Id}");
                 await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{_article.Id}");
             }
 
@@ -259,12 +254,10 @@ else
             // Check if article is selected AND valid (> 0)
             if (TreeState.SelectedArticleId.HasValue && TreeState.SelectedArticleId.Value > 0)
             {
-                Console.WriteLine($"Loading article {TreeState.SelectedArticleId.Value}");
                 await LoadArticleAsync(TreeState.SelectedArticleId.Value);
             }
             else
             {
-                Console.WriteLine("No article selected (or selection cleared), clearing article");
                 _article = null;
                 
                 // Reset page title to default
@@ -431,8 +424,6 @@ else
     {
         if (e.Key == "Enter")
         {
-            Console.WriteLine("Enter pressed in title field, saving...");
-            Console.WriteLine($"Current _editTitle value: '{_editTitle}'");
             await SaveArticle();
         }
     }
@@ -494,10 +485,6 @@ else
             if (titleChanged)
             {
                 var newSlug = CreateSlug(newTitle);
-                Console.WriteLine($"=== TITLE CHANGED ===");
-                Console.WriteLine($"Old: '{originalTitle}' -> New: '{newTitle}'");
-                Console.WriteLine($"New slug: {newSlug}");
-                Console.WriteLine($"Article ID: {_article.Id}");
                 
                 // Update browser page title
                 var pageTitle = string.IsNullOrEmpty(newTitle) 
@@ -506,21 +493,15 @@ else
                 await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(pageTitle)}'");
                 
                 // Refresh tree first
-                Console.WriteLine("Calling TreeState.RefreshTree()");
                 TreeState.RefreshTree();
                 
-                Console.WriteLine("Waiting 500ms for tree to reload...");
                 await Task.Delay(500);
                 
                 // Expand path and select the article
-                Console.WriteLine($"Calling TreeState.ExpandAndSelectArticle({_article.Id})");
                 TreeState.ExpandAndSelectArticle(_article.Id);
                 
                 // Update URL
-                Console.WriteLine($"Navigating to: /article/{newSlug}");
                 Navigation.NavigateTo($"/article/{newSlug}", replace: true);
-                
-                Console.WriteLine("=== TITLE CHANGE COMPLETE ===");
             }
 
             Snackbar.Add("Article saved successfully", Severity.Success);
@@ -608,7 +589,6 @@ else
     [JSInvokable("HandleHashtagLinkRequest")]
     public static async Task HandleHashtagLinkRequest(string hashtagName)
     {
-        Console.WriteLine($"Hashtag link request received for: #{hashtagName}");
         var evt = new CustomEventArgs { HashtagName = hashtagName };
         OnHashtagLinkRequested?.Invoke(evt);
     }
