@@ -321,10 +321,6 @@ else
                     Console.Error.WriteLine($"Article not found for slug: {slug}");
                     Navigation.NavigateTo("/", replace: true);
                 }
-                else
-                {
-                    Console.Error.WriteLine($"Article not found by search for slug: {slug}, but article already selected");
-                }
             }
         }
         catch (Exception ex)

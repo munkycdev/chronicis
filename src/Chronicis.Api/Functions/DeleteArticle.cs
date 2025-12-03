@@ -12,12 +12,12 @@ namespace Chronicis.Api.Functions;
 public class DeleteArticle
 {
     private readonly ChronicisDbContext _context;
-    private readonly ArticleValidationService _validationService;
+    private readonly IArticleValidationService _validationService;
     private readonly ILogger<DeleteArticle> _logger;
 
     public DeleteArticle(
         ChronicisDbContext context,
-        ArticleValidationService validationService,
+        IArticleValidationService validationService,
         ILogger<DeleteArticle> logger)
     {
         _context = context;
