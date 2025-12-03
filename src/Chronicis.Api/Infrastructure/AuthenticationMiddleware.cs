@@ -75,9 +75,12 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
                 _logger.LogWarning("No Authorization header present");
             }
             
+            var debugMsg = httpRequestData.Headers.TryGetValues("Authorization", out var vals) 
+                ? "Token present but validation failed" 
+                : "No auth header";
             _logger.LogWarning("Authentication failed for {FunctionName}: No valid token",
                 context.FunctionDefinition.Name);
-            await SetUnauthorizedResponse(context, httpRequestData, "Authentication required. Please provide a valid Auth0 token.");
+            await SetUnauthorizedResponse(context, httpRequestData, "Authentication required. Please provide a valid Auth0 token.", debugMsg);
             return;
         }
 
@@ -146,13 +149,19 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         return false;
     }
 
-    private static async Task SetUnauthorizedResponse(
+    private async Task SetUnauthorizedResponse(
         FunctionContext context,
         HttpRequestData httpRequestData,
-        string message)
+        string message,
+        string? debugInfo = null)
     {
         var response = httpRequestData.CreateResponse(HttpStatusCode.Unauthorized);
-        await response.WriteAsJsonAsync(new { error = message });
+        await response.WriteAsJsonAsync(new { 
+            error = message,
+            debug = debugInfo,
+            configuredDomain = _auth0Config.Domain,
+            configuredAudience = _auth0Config.Audience
+        });
 
         var invocationResult = context.GetInvocationResult();
         invocationResult.Value = response;
