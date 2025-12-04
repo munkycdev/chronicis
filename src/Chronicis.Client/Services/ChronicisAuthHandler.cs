@@ -5,7 +5,7 @@ namespace Chronicis.Client.Services;
 
 /// <summary>
 /// DelegatingHandler that automatically attaches the Auth0 bearer token to all outgoing requests.
-/// Used by IHttpClientFactory to create pre-configured HttpClient instances.
+/// Uses X-Auth0-Token header to bypass Azure Static Web Apps' auth interception.
 /// </summary>
 public class ChronicisAuthHandler : DelegatingHandler
 {
@@ -20,7 +20,6 @@ public class ChronicisAuthHandler : DelegatingHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        // Request access token with the API audience
         var tokenResult = await _tokenProvider.RequestAccessToken(
             new AccessTokenRequestOptions
             {
@@ -29,6 +28,11 @@ public class ChronicisAuthHandler : DelegatingHandler
 
         if (tokenResult.TryGetToken(out var token))
         {
+            // Use custom header to bypass Azure SWA's auth interception
+            // SWA intercepts and replaces the standard Authorization header
+            request.Headers.Add("X-Auth0-Token", token.Value);
+            
+            // Also set standard header for local development
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Value);
         }
 

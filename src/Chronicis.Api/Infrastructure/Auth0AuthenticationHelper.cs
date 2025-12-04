@@ -33,6 +33,18 @@ public static class Auth0AuthenticationHelper
 
         var authHeader = authHeaderValues.FirstOrDefault();
 
+        // Check for custom header first (used to bypass Azure SWA's auth interception)
+        // Azure SWA intercepts and replaces the standard Authorization header with its own token
+        if (req.Headers.TryGetValues("X-Auth0-Token", out var customTokenValues))
+        {
+            var customToken = customTokenValues.FirstOrDefault();
+            if (!string.IsNullOrEmpty(customToken))
+            {
+                // Use the custom header token instead
+                authHeader = $"Bearer {customToken}";
+            }
+        }
+
         if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
             error = "Auth header doesn't start with Bearer";
