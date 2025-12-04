@@ -179,20 +179,27 @@
     margin-right: var(--chronicis-space-sm);
     margin-top: var(--chronicis-space-xs);
 }
+.chronicis-bullet-list {
+  list-style-type: disc !important;
+  margin-left: 20px !important;
+}
 
-/* ============================================
+.chronicis-bullet-list li p {
+    display:inline;
+}
+
+  /* ============================================
    Code
    ============================================ */
-
-/* Inline code */
-.chronicis-editor-content code {
+  /* Inline code */
+  .chronicis-editor-content code {
     background-color: var(--chronicis-slate-grey);
     color: var(--chronicis-soft-off-white);
     padding: 2px 6px;
     border-radius: 3px;
     font-family: 'Courier New', monospace;
     font-size: 0.9em;
-}
+  }
 
 /* Code blocks */
 .chronicis-editor-content pre {

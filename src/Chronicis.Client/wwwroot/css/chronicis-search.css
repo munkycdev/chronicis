@@ -47,10 +47,6 @@
     color: var(--chronicis-deep-blue-grey);
 }
 
-.global-search-input .mud-input-outlined .mud-input-root::placeholder {
-    color: rgba(244, 240, 234, 0.6);
-}
-
 .global-search-input .mud-input-outlined.mud-input-adorned-start .mud-input-adornment-start {
     color: rgba(244, 240, 234, 0.7);
 }
