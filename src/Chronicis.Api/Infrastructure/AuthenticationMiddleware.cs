@@ -80,7 +80,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
                 : "No auth header";
             _logger.LogWarning("Authentication failed for {FunctionName}: No valid token",
                 context.FunctionDefinition.Name);
-            await SetUnauthorizedResponse(context, httpRequestData, "Authentication required. Please provide a valid Auth0 token.", debugMsg);
+            await SetUnauthorizedResponse(context, httpRequestData, "Authentication required. Please provide a valid Auth0 token. Principal was null.", debugMsg);
             return;
         }
 
@@ -103,7 +103,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during user lookup for Auth0 ID: {Auth0UserId}", principal.Auth0UserId);
-            await SetUnauthorizedResponse(context, httpRequestData, "An error occurred during authentication.");
+            await SetUnauthorizedResponse(context, httpRequestData, $"An error occurred during authentication with {ex.Message}");
             return;
         }
 
