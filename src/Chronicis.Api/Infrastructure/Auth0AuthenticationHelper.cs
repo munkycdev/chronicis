@@ -25,33 +25,34 @@ public static class Auth0AuthenticationHelper
     {
         error = "";
 
-        if (!req.Headers.TryGetValues("Authorization", out var authHeaderValues))
-        {
-            error = "No Authorization header";
-            return null;
-        }
-
-        var authHeader = authHeaderValues.FirstOrDefault();
-
         // Check for custom header first (used to bypass Azure SWA's auth interception)
         // Azure SWA intercepts and replaces the standard Authorization header with its own token
+        string? token = null;
+        
         if (req.Headers.TryGetValues("X-Auth0-Token", out var customTokenValues))
         {
-            var customToken = customTokenValues.FirstOrDefault();
-            if (!string.IsNullOrEmpty(customToken))
-            {
-                // Use the custom header token instead
-                authHeader = $"Bearer {customToken}";
-            }
+            token = customTokenValues.FirstOrDefault();
         }
-
-        if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        
+        // Fall back to standard Authorization header (for local development)
+        if (string.IsNullOrEmpty(token))
         {
-            error = "Auth header doesn't start with Bearer";
-            return null;
-        }
+            if (!req.Headers.TryGetValues("Authorization", out var authHeaderValues))
+            {
+                error = "No Authorization header";
+                return null;
+            }
 
-        var token = authHeader.Substring("Bearer ".Length).Trim();
+            var authHeader = authHeaderValues.FirstOrDefault();
+            
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                error = "Auth header doesn't start with Bearer";
+                return null;
+            }
+
+            token = authHeader.Substring("Bearer ".Length).Trim();
+        }
 
         if (string.IsNullOrEmpty(token))
         {
@@ -118,30 +119,6 @@ public static class Auth0AuthenticationHelper
         try
         {
             var handler = new JwtSecurityTokenHandler();
-            
-            // Log raw token info for debugging
-            var parts = token.Split('.');
-            error = $"Token length: {token.Length}, Parts: {parts.Length}";
-            
-            // Log first 20 chars of token
-            error += $", Token start: {token.Substring(0, Math.Min(50, token.Length))}";
-            
-            if (parts.Length >= 1)
-            {
-                try 
-                {
-                    var headerJson = System.Text.Encoding.UTF8.GetString(
-                        Convert.FromBase64String(PadBase64(parts[0])));
-                    error += $", Raw header: {headerJson}";
-                }
-                catch (Exception ex)
-                {
-                    error += $", Header decode error: {ex.Message}";
-                }
-            }
-            
-            var jwtToken = handler.ReadJwtToken(token);
-            error += $", Parsed alg: {jwtToken.Header.Alg}, kid: {jwtToken.Header.Kid ?? "NULL"}";
 
             if (_configurationManager == null)
             {
@@ -154,9 +131,6 @@ public static class Auth0AuthenticationHelper
 
             var config = _configurationManager.GetConfigurationAsync(CancellationToken.None)
                 .ConfigureAwait(false).GetAwaiter().GetResult();
-            
-            error += $", JWKS keys count: {config.SigningKeys.Count()}";
-            error += $", Keys: [{string.Join(", ", config.SigningKeys.Select(k => k.KeyId))}]";
 
             var validationParameters = new TokenValidationParameters
             {
@@ -172,29 +146,27 @@ public static class Auth0AuthenticationHelper
             };
 
             var result = handler.ValidateToken(token, validationParameters, out var validatedToken);
-            error = "Validation succeeded";
             return result;
         }
         catch (SecurityTokenSignatureKeyNotFoundException ex)
         {
-            error += $", KeyNotFound: {ex.Message}";
+            error = $"KeyNotFound: {ex.Message}";
             return null;
         }
         catch (SecurityTokenValidationException ex)
         {
-            error += $", ValidationError: {ex.Message}";
+            error = $"ValidationError: {ex.Message}";
             return null;
         }
         catch (Exception ex)
         {
-            error += $", Error: {ex.Message}";
+            error = $"Error: {ex.Message}";
             return null;
         }
     }
 
     private static string PadBase64(string base64)
     {
-        // JWT uses base64url encoding, convert to standard base64
         var output = base64.Replace('-', '+').Replace('_', '/');
         switch (output.Length % 4)
         {

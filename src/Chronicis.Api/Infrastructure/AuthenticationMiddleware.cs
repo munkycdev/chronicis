@@ -51,10 +51,6 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
             return;
         }
 
-        // Log config for debugging
-        _logger.LogInformation("Auth0 Config - Domain: {Domain}, Audience: {Audience}", 
-            _auth0Config.Domain, _auth0Config.Audience);
-
         // Validate JWT and get user principal
         var principal = Auth0AuthenticationHelper.GetUserFromTokenAsync(
             httpRequestData,
@@ -64,24 +60,10 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
 
         if (principal == null)
         {
-            // Log the token for debugging (first 50 chars only)
-            if (httpRequestData.Headers.TryGetValues("Authorization", out var authValues))
-            {
-                var authHeader = authValues.FirstOrDefault() ?? "";
-                _logger.LogWarning("Auth header present but validation failed. Header starts with: {HeaderStart}",
-                    authHeader.Length > 50 ? authHeader.Substring(0, 50) + "..." : authHeader);
-            }
-            else
-            {
-                _logger.LogWarning("No Authorization header present");
-            }
-            
-            var debugMsg = httpRequestData.Headers.TryGetValues("Authorization", out var vals) 
-                ? "Token present but validation failed" 
-                : "No auth header";
-            _logger.LogWarning("Authentication failed for {FunctionName}: No valid token",
-                context.FunctionDefinition.Name);
-            await SetUnauthorizedResponse(context, httpRequestData, $"Authentication required. Please provide a valid Auth0 token. Error was: {error}", debugMsg);
+            _logger.LogWarning("Authentication failed for {FunctionName}: {Error}",
+                context.FunctionDefinition.Name, error);
+            await SetUnauthorizedResponse(context, httpRequestData, 
+                "Authentication required. Please provide a valid Auth0 token.");
             return;
         }
 
@@ -104,7 +86,8 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during user lookup for Auth0 ID: {Auth0UserId}", principal.Auth0UserId);
-            await SetUnauthorizedResponse(context, httpRequestData, $"An error occurred during authentication with {ex.Message}");
+            await SetUnauthorizedResponse(context, httpRequestData, 
+                "An error occurred during authentication.");
             return;
         }
 
@@ -150,19 +133,13 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         return false;
     }
 
-    private async Task SetUnauthorizedResponse(
+    private static async Task SetUnauthorizedResponse(
         FunctionContext context,
         HttpRequestData httpRequestData,
-        string message,
-        string? debugInfo = null)
+        string message)
     {
         var response = httpRequestData.CreateResponse(HttpStatusCode.Unauthorized);
-        await response.WriteAsJsonAsync(new { 
-            error = message,
-            debug = debugInfo,
-            configuredDomain = _auth0Config.Domain,
-            configuredAudience = _auth0Config.Audience
-        });
+        await response.WriteAsJsonAsync(new { error = message });
 
         var invocationResult = context.GetInvocationResult();
         invocationResult.Value = response;
