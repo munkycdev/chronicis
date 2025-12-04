@@ -79,6 +79,25 @@ public class ArticleApiService : IArticleApiService
 
     public async Task<ArticleDto?> GetArticleAsync(int id) => await GetArticleDetailAsync(id);
 
+    public async Task<ArticleDto?> GetArticleByPathAsync(string path)
+    {
+        try
+        {
+            var encodedPath = string.Join("/", path.Split('/').Select(Uri.EscapeDataString));
+            return await _http.GetFromJsonAsync<ArticleDto>($"api/articles/by-path/{encodedPath}");
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Article not found at path: {Path}", path);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching article by path: {Path}", path);
+            throw;
+        }
+    }
+
     public async Task<ArticleDto> CreateArticleAsync(ArticleCreateDto dto)
     {
         try

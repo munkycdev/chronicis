@@ -1,4 +1,4 @@
-@page "/article/{ArticleSlug}"
+@page "/article/{*Path}"
 @attribute [Authorize]
 @inject ITreeStateService TreeStateService
 @inject IArticleApiService ArticleApi
@@ -244,7 +244,7 @@ else
 
 @code {
     [Parameter]
-    public string? ArticleSlug { get; set; }
+    public string? Path { get; set; }
 
     private CampaignStats? _stats;
     private List<ArticleDto>? _recentArticles;
@@ -256,10 +256,10 @@ else
     {
         TreeStateService.OnStateChanged += OnTreeStateChanged;
         
-        // If URL has article slug, find and load it
-        if (!string.IsNullOrEmpty(ArticleSlug))
+        // If URL has article path, load it
+        if (!string.IsNullOrEmpty(Path))
         {
-            await LoadArticleBySlug(ArticleSlug);
+            await LoadArticleByPath(Path);
         }
         
         await Task.WhenAll(
@@ -268,95 +268,46 @@ else
         );
     }
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         // Handle URL changes (browser back/forward)
-        // Only load if the slug changed AND it's different from what we have selected
-        if (!string.IsNullOrEmpty(ArticleSlug))
+        if (!string.IsNullOrEmpty(Path))
         {
-            var currentSlug = TreeStateService.SelectedArticleId.HasValue 
-                ? CreateSlug(GetArticleTitleById(TreeStateService.SelectedArticleId.Value))
-                : null;
-            
-            // Only load if slug actually changed (not from our own navigation)
-            if (currentSlug != ArticleSlug)
-            {
-                _ = LoadArticleBySlug(ArticleSlug);
-            }
+            await LoadArticleByPath(Path);
         }
     }
     
-    private string? GetArticleTitleById(int articleId)
-    {
-        // Try to find title in recent articles cache
-        return _recentArticles?.FirstOrDefault(a => a.Id == articleId)?.Title;
-    }
-
-    private async Task LoadArticleBySlug(string slug)
+    private async Task LoadArticleByPath(string path)
     {
         try
         {
-            // Search for article by title
-            var results = await ArticleApi.SearchArticlesAsync(slug);
+            var article = await ArticleApi.GetArticleByPathAsync(path);
             
-            // Try exact match first (case-insensitive)
-            var exactMatch = results.FirstOrDefault(r => 
-                CreateSlug(r.Title) == slug.ToLowerInvariant());
-            
-            if (exactMatch != null)
+            if (article != null)
             {
-                if (exactMatch.Id != TreeStateService.SelectedArticleId)
+                if (article.Id != TreeStateService.SelectedArticleId)
                 {
-                    TreeStateService.NotifySelectionChanged(exactMatch.Id);
+                    TreeStateService.NotifySelectionChanged(article.Id);
                 }
             }
             else
             {
-                // Article not found by search
-                // Only redirect if we don't already have an article selected
-                // (This prevents flickering when the article is already loaded)
+                // Article not found
                 if (!TreeStateService.SelectedArticleId.HasValue)
                 {
-                    Console.Error.WriteLine($"Article not found for slug: {slug}");
+                    Console.Error.WriteLine($"Article not found for path: {path}");
                     Navigation.NavigateTo("/", replace: true);
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading article by slug: {ex.Message}");
-            // Only redirect on error if no article is selected
+            Console.Error.WriteLine($"Error loading article by path: {ex.Message}");
             if (!TreeStateService.SelectedArticleId.HasValue)
             {
                 Navigation.NavigateTo("/", replace: true);
             }
         }
-    }
-
-    private static string CreateSlug(string? title)
-    {
-        if (string.IsNullOrEmpty(title))
-            return "untitled";
-        
-        // Convert to lowercase
-        var slug = title.ToLowerInvariant();
-        
-        // Replace spaces with hyphens
-        slug = slug.Replace(" ", "-");
-        
-        // Remove invalid characters (keep only letters, numbers, hyphens)
-        slug = new string(slug.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
-        
-        // Replace multiple consecutive hyphens with single hyphen
-        while (slug.Contains("--"))
-        {
-            slug = slug.Replace("--", "-");
-        }
-        
-        // Trim hyphens from start and end
-        slug = slug.Trim('-');
-        
-        return string.IsNullOrEmpty(slug) ? "untitled" : slug;
     }
 
     private async Task LoadQuote()
@@ -459,14 +410,14 @@ else
         return count;
     }
 
-    private void NavigateToArticle(int articleId)
+    private async Task NavigateToArticle(int articleId)
     {
-        // Find the article to get its title for the slug
-        var article = _recentArticles?.FirstOrDefault(a => a.Id == articleId);
-        if (article != null)
+        // Get the full article details to build path from breadcrumbs
+        var article = await ArticleApi.GetArticleDetailAsync(articleId);
+        if (article != null && article.Breadcrumbs.Any())
         {
-            var slug = CreateSlug(article.Title);
-            Navigation.NavigateTo($"/article/{slug}");
+            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
+            Navigation.NavigateTo($"/article/{path}");
         }
     }
 

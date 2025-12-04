@@ -1,5 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -29,6 +30,7 @@ namespace Chronicis.Api.Services
                 {
                     Id = a.Id,
                     Title = a.Title,
+                    Slug = a.Slug,
                     ParentId = a.ParentId,
                     HasChildren = _context.Articles.Any(c => c.ParentId == a.Id),
                     ChildCount = _context.Articles.Count(c => c.ParentId == a.Id),
@@ -56,6 +58,7 @@ namespace Chronicis.Api.Services
                 {
                     Id = a.Id,
                     Title = a.Title,
+                    Slug = a.Slug,
                     ParentId = a.ParentId,
                     HasChildren = false, // Not relevant in flat list
                     ChildCount = 0,      // Not relevant in flat list
@@ -83,6 +86,7 @@ namespace Chronicis.Api.Services
                 {
                     Id = a.Id,
                     Title = a.Title,
+                    Slug = a.Slug,
                     ParentId = a.ParentId,
                     HasChildren = _context.Articles.Any(c => c.ParentId == a.Id),
                     ChildCount = _context.Articles.Count(c => c.ParentId == a.Id),
@@ -110,6 +114,7 @@ namespace Chronicis.Api.Services
                 {
                     Id = a.Id,
                     Title = a.Title,
+                    Slug = a.Slug,
                     ParentId = a.ParentId,
                     Body = a.Body ?? string.Empty,
                     CreatedDate = a.CreatedDate,
@@ -243,7 +248,7 @@ namespace Chronicis.Api.Services
                 var article = await _context.Articles
                     .AsNoTracking()
                     .Where(a => a.Id == currentId && a.User.Id == userId)
-                    .Select(a => new { a.Id, a.Title, a.ParentId })
+                    .Select(a => new { a.Id, a.Title, a.Slug, a.ParentId })
                     .FirstOrDefaultAsync();
 
                 if (article == null)
@@ -252,13 +257,104 @@ namespace Chronicis.Api.Services
                 breadcrumbs.Insert(0, new BreadcrumbDto
                 {
                     Id = article.Id,
-                    Title = article.Title ?? "(Untitled)"
+                    Title = article.Title ?? "(Untitled)",
+                    Slug = article.Slug
                 });
 
                 currentId = article.ParentId;
             }
 
             return breadcrumbs;
+        }
+
+        /// <summary>
+        /// Get article by hierarchical path (e.g., "sword-coast/waterdeep/castle-ward").
+        /// Walks down the tree using slugs to find the target article.
+        /// </summary>
+        public async Task<ArticleDto?> GetArticleByPathAsync(string path, int userId)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
+
+            var slugs = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (slugs.Length == 0)
+                return null;
+
+            int? currentParentId = null;
+            int? articleId = null;
+
+            // Walk down the tree using slugs
+            foreach (var slug in slugs)
+            {
+                var article = await _context.Articles
+                    .AsNoTracking()
+                    .Where(a => a.Slug == slug && 
+                                a.ParentId == currentParentId && 
+                                a.UserId == userId)
+                    .Select(a => new { a.Id, a.ParentId })
+                    .FirstOrDefaultAsync();
+
+                if (article == null)
+                {
+                    _logger.LogWarning("Article not found for slug '{Slug}' under parent {ParentId} for user {UserId}", 
+                        slug, currentParentId, userId);
+                    return null;
+                }
+
+                articleId = article.Id;
+                currentParentId = article.Id; // Next iteration looks for children of this article
+            }
+
+            // Found the article, now get full details
+            return articleId.HasValue 
+                ? await GetArticleDetailAsync(articleId.Value, userId) 
+                : null;
+        }
+
+        /// <summary>
+        /// Check if a slug is unique within its parent scope.
+        /// </summary>
+        public async Task<bool> IsSlugUniqueAsync(string slug, int? parentId, int userId, int? excludeArticleId = null)
+        {
+            var query = _context.Articles
+                .AsNoTracking()
+                .Where(a => a.Slug == slug && 
+                            a.ParentId == parentId && 
+                            a.UserId == userId);
+
+            if (excludeArticleId.HasValue)
+            {
+                query = query.Where(a => a.Id != excludeArticleId.Value);
+            }
+
+            return !await query.AnyAsync();
+        }
+
+        /// <summary>
+        /// Generate a unique slug for an article within its parent scope.
+        /// </summary>
+        public async Task<string> GenerateUniqueSlugAsync(string title, int? parentId, int userId, int? excludeArticleId = null)
+        {
+            var baseSlug = SlugGenerator.GenerateSlug(title);
+            
+            // Get all existing slugs in the same parent scope
+            var existingSlugs = await _context.Articles
+                .AsNoTracking()
+                .Where(a => a.ParentId == parentId && a.UserId == userId)
+                .Where(a => !excludeArticleId.HasValue || a.Id != excludeArticleId.Value)
+                .Select(a => a.Slug)
+                .ToHashSetAsync();
+
+            return SlugGenerator.GenerateUniqueSlug(baseSlug, existingSlugs);
+        }
+
+        /// <summary>
+        /// Build the full hierarchical path for an article (e.g., "sword-coast/waterdeep/castle-ward").
+        /// </summary>
+        public async Task<string> BuildArticlePathAsync(int articleId, int userId)
+        {
+            var breadcrumbs = await BuildBreadcrumbsAsync(articleId, userId);
+            return string.Join("/", breadcrumbs.Select(b => b.Slug));
         }
     }
 }

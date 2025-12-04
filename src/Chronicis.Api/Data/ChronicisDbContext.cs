@@ -29,6 +29,11 @@ namespace Chronicis.Api.Data
                 entity.Property(a => a.Title)
                     .HasMaxLength(500);
 
+                // Slug configuration
+                entity.Property(a => a.Slug)
+                    .HasMaxLength(200)
+                    .IsRequired();
+
                 // Self-referencing hierarchy
                 entity.HasOne(a => a.Parent)
                     .WithMany(a => a.Children)
@@ -44,6 +49,19 @@ namespace Chronicis.Api.Data
                 entity.HasIndex(a => a.ParentId);
                 entity.HasIndex(a => a.UserId);
                 entity.HasIndex(a => a.Title);
+                
+                // Unique constraint: Slug must be unique within parent scope
+                // For root articles (ParentId is null)
+                entity.HasIndex(a => a.Slug)
+                    .IsUnique()
+                    .HasFilter("[ParentId] IS NULL")
+                    .HasDatabaseName("IX_Articles_Slug_Root");
+                
+                // For child articles (ParentId is not null)
+                entity.HasIndex(a => new { a.ParentId, a.Slug })
+                    .IsUnique()
+                    .HasFilter("[ParentId] IS NOT NULL")
+                    .HasDatabaseName("IX_Articles_ParentId_Slug");
             });
 
             // User configuration

@@ -4,6 +4,7 @@ using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Utilities;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ public class UpdateArticle
 {
     private readonly ChronicisDbContext _context;
     private readonly IArticleValidationService _validationService;
+    private readonly IArticleService _articleService;
     private readonly IHashtagSyncService _hashtagSync;
     private readonly ILogger<UpdateArticle> _logger;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
@@ -22,11 +24,13 @@ public class UpdateArticle
     public UpdateArticle(
         ChronicisDbContext context,
         IArticleValidationService validationService,
+        IArticleService articleService,
         IHashtagSyncService hashtagSync,
         ILogger<UpdateArticle> logger)
     {
         _context = context;
         _validationService = validationService;
+        _articleService = articleService;
         _hashtagSync = hashtagSync;
         _logger = logger;
     }
@@ -79,6 +83,28 @@ public class UpdateArticle
                 article.EffectiveDate = dto.EffectiveDate.Value;
             }
 
+            // Handle slug update if provided
+            if (!string.IsNullOrWhiteSpace(dto.Slug) && dto.Slug != article.Slug)
+            {
+                // Validate custom slug
+                if (!SlugGenerator.IsValidSlug(dto.Slug))
+                {
+                    var badSlug = req.CreateResponse(HttpStatusCode.BadRequest);
+                    await badSlug.WriteStringAsync("Slug must contain only lowercase letters, numbers, and hyphens");
+                    return badSlug;
+                }
+
+                // Check uniqueness (excluding current article)
+                if (!await _articleService.IsSlugUniqueAsync(dto.Slug, article.ParentId, user.Id, article.Id))
+                {
+                    var duplicateSlug = req.CreateResponse(HttpStatusCode.Conflict);
+                    await duplicateSlug.WriteStringAsync($"An article with slug '{dto.Slug}' already exists in this location");
+                    return duplicateSlug;
+                }
+
+                article.Slug = dto.Slug;
+            }
+
             await _context.SaveChangesAsync();
             await _hashtagSync.SyncHashtagsAsync(article.Id, article.Body);
 
@@ -86,6 +112,7 @@ public class UpdateArticle
             {
                 Id = article.Id,
                 Title = article.Title,
+                Slug = article.Slug,
                 ParentId = article.ParentId,
                 Body = article.Body,
                 CreatedDate = article.CreatedDate,

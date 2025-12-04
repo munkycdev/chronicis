@@ -333,18 +333,23 @@ else
             new BreadcrumbItem("Home", href: "/")
         };
 
-        // Add all ancestors from the API response (already includes current article)
+        // Build hierarchical paths from breadcrumbs
         if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
         {
             for (int i = 0; i < _article.Breadcrumbs.Count; i++)
             {
                 var crumb = _article.Breadcrumbs[i];
                 var isLast = i == _article.Breadcrumbs.Count - 1;
-                var slug = CreateSlug(crumb.Title);
+                
+                // Build path up to this breadcrumb
+                var pathSegments = _article.Breadcrumbs
+                    .Take(i + 1)
+                    .Select(b => b.Slug);
+                var path = string.Join("/", pathSegments);
                 
                 _breadcrumbs.Add(new BreadcrumbItem(
                     crumb.Title,
-                    href: isLast ? null : $"/article/{slug}",
+                    href: isLast ? null : $"/article/{path}",
                     disabled: isLast
                 ));
             }
@@ -472,10 +477,32 @@ else
             var newTitle = _editTitle?.Trim() ?? string.Empty;
             var titleChanged = originalTitle != newTitle;
 
+            string? newSlug = null;
+            
+            // If title changed, ask if user wants to update slug
+            if (titleChanged)
+            {
+                var suggestedSlug = CreateSlug(newTitle);
+                var currentSlug = _article.Slug;
+                
+                // Only prompt if the slug would actually change
+                if (suggestedSlug != currentSlug)
+                {
+                    var confirmMessage = $"Title changed. Update URL slug?\n\nCurrent: {currentSlug}\nSuggested: {suggestedSlug}\n\nWarning: Old links will break if you change the slug.";
+                    var updateSlug = await JSRuntime.InvokeAsync<bool>("confirm", confirmMessage);
+                    
+                    if (updateSlug)
+                    {
+                        newSlug = suggestedSlug;
+                    }
+                }
+            }
+
             // Create update DTO from current state
             var updateDto = new ArticleUpdateDto
             {
                 Title = newTitle,
+                Slug = newSlug, // Only set if user confirmed slug change
                 Body = _editBody,
                 EffectiveDate = _article.EffectiveDate,
                 IconEmoji = _article.IconEmoji
@@ -491,11 +518,9 @@ else
             _hasUnsavedChanges = false;
             _lastSaveTime = "just now";
 
-            // If title changed, update URL and refresh tree
-            if (titleChanged)
+            // If slug actually changed, update URL and refresh tree
+            if (newSlug != null)
             {
-                var newSlug = CreateSlug(newTitle);
-                
                 // Update browser page title
                 var pageTitle = string.IsNullOrEmpty(newTitle) 
                     ? "Untitled - Chronicis" 
@@ -510,8 +535,26 @@ else
                 // Expand path and select the article
                 TreeState.ExpandAndSelectArticle(_article.Id);
                 
-                // Update URL
-                Navigation.NavigateTo($"/article/{newSlug}", replace: true);
+                // Reload article to get updated breadcrumbs with new slug
+                _article = await ArticleApi.GetArticleAsync(_article.Id);
+                
+                // Build full hierarchical path from breadcrumbs
+                if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
+                {
+                    var path = string.Join("/", _article.Breadcrumbs.Select(b => b.Slug));
+                    Navigation.NavigateTo($"/article/{path}", replace: true);
+                }
+            }
+            else if (titleChanged)
+            {
+                // Title changed but slug didn't - still update browser title
+                var pageTitle = string.IsNullOrEmpty(newTitle) 
+                    ? "Untitled - Chronicis" 
+                    : $"{newTitle} - Chronicis";
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(pageTitle)}'");
+                
+                // Refresh tree to show new title
+                TreeState.RefreshTree();
             }
 
             Snackbar.Add("Article saved successfully", Severity.Success);

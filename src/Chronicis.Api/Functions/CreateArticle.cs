@@ -5,6 +5,7 @@ using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
+using Chronicis.Shared.Utilities;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
@@ -18,16 +19,19 @@ public class CreateArticle
 {
     private readonly ChronicisDbContext _context;
     private readonly IArticleValidationService _validationService;
+    private readonly IArticleService _articleService;
     private readonly ILogger<CreateArticle> _logger;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public CreateArticle(
         ChronicisDbContext context,
         IArticleValidationService validationService,
+        IArticleService articleService,
         ILogger<CreateArticle> logger)
     {
         _context = context;
         _validationService = validationService;
+        _articleService = articleService;
         _logger = logger;
     }
 
@@ -60,9 +64,38 @@ public class CreateArticle
                 return validationError;
             }
 
+            // Generate slug (user can provide custom slug or we auto-generate)
+            string slug;
+            if (!string.IsNullOrWhiteSpace(dto.Slug))
+            {
+                // Validate custom slug
+                if (!SlugGenerator.IsValidSlug(dto.Slug))
+                {
+                    var badSlug = req.CreateResponse(HttpStatusCode.BadRequest);
+                    await badSlug.WriteStringAsync("Slug must contain only lowercase letters, numbers, and hyphens");
+                    return badSlug;
+                }
+
+                // Check uniqueness
+                if (!await _articleService.IsSlugUniqueAsync(dto.Slug, dto.ParentId, user.Id))
+                {
+                    var duplicateSlug = req.CreateResponse(HttpStatusCode.Conflict);
+                    await duplicateSlug.WriteStringAsync($"An article with slug '{dto.Slug}' already exists in this location");
+                    return duplicateSlug;
+                }
+
+                slug = dto.Slug;
+            }
+            else
+            {
+                // Auto-generate unique slug from title
+                slug = await _articleService.GenerateUniqueSlugAsync(dto.Title, dto.ParentId, user.Id);
+            }
+
             var article = new Article
             {
                 Title = dto.Title,
+                Slug = slug,
                 ParentId = dto.ParentId,
                 Body = dto.Body,
                 CreatedDate = DateTime.UtcNow,
@@ -81,6 +114,7 @@ public class CreateArticle
             {
                 Id = article.Id,
                 Title = article.Title,
+                Slug = article.Slug,
                 ParentId = article.ParentId,
                 Body = article.Body,
                 CreatedDate = article.CreatedDate,

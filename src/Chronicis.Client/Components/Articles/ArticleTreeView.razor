@@ -456,16 +456,19 @@
         return false;
     }
 
-    private void SelectArticle(ArticleTreeNode node)
+    private async Task SelectArticle(ArticleTreeNode node)
     {
         _selectedNode = node;
 
         TreeState.NotifySelectionChanged(node.Article.Id);
 
-
-        // Navigate to article URL using slug for deep linking
-        var slug = CreateSlug(node.Title);
-        Navigation.NavigateTo($"/article/{slug}");
+        // Get full article details to build hierarchical path
+        var article = await ArticleApi.GetArticleDetailAsync(node.Article.Id);
+        if (article != null && article.Breadcrumbs.Any())
+        {
+            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
+            Navigation.NavigateTo($"/article/{path}");
+        }
 
         // Auto-expand if has children
         if (node.HasChildren && !node.IsExpanded)
@@ -479,32 +482,6 @@
         }
 
         StateHasChanged();
-    }
-
-    private static string CreateSlug(string title)
-    {
-        if (string.IsNullOrEmpty(title) || title == "(Untitled)")
-            return "untitled";
-        
-        // Convert to lowercase
-        var slug = title.ToLowerInvariant();
-        
-        // Replace spaces with hyphens
-        slug = slug.Replace(" ", "-");
-        
-        // Remove invalid characters (keep only letters, numbers, hyphens)
-        slug = new string(slug.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
-        
-        // Replace multiple consecutive hyphens with single hyphen
-        while (slug.Contains("--"))
-        {
-            slug = slug.Replace("--", "-");
-        }
-        
-        // Trim hyphens from start and end
-        slug = slug.Trim('-');
-        
-        return string.IsNullOrEmpty(slug) ? "untitled" : slug;
     }
 
     private string GetNavItemClass(ArticleTreeNode node)

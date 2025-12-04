@@ -8,6 +8,7 @@ public class ArticleDto
 {
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
     public int? ParentId { get; set; }
     public string Body { get; set; } = string.Empty;
     public DateTime CreatedDate { get; set; }
@@ -28,6 +29,7 @@ public class ArticleTreeDto
 {
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
     public int? ParentId { get; set; }
     public bool HasChildren { get; set; }
     public int ChildCount { get; set; } = 0;
@@ -43,6 +45,7 @@ public class ArticleTreeDto
 public class ArticleCreateDto
 {
     public string Title { get; set; } = string.Empty;
+    public string? Slug { get; set; }
     public int? ParentId { get; set; }
     public string Body { get; set; } = string.Empty;
 
@@ -58,6 +61,7 @@ public class ArticleCreateDto
 public class ArticleUpdateDto
 {
     public string Title { get; set; } = string.Empty;
+    public string? Slug { get; set; }
     public string Body { get; set; } = string.Empty;
     public DateTime? EffectiveDate { get; set; }
     public string? IconEmoji { get; set; }
@@ -70,6 +74,7 @@ public class BreadcrumbDto
 {
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
 }
 
 /// <summary>

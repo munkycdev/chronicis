@@ -8,6 +8,7 @@ namespace Chronicis.Client.Services
         Task DeleteArticleAsync(int id);
         Task<ArticleDto?> GetArticleDetailAsync(int id);
         Task<ArticleDto?> GetArticleAsync(int id);
+        Task<ArticleDto?> GetArticleByPathAsync(string path);
         Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId);
         Task<List<ArticleTreeDto>> GetRootArticlesAsync();
         Task<List<ArticleTreeDto>> GetAllArticlesAsync();
