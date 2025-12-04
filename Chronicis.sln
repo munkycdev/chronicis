@@ -17,6 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{3E26473A-4
 		docs\ChronicisPlatformSpec.md.pdf = docs\ChronicisPlatformSpec.md.pdf
 		docs\Chronicis_Implementation_Plan.md = docs\Chronicis_Implementation_Plan.md
 		docs\features-bugs.md = docs\features-bugs.md
+		global.json = global.json
 		docs\logo.png = docs\logo.png
 		docs\ScreenshotDemo.png = docs\ScreenshotDemo.png
 	EndProjectSection
