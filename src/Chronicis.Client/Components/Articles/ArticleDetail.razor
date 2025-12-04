@@ -39,6 +39,13 @@ else
                 height:auto !important;
             }
 
+        /* Scrollable metadata drawer */
+        .metadata-drawer-scrollable {
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
         .mud-input.mud-input-underline:before,
         .mud-input.mud-input-underline:after,
         .mud-input.mud-input-underline:hover:not(.mud-disabled):before,
@@ -161,7 +168,7 @@ else
         <MudDrawerHeader>
             <MudText Typo="Typo.h6">Metadata</MudText>
         </MudDrawerHeader>
-        <MudDrawerContainer>
+        <MudDrawerContainer Class="metadata-drawer-scrollable chronicis-scrollbar-light">
             <MudList T="string">
                 <MudListItem>
                         <MudText Typo="Typo.subtitle1">Article ID</MudText>
