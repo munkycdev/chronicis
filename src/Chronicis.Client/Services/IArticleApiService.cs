@@ -10,6 +10,7 @@ namespace Chronicis.Client.Services
         Task<ArticleDto?> GetArticleAsync(int id);
         Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId);
         Task<List<ArticleTreeDto>> GetRootArticlesAsync();
+        Task<List<ArticleTreeDto>> GetAllArticlesAsync();
         Task<List<ArticleSearchResultDto>> SearchArticlesAsync(string query);
         Task<List<ArticleSearchResultDto>> SearchArticlesByTitleAsync(string query);
         Task<ArticleDto> UpdateArticleAsync(int id, ArticleUpdateDto dto);

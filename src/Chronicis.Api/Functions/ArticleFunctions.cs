@@ -53,6 +53,35 @@ public class ArticleFunctions
     }
 
     /// <summary>
+    /// GET /api/articles/all
+    /// Returns all articles for the current user in a flat list (no hierarchy).
+    /// Useful for dropdowns, linking dialogs, and other scenarios where the full tree isn't needed.
+    /// </summary>
+    [Function("GetAllArticles")]
+    public async Task<HttpResponseData> GetAllArticles(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/all")] HttpRequestData req,
+        FunctionContext context)
+    {
+        var user = context.GetRequiredUser();
+
+        try
+        {
+            var articles = await _articleService.GetAllArticlesAsync(user.Id);
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(articles);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching all articles");
+            var response = req.CreateResponse(HttpStatusCode.InternalServerError);
+            await response.WriteStringAsync("Internal server error");
+            return response;
+        }
+    }
+
+    /// <summary>
     /// GET /api/articles/{id}
     /// Returns detailed information for a specific article including breadcrumbs.
     /// </summary>

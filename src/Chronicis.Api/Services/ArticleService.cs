@@ -44,6 +44,33 @@ namespace Chronicis.Api.Services
         }
 
         /// <summary>
+        /// Get all articles for a user in a flat list (no hierarchy).
+        /// Useful for dropdowns, linking dialogs, etc.
+        /// </summary>
+        public async Task<List<ArticleTreeDto>> GetAllArticlesAsync(int userId)
+        {
+            var articles = await _context.Articles
+                .AsNoTracking()
+                .Where(a => a.User.Id == userId)
+                .Select(a => new ArticleTreeDto
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    ParentId = a.ParentId,
+                    HasChildren = false, // Not relevant in flat list
+                    ChildCount = 0,      // Not relevant in flat list
+                    Children = new List<ArticleTreeDto>(),
+                    CreatedDate = a.CreatedDate,
+                    EffectiveDate = a.EffectiveDate,
+                    IconEmoji = a.IconEmoji
+                })
+                .OrderBy(a => a.Title)
+                .ToListAsync();
+
+            return articles;
+        }
+
+        /// <summary>
         /// Get all child articles of a specific parent.
         /// </summary>
         public async Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId, int userId)

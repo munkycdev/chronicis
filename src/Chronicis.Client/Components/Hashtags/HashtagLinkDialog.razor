@@ -41,9 +41,16 @@
                                      OnClick="@(() => SelectArticle(article))"
                                      Style="@(article.Id == _selectedArticleId ? "background-color: rgba(196, 175, 142, 0.15);" : "")">
                             <div class="d-flex align-center">
-                                <MudIcon Icon="@Icons.Material.Filled.Description" 
-                                         Color="@(article.Id == _selectedArticleId ? Color.Primary : Color.Default)" 
-                                         Class="mr-2" />
+                                @if (!string.IsNullOrEmpty(article.IconEmoji))
+                                {
+                                    <span class="mr-2">@article.IconEmoji</span>
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Description" 
+                                             Color="@(article.Id == _selectedArticleId ? Color.Primary : Color.Default)" 
+                                             Class="mr-2" />
+                                }
                                 <MudText Typo="Typo.body2">
                                     @(string.IsNullOrEmpty(article.Title) ? "(Untitled)" : article.Title)
                                 </MudText>
@@ -121,11 +128,9 @@
 
         try
         {
-            // Get all root articles
-            _allArticles = await ArticleApi.GetRootArticlesAsync();
-            
-            // Flatten the tree for easy searching
-            _filteredArticles = FlattenArticleTree(_allArticles);
+            // Get ALL articles in a flat list (no hierarchy)
+            _allArticles = await ArticleApi.GetAllArticlesAsync();
+            _filteredArticles = _allArticles;
         }
         catch (Exception ex)
         {
@@ -139,33 +144,16 @@
         }
     }
 
-    private List<ArticleTreeDto> FlattenArticleTree(List<ArticleTreeDto> articles)
-    {
-        var flattened = new List<ArticleTreeDto>();
-        
-        foreach (var article in articles)
-        {
-            flattened.Add(article);
-            
-            if (article.Children != null && article.Children.Any())
-            {
-                flattened.AddRange(FlattenArticleTree(article.Children.ToList()));
-            }
-        }
-        
-        return flattened.OrderBy(a => a.Title).ToList();
-    }
-
     private void FilterArticles()
     {
         if (string.IsNullOrEmpty(_searchQuery))
         {
-            _filteredArticles = FlattenArticleTree(_allArticles);
+            _filteredArticles = _allArticles;
         }
         else
         {
             var query = _searchQuery.ToLowerInvariant();
-            _filteredArticles = FlattenArticleTree(_allArticles)
+            _filteredArticles = _allArticles
                 .Where(a => (a.Title ?? string.Empty).ToLowerInvariant().Contains(query))
                 .ToList();
         }

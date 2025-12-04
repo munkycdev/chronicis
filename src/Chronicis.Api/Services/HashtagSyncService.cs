@@ -1,5 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.Models;
+using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
@@ -67,14 +68,26 @@ public class HashtagSyncService : IHashtagSyncService
 
             if (hashtag == null)
             {
+                // Auto-link: Try to find an article with a matching title (slug-normalized)
+                var linkedArticleId = await FindMatchingArticleIdAsync(parsedHashtag.Name);
+
                 hashtag = new Hashtag
                 {
                     Name = parsedHashtag.Name,
-                    LinkedArticleId = null,
+                    LinkedArticleId = linkedArticleId,
                     CreatedDate = DateTime.UtcNow
                 };
                 _context.Hashtags.Add(hashtag);
                 await _context.SaveChangesAsync();
+            }
+            else if (hashtag.LinkedArticleId == null)
+            {
+                // Hashtag exists but isn't linked - try to auto-link it
+                var linkedArticleId = await FindMatchingArticleIdAsync(parsedHashtag.Name);
+                if (linkedArticleId != null)
+                {
+                    hashtag.LinkedArticleId = linkedArticleId;
+                }
             }
 
             var articleHashtag = new ArticleHashtag
@@ -89,5 +102,58 @@ public class HashtagSyncService : IHashtagSyncService
         }
 
         await _context.SaveChangesAsync();
+        
+        // Also check if this article's title should link to any existing unlinked hashtags
+        await LinkHashtagsToArticleByTitleAsync(articleId);
+    }
+
+    /// <summary>
+    /// Attempts to auto-link any unlinked hashtags that match this article's title.
+    /// Called when an article is created or updated.
+    /// </summary>
+    public async Task LinkHashtagsToArticleByTitleAsync(int articleId)
+    {
+        var article = await _context.Articles
+            .FirstOrDefaultAsync(a => a.Id == articleId);
+
+        if (article == null || string.IsNullOrWhiteSpace(article.Title))
+            return;
+
+        var slug = SlugUtility.CreateSlug(article.Title);
+
+        // Find hashtags with this name that aren't linked yet
+        var matchingHashtags = await _context.Hashtags
+            .Where(h => h.Name == slug && h.LinkedArticleId == null)
+            .ToListAsync();
+
+        foreach (var hashtag in matchingHashtags)
+        {
+            hashtag.LinkedArticleId = articleId;
+        }
+
+        if (matchingHashtags.Any())
+        {
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    /// <summary>
+    /// Finds an article whose slug-normalized title matches the hashtag name.
+    /// </summary>
+    private async Task<int?> FindMatchingArticleIdAsync(string hashtagName)
+    {
+        // We need to fetch articles and compare slugs in-memory
+        // because EF Core can't translate SlugUtility.CreateSlug to SQL
+        var articles = await _context.Articles
+            .Where(a => a.Title != null && a.Title != "")
+            .Select(a => new { a.Id, a.Title })
+            .ToListAsync();
+
+        var matchingArticle = articles
+            .FirstOrDefault(a => SlugUtility.CreateSlug(a.Title).Equals(
+                hashtagName, 
+                StringComparison.OrdinalIgnoreCase));
+
+        return matchingArticle?.Id;
     }
 }

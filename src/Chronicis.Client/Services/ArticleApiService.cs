@@ -31,6 +31,20 @@ public class ArticleApiService : IArticleApiService
         }
     }
 
+    public async Task<List<ArticleTreeDto>> GetAllArticlesAsync()
+    {
+        try
+        {
+            var articles = await _http.GetFromJsonAsync<List<ArticleTreeDto>>("api/articles/all");
+            return articles ?? new List<ArticleTreeDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching all articles");
+            throw;
+        }
+    }
+
     public async Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId)
     {
         try
