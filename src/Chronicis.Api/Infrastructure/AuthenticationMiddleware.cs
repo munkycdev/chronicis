@@ -56,10 +56,12 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
             _auth0Config.Domain, _auth0Config.Audience);
 
         // Validate JWT and get user principal
-        var principal = await Auth0AuthenticationHelper.GetUserFromTokenAsync(
+        string error = "";
+        var principal = Auth0AuthenticationHelper.GetUserFromTokenAsync(
             httpRequestData,
             _auth0Config.Domain,
-            _auth0Config.Audience);
+            _auth0Config.Audience,
+            out error);
 
         if (principal == null)
         {
@@ -80,7 +82,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
                 : "No auth header";
             _logger.LogWarning("Authentication failed for {FunctionName}: No valid token",
                 context.FunctionDefinition.Name);
-            await SetUnauthorizedResponse(context, httpRequestData, "Authentication required. Please provide a valid Auth0 token. Principal was null.", debugMsg);
+            await SetUnauthorizedResponse(context, httpRequestData, $"Authentication required. Please provide a valid Auth0 token. Error was: {error}", debugMsg);
             return;
         }
 

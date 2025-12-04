@@ -21,13 +21,16 @@ public static class Auth0AuthenticationHelper
     /// <param name="auth0Domain">Auth0 domain (e.g., "dev-chronicis.us.auth0.com")</param>
     /// <param name="auth0Audience">Auth0 audience (e.g., "https://api.chronicis.app")</param>
     /// <returns>User principal with Auth0 claims, or null if not authenticated or invalid</returns>
-    public static async Task<UserPrincipal?> GetUserFromTokenAsync(
+    public static UserPrincipal? GetUserFromTokenAsync(
         Microsoft.Azure.Functions.Worker.Http.HttpRequestData req,
         string auth0Domain,
-        string auth0Audience)
+        string auth0Audience, out string error)
     {
+        error = "";
+
         if (!req.Headers.TryGetValues("Authorization", out var authHeaderValues))
         {
+            error = "Failed to get auth token";
             return null;
         }
 
@@ -35,6 +38,7 @@ public static class Auth0AuthenticationHelper
 
         if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
+            error = "Auth token doesn't start with Bearer";
             return null;
         }
 
@@ -42,14 +46,16 @@ public static class Auth0AuthenticationHelper
 
         if (string.IsNullOrEmpty(token))
         {
+            error = "Token value is empty";
             return null;
         }
 
         try
         {
-            var claimsPrincipal = await ValidateTokenAsync(token, auth0Domain, auth0Audience);
+            var claimsPrincipal = ValidateTokenAsync(token, auth0Domain, auth0Audience).ConfigureAwait(false).GetAwaiter().GetResult();
             if (claimsPrincipal == null)
             {
+                error = "claimsPrincipal is null";
                 return null;
             }
 
@@ -58,6 +64,7 @@ public static class Auth0AuthenticationHelper
 
             if (string.IsNullOrEmpty(auth0UserId))
             {
+                error = "auth0UserId is null";
                 return null;
             }
 
