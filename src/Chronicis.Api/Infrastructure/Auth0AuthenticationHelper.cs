@@ -109,7 +109,10 @@ public static class Auth0AuthenticationHelper
             
             // Log raw token info for debugging
             var parts = token.Split('.');
-            error = $"Token parts: {parts.Length}";
+            error = $"Token length: {token.Length}, Parts: {parts.Length}";
+            
+            // Log first 20 chars of token
+            error += $", Token start: {token.Substring(0, Math.Min(50, token.Length))}";
             
             if (parts.Length >= 1)
             {

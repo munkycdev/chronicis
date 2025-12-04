@@ -22,13 +22,17 @@ builder.Services.AddOidcAuthentication(options =>
     options.ProviderOptions.ResponseType = "code";
     options.ProviderOptions.RedirectUri = $"{baseUrl}/authentication/login-callback";
     options.ProviderOptions.PostLogoutRedirectUri = baseUrl;
+    
+    // Auth0 requires the audience parameter to issue a proper JWT access token
+    // Without it, Auth0 returns an opaque token that can't be validated
     options.ProviderOptions.AdditionalProviderParameters.Add("audience", "https://api.chronicis.app");
 
     options.ProviderOptions.DefaultScopes.Clear();
     options.ProviderOptions.DefaultScopes.Add("openid");
     options.ProviderOptions.DefaultScopes.Add("profile");
     options.ProviderOptions.DefaultScopes.Add("email");
-});
+})
+.AddAccountClaimsPrincipalFactory<RemoteAuthenticationState, RemoteUserAccount, CustomUserFactory>();
 
 // MudBlazor configuration
 builder.Services.AddMudServices(config =>
@@ -193,3 +197,11 @@ static MudTheme CreateChronicisTheme() => new MudTheme
         Tooltip = 1600
     }
 };
+
+// ============================================
+// CUSTOM USER FACTORY FOR AUTH0
+// ============================================
+public class CustomUserFactory : AccountClaimsPrincipalFactory<RemoteUserAccount>
+{
+    public CustomUserFactory(IAccessTokenProviderAccessor accessor) : base(accessor) { }
+}

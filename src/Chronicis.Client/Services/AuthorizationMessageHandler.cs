@@ -20,7 +20,12 @@ public class AuthorizationMessageHandler : DelegatingHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        var tokenResult = await _tokenProvider.RequestAccessToken();
+        // Request access token with the API audience
+        var tokenResult = await _tokenProvider.RequestAccessToken(
+            new AccessTokenRequestOptions
+            {
+                Scopes = new[] { "openid", "profile", "email" }
+            });
 
         if (tokenResult.TryGetToken(out var token))
         {
