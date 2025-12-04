@@ -52,10 +52,9 @@ public static class Auth0AuthenticationHelper
 
         try
         {
-            var claimsPrincipal = ValidateTokenAsync(token, auth0Domain, auth0Audience).ConfigureAwait(false).GetAwaiter().GetResult();
+            var claimsPrincipal = ValidateTokenAsync(token, auth0Domain, auth0Audience, out error);
             if (claimsPrincipal == null)
             {
-                error = "claimsPrincipal is null";
                 return null;
             }
 
@@ -98,10 +97,11 @@ public static class Auth0AuthenticationHelper
         }
     }
 
-    private static async Task<ClaimsPrincipal?> ValidateTokenAsync(
+    private static ClaimsPrincipal? ValidateTokenAsync(
         string token,
         string auth0Domain,
-        string auth0Audience)
+        string auth0Audience,
+        out string error)
     {
         if (_configurationManager == null)
         {
@@ -112,8 +112,8 @@ public static class Auth0AuthenticationHelper
                 new HttpDocumentRetriever());
         }
 
-        var config = await _configurationManager.GetConfigurationAsync(CancellationToken.None);
-
+        var config = _configurationManager.GetConfigurationAsync(CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
+        error = "Signing Keys : " + config.SigningKeys;
         var validationParameters = new TokenValidationParameters
         {
             ValidIssuer = $"https://{auth0Domain}/",
@@ -130,10 +130,16 @@ public static class Auth0AuthenticationHelper
         {
             var handler = new JwtSecurityTokenHandler();
             var result = handler.ValidateToken(token, validationParameters, out var validatedToken);
+            error += ", Issuer : " + validatedToken.Issuer;
+            error += ", Id : " + validatedToken.Id.ToString();
+            error += ", SigningKey : " + validatedToken.SigningKey;
+            error += ", ValidFrom : " + validatedToken.ValidFrom.ToString();
+            error += ", ValidTo : " + validatedToken.ValidTo.ToString();
             return result;
         }
-        catch
+        catch (Exception ex)
         {
+            error += ", Exception Message : "+ex.Message;
             return null;
         }
     }
