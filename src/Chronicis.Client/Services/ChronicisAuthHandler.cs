@@ -7,11 +7,11 @@ namespace Chronicis.Client.Services;
 /// DelegatingHandler that automatically attaches the Auth0 bearer token to all outgoing requests.
 /// Used by IHttpClientFactory to create pre-configured HttpClient instances.
 /// </summary>
-public class AuthorizationMessageHandler : DelegatingHandler
+public class ChronicisAuthHandler : DelegatingHandler
 {
     private readonly IAccessTokenProvider _tokenProvider;
 
-    public AuthorizationMessageHandler(IAccessTokenProvider tokenProvider)
+    public ChronicisAuthHandler(IAccessTokenProvider tokenProvider)
     {
         _tokenProvider = tokenProvider;
     }

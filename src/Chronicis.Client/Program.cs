@@ -1,6 +1,8 @@
 using Chronicis.Client;
 using Chronicis.Client.Services;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication.Internal;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor;
 using MudBlazor.Services;
@@ -62,14 +64,14 @@ var apiBaseUrl = isAzure
     : (builder.Configuration["ApiBaseUrl"] ?? "http://localhost:7071");
 
 // Register the auth handler
-builder.Services.AddScoped<AuthorizationMessageHandler>();
+builder.Services.AddScoped<ChronicisAuthHandler>();
 
 // Chronicis API client (with auth) - used by all API services
 builder.Services.AddHttpClient("ChronicisApi", client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 })
-.AddHttpMessageHandler<AuthorizationMessageHandler>();
+.AddHttpMessageHandler<ChronicisAuthHandler>();
 
 // Quote service (no auth needed - external API)
 builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
