@@ -56,12 +56,11 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
             _auth0Config.Domain, _auth0Config.Audience);
 
         // Validate JWT and get user principal
-        string error = "";
         var principal = Auth0AuthenticationHelper.GetUserFromTokenAsync(
             httpRequestData,
             _auth0Config.Domain,
             _auth0Config.Audience,
-            out error);
+            out string error);
 
         if (principal == null)
         {

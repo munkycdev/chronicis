@@ -17,20 +17,17 @@ public static class Auth0AuthenticationHelper
     /// <summary>
     /// Extracts and validates user claims from the Authorization header JWT token.
     /// </summary>
-    /// <param name="req">HTTP request with Authorization header</param>
-    /// <param name="auth0Domain">Auth0 domain (e.g., "dev-chronicis.us.auth0.com")</param>
-    /// <param name="auth0Audience">Auth0 audience (e.g., "https://api.chronicis.app")</param>
-    /// <returns>User principal with Auth0 claims, or null if not authenticated or invalid</returns>
     public static UserPrincipal? GetUserFromTokenAsync(
         Microsoft.Azure.Functions.Worker.Http.HttpRequestData req,
         string auth0Domain,
-        string auth0Audience, out string error)
+        string auth0Audience,
+        out string error)
     {
         error = "";
 
         if (!req.Headers.TryGetValues("Authorization", out var authHeaderValues))
         {
-            error = "Failed to get auth token";
+            error = "No Authorization header";
             return null;
         }
 
@@ -38,7 +35,7 @@ public static class Auth0AuthenticationHelper
 
         if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            error = "Auth token doesn't start with Bearer";
+            error = "Auth header doesn't start with Bearer";
             return null;
         }
 
@@ -52,7 +49,7 @@ public static class Auth0AuthenticationHelper
 
         try
         {
-            var claimsPrincipal = ValidateTokenAsync(token, auth0Domain, auth0Audience, out error);
+            var claimsPrincipal = ValidateToken(token, auth0Domain, auth0Audience, out error);
             if (claimsPrincipal == null)
             {
                 return null;
@@ -91,55 +88,75 @@ public static class Auth0AuthenticationHelper
                 AvatarUrl = avatarUrl
             };
         }
-        catch
+        catch (Exception ex)
         {
+            error = $"Exception: {ex.Message}";
             return null;
         }
     }
 
-    private static ClaimsPrincipal? ValidateTokenAsync(
+    private static ClaimsPrincipal? ValidateToken(
         string token,
         string auth0Domain,
         string auth0Audience,
         out string error)
     {
-        if (_configurationManager == null)
-        {
-            var issuer = $"https://{auth0Domain}/";
-            _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
-                $"{issuer}.well-known/openid-configuration",
-                new OpenIdConnectConfigurationRetriever(),
-                new HttpDocumentRetriever());
-        }
-
-        var config = _configurationManager.GetConfigurationAsync(CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
-        error = "Signing Keys : " + config.SigningKeys;
-        var validationParameters = new TokenValidationParameters
-        {
-            ValidIssuer = $"https://{auth0Domain}/",
-            ValidAudiences = new[] { auth0Audience },
-            IssuerSigningKeys = config.SigningKeys,
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ClockSkew = TimeSpan.FromMinutes(5)
-        };
-
+        error = "";
+        
         try
         {
+            // First, let's decode the token header to see what we're dealing with
             var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
+            
+            error = $"Token alg: {jwtToken.Header.Alg}, kid: {jwtToken.Header.Kid ?? "NULL"}";
+
+            if (_configurationManager == null)
+            {
+                var issuer = $"https://{auth0Domain}/";
+                _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
+                    $"{issuer}.well-known/openid-configuration",
+                    new OpenIdConnectConfigurationRetriever(),
+                    new HttpDocumentRetriever());
+            }
+
+            var config = _configurationManager.GetConfigurationAsync(CancellationToken.None)
+                .ConfigureAwait(false).GetAwaiter().GetResult();
+            
+            error += $", JWKS keys count: {config.SigningKeys.Count()}";
+            error += $", Keys: [{string.Join(", ", config.SigningKeys.Select(k => k.KeyId))}]";
+
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidIssuer = $"https://{auth0Domain}/",
+                ValidAudiences = new[] { auth0Audience },
+                IssuerSigningKeys = config.SigningKeys,
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ClockSkew = TimeSpan.FromMinutes(5),
+                // Try all keys if kid is missing
+                TryAllIssuerSigningKeys = true
+            };
+
             var result = handler.ValidateToken(token, validationParameters, out var validatedToken);
-            error += ", Issuer : " + validatedToken.Issuer;
-            error += ", Id : " + validatedToken.Id.ToString();
-            error += ", SigningKey : " + validatedToken.SigningKey;
-            error += ", ValidFrom : " + validatedToken.ValidFrom.ToString();
-            error += ", ValidTo : " + validatedToken.ValidTo.ToString();
+            error = "Validation succeeded";
             return result;
+        }
+        catch (SecurityTokenSignatureKeyNotFoundException ex)
+        {
+            error += $", KeyNotFound: {ex.Message}";
+            return null;
+        }
+        catch (SecurityTokenValidationException ex)
+        {
+            error += $", ValidationError: {ex.Message}";
+            return null;
         }
         catch (Exception ex)
         {
-            error += ", Exception Message : "+ex.Message;
+            error += $", Error: {ex.Message}";
             return null;
         }
     }
