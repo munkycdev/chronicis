@@ -113,6 +113,13 @@ builder.Services.AddScoped<IAISummaryApiService>(sp =>
     return new AISummaryApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
+builder.Services.AddScoped<IAutoHashtagApiService>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var logger = sp.GetRequiredService<ILogger<AutoHashtagApiService>>();
+    return new AutoHashtagApiService(factory.CreateClient("ChronicisApi"), logger);
+});
+
 // State & Auth services
 builder.Services.AddScoped<ITreeStateService, TreeStateService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

@@ -31,14 +31,18 @@
 
 .backlinks-empty {
     padding: var(--chronicis-space-lg) var(--chronicis-space-md);
-    text-align: center;
 }
 
-.backlinks-list {
+  .backlinks-empty h6 {
+      font-size:0.8rem;
+      margin-bottom:8px;
+  }
+
+  .backlinks-list {
     flex: 1;
     overflow-y: auto;
     padding: var(--chronicis-space-sm);
-}
+  }
 
 /* Use light scrollbar variant */
 .backlinks-list::-webkit-scrollbar-track {

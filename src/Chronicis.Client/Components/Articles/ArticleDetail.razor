@@ -38,6 +38,9 @@ else
             .metadata-drawer.mud-drawer-persistent {
                 height:auto !important;
             }
+            .metadata-drawer p {
+                font-size: 0.8rem;
+            }
 
         /* Scrollable metadata drawer */
         .metadata-drawer-scrollable {
@@ -57,6 +60,10 @@ else
         .chronicis-editor-content {
             border: solid 1px #c7c7c4;
             border-radius: 4px;
+        }
+
+        .chronicis-article-title .mud-input {
+            padding-left:8px;
         }
     </style>
 
@@ -164,8 +171,11 @@ else
                Variant="@DrawerVariant.Persistent"
                ClipMode="@DrawerClipMode.Always"
                Class="metadata-drawer">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6">Metadata</MudText>
+        <MudDrawerHeader Class="backlinks-header">
+            <MudText Typo="Typo.h6" Class="backlinks-title">
+                <MudIcon Icon="@Icons.Material.Filled.IntegrationInstructions" Size="Size.Small" />
+                Metadata
+            </MudText>
         </MudDrawerHeader>
         <MudDrawerContainer Class="metadata-drawer-scrollable chronicis-scrollbar-light">
             <MudList T="string">
@@ -189,12 +199,6 @@ else
                         <MudText Typo="Typo.subtitle1">Modified Date</MudText>
                         <MudText Typo="Typo.body2">
                             @_article.ModifiedDate?.ToString("MMMM d, yyyy 'at' h:mm tt")
-                        </MudText>
-                </MudListItem>
-                <MudListItem>
-                        <MudText Typo="Typo.subtitle1">Icon Emoji</MudText>
-                        <MudText Typo="Typo.body2">
-                            @(_article.IconEmoji ?? "(None)")
                         </MudText>
                 </MudListItem>
             </MudList>

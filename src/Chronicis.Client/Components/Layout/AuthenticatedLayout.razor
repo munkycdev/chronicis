@@ -35,10 +35,16 @@
                       Immediate="true"
                       @onkeydown="OnGlobalSearchKeyDown" />
 
-        <MudIconButton Icon="@Icons.Material.Filled.Search"
-                       Color="Color.Inherit"
-                       OnClick="ExecuteGlobalSearch"
-                       Class="ml-2" />
+        <MudMenu Icon="@Icons.Material.Filled.Settings"
+                 Color="Color.Inherit"
+                 AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight">
+            <ChildContent>
+                <div style="padding: 12px 16px;">
+                    <MudMenuItem Href="/tools/auto-hashtag" Style="color:var(--chronicis-primary);">Auto Hashtag</MudMenuItem>
+                </div>
+            </ChildContent>
+        </MudMenu>
 
         <MudMenu Icon="@Icons.Material.Filled.AccountCircle"
                  Color="Color.Inherit"
@@ -51,13 +57,14 @@
                         <MudAvatar Size="Size.Medium" Image="@_currentUser.AvatarUrl" Style="margin-bottom: 8px;" />
                     }
                     <div style="margin-top: 8px;">
-                        <div style="font-weight: 600; color: #C4AF8E;">@_currentUser?.DisplayName</div>
-                        <div style="font-size: 0.85rem; color: #D9C9A7; opacity: 0.8;">@_currentUser?.Email</div>
+                        <div style="font-weight: 600;">@_currentUser?.DisplayName</div>
+                        <div style="font-size: 0.85rem; opacity: 0.8;">@_currentUser?.Email</div>
                     </div>
                 </div>
                 <MudDivider />
                 <MudMenuItem Icon="@Icons.Material.Filled.Logout"
-                             Href="authentication/logout">
+                    IconColor="Color.Primary"
+                    Href="authentication/logout">
                     Logout
                 </MudMenuItem>
             </ChildContent>

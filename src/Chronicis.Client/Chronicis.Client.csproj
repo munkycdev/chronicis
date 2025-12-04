@@ -10,6 +10,8 @@
 		<Content Remove="Components\Articles\ArticleTreeView-Simple.razor" />
 		<Content Remove="Components\Search\SearchResultCard.razor" />
 		<Content Remove="Pages\Home.razor" />
+		<Content Remove="wwwroot\favicon.ico" />
+		<Content Remove="wwwroot\images\logo.png" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -33,6 +35,15 @@
 
 	<ItemGroup>
 	  <None Include="Components\Articles\SearchResultCard.razor" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Resource Include="wwwroot\favicon.ico">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Resource>
+	  <Resource Include="wwwroot\images\logo.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Resource>
 	</ItemGroup>
 
 </Project>

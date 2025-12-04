@@ -24,10 +24,13 @@
     animation: chronicis-glow-pulse 20s linear infinite;
 }
 
+.chronicis-hero h6 {
+    color: var(--chronicis-secondary);
+}
 /* Stat Cards */
 .chronicis-stat-card {
-    transition: all var(--chronicis-transition-normal);
-    border: 1px solid rgba(196, 175, 142, 0.2);
+  transition: all var(--chronicis-transition-normal);
+  border: 1px solid rgba(196, 175, 142, 0.2);
 }
 
 .chronicis-stat-card:hover {
@@ -65,9 +68,18 @@
     background-color: rgba(196, 175, 142, 0.05);
 }
 
+.chronicis-welcome-page h5,
+.chronicis-welcome-page h5 {
+  color: var(--chronicis-primary);
+}
+
+.chronicis-welcome-page .mud-button-outlined.mud-button-outlined-primary {
+  border-color: var(--chronicis-primary);
+  color: var(--chronicis-primary);
+}
 /* Tips Card */
 .chronicis-welcome-page .mud-divider {
-    opacity: 0.3;
+  opacity: 0.3;
 }
 
 /* Loading Animation */

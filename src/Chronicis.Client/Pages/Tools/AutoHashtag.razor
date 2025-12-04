@@ -1,0 +1,285 @@
+@page "/tools/auto-hashtag"
+@attribute [Authorize]
+@inject IAutoHashtagApiService AutoHashtagApi
+@inject ISnackbar Snackbar
+
+<PageTitle>Auto-Hashtag Tool - Chronicis</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Elevation="2" Class="pa-6">
+        <!-- Header -->
+        <div class="mb-6">
+            <MudText Typo="Typo.h4" GutterBottom="true">
+                <MudIcon Icon="@Icons.Material.Filled.Tag" Class="mr-2" />
+                Auto-Hashtag Tool
+            </MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary">
+                Automatically find and insert hashtags when article titles are referenced in your notes.
+            </MudText>
+        </div>
+
+        <MudDivider Class="mb-6" />
+
+        @if (!_hasPreviewedYet)
+        {
+            <!-- Initial State: Explanation -->
+            <MudAlert Severity="Severity.Info" Class="mb-4">
+                <MudText Typo="Typo.body2">
+                    This tool will scan all your articles and automatically insert hashtags when it finds references to other article titles.
+                </MudText>
+                <MudText Typo="Typo.body2" Class="mt-2">
+                    <strong>How it works:</strong>
+                </MudText>
+                <ul style="margin: 8px 0; padding-left: 20px;">
+                    <li>Finds whole-word matches of article titles</li>
+                    <li>Case-insensitive matching</li>
+                    <li>Skips titles shorter than 3 characters</li>
+                    <li>Won't add hashtags if already present</li>
+                    <li>Won't modify code blocks or existing links</li>
+                </ul>
+            </MudAlert>
+
+            <div class="d-flex justify-center mt-6">
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           Size="Size.Large"
+                           OnClick="PreviewChanges"
+                           Disabled="_isLoading"
+                           StartIcon="@Icons.Material.Filled.Preview">
+                    @if (_isLoading)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Scanning Articles...</span>
+                    }
+                    else
+                    {
+                        <span>Preview Changes</span>
+                    }
+                </MudButton>
+            </div>
+        }
+        else if (_previewResults != null)
+        {
+            <!-- Preview Results -->
+            <div class="mb-4">
+                <MudAlert Severity="Severity.Success">
+                    <MudText Typo="Typo.body1">
+                        <strong>Scan Complete!</strong> Found <strong>@_previewResults.TotalMatchesFound</strong> potential hashtags across <strong>@_previewResults.Changes.Count</strong> articles.
+                    </MudText>
+                </MudAlert>
+            </div>
+
+            @if (_previewResults.Changes.Any())
+            {
+                <!-- Selection Tools -->
+                <div class="d-flex justify-space-between align-center mb-4">
+                    <div>
+                        <MudButton OnClick="SelectAll" 
+                                   Variant="Variant.Text" 
+                                   Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.CheckBox">
+                            Select All
+                        </MudButton>
+                        <MudButton OnClick="SelectNone" 
+                                   Variant="Variant.Text" 
+                                   Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.CheckBoxOutlineBlank">
+                            Select None
+                        </MudButton>
+                    </div>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        @_selectedArticles.Count of @_previewResults.Changes.Count selected
+                    </MudText>
+                </div>
+
+                <!-- Preview List -->
+                <div style="max-height: 600px; overflow-y: auto;" class="mb-4">
+                    @foreach (var change in _previewResults.Changes)
+                    {
+                        <MudCard Class="mb-3">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <div class="d-flex align-center">
+                                        <MudCheckBox T="bool" 
+                                                     Checked="@_selectedArticles.Contains(change.ArticleId)"
+                                                     CheckedChanged="@((bool val) => ToggleSelection(change.ArticleId, val))"
+                                                     Color="Color.Primary" />
+                                        <MudText Typo="Typo.h6">@change.ArticleTitle</MudText>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="ml-2">
+                                            @change.MatchesFound @(change.MatchesFound == 1 ? "match" : "matches")
+                                        </MudChip>
+                                    </div>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Matched titles:</MudText>
+                                <div class="mb-3">
+                                    @foreach (var title in change.MatchedTitles)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@title</MudChip>
+                                    }
+                                </div>
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Preview:</MudText>
+                                <div class="preview-body">
+                                    @((MarkupString)change.PreviewBody.Replace("<mark>", "<mark style='background-color: #FFF9C4; padding: 2px 4px;'>"))
+                                </div>
+                            </MudCardContent>
+                        </MudCard>
+                    }
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-space-between">
+                    <MudButton Variant="Variant.Outlined" 
+                               OnClick="Cancel"
+                               StartIcon="@Icons.Material.Filled.Cancel">
+                        Cancel
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               OnClick="ApplyChanges"
+                               Disabled="_isApplying || _selectedArticles.Count == 0"
+                               StartIcon="@Icons.Material.Filled.Check">
+                        @if (_isApplying)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Applying Changes...</span>
+                        }
+                        else
+                        {
+                            <span>Apply to @_selectedArticles.Count @(_selectedArticles.Count == 1 ? "Article" : "Articles")</span>
+                        }
+                    </MudButton>
+                </div>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">
+                    No hashtag opportunities found. Your articles either already have hashtags or don't reference other article titles.
+                </MudAlert>
+                <div class="d-flex justify-center mt-4">
+                    <MudButton Variant="Variant.Text" OnClick="Reset">Try Again</MudButton>
+                </div>
+            }
+        }
+        else if (_applyResults != null)
+        {
+            <!-- Success State -->
+            <MudAlert Severity="Severity.Success" Class="mb-4">
+                <MudText Typo="Typo.h6" GutterBottom="true">✓ Changes Applied Successfully!</MudText>
+                <MudText Typo="Typo.body1">
+                    Added <strong>@_applyResults.TotalMatchesFound</strong> hashtags across <strong>@_applyResults.Changes.Count</strong> articles.
+                </MudText>
+            </MudAlert>
+            
+            <div class="d-flex justify-center gap-3">
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           Href="/dashboard"
+                           StartIcon="@Icons.Material.Filled.Home">
+                    Back to Dashboard
+                </MudButton>
+                <MudButton Variant="Variant.Text" 
+                           OnClick="Reset"
+                           StartIcon="@Icons.Material.Filled.Refresh">
+                    Run Again
+                </MudButton>
+            </div>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool _isLoading = false;
+    private bool _isApplying = false;
+    private bool _hasPreviewedYet = false;
+    private AutoHashtagResponse? _previewResults;
+    private AutoHashtagResponse? _applyResults;
+    private HashSet<int> _selectedArticles = new();
+
+    private async Task PreviewChanges()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _previewResults = await AutoHashtagApi.PreviewAutoHashtagAsync();
+            _hasPreviewedYet = true;
+
+            // Select all by default
+            _selectedArticles = _previewResults.Changes.Select(c => c.ArticleId).ToHashSet();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error previewing changes: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ApplyChanges()
+    {
+        if (!_selectedArticles.Any()) return;
+
+        _isApplying = true;
+        StateHasChanged();
+
+        try
+        {
+            _applyResults = await AutoHashtagApi.ApplyAutoHashtagAsync(_selectedArticles.ToList());
+            Snackbar.Add($"Successfully added hashtags to {_applyResults.Changes.Count} articles!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error applying changes: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isApplying = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleSelection(int articleId, bool isSelected)
+    {
+        if (isSelected)
+            _selectedArticles.Add(articleId);
+        else
+            _selectedArticles.Remove(articleId);
+        
+        StateHasChanged();
+    }
+
+    private void SelectAll()
+    {
+        if (_previewResults != null)
+        {
+            _selectedArticles = _previewResults.Changes.Select(c => c.ArticleId).ToHashSet();
+            StateHasChanged();
+        }
+    }
+
+    private void SelectNone()
+    {
+        _selectedArticles.Clear();
+        StateHasChanged();
+    }
+
+    private void Cancel()
+    {
+        Reset();
+    }
+
+    private void Reset()
+    {
+        _hasPreviewedYet = false;
+        _previewResults = null;
+        _applyResults = null;
+        _selectedArticles.Clear();
+        StateHasChanged();
+    }
+}

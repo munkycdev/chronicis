@@ -392,11 +392,11 @@
 }
 
 .section-subtitle {
-    font-size: 1.1rem;
-    color: var(--chronicis-slate-grey);
-    line-height: 1.7;
-    max-width: 700px;
-    margin: 0;
+  font-family: var(--chronicis-font-heading);
+  font-size: 1.1rem;
+  color: var(--chronicis-charcoal);
+  margin: 0 0 var(--chronicis-space-md) 0;
+  font-weight: 400;
 }
 
 /* Problem Section */
@@ -440,12 +440,12 @@
     color: var(--chronicis-soft-off-white);
 }
 
-.feature-highlight h4 {
-    color: var(--chronicis-beige-gold);
-}
+  .feature-highlight h4 {
+    color: var(--chronicis-soft-off-white) !important;
+  }
 
 .feature-highlight p {
-    color: var(--chronicis-soft-off-white);
+    color: var(--chronicis-soft-off-white) !important;
     opacity: 0.9;
 }
 

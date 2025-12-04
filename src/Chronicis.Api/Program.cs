@@ -43,6 +43,7 @@ var host = new HostBuilder()
         services.AddScoped<IHashtagParser, HashtagParser>();
         services.AddScoped<IHashtagSyncService, HashtagSyncService>();
         services.AddScoped<IAISummaryService, AISummaryService>();
+        services.AddScoped<IAutoHashtagService, AutoHashtagService>();
         services.AddScoped<IUserService, UserService>();
     })
     .Build();

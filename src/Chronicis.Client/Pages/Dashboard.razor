@@ -20,10 +20,9 @@
             <MudButton Variant="Variant.Filled"
                         Color="Color.Primary"
                         Size="Size.Large"
-                        StartIcon="@Icons.Material.Filled.Add"
                         OnClick="CreateFirstArticle"
                         Class="mt-2">
-                Start Your First Article
+                + Create a New World
             </MudButton>
         </div>
     </MudPaper>
@@ -34,30 +33,30 @@
         <MudGrid Class="mb-6">
             <MudItem xs="12" sm="6" md="3">
                 <MudPaper Elevation="2" Class="pa-4 text-center chronicis-stat-card">
-                    <div style="font-size: 2.5rem; color: #C4AF8E;">📚</div>
+                    <div style="font-size: 2.5rem;">📚</div>
                     <MudText Typo="Typo.h4" Class="mt-2">@_stats.TotalArticles</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Total Articles</MudText>
+                    <MudText Typo="Typo.body2">Total Articles</MudText>
                 </MudPaper>
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
                 <MudPaper Elevation="2" Class="pa-4 text-center chronicis-stat-card">
-                    <div style="font-size: 2.5rem; color: #C4AF8E;">🗂️</div>
+                    <div style="font-size: 2.5rem;">🗂️</div>
                     <MudText Typo="Typo.h4" Class="mt-2">@_stats.RootArticles</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Top-Level Topics</MudText>
+                    <MudText Typo="Typo.body2">Top-Level Topics</MudText>
                 </MudPaper>
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
                 <MudPaper Elevation="2" Class="pa-4 text-center chronicis-stat-card">
-                    <div style="font-size: 2.5rem; color: #C4AF8E;">✍️</div>
+                    <div style="font-size: 2.5rem;">✍️</div>
                     <MudText Typo="Typo.h4" Class="mt-2">@_stats.RecentlyModified</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Edited This Week</MudText>
+                    <MudText Typo="Typo.body2">Edited This Week</MudText>
                 </MudPaper>
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
                 <MudPaper Elevation="2" Class="pa-4 text-center chronicis-stat-card">
-                    <div style="font-size: 2.5rem; color: #C4AF8E;">🎲</div>
+                    <div style="font-size: 2.5rem;">🎲</div>
                     <MudText Typo="Typo.h4" Class="mt-2">@_stats.DaysSinceStart</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Days Chronicling</MudText>
+                    <MudText Typo="Typo.body2">Days Chronicling</MudText>
                 </MudPaper>
             </MudItem>
         </MudGrid>
@@ -69,17 +68,9 @@
         <MudItem xs="12" md="8">
             <MudPaper Elevation="2" Class="pa-6">
                 <div class="d-flex align-center justify-space-between mb-4">
-                    <MudText Typo="Typo.h5" Style="color: #C4AF8E;">
+                    <MudText Typo="Typo.h5">
                         📜 Recent Articles
                     </MudText>
-                    @if (_recentArticles?.Any() ?? false)
-                    {
-                        <MudButton Variant="Variant.Text"
-                                    Color="Color.Primary"
-                                    Size="Size.Small">
-                            View All
-                        </MudButton>
-                    }
                 </div>
 
                 @if (_isLoadingRecent)
@@ -88,10 +79,10 @@
                         <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" />
                     </div>
                 }
-                else if (_recentArticles?.Any() ?? false)
+                else if (_allArticles?.Any() ?? false)
                 {
                     <MudList T="string">
-                        @foreach (var article in _recentArticles)
+                        @foreach (var article in _allArticles.Take(7))
                         {
                             <MudListItem T="string" OnClick="@(() => NavigateToArticle(article.Id))">
                                 <div class="d-flex align-center">
@@ -102,8 +93,8 @@
                                         <MudText Typo="Typo.body1">
                                             @(string.IsNullOrEmpty(article.Title) ? "(Untitled)" : article.Title)
                                         </MudText>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                            Modified @FormatRelativeTime(article.ModifiedDate ?? article.CreatedDate)
+                                        <MudText Typo="Typo.caption">
+                                            Modified @FormatRelativeTime(article.CreatedDate)
                                         </MudText>
                                     </div>
                                     <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
@@ -129,7 +120,7 @@
         <MudItem xs="12" md="4">
             <!-- Quick Actions -->
             <MudPaper Elevation="2" Class="pa-6 mb-4">
-                <MudText Typo="Typo.h6" Class="mb-3" Style="color: #C4AF8E;">
+                <MudText Typo="Typo.h6" Class="mb-3">
                     ⚡ Quick Actions
                 </MudText>
                 <MudStack Spacing="2">
@@ -166,7 +157,7 @@
 
             <!-- Tips Card -->
             <MudPaper Elevation="2" Class="pa-6" Style="background: linear-gradient(135deg, rgba(196, 175, 142, 0.1) 0%, rgba(196, 175, 142, 0.05) 100%);">
-                <MudText Typo="Typo.h6" Class="mb-3" Style="color: #C4AF8E;">
+                <MudText Typo="Typo.h6" Class="mb-3">
                     💡 Pro Tips
                 </MudText>
                 <MudStack Spacing="3">
@@ -174,7 +165,7 @@
                         <MudText Typo="Typo.body2" Class="mb-1">
                             <strong>Search Tree:</strong>
                         </MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        <MudText Typo="Typo.caption">
                             Use the search box in the sidebar to filter articles by title
                         </MudText>
                     </div>
@@ -183,7 +174,7 @@
                         <MudText Typo="Typo.body2" Class="mb-1">
                             <strong>Organize with Hierarchy:</strong>
                         </MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        <MudText Typo="Typo.caption">
                             Use the three-dot menu to add child articles and build your knowledge tree
                         </MudText>
                     </div>
@@ -192,7 +183,7 @@
                         <MudText Typo="Typo.body2" Class="mb-1">
                             <strong>Auto-Save:</strong>
                         </MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        <MudText Typo="Typo.caption">
                             Your work saves automatically as you type—no need to click Save!
                         </MudText>
                     </div>
@@ -212,7 +203,7 @@
             <MudText Typo="Typo.body1" Style="font-style: italic; color: #3A4750;">
                 "@_quote.Content"
             </MudText>
-            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+            <MudText Typo="Typo.caption" Class="mt-2">
                 — @_quote.Author
             </MudText>
             <MudTooltip Text="Get a new quote">
@@ -232,7 +223,7 @@
     public string? ArticleSlug { get; set; }
 
     private CampaignStats? _stats;
-    private List<ArticleDto>? _recentArticles;
+    private List<ArticleTreeDto>? _allArticles;
     private bool _isLoadingRecent = true;
     private Quote? _quote;
     private bool _loadingQuote = true;
@@ -274,7 +265,7 @@
     private string? GetArticleTitleById(int articleId)
     {
         // Try to find title in recent articles cache
-        return _recentArticles?.FirstOrDefault(a => a.Id == articleId)?.Title;
+        return _allArticles?.FirstOrDefault(a => a.Id == articleId)?.Title;
     }
 
     private async Task LoadArticleBySlug(string slug)
@@ -378,18 +369,17 @@
         try
         {
             // Load recent articles (top 5 by modified date)
-            var allArticles = await ArticleApi.GetRootArticlesAsync();
-            _recentArticles = await GetRecentArticlesRecursive(allArticles);
+            _allArticles = await ArticleApi.GetAllArticlesAsync();
 
             // Calculate stats
             _stats = new CampaignStats
             {
-                TotalArticles = CountTotalArticles(allArticles),
-                RootArticles = allArticles.Count,
-                RecentlyModified = _recentArticles.Count(a =>
-                    (a.ModifiedDate ?? a.CreatedDate) > DateTime.Now.AddDays(-7)),
-                DaysSinceStart = allArticles.Any()
-                    ? (int)(DateTime.Now - allArticles.Min(a => a.CreatedDate)).TotalDays
+                TotalArticles = CountTotalArticles(_allArticles),
+                RootArticles = _allArticles.Count(a => !a.ParentId.HasValue),
+                RecentlyModified = _allArticles.Count(a =>
+                    (a.CreatedDate) > DateTime.Now.AddDays(-7)),
+                DaysSinceStart = _allArticles.Any()
+                    ? (int)(DateTime.Now - _allArticles.Min(a => a.CreatedDate)).TotalDays
                     : 0
             };
         }
@@ -402,33 +392,6 @@
             _isLoadingRecent = false;
             StateHasChanged();
         }
-    }
-
-    private async Task<List<ArticleDto>> GetRecentArticlesRecursive(List<ArticleTreeDto> articles, int maxResults = 5)
-    {
-        var allArticles = new List<ArticleDto>();
-
-        foreach (var article in articles)
-        {
-            // Convert TreeDto to full Dto
-            var fullArticle = await ArticleApi.GetArticleAsync(article.Id);
-            if (fullArticle != null)
-            {
-                allArticles.Add(fullArticle);
-            }
-
-            // Recursively get children
-            if (article.HasChildren && article.Children != null)
-            {
-                var childArticles = await GetRecentArticlesRecursive(article.Children.ToList(), maxResults);
-                allArticles.AddRange(childArticles);
-            }
-        }
-
-        return allArticles
-            .OrderByDescending(a => a.ModifiedDate ?? a.CreatedDate)
-            .Take(maxResults)
-            .ToList();
     }
 
     private int CountTotalArticles(List<ArticleTreeDto> articles)
@@ -447,7 +410,7 @@
     private void NavigateToArticle(int articleId)
     {
         // Find the article to get its title for the slug
-        var article = _recentArticles?.FirstOrDefault(a => a.Id == articleId);
+        var article = _allArticles?.FirstOrDefault(a => a.Id == articleId);
         if (article != null)
         {
             var slug = CreateSlug(article.Title);

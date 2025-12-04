@@ -17,7 +17,7 @@
     @if (_backlinks.Count == 0 && !_isLoading)
     {
         <div class="backlinks-empty">
-            <MudText Typo="Typo.body2" Color="Color.Dark">
+            <MudText Typo="Typo.h6" Color="Color.Dark">
                 No articles reference this page yet.
             </MudText>
             <MudText Typo="Typo.caption" Color="Color.Dark" Class="mt-2">
@@ -43,16 +43,6 @@
                             @GetRelativeTime(backlink.LastModified)
                         </MudText>
                     </div>
-
-                    @if (backlink.Hashtags.Any())
-                    {
-                        <div class="backlink-hashtags">
-                            @foreach (var hashtag in backlink.Hashtags)
-                            {
-                                <span class="backlink-hashtag">#@hashtag</span>
-                            }
-                        </div>
-                    }
                 </div>
             }
         </div>
