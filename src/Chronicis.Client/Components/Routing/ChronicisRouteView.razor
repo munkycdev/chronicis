@@ -1,0 +1,113 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Rendering
+@using Microsoft.AspNetCore.Authorization
+
+@*
+    ChronicisRouteView - Custom route view that prevents layout flicker
+    
+    This component intelligently determines which layout to use based on:
+    1. Explicit @layout directive on the page (public pages with PublicLayout)
+    2. [Authorize] attribute (authenticated pages get AuthenticatedLayout)
+    3. Default to PublicLayout for pages without explicit layout or auth
+    
+    This prevents the "flash" of AuthenticatedLayout on public pages.
+*@
+
+<CascadingAuthenticationState>
+    @RenderPageWithLayout()
+</CascadingAuthenticationState>
+
+@code {
+    [Parameter]
+    public RouteData RouteData { get; set; } = default!;
+
+    private RenderFragment RenderPageWithLayout() => builder =>
+    {
+        var pageType = RouteData.PageType;
+        var layoutType = DetermineLayoutType(pageType);
+        var requiresAuth = pageType.GetCustomAttributes(typeof(AuthorizeAttribute), true).Any();
+
+        if (layoutType != null)
+        {
+            // Render with layout
+            builder.OpenComponent<LayoutView>(0);
+            builder.AddAttribute(1, "Layout", layoutType);
+            builder.AddAttribute(2, "ChildContent", (RenderFragment)(contentBuilder =>
+            {
+                if (requiresAuth)
+                {
+                    // Use AuthorizeRouteView for pages with [Authorize]
+                    contentBuilder.OpenComponent<AuthorizeRouteView>(0);
+                    contentBuilder.AddAttribute(1, "RouteData", RouteData);
+                    contentBuilder.AddAttribute(2, "NotAuthorized", (RenderFragment<AuthenticationState>)(authState =>
+                    {
+                        return notAuthBuilder =>
+                        {
+                            notAuthBuilder.OpenComponent<RedirectToLogin>(0);
+                            notAuthBuilder.CloseComponent();
+                        };
+                    }));
+                    contentBuilder.CloseComponent();
+                }
+                else
+                {
+                    // Render public page directly
+                    RenderPageComponent(contentBuilder, pageType, RouteData);
+                }
+            }));
+            builder.CloseComponent();
+        }
+        else
+        {
+            // No layout specified
+            if (requiresAuth)
+            {
+                builder.OpenComponent<AuthorizeRouteView>(0);
+                builder.AddAttribute(1, "RouteData", RouteData);
+                builder.AddAttribute(2, "NotAuthorized", (RenderFragment<AuthenticationState>)(authState =>
+                {
+                    return notAuthBuilder =>
+                    {
+                        notAuthBuilder.OpenComponent<RedirectToLogin>(0);
+                        notAuthBuilder.CloseComponent();
+                    };
+                }));
+                builder.CloseComponent();
+            }
+            else
+            {
+                RenderPageComponent(builder, pageType, RouteData);
+            }
+        }
+    };
+
+    private void RenderPageComponent(RenderTreeBuilder builder, Type pageType, RouteData routeData)
+    {
+        builder.OpenComponent(0, pageType);
+        foreach (var kvp in routeData.RouteValues)
+        {
+            builder.AddAttribute(1, kvp.Key, kvp.Value);
+        }
+        builder.CloseComponent();
+    }
+
+    private Type? DetermineLayoutType(Type pageType)
+    {
+        // Check if page has explicit @layout directive
+        var layoutAttribute = pageType.GetCustomAttributes(typeof(LayoutAttribute), true)
+            .OfType<LayoutAttribute>()
+            .FirstOrDefault();
+
+        if (layoutAttribute != null)
+        {
+            return layoutAttribute.LayoutType;
+        }
+
+        // Check if page requires authentication
+        var requiresAuth = pageType.GetCustomAttributes(typeof(AuthorizeAttribute), true).Any();
+
+        // Default to AuthenticatedLayout for pages requiring auth, PublicLayout otherwise
+        return requiresAuth ? typeof(AuthenticatedLayout) : typeof(PublicLayout);
+    }
+}
