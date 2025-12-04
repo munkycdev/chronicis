@@ -105,11 +105,28 @@ public static class Auth0AuthenticationHelper
         
         try
         {
-            // First, let's decode the token header to see what we're dealing with
             var handler = new JwtSecurityTokenHandler();
-            var jwtToken = handler.ReadJwtToken(token);
             
-            error = $"Token alg: {jwtToken.Header.Alg}, kid: {jwtToken.Header.Kid ?? "NULL"}";
+            // Log raw token info for debugging
+            var parts = token.Split('.');
+            error = $"Token parts: {parts.Length}";
+            
+            if (parts.Length >= 1)
+            {
+                try 
+                {
+                    var headerJson = System.Text.Encoding.UTF8.GetString(
+                        Convert.FromBase64String(PadBase64(parts[0])));
+                    error += $", Raw header: {headerJson}";
+                }
+                catch (Exception ex)
+                {
+                    error += $", Header decode error: {ex.Message}";
+                }
+            }
+            
+            var jwtToken = handler.ReadJwtToken(token);
+            error += $", Parsed alg: {jwtToken.Header.Alg}, kid: {jwtToken.Header.Kid ?? "NULL"}";
 
             if (_configurationManager == null)
             {
@@ -136,7 +153,6 @@ public static class Auth0AuthenticationHelper
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
                 ClockSkew = TimeSpan.FromMinutes(5),
-                // Try all keys if kid is missing
                 TryAllIssuerSigningKeys = true
             };
 
@@ -158,6 +174,18 @@ public static class Auth0AuthenticationHelper
         {
             error += $", Error: {ex.Message}";
             return null;
+        }
+    }
+
+    private static string PadBase64(string base64)
+    {
+        // JWT uses base64url encoding, convert to standard base64
+        var output = base64.Replace('-', '+').Replace('_', '/');
+        switch (output.Length % 4)
+        {
+            case 2: return output + "==";
+            case 3: return output + "=";
+            default: return output;
         }
     }
 }
