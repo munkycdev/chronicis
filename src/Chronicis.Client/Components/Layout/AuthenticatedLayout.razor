@@ -151,7 +151,7 @@
         _drawerOpen = !_drawerOpen;
     }
 
-    private async Task ClearSearch()
+    private void ClearSearch()
     {
         _treeSearch = null;
         TreeState.ClearSearch();
@@ -173,11 +173,11 @@
     {
         if (e.Key == "Enter")
         {
-            await ExecuteGlobalSearch();
+            ExecuteGlobalSearch();
         }
     }
 
-    private async Task ExecuteGlobalSearch()
+    private void ExecuteGlobalSearch()
     {
         if (!string.IsNullOrWhiteSpace(_globalSearchQuery))
         {

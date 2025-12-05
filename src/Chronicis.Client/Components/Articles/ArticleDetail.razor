@@ -3,6 +3,7 @@
 @using MudBlazor.Charts
 @using Chronicis.Client.Components.Hashtags
 @inject IArticleApiService ArticleApi
+@inject IHashtagApiService HashtagApi
 @inject ITreeStateService TreeState
 @inject ISnackbar Snackbar
 @inject IJSRuntime JSRuntime
@@ -164,7 +165,7 @@ else
             </div>
         </div>
     </MudPaper>
-    <!-- Metadata -->
+    <!-- Metadata Drawer -->
     <MudDrawer @bind-Open="@_openMetadata"
                Fixed="true"
                Anchor="Anchor.End"
@@ -204,6 +205,7 @@ else
                 </MudListItem>
             </MudList>
             <BacklinksPanel ArticleId="@_article.Id" />
+            <ArticleHashtagsPanel ArticleId="@_article.Id" />
         </MudDrawerContainer>
     </MudDrawer>
 }
@@ -270,13 +272,13 @@ else
             else
             {
                 _article = null;
-                
+
                 // Reset page title to default
                 await JSRuntime.InvokeVoidAsync("eval", "document.title = 'Chronicis'");
             }
 
             StateHasChanged();
-            
+
             if (_article != null)
             {
                 await Task.Delay(100);
@@ -296,7 +298,8 @@ else
             _editTitle = _article?.Title ?? string.Empty;
             _editBody = _article?.Body ?? string.Empty;
             _hasUnsavedChanges = false;
-            await LoadBreadcrumbsAsync(articleId);
+
+            LoadBreadcrumbs(articleId);
 
             // Update browser page title
             var pageTitle = string.IsNullOrEmpty(_article?.Title) 
@@ -327,7 +330,7 @@ else
         return text.Replace("'", "\\'").Replace("\n", "\\n").Replace("\r", "\\r");
     }
 
-    private async Task LoadBreadcrumbsAsync(int articleId)
+    private void LoadBreadcrumbs(int articleId)
     {
         _breadcrumbs = new List<BreadcrumbItem>
         {
@@ -550,8 +553,6 @@ else
                 // Refresh tree to show new title
                 TreeState.RefreshTree();
             }
-
-            Snackbar.Add("Article saved successfully", Severity.Success);
         }
         catch (Exception ex)
         {
@@ -616,7 +617,7 @@ else
     }
 
     [JSInvokable("HandleHashtagLinkRequest")]
-    public static async Task HandleHashtagLinkRequest(string hashtagName)
+    public static void HandleHashtagLinkRequest(string hashtagName)
     {
         var evt = new CustomEventArgs { HashtagName = hashtagName };
         OnHashtagLinkRequested?.Invoke(evt);

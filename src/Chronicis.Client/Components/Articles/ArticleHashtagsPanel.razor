@@ -1,0 +1,78 @@
+@using Chronicis.Client.Services
+@using Chronicis.Shared.DTOs
+@inject IArticleApiService ArticleApi
+@inject NavigationManager Navigation
+
+    <div class="backlinks-header">
+        <MudText Typo="Typo.h6" Class="backlinks-title">
+            <MudIcon Icon="@Icons.Material.Filled.Numbers" Size="Size.Small" />
+            Hashtags
+        </MudText>
+        @if (_isLoading)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+        }
+    </div>
+
+    @if (_hashtagNames.Count == 0 && !_isLoading)
+    {
+        <div class="backlinks-empty">
+            <MudText Typo="Typo.h6" Color="Color.Dark">
+                No hashtags have been saved yet.
+            </MudText>
+        </div>
+    }
+    else
+    {
+        <div class="backlinks-list">
+            @foreach (var hashtag in _hashtagNames)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@hashtag</MudChip>
+            }
+        </div>
+    }
+
+@code {
+    [Parameter]
+    public int? ArticleId { get; set; }
+
+    private List<string> _hashtagNames = new();
+    private bool _isLoading = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ArticleId.HasValue && ArticleId.Value > 0)
+        {
+            await LoadHashtagsAsync();
+        }
+        else
+        {
+            _hashtagNames.Clear();
+        }
+    }
+
+    private async Task LoadHashtagsAsync()
+    {
+        if (!ArticleId.HasValue) return;
+
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var hashtags = await ArticleApi.GetArticleHashtagsAsync(ArticleId.Value);
+
+            _hashtagNames = hashtags.Select(h => h.Name).Distinct().Order().ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading hashtags: {ex.Message}");
+            _hashtagNames = new();
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+}

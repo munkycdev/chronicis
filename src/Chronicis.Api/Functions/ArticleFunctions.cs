@@ -1,8 +1,10 @@
 using System.Net;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
+using Chronicis.Shared.DTOs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Functions;
@@ -143,6 +145,37 @@ public class ArticleFunctions
             var response = req.CreateResponse(HttpStatusCode.InternalServerError);
             await response.WriteStringAsync("Internal server error");
             return response;
+        }
+    }
+
+
+    /// <summary>
+    /// POST /api/articles/{id}/hashtags
+    /// Gets the hashtags for a specific article
+    /// </summary>
+    [Function("GetArticleHashtags")]
+    public async Task<HttpResponseData> GetArticleHashtags(
+    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:int}/hashtags")]
+        HttpRequestData req,
+    FunctionContext context,
+    int id)
+    {
+        var user = context.GetRequiredUser();
+
+        try
+        {
+            var hashtags = await _articleService.GetArticleHashtagsAsync(id, user.Id) ?? new List<HashtagDto>();
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(hashtags);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving hashtags for Article {Id}", id);
+            var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
+            await errorResponse.WriteStringAsync($"Error retrieving hashtag: {ex.Message}");
+            return errorResponse;
         }
     }
 }

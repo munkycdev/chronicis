@@ -47,7 +47,7 @@ public class TreeStateService : ITreeStateService
         NotifyStateChanged();
     }
 
-    public async Task LoadChildrenAsync(ArticleTreeItemViewModel parent, List<ArticleTreeDto> children)
+    public void LoadChildren(ArticleTreeItemViewModel parent, List<ArticleTreeDto> children)
     {
         parent.Children = children.Select(c =>
         {
@@ -77,7 +77,7 @@ public class TreeStateService : ITreeStateService
         NotifyStateChanged();
     }
 
-    public async Task AddArticleAsync(ArticleDto article)
+    public void AddArticle(ArticleDto article)
     {
         var viewModel = MapToViewModel(article);
 
@@ -100,7 +100,7 @@ public class TreeStateService : ITreeStateService
         NotifyStateChanged();
     }
 
-    public async Task UpdateArticleAsync(ArticleDto article)
+    public void UpdateArticle(ArticleDto article)
     {
         var existing = FindArticleById(_rootItems, article.Id);
         if (existing != null)
@@ -113,7 +113,7 @@ public class TreeStateService : ITreeStateService
         }
     }
 
-    public async Task RemoveArticleAsync(int articleId)
+    public void RemoveArticle(int articleId)
     {
         if (RemoveArticleRecursive(_rootItems, articleId))
         {

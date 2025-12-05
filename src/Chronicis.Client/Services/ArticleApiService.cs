@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Models;
 
 namespace Chronicis.Client.Services;
 
@@ -224,6 +225,21 @@ public class ArticleApiService : IArticleApiService
         {
             _logger.LogError(ex, "Error fetching backlinks for article {ArticleId}", articleId);
             return new List<BacklinkDto>();
+        }
+    }
+
+    public async Task<List<HashtagDto>> GetArticleHashtagsAsync(int articleId)
+    {
+        try
+        {
+            var hashtags = await _http.GetFromJsonAsync<List<HashtagDto>>($"api/articles/{articleId}/hashtags") ?? new List<HashtagDto>();
+
+            return hashtags ?? new List<HashtagDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching hashtags for article {ArticleId}", articleId);
+            return new List<HashtagDto>();
         }
     }
 }
