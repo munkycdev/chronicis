@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
@@ -68,7 +67,7 @@ public class AutoHashtagService : IAutoHashtagService
             .Select(a => new
             {
                 a.Title,
-                Slug = SlugUtility.CreateSlug(a.Title)
+                Slug = SlugGenerator.GenerateSlug(a.Title)
             })
             .Where(x => !string.IsNullOrWhiteSpace(x.Slug))
             .GroupBy(x => x.Slug.ToLowerInvariant())

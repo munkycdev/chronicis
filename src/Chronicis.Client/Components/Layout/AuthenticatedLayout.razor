@@ -54,7 +54,7 @@
                 <div class="user-info" style="padding: 12px 16px; min-width: 200px;">
                     @if (!string.IsNullOrEmpty(_currentUser?.AvatarUrl))
                     {
-                        <MudAvatar Size="Size.Medium" Image="@_currentUser.AvatarUrl" Style="margin-bottom: 8px;" />
+                        <MudImage Src="@_currentUser.AvatarUrl" Style="margin-bottom: 8px;" />
                     }
                     <div style="margin-top: 8px;">
                         <div style="font-weight: 600;">@_currentUser?.DisplayName</div>

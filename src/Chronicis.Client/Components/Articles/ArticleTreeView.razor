@@ -522,7 +522,7 @@
             var newNode = _rootArticles?.FirstOrDefault(a => a.Article.Id == created.Id);
             if (newNode != null)
             {
-                SelectArticle(newNode);
+                await SelectArticle(newNode);
             }
             
             Snackbar.Add("Article created", Severity.Success);
@@ -561,7 +561,7 @@
             var newChild = parent.Children?.FirstOrDefault(c => c.Article.Id == created.Id);
             if (newChild != null)
             {
-                SelectArticle(newChild);
+                await SelectArticle(newChild);
             }
 
             Snackbar.Add("Child article created", Severity.Success);

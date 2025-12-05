@@ -106,7 +106,7 @@ public class ArticleSearchFunction
         {
             var snippet = ExtractSnippet(article?.Body ?? string.Empty, query, 200);
             var breadcrumbs = await BuildBreadcrumbs(article?.Id ?? 0);
-            var slug = SlugUtility.CreateSlug(article?.Title);
+            var slug = SlugGenerator.GenerateSlug(article?.Title ?? string.Empty);
 
             results.Add(new ArticleSearchResultDto
             {

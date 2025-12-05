@@ -10,6 +10,7 @@ public class Article
 {
     public int Id { get; set; }
     public int UserId { get; set; }
+    //public ArticleType Type { get; set; } = ArticleType.None;
     public string Title { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public int? ParentId { get; set; }

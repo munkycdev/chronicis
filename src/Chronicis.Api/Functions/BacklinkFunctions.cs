@@ -77,7 +77,7 @@ public class BacklinkFunctions
             {
                 ArticleId = b.ArticleId,
                 ArticleTitle = b.Article.Title,
-                ArticleSlug = SlugUtility.CreateSlug(b.Article.Title),
+                ArticleSlug = SlugGenerator.GenerateSlug(b.Article.Title),
                 Hashtags = b.Hashtags,
                 MentionCount = b.MentionCount,
                 LastModified = b.Article.ModifiedDate ?? b.Article.CreatedDate

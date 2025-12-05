@@ -119,7 +119,7 @@ public class HashtagSyncService : IHashtagSyncService
         if (article == null || string.IsNullOrWhiteSpace(article.Title))
             return;
 
-        var slug = SlugUtility.CreateSlug(article.Title);
+        var slug = SlugGenerator.GenerateSlug(article.Title);
 
         // Find hashtags with this name that aren't linked yet
         var matchingHashtags = await _context.Hashtags
@@ -150,7 +150,7 @@ public class HashtagSyncService : IHashtagSyncService
             .ToListAsync();
 
         var matchingArticle = articles
-            .FirstOrDefault(a => SlugUtility.CreateSlug(a.Title).Equals(
+            .FirstOrDefault(a => SlugGenerator.GenerateSlug(a.Title).Equals(
                 hashtagName, 
                 StringComparison.OrdinalIgnoreCase));
 

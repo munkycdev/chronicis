@@ -65,3 +65,4 @@ __azurite_db*__.json
 # EF Migrations
 Migrations
 /docs/features-bugs.md
+/src/Chronicis.CaptureApp/Properties/PublishProfiles/FolderProfile.pubxml

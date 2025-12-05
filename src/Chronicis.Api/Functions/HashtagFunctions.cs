@@ -217,7 +217,7 @@ public class HashtagFunctions
                 HashtagName = hashtag.Name,
                 ArticleId = hashtag.LinkedArticle.Id,
                 ArticleTitle = hashtag.LinkedArticle.Title,
-                ArticleSlug = SlugUtility.CreateSlug(hashtag.LinkedArticle.Title),
+                ArticleSlug = SlugGenerator.GenerateSlug(hashtag.LinkedArticle.Title),
                 PreviewText = previewText,
                 LastModified = hashtag.LinkedArticle.ModifiedDate ?? hashtag.LinkedArticle.CreatedDate
             };

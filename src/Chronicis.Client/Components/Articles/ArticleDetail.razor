@@ -1,4 +1,5 @@
 @using Chronicis.Client.Components.Shared
+@using Chronicis.Shared.Utilities
 @using MudBlazor.Charts
 @using Chronicis.Client.Components.Hashtags
 @inject IArticleApiService ArticleApi
@@ -482,19 +483,12 @@ else
             // If title changed, ask if user wants to update slug
             if (titleChanged)
             {
-                var suggestedSlug = CreateSlug(newTitle);
+                var suggestedSlug = SlugGenerator.GenerateSlug(newTitle);
                 var currentSlug = _article.Slug;
                 
-                // Only prompt if the slug would actually change
                 if (suggestedSlug != currentSlug)
                 {
-                    var confirmMessage = $"Title changed. Update URL slug?\n\nCurrent: {currentSlug}\nSuggested: {suggestedSlug}\n\nWarning: Old links will break if you change the slug.";
-                    var updateSlug = await JSRuntime.InvokeAsync<bool>("confirm", confirmMessage);
-                    
-                    if (updateSlug)
-                    {
-                        newSlug = suggestedSlug;
-                    }
+                    newSlug = suggestedSlug;
                 }
             }
 
@@ -568,24 +562,6 @@ else
             _isSaving = false;
             StateHasChanged();
         }
-    }
-
-    // NEW: Slug creation helper
-    private static string CreateSlug(string title)
-    {
-        if (string.IsNullOrEmpty(title))
-            return "untitled";
-        
-        var slug = title.ToLowerInvariant();
-        slug = slug.Replace(" ", "-");
-        slug = new string(slug.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
-        
-        while (slug.Contains("--"))
-            slug = slug.Replace("--", "-");
-        
-        slug = slug.Trim('-');
-        
-        return string.IsNullOrEmpty(slug) ? "untitled" : slug;
     }
 
     private async Task DeleteArticle()
