@@ -1,17 +1,17 @@
 # Chronicis Implementation Plan - Complete Reference
 
-**Version:** 2.1 | **Date:** December 2, 2025  
+**Version:** 2.0 | **Date:** December 4, 2025  
 **Purpose:** Complete phase-by-phase implementation guide with detailed specifications
 
-**CHANGES IN v2.1:**
-- Phase 11: **COMPLETE** - Custom Icons & Visual Enhancements
-- Phase 11: Picmo emoji picker integration via CDN
-- Phase 11: EmojiPickerButton component with auto-save
-- Phase 11: Full breadcrumb path with clickable ancestor navigation
-- Phase 11: Tree view shows emoji icons (with folder/document fallback)
-- Phase 11: Fixed UpdateArticle and GetArticleDetail to include IconEmoji
-- Phase 11: Fixed SearchArticlesAsync to use GlobalSearchResultsDto
-- All Phase 11 features tested and working end-to-end
+**CHANGES IN v2.0:**
+- Phase 12: **IN PROGRESS** - Azure deployment completed successfully
+- Phase 12: Azure Static Web Apps deployment with GitHub Actions CI/CD
+- Phase 12: Azure SQL Database provisioned and migrations applied
+- Phase 12: Auth0 production configuration with Azure callback URLs
+- Phase 12: **Critical Fix:** Azure SWA auth token interception workaround using X-Auth0-Token header
+- Phase 12: Downgraded to .NET 9 for Azure SWA compatibility
+- Phase 12: SPA routing configured via staticwebapp.config.json
+- All deployment features tested and working end-to-end
 
 ---
 
@@ -29,6 +29,8 @@
 **Stack:** Blazor WASM + Azure Functions + Azure SQL + MudBlazor  
 **Timeline:** 16 weeks (12 phases)  
 **Approach:** Local dev → Test → Deploy to Azure when stable
+
+**Live URL:** https://ambitious-mushroom-015091e1e.3.azurestaticapps.net
 
 **Key Specs:**
 - Design: `/mnt/project/Chronicis_Style_Guide.pdf`
@@ -54,9 +56,9 @@
 | 8 | AI Summaries | 2 | ✅ Complete | Azure OpenAI integration, summary generation, cost controls |
 | 9 | Advanced Search | 1 | ✅ Complete | Full-text content search, grouped results, global UI |
 | 9.5 | Auth Architecture | 0.5 | ✅ Complete | Global middleware, centralized HttpClient |
-| 10 | Drag & Drop | 1 | ✅ Complete | Tree reorganization |
-| 11 | Icons & Polish | 1 | ✅ **COMPLETE** | Custom emoji icons, breadcrumb navigation |
-| 12 | Testing & Deploy | 2 | 📜 Next | E2E tests, optimization, production |
+| 10 | Drag & Drop | 1 | 📋 Pending | Tree reorganization |
+| 11 | Icons & Polish | 1 | 📋 Pending | Custom icons, final touches |
+| 12 | Testing & Deploy | 2 | 🔄 **IN PROGRESS** | Azure deployment ✅, E2E tests pending |
 
 ---
 
@@ -66,7 +68,7 @@
 
 ### Phase 0: Infrastructure & Project Setup
 - Azure Resource Group, SQL Database, Key Vault, Static Web App
-- Local development environment with .NET 10
+- Local development environment with .NET 9
 - Health check endpoints
 
 ### Phase 1: Core Data Model & Tree Navigation
@@ -138,8 +140,7 @@
 
 **Goal:** Implement full-text content search across article bodies and hashtags with global search interface
 
-**Completed:** November 28, 2025  
-**Implementation Time:** ~8 hours (including troubleshooting)
+**Completed:** November 28, 2025
 
 ### Overview
 
@@ -159,24 +160,6 @@ Phase 9 adds powerful content search that complements the existing title-only tr
 GET /api/articles/search?query={term}
 ```
 
-**Response Structure:**
-```json
-{
-  "query": "waterdeep",
-  "titleMatches": [...],
-  "bodyMatches": [...],
-  "hashtagMatches": [...],
-  "totalResults": 17
-}
-```
-
-### Frontend Implementation
-
-- Global Search Box in app header
-- SearchResults page with grouped results
-- SearchResultCard component with highlighting
-- SearchApiService for API communication
-
 ### Success Criteria
 
 1. ✅ Global search box appears in app header
@@ -193,8 +176,7 @@ GET /api/articles/search?query={term}
 
 **Goal:** Centralize authentication handling to eliminate repetitive code
 
-**Completed:** December 1, 2025  
-**Implementation Time:** ~1 hour with Claude Opus 4.5
+**Completed:** December 1, 2025
 
 ### Overview
 
@@ -202,315 +184,172 @@ Phase 9.5 refactors authentication across both backend (Azure Functions) and fro
 
 ### Backend Solution: Global Middleware
 
-**AuthenticationMiddleware.cs:**
-Implements `IFunctionsWorkerMiddleware` to handle JWT validation globally:
-- Validates Auth0 JWT token on every HTTP request
-- Skips validation for `[AllowAnonymous]` endpoints
-- Stores authenticated user in `FunctionContext.Items["User"]`
-- Returns 401 Unauthorized automatically for invalid/missing tokens
-
-**FunctionContextExtensions.cs:**
-Extension methods for easy user access:
-```csharp
-var user = context.GetRequiredUser();  // Throws if not authenticated
-var user = context.GetUser();          // Returns null if not authenticated
-```
+- `AuthenticationMiddleware.cs` implements `IFunctionsWorkerMiddleware`
+- `[AllowAnonymous]` attribute for public endpoints
+- `FunctionContextExtensions` for easy user access (`context.GetRequiredUser()`)
 
 ### Frontend Solution: Centralized HttpClient
 
-**AuthorizationMessageHandler.cs:**
-`DelegatingHandler` that automatically attaches bearer tokens to all requests.
-
-**Program.cs Registration:**
-- Named client `"ChronicisApi"` with automatic auth
-- All services use `IHttpClientFactory.CreateClient("ChronicisApi")`
-
-### Success Criteria
-
-1. ✅ Health endpoint works without authentication (`[AllowAnonymous]`)
-2. ✅ Protected endpoints return 401 without token
-3. ✅ Protected endpoints work with valid token
-4. ✅ User accessible via `context.GetRequiredUser()` in all functions
-5. ✅ All frontend services automatically include auth token
-6. ✅ No redundant base classes or wrappers
-7. ✅ Clean build with no warnings
-8. ✅ End-to-end functionality verified
+- `ChronicisAuthHandler` (DelegatingHandler) auto-attaches bearer tokens
+- `IHttpClientFactory` with named client pattern
+- All services use single named client with automatic token attachment
 
 ---
 
 ## Phase 10: Drag-and-Drop Reorganization
 
-**Status:** ✅ **COMPLETE** (v2.0)
+**Status:** 📋 Pending
 
 **Goal:** Allow dragging articles to reorganize hierarchy
 
-**Completed:** December 2, 2025  
-**Implementation Time:** ~2 hours with Claude Opus 4.5
+### Backend
 
-### Overview
+- PATCH /api/articles/{id}/parent
+- Update ParentId
+- Validate no circular references
+- Walk up tree to detect cycles
 
-Phase 10 adds drag-and-drop functionality to the navigation tree, allowing users to reorganize their campaign knowledge structure by dragging articles to new parents or to root level.
+### Frontend
 
-### Backend Implementation
-
-**New DTO:**
-```csharp
-public class ArticleMoveDto
-{
-    public int? NewParentId { get; set; }  // null = move to root
-}
-```
-
-**New Service Method:**
-```csharp
-Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(int articleId, int? newParentId, int userId);
-```
-
-**Circular Reference Detection:**
-- Walks up from target parent to root
-- If the article being moved appears in the ancestor chain, rejects the move
-- Prevents data corruption from circular hierarchies
-
-**New Endpoint:**
-```
-PATCH /api/articles/{id}/parent
-Body: { "newParentId": int | null }
-```
-
-### Frontend Implementation
-
-**HTML5 Drag API via Blazor:**
-- `@ondragstart`, `@ondragover`, `@ondrop` events on tree nodes
-- Stop propagation on all drag events to prevent bubbling to parent nodes
-- `pointer-events: none` on inner elements during drag for consistent drop targeting
-
-**"Drop to Root" Zone:**
-- Appears at top of tree only when dragging
-- Highlighted when hovering with valid drag source
-- Accepts drops to promote articles to root level
-
-**Visual Feedback:**
-- Dragged article fades to 50% opacity
-- Valid drop targets highlight with beige-gold glow and left border
-- "Drop to Root" zone pulses when active
-- Drag handle icon visible on hover
-
-### Success Criteria
-
-1. ✅ Can drag article to new parent
-2. ✅ Cannot create circular references
-3. ✅ Tree updates immediately after move
-4. ✅ Clear visual feedback during drag
-5. ✅ Article remains selected in new location after move
-6. ✅ "Drop to Root" zone works correctly
-7. ✅ Child articles stay attached when parent moves
-8. ✅ Consistent hover highlighting (no flicker)
+- Enable drag-and-drop on tree navigation
+- Validate drop targets
+- Prevent dropping on self/descendants
+- Visual feedback during drag
+- Toast notification on success
 
 ---
 
 ## Phase 11: Custom Icons & Visual Enhancements
 
-**Status:** ✅ **COMPLETE** (v2.1)
+**Status:** 📋 Pending
 
-**Goal:** Allow custom emoji icons for articles and improve breadcrumb navigation
+**Goal:** Allow custom emoji icons and final polish
 
-**Completed:** December 2, 2025  
-**Implementation Time:** ~3 hours with Claude Opus 4.5
+### Features
 
-### Overview
-
-Phase 11 adds emoji icon support for articles and enhances the breadcrumb navigation to show the full ancestor path with clickable links.
-
-### Emoji Picker Implementation
-
-**Library Choice: Picmo**
-- Initially tried emoji-mart but had issues with event handling
-- Picmo provides cleaner API with proper `emoji:select` events
-- Loaded via CDN: `https://unpkg.com/picmo@latest/dist/index.js`
-
-**JavaScript Interop (emojiPickerInterop.js):**
-```javascript
-window.initializeEmojiPicker = async function (containerId, dotNetHelper) {
-    const picker = Picmo.createPicker({
-        rootElement: container,
-        theme: 'light',
-        // ... options
-    });
-    
-    picker.addEventListener('emoji:select', (event) => {
-        dotNetHelper.invokeMethodAsync('OnEmojiSelected', event.emoji);
-    });
-};
-```
-
-**EmojiPickerButton.razor Component:**
-- Displays current emoji or placeholder icon
-- Opens Picmo picker on click
-- Auto-saves when emoji selected
-- Clear button (X) on hover to remove emoji
-- Click-outside closes picker
-
-### Breadcrumb Enhancement
-
-**Full Ancestor Path:**
-- Shows: Home > Parent > Child > Current Article
-- All ancestors are clickable links
-- Current article is disabled (not clickable)
-- Uses slug-based URLs for navigation
-
-**Implementation:**
-```csharp
-private async Task LoadBreadcrumbsAsync(int articleId)
-{
-    _breadcrumbs = new List<BreadcrumbItem> { new("Home", href: "/") };
-    
-    foreach (var crumb in _article.Breadcrumbs)
-    {
-        var isLast = /* check if last */;
-        _breadcrumbs.Add(new BreadcrumbItem(
-            crumb.Title,
-            href: isLast ? null : $"/article/{slug}",
-            disabled: isLast
-        ));
-    }
-}
-```
-
-### Tree View Icons
-
-**Conditional Rendering:**
-- Shows emoji when `IconEmoji` is set
-- Falls back to Material icons (Folder for parents, Description for leaves)
-
-```razor
-@if (!string.IsNullOrEmpty(node.IconEmoji))
-{
-    <span class="chronicis-tree-emoji">@node.IconEmoji</span>
-}
-else
-{
-    <MudIcon Icon="@(node.HasChildren ? Icons.Material.Filled.Folder : Icons.Material.Filled.Description)" />
-}
-```
-
-### Backend Fixes
-
-**UpdateArticle.cs:**
-- Added `IconEmoji` and `EffectiveDate` to the update logic
-- Added these fields to the response DTO
-
-**ArticleService.cs (GetArticleDetailAsync):**
-- Added `IconEmoji` and `EffectiveDate` to the projection
-
-**ArticleApiService.cs:**
-- Fixed `SearchArticlesAsync` to deserialize `GlobalSearchResultsDto` instead of `List<ArticleSearchResultDto>`
-- Fixed `SearchArticlesByTitleAsync` to use global search and extract title matches
-
-### Files Created
-
-| File | Purpose |
-|------|---------|
-| `wwwroot/js/emojiPickerInterop.js` | Picmo picker JavaScript interop |
-| `wwwroot/css/chronicis-emoji-picker.css` | Emoji picker and button styling |
-| `Components/Articles/EmojiPickerButton.razor` | Blazor emoji picker component |
-
-### Files Modified
-
-| File | Changes |
-|------|---------|
-| `wwwroot/index.html` | Added Picmo CDN, CSS reference, JS reference |
-| `Components/Articles/ArticleDetail.razor` | Added EmojiPickerButton, fixed breadcrumbs, added OnIconEmojiChanged handler |
-| `Components/Articles/ArticleTreeView.razor` | Conditional emoji/icon rendering, removed unused GetNodeIcon method |
-| `Functions/UpdateArticle.cs` | Save IconEmoji and EffectiveDate |
-| `Services/ArticleService.cs` | Include IconEmoji in GetArticleDetailAsync projection |
-| `Services/ArticleApiService.cs` | Fixed search methods to use GlobalSearchResultsDto |
-
-### Key Learnings
-
-**Emoji Picker Libraries:**
-- emoji-mart uses custom elements but has tricky event handling
-- Picmo has cleaner property-based callbacks (`picker.addEventListener`)
-- Always test event firing before assuming the integration works
-
-**API Response Alignment:**
-- Frontend DTOs must match backend response structure exactly
-- Pre-existing bugs can surface when touching related code
-- `GlobalSearchResultsDto` vs `List<ArticleSearchResultDto>` mismatch was caught during Phase 11
-
-**Field Propagation:**
-- When adding a field to an entity, must update:
-  1. Entity model
-  2. All DTOs that include it
-  3. All API projections (SELECT statements)
-  4. Update/Create functions
-  5. Response DTOs
-
-### Success Criteria
-
-1. ✅ Can select emoji for article via picker
-2. ✅ Emoji displays in tree view
-3. ✅ Emoji displays on article detail page after reload
-4. ✅ Can remove emoji via clear button
-5. ✅ Emoji auto-saves on selection
-6. ✅ Breadcrumbs show full ancestor path
-7. ✅ Ancestor breadcrumbs are clickable
-8. ✅ Picker has proper background (not transparent)
-9. ✅ Tree refreshes after icon change
+- EmojiPicker component
+- Icon selection in inline editor (near title)
+- Display icons in tree view
+- Icons in breadcrumbs
+- Large icon in article header
+- Smooth animations throughout
 
 ---
 
 ## Phase 12: Testing, Performance & Deployment
 
-**Status:** 📜 Next Phase
+**Status:** 🔄 **IN PROGRESS**
 
 **Goal:** Ensure quality, optimize, deploy to production
 
-### Testing Strategy
+### Azure Deployment - ✅ COMPLETE
 
-- Unit tests for Article CRUD
-- Unit tests for hashtag parsing
-- Unit tests for AI summary service
-- Unit tests for search functionality
-- Unit tests for authentication middleware
-- Unit tests for article move/circular reference detection
-- Integration tests for API endpoints
-- Manual test plan execution
-- Test inline editing edge cases
-- Test drag-and-drop edge cases
-- Test emoji picker edge cases
+**Completed:** December 4, 2025  
+**Implementation Time:** ~4 hours (including troubleshooting auth issues)
 
-### Performance Optimizations
+#### Azure Resources Created
 
-- Add database indexes (Title, Hashtag.Name, Body for full-text)
-- Query optimization with projections
-- Frontend debouncing (already done for auto-save)
-- Response compression
-- Caching headers
-- AI summary caching strategy
+| Resource | Name | Details |
+|----------|------|---------|
+| Resource Group | rg-chronicis-dev | West US 2 |
+| SQL Server | sql-chronicis-dev | Basic tier |
+| SQL Database | chronicis-db | 5 DTU |
+| Static Web App | swa-chronicis-dev | Free tier, GitHub Actions CI/CD |
 
-### Deployment Steps
+**Live URL:** https://ambitious-mushroom-015091e1e.3.azurestaticapps.net
 
-- Validate Azure infrastructure
-- Configure GitHub Actions
-- Set environment variables
-- Run database migrations on Azure SQL
-- Deploy Azure OpenAI configuration to production
-- Smoke test deployed app
-- Set up Application Insights
-- Configure monitoring and alerts
+#### Configuration
 
-### Success Criteria
+**App Settings (Azure Static Web Apps):**
+- `Auth0__Domain` - Auth0 tenant domain
+- `Auth0__Audience` - API audience identifier
+- `Auth0__ClientId` - Auth0 application client ID
+- `AzureOpenAI__Endpoint` - Azure OpenAI endpoint URL
+- `AzureOpenAI__ApiKey` - Azure OpenAI API key
+- `AzureOpenAI__DeploymentName` - GPT model deployment name
+- `AzureOpenAI__MaxInputTokens` - Token limit for input
+- `AzureOpenAI__MaxOutputTokens` - Token limit for output
+- `ConnectionStrings__ChronicisDb` - Azure SQL connection string
 
-1. All tests passing
-2. Performance meets targets
-3. Successfully deployed to Azure
-4. Monitoring configured
-5. Inline editing works in production
-6. AI summaries working in production
-7. Search performance acceptable
-8. Drag-and-drop works in production
-9. Emoji icons persist in production
-10. Costs monitored and within budget
+**Auth0 Configuration:**
+- Added Azure callback URL to Allowed Callback URLs
+- Added Azure URL to Allowed Logout URLs
+- Added Azure URL to Allowed Web Origins
+
+#### Critical Issue Resolved: Azure SWA Auth Token Interception
+
+**Problem:** Azure Static Web Apps' managed functions automatically intercept and replace the standard `Authorization` header with their own internal HS256 token. This caused Auth0's RS256 JWT tokens to be replaced before reaching the Azure Function.
+
+**Symptoms:**
+- Browser sent correct RS256 token (verified in Network tab)
+- Azure Function received different HS256 token (376 chars vs 800+ chars)
+- JWT validation failed with "kid missing" error
+
+**Solution:** Use a custom header to bypass SWA's auth interception:
+
+**Client (ChronicisAuthHandler.cs):**
+```csharp
+// Use custom header to bypass Azure SWA's auth interception
+request.Headers.Add("X-Auth0-Token", token.Value);
+
+// Also set standard header for local development
+request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Value);
+```
+
+**API (Auth0AuthenticationHelper.cs):**
+```csharp
+// Check for custom header first (Azure SWA workaround)
+if (req.Headers.TryGetValues("X-Auth0-Token", out var customTokenValues))
+{
+    token = customTokenValues.FirstOrDefault();
+}
+
+// Fall back to standard Authorization header (local dev)
+if (string.IsNullOrEmpty(token))
+{
+    // ... standard Authorization header handling
+}
+```
+
+**Key Learning:** Azure SWA only intercepts the standard `Authorization` header - custom headers pass through unchanged.
+
+#### Other Deployment Fixes
+
+**.NET Version:**
+- Downgraded from .NET 10 to .NET 9 (Azure SWA doesn't support .NET 10 yet)
+- Updated all `.csproj` files and `global.json`
+
+**SPA Routing:**
+- Added `staticwebapp.config.json` for client-side routing
+- Navigation fallback to `index.html` for Blazor routes
+- Excluded static files and API routes from fallback
+
+**Dynamic Auth URLs:**
+- Updated `Program.cs` to use `builder.HostEnvironment.BaseAddress`
+- Auth redirect URLs work for both localhost and Azure
+
+### Remaining Phase 12 Work
+
+#### Testing (Pending)
+- [ ] Unit tests for Article CRUD
+- [ ] Unit tests for hashtag parsing
+- [ ] Unit tests for AI summary service
+- [ ] Unit tests for search functionality
+- [ ] Unit tests for authentication middleware
+- [ ] Integration tests for API endpoints
+- [ ] Manual test plan execution
+
+#### Performance Optimizations (Pending)
+- [ ] Add database indexes
+- [ ] Query optimization with projections
+- [ ] Response compression
+- [ ] Caching headers
+
+#### Monitoring (Pending)
+- [ ] Set up Application Insights
+- [ ] Configure alerts for errors
+- [ ] Monitor DTU usage on SQL Database
+- [ ] Set up cost alerts
 
 ---
 
@@ -518,15 +357,7 @@ else
 
 ### A. Essential Commands
 
-**Project Setup:**
-```bash
-dotnet new sln -n Chronicis
-dotnet new blazorwasm -n Chronicis.Client
-dotnet new func -n Chronicis.Api
-dotnet sln add src/Chronicis.Client src/Chronicis.Api
-```
-
-**Development (PowerShell):**
+**Development:**
 ```powershell
 # Run Blazor client with hot reload
 cd src\Chronicis.Client
@@ -543,11 +374,39 @@ dotnet ef database update
 ```
 
 **Azure CLI:**
-```bash
+```powershell
+# Login
 az login
-az group create --name rg-chronicis-dev --location eastus
-az sql server create --name sql-chronicis-dev ...
-az keyvault create --name kv-chronicis-dev ...
+
+# View app settings
+az staticwebapp appsettings list `
+    --name swa-chronicis-dev `
+    --resource-group rg-chronicis-dev
+
+# Set app setting
+az staticwebapp appsettings set `
+    --name swa-chronicis-dev `
+    --resource-group rg-chronicis-dev `
+    --setting-names "Key=Value"
+
+# Add SQL firewall rule
+az sql server firewall-rule create `
+    --name RuleName `
+    --resource-group rg-chronicis-dev `
+    --server sql-chronicis-dev `
+    --start-ip-address X.X.X.X `
+    --end-ip-address X.X.X.X
+```
+
+**Deployment:**
+```powershell
+# Trigger manual deployment
+git commit --allow-empty -m "Trigger deployment"
+git push
+
+# Run migrations against Azure SQL
+$connectionString = "Server=tcp:sql-chronicis-dev.database.windows.net,1433;..."
+dotnet ef database update --connection $connectionString
 ```
 
 ### B. Performance Targets
@@ -560,9 +419,6 @@ az keyvault create --name kv-chronicis-dev ...
 - **Hashtag Sync:** < 50ms
 - **AI Summary Generation:** < 30 seconds
 - **Hover Tooltip:** < 300ms
-- **Dialog Open:** < 200ms
-- **Drag-Drop Move:** < 500ms
-- **Emoji Picker Open:** < 300ms
 
 ### C. Project Structure
 
@@ -572,20 +428,17 @@ chronicis/
 │   ├── Chronicis.Client/           # Blazor WASM
 │   │   ├── Components/
 │   │   │   ├── Articles/
-│   │   │   │   ├── ArticleDetail.razor        # Updated Phase 11
-│   │   │   │   ├── ArticleTreeView.razor      # Updated Phase 11
-│   │   │   │   ├── EmojiPickerButton.razor    # NEW Phase 11
+│   │   │   │   ├── ArticleDetail.razor
+│   │   │   │   ├── ArticleTreeView.razor
 │   │   │   │   ├── BacklinksPanel.razor
 │   │   │   │   ├── AISummarySection.razor
 │   │   │   │   └── SearchResultCard.razor
 │   │   │   └── Hashtags/
 │   │   │       └── HashtagLinkDialog.razor
 │   │   ├── Services/
-│   │   │   ├── ArticleApiService.cs           # Updated Phase 11
-│   │   │   ├── IArticleApiService.cs
-│   │   │   ├── AuthorizationMessageHandler.cs
+│   │   │   ├── ArticleApiService.cs
+│   │   │   ├── ChronicisAuthHandler.cs      # Auth token handler
 │   │   │   ├── TreeStateService.cs
-│   │   │   ├── QuoteService.cs
 │   │   │   ├── HashtagApiService.cs
 │   │   │   ├── AISummaryApiService.cs
 │   │   │   └── SearchApiService.cs
@@ -594,79 +447,74 @@ chronicis/
 │   │   │   └── Search.razor
 │   │   └── wwwroot/
 │   │       ├── css/
-│   │       │   ├── chronicis-emoji-picker.css # NEW Phase 11
-│   │       │   ├── chronicis-nav.css
-│   │       │   ├── chronicis-home.css
-│   │       │   └── ...
-│   │       └── js/
-│   │           ├── emojiPickerInterop.js      # NEW Phase 11
-│   │           ├── tipTapIntegration.js
-│   │           └── tipTapHashtagExtension.js
+│   │       ├── js/
+│   │       └── staticwebapp.config.json    # SWA routing config
 │   ├── Chronicis.Api/              # Azure Functions
 │   │   ├── Functions/
 │   │   │   ├── ArticleFunctions.cs
-│   │   │   ├── UpdateArticle.cs               # Updated Phase 11
-│   │   │   ├── MoveArticle.cs
-│   │   │   └── ...
+│   │   │   ├── ArticleSearchFunction.cs
+│   │   │   ├── HashtagFunctions.cs
+│   │   │   ├── BacklinkFunctions.cs
+│   │   │   ├── AISummaryFunctions.cs
+│   │   │   └── HealthFunction.cs
+│   │   ├── Infrastructure/
+│   │   │   ├── AuthenticationMiddleware.cs
+│   │   │   ├── AllowAnonymousAttribute.cs
+│   │   │   ├── FunctionContextExtensions.cs
+│   │   │   ├── Auth0Configuration.cs
+│   │   │   └── Auth0AuthenticationHelper.cs  # X-Auth0-Token support
 │   │   ├── Services/
-│   │   │   ├── ArticleService.cs              # Updated Phase 11
-│   │   │   └── ...
-│   │   └── ...
+│   │   │   ├── HashtagParser.cs
+│   │   │   ├── HashtagSyncService.cs
+│   │   │   ├── AISummaryService.cs
+│   │   │   ├── ArticleService.cs
+│   │   │   └── UserService.cs
+│   │   └── Data/
+│   │       └── Entities/
 │   └── Chronicis.Shared/           # DTOs
-│       └── DTOs/
-│           ├── ArticleDTOs.cs
-│           ├── SearchDtos.cs
-│           └── ...
-├── tests/
-├── docs/
 └── Chronicis.sln
 ```
 
 ### D. Troubleshooting
 
-**Emoji not saving:**
-- Check: UpdateArticle.cs includes `article.IconEmoji = dto.IconEmoji`
-- Check: Response DTO includes IconEmoji field
-- Verify: API returns 200 status
+**Azure SWA replacing auth token:**
+- Symptom: API receives HS256 token when browser sends RS256
+- Cause: Azure SWA intercepts Authorization header for managed functions
+- Solution: Use `X-Auth0-Token` custom header
 
-**Emoji not loading on page refresh:**
-- Check: ArticleService.GetArticleDetailAsync projection includes IconEmoji
-- Check: ArticleDto has IconEmoji property
+**.NET version not supported:**
+- Symptom: Build error about unsupported platform version
+- Cause: Azure SWA doesn't support .NET 10 yet
+- Solution: Downgrade to .NET 9 in all `.csproj` and `global.json`
 
-**Emoji picker not firing events:**
-- Check browser console for errors
-- Verify Picmo loaded: `window.Picmo` should exist
-- Check: `picker.addEventListener('emoji:select', ...)` syntax
+**SPA routes return 404:**
+- Symptom: Direct navigation to /dashboard returns 404
+- Cause: Azure doesn't know to route to index.html
+- Solution: Add `staticwebapp.config.json` with navigationFallback
 
-**Picker has transparent background:**
-- Check: chronicis-emoji-picker.css has background-color on `.chronicis-emoji-picker-dropdown`
-- Check: Picmo-specific selectors (`.picmo__picker`, etc.) have `!important` backgrounds
+**401 Unauthorized on API:**
+- Check: Token being sent in request headers
+- Check: Auth0 audience matches API configuration
+- Check: `X-Auth0-Token` header is present (for Azure)
+- Solution: Verify app settings in Azure portal
 
-**Search returning JSON error:**
-- Check: ArticleApiService uses `GlobalSearchResultsDto` not `List<ArticleSearchResultDto>`
-- API returns grouped results, not flat list
+**Database connection failed:**
+- Check: SQL Server firewall allows your IP
+- Check: Connection string is correct in app settings
+- Check: `ConnectionStrings__ChronicisDb` key name matches code
 
-**Breadcrumbs not showing full path:**
-- Check: LoadBreadcrumbsAsync iterates through `_article.Breadcrumbs`
-- Verify: API returns breadcrumbs in GetArticleDetail response
+**App settings not taking effect:**
+- Cause: Functions need redeploy to pick up new settings
+- Solution: Trigger a new deployment via git push
 
 ### E. Using This Plan
 
-**Before Starting Phase 12:**
-1. Review Phase 12 specification
-2. Check that all Phase 11 features are working
+**For Remaining Work:**
+1. Review remaining Phase 12 tasks (testing, monitoring)
+2. Consider Phase 10 (Drag & Drop) and Phase 11 (Icons)
 3. Create new chat with Claude
 4. Upload this plan + spec PDFs
-5. Say: "I'm ready to start Phase 12 - Testing, Performance & Deployment"
-
-**During Each Phase:**
-1. Create new chat with Claude
-2. Upload this plan + spec PDFs
-3. Say: "I'm ready to start Phase X"
-4. Mention completed phases and any variations
-5. Work through deliverables
-6. Use GitHub Copilot for code
-7. Return to Claude for architecture
+5. Reference specific phase/task
 
 **When Stuck:**
 1. Check troubleshooting section
@@ -681,7 +529,7 @@ chronicis/
 - Phase planning
 - API design
 - Complex business logic
-- Debugging tricky issues
+- Debugging tricky issues (like the SWA auth token issue!)
 - Code review
 
 **Use GitHub Copilot for:**
@@ -690,67 +538,58 @@ chronicis/
 - Common patterns
 - Test generation
 - Refactoring
-- Quick syntax help
 
 **Model Selection:**
-- **Opus 4.5:** Best for architectural changes touching many files. Completed auth refactoring in ~1 hour, drag-drop in ~2 hours, icons in ~3 hours.
-- **Sonnet 4:** Good for focused implementation tasks. Lower cost, but may need more iteration for complex multi-file changes.
-
-**Workflow:**
-1. Plan with Claude
-2. Implement with Copilot
-3. Review with Claude
-4. Iterate until complete
+- **Opus 4.5:** Best for complex multi-file changes, architectural decisions
+- **Sonnet 4:** Good for focused implementation tasks
 
 ---
 
 ## Final Notes
 
-**Remember:**
-- This is a learning project - focus on the process
-- AI accelerates but doesn't replace judgment
-- Build phase by phase - don't skip ahead
-- Test frequently, commit often
-- Document your learnings
-- Have fun! 🎉🐉
+**Current Status: DEPLOYED TO AZURE! 🎉**
 
-**Phase 11 Complete! ✅**
-Custom icons and visual enhancements fully implemented:
-- ✅ Picmo emoji picker integration
-- ✅ EmojiPickerButton component with auto-save
-- ✅ Full breadcrumb path with clickable ancestors
-- ✅ Tree view shows emoji icons
-- ✅ Backend properly saves and returns IconEmoji
-- ✅ Search API response handling fixed
-- ✅ Picker styling matches Chronicis theme
-- ✅ End-to-end functionality verified
+**Live URL:** https://ambitious-mushroom-015091e1e.3.azurestaticapps.net
+
+**What's Working:**
+- ✅ User authentication via Auth0
+- ✅ Article CRUD operations
+- ✅ Hierarchical tree navigation
+- ✅ Rich text editing with TipTap
+- ✅ Hashtag system with linking
+- ✅ Backlinks panel
+- ✅ AI-powered summaries
+- ✅ Full-text search
+- ✅ Auto-save functionality
 
 **Current Progress:**
-**11 of 12 phases complete** (~92% of project)
-- Phases 0-11: ✅ Complete
-- Phase 12: 📜 Ready to start (Testing & Deploy)
+**Phase 12 partially complete** (~90% of project)
+- Phases 0-9.5: ✅ Complete
+- Phase 10: 📋 Pending (Drag & Drop)
+- Phase 11: 📋 Pending (Icons & Polish)  
+- Phase 12: 🔄 In Progress (Deployment ✅, Testing pending)
 
-**When Ready to Start Phase 12:**
-Create a new chat, upload this plan and the spec PDFs, and say:
-*"I'm ready to start Phase 12 of Chronicis implementation - Testing, Performance & Deployment. Note: Phases 0-11 are complete including custom emoji icons and breadcrumb navigation. All working perfectly!"*
+**Key Learnings from Deployment:**
+1. Azure SWA intercepts Authorization headers - use custom headers
+2. .NET 10 not yet supported on Azure SWA - use .NET 9
+3. SPA routing requires staticwebapp.config.json
+4. App setting changes require redeployment
+5. Debug logging is essential for troubleshooting remote issues
 
 ---
 
 **Version History:**
-- 2.1 (2025-12-02): Phase 11 COMPLETE - Emoji icons, breadcrumb navigation, search API fix
-- 2.0 (2025-12-02): Phase 10 COMPLETE - Drag-and-drop reorganization
+- 2.0 (2025-12-04): Phase 12 deployment COMPLETE - Azure SWA, SQL, Auth0 production config, X-Auth0-Token workaround
 - 1.9 (2025-12-01): Phase 9.5 COMPLETE - Auth architecture refactoring
 - 1.8 (2025-11-28): Phase 9 COMPLETE - Full-text content search
 - 1.7 (2025-11-27): Phase 8 COMPLETE - AI summaries with Azure OpenAI
-- 1.6 (2025-11-27): Phase 7 COMPLETE - Interactive hashtags, backlinks, tooltips
+- 1.6 (2025-11-27): Phase 7 COMPLETE - Interactive hashtags, backlinks
 - 1.5 (2025-11-26): Phase 6 COMPLETE - Full hashtag system
-- 1.4 (2025-11-25): Phase 5 COMPLETE - Dashboard, routing, title save
+- 1.4 (2025-11-25): Phase 5 COMPLETE - Dashboard, routing
 - 1.3 (2025-11-25): Phase 5 complete implementation
 - 1.2 (2025-11-24): Phase 4 complete (TipTap)
 - 1.1 (2025-11-23): Updated for inline editing
 - 1.0 (2025-11-18): Initial plan
-
-**License:** Part of the Chronicis project. Modify as needed for your team.
 
 ---
 
