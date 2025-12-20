@@ -1,7 +1,17 @@
 # Chronicis Implementation Plan - Complete Reference
 
-**Version:** 2.0 | **Date:** December 4, 2025  
+**Version:** 2.1 | **Date:** December 15, 2025  
 **Purpose:** Complete phase-by-phase implementation guide with detailed specifications
+
+**CHANGES IN v2.1:**
+- Phase 10: **COMPLETE** - Hierarchical URL Paths
+- Phase 10: Articles now use full hierarchical paths in URLs (e.g., `/article/sword-coast/waterdeep/castle-ward`)
+- Phase 10: Slug system with auto-generation from titles and user confirmation for changes
+- Phase 10: Path-based article lookup via `/api/articles/by-path/{*path}` endpoint
+- Phase 10: Database migration for Slug column with unique constraints per parent scope
+- Phase 10: Automatic slug backfilling for existing articles
+- Phase 10: Hierarchical breadcrumb navigation with clickable paths
+- All Phase 10 features tested and working end-to-end
 
 **CHANGES IN v2.0:**
 - Phase 12: **IN PROGRESS** - Azure deployment completed successfully
@@ -56,7 +66,7 @@
 | 8 | AI Summaries | 2 | ✅ Complete | Azure OpenAI integration, summary generation, cost controls |
 | 9 | Advanced Search | 1 | ✅ Complete | Full-text content search, grouped results, global UI |
 | 9.5 | Auth Architecture | 0.5 | ✅ Complete | Global middleware, centralized HttpClient |
-| 10 | Drag & Drop | 1 | 📋 Pending | Tree reorganization |
+| 10 | Hierarchical URLs | 1 | ✅ **COMPLETE** | Path-based URLs, slug system, breadcrumb navigation |
 | 11 | Icons & Polish | 1 | 📋 Pending | Custom icons, final touches |
 | 12 | Testing & Deploy | 2 | 🔄 **IN PROGRESS** | Azure deployment ✅, E2E tests pending |
 
@@ -196,26 +206,107 @@ Phase 9.5 refactors authentication across both backend (Azure Functions) and fro
 
 ---
 
-## Phase 10: Drag-and-Drop Reorganization
+## Phase 10: Hierarchical URL Paths
 
-**Status:** 📋 Pending
+**Status:** ✅ **COMPLETE**
 
-**Goal:** Allow dragging articles to reorganize hierarchy
+**Completed:** December 15, 2025  
+**Implementation Time:** ~6 hours (including EF migration troubleshooting)
 
-### Backend
+**Goal:** Implement hierarchical URL paths for articles with slug-based navigation
 
-- PATCH /api/articles/{id}/parent
-- Update ParentId
-- Validate no circular references
-- Walk up tree to detect cycles
+### Overview
 
-### Frontend
+Phase 10 replaces single-slug URLs (`/article/waterdeep`) with full hierarchical paths (`/article/sword-coast/waterdeep/castle-ward`), providing unambiguous deep linking and better bookmarkability.
 
-- Enable drag-and-drop on tree navigation
-- Validate drop targets
-- Prevent dropping on self/descendants
-- Visual feedback during drag
-- Toast notification on success
+### Backend Implementation
+
+**Data Model:**
+- Added `Slug` property to Article entity (string, required, max 200 chars)
+- Updated all DTOs to include slug
+- `SlugGenerator` utility class for slug creation and validation
+
+**Database Migration** (`20251204213028_AddArticleSlugColumn`):
+1. Adds Slug column (nullable initially)
+2. Backfills slugs from existing article titles
+3. Makes Slug required
+4. Creates unique indexes:
+   - `IX_Articles_Slug_Root` - for root articles (ParentId IS NULL)
+   - `IX_Articles_ParentId_Slug` - for child articles (ParentId IS NOT NULL)
+
+**ArticleService Enhancements:**
+- `GetArticleByPathAsync` - walks tree using slugs
+- `IsSlugUniqueAsync` - validates uniqueness within parent scope
+- `GenerateUniqueSlugAsync` - creates unique slugs with numeric suffixes if needed
+- `BuildArticlePathAsync` - builds full hierarchical path
+
+**API Endpoints:**
+- `CreateArticle` - auto-generates slugs, validates uniqueness, supports custom slugs
+- `UpdateArticle` - handles slug changes with validation
+- `GetArticleByPath` - NEW endpoint: `GET /api/articles/by-path/{*path}`
+
+### Frontend Implementation
+
+**Routing:**
+- Changed from `/article/{ArticleSlug}` to `/article/{*Path}`
+- Path-based loading via `GetArticleByPathAsync`
+
+**Navigation:**
+- ArticleTreeView builds full hierarchical paths on selection
+- ArticleDetail updates URL when title changes (with user confirmation)
+- Breadcrumbs use hierarchical paths (each level clickable)
+
+**Slug Management:**
+- Auto-generated from titles
+- User confirmation dialog when title changes affect slug
+- Shows current vs. suggested slug
+- Warns about breaking old links
+
+### Key Features
+
+1. **Hierarchical URLs** - Full context in URL path
+2. **Deep Linking** - Bookmarkable multi-level paths
+3. **Clickable Breadcrumbs** - Each level navigable
+4. **Slug Uniqueness** - Per parent scope (siblings can't duplicate)
+5. **Automatic Backfilling** - Migration handles existing articles
+
+### URL Examples
+
+- Root: `/article/waterdeep`
+- Two-level: `/article/sword-coast/waterdeep`
+- Three-level: `/article/sword-coast/waterdeep/castle-ward`
+- Duplicate handling: `/article/waterdeep`, `/article/north/waterdeep-2`
+
+### Success Criteria
+
+All criteria met and tested:
+1. ✅ URLs show full hierarchical paths
+2. ✅ Breadcrumbs clickable with correct paths
+3. ✅ Direct URLs (deep links) work
+4. ✅ Browser back/forward works
+5. ✅ Title changes prompt slug update
+6. ✅ Slugs unique within parent
+7. ✅ Tree navigation uses paths
+8. ✅ Migration backfills existing articles
+
+### Files Modified
+
+**Backend:**
+- `Shared/Models/Article.cs` - Added Slug
+- `Shared/DTOs/ArticleDTOs.cs` - Slug in all DTOs
+- `Shared/Utilities/SlugGenerator.cs` - NEW
+- `Data/ChronicisDbContext.cs` - Slug indexes
+- `Services/ArticleService.cs` - Path resolution
+- `Functions/CreateArticle.cs` - Slug generation
+- `Functions/UpdateArticle.cs` - Slug updates
+- `Functions/GetArticleByPath.cs` - NEW
+
+**Frontend:**
+- `Utilities/ArticlePathBuilder.cs` - NEW
+- `Services/ArticleApiService.cs` - Path-based lookup
+- `Pages/Articles.razor` - Path routing
+- `Components/Articles/ArticleDetail.razor` - Slug confirmation
+- `Components/Articles/ArticleTreeView.razor` - Path navigation
 
 ---
 
