@@ -6,7 +6,7 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
-@if (TreeStateService.SelectedArticleId.HasValue && TreeStateService.SelectedArticleId.Value > 0)
+@if (TreeStateService.SelectedArticleId.HasValue && TreeStateService.SelectedArticleId.Value != Guid.Empty)
 {
     <ArticleDetail />
 }
@@ -74,7 +74,7 @@ else
         }
     }
 
-    private async Task NavigateToArticle(int articleId)
+    private async Task NavigateToArticle(Guid articleId)
     {
         // Get the full article details to build path from breadcrumbs
         var article = await ArticleApi.GetArticleDetailAsync(articleId);

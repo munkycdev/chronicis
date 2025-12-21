@@ -5,7 +5,7 @@ namespace Chronicis.Shared.DTOs;
 /// </summary>
 public class SummaryEstimateDto
 {
-    public int ArticleId { get; set; }
+    public Guid ArticleId { get; set; }
     public string ArticleTitle { get; set; } = string.Empty;
     public int BacklinkCount { get; set; }
     public int EstimatedInputTokens { get; set; }
@@ -33,7 +33,7 @@ public class SummaryGenerationDto
 /// </summary>
 public class GenerateSummaryRequestDto
 {
-    public int ArticleId { get; set; }
+    public Guid ArticleId { get; set; }
     public int MaxOutputTokens { get; set; } = 1500;
 }
 
@@ -42,8 +42,8 @@ public class GenerateSummaryRequestDto
 /// </summary>
 public class ArticleSummaryDto
 {
-    public int ArticleId { get; set; }
+    public Guid ArticleId { get; set; }
     public string? Summary { get; set; }
-    public DateTime? GeneratedDate { get; set; }
+    public DateTime? GeneratedAt { get; set; }
     public bool HasSummary => !string.IsNullOrEmpty(Summary);
 }

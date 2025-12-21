@@ -32,7 +32,7 @@ public class ArticleValidationService : IArticleValidationService
         return result;
     }
 
-    public async Task<ValidationResult> ValidateUpdateAsync(int articleId, ArticleUpdateDto dto)
+    public async Task<ValidationResult> ValidateUpdateAsync(Guid articleId, ArticleUpdateDto dto)
     {
         var result = new ValidationResult();
 
@@ -54,7 +54,7 @@ public class ArticleValidationService : IArticleValidationService
         return result;
     }
 
-    public async Task<ValidationResult> ValidateDeleteAsync(int articleId)
+    public async Task<ValidationResult> ValidateDeleteAsync(Guid articleId)
     {
         var result = new ValidationResult();
 

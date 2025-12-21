@@ -37,9 +37,9 @@ public class UpdateArticle
 
     [Function("UpdateArticle")]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "articles/{id}")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "articles/{id:guid}")] HttpRequestData req,
         FunctionContext context,
-        int id)
+        Guid id)
     {
         var user = context.GetRequiredUser();
 
@@ -64,7 +64,7 @@ public class UpdateArticle
 
             var article = await _context.Articles
                 .Include(a => a.Children)
-                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == user.Id);
+                .FirstOrDefaultAsync(a => a.Id == id && a.CreatedBy == user.Id);
 
             if (article == null)
             {
@@ -75,12 +75,28 @@ public class UpdateArticle
 
             article.Title = dto.Title;
             article.Body = dto.Body;
-            article.ModifiedDate = DateTime.UtcNow;
+            article.ModifiedAt = DateTime.UtcNow;
+            article.LastModifiedBy = user.Id;
             article.IconEmoji = dto.IconEmoji;
 
             if (dto.EffectiveDate.HasValue)
             {
                 article.EffectiveDate = dto.EffectiveDate.Value;
+            }
+
+            if (dto.Visibility.HasValue)
+            {
+                article.Visibility = dto.Visibility.Value;
+            }
+
+            if (dto.SessionDate.HasValue)
+            {
+                article.SessionDate = dto.SessionDate.Value;
+            }
+
+            if (!string.IsNullOrEmpty(dto.InGameDate))
+            {
+                article.InGameDate = dto.InGameDate;
             }
 
             // Handle slug update if provided
@@ -106,7 +122,7 @@ public class UpdateArticle
             }
 
             await _context.SaveChangesAsync();
-            await _hashtagSync.SyncHashtagsAsync(article.Id, article.Body);
+            await _hashtagSync.SyncHashtagsAsync(article.Id, article.Body ?? string.Empty);
 
             var responseDto = new ArticleDto
             {
@@ -114,10 +130,16 @@ public class UpdateArticle
                 Title = article.Title,
                 Slug = article.Slug,
                 ParentId = article.ParentId,
-                Body = article.Body,
-                CreatedDate = article.CreatedDate,
-                ModifiedDate = article.ModifiedDate,
+                WorldId = article.WorldId,
+                CampaignId = article.CampaignId,
+                Body = article.Body ?? string.Empty,
+                Type = article.Type,
+                Visibility = article.Visibility,
+                CreatedAt = article.CreatedAt,
+                ModifiedAt = article.ModifiedAt,
                 EffectiveDate = article.EffectiveDate,
+                CreatedBy = article.CreatedBy,
+                LastModifiedBy = article.LastModifiedBy,
                 IconEmoji = article.IconEmoji,
                 HasChildren = article?.Children?.Count > 0
             };

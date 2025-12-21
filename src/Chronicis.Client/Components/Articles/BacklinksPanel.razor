@@ -50,14 +50,14 @@
 
 @code {
     [Parameter]
-    public int? ArticleId { get; set; }
+    public Guid? ArticleId { get; set; }
 
     private List<BacklinkDto> _backlinks = new();
     private bool _isLoading = false;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (ArticleId.HasValue && ArticleId.Value > 0)
+        if (ArticleId.HasValue && ArticleId.Value != Guid.Empty)
         {
             await LoadBacklinksAsync();
         }

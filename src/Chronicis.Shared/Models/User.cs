@@ -2,48 +2,75 @@ namespace Chronicis.Shared.Models;
 
 /// <summary>
 /// Represents a user authenticated via Auth0.
-/// Each user has a unique Auth0 user ID and can create their own articles.
+/// Each user has a unique Auth0 user ID and can own worlds, campaigns, and articles.
 /// </summary>
 public class User
 {
     /// <summary>
-    /// Internal database ID
+    /// Unique identifier for the user.
     /// </summary>
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     /// <summary>
-    /// Auth0 user ID (e.g., "google-oauth2|123456" or "discord|789012")
-    /// This is unique across all identity providers
+    /// Auth0 user ID (e.g., "google-oauth2|123456" or "discord|789012").
+    /// This is unique across all identity providers.
     /// </summary>
     public string Auth0UserId { get; set; } = string.Empty;
 
     /// <summary>
-    /// User's email address from Auth0
+    /// User's email address from Auth0.
     /// </summary>
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
-    /// Display name from Auth0 (could be username, real name, etc.)
+    /// Display name from Auth0 (could be username, real name, etc.).
     /// </summary>
     public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Avatar/profile picture URL from Auth0
+    /// Avatar/profile picture URL from Auth0.
     /// </summary>
     public string? AvatarUrl { get; set; }
 
     /// <summary>
-    /// When the user first created their account in Chronicis
+    /// When the user first created their account in Chronicis.
     /// </summary>
-    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Last time the user logged in
+    /// Last time the user logged in.
     /// </summary>
-    public DateTime LastLoginDate { get; set; } = DateTime.UtcNow;
+    public DateTime LastLoginAt { get; set; } = DateTime.UtcNow;
+
+    // ===== Navigation Properties =====
+    
+    /// <summary>
+    /// All worlds owned by this user.
+    /// </summary>
+    public ICollection<World> OwnedWorlds { get; set; } = new List<World>();
+    
+    /// <summary>
+    /// All campaigns owned by this user (where they are DM).
+    /// </summary>
+    public ICollection<Campaign> OwnedCampaigns { get; set; } = new List<Campaign>();
+    
+    /// <summary>
+    /// All campaign memberships for this user.
+    /// </summary>
+    public ICollection<CampaignMember> CampaignMemberships { get; set; } = new List<CampaignMember>();
 
     /// <summary>
-    /// Navigation property: All articles created by this user
+    /// All articles created by this user.
     /// </summary>
-    public ICollection<Article> Articles { get; set; } = new List<Article>();
+    public ICollection<Article> CreatedArticles { get; set; } = new List<Article>();
+    
+    /// <summary>
+    /// All articles last modified by this user.
+    /// </summary>
+    public ICollection<Article> ModifiedArticles { get; set; } = new List<Article>();
+    
+    /// <summary>
+    /// All characters owned by this user (where they are the player).
+    /// </summary>
+    public ICollection<Article> OwnedCharacters { get; set; } = new List<Article>();
 }

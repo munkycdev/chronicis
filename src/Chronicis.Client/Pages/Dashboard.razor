@@ -94,7 +94,7 @@
                                             @(string.IsNullOrEmpty(article.Title) ? "(Untitled)" : article.Title)
                                         </MudText>
                                         <MudText Typo="Typo.caption">
-                                            Modified @FormatRelativeTime(article.CreatedDate)
+                                            Modified @FormatRelativeTime(article.CreatedAt)
                                         </MudText>
                                     </div>
                                     <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
@@ -262,7 +262,7 @@
         }
     }
 
-    private string? GetArticleTitleById(int articleId)
+    private string? GetArticleTitleById(Guid articleId)
     {
         // Try to find title in recent articles cache
         return _allArticles?.FirstOrDefault(a => a.Id == articleId)?.Title;
@@ -377,9 +377,9 @@
                 TotalArticles = CountTotalArticles(_allArticles),
                 RootArticles = _allArticles.Count(a => !a.ParentId.HasValue),
                 RecentlyModified = _allArticles.Count(a =>
-                    (a.CreatedDate) > DateTime.Now.AddDays(-7)),
+                    (a.CreatedAt) > DateTime.Now.AddDays(-7)),
                 DaysSinceStart = _allArticles.Any()
-                    ? (int)(DateTime.Now - _allArticles.Min(a => a.CreatedDate)).TotalDays
+                    ? (int)(DateTime.Now - _allArticles.Min(a => a.CreatedAt)).TotalDays
                     : 0
             };
         }
@@ -407,7 +407,7 @@
         return count;
     }
 
-    private void NavigateToArticle(int articleId)
+    private void NavigateToArticle(Guid articleId)
     {
         // Find the article to get its title for the slug
         var article = _allArticles?.FirstOrDefault(a => a.Id == articleId);

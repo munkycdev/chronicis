@@ -3,7 +3,6 @@ using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Services;
 
-
 public class AISummaryApiService : IAISummaryApiService
 {
     private readonly HttpClient _http;
@@ -15,7 +14,7 @@ public class AISummaryApiService : IAISummaryApiService
         _logger = logger;
     }
 
-    public async Task<SummaryEstimateDto?> GetEstimateAsync(int articleId)
+    public async Task<SummaryEstimateDto?> GetEstimateAsync(Guid articleId)
     {
         try
         {
@@ -28,7 +27,7 @@ public class AISummaryApiService : IAISummaryApiService
         }
     }
 
-    public async Task<SummaryGenerationDto?> GenerateSummaryAsync(int articleId, int maxOutputTokens = 1500)
+    public async Task<SummaryGenerationDto?> GenerateSummaryAsync(Guid articleId, int maxOutputTokens = 1500)
     {
         try
         {
@@ -58,7 +57,7 @@ public class AISummaryApiService : IAISummaryApiService
         }
     }
 
-    public async Task<ArticleSummaryDto?> GetSummaryAsync(int articleId)
+    public async Task<ArticleSummaryDto?> GetSummaryAsync(Guid articleId)
     {
         try
         {
@@ -75,7 +74,7 @@ public class AISummaryApiService : IAISummaryApiService
         }
     }
 
-    public async Task<bool> ClearSummaryAsync(int articleId)
+    public async Task<bool> ClearSummaryAsync(Guid articleId)
     {
         try
         {

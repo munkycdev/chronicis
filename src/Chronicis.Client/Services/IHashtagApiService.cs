@@ -21,7 +21,7 @@ public interface IHashtagApiService
     /// <summary>
     /// Link a hashtag to an article
     /// </summary>
-    Task<bool> LinkHashtagAsync(string hashtagName, int articleId);
+    Task<bool> LinkHashtagAsync(string hashtagName, Guid articleId);
 
     Task<HashtagPreviewDto?> GetHashtagPreviewAsync(string name);
 }

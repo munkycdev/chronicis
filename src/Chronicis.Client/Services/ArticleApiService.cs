@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Models;
 
 namespace Chronicis.Client.Services;
 
@@ -18,11 +17,14 @@ public class ArticleApiService : IArticleApiService
         _logger = logger;
     }
 
-    public async Task<List<ArticleTreeDto>> GetRootArticlesAsync()
+    public async Task<List<ArticleTreeDto>> GetRootArticlesAsync(Guid? worldId = null)
     {
         try
         {
-            var articles = await _http.GetFromJsonAsync<List<ArticleTreeDto>>("api/articles");
+            var url = worldId.HasValue
+                ? $"api/articles?worldId={worldId.Value}"
+                : "api/articles";
+            var articles = await _http.GetFromJsonAsync<List<ArticleTreeDto>>(url);
             return articles ?? new List<ArticleTreeDto>();
         }
         catch (Exception ex)
@@ -32,11 +34,14 @@ public class ArticleApiService : IArticleApiService
         }
     }
 
-    public async Task<List<ArticleTreeDto>> GetAllArticlesAsync()
+    public async Task<List<ArticleTreeDto>> GetAllArticlesAsync(Guid? worldId = null)
     {
         try
         {
-            var articles = await _http.GetFromJsonAsync<List<ArticleTreeDto>>("api/articles/all");
+            var url = worldId.HasValue
+                ? $"api/articles/all?worldId={worldId.Value}"
+                : "api/articles/all";
+            var articles = await _http.GetFromJsonAsync<List<ArticleTreeDto>>(url);
             return articles ?? new List<ArticleTreeDto>();
         }
         catch (Exception ex)
@@ -46,7 +51,7 @@ public class ArticleApiService : IArticleApiService
         }
     }
 
-    public async Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId)
+    public async Task<List<ArticleTreeDto>> GetChildrenAsync(Guid parentId)
     {
         try
         {
@@ -60,7 +65,7 @@ public class ArticleApiService : IArticleApiService
         }
     }
 
-    public async Task<ArticleDto?> GetArticleDetailAsync(int id)
+    public async Task<ArticleDto?> GetArticleDetailAsync(Guid id)
     {
         try
         {
@@ -78,7 +83,7 @@ public class ArticleApiService : IArticleApiService
         }
     }
 
-    public async Task<ArticleDto?> GetArticleAsync(int id) => await GetArticleDetailAsync(id);
+    public async Task<ArticleDto?> GetArticleAsync(Guid id) => await GetArticleDetailAsync(id);
 
     public async Task<ArticleDto?> GetArticleByPathAsync(string path)
     {
@@ -115,7 +120,7 @@ public class ArticleApiService : IArticleApiService
         }
     }
 
-    public async Task<ArticleDto> UpdateArticleAsync(int id, ArticleUpdateDto dto)
+    public async Task<ArticleDto> UpdateArticleAsync(Guid id, ArticleUpdateDto dto)
     {
         try
         {
@@ -131,7 +136,7 @@ public class ArticleApiService : IArticleApiService
         }
     }
 
-    public async Task DeleteArticleAsync(int id)
+    public async Task DeleteArticleAsync(Guid id)
     {
         try
         {
@@ -145,7 +150,7 @@ public class ArticleApiService : IArticleApiService
         }
     }
 
-    public async Task<bool> MoveArticleAsync(int articleId, int? newParentId)
+    public async Task<bool> MoveArticleAsync(Guid articleId, Guid? newParentId)
     {
         try
         {
@@ -214,7 +219,7 @@ public class ArticleApiService : IArticleApiService
         }
     }
 
-    public async Task<List<BacklinkDto>> GetArticleBacklinksAsync(int articleId)
+    public async Task<List<BacklinkDto>> GetArticleBacklinksAsync(Guid articleId)
     {
         try
         {
@@ -228,7 +233,7 @@ public class ArticleApiService : IArticleApiService
         }
     }
 
-    public async Task<List<HashtagDto>> GetArticleHashtagsAsync(int articleId)
+    public async Task<List<HashtagDto>> GetArticleHashtagsAsync(Guid articleId)
     {
         try
         {

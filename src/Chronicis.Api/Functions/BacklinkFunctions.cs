@@ -25,10 +25,10 @@ public class BacklinkFunctions
 
     [Function("GetArticleBacklinks")]
     public async Task<HttpResponseData> GetArticleBacklinks(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id}/backlinks")]
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:guid}/backlinks")]
         HttpRequestData req,
         FunctionContext context,
-        int id)
+        Guid id)
     {
         var user = context.GetRequiredUser();
         var response = req.CreateResponse();
@@ -36,7 +36,7 @@ public class BacklinkFunctions
         try
         {
             var targetArticle = await _context.Articles
-                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == user.Id);
+                .FirstOrDefaultAsync(a => a.Id == id && a.CreatedBy == user.Id);
 
             if (targetArticle == null)
             {
@@ -62,7 +62,7 @@ public class BacklinkFunctions
                 .Include(ah => ah.Hashtag)
                 .Where(ah => relevantHashtags.Contains(ah.HashtagId)
                           && ah.ArticleId != id
-                          && ah.Article.UserId == user.Id)
+                          && ah.Article.CreatedBy == user.Id)
                 .GroupBy(ah => ah.ArticleId)
                 .Select(g => new
                 {
@@ -80,7 +80,7 @@ public class BacklinkFunctions
                 ArticleSlug = SlugGenerator.GenerateSlug(b.Article.Title),
                 Hashtags = b.Hashtags,
                 MentionCount = b.MentionCount,
-                LastModified = b.Article.ModifiedDate ?? b.Article.CreatedDate
+                LastModified = b.Article.ModifiedAt ?? b.Article.CreatedAt
             }).OrderByDescending(b => b.LastModified).ToList();
 
             response.StatusCode = HttpStatusCode.OK;

@@ -49,7 +49,7 @@ public class AISummaryService : IAISummaryService
         _chatClient = _openAIClient.GetChatClient(deploymentName);
     }
 
-    public async Task<SummaryEstimateDto> EstimateCostAsync(int articleId)
+    public async Task<SummaryEstimateDto> EstimateCostAsync(Guid articleId)
     {
         var article = await _context.Articles
             .AsNoTracking()
@@ -86,11 +86,11 @@ public class AISummaryService : IAISummaryService
             EstimatedOutputTokens = estimatedOutputTokens,
             EstimatedCostUSD = Math.Round(estimatedCost, 4),
             HasExistingSummary = !string.IsNullOrEmpty(article.AISummary),
-            ExistingSummaryDate = article.AISummaryGeneratedDate
+            ExistingSummaryDate = article.AISummaryGeneratedAt
         };
     }
 
-    public async Task<SummaryGenerationDto> GenerateSummaryAsync(int articleId, int maxOutputTokens = 1500)
+    public async Task<SummaryGenerationDto> GenerateSummaryAsync(Guid articleId, int maxOutputTokens = 1500)
     {
         try
         {
@@ -160,14 +160,14 @@ public class AISummaryService : IAISummaryService
                 (outputTokens / 1000m * OutputTokenCostPer1K);
 
             article.AISummary = summary;
-            article.AISummaryGeneratedDate = DateTime.UtcNow;
+            article.AISummaryGeneratedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return new SummaryGenerationDto
             {
                 Success = true,
                 Summary = summary,
-                GeneratedDate = article.AISummaryGeneratedDate.Value,
+                GeneratedDate = article.AISummaryGeneratedAt.Value,
                 TokensUsed = tokensUsed,
                 ActualCostUSD = Math.Round(actualCost, 4)
             };
@@ -183,7 +183,7 @@ public class AISummaryService : IAISummaryService
         }
     }
 
-    private async Task<List<(string Title, string Content)>> GetBacklinksContentAsync(int articleId)
+    private async Task<List<(string Title, string Content)>> GetBacklinksContentAsync(Guid articleId)
     {
         var linkedHashtags = await _context.Hashtags
             .Where(h => h.LinkedArticleId == articleId)

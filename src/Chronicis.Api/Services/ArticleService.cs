@@ -1,5 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -19,25 +20,35 @@ namespace Chronicis.Api.Services
 
         /// <summary>
         /// Get all root-level articles (ParentId is null) for a specific user.
+        /// Optionally filter by WorldId.
         /// </summary>
-        public async Task<List<ArticleTreeDto>> GetRootArticlesAsync(int userId)
+        public async Task<List<ArticleTreeDto>> GetRootArticlesAsync(Guid userId, Guid? worldId = null)
         {
-            // Use AsNoTracking and direct projection to avoid User navigation issues
-            var rootArticles = await _context.Articles
+            var query = _context.Articles
                 .AsNoTracking()
-                .Where(a => a.ParentId == null && a.User.Id == userId)
+                .Where(a => a.ParentId == null && a.CreatedBy == userId);
+
+            if (worldId.HasValue)
+            {
+                query = query.Where(a => a.WorldId == worldId.Value);
+            }
+
+            var rootArticles = await query
                 .Select(a => new ArticleTreeDto
                 {
                     Id = a.Id,
                     Title = a.Title,
                     Slug = a.Slug,
                     ParentId = a.ParentId,
+                    Type = a.Type,
+                    Visibility = a.Visibility,
                     HasChildren = _context.Articles.Any(c => c.ParentId == a.Id),
                     ChildCount = _context.Articles.Count(c => c.ParentId == a.Id),
                     Children = new List<ArticleTreeDto>(),
-                    CreatedDate = a.CreatedDate,
+                    CreatedAt = a.CreatedAt,
                     EffectiveDate = a.EffectiveDate,
-                    IconEmoji = a.IconEmoji
+                    IconEmoji = a.IconEmoji,
+                    CreatedBy = a.CreatedBy
                 })
                 .OrderBy(a => a.Title)
                 .ToListAsync();
@@ -48,24 +59,35 @@ namespace Chronicis.Api.Services
         /// <summary>
         /// Get all articles for a user in a flat list (no hierarchy).
         /// Useful for dropdowns, linking dialogs, etc.
+        /// Optionally filter by WorldId.
         /// </summary>
-        public async Task<List<ArticleTreeDto>> GetAllArticlesAsync(int userId)
+        public async Task<List<ArticleTreeDto>> GetAllArticlesAsync(Guid userId, Guid? worldId = null)
         {
-            var articles = await _context.Articles
+            var query = _context.Articles
                 .AsNoTracking()
-                .Where(a => a.User.Id == userId)
+                .Where(a => a.CreatedBy == userId);
+
+            if (worldId.HasValue)
+            {
+                query = query.Where(a => a.WorldId == worldId.Value);
+            }
+
+            var articles = await query
                 .Select(a => new ArticleTreeDto
                 {
                     Id = a.Id,
                     Title = a.Title,
                     Slug = a.Slug,
                     ParentId = a.ParentId,
+                    Type = a.Type,
+                    Visibility = a.Visibility,
                     HasChildren = false, // Not relevant in flat list
                     ChildCount = 0,      // Not relevant in flat list
                     Children = new List<ArticleTreeDto>(),
-                    CreatedDate = a.CreatedDate,
+                    CreatedAt = a.CreatedAt,
                     EffectiveDate = a.EffectiveDate,
-                    IconEmoji = a.IconEmoji
+                    IconEmoji = a.IconEmoji,
+                    CreatedBy = a.CreatedBy
                 })
                 .OrderBy(a => a.Title)
                 .ToListAsync();
@@ -76,24 +98,26 @@ namespace Chronicis.Api.Services
         /// <summary>
         /// Get all child articles of a specific parent.
         /// </summary>
-        public async Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId, int userId)
+        public async Task<List<ArticleTreeDto>> GetChildrenAsync(Guid parentId, Guid userId)
         {
-            // Use AsNoTracking and direct projection
             var children = await _context.Articles
                 .AsNoTracking()
-                .Where(a => a.ParentId == parentId && a.User.Id == userId)
+                .Where(a => a.ParentId == parentId && a.CreatedBy == userId)
                 .Select(a => new ArticleTreeDto
                 {
                     Id = a.Id,
                     Title = a.Title,
                     Slug = a.Slug,
                     ParentId = a.ParentId,
+                    Type = a.Type,
+                    Visibility = a.Visibility,
                     HasChildren = _context.Articles.Any(c => c.ParentId == a.Id),
                     ChildCount = _context.Articles.Count(c => c.ParentId == a.Id),
                     Children = new List<ArticleTreeDto>(),
-                    CreatedDate = a.CreatedDate,
+                    CreatedAt = a.CreatedAt,
                     EffectiveDate = a.EffectiveDate,
-                    IconEmoji = a.IconEmoji
+                    IconEmoji = a.IconEmoji,
+                    CreatedBy = a.CreatedBy
                 })
                 .OrderBy(a => a.Title)
                 .ToListAsync();
@@ -104,23 +128,33 @@ namespace Chronicis.Api.Services
         /// <summary>
         /// Get full article details including breadcrumb path from root.
         /// </summary>
-        public async Task<ArticleDto?> GetArticleDetailAsync(int id, int userId)
+        public async Task<ArticleDto?> GetArticleDetailAsync(Guid id, Guid userId)
         {
-            // Use AsNoTracking and direct projection
             var article = await _context.Articles
                 .AsNoTracking()
-                .Where(a => a.Id == id && a.User.Id == userId)
+                .Where(a => a.Id == id && a.CreatedBy == userId)
                 .Select(a => new ArticleDto
                 {
                     Id = a.Id,
                     Title = a.Title,
                     Slug = a.Slug,
                     ParentId = a.ParentId,
+                    WorldId = a.WorldId,
+                    CampaignId = a.CampaignId,
                     Body = a.Body ?? string.Empty,
-                    CreatedDate = a.CreatedDate,
-                    ModifiedDate = a.ModifiedDate,
+                    Type = a.Type,
+                    Visibility = a.Visibility,
+                    CreatedAt = a.CreatedAt,
+                    ModifiedAt = a.ModifiedAt,
                     EffectiveDate = a.EffectiveDate,
+                    CreatedBy = a.CreatedBy,
+                    LastModifiedBy = a.LastModifiedBy,
                     IconEmoji = a.IconEmoji,
+                    SessionDate = a.SessionDate,
+                    InGameDate = a.InGameDate,
+                    PlayerId = a.PlayerId,
+                    AISummary = a.AISummary,
+                    AISummaryGeneratedAt = a.AISummaryGeneratedAt,
                     Breadcrumbs = new List<BreadcrumbDto>()  // Will populate separately
                 })
                 .FirstOrDefaultAsync();
@@ -140,11 +174,10 @@ namespace Chronicis.Api.Services
         /// <summary>
         /// Get all hashtags associated with a specific article.
         /// </summary>
-        public async Task<List<HashtagDto>?> GetArticleHashtagsAsync(int id, int userId)
+        public async Task<List<HashtagDto>?> GetArticleHashtagsAsync(Guid id, Guid userId)
         {
-            // Use AsNoTracking and direct projection
             var hashtags = await _context.ArticleHashtags
-                .Where(ah => ah.ArticleId == id && ah.Article.UserId == userId)
+                .Where(ah => ah.ArticleId == id && ah.Article.CreatedBy == userId)
                 .Include(ah => ah.Hashtag)
                 .Select(ah => new HashtagDto
                 {
@@ -152,8 +185,8 @@ namespace Chronicis.Api.Services
                     Name = ah.Hashtag.Name,
                     LinkedArticleId = ah.Hashtag.LinkedArticleId,
                     LinkedArticleTitle = ah.Hashtag.LinkedArticle != null ? ah.Hashtag.LinkedArticle.Title : null,
-                    UsageCount = ah.Hashtag.ArticleHashtags.Count, 
-                    CreatedDate = ah.Hashtag.CreatedDate
+                    UsageCount = ah.Hashtag.ArticleHashtags.Count,
+                    CreatedAt = ah.Hashtag.CreatedAt
                 })
                 .ToListAsync();
 
@@ -169,11 +202,11 @@ namespace Chronicis.Api.Services
         /// <summary>
         /// Move an article to a new parent (or to root if newParentId is null).
         /// </summary>
-        public async Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(int articleId, int? newParentId, int userId)
+        public async Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(Guid articleId, Guid? newParentId, Guid userId)
         {
             // 1. Get the article to move
             var article = await _context.Articles
-                .FirstOrDefaultAsync(a => a.Id == articleId && a.UserId == userId);
+                .FirstOrDefaultAsync(a => a.Id == articleId && a.CreatedBy == userId);
 
             if (article == null)
             {
@@ -192,7 +225,7 @@ namespace Chronicis.Api.Services
             {
                 var targetParent = await _context.Articles
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(a => a.Id == newParentId.Value && a.UserId == userId);
+                    .FirstOrDefaultAsync(a => a.Id == newParentId.Value && a.CreatedBy == userId);
 
                 if (targetParent == null)
                 {
@@ -211,7 +244,8 @@ namespace Chronicis.Api.Services
 
             // 5. Perform the move
             article.ParentId = newParentId;
-            article.ModifiedDate = DateTime.UtcNow;
+            article.ModifiedAt = DateTime.UtcNow;
+            article.LastModifiedBy = userId;
 
             await _context.SaveChangesAsync();
 
@@ -220,9 +254,8 @@ namespace Chronicis.Api.Services
 
         /// <summary>
         /// Check if moving articleId to become a child of targetParentId would create a circular reference.
-        /// This happens if targetParentId is the article itself or any of its descendants.
         /// </summary>
-        private async Task<bool> WouldCreateCircularReferenceAsync(int articleId, int targetParentId, int userId)
+        private async Task<bool> WouldCreateCircularReferenceAsync(Guid articleId, Guid targetParentId, Guid userId)
         {
             // If trying to move to self, that's circular
             if (articleId == targetParentId)
@@ -231,8 +264,8 @@ namespace Chronicis.Api.Services
             }
 
             // Walk up from targetParentId to root, checking if we encounter articleId
-            var currentId = (int?)targetParentId;
-            var visited = new HashSet<int>();
+            var currentId = (Guid?)targetParentId;
+            var visited = new HashSet<Guid>();
 
             while (currentId.HasValue)
             {
@@ -253,7 +286,7 @@ namespace Chronicis.Api.Services
                 // Move up to parent
                 var parent = await _context.Articles
                     .AsNoTracking()
-                    .Where(a => a.Id == currentId.Value && a.UserId == userId)
+                    .Where(a => a.Id == currentId.Value && a.CreatedBy == userId)
                     .Select(a => new { a.ParentId })
                     .FirstOrDefaultAsync();
 
@@ -266,18 +299,18 @@ namespace Chronicis.Api.Services
         /// <summary>
         /// Recursively build breadcrumb trail from root to current article.
         /// </summary>
-        private async Task<List<BreadcrumbDto>> BuildBreadcrumbsAsync(int articleId, int userId)
+        private async Task<List<BreadcrumbDto>> BuildBreadcrumbsAsync(Guid articleId, Guid userId)
         {
             var breadcrumbs = new List<BreadcrumbDto>();
-            var currentId = (int?)articleId;
+            var currentId = (Guid?)articleId;
 
             // Walk up the tree to build path
             while (currentId.HasValue)
             {
                 var article = await _context.Articles
                     .AsNoTracking()
-                    .Where(a => a.Id == currentId && a.User.Id == userId)
-                    .Select(a => new { a.Id, a.Title, a.Slug, a.ParentId })
+                    .Where(a => a.Id == currentId && a.CreatedBy == userId)
+                    .Select(a => new { a.Id, a.Title, a.Slug, a.ParentId, a.Type })
                     .FirstOrDefaultAsync();
 
                 if (article == null)
@@ -287,7 +320,8 @@ namespace Chronicis.Api.Services
                 {
                     Id = article.Id,
                     Title = article.Title ?? "(Untitled)",
-                    Slug = article.Slug
+                    Slug = article.Slug,
+                    Type = article.Type
                 });
 
                 currentId = article.ParentId;
@@ -298,9 +332,8 @@ namespace Chronicis.Api.Services
 
         /// <summary>
         /// Get article by hierarchical path (e.g., "sword-coast/waterdeep/castle-ward").
-        /// Walks down the tree using slugs to find the target article.
         /// </summary>
-        public async Task<ArticleDto?> GetArticleByPathAsync(string path, int userId)
+        public async Task<ArticleDto?> GetArticleByPathAsync(string path, Guid userId)
         {
             if (string.IsNullOrWhiteSpace(path))
                 return null;
@@ -309,23 +342,23 @@ namespace Chronicis.Api.Services
             if (slugs.Length == 0)
                 return null;
 
-            int? currentParentId = null;
-            int? articleId = null;
+            Guid? currentParentId = null;
+            Guid? articleId = null;
 
             // Walk down the tree using slugs
             foreach (var slug in slugs)
             {
                 var article = await _context.Articles
                     .AsNoTracking()
-                    .Where(a => a.Slug == slug && 
-                                a.ParentId == currentParentId && 
-                                a.UserId == userId)
+                    .Where(a => a.Slug == slug &&
+                                a.ParentId == currentParentId &&
+                                a.CreatedBy == userId)
                     .Select(a => new { a.Id, a.ParentId })
                     .FirstOrDefaultAsync();
 
                 if (article == null)
                 {
-                    _logger.LogWarning("Article not found for slug '{Slug}' under parent {ParentId} for user {UserId}", 
+                    _logger.LogWarning("Article not found for slug '{Slug}' under parent {ParentId} for user {UserId}",
                         slug, currentParentId, userId);
                     return null;
                 }
@@ -335,21 +368,21 @@ namespace Chronicis.Api.Services
             }
 
             // Found the article, now get full details
-            return articleId.HasValue 
-                ? await GetArticleDetailAsync(articleId.Value, userId) 
+            return articleId.HasValue
+                ? await GetArticleDetailAsync(articleId.Value, userId)
                 : null;
         }
 
         /// <summary>
         /// Check if a slug is unique within its parent scope.
         /// </summary>
-        public async Task<bool> IsSlugUniqueAsync(string slug, int? parentId, int userId, int? excludeArticleId = null)
+        public async Task<bool> IsSlugUniqueAsync(string slug, Guid? parentId, Guid userId, Guid? excludeArticleId = null)
         {
             var query = _context.Articles
                 .AsNoTracking()
-                .Where(a => a.Slug == slug && 
-                            a.ParentId == parentId && 
-                            a.UserId == userId);
+                .Where(a => a.Slug == slug &&
+                            a.ParentId == parentId &&
+                            a.CreatedBy == userId);
 
             if (excludeArticleId.HasValue)
             {
@@ -362,14 +395,14 @@ namespace Chronicis.Api.Services
         /// <summary>
         /// Generate a unique slug for an article within its parent scope.
         /// </summary>
-        public async Task<string> GenerateUniqueSlugAsync(string title, int? parentId, int userId, int? excludeArticleId = null)
+        public async Task<string> GenerateUniqueSlugAsync(string title, Guid? parentId, Guid userId, Guid? excludeArticleId = null)
         {
             var baseSlug = SlugGenerator.GenerateSlug(title);
-            
+
             // Get all existing slugs in the same parent scope
             var existingSlugs = await _context.Articles
                 .AsNoTracking()
-                .Where(a => a.ParentId == parentId && a.UserId == userId)
+                .Where(a => a.ParentId == parentId && a.CreatedBy == userId)
                 .Where(a => !excludeArticleId.HasValue || a.Id != excludeArticleId.Value)
                 .Select(a => a.Slug)
                 .ToHashSetAsync();
@@ -378,9 +411,9 @@ namespace Chronicis.Api.Services
         }
 
         /// <summary>
-        /// Build the full hierarchical path for an article (e.g., "sword-coast/waterdeep/castle-ward").
+        /// Build the full hierarchical path for an article.
         /// </summary>
-        public async Task<string> BuildArticlePathAsync(int articleId, int userId)
+        public async Task<string> BuildArticlePathAsync(Guid articleId, Guid userId)
         {
             var breadcrumbs = await BuildBreadcrumbsAsync(articleId, userId);
             return string.Join("/", breadcrumbs.Select(b => b.Slug));

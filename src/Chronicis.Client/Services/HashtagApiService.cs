@@ -57,9 +57,9 @@ public class HashtagApiService : IHashtagApiService
     }
 
     /// <summary>
-    /// Link a hashtag to an article (Phase 7+ feature)
+    /// Link a hashtag to an article
     /// </summary>
-    public async Task<bool> LinkHashtagAsync(string hashtagName, int articleId)
+    public async Task<bool> LinkHashtagAsync(string hashtagName, Guid articleId)
     {
         try
         {

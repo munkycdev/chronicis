@@ -14,12 +14,12 @@ public interface IHashtagSyncService
     /// </summary>
     /// <param name="articleId">The article to sync hashtags for</param>
     /// <param name="body">The current body text of the article</param>
-    Task SyncHashtagsAsync(int articleId, string body);
+    Task SyncHashtagsAsync(Guid articleId, string body);
 
     /// <summary>
     /// Attempts to auto-link any unlinked hashtags that match this article's title.
     /// Called when an article is created or updated.
     /// </summary>
     /// <param name="articleId">The article whose title to check</param>
-    Task LinkHashtagsToArticleByTitleAsync(int articleId);
+    Task LinkHashtagsToArticleByTitleAsync(Guid articleId);
 }

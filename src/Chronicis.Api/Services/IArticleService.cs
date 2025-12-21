@@ -4,14 +4,14 @@ namespace Chronicis.Api.Services;
 
 public interface IArticleService
 {
-    Task<ArticleDto?> GetArticleDetailAsync(int id, int userId);
-    Task<ArticleDto?> GetArticleByPathAsync(string path, int userId);
-    Task<List<HashtagDto>?> GetArticleHashtagsAsync(int id, int userId);
-    Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId, int userId);
-    Task<List<ArticleTreeDto>> GetRootArticlesAsync(int userId);
-    Task<List<ArticleTreeDto>> GetAllArticlesAsync(int userId);
-    Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(int articleId, int? newParentId, int userId);
-    Task<bool> IsSlugUniqueAsync(string slug, int? parentId, int userId, int? excludeArticleId = null);
-    Task<string> GenerateUniqueSlugAsync(string title, int? parentId, int userId, int? excludeArticleId = null);
-    Task<string> BuildArticlePathAsync(int articleId, int userId);
+    Task<ArticleDto?> GetArticleDetailAsync(Guid id, Guid userId);
+    Task<ArticleDto?> GetArticleByPathAsync(string path, Guid userId);
+    Task<List<HashtagDto>?> GetArticleHashtagsAsync(Guid id, Guid userId);
+    Task<List<ArticleTreeDto>> GetChildrenAsync(Guid parentId, Guid userId);
+    Task<List<ArticleTreeDto>> GetRootArticlesAsync(Guid userId, Guid? worldId = null);
+    Task<List<ArticleTreeDto>> GetAllArticlesAsync(Guid userId, Guid? worldId = null);
+    Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(Guid articleId, Guid? newParentId, Guid userId);
+    Task<bool> IsSlugUniqueAsync(string slug, Guid? parentId, Guid userId, Guid? excludeArticleId = null);
+    Task<string> GenerateUniqueSlugAsync(string title, Guid? parentId, Guid userId, Guid? excludeArticleId = null);
+    Task<string> BuildArticlePathAsync(Guid articleId, Guid userId);
 }

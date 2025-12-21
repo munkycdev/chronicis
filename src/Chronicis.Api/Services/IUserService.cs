@@ -10,6 +10,7 @@ public interface IUserService
     /// <summary>
     /// Gets an existing user or creates a new one based on Auth0 user ID.
     /// This method is called on every authenticated request to ensure the user exists in our database.
+    /// On first login, also creates a default World for the user.
     /// </summary>
     /// <param name="auth0UserId">The Auth0 user ID (e.g., "google-oauth2|123456")</param>
     /// <param name="email">User's email from Auth0</param>
@@ -23,11 +24,11 @@ public interface IUserService
     /// </summary>
     /// <param name="userId">Internal user ID</param>
     /// <returns>User entity or null if not found</returns>
-    Task<User?> GetUserByIdAsync(int userId);
+    Task<User?> GetUserByIdAsync(Guid userId);
 
     /// <summary>
     /// Updates the user's last login timestamp
     /// </summary>
     /// <param name="userId">Internal user ID</param>
-    Task UpdateLastLoginAsync(int userId);
+    Task UpdateLastLoginAsync(Guid userId);
 }

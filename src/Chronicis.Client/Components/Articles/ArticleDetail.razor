@@ -194,13 +194,13 @@ else
                 <MudListItem>
                         <MudText Typo="Typo.subtitle1">Created Date</MudText>
                         <MudText Typo="Typo.body2">
-                            @_article.CreatedDate.ToString("MMMM d, yyyy 'at' h:mm tt")
+                            @_article.CreatedAt.ToString("MMMM d, yyyy 'at' h:mm tt")
                         </MudText>
                 </MudListItem>
                 <MudListItem>
                         <MudText Typo="Typo.subtitle1">Modified Date</MudText>
                         <MudText Typo="Typo.body2">
-                            @_article.ModifiedDate?.ToString("MMMM d, yyyy 'at' h:mm tt")
+                            @_article.ModifiedAt?.ToString("MMMM d, yyyy 'at' h:mm tt")
                         </MudText>
                 </MudListItem>
             </MudList>
@@ -264,8 +264,8 @@ else
 
             _editorInitialized = false;
 
-            // Check if article is selected AND valid (> 0)
-            if (TreeState.SelectedArticleId.HasValue && TreeState.SelectedArticleId.Value > 0)
+            // Check if article is selected AND valid
+            if (TreeState.SelectedArticleId.HasValue && TreeState.SelectedArticleId.Value != Guid.Empty)
             {
                 await LoadArticleAsync(TreeState.SelectedArticleId.Value);
             }
@@ -287,7 +287,7 @@ else
         });
     }
 
-    private async Task LoadArticleAsync(int articleId)
+    private async Task LoadArticleAsync(Guid articleId)
     {
         _isLoading = true;
         StateHasChanged();
@@ -330,7 +330,7 @@ else
         return text.Replace("'", "\\'").Replace("\n", "\\n").Replace("\r", "\\r");
     }
 
-    private void LoadBreadcrumbs(int articleId)
+    private void LoadBreadcrumbs(Guid articleId)
     {
         _breadcrumbs = new List<BreadcrumbItem>
         {
@@ -418,7 +418,7 @@ else
             };
 
             await ArticleApi.UpdateArticleAsync(_article.Id, updateDto);
-            _article.ModifiedDate = DateTime.Now;
+            _article.ModifiedAt = DateTime.Now;
             _lastSaveTime = "just now";
 
             // Refresh tree to show updated icon
@@ -510,7 +510,7 @@ else
             // Update local article with changes
             _article.Title = newTitle;
             _article.Body = _editBody;
-            _article.ModifiedDate = DateTime.Now;
+            _article.ModifiedAt = DateTime.Now;
 
             _hasUnsavedChanges = false;
             _lastSaveTime = "just now";

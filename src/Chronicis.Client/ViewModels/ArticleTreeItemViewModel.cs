@@ -1,13 +1,17 @@
+using Chronicis.Shared.Enums;
+
 namespace Chronicis.Client.ViewModels;
 
 public class ArticleTreeItemViewModel
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
-    public int? ParentId { get; set; }
+    public Guid? ParentId { get; set; }
     public string? Body { get; set; }
     public bool HasChildren { get; set; }
     public bool IsExpanded { get; set; }
     public bool IsSelected { get; set; }
+    public ArticleType Type { get; set; }
+    public ArticleVisibility Visibility { get; set; }
     public List<ArticleTreeItemViewModel> Children { get; set; } = new();
 }

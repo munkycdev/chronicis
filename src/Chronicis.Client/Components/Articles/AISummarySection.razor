@@ -12,7 +12,7 @@
             @if (_summaryData?.HasSummary == true)
             {
                 <MudText Typo="Typo.caption" Class="summary-timestamp">
-                    Generated @GetRelativeTime(_summaryData.GeneratedDate!.Value)
+                    Generated @GetRelativeTime(_summaryData.GeneratedAt!.Value)
                 </MudText>
             }
         </div>
@@ -113,7 +113,7 @@
 
 @code {
     [Parameter]
-    public int ArticleId { get; set; }
+    public Guid ArticleId { get; set; }
 
     [Parameter]
     public bool IsExpanded { get; set; } = false;
@@ -163,7 +163,7 @@
                 {
                     ArticleId = ArticleId,
                     Summary = result.Summary,
-                    GeneratedDate = result.GeneratedDate
+                    GeneratedAt = result.GeneratedDate
                 };
                 
                 Snackbar.Add(

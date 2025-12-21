@@ -29,9 +29,9 @@ public class MoveArticle
     /// </summary>
     [Function("MoveArticle")]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "articles/{id:int}/parent")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "articles/{id:guid}/parent")] HttpRequestData req,
         FunctionContext context,
-        int id)
+        Guid id)
     {
         var user = context.GetRequiredUser();
 

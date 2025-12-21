@@ -2,7 +2,7 @@ namespace Chronicis.Shared.DTOs;
 
 public class BacklinkDto
 {
-    public int ArticleId { get; set; }
+    public Guid ArticleId { get; set; }
     public string ArticleTitle { get; set; } = string.Empty;
     public string ArticleSlug { get; set; } = string.Empty;
     public List<string> Hashtags { get; set; } = new();

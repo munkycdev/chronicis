@@ -27,9 +27,9 @@ public class DeleteArticle
 
     [Function("DeleteArticle")]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "articles/{id}")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "articles/{id:guid}")] HttpRequestData req,
         FunctionContext context,
-        int id)
+        Guid id)
     {
         var user = context.GetRequiredUser();
 
@@ -44,7 +44,7 @@ public class DeleteArticle
             }
 
             var article = await _context.Articles
-                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == user.Id);
+                .FirstOrDefaultAsync(a => a.Id == id && a.CreatedBy == user.Id);
 
             if (article == null)
             {

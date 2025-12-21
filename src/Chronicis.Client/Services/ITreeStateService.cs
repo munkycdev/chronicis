@@ -5,10 +5,10 @@ namespace Chronicis.Client.Services
 {
     public interface ITreeStateService
     {
-        void ExpandAndSelectArticle(int articleId);
-        event Action<int>? OnExpandAndSelect;
-        void NotifySelectionChanged(int articleId);
-        int? SelectedArticleId { get; }
+        void ExpandAndSelectArticle(Guid articleId);
+        event Action<Guid>? OnExpandAndSelect;
+        void NotifySelectionChanged(Guid articleId);
+        Guid? SelectedArticleId { get; }
         bool IsSearchActive { get; }
         List<ArticleTreeItemViewModel> RootItems { get; }
         string SearchQuery { get; }
@@ -20,12 +20,12 @@ namespace Chronicis.Client.Services
         void AddArticle(ArticleDto article);
         void ClearSearch();
         void Initialize(List<ArticleTreeDto> rootArticles);
-        bool IsNodeVisible(int articleId);
+        bool IsNodeVisible(Guid articleId);
         void LoadChildren(ArticleTreeItemViewModel parent, List<ArticleTreeDto> children);
-        void RemoveArticle(int articleId);
+        void RemoveArticle(Guid articleId);
         void RefreshTree();
         Task SearchAsync(string query);
-        void SelectArticle(int articleId);
+        void SelectArticle(Guid articleId);
         void UpdateArticle(ArticleDto article);
     }
 }

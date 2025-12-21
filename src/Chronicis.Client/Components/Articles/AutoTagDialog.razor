@@ -74,7 +74,7 @@
     MudDialogInstance MudDialog { get; set; } = null!;
 
     [Parameter]
-    public int ArticleId { get; set; }
+    public Guid ArticleId { get; set; }
 
     private bool _isLoading = true;
     private bool _isApplying = false;
@@ -93,7 +93,7 @@
         try
         {
             // Preview changes for just this article
-            var response = await AutoHashtagApi.PreviewAutoHashtagAsync(new List<int> { ArticleId });
+            var response = await AutoHashtagApi.PreviewAutoHashtagAsync(new List<Guid> { ArticleId });
 
             // Get the change for this specific article (should only be one)
             _preview = response.Changes.FirstOrDefault();
@@ -119,7 +119,7 @@
 
         try
         {
-            await AutoHashtagApi.ApplyAutoHashtagAsync(new List<int> { ArticleId });
+            await AutoHashtagApi.ApplyAutoHashtagAsync(new List<Guid> { ArticleId });
             
             Snackbar.Add($"Successfully added {_preview.MatchesFound} hashtags!", Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));

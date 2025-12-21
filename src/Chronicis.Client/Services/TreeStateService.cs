@@ -11,13 +11,13 @@ public class TreeStateService : ITreeStateService
     private ArticleTreeItemViewModel? _selectedArticle;
     private string _searchQuery = string.Empty;
     private List<ArticleSearchResultDto> _searchResults = new();
-    private HashSet<int> _visibleNodeIds = new();
+    private HashSet<Guid> _visibleNodeIds = new();
 
     public event Action? OnRefreshRequested;
-    public event Action<int>? OnExpandAndSelect;
+    public event Action<Guid>? OnExpandAndSelect;
     public event Action? OnStateChanged;
 
-    public int? SelectedArticleId { get; private set; }
+    public Guid? SelectedArticleId { get; private set; }
     public List<ArticleTreeItemViewModel> RootItems => _rootItems;
     public ArticleTreeItemViewModel? SelectedArticle => _selectedArticle;
     public string SearchQuery => _searchQuery;
@@ -28,13 +28,13 @@ public class TreeStateService : ITreeStateService
         _apiService = apiService;
     }
 
-    public void NotifySelectionChanged(int articleId)
+    public void NotifySelectionChanged(Guid articleId)
     {
         SelectedArticleId = articleId;
         NotifyStateChanged();
     }
 
-    public void ExpandAndSelectArticle(int articleId)
+    public void ExpandAndSelectArticle(Guid articleId)
     {
         SelectedArticleId = articleId;
         OnExpandAndSelect?.Invoke(articleId);
@@ -60,7 +60,7 @@ public class TreeStateService : ITreeStateService
         NotifyStateChanged();
     }
 
-    public void SelectArticle(int articleId)
+    public void SelectArticle(Guid articleId)
     {
         if (_selectedArticle != null)
         {
@@ -113,7 +113,7 @@ public class TreeStateService : ITreeStateService
         }
     }
 
-    public void RemoveArticle(int articleId)
+    public void RemoveArticle(Guid articleId)
     {
         if (RemoveArticleRecursive(_rootItems, articleId))
         {
@@ -170,7 +170,7 @@ public class TreeStateService : ITreeStateService
         NotifyStateChanged();
     }
 
-    public bool IsNodeVisible(int articleId)
+    public bool IsNodeVisible(Guid articleId)
     {
         if (!IsSearchActive)
             return true;
@@ -183,7 +183,7 @@ public class TreeStateService : ITreeStateService
         OnRefreshRequested?.Invoke();
     }
 
-    private bool RemoveArticleRecursive(List<ArticleTreeItemViewModel> items, int articleId)
+    private bool RemoveArticleRecursive(List<ArticleTreeItemViewModel> items, Guid articleId)
     {
         var item = items.FirstOrDefault(i => i.Id == articleId);
         if (item != null)
@@ -203,7 +203,7 @@ public class TreeStateService : ITreeStateService
         return false;
     }
 
-    private ArticleTreeItemViewModel? FindArticleById(List<ArticleTreeItemViewModel> items, int id)
+    private ArticleTreeItemViewModel? FindArticleById(List<ArticleTreeItemViewModel> items, Guid id)
     {
         foreach (var item in items)
         {

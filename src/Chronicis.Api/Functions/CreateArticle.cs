@@ -4,6 +4,7 @@ using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
 using Microsoft.Azure.Functions.Worker;
@@ -94,12 +95,22 @@ public class CreateArticle
 
             var article = new Article
             {
+                Id = Guid.NewGuid(),
                 Title = dto.Title,
                 Slug = slug,
                 ParentId = dto.ParentId,
+                WorldId = dto.WorldId,
+                CampaignId = dto.CampaignId,
                 Body = dto.Body,
-                CreatedDate = DateTime.UtcNow,
-                UserId = user.Id
+                Type = dto.Type,
+                Visibility = dto.Visibility,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = user.Id,
+                EffectiveDate = dto.EffectiveDate ?? DateTime.UtcNow,
+                IconEmoji = dto.IconEmoji,
+                SessionDate = dto.SessionDate,
+                InGameDate = dto.InGameDate,
+                PlayerId = dto.PlayerId
             };
 
             _context.Articles.Add(article);
@@ -116,9 +127,16 @@ public class CreateArticle
                 Title = article.Title,
                 Slug = article.Slug,
                 ParentId = article.ParentId,
-                Body = article.Body,
-                CreatedDate = article.CreatedDate,
-                ModifiedDate = article.ModifiedDate,
+                WorldId = article.WorldId,
+                CampaignId = article.CampaignId,
+                Body = article.Body ?? string.Empty,
+                Type = article.Type,
+                Visibility = article.Visibility,
+                CreatedAt = article.CreatedAt,
+                ModifiedAt = article.ModifiedAt,
+                EffectiveDate = article.EffectiveDate,
+                CreatedBy = article.CreatedBy,
+                IconEmoji = article.IconEmoji,
                 HasChildren = false
             };
 

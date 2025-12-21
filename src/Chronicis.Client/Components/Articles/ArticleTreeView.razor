@@ -190,7 +190,7 @@
     // Drag-and-drop state
     private bool _isDragging = false;
     private ArticleTreeNode? _draggedNode = null;
-    private int? _dropTargetNodeId = null;
+    private Guid? _dropTargetNodeId = null;
     private bool _isOverDropToRoot = false;
 
     protected override async Task OnInitializedAsync()
@@ -307,7 +307,7 @@
         return IsInSubtree(_draggedNode, node.Article.Id);
     }
 
-    private bool IsInSubtree(ArticleTreeNode root, int targetId)
+    private bool IsInSubtree(ArticleTreeNode root, Guid targetId)
     {
         if (root.Article.Id == targetId) return true;
         
@@ -322,7 +322,7 @@
         return false;
     }
 
-    private async Task MoveArticleToParent(int articleId, int? newParentId)
+    private async Task MoveArticleToParent(Guid articleId, Guid? newParentId)
     {
         try
         {
@@ -351,9 +351,8 @@
 
     #endregion
 
-    private async void OnExpandAndSelectRequested(int articleId)
+    private async void OnExpandAndSelectRequested(Guid articleId)
     {
-
         await InvokeAsync(async () =>
         {
             await ExpandAndSelectNode(articleId);
@@ -622,7 +621,7 @@
         }
     }
 
-    private async Task ExpandAndSelectNode(int targetId)
+    private async Task ExpandAndSelectNode(Guid targetId)
     {
         // Get the full article to get its breadcrumbs
         var article = await ArticleApi.GetArticleAsync(targetId);
@@ -673,7 +672,7 @@
         }
     }
 
-    private ArticleTreeNode? FindNodeById(List<ArticleTreeNode>? nodes, int id)
+    private ArticleTreeNode? FindNodeById(List<ArticleTreeNode>? nodes, Guid id)
     {
         if (nodes == null) return null;
         
@@ -726,7 +725,7 @@
                 ParentId = treeDto.ParentId,
                 HasChildren = treeDto.HasChildren,
                 ChildCount = treeDto.ChildCount,
-                CreatedDate = treeDto.CreatedDate,
+                CreatedAt = treeDto.CreatedAt,
                 EffectiveDate = treeDto.EffectiveDate,
                 IconEmoji = treeDto.IconEmoji,
                 Body = string.Empty

@@ -14,7 +14,7 @@ public class AutoHashtagApiService : IAutoHashtagApiService
         _logger = logger;
     }
 
-    public async Task<AutoHashtagResponse> PreviewAutoHashtagAsync(List<int>? articleIds = null)
+    public async Task<AutoHashtagResponse> PreviewAutoHashtagAsync(List<Guid>? articleIds = null)
     {
         try
         {
@@ -37,7 +37,7 @@ public class AutoHashtagApiService : IAutoHashtagApiService
         }
     }
 
-    public async Task<AutoHashtagResponse> ApplyAutoHashtagAsync(List<int>? articleIds = null)
+    public async Task<AutoHashtagResponse> ApplyAutoHashtagAsync(List<Guid>? articleIds = null)
     {
         try
         {

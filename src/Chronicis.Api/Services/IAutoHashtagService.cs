@@ -11,5 +11,5 @@ public interface IAutoHashtagService
     /// <param name="dryRun">If true, preview changes without applying them</param>
     /// <param name="articleIds">Optional list of specific article IDs to process. If null, processes all.</param>
     /// <returns>Results showing changes found/applied</returns>
-    Task<AutoHashtagResponse> ProcessArticlesAsync(int userId, bool dryRun, List<int>? articleIds = null);
+    Task<AutoHashtagResponse> ProcessArticlesAsync(Guid userId, bool dryRun, List<Guid>? articleIds = null);
 }

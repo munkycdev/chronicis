@@ -6,7 +6,7 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
-@if (TreeStateService.SelectedArticleId.HasValue && TreeStateService.SelectedArticleId.Value > 0)
+@if (TreeStateService.SelectedArticleId.HasValue && TreeStateService.SelectedArticleId.Value != Guid.Empty)
 {
     <ArticleDetail />
 }
@@ -109,7 +109,7 @@ else
                                                 @(string.IsNullOrEmpty(article.Title) ? "(Untitled)" : article.Title)
                                             </MudText>
                                             <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                                Modified @FormatRelativeTime(article.ModifiedDate ?? article.CreatedDate)
+                                                Modified @FormatRelativeTime(article.ModifiedAt.HasValue ? article.ModifiedAt.Value : article.CreatedAt)
                                             </MudText>
                                         </div>
                                         <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
@@ -345,9 +345,9 @@ else
                 TotalArticles = CountTotalArticles(allArticles),
                 RootArticles = allArticles.Count,
                 RecentlyModified = _recentArticles.Count(a =>
-                    (a.ModifiedDate ?? a.CreatedDate) > DateTime.Now.AddDays(-7)),
+                    (a.ModifiedAt.HasValue ? a.ModifiedAt.Value : a.CreatedAt) > DateTime.Now.AddDays(-7)),
                 DaysSinceStart = allArticles.Any()
-                    ? (int)(DateTime.Now - allArticles.Min(a => a.CreatedDate)).TotalDays
+                    ? (int)(DateTime.Now - allArticles.Min(a => a.CreatedAt)).TotalDays
                     : 0
             };
         }
@@ -384,7 +384,7 @@ else
         }
 
         return allArticles
-            .OrderByDescending(a => a.ModifiedDate ?? a.CreatedDate)
+            .OrderByDescending(a => a.ModifiedAt.HasValue ? a.ModifiedAt.Value : a.CreatedAt)
             .Take(maxResults)
             .ToList();
     }
@@ -402,7 +402,7 @@ else
         return count;
     }
 
-    private async Task NavigateToArticle(int articleId)
+    private async Task NavigateToArticle(Guid articleId)
     {
         // Get the full article details to build path from breadcrumbs
         var article = await ArticleApi.GetArticleDetailAsync(articleId);

@@ -4,7 +4,6 @@ using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Functions;
@@ -37,9 +36,17 @@ public class ArticleFunctions
     {
         var user = context.GetRequiredUser();
 
+        // Check for optional worldId query parameter
+        Guid? worldId = null;
+        var query = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
+        if (Guid.TryParse(query["worldId"], out var parsedWorldId))
+        {
+            worldId = parsedWorldId;
+        }
+
         try
         {
-            var articles = await _articleService.GetRootArticlesAsync(user.Id);
+            var articles = await _articleService.GetRootArticlesAsync(user.Id, worldId);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(articles);
@@ -57,7 +64,6 @@ public class ArticleFunctions
     /// <summary>
     /// GET /api/articles/all
     /// Returns all articles for the current user in a flat list (no hierarchy).
-    /// Useful for dropdowns, linking dialogs, and other scenarios where the full tree isn't needed.
     /// </summary>
     [Function("GetAllArticles")]
     public async Task<HttpResponseData> GetAllArticles(
@@ -66,9 +72,17 @@ public class ArticleFunctions
     {
         var user = context.GetRequiredUser();
 
+        // Check for optional worldId query parameter
+        Guid? worldId = null;
+        var query = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
+        if (Guid.TryParse(query["worldId"], out var parsedWorldId))
+        {
+            worldId = parsedWorldId;
+        }
+
         try
         {
-            var articles = await _articleService.GetAllArticlesAsync(user.Id);
+            var articles = await _articleService.GetAllArticlesAsync(user.Id, worldId);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(articles);
@@ -89,9 +103,9 @@ public class ArticleFunctions
     /// </summary>
     [Function("GetArticleDetail")]
     public async Task<HttpResponseData> GetArticleDetail(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:int}")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:guid}")] HttpRequestData req,
         FunctionContext context,
-        int id)
+        Guid id)
     {
         var user = context.GetRequiredUser();
 
@@ -125,9 +139,9 @@ public class ArticleFunctions
     /// </summary>
     [Function("GetArticleChildren")]
     public async Task<HttpResponseData> GetArticleChildren(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:int}/children")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:guid}/children")] HttpRequestData req,
         FunctionContext context,
-        int id)
+        Guid id)
     {
         var user = context.GetRequiredUser();
 
@@ -148,17 +162,15 @@ public class ArticleFunctions
         }
     }
 
-
     /// <summary>
-    /// POST /api/articles/{id}/hashtags
+    /// GET /api/articles/{id}/hashtags
     /// Gets the hashtags for a specific article
     /// </summary>
     [Function("GetArticleHashtags")]
     public async Task<HttpResponseData> GetArticleHashtags(
-    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:int}/hashtags")]
-        HttpRequestData req,
-    FunctionContext context,
-    int id)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:guid}/hashtags")] HttpRequestData req,
+        FunctionContext context,
+        Guid id)
     {
         var user = context.GetRequiredUser();
 
@@ -174,7 +186,7 @@ public class ArticleFunctions
         {
             _logger.LogError(ex, "Error retrieving hashtags for Article {Id}", id);
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await errorResponse.WriteStringAsync($"Error retrieving hashtag: {ex.Message}");
+            await errorResponse.WriteStringAsync("Error retrieving hashtags: " + ex.Message);
             return errorResponse;
         }
     }

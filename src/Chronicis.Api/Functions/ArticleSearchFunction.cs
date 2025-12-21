@@ -46,7 +46,7 @@ public class ArticleSearchFunction
         {
             // Search titles
             var titleMatches = await _context.Articles
-                .Where(a => a.UserId == user.Id && EF.Functions.Like(a.Title, $"%{query}%"))
+                .Where(a => a.CreatedBy == user.Id && EF.Functions.Like(a.Title, $"%{query}%"))
                 .OrderBy(a => a.Title)
                 .Take(20)
                 .ToListAsync();
@@ -54,10 +54,10 @@ public class ArticleSearchFunction
             // Search bodies (exclude articles already matched by title)
             var titleMatchIds = titleMatches.Select(a => a.Id).ToList();
             var bodyMatches = await _context.Articles
-                .Where(a => a.UserId == user.Id
+                .Where(a => a.CreatedBy == user.Id
                          && EF.Functions.Like(a.Body, $"%{query}%")
                          && !titleMatchIds.Contains(a.Id))
-                .OrderByDescending(a => a.ModifiedDate ?? a.CreatedDate)
+                .OrderByDescending(a => a.ModifiedAt ?? a.CreatedAt)
                 .Take(20)
                 .ToListAsync();
 
@@ -65,7 +65,7 @@ public class ArticleSearchFunction
             var hashtagMatches = await _context.ArticleHashtags
                 .Include(ah => ah.Article)
                 .Include(ah => ah.Hashtag)
-                .Where(ah => ah.Article.UserId == user.Id
+                .Where(ah => ah.Article.CreatedBy == user.Id
                           && EF.Functions.Like(ah.Hashtag.Name, $"%{query}%"))
                 .Select(ah => ah.Article)
                 .Distinct()
@@ -105,18 +105,18 @@ public class ArticleSearchFunction
         foreach (var article in articles)
         {
             var snippet = ExtractSnippet(article?.Body ?? string.Empty, query, 200);
-            var breadcrumbs = await BuildBreadcrumbs(article?.Id ?? 0);
+            var breadcrumbs = await BuildBreadcrumbs(article?.Id ?? Guid.Empty);
             var slug = SlugGenerator.GenerateSlug(article?.Title ?? string.Empty);
 
             results.Add(new ArticleSearchResultDto
             {
-                Id = article?.Id ?? 0,
+                Id = article?.Id ?? Guid.Empty,
                 Title = string.IsNullOrEmpty(article?.Title) ? "(Untitled)" : article.Title,
                 Slug = slug,
                 MatchSnippet = snippet,
                 MatchType = matchType,
                 AncestorPath = breadcrumbs,
-                LastModified = article?.ModifiedDate ?? article?.CreatedDate ?? DateTime.MinValue,
+                LastModified = article?.ModifiedAt ?? article?.CreatedAt ?? DateTime.MinValue,
             });
         }
 
@@ -151,7 +151,7 @@ public class ArticleSearchFunction
         return snippet.Trim();
     }
 
-    private async Task<List<BreadcrumbDto>> BuildBreadcrumbs(int articleId)
+    private async Task<List<BreadcrumbDto>> BuildBreadcrumbs(Guid articleId)
     {
         var breadcrumbs = new List<BreadcrumbDto>();
         var current = await _context.Articles.FindAsync(articleId);
@@ -161,7 +161,9 @@ public class ArticleSearchFunction
             breadcrumbs.Insert(0, new BreadcrumbDto
             {
                 Id = current.Id,
-                Title = string.IsNullOrEmpty(current.Title) ? "(Untitled)" : current.Title
+                Title = string.IsNullOrEmpty(current.Title) ? "(Untitled)" : current.Title,
+                Slug = current.Slug,
+                Type = current.Type
             });
 
             if (current.ParentId.HasValue)

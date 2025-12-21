@@ -5,18 +5,18 @@ namespace Chronicis.Client.Services
     public interface IArticleApiService
     {
         Task<ArticleDto> CreateArticleAsync(ArticleCreateDto dto);
-        Task DeleteArticleAsync(int id);
-        Task<ArticleDto?> GetArticleDetailAsync(int id);
-        Task<ArticleDto?> GetArticleAsync(int id);
+        Task DeleteArticleAsync(Guid id);
+        Task<ArticleDto?> GetArticleDetailAsync(Guid id);
+        Task<ArticleDto?> GetArticleAsync(Guid id);
         Task<ArticleDto?> GetArticleByPathAsync(string path);
-        Task<List<ArticleTreeDto>> GetChildrenAsync(int parentId);
-        Task<List<ArticleTreeDto>> GetRootArticlesAsync();
-        Task<List<ArticleTreeDto>> GetAllArticlesAsync();
+        Task<List<ArticleTreeDto>> GetChildrenAsync(Guid parentId);
+        Task<List<ArticleTreeDto>> GetRootArticlesAsync(Guid? worldId = null);
+        Task<List<ArticleTreeDto>> GetAllArticlesAsync(Guid? worldId = null);
         Task<List<ArticleSearchResultDto>> SearchArticlesAsync(string query);
         Task<List<ArticleSearchResultDto>> SearchArticlesByTitleAsync(string query);
-        Task<ArticleDto> UpdateArticleAsync(int id, ArticleUpdateDto dto);
-        Task<List<BacklinkDto>> GetArticleBacklinksAsync(int articleId);
-        Task<List<HashtagDto>> GetArticleHashtagsAsync(int articleId);
+        Task<ArticleDto> UpdateArticleAsync(Guid id, ArticleUpdateDto dto);
+        Task<List<BacklinkDto>> GetArticleBacklinksAsync(Guid articleId);
+        Task<List<HashtagDto>> GetArticleHashtagsAsync(Guid articleId);
 
         /// <summary>
         /// Move an article to a new parent (or to root if newParentId is null).
@@ -24,6 +24,6 @@ namespace Chronicis.Client.Services
         /// <param name="articleId">The article to move</param>
         /// <param name="newParentId">The new parent ID, or null to make root-level</param>
         /// <returns>True if successful</returns>
-        Task<bool> MoveArticleAsync(int articleId, int? newParentId);
+        Task<bool> MoveArticleAsync(Guid articleId, Guid? newParentId);
     }
 }

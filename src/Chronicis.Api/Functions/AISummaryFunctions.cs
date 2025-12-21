@@ -29,10 +29,10 @@ public class AISummaryFunctions
 
     [Function("GetSummaryEstimate")]
     public async Task<HttpResponseData> GetSummaryEstimate(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id}/summary/estimate")]
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:guid}/summary/estimate")]
         HttpRequestData req,
         FunctionContext context,
-        int id)
+        Guid id)
     {
         var user = context.GetRequiredUser();
 
@@ -55,17 +55,17 @@ public class AISummaryFunctions
         {
             _logger.LogError(ex, "Error getting summary estimate for article {ArticleId}", id);
             var response = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await response.WriteStringAsync($"Error: {ex.Message}");
+            await response.WriteStringAsync("Error: " + ex.Message);
             return response;
         }
     }
 
     [Function("GenerateSummary")]
     public async Task<HttpResponseData> GenerateSummary(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "articles/{id}/summary/generate")]
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "articles/{id:guid}/summary/generate")]
         HttpRequestData req,
         FunctionContext context,
-        int id)
+        Guid id)
     {
         var user = context.GetRequiredUser();
 
@@ -94,7 +94,7 @@ public class AISummaryFunctions
             await response.WriteAsJsonAsync(new SummaryGenerationDto
             {
                 Success = false,
-                ErrorMessage = $"Server error: {ex.Message}"
+                ErrorMessage = "Server error: " + ex.Message
             });
             return response;
         }
@@ -102,10 +102,10 @@ public class AISummaryFunctions
 
     [Function("GetArticleSummary")]
     public async Task<HttpResponseData> GetArticleSummary(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id}/summary")]
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:guid}/summary")]
         HttpRequestData req,
         FunctionContext context,
-        int id)
+        Guid id)
     {
         var user = context.GetRequiredUser();
 
@@ -113,19 +113,19 @@ public class AISummaryFunctions
         {
             var article = await _context.Articles
                 .AsNoTracking()
-                .Where(a => a.Id == id && a.UserId == user.Id)
+                .Where(a => a.Id == id && a.CreatedBy == user.Id)
                 .Select(a => new ArticleSummaryDto
                 {
                     ArticleId = a.Id,
                     Summary = a.AISummary,
-                    GeneratedDate = a.AISummaryGeneratedDate
+                    GeneratedAt = a.AISummaryGeneratedAt
                 })
                 .FirstOrDefaultAsync();
 
             if (article == null)
             {
                 var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
-                await notFoundResponse.WriteStringAsync($"Article {id} not found");
+                await notFoundResponse.WriteStringAsync("Article " + id + " not found");
                 return notFoundResponse;
             }
 
@@ -137,34 +137,34 @@ public class AISummaryFunctions
         {
             _logger.LogError(ex, "Error getting summary for article {ArticleId}", id);
             var response = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await response.WriteStringAsync($"Error: {ex.Message}");
+            await response.WriteStringAsync("Error: " + ex.Message);
             return response;
         }
     }
 
     [Function("ClearArticleSummary")]
     public async Task<HttpResponseData> ClearArticleSummary(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "articles/{id}/summary")]
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "articles/{id:guid}/summary")]
         HttpRequestData req,
         FunctionContext context,
-        int id)
+        Guid id)
     {
         var user = context.GetRequiredUser();
 
         try
         {
             var article = await _context.Articles
-                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == user.Id);
+                .FirstOrDefaultAsync(a => a.Id == id && a.CreatedBy == user.Id);
 
             if (article == null)
             {
                 var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
-                await notFoundResponse.WriteStringAsync($"Article {id} not found");
+                await notFoundResponse.WriteStringAsync("Article " + id + " not found");
                 return notFoundResponse;
             }
 
             article.AISummary = null;
-            article.AISummaryGeneratedDate = null;
+            article.AISummaryGeneratedAt = null;
             await _context.SaveChangesAsync();
 
             return req.CreateResponse(HttpStatusCode.NoContent);
@@ -173,7 +173,7 @@ public class AISummaryFunctions
         {
             _logger.LogError(ex, "Error clearing summary for article {ArticleId}", id);
             var response = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await response.WriteStringAsync($"Error: {ex.Message}");
+            await response.WriteStringAsync("Error: " + ex.Message);
             return response;
         }
     }

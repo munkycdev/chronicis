@@ -8,7 +8,7 @@ public class HashtagDto
     /// <summary>
     /// Hashtag ID
     /// </summary>
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     /// <summary>
     /// Hashtag name (without # symbol, lowercase)
@@ -18,7 +18,7 @@ public class HashtagDto
     /// <summary>
     /// ID of the article this hashtag links to (null if unlinked)
     /// </summary>
-    public int? LinkedArticleId { get; set; }
+    public Guid? LinkedArticleId { get; set; }
 
     /// <summary>
     /// Title of the linked article (null if unlinked)
@@ -33,7 +33,7 @@ public class HashtagDto
     /// <summary>
     /// When this hashtag was first created
     /// </summary>
-    public DateTime CreatedDate { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
 
 /// <summary>
@@ -44,5 +44,5 @@ public class LinkHashtagDto
     /// <summary>
     /// ID of the article to link to
     /// </summary>
-    public int ArticleId { get; set; }
+    public Guid ArticleId { get; set; }
 }

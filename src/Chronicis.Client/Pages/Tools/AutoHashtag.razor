@@ -195,7 +195,7 @@
     private bool _hasPreviewedYet = false;
     private AutoHashtagResponse? _previewResults;
     private AutoHashtagResponse? _applyResults;
-    private HashSet<int> _selectedArticles = new();
+    private HashSet<Guid> _selectedArticles = new();
 
     private async Task PreviewChanges()
     {
@@ -244,7 +244,7 @@
         }
     }
 
-    private void ToggleSelection(int articleId, bool isSelected)
+    private void ToggleSelection(Guid articleId, bool isSelected)
     {
         if (isSelected)
             _selectedArticles.Add(articleId);

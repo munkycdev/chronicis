@@ -44,7 +44,7 @@ public class HashtagFunctions
                     LinkedArticleId = h.LinkedArticleId,
                     LinkedArticleTitle = h.LinkedArticle != null ? h.LinkedArticle.Title : null,
                     UsageCount = h.ArticleHashtags.Count,
-                    CreatedDate = h.CreatedDate
+                    CreatedAt = h.CreatedAt
                 })
                 .OrderByDescending(h => h.UsageCount)
                 .ToListAsync();
@@ -57,7 +57,7 @@ public class HashtagFunctions
         {
             _logger.LogError(ex, "Error retrieving hashtags");
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await errorResponse.WriteStringAsync($"Error retrieving hashtags: {ex.Message}");
+            await errorResponse.WriteStringAsync("Error retrieving hashtags: " + ex.Message);
             return errorResponse;
         }
     }
@@ -86,14 +86,14 @@ public class HashtagFunctions
                     LinkedArticleId = h.LinkedArticleId,
                     LinkedArticleTitle = h.LinkedArticle != null ? h.LinkedArticle.Title : null,
                     UsageCount = h.ArticleHashtags.Count,
-                    CreatedDate = h.CreatedDate
+                    CreatedAt = h.CreatedAt
                 })
                 .FirstOrDefaultAsync();
 
             if (hashtag == null)
             {
                 var notFound = req.CreateResponse(HttpStatusCode.NotFound);
-                await notFound.WriteStringAsync($"Hashtag '{name}' not found");
+                await notFound.WriteStringAsync("Hashtag '" + name + "' not found");
                 return notFound;
             }
 
@@ -105,7 +105,7 @@ public class HashtagFunctions
         {
             _logger.LogError(ex, "Error retrieving hashtag {Name}", name);
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await errorResponse.WriteStringAsync($"Error retrieving hashtag: {ex.Message}");
+            await errorResponse.WriteStringAsync("Error retrieving hashtag: " + ex.Message);
             return errorResponse;
         }
     }
@@ -141,17 +141,17 @@ public class HashtagFunctions
             if (hashtag == null)
             {
                 var notFound = req.CreateResponse(HttpStatusCode.NotFound);
-                await notFound.WriteStringAsync($"Hashtag '{name}' not found");
+                await notFound.WriteStringAsync("Hashtag '" + name + "' not found");
                 return notFound;
             }
 
             var articleExists = await _context.Articles
-                .AnyAsync(a => a.Id == linkDto.ArticleId && a.UserId == user.Id);
+                .AnyAsync(a => a.Id == linkDto.ArticleId && a.CreatedBy == user.Id);
 
             if (!articleExists)
             {
                 var notFound = req.CreateResponse(HttpStatusCode.NotFound);
-                await notFound.WriteStringAsync($"Article with ID {linkDto.ArticleId} not found");
+                await notFound.WriteStringAsync("Article with ID " + linkDto.ArticleId + " not found");
                 return notFound;
             }
 
@@ -159,14 +159,14 @@ public class HashtagFunctions
             await _context.SaveChangesAsync();
 
             var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteStringAsync($"Hashtag '{name}' linked to article {linkDto.ArticleId}");
+            await response.WriteStringAsync("Hashtag '" + name + "' linked to article " + linkDto.ArticleId);
             return response;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error linking hashtag {Name}", name);
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await errorResponse.WriteStringAsync($"Error linking hashtag: {ex.Message}");
+            await errorResponse.WriteStringAsync("Error linking hashtag: " + ex.Message);
             return errorResponse;
         }
     }
@@ -219,7 +219,7 @@ public class HashtagFunctions
                 ArticleTitle = hashtag.LinkedArticle.Title,
                 ArticleSlug = SlugGenerator.GenerateSlug(hashtag.LinkedArticle.Title),
                 PreviewText = previewText,
-                LastModified = hashtag.LinkedArticle.ModifiedDate ?? hashtag.LinkedArticle.CreatedDate
+                LastModified = hashtag.LinkedArticle.ModifiedAt ?? hashtag.LinkedArticle.CreatedAt
             };
 
             response.StatusCode = HttpStatusCode.OK;

@@ -18,7 +18,7 @@ public class AutoHashtagService : IAutoHashtagService
     private readonly ILogger<AutoHashtagService> _logger;
 
     public AutoHashtagService(
-        ChronicisDbContext context, 
+        ChronicisDbContext context,
         IHashtagSyncService hashtagSync,
         ILogger<AutoHashtagService> logger)
     {
@@ -31,9 +31,9 @@ public class AutoHashtagService : IAutoHashtagService
     /// Process articles to find and optionally insert hashtags
     /// </summary>
     public async Task<AutoHashtagResponse> ProcessArticlesAsync(
-        int userId, 
-        bool dryRun, 
-        List<int>? articleIds = null)
+        Guid userId,
+        bool dryRun,
+        List<Guid>? articleIds = null)
     {
         var response = new AutoHashtagResponse
         {
@@ -43,7 +43,7 @@ public class AutoHashtagService : IAutoHashtagService
         // Get all articles for the user
         var articlesQuery = _context.Articles
             .AsNoTracking()
-            .Where(a => a.UserId == userId);
+            .Where(a => a.CreatedBy == userId);
 
         if (articleIds != null && articleIds.Any())
         {
@@ -106,7 +106,7 @@ public class AutoHashtagService : IAutoHashtagService
     /// Find hashtag opportunities in article body
     /// </summary>
     private AutoHashtagChange FindHashtagOpportunities(
-        string body, 
+        string body,
         Dictionary<string, string> titleToSlugMap)
     {
         var change = new AutoHashtagChange();
@@ -121,7 +121,7 @@ public class AutoHashtagService : IAutoHashtagService
         foreach (var title in sortedTitles)
         {
             var slug = titleToSlugMap[title];
-            
+
             // Create regex pattern for whole-word matching
             // \b = word boundary, ensures we match complete words
             var pattern = $@"\b{Regex.Escape(title)}\b";
@@ -182,10 +182,9 @@ public class AutoHashtagService : IAutoHashtagService
     {
         // Check for inline code (backticks)
         var beforeText = text.Substring(0, position);
-        var afterText = text.Substring(position);
-        
+
         var backticksBefore = beforeText.Count(c => c == '`');
-        
+
         // If odd number of backticks before this position, we're inside code
         if (backticksBefore % 2 != 0)
             return true;
@@ -193,7 +192,7 @@ public class AutoHashtagService : IAutoHashtagService
         // Check for markdown links [text](url)
         var linkPattern = @"\[([^\]]+)\]\(([^\)]+)\)";
         var linkMatches = Regex.Matches(text, linkPattern);
-        
+
         foreach (Match linkMatch in linkMatches)
         {
             if (position >= linkMatch.Index && position < linkMatch.Index + linkMatch.Length)
@@ -210,22 +209,22 @@ public class AutoHashtagService : IAutoHashtagService
     {
         // Look backwards from position to see if there's a # before this word
         // We need to check if there's a # with no space between it and our word
-        
+
         var checkStart = Math.Max(0, position - 50); // Look back up to 50 chars
         var checkLength = position - checkStart;
-        
+
         if (checkLength > 0)
         {
             var beforeText = text.Substring(checkStart, checkLength);
-            
+
             // Find all hashtags in the text before our position
             var hashtagPattern = @"#[a-z0-9_-]+";
             var hashtagMatches = Regex.Matches(beforeText, hashtagPattern, RegexOptions.IgnoreCase);
-            
+
             foreach (Match hashtagMatch in hashtagMatches)
             {
                 var hashtagEnd = checkStart + hashtagMatch.Index + hashtagMatch.Length;
-                
+
                 // If our match position falls within or immediately after this hashtag, skip it
                 if (position >= checkStart + hashtagMatch.Index && position <= hashtagEnd)
                 {
@@ -237,7 +236,7 @@ public class AutoHashtagService : IAutoHashtagService
         // Also check if the text ahead contains a hashtag that includes our word
         var checkEnd = Math.Min(text.Length, position + length + 50);
         var aheadText = text.Substring(position, checkEnd - position);
-        
+
         // Check if our word is at the start of an existing hashtag
         if (aheadText.Length > length && aheadText[0] != '#')
         {
@@ -254,7 +253,7 @@ public class AutoHashtagService : IAutoHashtagService
     /// <summary>
     /// Apply hashtag changes to an article and sync hashtags to database
     /// </summary>
-    private async Task ApplyChangesAsync(int articleId, string newBody)
+    private async Task ApplyChangesAsync(Guid articleId, string newBody)
     {
         // Remove <mark> tags from preview before saving
         var cleanedBody = Regex.Replace(newBody, @"<mark>|</mark>", string.Empty);
@@ -263,7 +262,7 @@ public class AutoHashtagService : IAutoHashtagService
         if (article != null)
         {
             article.Body = cleanedBody;
-            article.ModifiedDate = DateTime.UtcNow;
+            article.ModifiedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             // IMPORTANT: Sync hashtags to the ArticleHashtag table
@@ -271,7 +270,7 @@ public class AutoHashtagService : IAutoHashtagService
             await _hashtagSync.SyncHashtagsAsync(articleId, cleanedBody);
 
             _logger.LogInformation(
-                "Applied auto-hashtag changes to article {ArticleId} and synced hashtags to database", 
+                "Applied auto-hashtag changes to article {ArticleId} and synced hashtags to database",
                 articleId);
         }
     }

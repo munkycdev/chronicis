@@ -13,7 +13,7 @@ public class AutoHashtagRequest
     /// <summary>
     /// Optional: Specific article IDs to process. If null/empty, process all articles.
     /// </summary>
-    public List<int>? ArticleIds { get; set; }
+    public List<Guid>? ArticleIds { get; set; }
 }
 
 /// <summary>
@@ -50,7 +50,7 @@ public class AutoHashtagChange
     /// <summary>
     /// Article ID
     /// </summary>
-    public int ArticleId { get; set; }
+    public Guid ArticleId { get; set; }
 
     /// <summary>
     /// Article title

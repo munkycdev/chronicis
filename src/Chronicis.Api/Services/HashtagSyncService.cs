@@ -22,7 +22,7 @@ public class HashtagSyncService : IHashtagSyncService
     /// <summary>
     /// Synchronizes hashtags for an article based on its current body content.
     /// </summary>
-    public async Task SyncHashtagsAsync(int articleId, string body)
+    public async Task SyncHashtagsAsync(Guid articleId, string body)
     {
         var parsedHashtags = _parser.ExtractHashtags(body ?? string.Empty);
 
@@ -73,9 +73,10 @@ public class HashtagSyncService : IHashtagSyncService
 
                 hashtag = new Hashtag
                 {
+                    Id = Guid.NewGuid(),
                     Name = parsedHashtag.Name,
                     LinkedArticleId = linkedArticleId,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow
                 };
                 _context.Hashtags.Add(hashtag);
                 await _context.SaveChangesAsync();
@@ -92,17 +93,18 @@ public class HashtagSyncService : IHashtagSyncService
 
             var articleHashtag = new ArticleHashtag
             {
+                Id = Guid.NewGuid(),
                 ArticleId = articleId,
                 HashtagId = hashtag.Id,
                 Position = parsedHashtag.Position,
-                CreatedDate = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.ArticleHashtags.Add(articleHashtag);
         }
 
         await _context.SaveChangesAsync();
-        
+
         // Also check if this article's title should link to any existing unlinked hashtags
         await LinkHashtagsToArticleByTitleAsync(articleId);
     }
@@ -111,7 +113,7 @@ public class HashtagSyncService : IHashtagSyncService
     /// Attempts to auto-link any unlinked hashtags that match this article's title.
     /// Called when an article is created or updated.
     /// </summary>
-    public async Task LinkHashtagsToArticleByTitleAsync(int articleId)
+    public async Task LinkHashtagsToArticleByTitleAsync(Guid articleId)
     {
         var article = await _context.Articles
             .FirstOrDefaultAsync(a => a.Id == articleId);
@@ -140,7 +142,7 @@ public class HashtagSyncService : IHashtagSyncService
     /// <summary>
     /// Finds an article whose slug-normalized title matches the hashtag name.
     /// </summary>
-    private async Task<int?> FindMatchingArticleIdAsync(string hashtagName)
+    private async Task<Guid?> FindMatchingArticleIdAsync(string hashtagName)
     {
         // We need to fetch articles and compare slugs in-memory
         // because EF Core can't translate SlugUtility.CreateSlug to SQL
@@ -151,7 +153,7 @@ public class HashtagSyncService : IHashtagSyncService
 
         var matchingArticle = articles
             .FirstOrDefault(a => SlugGenerator.GenerateSlug(a.Title).Equals(
-                hashtagName, 
+                hashtagName,
                 StringComparison.OrdinalIgnoreCase));
 
         return matchingArticle?.Id;

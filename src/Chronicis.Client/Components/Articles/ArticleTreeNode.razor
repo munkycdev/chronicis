@@ -50,11 +50,11 @@
 @code {
     [Parameter] public ArticleTreeDto Article { get; set; } = null!;
     [Parameter] public int Level { get; set; }
-    [Parameter] public EventCallback<int> OnArticleSelected { get; set; }
-    [Parameter] public EventCallback<int> OnLoadChildren { get; set; }
-    [Parameter] public HashSet<int> ExpandedNodes { get; set; } = new();
-    [Parameter] public int? SelectedId { get; set; }
-    [Parameter] public Dictionary<int, List<ArticleTreeDto>> ChildrenCache { get; set; } = new();
+    [Parameter] public EventCallback<Guid> OnArticleSelected { get; set; }
+    [Parameter] public EventCallback<Guid> OnLoadChildren { get; set; }
+    [Parameter] public HashSet<Guid> ExpandedNodes { get; set; } = new();
+    [Parameter] public Guid? SelectedId { get; set; }
+    [Parameter] public Dictionary<Guid, List<ArticleTreeDto>> ChildrenCache { get; set; } = new();
 
     private bool IsExpanded => ExpandedNodes.Contains(Article.Id);
     private bool IsSelected => SelectedId == Article.Id;

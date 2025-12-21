@@ -7,38 +7,40 @@ namespace Chronicis.Shared.Models;
 public class ArticleHashtag
 {
     /// <summary>
-    /// Primary key
+    /// Unique identifier for this relationship.
     /// </summary>
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     /// <summary>
-    /// Foreign key to Article
+    /// Foreign key to Article.
     /// </summary>
-    public int ArticleId { get; set; }
+    public Guid ArticleId { get; set; }
 
     /// <summary>
-    /// Navigation property to Article
+    /// Foreign key to Hashtag.
     /// </summary>
-    public Article Article { get; set; } = null!;
+    public Guid HashtagId { get; set; }
 
     /// <summary>
-    /// Foreign key to Hashtag
-    /// </summary>
-    public int HashtagId { get; set; }
-
-    /// <summary>
-    /// Navigation property to Hashtag
-    /// </summary>
-    public Hashtag Hashtag { get; set; } = null!;
-
-    /// <summary>
-    /// Position of this hashtag in the article text (0-based character index)
-    /// Used for potential future features like "jump to hashtag" or highlighting
+    /// Position of this hashtag in the article text (0-based character index).
+    /// Used for potential future features like "jump to hashtag" or highlighting.
     /// </summary>
     public int Position { get; set; }
 
     /// <summary>
-    /// When this relationship was created (when hashtag was added to article)
+    /// When this relationship was created (when hashtag was added to article).
     /// </summary>
-    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // ===== Navigation Properties =====
+    
+    /// <summary>
+    /// Navigation property to Article.
+    /// </summary>
+    public Article Article { get; set; } = null!;
+
+    /// <summary>
+    /// Navigation property to Hashtag.
+    /// </summary>
+    public Hashtag Hashtag { get; set; } = null!;
 }
