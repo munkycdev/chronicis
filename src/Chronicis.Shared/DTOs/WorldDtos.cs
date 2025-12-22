@@ -12,6 +12,11 @@ public class WorldDto
     public string OwnerName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public int CampaignCount { get; set; }
+    
+    /// <summary>
+    /// The ID of the WorldRoot article (top-level article for this world)
+    /// </summary>
+    public Guid? WorldRootArticleId { get; set; }
 }
 
 /// <summary>

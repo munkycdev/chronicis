@@ -13,6 +13,11 @@ namespace Chronicis.Client.Services
         List<ArticleTreeItemViewModel> RootItems { get; }
         string SearchQuery { get; }
         ArticleTreeItemViewModel? SelectedArticle { get; }
+        
+        /// <summary>
+        /// Flag to indicate the title field should be focused when loading an article
+        /// </summary>
+        bool ShouldFocusTitle { get; set; }
 
         event Action? OnStateChanged;
         event Action? OnRefreshRequested;

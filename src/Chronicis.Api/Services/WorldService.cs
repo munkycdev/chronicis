@@ -88,25 +88,40 @@ public class WorldService : IWorldService
         _context.Worlds.Add(world);
 
         // Create root structure articles
-        var worldRoot = CreateRootArticle(ArticleType.WorldRoot, "World", "world", world.Id, null, userId);
+        var worldRoot = CreateRootArticle(ArticleType.WorldRoot, "New World", "new-world", world.Id, null, userId);
         _context.Articles.Add(worldRoot);
 
         var wikiRoot = CreateRootArticle(ArticleType.WikiRoot, "Wiki", "wiki", world.Id, worldRoot.Id, userId);
         _context.Articles.Add(wikiRoot);
 
+        // Add default wiki subcategories
+        var bestiary = CreateRootArticle(ArticleType.WikiArticle, "Bestiary", "bestiary", world.Id, wikiRoot.Id, userId);
+        _context.Articles.Add(bestiary);
+
+        var characters = CreateRootArticle(ArticleType.WikiArticle, "Characters", "characters", world.Id, wikiRoot.Id, userId);
+        _context.Articles.Add(characters);
+
+        var factions = CreateRootArticle(ArticleType.WikiArticle, "Factions", "factions", world.Id, wikiRoot.Id, userId);
+        _context.Articles.Add(factions);
+
+        var locations = CreateRootArticle(ArticleType.WikiArticle, "Locations", "locations", world.Id, wikiRoot.Id, userId);
+        _context.Articles.Add(locations);
+
         var campaignRoot = CreateRootArticle(ArticleType.CampaignRoot, "Campaigns", "campaigns", world.Id, worldRoot.Id, userId);
         _context.Articles.Add(campaignRoot);
 
-        var characterRoot = CreateRootArticle(ArticleType.CharacterRoot, "Characters", "characters", world.Id, worldRoot.Id, userId);
+        var characterRoot = CreateRootArticle(ArticleType.CharacterRoot, "Player Characters", "player-characters", world.Id, worldRoot.Id, userId);
         _context.Articles.Add(characterRoot);
 
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Created world {WorldId} with root structure for user {UserId}", world.Id, userId);
 
-        // Return DTO
+        // Return DTO with WorldRoot ID
         world.Owner = user;
-        return MapToDto(world);
+        var resultDto = MapToDto(world);
+        resultDto.WorldRootArticleId = worldRoot.Id;
+        return resultDto;
     }
 
     public async Task<WorldDto?> UpdateWorldAsync(Guid worldId, WorldUpdateDto dto, Guid userId)

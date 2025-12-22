@@ -1,5 +1,5 @@
 using Chronicis.Api.Data;
-using Chronicis.Shared.Enums;
+using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -12,11 +12,16 @@ namespace Chronicis.Api.Services;
 public class UserService : IUserService
 {
     private readonly ChronicisDbContext _context;
+    private readonly IWorldService _worldService;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(ChronicisDbContext context, ILogger<UserService> logger)
+    public UserService(
+        ChronicisDbContext context, 
+        IWorldService worldService,
+        ILogger<UserService> logger)
     {
         _context = context;
+        _worldService = worldService;
         _logger = logger;
     }
 
@@ -50,7 +55,7 @@ public class UserService : IUserService
             _logger.LogInformation("Created new user {UserId} for Auth0 ID {Auth0UserId}", user.Id, auth0UserId);
 
             // Create default world for new user
-            await CreateDefaultWorldAsync(user);
+            await CreateDefaultWorldAsync(user.Id);
         }
         else
         {
@@ -106,54 +111,16 @@ public class UserService : IUserService
     /// <summary>
     /// Creates a default world with root structure for a new user
     /// </summary>
-    private async Task CreateDefaultWorldAsync(User user)
+    private async Task CreateDefaultWorldAsync(Guid userId)
     {
-        _logger.LogInformation("Creating default world for user {UserId}", user.Id);
+        _logger.LogInformation("Creating default world for user {UserId}", userId);
 
-        // Create the World
-        var world = new World
+        var createDto = new WorldCreateDto
         {
-            Id = Guid.NewGuid(),
             Name = "My World",
-            Description = "Your personal world for campaigns and adventures",
-            OwnerId = user.Id,
-            CreatedAt = DateTime.UtcNow
+            Description = "Your personal world for campaigns and adventures"
         };
-        _context.Worlds.Add(world);
 
-        // Create root structure articles
-        var worldRoot = CreateRootArticle(ArticleType.WorldRoot, "World", "world", world.Id, null, user.Id);
-        _context.Articles.Add(worldRoot);
-
-        var wikiRoot = CreateRootArticle(ArticleType.WikiRoot, "Wiki", "wiki", world.Id, worldRoot.Id, user.Id);
-        _context.Articles.Add(wikiRoot);
-
-        var campaignRoot = CreateRootArticle(ArticleType.CampaignRoot, "Campaigns", "campaigns", world.Id, worldRoot.Id, user.Id);
-        _context.Articles.Add(campaignRoot);
-
-        var characterRoot = CreateRootArticle(ArticleType.CharacterRoot, "Characters", "characters", world.Id, worldRoot.Id, user.Id);
-        _context.Articles.Add(characterRoot);
-
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Created default world {WorldId} with root structure for user {UserId}", world.Id, user.Id);
-    }
-
-    private static Article CreateRootArticle(ArticleType type, string title, string slug, Guid worldId, Guid? parentId, Guid userId)
-    {
-        return new Article
-        {
-            Id = Guid.NewGuid(),
-            Type = type,
-            Title = title,
-            Slug = slug,
-            WorldId = worldId,
-            ParentId = parentId,
-            CreatedBy = userId,
-            CreatedAt = DateTime.UtcNow,
-            EffectiveDate = DateTime.UtcNow,
-            Visibility = ArticleVisibility.Public,
-            Body = string.Empty
-        };
+        await _worldService.CreateWorldAsync(createDto, userId);
     }
 }

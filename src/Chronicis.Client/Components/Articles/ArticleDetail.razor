@@ -347,10 +347,11 @@ else
                 await LocalStorage.SetItemAsStringAsync(LastArticlePathKey, $"/article/{path}");
             }
 
-            // Focus title if it's empty (new article) - set flag for after render
-            if (string.IsNullOrEmpty(_editTitle))
+            // Focus title if it's empty (new article) OR if ShouldFocusTitle flag is set
+            if (string.IsNullOrEmpty(_editTitle) || TreeState.ShouldFocusTitle)
             {
                 _shouldFocusTitle = true;
+                TreeState.ShouldFocusTitle = false; // Clear the flag
                 StateHasChanged(); // Trigger re-render so OnAfterRenderAsync runs
             }
         }

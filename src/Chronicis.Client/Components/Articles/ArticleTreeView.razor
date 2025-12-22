@@ -58,6 +58,22 @@
     else
     {
         <MudNavMenu Class="chronicis-nav-menu-items">
+            @* Desktop link to dashboard *@
+            <MudNavLink Href="/dashboard" 
+                        Match="NavLinkMatch.All"
+                        Class="chronicis-nav-item chronicis-desktop-link">
+                <div class="d-flex align-center">
+                    <div style="width: 30px;"></div>
+                    <MudIcon Icon="@Icons.Material.Filled.Home" 
+                             Color="Color.Primary" 
+                             Size="Size.Small" 
+                             Style="margin-right: 8px;" />
+                    <span>Desktop</span>
+                </div>
+            </MudNavLink>
+            
+            <MudDivider Class="my-2" Style="opacity: 0.3;" />
+            
             @foreach (var article in _rootArticles)
             {
                 @RenderArticleNavItem(article)

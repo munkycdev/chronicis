@@ -1,11 +1,11 @@
 @page "/dashboard"
 @attribute [Authorize]
-@using Blazored.LocalStorage
 @inject ITreeStateService TreeStateService
 @inject IArticleApiService ArticleApi
+@inject IWorldApiService WorldApi
 @inject IQuoteService QuoteService
 @inject NavigationManager Navigation
-@inject ILocalStorageService LocalStorage
+@inject ISnackbar Snackbar
 @implements IDisposable
 
 <div class="chronicis-welcome-page">
@@ -230,31 +230,9 @@
     private Quote? _quote;
     private bool _loadingQuote = true;
 
-    private const string LastArticlePathKey = "chronicis_last_article_path";
-
     protected override async Task OnInitializedAsync()
     {
         TreeStateService.OnStateChanged += OnTreeStateChanged;
-
-        // Check for last visited article and redirect
-        try
-        {
-            var lastPath = await LocalStorage.GetItemAsStringAsync(LastArticlePathKey);
-            if (!string.IsNullOrEmpty(lastPath))
-            {
-                // Remove quotes if present (localStorage sometimes wraps strings)
-                lastPath = lastPath.Trim('"');
-                if (lastPath.StartsWith("/article/"))
-                {
-                    Navigation.NavigateTo(lastPath);
-                    return; // Don't load dashboard data, we're redirecting
-                }
-            }
-        }
-        catch
-        {
-            // Ignore localStorage errors, just show dashboard
-        }
 
         // If URL has article slug, find and load it
         if (!string.IsNullOrEmpty(ArticleSlug))
@@ -444,7 +422,54 @@
 
     private async Task CreateFirstArticle()
     {
-        await CreateArticleWithTitle(string.Empty);
+        try
+        {
+            // Create a new world with full structure (WorldRoot, Wiki, Campaigns, Player Characters)
+            var createDto = new WorldCreateDto
+            {
+                Name = "New World",
+                Description = "A new world for your adventures"
+            };
+
+            var world = await WorldApi.CreateWorldAsync(createDto);
+            
+            if (world != null)
+            {
+                Snackbar.Add($"World '{world.Name}' created with Wiki, Campaigns, and Player Characters!", Severity.Success);
+                TreeStateService.RefreshTree();
+                
+                // Navigate to the WorldRoot article so user can rename it
+                if (world.WorldRootArticleId.HasValue)
+                {
+                    await Task.Delay(300); // Let tree refresh
+                    
+                    // Set flag to focus title when article loads
+                    TreeStateService.ShouldFocusTitle = true;
+                    TreeStateService.ExpandAndSelectArticle(world.WorldRootArticleId.Value);
+                    
+                    // Get the article to build the path
+                    var article = await ArticleApi.GetArticleAsync(world.WorldRootArticleId.Value);
+                    if (article != null)
+                    {
+                        Navigation.NavigateTo($"/article/{article.Slug}");
+                    }
+                }
+                else
+                {
+                    // Fallback: reload dashboard
+                    await LoadDashboardData();
+                }
+            }
+            else
+            {
+                Snackbar.Add("Failed to create world", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error creating world: {ex.Message}");
+            Snackbar.Add($"Error creating world: {ex.Message}", Severity.Error);
+        }
     }
 
     private async Task CreateArticleWithTitle(string title)

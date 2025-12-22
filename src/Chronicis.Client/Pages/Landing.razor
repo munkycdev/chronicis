@@ -1,5 +1,9 @@
 @page "/"
 @layout PublicLayout
+@using Blazored.LocalStorage
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Chronicis — Campaign Notes for Tabletop RPGs</PageTitle>
 
@@ -227,3 +231,37 @@
         </div>
     </section>
 </div>
+
+@code {
+    private const string LastArticlePathKey = "chronicis_last_article_path";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if user is authenticated
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            // Try to redirect to last visited article
+            try
+            {
+                var lastPath = await LocalStorage.GetItemAsStringAsync(LastArticlePathKey);
+                if (!string.IsNullOrEmpty(lastPath))
+                {
+                    lastPath = lastPath.Trim('"');
+                    if (lastPath.StartsWith("/article/"))
+                    {
+                        Navigation.NavigateTo(lastPath);
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore localStorage errors
+            }
+
+            // No saved article, go to dashboard
+            Navigation.NavigateTo("/dashboard");
+        }
+    }
+}

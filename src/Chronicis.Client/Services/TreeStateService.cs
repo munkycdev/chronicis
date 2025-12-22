@@ -22,6 +22,7 @@ public class TreeStateService : ITreeStateService
     public ArticleTreeItemViewModel? SelectedArticle => _selectedArticle;
     public string SearchQuery => _searchQuery;
     public bool IsSearchActive => !string.IsNullOrWhiteSpace(_searchQuery);
+    public bool ShouldFocusTitle { get; set; }
 
     public TreeStateService(IArticleApiService apiService)
     {
