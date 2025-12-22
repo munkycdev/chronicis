@@ -30,7 +30,6 @@
 
 /* Search group headers */
 .search-group-header {
-    color: var(--chronicis-beige-gold) !important;
     border-bottom: 2px solid var(--chronicis-beige-gold);
     padding-bottom: var(--chronicis-space-sm);
     margin-bottom: var(--chronicis-space-md);

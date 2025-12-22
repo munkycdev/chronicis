@@ -69,6 +69,7 @@
 /* Nav Item Container */
 .chronicis-nav-item-container {
     position: relative;
+    margin-top:15px;
 }
 
 .chronicis-nav-item-menu {

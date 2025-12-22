@@ -30,7 +30,7 @@
     /* Semantic Colors */
     --chronicis-success: #4CAF50;
     --chronicis-warning: #FFA726;
-    --chronicis-error: #EF5350;
+    --chronicis-error: #ad1412ff;
     --chronicis-info: #29B6F6;
     
     /* Typography */
@@ -412,6 +412,15 @@
 /* Nav Menu */
 .mud-navmenu {
     padding: 0 !important;
+}
+
+.mud-secondary-text { 
+    color: var(--chronicis-error) !important; 
+}
+
+.fa-solid {
+    min-width: 20px;
+    text-align: center;
 }
 
 /* ============================================

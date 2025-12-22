@@ -173,7 +173,7 @@ static MudTheme CreateChronicisTheme() => new MudTheme
         TextDisabled = "rgba(26, 26, 26, 0.38)",
         Success = "#4CAF50",
         Warning = "#FFA726",
-        Error = "#EF5350",
+        Error = "#ad1412ff",
         Info = "#29B6F6"
     },
     PaletteDark = new PaletteDark
@@ -192,7 +192,7 @@ static MudTheme CreateChronicisTheme() => new MudTheme
         Divider = "rgba(196, 175, 142, 0.12)",
         Success = "#4CAF50",
         Warning = "#FFA726",
-        Error = "#EF5350",
+        Error = "#ad1412ff",
         Info = "#29B6F6"
     },
     Typography = new Typography
