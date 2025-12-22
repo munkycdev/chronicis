@@ -1,7 +1,23 @@
 # Chronicis Implementation Plan - Complete Reference
 
-**Version:** 2.1 | **Date:** December 15, 2025  
+**Version:** 2.3 | **Date:** December 21, 2025  
 **Purpose:** Complete phase-by-phase implementation guide with detailed specifications
+
+**CHANGES IN v2.3:**
+- Phase 1.5.1b: **COMPLETE** - World & Campaign Management APIs
+- Phase 1.5.1b: New endpoints for World CRUD operations
+- Phase 1.5.1b: New endpoints for Campaign CRUD and member management
+- Phase 1.5.1b: Auto-creation of Act 1 and SharedInfoRoot when campaign created
+- Phase 1.5.1b: See docs/phase-1.5/Phase_1_5_1b_World_Campaign_APIs.md for full details
+
+**CHANGES IN v2.2:**
+- Phase 1.5.1a: **COMPLETE** - Guid ID Migration & Multi-User Foundation
+- Phase 1.5.1a: All entity IDs migrated from int to Guid
+- Phase 1.5.1a: New entities added: World, Campaign, CampaignMember
+- Phase 1.5.1a: New enums: ArticleType, CampaignRole, ArticleVisibility
+- Phase 1.5.1a: Property renames: CreatedDate → CreatedAt, ModifiedDate → ModifiedAt
+- Phase 1.5.1a: EF Core migration created and applied to dev database
+- Phase 1.5.1a: See docs/phase-1.5/Phase_1_5_1a_Guid_Migration.md for full details
 
 **CHANGES IN v2.1:**
 - Phase 10: **COMPLETE** - Hierarchical URL Paths
@@ -67,6 +83,8 @@
 | 9 | Advanced Search | 1 | ✅ Complete | Full-text content search, grouped results, global UI |
 | 9.5 | Auth Architecture | 0.5 | ✅ Complete | Global middleware, centralized HttpClient |
 | 10 | Hierarchical URLs | 1 | ✅ **COMPLETE** | Path-based URLs, slug system, breadcrumb navigation |
+| 1.5.1a | Guid ID Migration | 0.5 | ✅ **COMPLETE** | Multi-user foundation, World/Campaign entities |
+| 1.5.1b | World/Campaign APIs | 0.5 | ✅ **COMPLETE** | CRUD endpoints, member management, auto-creation |
 | 11 | Icons & Polish | 1 | 📋 Pending | Custom icons, final touches |
 | 12 | Testing & Deploy | 2 | 🔄 **IN PROGRESS** | Azure deployment ✅, E2E tests pending |
 
@@ -670,6 +688,9 @@ chronicis/
 ---
 
 **Version History:**
+- 2.3 (2025-12-21): Phase 1.5.1b COMPLETE - World & Campaign management APIs, member management, auto-creation logic
+- 2.2 (2025-12-20): Phase 1.5.1a COMPLETE - Guid ID migration, World/Campaign/CampaignMember entities, multi-user foundation
+- 2.1 (2025-12-15): Phase 10 COMPLETE - Hierarchical URL paths, slug system
 - 2.0 (2025-12-04): Phase 12 deployment COMPLETE - Azure SWA, SQL, Auth0 production config, X-Auth0-Token workaround
 - 1.9 (2025-12-01): Phase 9.5 COMPLETE - Auth architecture refactoring
 - 1.8 (2025-11-28): Phase 9 COMPLETE - Full-text content search

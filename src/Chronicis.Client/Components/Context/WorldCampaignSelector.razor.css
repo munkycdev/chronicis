@@ -1,0 +1,42 @@
+.world-campaign-selector {
+    padding: 8px 16px 16px 16px;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.selector-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.selector-row:last-child {
+    margin-bottom: 0;
+}
+
+.selector-dropdown {
+    flex: 1;
+}
+
+.selector-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.selector-icon {
+    font-size: 1rem;
+}
+
+/* Style the dropdowns to match Chronicis theme */
+.world-campaign-selector .mud-input-outlined {
+    background-color: rgba(196, 175, 142, 0.05);
+}
+
+.world-campaign-selector .mud-input-outlined:hover {
+    background-color: rgba(196, 175, 142, 0.1);
+}
+
+.world-campaign-selector .mud-select-input {
+    font-size: 0.875rem;
+}

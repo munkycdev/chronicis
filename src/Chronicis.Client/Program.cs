@@ -1,3 +1,4 @@
+using Blazored.LocalStorage;
 using Chronicis.Client;
 using Chronicis.Client.Services;
 using Microsoft.AspNetCore.Components.Web;
@@ -48,6 +49,9 @@ builder.Services.AddMudServices(config =>
     config.SnackbarConfiguration.ShowTransitionDuration = 300;
     config.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
 });
+
+// Blazored LocalStorage for persisting user preferences
+builder.Services.AddBlazoredLocalStorage();
 
 // Chronicis theme
 builder.Services.AddSingleton(CreateChronicisTheme());
@@ -120,9 +124,24 @@ builder.Services.AddScoped<IAutoHashtagApiService>(sp =>
     return new AutoHashtagApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
+builder.Services.AddScoped<IWorldApiService>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var logger = sp.GetRequiredService<ILogger<WorldApiService>>();
+    return new WorldApiService(factory.CreateClient("ChronicisApi"), logger);
+});
+
+builder.Services.AddScoped<ICampaignApiService>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var logger = sp.GetRequiredService<ILogger<CampaignApiService>>();
+    return new CampaignApiService(factory.CreateClient("ChronicisApi"), logger);
+});
+
 // State & Auth services
 builder.Services.AddScoped<ITreeStateService, TreeStateService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAppContextService, AppContextService>();
 
 await builder.Build().RunAsync();
 

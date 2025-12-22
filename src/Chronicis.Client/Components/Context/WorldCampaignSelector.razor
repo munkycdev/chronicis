@@ -1,0 +1,168 @@
+@inject IAppContextService AppContext
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@implements IDisposable
+
+<div class="world-campaign-selector">
+    @if (!AppContext.IsInitialized)
+    {
+        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+    }
+    else if (AppContext.Worlds.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">No worlds available</MudAlert>
+    }
+    else
+    {
+        <div class="selector-row">
+            <MudSelect T="Guid" 
+                       Value="_selectedWorldId"
+                       ValueChanged="OnWorldChanged"
+                       Label="World"
+                       Variant="Variant.Outlined"
+                       Dense="true"
+                       Margin="Margin.Dense"
+                       Class="selector-dropdown">
+                @foreach (var world in AppContext.Worlds)
+                {
+                    <MudSelectItem Value="@world.Id">
+                        <div class="selector-item">
+                            <span class="selector-icon">🌍</span>
+                            <span>@world.Name</span>
+                        </div>
+                    </MudSelectItem>
+                }
+            </MudSelect>
+            
+            <MudIconButton Icon="@Icons.Material.Filled.Add"
+                           Size="Size.Small"
+                           Color="Color.Primary"
+                           OnClick="OpenCreateWorldDialog"
+                           Title="Create new world" />
+        </div>
+
+        @if (AppContext.CurrentWorld?.Campaigns.Count > 0)
+        {
+            <div class="selector-row">
+                <MudSelect T="Guid?" 
+                           Value="_selectedCampaignId"
+                           ValueChanged="OnCampaignChanged"
+                           Label="Campaign"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Margin="Margin.Dense"
+                           Class="selector-dropdown">
+                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">
+                        <div class="selector-item">
+                            <span class="selector-icon">📚</span>
+                            <span>Wiki & Characters</span>
+                        </div>
+                    </MudSelectItem>
+                    @foreach (var campaign in AppContext.CurrentWorld.Campaigns)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)campaign.Id)">
+                            <div class="selector-item">
+                                <span class="selector-icon">⚔️</span>
+                                <span>@campaign.Name</span>
+                            </div>
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+                
+                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                               Size="Size.Small"
+                               Color="Color.Primary"
+                               OnClick="OpenCreateCampaignDialog"
+                               Title="Create new campaign" />
+            </div>
+        }
+        else
+        {
+            <div class="selector-row">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="OpenCreateCampaignDialog"
+                           FullWidth="true"
+                           Size="Size.Small">
+                    Create First Campaign
+                </MudButton>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private Guid _selectedWorldId;
+    private Guid? _selectedCampaignId;
+
+    protected override void OnInitialized()
+    {
+        AppContext.OnContextChanged += OnContextChanged;
+        UpdateSelections();
+    }
+
+    private void OnContextChanged()
+    {
+        UpdateSelections();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateSelections()
+    {
+        _selectedWorldId = AppContext.CurrentWorldId ?? Guid.Empty;
+        _selectedCampaignId = AppContext.CurrentCampaignId;
+    }
+
+    private async Task OnWorldChanged(Guid worldId)
+    {
+        if (worldId != Guid.Empty && worldId != AppContext.CurrentWorldId)
+        {
+            await AppContext.SelectWorldAsync(worldId);
+        }
+    }
+
+    private async Task OnCampaignChanged(Guid? campaignId)
+    {
+        await AppContext.SelectCampaignAsync(campaignId);
+    }
+
+    private async Task OpenCreateWorldDialog()
+    {
+        var dialog = await DialogService.ShowAsync<CreateWorldDialog>("Create New World");
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is WorldDto newWorld)
+        {
+            await AppContext.RefreshWorldsAsync();
+            await AppContext.SelectWorldAsync(newWorld.Id);
+            Snackbar.Add($"World '{newWorld.Name}' created!", Severity.Success);
+        }
+    }
+
+    private async Task OpenCreateCampaignDialog()
+    {
+        if (!AppContext.CurrentWorldId.HasValue)
+            return;
+
+        var parameters = new DialogParameters
+        {
+            ["WorldId"] = AppContext.CurrentWorldId.Value
+        };
+
+        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Create New Campaign", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is CampaignDto newCampaign)
+        {
+            await AppContext.RefreshCurrentWorldAsync();
+            await AppContext.SelectCampaignAsync(newCampaign.Id);
+            Snackbar.Add($"Campaign '{newCampaign.Name}' created!", Severity.Success);
+        }
+    }
+
+    public void Dispose()
+    {
+        AppContext.OnContextChanged -= OnContextChanged;
+    }
+}

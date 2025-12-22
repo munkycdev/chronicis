@@ -1,9 +1,11 @@
 @page "/dashboard"
 @attribute [Authorize]
+@using Blazored.LocalStorage
 @inject ITreeStateService TreeStateService
 @inject IArticleApiService ArticleApi
 @inject IQuoteService QuoteService
 @inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage
 @implements IDisposable
 
 <div class="chronicis-welcome-page">
@@ -228,9 +230,31 @@
     private Quote? _quote;
     private bool _loadingQuote = true;
 
+    private const string LastArticlePathKey = "chronicis_last_article_path";
+
     protected override async Task OnInitializedAsync()
     {
         TreeStateService.OnStateChanged += OnTreeStateChanged;
+
+        // Check for last visited article and redirect
+        try
+        {
+            var lastPath = await LocalStorage.GetItemAsStringAsync(LastArticlePathKey);
+            if (!string.IsNullOrEmpty(lastPath))
+            {
+                // Remove quotes if present (localStorage sometimes wraps strings)
+                lastPath = lastPath.Trim('"');
+                if (lastPath.StartsWith("/article/"))
+                {
+                    Navigation.NavigateTo(lastPath);
+                    return; // Don't load dashboard data, we're redirecting
+                }
+            }
+        }
+        catch
+        {
+            // Ignore localStorage errors, just show dashboard
+        }
 
         // If URL has article slug, find and load it
         if (!string.IsNullOrEmpty(ArticleSlug))

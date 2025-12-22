@@ -2,6 +2,7 @@
 @using Chronicis.Shared.Utilities
 @using MudBlazor.Charts
 @using Chronicis.Client.Components.Hashtags
+@using Blazored.LocalStorage
 @inject IArticleApiService ArticleApi
 @inject IHashtagApiService HashtagApi
 @inject ITreeStateService TreeState
@@ -9,6 +10,7 @@
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @inject IDialogService DialogService
+@inject ILocalStorageService LocalStorage
 
 @implements IDisposable
 
@@ -225,6 +227,9 @@ else
     private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
     private bool _openMetadata = false;
     private bool _isSummaryExpanded = false;
+    private bool _shouldFocusTitle = false;
+    
+    private const string LastArticlePathKey = "chronicis_last_article_path";
 
     private string _saveStatusClass => _isSaving ? "saving" : _hasUnsavedChanges ? "unsaved" : "saved";
 
@@ -232,6 +237,19 @@ else
     {
         TreeState.OnStateChanged += OnTreeStateChanged;
         _dotNetHelper = DotNetObjectReference.Create(this);
+
+        // Register global keyboard shortcut handler
+        await JSRuntime.InvokeVoidAsync("eval", @"
+            if (!window.chronicisKeyboardHandler) {
+                window.chronicisKeyboardHandler = function(e) {
+                    if (e.ctrlKey && e.key === 'n') {
+                        e.preventDefault();
+                        DotNet.invokeMethodAsync('Chronicis.Client', 'HandleCtrlN');
+                    }
+                };
+                document.addEventListener('keydown', window.chronicisKeyboardHandler);
+            }
+        ");
 
         // NEW: Listen for hashtag link requests
         await JSRuntime.InvokeVoidAsync("eval", @"
@@ -250,6 +268,21 @@ else
             StateHasChanged();
             await Task.Delay(100);
             await InitializeEditor();
+        }
+
+        // Focus title field if flagged (after component has rendered)
+        if (_shouldFocusTitle && _titleField != null)
+        {
+            _shouldFocusTitle = false;
+            await Task.Delay(100);
+            try
+            {
+                await _titleField.FocusAsync();
+                // Also try JS focus as backup
+                await JSRuntime.InvokeVoidAsync("eval", 
+                    "document.querySelector('.chronicis-article-title input')?.focus();");
+            }
+            catch { /* ignore focus errors */ }
         }
     }
 
@@ -307,11 +340,18 @@ else
                 : $"{_article.Title} - Chronicis";
             await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(pageTitle)}'");
 
-            // Focus title if it's empty (new article)
+            // Save last visited article path to localStorage
+            if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
+            {
+                var path = string.Join("/", _article.Breadcrumbs.Select(b => b.Slug));
+                await LocalStorage.SetItemAsStringAsync(LastArticlePathKey, $"/article/{path}");
+            }
+
+            // Focus title if it's empty (new article) - set flag for after render
             if (string.IsNullOrEmpty(_editTitle))
             {
-                await Task.Delay(100);
-                _titleField?.FocusAsync().GetAwaiter().GetResult();
+                _shouldFocusTitle = true;
+                StateHasChanged(); // Trigger re-render so OnAfterRenderAsync runs
             }
         }
         catch (Exception ex)
@@ -623,7 +663,14 @@ else
         OnHashtagLinkRequested?.Invoke(evt);
     }
 
+    [JSInvokable("HandleCtrlN")]
+    public static void HandleCtrlN()
+    {
+        OnCtrlNPressed?.Invoke();
+    }
+
     private static event Action<CustomEventArgs>? OnHashtagLinkRequested;
+    private static event Action? OnCtrlNPressed;
 
     private class CustomEventArgs
     {
@@ -633,6 +680,7 @@ else
     protected override void OnInitialized()
     {
         OnHashtagLinkRequested += HandleHashtagLinkRequestInstance;
+        OnCtrlNPressed += HandleCtrlNInstance;
         base.OnInitialized();
     }
 
@@ -642,6 +690,61 @@ else
         {
             await OpenHashtagLinkDialog(args.HashtagName);
         });
+    }
+
+    private async void HandleCtrlNInstance()
+    {
+        await InvokeAsync(async () =>
+        {
+            await CreateSiblingArticle();
+        });
+    }
+
+    private async Task CreateSiblingArticle()
+    {
+        if (_article == null) return;
+
+        try
+        {
+            // Create sibling = same parent as current article
+            var createDto = new ArticleCreateDto
+            {
+                Title = string.Empty,
+                Body = string.Empty,
+                ParentId = _article.ParentId, // Same parent = sibling
+                EffectiveDate = DateTime.Now,
+                WorldId = _article.WorldId,
+                CampaignId = _article.CampaignId
+            };
+
+            var created = await ArticleApi.CreateArticleAsync(createDto);
+            
+            // Refresh tree to show new article
+            TreeState.RefreshTree();
+            
+            // Small delay to let tree refresh
+            await Task.Delay(100);
+            
+            // Select and navigate to the new article
+            TreeState.ExpandAndSelectArticle(created.Id);
+            
+            // Navigate to the new article
+            if (created.Breadcrumbs != null && created.Breadcrumbs.Any())
+            {
+                var path = string.Join("/", created.Breadcrumbs.Select(b => b.Slug));
+                Navigation.NavigateTo($"/article/{path}");
+            }
+            else
+            {
+                Navigation.NavigateTo($"/article/{created.Slug}");
+            }
+
+            Snackbar.Add("New article created", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
+        }
     }
 
     private async Task OpenHashtagLinkDialog(string hashtagName)
@@ -685,6 +788,7 @@ else
     {
         TreeState.OnStateChanged -= OnTreeStateChanged;
         OnHashtagLinkRequested -= HandleHashtagLinkRequestInstance;
+        OnCtrlNPressed -= HandleCtrlNInstance;
         _autoSaveTimer?.Dispose();
         _dotNetHelper?.Dispose();
     }
