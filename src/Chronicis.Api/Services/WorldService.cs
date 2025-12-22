@@ -87,30 +87,30 @@ public class WorldService : IWorldService
         };
         _context.Worlds.Add(world);
 
-        // Create root structure articles
-        var worldRoot = CreateRootArticle(ArticleType.WorldRoot, "New World", "new-world", world.Id, null, userId);
+        // Create root structure articles with default icons
+        var worldRoot = CreateRootArticle(ArticleType.WorldRoot, "New World", "new-world", world.Id, null, userId, "fa-solid fa-globe");
         _context.Articles.Add(worldRoot);
 
-        var wikiRoot = CreateRootArticle(ArticleType.WikiRoot, "Wiki", "wiki", world.Id, worldRoot.Id, userId);
+        var wikiRoot = CreateRootArticle(ArticleType.WikiRoot, "Wiki", "wiki", world.Id, worldRoot.Id, userId, "fa-solid fa-book-atlas");
         _context.Articles.Add(wikiRoot);
 
         // Add default wiki subcategories
-        var bestiary = CreateRootArticle(ArticleType.WikiArticle, "Bestiary", "bestiary", world.Id, wikiRoot.Id, userId);
+        var bestiary = CreateRootArticle(ArticleType.WikiArticle, "Bestiary", "bestiary", world.Id, wikiRoot.Id, userId, "fa-solid fa-skull");
         _context.Articles.Add(bestiary);
 
-        var characters = CreateRootArticle(ArticleType.WikiArticle, "Characters", "characters", world.Id, wikiRoot.Id, userId);
+        var characters = CreateRootArticle(ArticleType.WikiArticle, "Characters", "characters", world.Id, wikiRoot.Id, userId, "fa-solid fa-user-ninja");
         _context.Articles.Add(characters);
 
-        var factions = CreateRootArticle(ArticleType.WikiArticle, "Factions", "factions", world.Id, wikiRoot.Id, userId);
+        var factions = CreateRootArticle(ArticleType.WikiArticle, "Factions", "factions", world.Id, wikiRoot.Id, userId, "fa-solid fa-people-group");
         _context.Articles.Add(factions);
 
-        var locations = CreateRootArticle(ArticleType.WikiArticle, "Locations", "locations", world.Id, wikiRoot.Id, userId);
+        var locations = CreateRootArticle(ArticleType.WikiArticle, "Locations", "locations", world.Id, wikiRoot.Id, userId, "fa-solid fa-compass");
         _context.Articles.Add(locations);
 
-        var campaignRoot = CreateRootArticle(ArticleType.CampaignRoot, "Campaigns", "campaigns", world.Id, worldRoot.Id, userId);
+        var campaignRoot = CreateRootArticle(ArticleType.CampaignRoot, "Campaigns", "campaigns", world.Id, worldRoot.Id, userId, "fa-solid fa-scroll");
         _context.Articles.Add(campaignRoot);
 
-        var characterRoot = CreateRootArticle(ArticleType.CharacterRoot, "Player Characters", "player-characters", world.Id, worldRoot.Id, userId);
+        var characterRoot = CreateRootArticle(ArticleType.CharacterRoot, "Player Characters", "player-characters", world.Id, worldRoot.Id, userId, "fa-solid fa-user-group");
         _context.Articles.Add(characterRoot);
 
         await _context.SaveChangesAsync();
@@ -170,7 +170,7 @@ public class WorldService : IWorldService
             .AnyAsync(w => w.Id == worldId && w.OwnerId == userId);
     }
 
-    private static Article CreateRootArticle(ArticleType type, string title, string slug, Guid worldId, Guid? parentId, Guid userId)
+    private static Article CreateRootArticle(ArticleType type, string title, string slug, Guid worldId, Guid? parentId, Guid userId, string? icon = null)
     {
         return new Article
         {
@@ -184,7 +184,8 @@ public class WorldService : IWorldService
             CreatedAt = DateTime.UtcNow,
             EffectiveDate = DateTime.UtcNow,
             Visibility = ArticleVisibility.Public,
-            Body = string.Empty
+            Body = string.Empty,
+            IconEmoji = icon
         };
     }
 

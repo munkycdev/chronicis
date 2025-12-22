@@ -140,9 +140,14 @@
                             Class="drag-handle"
                             Style="@(node.IsHovered || _isDragging ? "opacity: 0.6;" : "opacity: 0;")" />
                         
-                        <!-- Article icon (emoji or Material icon fallback) -->
-                        @if (!string.IsNullOrEmpty(node.IconEmoji))
+                        <!-- Article icon (Font Awesome or Material icon fallback) -->
+                        @if (!string.IsNullOrEmpty(node.IconEmoji) && node.IconEmoji.StartsWith("fa-"))
                         {
+                            <i class="@node.IconEmoji" style="margin-right: 8px; font-size: 1rem; color: var(--chronicis-beige-gold);"></i>
+                        }
+                        else if (!string.IsNullOrEmpty(node.IconEmoji))
+                        {
+                            <!-- Legacy emoji support -->
                             <span class="chronicis-tree-emoji" style="margin-right: 8px; font-size: 1.1rem;">@node.IconEmoji</span>
                         }
                         else
@@ -604,10 +609,19 @@
 
     private async Task DeleteArticle(ArticleTreeNode node)
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>(
-            "confirm",
-            $"Are you sure you want to delete '{node.Title}'? This action cannot be undone."
-        );
+        // Build confirmation message with child warning if applicable
+        var message = $"Are you sure you want to delete '{node.Title}'?";
+        
+        if (node.HasChildren)
+        {
+            var childCount = node.Article.ChildCount;
+            var childText = childCount == 1 ? "1 child article" : $"{childCount} child articles";
+            message = $"Are you sure you want to delete '{node.Title}'?\n\n⚠️ WARNING: This will also delete {childText} and all their descendants.";
+        }
+        
+        message += "\n\nThis action cannot be undone.";
+        
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", message);
 
         if (!confirmed) return;
 

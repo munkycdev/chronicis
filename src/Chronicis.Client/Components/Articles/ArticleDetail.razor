@@ -97,13 +97,12 @@ else
             </MudTooltip>
         </div>
 
-        <!-- Title Row with Emoji Picker -->
+        <!-- Title Row with Icon Picker -->
         <div class="d-flex align-center mb-3">
-            <!-- Emoji Picker Button -->
-            <EmojiPickerButton 
-                CurrentEmoji="@_article.IconEmoji"
-                OnEmojiChanged="OnIconEmojiChanged"
-                IsSaving="@_isSaving" />
+            <!-- Icon Picker Button -->
+            <IconPickerButton 
+                CurrentIcon="@_article.IconEmoji"
+                OnIconChanged="OnIconChanged" />
             
             <!-- Title (Always Editable) - NO AUTO-SAVE -->
             <MudTextField @ref="_titleField"
@@ -436,13 +435,13 @@ else
         // No auto-save timer for title changes
     }
 
-    // Handle emoji icon changes - auto-save immediately
-    private async Task OnIconEmojiChanged(string? newEmoji)
+    // Handle icon changes - auto-save immediately
+    private async Task OnIconChanged(string? newIcon)
     {
         if (_article == null || _isSaving) return;
 
         // Update local state
-        _article.IconEmoji = newEmoji;
+        _article.IconEmoji = newIcon;
         
         // Save immediately
         _isSaving = true;
@@ -455,7 +454,7 @@ else
                 Title = _editTitle?.Trim() ?? string.Empty,
                 Body = _editBody,
                 EffectiveDate = _article.EffectiveDate,
-                IconEmoji = newEmoji
+                IconEmoji = newIcon
             };
 
             await ArticleApi.UpdateArticleAsync(_article.Id, updateDto);
@@ -465,7 +464,7 @@ else
             // Refresh tree to show updated icon
             TreeState.RefreshTree();
 
-            var action = string.IsNullOrEmpty(newEmoji) ? "removed" : "updated";
+            var action = string.IsNullOrEmpty(newIcon) ? "removed" : "updated";
             Snackbar.Add($"Icon {action}", Severity.Success);
         }
         catch (Exception ex)
@@ -610,10 +609,18 @@ else
     {
         if (_article == null) return;
 
-        var confirmed = await JSRuntime.InvokeAsync<bool>(
-            "confirm",
-            $"Are you sure you want to delete '{_article.Title}'? This action cannot be undone."
-        );
+        // Build confirmation message with child warning if applicable
+        var message = $"Are you sure you want to delete '{_article.Title}'?";
+        
+        if (_article.ChildCount > 0)
+        {
+            var childText = _article.ChildCount == 1 ? "1 child article" : $"{_article.ChildCount} child articles";
+            message = $"Are you sure you want to delete '{_article.Title}'?\n\n⚠️ WARNING: This will also delete {childText} and all their descendants.";
+        }
+        
+        message += "\n\nThis action cannot be undone.";
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", message);
 
         if (!confirmed) return;
 
