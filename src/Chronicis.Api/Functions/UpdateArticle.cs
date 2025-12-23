@@ -17,6 +17,7 @@ public class UpdateArticle
     private readonly ChronicisDbContext _context;
     private readonly IArticleValidationService _validationService;
     private readonly IArticleService _articleService;
+    private readonly ILinkSyncService _linkSyncService;
     private readonly ILogger<UpdateArticle> _logger;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -24,11 +25,13 @@ public class UpdateArticle
         ChronicisDbContext context,
         IArticleValidationService validationService,
         IArticleService articleService,
+        ILinkSyncService linkSyncService,
         ILogger<UpdateArticle> logger)
     {
         _context = context;
         _validationService = validationService;
         _articleService = articleService;
+        _linkSyncService = linkSyncService;
         _logger = logger;
     }
 
@@ -119,6 +122,9 @@ public class UpdateArticle
             }
 
             await _context.SaveChangesAsync();
+
+            // Sync wiki links after saving article
+            await _linkSyncService.SyncLinksAsync(article.Id, article.Body);
 
             var responseDto = new ArticleDto
             {

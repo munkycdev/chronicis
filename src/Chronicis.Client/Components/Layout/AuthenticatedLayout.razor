@@ -4,7 +4,6 @@
 @inject ITreeStateService TreeState
 @inject IAuthService AuthService
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject SignOutSessionStateManager SignOutManager
 @implements IDisposable
 
 <MudThemeProvider />
@@ -171,7 +170,7 @@
         }
     }
 
-    private async Task OnGlobalSearchKeyDown(KeyboardEventArgs e)
+    private void OnGlobalSearchKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
@@ -187,9 +186,8 @@
         }
     }
 
-    private async Task BeginSignOut()
+    private void BeginSignOut()
     {
-        await SignOutManager.SetSignOutState();
         Navigation.NavigateToLogout("authentication/logout");
     }
 

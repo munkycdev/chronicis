@@ -266,3 +266,57 @@ a:focus-visible {
         font-size: 1rem;
     }
 }
+
+/* ============================================
+   Scrollbar Styles
+   ============================================ */
+
+/* Light scrollbar for light backgrounds */
+.chronicis-scrollbar-light {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(196, 175, 142, 0.4) transparent;
+}
+
+.chronicis-scrollbar-light::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chronicis-scrollbar-light::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chronicis-scrollbar-light::-webkit-scrollbar-thumb {
+    background-color: rgba(196, 175, 142, 0.4);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.chronicis-scrollbar-light::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(196, 175, 142, 0.6);
+}
+
+/* Dark scrollbar for dark backgrounds */
+.chronicis-scrollbar-dark {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(196, 175, 142, 0.3) transparent;
+}
+
+.chronicis-scrollbar-dark::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chronicis-scrollbar-dark::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chronicis-scrollbar-dark::-webkit-scrollbar-thumb {
+    background-color: rgba(196, 175, 142, 0.3);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.chronicis-scrollbar-dark::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(196, 175, 142, 0.5);
+}

@@ -1,0 +1,253 @@
+/* ============================================
+   CHRONICIS WIKI LINKS STYLES
+   ============================================
+   Styles for [[wiki-style]] links in articles
+   ============================================ */
+
+/* ============================================
+   VALID WIKI LINKS
+   ============================================ */
+
+/* Wiki link in the editor/rendered content */
+span[data-type="wiki-link"] {
+    color: #2563eb; /* Blue for better contrast */
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+/* Hover state */
+span[data-type="wiki-link"]:hover {
+    color: #1d4ed8; /* Darker blue on hover */
+    background-color: rgba(37, 99, 235, 0.1);
+}
+
+/* Active/pressed state */
+span[data-type="wiki-link"]:active {
+    color: #1e40af;
+    background-color: rgba(37, 99, 235, 0.2);
+}
+
+/* ============================================
+   BROKEN WIKI LINKS
+   ============================================ */
+
+/* Broken link indicator */
+span[data-type="wiki-link"][data-broken="true"],
+span[data-type="wiki-link"].broken {
+    color: #ad1412; /* Chronicis error color */
+    border-bottom: 1px dashed #ad1412;
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+/* Broken link hover */
+span[data-type="wiki-link"][data-broken="true"]:hover,
+span[data-type="wiki-link"].broken:hover {
+    color: #d32f2f;
+    opacity: 1;
+    background-color: rgba(173, 20, 18, 0.05);
+    box-shadow: 0 0 4px rgba(173, 20, 18, 0.2);
+}
+
+/* ============================================
+   WIKI LINK AUTOCOMPLETE DROPDOWN
+   ============================================ */
+
+/* Autocomplete container */
+.wiki-link-autocomplete {
+    position: absolute;
+    background: #FFFFFF;
+    border: 1px solid #C4AF8E;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(31, 42, 51, 0.15);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    min-width: 300px;
+    padding: 4px 0;
+}
+
+/* Individual suggestion item */
+.wiki-link-suggestion {
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Suggestion title */
+.wiki-link-suggestion-title {
+    color: #1A1A1A;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+/* Suggestion path */
+.wiki-link-suggestion-path {
+    color: #3A4750;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* Hover state for suggestion */
+.wiki-link-suggestion:hover,
+.wiki-link-suggestion.selected {
+    background-color: rgba(196, 175, 142, 0.15);
+}
+
+/* Active/selected suggestion */
+.wiki-link-suggestion.selected {
+    background-color: rgba(196, 175, 142, 0.2);
+}
+
+/* Create new article option */
+.wiki-link-create-option {
+    padding: 10px 16px;
+    cursor: pointer;
+    border-top: 1px solid rgba(196, 175, 142, 0.2);
+    color: #C4AF8E;
+    font-weight: 500;
+    font-size: 14px;
+    transition: background-color 0.15s ease;
+}
+
+.wiki-link-create-option:hover {
+    background-color: rgba(196, 175, 142, 0.1);
+}
+
+/* Icon in create option */
+.wiki-link-create-icon {
+    margin-right: 8px;
+    font-weight: bold;
+}
+
+/* Empty state */
+.wiki-link-no-results {
+    padding: 16px;
+    text-align: center;
+    color: #3A4750;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+/* Loading state */
+.wiki-link-loading {
+    padding: 16px;
+    text-align: center;
+    color: #C4AF8E;
+    font-size: 14px;
+}
+
+/* ============================================
+   DARK MODE SUPPORT
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    /* Valid links in dark mode */
+    span[data-type="wiki-link"] {
+        color: #60a5fa; /* Lighter blue for dark backgrounds */
+    }
+
+    span[data-type="wiki-link"]:hover {
+        color: #93c5fd;
+        background-color: rgba(96, 165, 250, 0.15);
+    }
+
+    /* Broken links in dark mode */
+    span[data-type="wiki-link"][data-broken="true"],
+    span[data-type="wiki-link"].broken {
+        color: #ef5350;
+        border-bottom-color: #ef5350;
+    }
+
+    span[data-type="wiki-link"][data-broken="true"]:hover,
+    span[data-type="wiki-link"].broken:hover {
+        color: #ff6b6b;
+        background-color: rgba(239, 83, 80, 0.1);
+    }
+
+    /* Autocomplete in dark mode */
+    .wiki-link-autocomplete {
+        background: #1F2A33;
+        border-color: #3A4750;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .wiki-link-suggestion-title {
+        color: #F4F0EA;
+    }
+
+    .wiki-link-suggestion-path {
+        color: #C4AF8E;
+    }
+
+    .wiki-link-suggestion:hover,
+    .wiki-link-suggestion.selected {
+        background-color: rgba(196, 175, 142, 0.2);
+    }
+
+    .wiki-link-create-option {
+        border-top-color: rgba(196, 175, 142, 0.3);
+        color: #D9C9A7;
+    }
+
+    .wiki-link-no-results {
+        color: #C4AF8E;
+    }
+}
+
+/* ============================================
+   WIKI LINK TOOLTIP
+   ============================================ */
+
+.wiki-link-tooltip {
+    background: #1F2A33;
+    color: #F4F0EA;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    white-space: nowrap;
+    pointer-events: auto;
+}
+
+.wiki-link-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 12px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: #1F2A33 transparent transparent transparent;
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+/* Focus states for keyboard navigation */
+span[data-type="wiki-link"]:focus {
+    outline: 2px solid #C4AF8E;
+    outline-offset: 2px;
+}
+
+.wiki-link-suggestion:focus {
+    outline: 2px solid #C4AF8E;
+    outline-offset: -2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    span[data-type="wiki-link"],
+    .wiki-link-suggestion,
+    .wiki-link-create-option {
+        transition: none;
+    }
+}

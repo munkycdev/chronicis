@@ -1,0 +1,110 @@
+@inject ILogger<WikiLinkAutocomplete> Logger
+
+@using Chronicis.Shared.DTOs
+
+<div class="wiki-link-autocomplete" 
+     style="left: @($"{Position.X}px"); top: @($"{Position.Y}px");">
+    
+    @if (Loading)
+    {
+        <div class="wiki-link-loading">
+            Searching...
+        </div>
+    }
+    else if (!Suggestions.Any())
+    {        
+        <div class="wiki-link-no-results">
+            @if (Query.Length < 3)
+            {
+                <text>Type at least 3 characters to search</text>
+            }
+            else
+            {
+                <text>No articles found</text>
+                <div class="wiki-link-create-option" @onclick="OnCreateClick">
+                    <span class="wiki-link-create-icon">+</span>
+                    Create "@GetArticleName()" in Wiki root
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        @for (int i = 0; i < Suggestions.Count; i++)
+        {
+            var suggestion = Suggestions[i];
+            var index = i;
+            var isSelected = index == SelectedIndex;
+            
+            <div class="wiki-link-suggestion @(isSelected ? "selected" : "")"
+                 @onclick="() => OnSuggestionClick(suggestion)"
+                 @onmouseenter="() => OnSuggestionHover(index)">
+                <div class="wiki-link-suggestion-title">@suggestion.Title</div>
+                <div class="wiki-link-suggestion-path">@suggestion.DisplayPath</div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public List<LinkSuggestionDto> Suggestions { get; set; } = new();
+
+    [Parameter]
+    public bool Loading { get; set; }
+
+    [Parameter]
+    public int SelectedIndex { get; set; }
+
+    [Parameter]
+    public EventCallback<int> SelectedIndexChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<LinkSuggestionDto> OnSelect { get; set; }
+
+    [Parameter]
+    public (double X, double Y) Position { get; set; }
+
+    [Parameter]
+    public string Query { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnCreate { get; set; }
+
+    private async Task OnSuggestionClick(LinkSuggestionDto suggestion)
+    {
+        Logger.LogInformation("WikiLinkAutocomplete: OnSuggestionClick called for {Title}", suggestion.Title);
+        await OnSelect.InvokeAsync(suggestion);
+        Logger.LogInformation("WikiLinkAutocomplete: OnSelect.InvokeAsync completed");
+    }
+
+    private async Task OnSuggestionHover(int index)
+    {
+        if (SelectedIndex != index)
+        {
+            await SelectedIndexChanged.InvokeAsync(index);
+        }
+    }
+
+    private async Task OnCreateClick()
+    {
+        var articleName = GetArticleName();
+        Logger.LogInformation("WikiLinkAutocomplete: OnCreateClick called for {Name}", articleName);
+        await OnCreate.InvokeAsync(articleName);
+    }
+
+    private string GetArticleName()
+    {
+        // If query contains path separators, extract just the article name (last segment)
+        var segments = Query.Split('/');
+        var name = segments.Last().Trim();
+        
+        // Capitalize first letter
+        if (!string.IsNullOrEmpty(name))
+        {
+            name = char.ToUpper(name[0]) + name.Substring(1);
+        }
+        
+        return name;
+    }
+}

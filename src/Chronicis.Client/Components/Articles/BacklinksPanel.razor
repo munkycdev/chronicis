@@ -1,0 +1,170 @@
+@using Chronicis.Shared.DTOs
+@inject ILinkApiService LinkApiService
+@inject IArticleCacheService ArticleCache
+@inject NavigationManager Navigation
+@inject ILogger<BacklinksPanel> Logger
+
+<div class="links-panel">
+    <div class="links-panel-header">
+        <span class="links-panel-title">Links From</span>
+        @if (_loading)
+        {
+            <span class="links-panel-loading">...</span>
+        }
+        <span class="links-panel-count">@_backlinks.Count</span>
+    </div>
+
+    @if (_backlinks.Any())
+    {
+        <div class="links-chip-container">
+            @foreach (var backlink in _backlinks)
+            {
+                <span class="link-chip" 
+                      @onclick="() => NavigateToArticle(backlink.ArticleId)"
+                      title="@backlink.DisplayPath">
+                    @backlink.Title
+                </span>
+            }
+        </div>
+    }
+    else if (!_loading)
+    {
+        <div class="links-panel-empty">No incoming links</div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Guid ArticleId { get; set; }
+
+    private List<BacklinkDto> _backlinks = new();
+    private bool _loading = false;
+    private Guid _lastArticleId = Guid.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Only reload if article ID changed
+        if (ArticleId != _lastArticleId)
+        {
+            _lastArticleId = ArticleId;
+            await LoadAsync();
+        }
+    }
+
+    /// <summary>
+    /// Public method to refresh the links (called after save).
+    /// </summary>
+    public async Task RefreshAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        try
+        {
+            _backlinks = await LinkApiService.GetBacklinksAsync(ArticleId);
+            Logger.LogDebug("Loaded {Count} backlinks for article {ArticleId}", _backlinks.Count, ArticleId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading backlinks for article {ArticleId}", ArticleId);
+            _backlinks = new List<BacklinkDto>();
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task NavigateToArticle(Guid articleId)
+    {
+        try
+        {
+            var path = await ArticleCache.GetNavigationPathAsync(articleId);
+            
+            if (!string.IsNullOrEmpty(path))
+            {
+                Navigation.NavigateTo($"/article/{path}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error navigating to article {ArticleId}", articleId);
+        }
+    }
+}
+
+<style>
+.links-panel {
+    padding: 12px 16px;
+}
+
+.links-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.links-panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mud-palette-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.links-panel-loading {
+    font-size: 12px;
+    color: #C4AF8E;
+}
+
+.links-panel-count {
+    font-size: 11px;
+    background: rgba(196, 175, 142, 0.2);
+    color: var(--mud-palette-text-secondary);
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: auto;
+}
+
+.links-chip-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.link-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 12px;
+    background: rgba(196, 175, 142, 0.1);
+    border: 1px solid rgba(196, 175, 142, 0.25);
+    border-radius: 12px;
+    color: var(--mud-palette-text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.link-chip:hover {
+    background: rgba(196, 175, 142, 0.25);
+    border-color: rgba(196, 175, 142, 0.5);
+    color: #C4AF8E;
+}
+
+.links-panel-empty {
+    font-size: 12px;
+    color: var(--mud-palette-text-secondary);
+    opacity: 0.6;
+    font-style: italic;
+}
+</style>

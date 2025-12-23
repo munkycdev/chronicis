@@ -46,6 +46,23 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
         })
     ];
 
+    // Add wiki link extension if available
+    if (window.createWikiLinkExtension) {
+        try {
+            const wikiLinkExt = window.createWikiLinkExtension();
+            if (wikiLinkExt) {
+                extensions.push(wikiLinkExt);
+                console.log('✅ Wiki link extension loaded');
+            } else {
+                console.warn('⚠️ Wiki link extension returned null - TipTap.Node may not be available');
+            }
+        } catch (err) {
+            console.error('❌ Failed to load wiki link extension:', err);
+        }
+    } else {
+        console.warn('⚠️ Wiki link extension not available');
+    }
+
     // Create editor
     const editor = new window.TipTap.Editor({
         element: container,
@@ -62,6 +79,77 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
     // Store editor instance
     window.tipTapEditors[editorId] = editor;
 
+    // Add click handler for wiki links
+    container.addEventListener('click', (e) => {
+        const wikiLink = e.target.closest('span[data-type="wiki-link"]');
+        if (wikiLink) {
+            e.preventDefault();
+            e.stopPropagation();
+            const targetArticleId = wikiLink.getAttribute('data-target-id');
+            const isBroken = wikiLink.getAttribute('data-broken') === 'true';
+            
+            if (targetArticleId) {
+                if (isBroken) {
+                    // Dispatch event for broken link - Blazor will handle via event listener
+                    dotNetHelper.invokeMethodAsync('OnBrokenLinkClicked', targetArticleId);
+                    console.log('Broken wiki link clicked:', targetArticleId);
+                } else {
+                    // Navigate to the article
+                    dotNetHelper.invokeMethodAsync('OnWikiLinkClicked', targetArticleId);
+                    console.log('Wiki link clicked:', targetArticleId);
+                }
+            }
+        }
+    });
+
+    // Add hover handler for wiki link tooltips
+    let tooltipTimeout = null;
+    let currentTooltip = null;
+
+    container.addEventListener('mouseover', (e) => {
+        const wikiLink = e.target.closest('span[data-type="wiki-link"]');
+        if (wikiLink && !wikiLink.hasAttribute('data-tooltip-loading')) {
+            const targetArticleId = wikiLink.getAttribute('data-target-id');
+            
+            // Clear any existing timeout
+            if (tooltipTimeout) {
+                clearTimeout(tooltipTimeout);
+            }
+            
+            // Show tooltip immediately (no delay)
+            tooltipTimeout = setTimeout(async () => {
+                if (!targetArticleId) return;
+                
+                // Mark as loading to prevent duplicate requests
+                wikiLink.setAttribute('data-tooltip-loading', 'true');
+                
+                try {
+                    // Ask Blazor for the article path
+                    const path = await dotNetHelper.invokeMethodAsync('GetArticlePath', targetArticleId);
+                    
+                    if (path) {
+                        showWikiLinkTooltip(wikiLink, path);
+                    }
+                } catch (err) {
+                    console.error('Error getting article path:', err);
+                } finally {
+                    wikiLink.removeAttribute('data-tooltip-loading');
+                }
+            }, 0);
+        }
+    });
+
+    container.addEventListener('mouseout', (e) => {
+        const wikiLink = e.target.closest('span[data-type="wiki-link"]');
+        if (wikiLink) {
+            if (tooltipTimeout) {
+                clearTimeout(tooltipTimeout);
+                tooltipTimeout = null;
+            }
+            hideWikiLinkTooltip();
+        }
+    });
+
     console.log(`✅ TipTap editor created with ID: ${editorId}`);
     return editor;
 }
@@ -75,10 +163,61 @@ function destroyTipTapEditor(editorId) {
     }
 }
 
+function setTipTapContent(editorId, markdown) {
+    const editor = window.tipTapEditors[editorId];
+    if (editor) {
+        const html = markdownToHTML(markdown);
+        editor.commands.setContent(html);
+        console.log(`Editor content updated: ${editorId}`);
+    } else {
+        console.warn(`Editor not found: ${editorId}`);
+    }
+}
+
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ================================================
+// WIKI LINK TOOLTIP
+// ================================================
+
+let currentWikiLinkTooltip = null;
+
+function showWikiLinkTooltip(element, path) {
+    hideWikiLinkTooltip();
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'wiki-link-tooltip';
+    tooltip.textContent = path;
+    
+    // Position tooltip above the element
+    const rect = element.getBoundingClientRect();
+    tooltip.style.position = 'fixed';
+    tooltip.style.left = `${rect.left}px`;
+    tooltip.style.top = `${rect.top - 8}px`;
+    tooltip.style.transform = 'translateY(-100%)';
+    tooltip.style.zIndex = '10000';
+    
+    document.body.appendChild(tooltip);
+    currentWikiLinkTooltip = tooltip;
+    
+    // Keep tooltip visible if mouse moves to it
+    tooltip.addEventListener('mouseenter', () => {
+        // Don't hide while hovering tooltip
+    });
+    tooltip.addEventListener('mouseleave', () => {
+        hideWikiLinkTooltip();
+    });
+}
+
+function hideWikiLinkTooltip() {
+    if (currentWikiLinkTooltip) {
+        currentWikiLinkTooltip.remove();
+        currentWikiLinkTooltip = null;
+    }
 }
 
 // ================================================
@@ -89,6 +228,14 @@ function markdownToHTML(markdown) {
     if (!markdown) return '<p></p>';
 
     let html = markdown;
+
+    // Wiki links: [[guid]] or [[guid|display text]]
+    // Convert to: <span data-type="wiki-link" data-target-id="guid" data-display="display">display</span>
+    html = html.replace(/\[\[([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:\|([^\]]+))?\]\]/g, (match, guid, display) => {
+        const displayText = display || 'Loading...';
+        const displayAttr = display ? ` data-display="${display}"` : '';
+        return `<span data-type="wiki-link" data-target-id="${guid}"${displayAttr}>${displayText}</span>`;
+    });
 
     // Headers (# = h1, ## = h2, etc.)
     html = html.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
@@ -101,7 +248,7 @@ function markdownToHTML(markdown) {
     // Bold and Italic
     html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    html = html.replace(/\*([^\*\n]+?)\*/g, '<em>$1</em>');
 
     // Links [text](url)
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
@@ -112,14 +259,31 @@ function markdownToHTML(markdown) {
     // Inline code `
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
 
-    // Bullet lists
-    html = html.replace(/^[\*\-]\s+(.+)$/gm, '<li>$1</li>');
-    html = html.replace(/(<li>.*<\/li>)/s, '<ul class="chronicis-bullet-list">$1</ul>');
+    // Bullet lists - find consecutive lines starting with * or -
+    html = html.replace(/^([\*\-]\s+.+\n?)+/gm, (match) => {
+        const items = match.trim().split('\n')
+            .filter(line => line.trim())
+            .map(line => {
+                const content = line.replace(/^[\*\-]\s+/, '');
+                return `<li>${content}</li>`;
+            })
+            .join('');
+        return `<ul class="chronicis-bullet-list">${items}</ul>`;
+    });
 
-    // Ordered lists
-    html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+    // Ordered lists - find consecutive lines starting with numbers
+    html = html.replace(/^(\d+\.\s+.+\n?)+/gm, (match) => {
+        const items = match.trim().split('\n')
+            .filter(line => line.trim())
+            .map(line => {
+                const content = line.replace(/^\d+\.\s+/, '');
+                return `<li>${content}</li>`;
+            })
+            .join('');
+        return `<ol class="chronicis-ordered-list">${items}</ol>`;
+    });
 
-    // Line breaks
+    // Line breaks (but not inside lists which are already processed)
     html = html.replace(/\n\n/g, '</p><p>');
     html = html.replace(/\n/g, '<br>');
 
@@ -135,6 +299,11 @@ function htmlToMarkdown(html) {
     if (!html) return '';
 
     let markdown = html;
+
+    // Wiki links: <span data-type="wiki-link" data-target-id="guid" data-display="display">text</span>
+    // Convert to: [[guid|display]] or [[guid]]
+    markdown = markdown.replace(/<span[^>]*data-type="wiki-link"[^>]*data-target-id="([^"]+)"[^>]*data-display="([^"]+)"[^>]*>.*?<\/span>/gi, '[[$1|$2]]');
+    markdown = markdown.replace(/<span[^>]*data-type="wiki-link"[^>]*data-target-id="([^"]+)"[^>]*>.*?<\/span>/gi, '[[$1]]');
 
     // Headers
     markdown = markdown.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
@@ -161,16 +330,31 @@ function htmlToMarkdown(html) {
     // Inline code
     markdown = markdown.replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`');
 
-    // Lists
-    markdown = markdown.replace(/<ul[^>]*>[\s\S]*?<\/ul>/gi, (match) => {
-        return match.replace(/<li[^>]*>(.*?)<\/li>/gi, '* $1\n');
+    // Lists - handle the entire ul/ol block at once
+    markdown = markdown.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (match, inner) => {
+        // Extract all li contents, handling potential <p> tags inside
+        const items = [];
+        const liRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+        let liMatch;
+        while ((liMatch = liRegex.exec(inner)) !== null) {
+            // Strip any <p> tags from inside the li
+            let content = liMatch[1].replace(/<p[^>]*>(.*?)<\/p>/gi, '$1').trim();
+            items.push('* ' + content);
+        }
+        return items.join('\n') + '\n';
     });
 
-    markdown = markdown.replace(/<ol[^>]*>[\s\S]*?<\/ol>/gi, (match) => {
+    markdown = markdown.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, inner) => {
+        const items = [];
+        const liRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+        let liMatch;
         let counter = 1;
-        return match.replace(/<li[^>]*>(.*?)<\/li>/gi, () => {
-            return `${counter++}. $1\n`;
-        });
+        while ((liMatch = liRegex.exec(inner)) !== null) {
+            let content = liMatch[1].replace(/<p[^>]*>(.*?)<\/p>/gi, '$1').trim();
+            items.push(counter + '. ' + content);
+            counter++;
+        }
+        return items.join('\n') + '\n';
     });
 
     // Remove remaining HTML tags

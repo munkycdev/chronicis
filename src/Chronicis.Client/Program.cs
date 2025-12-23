@@ -124,10 +124,20 @@ builder.Services.AddScoped<ICampaignApiService>(sp =>
     return new CampaignApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
+builder.Services.AddScoped<ILinkApiService>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var logger = sp.GetRequiredService<ILogger<LinkApiService>>();
+    return new LinkApiService(factory.CreateClient("ChronicisApi"), logger);
+});
+
 // State & Auth services
 builder.Services.AddScoped<ITreeStateService, TreeStateService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAppContextService, AppContextService>();
+
+// Article cache service (for reducing API calls on tooltips/navigation)
+builder.Services.AddScoped<IArticleCacheService, ArticleCacheService>();
 
 await builder.Build().RunAsync();
 

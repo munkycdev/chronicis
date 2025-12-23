@@ -14,6 +14,7 @@ public class ChronicisDbContext : DbContext
     public DbSet<Campaign> Campaigns { get; set; } = null!;
     public DbSet<CampaignMember> CampaignMembers { get; set; } = null!;
     public DbSet<Article> Articles { get; set; } = null!;
+    public DbSet<ArticleLink> ArticleLinks { get; set; } = null!;
     
 
 
@@ -29,6 +30,7 @@ public class ChronicisDbContext : DbContext
         ConfigureCampaign(modelBuilder);
         ConfigureCampaignMember(modelBuilder);
         ConfigureArticle(modelBuilder);
+        ConfigureArticleLink(modelBuilder);
     }
 
     private static void ConfigureUser(ModelBuilder modelBuilder)
@@ -218,5 +220,36 @@ public class ChronicisDbContext : DbContext
         });
     }
 
+    private static void ConfigureArticleLink(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ArticleLink>(entity =>
+        {
+            entity.HasKey(al => al.Id);
 
+            // DisplayText max length
+            entity.Property(al => al.DisplayText)
+                .HasMaxLength(500);
+
+            // ArticleLink -> SourceArticle (CASCADE delete - when source is deleted, remove its links)
+            entity.HasOne(al => al.SourceArticle)
+                .WithMany(a => a.OutgoingLinks)
+                .HasForeignKey(al => al.SourceArticleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ArticleLink -> TargetArticle (NO ACTION - SQL Server limitation with multiple cascade paths)
+            // When target article is deleted, links must be cleaned up manually or via triggers
+            entity.HasOne(al => al.TargetArticle)
+                .WithMany(a => a.IncomingLinks)
+                .HasForeignKey(al => al.TargetArticleId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Indexes for query performance
+            entity.HasIndex(al => al.SourceArticleId);
+            entity.HasIndex(al => al.TargetArticleId);
+
+            // Unique constraint: Prevent duplicate links at same position
+            entity.HasIndex(al => new { al.SourceArticleId, al.TargetArticleId, al.Position })
+                .IsUnique();
+        });
+    }
 }

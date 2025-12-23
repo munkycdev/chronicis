@@ -38,7 +38,7 @@
                            Size="Size.Small"
                            Color="Color.Primary"
                            OnClick="OpenCreateWorldDialog"
-                           Title="Create new world" />
+                           title="Create new world" />
         </div>
 
         @if (AppContext.CurrentWorld?.Campaigns.Count > 0)
@@ -58,7 +58,7 @@
                             <span>Wiki & Characters</span>
                         </div>
                     </MudSelectItem>
-                    @foreach (var campaign in AppContext.CurrentWorld.Campaigns)
+                    @foreach (var campaign in AppContext.CurrentWorld?.Campaigns ?? new List<CampaignDto>())
                     {
                         <MudSelectItem T="Guid?" Value="@((Guid?)campaign.Id)">
                             <div class="selector-item">
@@ -73,7 +73,7 @@
                                Size="Size.Small"
                                Color="Color.Primary"
                                OnClick="OpenCreateCampaignDialog"
-                               Title="Create new campaign" />
+                               title="Create new campaign" />
             </div>
         }
         else
@@ -132,7 +132,7 @@
         var dialog = await DialogService.ShowAsync<CreateWorldDialog>("Create New World");
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is WorldDto newWorld)
+        if (result is not null && !result.Canceled && result.Data is WorldDto newWorld)
         {
             await AppContext.RefreshWorldsAsync();
             await AppContext.SelectWorldAsync(newWorld.Id);
@@ -153,7 +153,7 @@
         var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Create New Campaign", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is CampaignDto newCampaign)
+        if (result is not null && !result.Canceled && result.Data is CampaignDto newCampaign)
         {
             await AppContext.RefreshCurrentWorldAsync();
             await AppContext.SelectCampaignAsync(newCampaign.Id);

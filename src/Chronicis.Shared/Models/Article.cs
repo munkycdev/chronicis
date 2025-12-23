@@ -162,6 +162,15 @@ public class Article
     /// </summary>
     public User? Player { get; set; }
     
+    /// <summary>
+    /// Links from this article to other articles.
+    /// </summary>
+    public ICollection<ArticleLink> OutgoingLinks { get; set; } = new List<ArticleLink>();
+    
+    /// <summary>
+    /// Links from other articles to this article (backlinks).
+    /// </summary>
+    public ICollection<ArticleLink> IncomingLinks { get; set; } = new List<ArticleLink>();
 
     /// <summary>
     /// Computed property for child count (not mapped to database).
