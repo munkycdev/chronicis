@@ -129,7 +129,17 @@
 
     private void NavigateToArticle(ArticleSearchResultDto result)
     {
-        TreeState.NotifySelectionChanged(result.Id);
-        Navigation.NavigateTo($"/article/{result.Slug}");
+        TreeState.ExpandPathToAndSelect(result.Id);
+        
+        // Build path from breadcrumbs if available
+        if (result.AncestorPath != null && result.AncestorPath.Any())
+        {
+            var path = string.Join("/", result.AncestorPath.Select(a => a.Slug));
+            Navigation.NavigateTo($"/article/{path}");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/article/{result.Slug}");
+        }
     }
 }

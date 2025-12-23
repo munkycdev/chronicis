@@ -1,0 +1,217 @@
+/* ============================================
+   Article Tree Navigation Styles
+   ============================================ */
+
+.article-tree {
+    padding: var(--chronicis-space-sm) 0;
+}
+
+/* Loading State */
+.article-tree__loading {
+    display: flex;
+    align-items: center;
+    padding: var(--chronicis-space-md);
+    color: var(--chronicis-soft-off-white);
+}
+
+/* Empty State */
+.article-tree__empty {
+    padding: var(--chronicis-space-lg) var(--chronicis-space-md);
+    text-align: center;
+    color: var(--chronicis-soft-off-white);
+}
+
+.article-tree__empty-icon {
+    font-size: 2.5rem;
+    opacity: 0.5;
+}
+
+/* Dashboard Link */
+.article-tree__dashboard-link {
+    display: flex;
+    align-items: center;
+    padding: var(--chronicis-space-sm) var(--chronicis-space-md);
+    color: var(--chronicis-soft-off-white);
+    text-decoration: none;
+    transition: all var(--chronicis-transition-fast);
+    border-radius: 0;
+}
+
+.article-tree__dashboard-link:hover {
+    background-color: rgba(196, 175, 142, 0.12);
+    color: var(--chronicis-beige-gold);
+}
+
+/* New Article Button */
+.article-tree__new-article {
+    display: flex;
+    align-items: center;
+    padding: var(--chronicis-space-xs) var(--chronicis-space-md);
+    padding-left: calc(var(--chronicis-space-md) + 30px);
+    color: var(--chronicis-muted-gold);
+    cursor: pointer;
+    transition: all var(--chronicis-transition-fast);
+    font-size: 0.875rem;
+}
+
+.article-tree__new-article:hover {
+    background-color: rgba(196, 175, 142, 0.12);
+    color: var(--chronicis-beige-gold);
+}
+
+/* ============================================
+   Tree Node Styles
+   ============================================ */
+
+.tree-node {
+    user-select: none;
+}
+
+.tree-node--hidden {
+    display: none;
+}
+
+.tree-node__content {
+    display: flex;
+    align-items: center;
+    padding: var(--chronicis-space-xs) var(--chronicis-space-sm);
+    padding-right: var(--chronicis-space-xs);
+    cursor: pointer;
+    transition: all var(--chronicis-transition-fast);
+    color: var(--chronicis-soft-off-white);
+    border-left: 3px solid transparent;
+}
+
+.tree-node__content:hover {
+    background-color: rgba(196, 175, 142, 0.12);
+    color: var(--chronicis-beige-gold);
+}
+
+/* Selected State */
+.tree-node--selected > .tree-node__content {
+    background-color: rgba(196, 175, 142, 0.2);
+    border-left-color: var(--chronicis-beige-gold);
+    color: var(--chronicis-beige-gold);
+}
+
+/* Expand Button */
+.tree-node__expand-btn {
+    color: var(--chronicis-muted-gold) !important;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.tree-node__expand-btn:hover {
+    color: var(--chronicis-beige-gold) !important;
+}
+
+.tree-node__expand-spacer {
+    width: 28px;
+    flex-shrink: 0;
+}
+
+/* Icons */
+.tree-node__icon {
+    margin-right: var(--chronicis-space-sm);
+    flex-shrink: 0;
+}
+
+.tree-node__icon--material {
+    color: var(--chronicis-muted-gold);
+}
+
+.tree-node--selected .tree-node__icon--material {
+    color: var(--chronicis-beige-gold);
+}
+
+.tree-node__icon--fa {
+    font-size: 1rem;
+    color: var(--chronicis-beige-gold);
+    width: 20px;
+    text-align: center;
+}
+
+.tree-node__icon--emoji {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* Title */
+.tree-node__title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9375rem;
+}
+
+/* Children Container */
+.tree-node__children {
+    margin-left: var(--chronicis-space-md);
+    padding-left: var(--chronicis-space-sm);
+    border-left: 1px solid rgba(196, 175, 142, 0.2);
+}
+
+/* Menu Items */
+.mud-menu-item {
+    transition: all var(--chronicis-transition-fast);
+}
+
+.mud-menu-item:hover {
+    background-color: rgba(196, 175, 142, 0.1);
+}
+
+.mud-menu-item .mud-icon-root {
+    color: var(--chronicis-muted-gold);
+}
+
+.mud-menu-item:hover .mud-icon-root {
+    color: var(--chronicis-beige-gold);
+}
+
+/* ============================================
+   Drag and Drop Styles
+   ============================================ */
+
+/* Dragging state on tree container */
+.article-tree--dragging {
+    cursor: grabbing;
+}
+
+/* Node being dragged */
+.tree-node--dragging {
+    opacity: 0.5;
+}
+
+.tree-node--dragging > .tree-node__content {
+    background-color: rgba(196, 175, 142, 0.1);
+}
+
+/* Valid drop target */
+.tree-node__content--drop-target {
+    background-color: rgba(196, 175, 142, 0.3) !important;
+    border-left-color: var(--chronicis-beige-gold);
+    box-shadow: inset 0 0 0 2px var(--chronicis-beige-gold);
+}
+
+/* Root drop zone */
+.article-tree__root-drop-zone {
+    display: flex;
+    align-items: center;
+    padding: var(--chronicis-space-sm) var(--chronicis-space-md);
+    padding-left: calc(var(--chronicis-space-md) + 30px);
+    margin-top: var(--chronicis-space-sm);
+    color: var(--chronicis-muted-gold);
+    border: 2px dashed rgba(196, 175, 142, 0.3);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    transition: all var(--chronicis-transition-fast);
+}
+
+.article-tree__root-drop-zone--active {
+    background-color: rgba(196, 175, 142, 0.2);
+    border-color: var(--chronicis-beige-gold);
+    color: var(--chronicis-beige-gold);
+}

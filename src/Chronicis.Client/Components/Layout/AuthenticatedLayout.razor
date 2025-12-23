@@ -79,7 +79,8 @@
 
         <div class="chronicis-search-box">
             <MudTextField @bind-Value="_treeSearch"
-                          Placeholder="Search articles..."
+                          @bind-Value:after="OnTreeSearchChanged"
+                          Placeholder="Filter articles..."
                           Adornment="Adornment.End"
                           AdornmentIcon="@(_treeSearch?.Length > 0 ? Icons.Material.Filled.Clear : Icons.Material.Filled.Search)"
                           AdornmentColor="Color.Primary"
@@ -87,7 +88,7 @@
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Immediate="true"
-                          @onkeyup="OnTreeSearchKeyUp"
+                          DebounceInterval="200"
                           Class="mb-2" />
         </div>
 
@@ -152,22 +153,23 @@
         _drawerOpen = !_drawerOpen;
     }
 
+    private void OnTreeSearchChanged()
+    {
+        // Real-time filtering as user types (debounced by MudTextField)
+        if (string.IsNullOrWhiteSpace(_treeSearch))
+        {
+            TreeState.ClearSearch();
+        }
+        else
+        {
+            TreeState.SetSearchQuery(_treeSearch);
+        }
+    }
+
     private void ClearSearch()
     {
         _treeSearch = null;
         TreeState.ClearSearch();
-    }
-
-    private async Task OnTreeSearchKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_treeSearch))
-        {
-            await TreeState.SearchAsync(_treeSearch);
-        }
-        else if (string.IsNullOrWhiteSpace(_treeSearch))
-        {
-            TreeState.ClearSearch();
-        }
     }
 
     private void OnGlobalSearchKeyDown(KeyboardEventArgs e)

@@ -1,89 +1,208 @@
-@using Chronicis.Shared.DTOs
+@using Chronicis.Client.Models
 
-<div class="tree-item @(IsSelected ? "selected" : "")"
-     style="@($"padding-left: {Level * 20}px; cursor: pointer;")"
-     @onclick="@HandleClick">
-
-    @if (Article.HasChildren)
-    {
-        <MudIconButton Icon="@GetExpandIcon()"
-                       Size="Size.Small"
-                       OnClick="@ToggleExpand"
-                       Class="expand-button" />
-    }
-    else
-    {
-        <span style="display: inline-block; width: 40px;"></span>
-    }
-
-    <MudIcon Icon="@GetArticleIcon()"
-             Size="Size.Small"
-             Class="article-icon" />
-
-    <span class="article-title">@Article.Title</span>
-</div>
-
-@if (IsExpanded && Article.HasChildren)
-{
-    @if (ChildrenCache.TryGetValue(Article.Id, out var children))
-    {
-        @foreach (var child in children)
+<div class="tree-node @GetNodeClasses()">
+    
+    <div class="@GetContentClasses()"
+         @onclick="OnNodeClick"
+         @onclick:stopPropagation="true"
+         @oncontextmenu="OpenContextMenu"
+         @oncontextmenu:preventDefault="true"
+         draggable="true"
+         @ondragstart="HandleDragStart"
+         @ondragstart:stopPropagation="true"
+         @ondragend="HandleDragEnd"
+         @ondragover="HandleDragOver"
+         @ondragover:preventDefault="true"
+         @ondragleave="HandleDragLeave"
+         @ondrop="HandleDrop"
+         @ondrop:preventDefault="true">
+        
+        @* Expand/Collapse button *@
+        @if (Node.HasChildren)
         {
-            <ArticleTreeNode Article="@child"
-            Level="@(Level + 1)"
-            OnArticleSelected="@OnArticleSelected"
-            OnLoadChildren="@OnLoadChildren"
-            ExpandedNodes="@ExpandedNodes"
-            SelectedId="@SelectedId"
-            ChildrenCache="@ChildrenCache" />
-        }
-    }
-    else
-    {
-        <div class="tree-item" style="@($"padding-left: {(Level + 1) * 20}px")">
-            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-            <span style="margin-left: 8px;">Loading...</span>
-        </div>
-    }
-}
-
-@code {
-    [Parameter] public ArticleTreeDto Article { get; set; } = null!;
-    [Parameter] public int Level { get; set; }
-    [Parameter] public EventCallback<Guid> OnArticleSelected { get; set; }
-    [Parameter] public EventCallback<Guid> OnLoadChildren { get; set; }
-    [Parameter] public HashSet<Guid> ExpandedNodes { get; set; } = new();
-    [Parameter] public Guid? SelectedId { get; set; }
-    [Parameter] public Dictionary<Guid, List<ArticleTreeDto>> ChildrenCache { get; set; } = new();
-
-    private bool IsExpanded => ExpandedNodes.Contains(Article.Id);
-    private bool IsSelected => SelectedId == Article.Id;
-
-    private async Task HandleClick()
-    {
-        await OnArticleSelected.InvokeAsync(Article.Id);
-    }
-
-    private async Task ToggleExpand()
-    {
-        if (IsExpanded)
-        {
-            ExpandedNodes.Remove(Article.Id);
+            <MudIconButton 
+                Icon="@(Node.IsExpanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)"
+                Size="Size.Small"
+                Class="tree-node__expand-btn"
+                OnClick="@OnExpandClickWrapper" />
         }
         else
         {
-            ExpandedNodes.Add(Article.Id);
-            await OnLoadChildren.InvokeAsync(Article.Id);
+            <div class="tree-node__expand-spacer"></div>
+        }
+        
+        @* Icon *@
+        @if (!string.IsNullOrEmpty(Node.IconEmoji) && Node.IconEmoji.StartsWith("fa-"))
+        {
+            <i class="@Node.IconEmoji tree-node__icon tree-node__icon--fa"></i>
+        }
+        else if (!string.IsNullOrEmpty(Node.IconEmoji))
+        {
+            <span class="tree-node__icon tree-node__icon--emoji">@Node.IconEmoji</span>
+        }
+        else
+        {
+            <MudIcon 
+                Icon="@(Node.HasChildren ? Icons.Material.Filled.Folder : Icons.Material.Filled.Description)" 
+                Size="Size.Small"
+                Class="tree-node__icon tree-node__icon--material" />
+        }
+        
+        @* Title with tooltip *@
+        <MudTooltip Text="@Node.DisplayTitle" Delay="500" Placement="Placement.Bottom">
+            <span class="tree-node__title">@Node.DisplayTitle</span>
+        </MudTooltip>
+        
+        @* Context menu (right-click activated) *@
+        <MudMenu @ref="_contextMenu"
+                 AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight"
+                 Dense="true"
+                 PositionAtCursor="true">
+            <ChildContent>
+                <MudMenuItem 
+                    Icon="@Icons.Material.Filled.Add"
+                    OnClick="@(() => OnAddChild.InvokeAsync(Node.Id))">
+                    Add Child
+                </MudMenuItem>
+                <MudMenuItem 
+                    Icon="@Icons.Material.Filled.Delete"
+                    OnClick="@(() => OnDelete.InvokeAsync(Node.Id))">
+                    Delete
+                </MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    </div>
+    
+    @* Children *@
+    @if (Node.HasChildren && Node.IsExpanded && Node.Children.Count > 0)
+    {
+        <div class="tree-node__children">
+            @foreach (var child in Node.Children.Where(c => c.IsVisible))
+            {
+                <ArticleTreeNode 
+                    Node="child"
+                    OnSelect="OnSelect"
+                    OnToggle="OnToggle"
+                    OnAddChild="OnAddChild"
+                    OnDelete="OnDelete"
+                    OnMove="OnMove"
+                    DraggedNodeId="DraggedNodeId"
+                    DraggedNodeIdChanged="DraggedNodeIdChanged" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public TreeNode Node { get; set; } = null!;
+    
+    [Parameter]
+    public EventCallback<Guid> OnSelect { get; set; }
+    
+    [Parameter]
+    public EventCallback<Guid> OnToggle { get; set; }
+    
+    [Parameter]
+    public EventCallback<Guid> OnAddChild { get; set; }
+    
+    [Parameter]
+    public EventCallback<Guid> OnDelete { get; set; }
+    
+    [Parameter]
+    public EventCallback<(Guid ArticleId, Guid? NewParentId)> OnMove { get; set; }
+    
+    [Parameter]
+    public Guid? DraggedNodeId { get; set; }
+    
+    [Parameter]
+    public EventCallback<Guid?> DraggedNodeIdChanged { get; set; }
+    
+    private bool _isDragOver;
+    private MudMenu? _contextMenu;
+    
+    private string GetNodeClasses()
+    {
+        var classes = new List<string> { "tree-node" };
+        
+        if (Node.IsSelected) classes.Add("tree-node--selected");
+        if (!Node.IsVisible) classes.Add("tree-node--hidden");
+        if (DraggedNodeId == Node.Id) classes.Add("tree-node--dragging");
+        
+        return string.Join(" ", classes);
+    }
+    
+    private string GetContentClasses()
+    {
+        var classes = new List<string> { "tree-node__content" };
+        
+        if (_isDragOver && CanDropHere()) classes.Add("tree-node__content--drop-target");
+        
+        return string.Join(" ", classes);
+    }
+    
+    private async Task OnNodeClick()
+    {
+        await OnSelect.InvokeAsync(Node.Id);
+    }
+    
+    private async Task OpenContextMenu(MouseEventArgs e)
+    {
+        if (_contextMenu != null)
+        {
+            await _contextMenu.OpenMenuAsync(e);
         }
     }
-
-    private string GetExpandIcon()
+    
+    private async Task OnExpandClickWrapper(MouseEventArgs e)
     {
-        return IsExpanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight;
+        await OnToggle.InvokeAsync(Node.Id);
     }
-
-    private string GetArticleIcon()
+    
+    private async Task HandleDragStart(DragEventArgs e)
     {
-        return Article.HasChildren ? Icons.Material.Filled.Folder : Icons.Material.Filled.Description;
+        // Set the dragged node ID
+        await DraggedNodeIdChanged.InvokeAsync(Node.Id);
+    }
+    
+    private async Task HandleDragEnd(DragEventArgs e)
+    {
+        await DraggedNodeIdChanged.InvokeAsync(null);
+        _isDragOver = false;
+    }
+    
+    private void HandleDragOver(DragEventArgs e)
+    {
+        if (CanDropHere())
+        {
+            _isDragOver = true;
+        }
+    }
+    
+    private void HandleDragLeave(DragEventArgs e)
+    {
+        _isDragOver = false;
+    }
+    
+    private async Task HandleDrop(DragEventArgs e)
+    {
+        _isDragOver = false;
+        
+        if (DraggedNodeId.HasValue && CanDropHere())
+        {
+            // Move the dragged node to be a child of this node
+            await OnMove.InvokeAsync((DraggedNodeId.Value, Node.Id));
+        }
+        
+        await DraggedNodeIdChanged.InvokeAsync(null);
+    }
+    
+    private bool CanDropHere()
+    {
+        if (!DraggedNodeId.HasValue) return false;
+        if (DraggedNodeId.Value == Node.Id) return false; // Can't drop on self
+        
+        return true;
     }
 }

@@ -51,7 +51,8 @@ else
             {
                 if (article.Id != TreeStateService.SelectedArticleId)
                 {
-                    TreeStateService.NotifySelectionChanged(article.Id);
+                    // Expand path to article and select it
+                    TreeStateService.ExpandPathToAndSelect(article.Id);
                 }
             }
             else

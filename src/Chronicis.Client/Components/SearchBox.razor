@@ -57,9 +57,10 @@
         }
     }
 
-    private async Task ExecuteSearch()
+    private Task ExecuteSearch()
     {
-        await TreeState.SearchAsync(_searchText);
+        TreeState.SetSearchQuery(_searchText);
+        return Task.CompletedTask;
     }
 
     public void Dispose()

@@ -285,7 +285,7 @@
             {
                 if (exactMatch.Id != TreeStateService.SelectedArticleId)
                 {
-                    TreeStateService.NotifySelectionChanged(exactMatch.Id);
+                    TreeStateService.ExpandPathToAndSelect(exactMatch.Id);
                 }
             }
             else
@@ -436,16 +436,14 @@
             if (world != null)
             {
                 Snackbar.Add($"World '{world.Name}' created with Wiki, Campaigns, and Player Characters!", Severity.Success);
-                TreeStateService.RefreshTree();
+                await TreeStateService.RefreshAsync();
                 
                 // Navigate to the WorldRoot article so user can rename it
                 if (world.WorldRootArticleId.HasValue)
                 {
-                    await Task.Delay(300); // Let tree refresh
-                    
                     // Set flag to focus title when article loads
                     TreeStateService.ShouldFocusTitle = true;
-                    TreeStateService.ExpandAndSelectArticle(world.WorldRootArticleId.Value);
+                    TreeStateService.ExpandPathToAndSelect(world.WorldRootArticleId.Value);
                     
                     // Get the article to build the path
                     var article = await ArticleApi.GetArticleAsync(world.WorldRootArticleId.Value);
@@ -485,11 +483,10 @@
             };
 
             var created = await ArticleApi.CreateArticleAsync(createDto);
-            TreeStateService.RefreshTree();
+            await TreeStateService.RefreshAsync();
 
-            // Small delay to let tree refresh, then select
-            await Task.Delay(300);
-            TreeStateService.NotifySelectionChanged(created.Id);
+            // Select the new article
+            TreeStateService.ExpandPathToAndSelect(created.Id);
         }
         catch (Exception ex)
         {

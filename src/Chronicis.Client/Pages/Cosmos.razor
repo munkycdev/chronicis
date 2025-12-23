@@ -279,7 +279,7 @@ else
             {
                 if (article.Id != TreeStateService.SelectedArticleId)
                 {
-                    TreeStateService.NotifySelectionChanged(article.Id);
+                    TreeStateService.ExpandPathToAndSelect(article.Id);
                 }
             }
             else
@@ -431,11 +431,10 @@ else
             };
 
             var created = await ArticleApi.CreateArticleAsync(createDto);
-            TreeStateService.RefreshTree();
+            await TreeStateService.RefreshAsync();
 
-            // Small delay to let tree refresh, then select
-            await Task.Delay(300);
-            TreeStateService.NotifySelectionChanged(created.Id);
+            // Select the new article
+            TreeStateService.ExpandPathToAndSelect(created.Id);
         }
         catch (Exception ex)
         {

@@ -521,7 +521,10 @@ else
             _lastSaveTime = "just now";
 
             // Refresh tree to show updated icon
-            TreeState.RefreshTree();
+            await TreeState.RefreshAsync();
+            
+            // Update tree node display
+            TreeState.UpdateNodeDisplay(_article.Id, _editTitle ?? string.Empty, newIcon);
 
             var action = string.IsNullOrEmpty(newIcon) ? "removed" : "updated";
             Snackbar.Add($"Icon {action}", Severity.Success);
@@ -626,13 +629,11 @@ else
                     : $"{newTitle} - Chronicis";
                 await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(pageTitle)}'");
                 
-                // Refresh tree first
-                TreeState.RefreshTree();
-                
-                await Task.Delay(500);
+                // Update tree node display and refresh
+                TreeState.UpdateNodeDisplay(_article.Id, newTitle, _article.IconEmoji);
                 
                 // Expand path and select the article
-                TreeState.ExpandAndSelectArticle(_article.Id);
+                TreeState.ExpandPathToAndSelect(_article.Id);
                 
                 // Reload article to get updated breadcrumbs with new slug
                 _article = await ArticleApi.GetArticleAsync(_article.Id);
@@ -652,8 +653,8 @@ else
                     : $"{newTitle} - Chronicis";
                 await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(pageTitle)}'");
                 
-                // Refresh tree to show new title
-                TreeState.RefreshTree();
+                // Update tree node display
+                TreeState.UpdateNodeDisplay(_article.Id, newTitle, _article.IconEmoji);
             }
         }
         catch (Exception ex)
@@ -700,7 +701,7 @@ else
             ArticleCache.InvalidateCache();
             
             Snackbar.Add("Article deleted successfully", Severity.Success);
-            TreeState.RefreshTree();
+            await TreeState.RefreshAsync();
             _article = null;
         }
         catch (Exception ex)
@@ -790,7 +791,7 @@ else
             };
 
             var created = await ArticleApi.CreateArticleAsync(createDto);
-            TreeState.RefreshTree();
+            await TreeState.RefreshAsync();
             Snackbar.Add("Article created", Severity.Success);
         }
         catch (Exception ex)
@@ -847,13 +848,10 @@ else
             var created = await ArticleApi.CreateArticleAsync(createDto);
             
             // Refresh tree to show new article
-            TreeState.RefreshTree();
-            
-            // Small delay to let tree refresh
-            await Task.Delay(100);
+            await TreeState.RefreshAsync();
             
             // Select and navigate to the new article
-            TreeState.ExpandAndSelectArticle(created.Id);
+            TreeState.ExpandPathToAndSelect(created.Id);
             
             // Navigate to the new article
             if (created.Breadcrumbs != null && created.Breadcrumbs.Any())
@@ -1060,7 +1058,7 @@ else
             await SaveArticle();
 
             // Refresh tree to show new article
-            TreeState.RefreshTree();
+            await TreeState.RefreshAsync();
 
             Snackbar.Add($"Created and linked '{articleName}'", Severity.Success);
         }
