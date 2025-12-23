@@ -15,8 +15,6 @@ namespace Chronicis.Client.Services
         Task<List<ArticleSearchResultDto>> SearchArticlesAsync(string query);
         Task<List<ArticleSearchResultDto>> SearchArticlesByTitleAsync(string query);
         Task<ArticleDto> UpdateArticleAsync(Guid id, ArticleUpdateDto dto);
-        Task<List<BacklinkDto>> GetArticleBacklinksAsync(Guid articleId);
-        Task<List<HashtagDto>> GetArticleHashtagsAsync(Guid articleId);
 
         /// <summary>
         /// Move an article to a new parent (or to root if newParentId is null).

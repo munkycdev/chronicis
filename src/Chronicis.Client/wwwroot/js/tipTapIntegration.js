@@ -1,11 +1,9 @@
 // ================================================
-// TipTap Integration - Phase 7.3 Complete
+// TipTap Integration
 // ================================================
 
-// Global storage for editor instances and tooltips
+// Global storage for editor instances
 window.tipTapEditors = window.tipTapEditors || {};
-window.activeTooltip = null;
-window.tooltipHideTimeout = null;
 
 // Wait for TipTap to be ready
 window.addEventListener('tiptap-ready', function() {
@@ -48,16 +46,6 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
         })
     ];
 
-    // Load hashtag extension
-    try {
-        const hashtagModule = await import('/js/tipTapHashtagExtension.js');
-        const HashtagExtension = await hashtagModule.createHashtagExtension();
-        extensions.push(HashtagExtension);
-        console.log('✅ Hashtag extension loaded and added');
-    } catch (error) {
-        console.warn('⚠️ Could not load hashtag extension:', error.message);
-    }
-
     // Create editor
     const editor = new window.TipTap.Editor({
         element: container,
@@ -74,10 +62,6 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
     // Store editor instance
     window.tipTapEditors[editorId] = editor;
 
-    // Setup hashtag interactions (Phase 7.3)
-    setupHashtagClickHandler(editorId, editor);
-    setupHashtagHoverHandler(editorId, editor);
-
     console.log(`✅ TipTap editor created with ID: ${editorId}`);
     return editor;
 }
@@ -88,163 +72,6 @@ function destroyTipTapEditor(editorId) {
         editor.destroy();
         delete window.tipTapEditors[editorId];
         console.log(`Editor destroyed: ${editorId}`);
-    }
-}
-
-// ================================================
-// PHASE 7.3: HASHTAG CLICK HANDLER
-// ================================================
-
-function setupHashtagClickHandler(editorId, editor) {
-    const editorElement = document.getElementById(editorId);
-    if (!editorElement) return;
-
-    editorElement.addEventListener('click', async (e) => {
-        const target = e.target;
-
-        // Check if clicked element is a hashtag
-        if (target.classList.contains('chronicis-hashtag')) {
-            const hashtagName = target.getAttribute('data-hashtag-name');
-            const isLinked = target.getAttribute('data-linked') === 'true';
-            const articleSlug = target.getAttribute('data-article-slug');
-
-            console.log(`Hashtag clicked: #${hashtagName}, linked: ${isLinked}`);
-
-            if (isLinked && articleSlug) {
-                // Navigate to linked article
-                console.log(`Navigating to: /article/${articleSlug}`);
-                window.location.href = `/article/${articleSlug}`;
-            } else if (hashtagName) {
-                // Trigger linking dialog (Phase 7.3)
-                console.log(`Triggering link dialog for #${hashtagName}`);
-                
-                // Dispatch event that Blazor can listen to
-                const event = new CustomEvent('hashtag-link-requested', {
-                    detail: { hashtagName: hashtagName }
-                });
-                document.dispatchEvent(event);
-            }
-
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    });
-
-    console.log(`✅ Click handler setup for ${editorId}`);
-}
-
-// ================================================
-// PHASE 7.3: HASHTAG HOVER HANDLER
-// ================================================
-
-function setupHashtagHoverHandler(editorId, editor) {
-    const editorElement = document.getElementById(editorId);
-    if (!editorElement) return;
-
-    let hoverTimeout;
-
-    editorElement.addEventListener('mouseover', async (e) => {
-        const target = e.target;
-
-        if (target.classList.contains('chronicis-hashtag')) {
-            const hashtagName = target.getAttribute('data-hashtag-name');
-
-            // Clear existing timeout
-            if (hoverTimeout) clearTimeout(hoverTimeout);
-
-            // Wait 300ms before showing tooltip
-            hoverTimeout = setTimeout(async () => {
-                await showHashtagTooltip(target, hashtagName);
-            }, 300);
-        }
-    });
-
-    editorElement.addEventListener('mouseout', (e) => {
-        const target = e.target;
-
-        if (target.classList.contains('chronicis-hashtag')) {
-            // Clear timeout
-            if (hoverTimeout) clearTimeout(hoverTimeout);
-
-            // Hide tooltip after a delay (allows moving to tooltip)
-            window.tooltipHideTimeout = setTimeout(() => {
-                hideHashtagTooltip();
-            }, 200);
-        }
-    });
-
-    console.log(`✅ Hover handler setup for ${editorId}`);
-}
-
-async function showHashtagTooltip(element, hashtagName) {
-    // Remove existing tooltip
-    hideHashtagTooltip();
-
-    try {
-        // Fetch hashtag preview from API
-        const response = await fetch(`/api/hashtags/${encodeURIComponent(hashtagName)}/preview`);
-        if (!response.ok) {
-            console.error('Failed to fetch hashtag preview');
-            return;
-        }
-
-        const preview = await response.json();
-
-        if (!preview.hasArticle) {
-            // Show "not linked" tooltip
-            createTooltip(element, `
-                <div class="hashtag-tooltip-content">
-                    <div class="hashtag-tooltip-title">#${hashtagName}</div>
-                    <div class="hashtag-tooltip-text">Not linked to an article</div>
-                    <div class="hashtag-tooltip-action">Click to link</div>
-                </div>
-            `);
-            return;
-        }
-
-        // Show article preview tooltip
-        createTooltip(element, `
-            <div class="hashtag-tooltip-content">
-                <div class="hashtag-tooltip-title">${escapeHtml(preview.articleTitle || '(Untitled)')}</div>
-                <div class="hashtag-tooltip-text">${escapeHtml(preview.previewText || 'No content')}</div>
-                <div class="hashtag-tooltip-meta">Click to open</div>
-            </div>
-        `);
-
-    } catch (error) {
-        console.error('Error fetching hashtag preview:', error);
-    }
-}
-
-function createTooltip(element, htmlContent) {
-    const tooltip = document.createElement('div');
-    tooltip.className = 'hashtag-tooltip';
-    tooltip.innerHTML = htmlContent;
-
-    // Position tooltip
-    const rect = element.getBoundingClientRect();
-    tooltip.style.position = 'fixed';
-    tooltip.style.left = `${rect.left}px`;
-    tooltip.style.top = `${rect.bottom + 8}px`;
-    tooltip.style.zIndex = '10000';
-
-    document.body.appendChild(tooltip);
-    window.activeTooltip = tooltip;
-
-    // Add hover handlers to keep tooltip visible
-    tooltip.addEventListener('mouseenter', () => {
-        clearTimeout(window.tooltipHideTimeout);
-    });
-
-    tooltip.addEventListener('mouseleave', () => {
-        hideHashtagTooltip();
-    });
-}
-
-function hideHashtagTooltip() {
-    if (window.activeTooltip) {
-        window.activeTooltip.remove();
-        window.activeTooltip = null;
     }
 }
 
@@ -262,13 +89,6 @@ function markdownToHTML(markdown) {
     if (!markdown) return '<p></p>';
 
     let html = markdown;
-
-    // Convert hashtags FIRST (before headers to avoid confusion)
-    // This will be enhanced in Phase 7.3 to check if hashtags are linked
-    html = html.replace(
-        /#(\w+)/g,
-        '<span data-type="hashtag" class="chronicis-hashtag" data-hashtag-name="$1" data-linked="false" title="Hashtag">#$1</span>'
-    );
 
     // Headers (# = h1, ## = h2, etc.)
     html = html.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
@@ -315,16 +135,6 @@ function htmlToMarkdown(html) {
     if (!html) return '';
 
     let markdown = html;
-
-    // Convert hashtag spans back to plain text
-    markdown = markdown.replace(
-        /<span[^>]*data-type="hashtag"[^>]*data-hashtag-name="([^"]*)"[^>]*>.*?<\/span>/gi,
-        '#$1'
-    );
-
-    // Fallback patterns
-    markdown = markdown.replace(/<span[^>]*data-type="hashtag"[^>]*>(#\w+)<\/span>/gi, '$1');
-    markdown = markdown.replace(/<span[^>]*class="chronicis-hashtag"[^>]*>(#\w+)<\/span>/gi, '$1');
 
     // Headers
     markdown = markdown.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
@@ -376,4 +186,4 @@ function htmlToMarkdown(html) {
     return markdown;
 }
 
-console.log('✅ TipTap integration script loaded (Phase 7.3)');
+console.log('✅ TipTap integration script loaded');

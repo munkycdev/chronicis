@@ -1,10 +1,8 @@
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Shared.Utilities
 @using MudBlazor.Charts
-@using Chronicis.Client.Components.Hashtags
 @using Blazored.LocalStorage
 @inject IArticleApiService ArticleApi
-@inject IHashtagApiService HashtagApi
 @inject ITreeStateService TreeState
 @inject ISnackbar Snackbar
 @inject IJSRuntime JSRuntime
@@ -205,8 +203,6 @@ else
                         </MudText>
                 </MudListItem>
             </MudList>
-            <BacklinksPanel ArticleId="@_article.Id" />
-            <ArticleHashtagsPanel ArticleId="@_article.Id" />
         </MudDrawerContainer>
     </MudDrawer>
 }
@@ -238,24 +234,6 @@ else
         _dotNetHelper = DotNetObjectReference.Create(this);
 
         // Register global keyboard shortcut handler
-        await JSRuntime.InvokeVoidAsync("eval", @"
-            if (!window.chronicisKeyboardHandler) {
-                window.chronicisKeyboardHandler = function(e) {
-                    if (e.ctrlKey && e.key === 'n') {
-                        e.preventDefault();
-                        DotNet.invokeMethodAsync('Chronicis.Client', 'HandleCtrlN');
-                    }
-                };
-                document.addEventListener('keydown', window.chronicisKeyboardHandler);
-            }
-        ");
-
-        // NEW: Listen for hashtag link requests
-        await JSRuntime.InvokeVoidAsync("eval", @"
-        document.addEventListener('hashtag-link-requested', function(e) {
-            DotNet.invokeMethodAsync('Chronicis.Client', 'HandleHashtagLinkRequest', e.detail.hashtagName);
-        });
-    ");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -664,40 +642,18 @@ else
         _openMetadata = !_openMetadata;
     }
 
-    [JSInvokable("HandleHashtagLinkRequest")]
-    public static void HandleHashtagLinkRequest(string hashtagName)
-    {
-        var evt = new CustomEventArgs { HashtagName = hashtagName };
-        OnHashtagLinkRequested?.Invoke(evt);
-    }
-
     [JSInvokable("HandleCtrlN")]
     public static void HandleCtrlN()
     {
         OnCtrlNPressed?.Invoke();
     }
 
-    private static event Action<CustomEventArgs>? OnHashtagLinkRequested;
     private static event Action? OnCtrlNPressed;
-
-    private class CustomEventArgs
-    {
-        public string HashtagName { get; set; } = string.Empty;
-    }
 
     protected override void OnInitialized()
     {
-        OnHashtagLinkRequested += HandleHashtagLinkRequestInstance;
         OnCtrlNPressed += HandleCtrlNInstance;
         base.OnInitialized();
-    }
-
-    private async void HandleHashtagLinkRequestInstance(CustomEventArgs args)
-    {
-        await InvokeAsync(async () =>
-        {
-            await OpenHashtagLinkDialog(args.HashtagName);
-        });
     }
 
     private async void HandleCtrlNInstance()
@@ -755,47 +711,9 @@ else
         }
     }
 
-    private async Task OpenHashtagLinkDialog(string hashtagName)
-    {
-        var parameters = new DialogParameters
-    {
-        { "HashtagName", hashtagName }
-    };
-
-        var options = new DialogOptions
-        {
-            CloseButton = true,
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true
-        };
-
-        var dialog = await DialogService.ShowAsync<HashtagLinkDialog>(
-            "Link Hashtag to Article",
-            parameters,
-            options
-        );
-
-        var result = await dialog.Result;
-
-        if (!result?.Canceled ?? true)
-        {
-            // Hashtag was linked, refresh editor
-            if (_article != null && _editorInitialized)
-            {
-                await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{_article.Id}");
-                _editorInitialized = false;
-                await Task.Delay(100);
-                await InitializeEditor();
-            }
-
-            StateHasChanged();
-        }
-    }
-
     public void Dispose()
     {
         TreeState.OnStateChanged -= OnTreeStateChanged;
-        OnHashtagLinkRequested -= HandleHashtagLinkRequestInstance;
         OnCtrlNPressed -= HandleCtrlNInstance;
         _autoSaveTimer?.Dispose();
         _dotNetHelper?.Dispose();

@@ -17,7 +17,6 @@ public class UpdateArticle
     private readonly ChronicisDbContext _context;
     private readonly IArticleValidationService _validationService;
     private readonly IArticleService _articleService;
-    private readonly IHashtagSyncService _hashtagSync;
     private readonly ILogger<UpdateArticle> _logger;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -25,13 +24,11 @@ public class UpdateArticle
         ChronicisDbContext context,
         IArticleValidationService validationService,
         IArticleService articleService,
-        IHashtagSyncService hashtagSync,
         ILogger<UpdateArticle> logger)
     {
         _context = context;
         _validationService = validationService;
         _articleService = articleService;
-        _hashtagSync = hashtagSync;
         _logger = logger;
     }
 
@@ -122,7 +119,6 @@ public class UpdateArticle
             }
 
             await _context.SaveChangesAsync();
-            await _hashtagSync.SyncHashtagsAsync(article.Id, article.Body ?? string.Empty);
 
             var responseDto = new ArticleDto
             {

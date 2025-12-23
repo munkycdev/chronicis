@@ -172,34 +172,6 @@ namespace Chronicis.Api.Services
         }
 
         /// <summary>
-        /// Get all hashtags associated with a specific article.
-        /// </summary>
-        public async Task<List<HashtagDto>?> GetArticleHashtagsAsync(Guid id, Guid userId)
-        {
-            var hashtags = await _context.ArticleHashtags
-                .Where(ah => ah.ArticleId == id && ah.Article.CreatedBy == userId)
-                .Include(ah => ah.Hashtag)
-                .Select(ah => new HashtagDto
-                {
-                    Id = ah.Hashtag.Id,
-                    Name = ah.Hashtag.Name,
-                    LinkedArticleId = ah.Hashtag.LinkedArticleId,
-                    LinkedArticleTitle = ah.Hashtag.LinkedArticle != null ? ah.Hashtag.LinkedArticle.Title : null,
-                    UsageCount = ah.Hashtag.ArticleHashtags.Count,
-                    CreatedAt = ah.Hashtag.CreatedAt
-                })
-                .ToListAsync();
-
-            if (hashtags == null)
-            {
-                _logger.LogWarning("Article {ArticleId} hashtags not found for user {UserId}", id, userId);
-                return null;
-            }
-
-            return hashtags;
-        }
-
-        /// <summary>
         /// Move an article to a new parent (or to root if newParentId is null).
         /// </summary>
         public async Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(Guid articleId, Guid? newParentId, Guid userId)

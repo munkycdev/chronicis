@@ -6,7 +6,6 @@ public interface IArticleService
 {
     Task<ArticleDto?> GetArticleDetailAsync(Guid id, Guid userId);
     Task<ArticleDto?> GetArticleByPathAsync(string path, Guid userId);
-    Task<List<HashtagDto>?> GetArticleHashtagsAsync(Guid id, Guid userId);
     Task<List<ArticleTreeDto>> GetChildrenAsync(Guid parentId, Guid userId);
     Task<List<ArticleTreeDto>> GetRootArticlesAsync(Guid userId, Guid? worldId = null);
     Task<List<ArticleTreeDto>> GetAllArticlesAsync(Guid userId, Guid? worldId = null);

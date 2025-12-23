@@ -218,33 +218,4 @@ public class ArticleApiService : IArticleApiService
             throw;
         }
     }
-
-    public async Task<List<BacklinkDto>> GetArticleBacklinksAsync(Guid articleId)
-    {
-        try
-        {
-            var backlinks = await _http.GetFromJsonAsync<List<BacklinkDto>>($"api/articles/{articleId}/backlinks");
-            return backlinks ?? new List<BacklinkDto>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching backlinks for article {ArticleId}", articleId);
-            return new List<BacklinkDto>();
-        }
-    }
-
-    public async Task<List<HashtagDto>> GetArticleHashtagsAsync(Guid articleId)
-    {
-        try
-        {
-            var hashtags = await _http.GetFromJsonAsync<List<HashtagDto>>($"api/articles/{articleId}/hashtags") ?? new List<HashtagDto>();
-
-            return hashtags ?? new List<HashtagDto>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching hashtags for article {ArticleId}", articleId);
-            return new List<HashtagDto>();
-        }
-    }
 }

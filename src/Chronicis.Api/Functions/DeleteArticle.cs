@@ -61,12 +61,6 @@ public class DeleteArticle
             _logger.LogInformation("Deleting article {ArticleId} and {DescendantCount} descendants", 
                 id, allArticleIds.Count - 1);
 
-            // Delete all associated hashtag links first
-            var hashtagLinks = await _context.ArticleHashtags
-                .Where(ah => allArticleIds.Contains(ah.ArticleId))
-                .ToListAsync();
-            _context.ArticleHashtags.RemoveRange(hashtagLinks);
-
             // Delete all articles (children first, then parent - order by depth descending)
             var articlesToDelete = await _context.Articles
                 .Where(a => allArticleIds.Contains(a.Id))

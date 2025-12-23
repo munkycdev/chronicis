@@ -103,25 +103,11 @@ builder.Services.AddScoped<ISearchApiService>(sp =>
     return new SearchApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
-builder.Services.AddScoped<IHashtagApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<HashtagApiService>>();
-    return new HashtagApiService(factory.CreateClient("ChronicisApi"), logger);
-});
-
 builder.Services.AddScoped<IAISummaryApiService>(sp =>
 {
     var factory = sp.GetRequiredService<IHttpClientFactory>();
     var logger = sp.GetRequiredService<ILogger<AISummaryApiService>>();
     return new AISummaryApiService(factory.CreateClient("ChronicisApi"), logger);
-});
-
-builder.Services.AddScoped<IAutoHashtagApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<AutoHashtagApiService>>();
-    return new AutoHashtagApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
 builder.Services.AddScoped<IWorldApiService>(sp =>

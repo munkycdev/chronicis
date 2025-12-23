@@ -162,10 +162,6 @@ public class Article
     /// </summary>
     public User? Player { get; set; }
     
-    /// <summary>
-    /// Hashtags associated with this article.
-    /// </summary>
-    public ICollection<ArticleHashtag> ArticleHashtags { get; set; } = new List<ArticleHashtag>();
 
     /// <summary>
     /// Computed property for child count (not mapped to database).

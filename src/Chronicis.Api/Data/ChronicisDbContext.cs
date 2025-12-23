@@ -15,9 +15,7 @@ public class ChronicisDbContext : DbContext
     public DbSet<CampaignMember> CampaignMembers { get; set; } = null!;
     public DbSet<Article> Articles { get; set; } = null!;
     
-    // ===== Hashtag System =====
-    public DbSet<Hashtag> Hashtags { get; set; } = null!;
-    public DbSet<ArticleHashtag> ArticleHashtags { get; set; } = null!;
+
 
     public ChronicisDbContext(DbContextOptions<ChronicisDbContext> options)
         : base(options)
@@ -31,8 +29,6 @@ public class ChronicisDbContext : DbContext
         ConfigureCampaign(modelBuilder);
         ConfigureCampaignMember(modelBuilder);
         ConfigureArticle(modelBuilder);
-        ConfigureHashtag(modelBuilder);
-        ConfigureArticleHashtag(modelBuilder);
     }
 
     private static void ConfigureUser(ModelBuilder modelBuilder)
@@ -222,44 +218,5 @@ public class ChronicisDbContext : DbContext
         });
     }
 
-    private static void ConfigureHashtag(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<Hashtag>(entity =>
-        {
-            entity.HasKey(h => h.Id);
 
-            entity.Property(h => h.Name)
-                .HasMaxLength(100)
-                .IsRequired();
-
-            entity.HasOne(h => h.LinkedArticle)
-                .WithMany()
-                .HasForeignKey(h => h.LinkedArticleId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            entity.HasIndex(h => h.Name)
-                .IsUnique();
-        });
-    }
-
-    private static void ConfigureArticleHashtag(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<ArticleHashtag>(entity =>
-        {
-            entity.HasKey(ah => ah.Id);
-
-            entity.HasOne(ah => ah.Article)
-                .WithMany(a => a.ArticleHashtags)
-                .HasForeignKey(ah => ah.ArticleId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(ah => ah.Hashtag)
-                .WithMany(h => h.ArticleHashtags)
-                .HasForeignKey(ah => ah.HashtagId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasIndex(ah => new { ah.ArticleId, ah.HashtagId })
-                .IsUnique();
-        });
-    }
 }

@@ -61,25 +61,13 @@ public class ArticleSearchFunction
                 .Take(20)
                 .ToListAsync();
 
-            // Search hashtags
-            var hashtagMatches = await _context.ArticleHashtags
-                .Include(ah => ah.Article)
-                .Include(ah => ah.Hashtag)
-                .Where(ah => ah.Article.CreatedBy == user.Id
-                          && EF.Functions.Like(ah.Hashtag.Name, $"%{query}%"))
-                .Select(ah => ah.Article)
-                .Distinct()
-                .OrderBy(a => a.Title)
-                .Take(20)
-                .ToListAsync();
-
             var results = new GlobalSearchResultsDto
             {
                 Query = query,
                 TitleMatches = await BuildSearchResults(titleMatches, query, "title"),
                 BodyMatches = await BuildSearchResults(bodyMatches, query, "content"),
-                HashtagMatches = await BuildSearchResults(hashtagMatches, query, "hashtag"),
-                TotalResults = titleMatches.Count + bodyMatches.Count + hashtagMatches.Count
+                HashtagMatches = new List<ArticleSearchResultDto>(),
+                TotalResults = titleMatches.Count + bodyMatches.Count
             };
 
             var response = req.CreateResponse(HttpStatusCode.OK);

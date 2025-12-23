@@ -161,33 +161,4 @@ public class ArticleFunctions
             return response;
         }
     }
-
-    /// <summary>
-    /// GET /api/articles/{id}/hashtags
-    /// Gets the hashtags for a specific article
-    /// </summary>
-    [Function("GetArticleHashtags")]
-    public async Task<HttpResponseData> GetArticleHashtags(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:guid}/hashtags")] HttpRequestData req,
-        FunctionContext context,
-        Guid id)
-    {
-        var user = context.GetRequiredUser();
-
-        try
-        {
-            var hashtags = await _articleService.GetArticleHashtagsAsync(id, user.Id) ?? new List<HashtagDto>();
-
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(hashtags);
-            return response;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving hashtags for Article {Id}", id);
-            var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await errorResponse.WriteStringAsync("Error retrieving hashtags: " + ex.Message);
-            return errorResponse;
-        }
-    }
 }
