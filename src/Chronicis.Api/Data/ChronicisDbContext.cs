@@ -16,7 +16,7 @@ public class ChronicisDbContext : DbContext
     public DbSet<Arc> Arcs { get; set; } = null!;
     public DbSet<Article> Articles { get; set; } = null!;
     public DbSet<ArticleLink> ArticleLinks { get; set; } = null!;
-    
+    public DbSet<WorldLink> WorldLinks { get; set; } = null!;
 
 
     public ChronicisDbContext(DbContextOptions<ChronicisDbContext> options)
@@ -33,6 +33,7 @@ public class ChronicisDbContext : DbContext
         ConfigureArc(modelBuilder);
         ConfigureArticle(modelBuilder);
         ConfigureArticleLink(modelBuilder);
+        ConfigureWorldLink(modelBuilder);
     }
 
     private static void ConfigureUser(ModelBuilder modelBuilder)
@@ -290,6 +291,34 @@ public class ChronicisDbContext : DbContext
             // Unique constraint: Prevent duplicate links at same position
             entity.HasIndex(al => new { al.SourceArticleId, al.TargetArticleId, al.Position })
                 .IsUnique();
+        });
+    }
+
+    private static void ConfigureWorldLink(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<WorldLink>(entity =>
+        {
+            entity.HasKey(wl => wl.Id);
+
+            entity.Property(wl => wl.Url)
+                .HasMaxLength(2048)
+                .IsRequired();
+
+            entity.Property(wl => wl.Title)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(wl => wl.Description)
+                .HasMaxLength(500);
+
+            // WorldLink -> World (CASCADE delete - when world is deleted, remove its links)
+            entity.HasOne(wl => wl.World)
+                .WithMany(w => w.Links)
+                .HasForeignKey(wl => wl.WorldId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Index for query performance
+            entity.HasIndex(wl => wl.WorldId);
         });
     }
 }

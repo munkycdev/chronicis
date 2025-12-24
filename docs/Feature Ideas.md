@@ -43,10 +43,6 @@ Campaign
     Perhaps not require an Arc, so can add either an arc or a session?
 
 General
-    Displays the public page before redirecting to the previous active page
-    Login isn't smooth
-    Clicking on a parent object in the tree view should expand it, always
-    Can we find a way to make it more attractive while loading an article's content? Perhaps stage data loading so that it's progressive?
     Make sure global search works with linked entries and the links themselves
     Do away with right-click popups where possible
     Run a cleanup to remove all unused code and styles

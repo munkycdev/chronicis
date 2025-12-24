@@ -213,11 +213,25 @@ public class TreeStateService : ITreeStateService
             .SelectMany(wd => wd!.Campaigns ?? new List<CampaignDto>())
             .ToList();
         
-        _logger.LogInformation("Phase 3: Fetching arcs for {Count} campaigns in parallel...", allCampaigns.Count);
-        
-        // Fetch all arcs in parallel
+        _logger.LogInformation("Phase 3: Fetching arcs for {Count} campaigns and world links in parallel...", allCampaigns.Count);
+
+        // Fetch all arcs and world links in parallel
         var arcTasks = allCampaigns.Select(c => _arcApi.GetArcsByCampaignAsync(c.Id)).ToList();
-        var arcResults = await Task.WhenAll(arcTasks);
+        var linkTasks = worlds.Select(w => _worldApi.GetWorldLinksAsync(w.Id)).ToList();
+
+        await Task.WhenAll(
+            Task.WhenAll(arcTasks),
+            Task.WhenAll(linkTasks)
+        );
+
+        var arcResults = arcTasks.Select(t => t.Result).ToArray();
+
+        // Create lookup: WorldId -> List<WorldLinkDto>
+        var linksByWorld = new Dictionary<Guid, List<WorldLinkDto>>();
+        for (int i = 0; i < worlds.Count; i++)
+        {
+            linksByWorld[worlds[i].Id] = linkTasks[i].Result;
+        }
         
         // Create lookup: CampaignId -> List<ArcDto>
         var arcsByCampaign = new Dictionary<Guid, List<ArcDto>>();
@@ -244,12 +258,15 @@ public class TreeStateService : ITreeStateService
                 continue;
             }
             
+            var worldLinks = linksByWorld.TryGetValue(world.Id, out var links) ? links : new List<WorldLinkDto>();
+
             var worldNode = BuildWorldNode(
                 world, 
                 worldDetail, 
                 allArticles, 
                 articleIndex, 
-                arcsByCampaign);
+                arcsByCampaign,
+                worldLinks);
             
             _rootNodes.Add(worldNode);
             _nodeIndex[worldNode.Id] = worldNode;
@@ -293,7 +310,8 @@ public class TreeStateService : ITreeStateService
         WorldDetailDto worldDetail,
         List<ArticleTreeDto> allArticles,
         Dictionary<Guid, ArticleTreeDto> articleIndex,
-        Dictionary<Guid, List<ArcDto>> arcsByCampaign)
+        Dictionary<Guid, List<ArcDto>> arcsByCampaign,
+        List<WorldLinkDto> worldLinks)
     {
         var worldNode = new TreeNode
         {
@@ -353,6 +371,24 @@ public class TreeStateService : ITreeStateService
             wikiGroup.Children.Add(articleNode);
         }
         wikiGroup.ChildCount = wikiGroup.Children.Count;
+
+        // Build Links group (external resources)
+        var linksGroup = CreateVirtualGroupNode(VirtualGroupType.Links, "External Resources", world.Id);
+        foreach (var link in worldLinks.OrderBy(l => l.Title))
+        {
+            var linkNode = new TreeNode
+            {
+                Id = link.Id,
+                NodeType = TreeNodeType.ExternalLink,
+                Title = link.Title,
+                Url = link.Url,
+                WorldId = world.Id,
+                IconEmoji = "fa-solid fa-external-link-alt"
+            };
+            linksGroup.Children.Add(linkNode);
+            _nodeIndex[linkNode.Id] = linkNode;
+        }
+        linksGroup.ChildCount = linksGroup.Children.Count;
         
         // Build Uncategorized group (Legacy and untyped articles)
         var uncategorizedArticles = worldArticles
@@ -381,6 +417,13 @@ public class TreeStateService : ITreeStateService
         
         worldNode.Children.Add(wikiGroup);
         _nodeIndex[wikiGroup.Id] = wikiGroup;
+        
+        // Only add Links if it has content
+        if (linksGroup.Children.Any())
+        {
+            worldNode.Children.Add(linksGroup);
+            _nodeIndex[linksGroup.Id] = linksGroup;
+        }
         
         // Only add Uncategorized if it has content
         if (uncategorizedGroup.Children.Any())

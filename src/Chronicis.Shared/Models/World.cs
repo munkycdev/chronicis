@@ -50,4 +50,9 @@ public class World
     /// All articles scoped to this world (Wiki articles, Characters, etc.).
     /// </summary>
     public ICollection<Article> Articles { get; set; } = new List<Article>();
+
+    /// <summary>
+    /// External links associated with this world (Roll20, D&D Beyond, etc.).
+    /// </summary>
+    public ICollection<WorldLink> Links { get; set; } = new List<WorldLink>();
 }

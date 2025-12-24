@@ -90,6 +90,137 @@ else
             </MudButton>
         </div>
 
+        <!-- External Resources -->
+        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
+            External Resources
+        </MudText>
+
+        <div class="mb-4">
+            @if (_links.Count == 0 && !_isAddingLink)
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+                    No external resources yet. Add links to Roll20, D&D Beyond, SRD, or other useful resources.
+                </MudText>
+            }
+
+            <!-- Existing Links -->
+            @foreach (var link in _links)
+            {
+                <div class="world-link-item d-flex align-center gap-2 mb-2 pa-2 rounded" 
+                     style="background: var(--mud-palette-background-grey);">
+                    @if (_editingLinkId == link.Id)
+                    {
+                        <!-- Edit Mode -->
+                        <MudIcon Icon="@Icons.Material.Filled.Link" 
+                                 Size="Size.Small" 
+                                 Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
+                        <MudTextField @bind-Value="_editLinkTitle"
+                                      Placeholder="Title"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Style="min-width: 150px;" />
+                        <MudTextField @bind-Value="_editLinkUrl"
+                                      Placeholder="URL"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Class="flex-grow-1" />
+                        <MudTextField @bind-Value="_editLinkDescription"
+                                      Placeholder="Description (optional)"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Style="min-width: 150px;" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                       Color="Color.Success"
+                                       Size="Size.Small"
+                                       OnClick="SaveEditLink"
+                                       Disabled="_isSavingLink" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                       Color="Color.Default"
+                                       Size="Size.Small"
+                                       OnClick="CancelEditLink" />
+                    }
+                    else
+                    {
+                        <!-- View Mode -->
+                        <img src="@GetFaviconUrl(link.Url)" 
+                             alt="" 
+                             style="width: 20px; height: 20px; flex-shrink: 0;"
+                             @onerror="HandleFaviconError" />
+                        <div class="flex-grow-1">
+                            <MudLink Href="@link.Url" 
+                                     Target="_blank" 
+                                     Typo="Typo.body1"
+                                     Style="color: var(--chronicis-beige-gold);">
+                                @link.Title
+                                <MudIcon Icon="@Icons.Material.Filled.OpenInNew" 
+                                         Size="Size.Small" 
+                                         Style="font-size: 14px; vertical-align: middle; margin-left: 4px;" />
+                            </MudLink>
+                            @if (!string.IsNullOrWhiteSpace(link.Description))
+                            {
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    @link.Description
+                                </MudText>
+                            }
+                        </div>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Color="Color.Default"
+                                       Size="Size.Small"
+                                       OnClick="() => StartEditLink(link)" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
+                                       Size="Size.Small"
+                                       OnClick="() => DeleteLink(link)" />
+                    }
+                </div>
+            }
+
+            <!-- Add New Link Form -->
+            @if (_isAddingLink)
+            {
+                <div class="world-link-item d-flex align-center gap-2 mb-2 pa-2 rounded" 
+                     style="background: var(--mud-palette-background-grey);">
+                    <MudIcon Icon="@Icons.Material.Filled.AddLink" 
+                             Size="Size.Small" 
+                             Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
+                    <MudTextField @bind-Value="_newLinkTitle"
+                                  Placeholder="Title (e.g., Roll20 Campaign)"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Style="min-width: 150px;" />
+                    <MudTextField @bind-Value="_newLinkUrl"
+                                  Placeholder="URL (e.g., https://roll20.net/...)"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Class="flex-grow-1" />
+                    <MudTextField @bind-Value="_newLinkDescription"
+                                  Placeholder="Description (optional)"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Style="min-width: 150px;" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                   Color="Color.Success"
+                                   Size="Size.Small"
+                                   OnClick="SaveNewLink"
+                                   Disabled="_isSavingLink" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                   Color="Color.Default"
+                                   Size="Size.Small"
+                                   OnClick="CancelAddLink" />
+                </div>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="StartAddLink"
+                           Size="Size.Small">
+                    Add Resource
+                </MudButton>
+            }
+        </div>
+
         <!-- Stats -->
         <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
             World Statistics
@@ -153,6 +284,20 @@ else
     private bool _hasUnsavedChanges = false;
     private List<BreadcrumbItem> _breadcrumbs = new();
 
+    // Links state
+    private List<WorldLinkDto> _links = new();
+    private bool _isAddingLink = false;
+    private bool _isSavingLink = false;
+    private string _newLinkTitle = string.Empty;
+    private string _newLinkUrl = string.Empty;
+    private string _newLinkDescription = string.Empty;
+
+    // Edit link state
+    private Guid? _editingLinkId = null;
+    private string _editLinkTitle = string.Empty;
+    private string _editLinkUrl = string.Empty;
+    private string _editLinkDescription = string.Empty;
+
     private string _saveStatusClass => _isSaving ? "saving" : _hasUnsavedChanges ? "unsaved" : "saved";
 
     protected override async Task OnParametersSetAsync()
@@ -181,6 +326,9 @@ else
                 };
 
                 await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(_world.Name)} - Chronicis'");
+                
+                // Load links
+                _links = await WorldApi.GetWorldLinksAsync(WorldId);
                 
                 // Highlight in tree
                 TreeState.ExpandPathToAndSelect(WorldId);
@@ -245,6 +393,202 @@ else
             StateHasChanged();
         }
     }
+
+    // ===== Link Management =====
+
+    private void StartAddLink()
+    {
+        _isAddingLink = true;
+        _newLinkTitle = string.Empty;
+        _newLinkUrl = string.Empty;
+        _newLinkDescription = string.Empty;
+    }
+
+    private void CancelAddLink()
+    {
+        _isAddingLink = false;
+        _newLinkTitle = string.Empty;
+        _newLinkUrl = string.Empty;
+        _newLinkDescription = string.Empty;
+    }
+
+    private async Task SaveNewLink()
+    {
+        if (string.IsNullOrWhiteSpace(_newLinkTitle) || string.IsNullOrWhiteSpace(_newLinkUrl))
+        {
+            Snackbar.Add("Title and URL are required", Severity.Warning);
+            return;
+        }
+
+        // Basic URL validation
+        if (!Uri.TryCreate(_newLinkUrl, UriKind.Absolute, out var uri) || 
+            (uri.Scheme != "http" && uri.Scheme != "https"))
+        {
+            Snackbar.Add("Please enter a valid URL (starting with http:// or https://)", Severity.Warning);
+            return;
+        }
+
+        _isSavingLink = true;
+        StateHasChanged();
+
+        try
+        {
+            var dto = new WorldLinkCreateDto
+            {
+                Title = _newLinkTitle.Trim(),
+                Url = _newLinkUrl.Trim(),
+                Description = string.IsNullOrWhiteSpace(_newLinkDescription) ? null : _newLinkDescription.Trim()
+            };
+
+            var created = await WorldApi.CreateWorldLinkAsync(WorldId, dto);
+            if (created != null)
+            {
+                // Reload links to get proper alphabetical order
+                _links = await WorldApi.GetWorldLinksAsync(WorldId);
+                _isAddingLink = false;
+                _newLinkTitle = string.Empty;
+                _newLinkUrl = string.Empty;
+                _newLinkDescription = string.Empty;
+                Snackbar.Add("Link added", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to add link", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to add link: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSavingLink = false;
+            StateHasChanged();
+        }
+    }
+
+    private void StartEditLink(WorldLinkDto link)
+    {
+        _editingLinkId = link.Id;
+        _editLinkTitle = link.Title;
+        _editLinkUrl = link.Url;
+        _editLinkDescription = link.Description ?? string.Empty;
+    }
+
+    private void CancelEditLink()
+    {
+        _editingLinkId = null;
+        _editLinkTitle = string.Empty;
+        _editLinkUrl = string.Empty;
+        _editLinkDescription = string.Empty;
+    }
+
+    private async Task SaveEditLink()
+    {
+        if (_editingLinkId == null) return;
+
+        if (string.IsNullOrWhiteSpace(_editLinkTitle) || string.IsNullOrWhiteSpace(_editLinkUrl))
+        {
+            Snackbar.Add("Title and URL are required", Severity.Warning);
+            return;
+        }
+
+        // Basic URL validation
+        if (!Uri.TryCreate(_editLinkUrl, UriKind.Absolute, out var uri) || 
+            (uri.Scheme != "http" && uri.Scheme != "https"))
+        {
+            Snackbar.Add("Please enter a valid URL (starting with http:// or https://)", Severity.Warning);
+            return;
+        }
+
+        _isSavingLink = true;
+        StateHasChanged();
+
+        try
+        {
+            var dto = new WorldLinkUpdateDto
+            {
+                Title = _editLinkTitle.Trim(),
+                Url = _editLinkUrl.Trim(),
+                Description = string.IsNullOrWhiteSpace(_editLinkDescription) ? null : _editLinkDescription.Trim()
+            };
+
+            var updated = await WorldApi.UpdateWorldLinkAsync(WorldId, _editingLinkId.Value, dto);
+            if (updated != null)
+            {
+                // Reload links to get proper alphabetical order
+                _links = await WorldApi.GetWorldLinksAsync(WorldId);
+                _editingLinkId = null;
+                _editLinkTitle = string.Empty;
+                _editLinkUrl = string.Empty;
+                _editLinkDescription = string.Empty;
+                Snackbar.Add("Link updated", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to update link", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to update link: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSavingLink = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteLink(WorldLinkDto link)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete Link",
+            $"Are you sure you want to delete \"{link.Title}\"?",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (confirmed != true) return;
+
+        try
+        {
+            var deleted = await WorldApi.DeleteWorldLinkAsync(WorldId, link.Id);
+            if (deleted)
+            {
+                _links.Remove(link);
+                Snackbar.Add("Link deleted", Severity.Success);
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete link", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to delete link: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private static string GetFaviconUrl(string url)
+    {
+        try
+        {
+            var uri = new Uri(url);
+            return $"https://www.google.com/s2/favicons?domain={uri.Host}&sz=32";
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    private void HandleFaviconError()
+    {
+        // Favicon errors are handled via CSS fallback
+    }
+
+    // ===== Article Creation =====
 
     private async Task CreateCampaign()
     {

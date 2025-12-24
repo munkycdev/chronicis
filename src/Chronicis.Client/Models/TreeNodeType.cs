@@ -30,7 +30,12 @@ public enum TreeNodeType
     /// <summary>
     /// An Article entity (WikiArticle, Character, Session, etc.).
     /// </summary>
-    Article
+    Article,
+    
+    /// <summary>
+    /// An external link (URL to external resource like Roll20, D&D Beyond, etc.).
+    /// </summary>
+    ExternalLink
 }
 
 /// <summary>
@@ -42,5 +47,6 @@ public enum VirtualGroupType
     Campaigns,
     PlayerCharacters,
     Wiki,
+    Links,
     Uncategorized
 }

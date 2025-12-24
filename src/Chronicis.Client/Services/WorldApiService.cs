@@ -86,4 +86,74 @@ public class WorldApiService : IWorldApiService
             return null;
         }
     }
+
+    // ===== World Links =====
+
+    public async Task<List<WorldLinkDto>> GetWorldLinksAsync(Guid worldId)
+    {
+        try
+        {
+            var result = await _http.GetFromJsonAsync<List<WorldLinkDto>>($"api/worlds/{worldId}/links");
+            return result ?? new List<WorldLinkDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching links for world {WorldId}", worldId);
+            return new List<WorldLinkDto>();
+        }
+    }
+
+    public async Task<WorldLinkDto?> CreateWorldLinkAsync(Guid worldId, WorldLinkCreateDto dto)
+    {
+        try
+        {
+            var response = await _http.PostAsJsonAsync($"api/worlds/{worldId}/links", dto);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<WorldLinkDto>();
+            }
+            
+            _logger.LogWarning("Failed to create world link: {StatusCode}", response.StatusCode);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating link for world {WorldId}", worldId);
+            return null;
+        }
+    }
+
+    public async Task<WorldLinkDto?> UpdateWorldLinkAsync(Guid worldId, Guid linkId, WorldLinkUpdateDto dto)
+    {
+        try
+        {
+            var response = await _http.PutAsJsonAsync($"api/worlds/{worldId}/links/{linkId}", dto);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<WorldLinkDto>();
+            }
+            
+            _logger.LogWarning("Failed to update world link: {StatusCode}", response.StatusCode);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating link {LinkId} for world {WorldId}", linkId, worldId);
+            return null;
+        }
+    }
+
+    public async Task<bool> DeleteWorldLinkAsync(Guid worldId, Guid linkId)
+    {
+        try
+        {
+            var response = await _http.DeleteAsync($"api/worlds/{worldId}/links/{linkId}");
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting link {LinkId} for world {WorldId}", linkId, worldId);
+            return false;
+        }
+    }
 }

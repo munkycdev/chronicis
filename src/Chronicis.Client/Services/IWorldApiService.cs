@@ -26,4 +26,26 @@ public interface IWorldApiService
     /// Update a world
     /// </summary>
     Task<WorldDto?> UpdateWorldAsync(Guid worldId, WorldUpdateDto dto);
+
+    // ===== World Links =====
+
+    /// <summary>
+    /// Get all links for a world (sorted alphabetically)
+    /// </summary>
+    Task<List<WorldLinkDto>> GetWorldLinksAsync(Guid worldId);
+
+    /// <summary>
+    /// Create a new link for a world
+    /// </summary>
+    Task<WorldLinkDto?> CreateWorldLinkAsync(Guid worldId, WorldLinkCreateDto dto);
+
+    /// <summary>
+    /// Update an existing world link
+    /// </summary>
+    Task<WorldLinkDto?> UpdateWorldLinkAsync(Guid worldId, Guid linkId, WorldLinkUpdateDto dto);
+
+    /// <summary>
+    /// Delete a world link
+    /// </summary>
+    Task<bool> DeleteWorldLinkAsync(Guid worldId, Guid linkId);
 }

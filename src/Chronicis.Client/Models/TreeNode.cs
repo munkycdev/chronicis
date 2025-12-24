@@ -65,6 +65,11 @@ public class TreeNode
     public Guid? ArcId { get; set; }
     
     /// <summary>
+    /// For ExternalLink nodes, the URL to navigate to.
+    /// </summary>
+    public string? Url { get; set; }
+
+    /// <summary>
     /// Number of children (from server or computed).
     /// </summary>
     public int ChildCount { get; set; }
@@ -107,7 +112,7 @@ public class TreeNode
     
     /// <summary>
     /// Whether this node can be selected/navigated to.
-    /// Virtual groups cannot be selected.
+    /// Virtual groups cannot be selected. External links open in new tab.
     /// </summary>
     public bool IsSelectable => NodeType switch
     {
@@ -115,6 +120,7 @@ public class TreeNode
         TreeNodeType.World => true,
         TreeNodeType.Campaign => true,
         TreeNodeType.Arc => true,
+        TreeNodeType.ExternalLink => true, // Opens in new tab
         _ => false
     };
     
@@ -128,11 +134,14 @@ public class TreeNode
         {
             // Campaigns requires creating Campaign entities (separate flow)
             VirtualGroupType.Campaigns => false, // TODO: Enable when campaign creation dialog is ready
+            // Links are managed via WorldDetail page, not tree
+            VirtualGroupType.Links => false,
             _ => true
         },
         TreeNodeType.Campaign => false, // Add arcs via separate flow
         TreeNodeType.Arc => true, // Add sessions
         TreeNodeType.Article => true,
+        TreeNodeType.ExternalLink => false, // Links don't have children
         _ => false
     };
     
@@ -151,6 +160,8 @@ public class TreeNode
         {
             // Campaigns group holds Campaign entities, not articles
             VirtualGroupType.Campaigns => false,
+            // Links group holds external links, not articles
+            VirtualGroupType.Links => false,
             // Other groups can accept article drops
             _ => true
         },
@@ -162,6 +173,7 @@ public class TreeNode
         VirtualGroupType.Campaigns => "Campaigns",
         VirtualGroupType.PlayerCharacters => "Player Characters",
         VirtualGroupType.Wiki => "Wiki",
+        VirtualGroupType.Links => "External Resources",
         VirtualGroupType.Uncategorized => "Uncategorized",
         _ => Title
     };
@@ -177,11 +189,13 @@ public class TreeNode
             VirtualGroupType.Campaigns => "fa-solid fa-scroll",
             VirtualGroupType.PlayerCharacters => "fa-solid fa-user-group",
             VirtualGroupType.Wiki => "fa-solid fa-book-atlas",
+            VirtualGroupType.Links => "fa-solid fa-link",
             VirtualGroupType.Uncategorized => "fa-solid fa-folder-open",
             _ => "fa-solid fa-folder"
         },
         TreeNodeType.Campaign => "fa-solid fa-dungeon",
         TreeNodeType.Arc => "fa-solid fa-book-open",
+        TreeNodeType.ExternalLink => "fa-solid fa-external-link-alt",
         TreeNodeType.Article => ArticleType switch
         {
             Shared.Enums.ArticleType.Character => "fa-solid fa-user",
