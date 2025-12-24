@@ -320,3 +320,7 @@ a:focus-visible {
 .chronicis-scrollbar-dark::-webkit-scrollbar-thumb:hover {
     background-color: rgba(196, 175, 142, 0.5);
 }
+
+.generic-container-icon {
+    margin-bottom:15px;
+}
