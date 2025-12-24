@@ -31,6 +31,9 @@ public class TreeStateService : ITreeStateService
     private bool _isLoading;
     private bool _isInitialized;
     
+    // Cached data for sharing with other services
+    private List<ArticleTreeDto> _cachedArticles = new();
+    
     public TreeStateService(
         IArticleApiService articleApi,
         IWorldApiService worldApi,
@@ -59,6 +62,17 @@ public class TreeStateService : ITreeStateService
     public bool IsSearchActive => !string.IsNullOrWhiteSpace(_searchQuery);
     public bool IsLoading => _isLoading;
     public bool ShouldFocusTitle { get; set; }
+    
+    /// <summary>
+    /// Exposes the cached article list for other services to consume.
+    /// Avoids duplicate API calls from Dashboard, etc.
+    /// </summary>
+    public IReadOnlyList<ArticleTreeDto> CachedArticles => _cachedArticles;
+    
+    /// <summary>
+    /// Indicates whether the tree has been initialized and CachedArticles is populated.
+    /// </summary>
+    public bool HasCachedData => _isInitialized && _cachedArticles.Any();
     
     public event Action? OnStateChanged;
     
@@ -125,10 +139,10 @@ public class TreeStateService : ITreeStateService
                 }
             }
             
-            // Restore selection
+            // Restore selection AND ensure path is expanded
             if (previousSelection.HasValue && _nodeIndex.ContainsKey(previousSelection.Value))
             {
-                SelectNode(previousSelection.Value);
+                ExpandPathToAndSelect(previousSelection.Value);
             }
             
             if (IsSearchActive)
@@ -148,7 +162,7 @@ public class TreeStateService : ITreeStateService
     }
     
     // ============================================
-    // Tree Building
+    // Tree Building (Optimized with Parallel Loading)
     // ============================================
     
     private async Task BuildTreeAsync()
@@ -157,7 +171,10 @@ public class TreeStateService : ITreeStateService
         _expandedNodeIds.Clear();
         _rootNodes = new List<TreeNode>();
         
-        // Fetch all data in parallel
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
+        // Phase 1: Fetch worlds list and all articles in parallel
+        _logger.LogInformation("Phase 1: Fetching worlds and articles...");
         var worldsTask = _worldApi.GetWorldsAsync();
         var articlesTask = _articleApi.GetAllArticlesAsync();
         
@@ -166,16 +183,74 @@ public class TreeStateService : ITreeStateService
         var worlds = worldsTask.Result;
         var allArticles = articlesTask.Result;
         
-        _logger.LogInformation("Building tree with {WorldCount} worlds and {ArticleCount} articles",
-            worlds.Count, allArticles.Count);
+        // Cache articles for sharing with Dashboard, etc.
+        _cachedArticles = allArticles;
         
-        // Build article index by ID for quick lookup
+        _logger.LogInformation("Phase 1 complete: {WorldCount} worlds, {ArticleCount} articles in {Ms}ms",
+            worlds.Count, allArticles.Count, stopwatch.ElapsedMilliseconds);
+        
+        if (!worlds.Any())
+        {
+            return; // Nothing to build
+        }
+        
+        // Phase 2: Fetch all world details in parallel
+        _logger.LogInformation("Phase 2: Fetching world details in parallel...");
+        var worldDetailTasks = worlds.Select(w => _worldApi.GetWorldAsync(w.Id)).ToList();
+        var worldDetails = await Task.WhenAll(worldDetailTasks);
+        
+        // Create lookup: WorldId -> WorldDetailDto
+        var worldDetailLookup = worldDetails
+            .Where(wd => wd != null)
+            .ToDictionary(wd => wd!.Id, wd => wd!);
+        
+        _logger.LogInformation("Phase 2 complete: {Count} world details in {Ms}ms",
+            worldDetailLookup.Count, stopwatch.ElapsedMilliseconds);
+        
+        // Phase 3: Collect all campaigns and fetch all arcs in parallel
+        var allCampaigns = worldDetails
+            .Where(wd => wd != null)
+            .SelectMany(wd => wd!.Campaigns ?? new List<CampaignDto>())
+            .ToList();
+        
+        _logger.LogInformation("Phase 3: Fetching arcs for {Count} campaigns in parallel...", allCampaigns.Count);
+        
+        // Fetch all arcs in parallel
+        var arcTasks = allCampaigns.Select(c => _arcApi.GetArcsByCampaignAsync(c.Id)).ToList();
+        var arcResults = await Task.WhenAll(arcTasks);
+        
+        // Create lookup: CampaignId -> List<ArcDto>
+        var arcsByCampaign = new Dictionary<Guid, List<ArcDto>>();
+        for (int i = 0; i < allCampaigns.Count; i++)
+        {
+            arcsByCampaign[allCampaigns[i].Id] = arcResults[i];
+        }
+        
+        _logger.LogInformation("Phase 3 complete: {Count} total arcs in {Ms}ms",
+            arcResults.Sum(r => r.Count), stopwatch.ElapsedMilliseconds);
+        
+        // Phase 4: Build the tree structure (now synchronous with all data in memory)
+        _logger.LogInformation("Phase 4: Building tree structure...");
+        
+        // Build article index for quick lookup
         var articleIndex = allArticles.ToDictionary(a => a.Id);
         
         // Process each world
         foreach (var world in worlds.OrderBy(w => w.Name))
         {
-            var worldNode = await BuildWorldNodeAsync(world, allArticles, articleIndex);
+            if (!worldDetailLookup.TryGetValue(world.Id, out var worldDetail))
+            {
+                _logger.LogWarning("World detail not found for {WorldId}", world.Id);
+                continue;
+            }
+            
+            var worldNode = BuildWorldNode(
+                world, 
+                worldDetail, 
+                allArticles, 
+                articleIndex, 
+                arcsByCampaign);
+            
             _rootNodes.Add(worldNode);
             _nodeIndex[worldNode.Id] = worldNode;
         }
@@ -205,12 +280,20 @@ public class TreeStateService : ITreeStateService
                 _nodeIndex[orphanNode.Id] = orphanNode;
             }
         }
+        
+        stopwatch.Stop();
+        _logger.LogInformation("Tree build complete in {Ms}ms total", stopwatch.ElapsedMilliseconds);
     }
     
-    private async Task<TreeNode> BuildWorldNodeAsync(
-        WorldDto world, 
+    /// <summary>
+    /// Builds a world node synchronously using pre-fetched data.
+    /// </summary>
+    private TreeNode BuildWorldNode(
+        WorldDto world,
+        WorldDetailDto worldDetail,
         List<ArticleTreeDto> allArticles,
-        Dictionary<Guid, ArticleTreeDto> articleIndex)
+        Dictionary<Guid, ArticleTreeDto> articleIndex,
+        Dictionary<Guid, List<ArcDto>> arcsByCampaign)
     {
         var worldNode = new TreeNode
         {
@@ -221,9 +304,7 @@ public class TreeStateService : ITreeStateService
             IconEmoji = "fa-solid fa-globe"
         };
         
-        // Get world detail to get campaigns
-        var worldDetail = await _worldApi.GetWorldAsync(world.Id);
-        var campaigns = worldDetail?.Campaigns ?? new List<CampaignDto>();
+        var campaigns = worldDetail.Campaigns ?? new List<CampaignDto>();
         
         // Filter articles for this world
         var worldArticles = allArticles.Where(a => a.WorldId == world.Id).ToList();
@@ -237,7 +318,11 @@ public class TreeStateService : ITreeStateService
         // Build Campaigns group
         foreach (var campaign in campaigns.OrderBy(c => c.Name))
         {
-            var campaignNode = await BuildCampaignNodeAsync(campaign, worldArticles, articleIndex);
+            var arcs = arcsByCampaign.TryGetValue(campaign.Id, out var campaignArcs) 
+                ? campaignArcs 
+                : new List<ArcDto>();
+            
+            var campaignNode = BuildCampaignNode(campaign, arcs, worldArticles, articleIndex);
             campaignsGroup.Children.Add(campaignNode);
             _nodeIndex[campaignNode.Id] = campaignNode;
         }
@@ -309,8 +394,12 @@ public class TreeStateService : ITreeStateService
         return worldNode;
     }
     
-    private async Task<TreeNode> BuildCampaignNodeAsync(
+    /// <summary>
+    /// Builds a campaign node synchronously using pre-fetched arc data.
+    /// </summary>
+    private TreeNode BuildCampaignNode(
         CampaignDto campaign,
+        List<ArcDto> arcs,
         List<ArticleTreeDto> worldArticles,
         Dictionary<Guid, ArticleTreeDto> articleIndex)
     {
@@ -323,9 +412,6 @@ public class TreeStateService : ITreeStateService
             CampaignId = campaign.Id,
             IconEmoji = "fa-solid fa-dungeon"
         };
-        
-        // Fetch arcs for this campaign
-        var arcs = await _arcApi.GetArcsByCampaignAsync(campaign.Id);
         
         foreach (var arc in arcs.OrderBy(a => a.SortOrder).ThenBy(a => a.Name))
         {
@@ -483,6 +569,14 @@ public class TreeStateService : ITreeStateService
             {
                 node.IsSelected = true;
                 _selectedNodeId = nodeId;
+                
+                // Auto-expand if node has children
+                if (node.HasChildren && !node.IsExpanded)
+                {
+                    node.IsExpanded = true;
+                    _expandedNodeIds.Add(nodeId);
+                    SaveExpandedStateAsync().ConfigureAwait(false);
+                }
             }
             else
             {

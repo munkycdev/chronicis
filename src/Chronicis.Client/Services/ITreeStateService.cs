@@ -1,4 +1,5 @@
 using Chronicis.Client.Models;
+using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Services;
 
@@ -47,6 +48,17 @@ public interface ITreeStateService
     /// Used when creating new articles.
     /// </summary>
     bool ShouldFocusTitle { get; set; }
+    
+    /// <summary>
+    /// Exposes the cached article list for other services/components to consume.
+    /// Avoids duplicate API calls from Dashboard, etc.
+    /// </summary>
+    IReadOnlyList<ArticleTreeDto> CachedArticles { get; }
+    
+    /// <summary>
+    /// Indicates whether the tree has been initialized and CachedArticles is populated.
+    /// </summary>
+    bool HasCachedData { get; }
     
     // ============================================
     // Events

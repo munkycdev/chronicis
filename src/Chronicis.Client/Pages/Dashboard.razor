@@ -370,8 +370,16 @@
 
         try
         {
-            // Load recent articles (top 5 by modified date)
-            _allArticles = await ArticleApi.GetAllArticlesAsync();
+            // Use cached data from TreeStateService if available (avoids duplicate API call)
+            if (TreeStateService.HasCachedData)
+            {
+                _allArticles = TreeStateService.CachedArticles.ToList();
+            }
+            else
+            {
+                // Fallback: fetch directly (e.g., if tree hasn't initialized yet)
+                _allArticles = await ArticleApi.GetAllArticlesAsync();
+            }
 
             // Calculate stats
             _stats = new CampaignStats
@@ -514,6 +522,26 @@
 
     private void OnTreeStateChanged()
     {
+        // When tree state changes, update our cached articles
+        if (TreeStateService.HasCachedData && (_allArticles == null || !_allArticles.Any()))
+        {
+            _allArticles = TreeStateService.CachedArticles.ToList();
+            
+            // Recalculate stats
+            _stats = new CampaignStats
+            {
+                TotalArticles = CountTotalArticles(_allArticles),
+                RootArticles = _allArticles.Count(a => !a.ParentId.HasValue),
+                RecentlyModified = _allArticles.Count(a =>
+                    (a.CreatedAt) > DateTime.Now.AddDays(-7)),
+                DaysSinceStart = _allArticles.Any()
+                    ? (int)(DateTime.Now - _allArticles.Min(a => a.CreatedAt)).TotalDays
+                    : 0
+            };
+            
+            _isLoadingRecent = false;
+        }
+        
         InvokeAsync(StateHasChanged);
     }
 

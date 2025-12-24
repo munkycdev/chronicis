@@ -12,6 +12,9 @@
     3. Default to PublicLayout for pages without explicit layout or auth
     
     This prevents the "flash" of AuthenticatedLayout on public pages.
+    
+    It also provides a styled "Authorizing" screen instead of the default
+    unstyled "Authorizing..." text.
 *@
 
 <CascadingAuthenticationState>
@@ -40,7 +43,12 @@
                     // Use AuthorizeRouteView for pages with [Authorize]
                     contentBuilder.OpenComponent<AuthorizeRouteView>(0);
                     contentBuilder.AddAttribute(1, "RouteData", RouteData);
-                    contentBuilder.AddAttribute(2, "NotAuthorized", (RenderFragment<AuthenticationState>)(authState =>
+                    contentBuilder.AddAttribute(2, "Authorizing", (RenderFragment)(authorizingBuilder =>
+                    {
+                        authorizingBuilder.OpenComponent<AuthorizingScreen>(0);
+                        authorizingBuilder.CloseComponent();
+                    }));
+                    contentBuilder.AddAttribute(3, "NotAuthorized", (RenderFragment<AuthenticationState>)(authState =>
                     {
                         return notAuthBuilder =>
                         {
@@ -65,7 +73,12 @@
             {
                 builder.OpenComponent<AuthorizeRouteView>(0);
                 builder.AddAttribute(1, "RouteData", RouteData);
-                builder.AddAttribute(2, "NotAuthorized", (RenderFragment<AuthenticationState>)(authState =>
+                builder.AddAttribute(2, "Authorizing", (RenderFragment)(authorizingBuilder =>
+                {
+                    authorizingBuilder.OpenComponent<AuthorizingScreen>(0);
+                    authorizingBuilder.CloseComponent();
+                }));
+                builder.AddAttribute(3, "NotAuthorized", (RenderFragment<AuthenticationState>)(authState =>
                 {
                     return notAuthBuilder =>
                     {
