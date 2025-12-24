@@ -185,7 +185,18 @@ public class AISummaryService : IAISummaryService
 
     private async Task<List<(string Title, string Content)>> GetBacklinksContentAsync(Guid articleId)
     {
-        // Without hashtags, there are no backlinks
-        return new List<(string, string)>();
+        // Find all articles that link TO this article (incoming links/backlinks)
+        var backlinkingArticles = await _context.ArticleLinks
+            .AsNoTracking()
+            .Where(al => al.TargetArticleId == articleId)
+            .Select(al => al.SourceArticle)
+            .Distinct()
+            .Where(a => !string.IsNullOrEmpty(a.Body))
+            .Select(a => new { a.Title, a.Body })
+            .ToListAsync();
+
+        return backlinkingArticles
+            .Select(a => (a.Title, a.Body!))
+            .ToList();
     }
 }

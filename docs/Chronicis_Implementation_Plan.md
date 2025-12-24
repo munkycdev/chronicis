@@ -1,7 +1,17 @@
 # Chronicis Implementation Plan - Complete Reference
 
-**Version:** 2.3 | **Date:** December 21, 2025  
+**Version:** 2.4 | **Date:** December 23, 2025  
 **Purpose:** Complete phase-by-phase implementation guide with detailed specifications
+
+**CHANGES IN v2.4:**
+- Phase 10.5: **COMPLETE** - Tree Navigation Rewrite
+- Phase 10.5: Complete architectural rewrite of article tree navigation
+- Phase 10.5: Single source of truth with TreeStateService and TreeNode model
+- Phase 10.5: Eager loading replaces lazy loading for better UX
+- Phase 10.5: Real-time search filtering with localStorage persistence
+- Phase 10.5: Native HTML5 drag-and-drop for article reorganization
+- Phase 10.5: Right-click context menus, tooltips for truncated titles
+- Phase 10.5: Removed old ViewModels and chronicis-nav.css
 
 **CHANGES IN v2.3:**
 - Phase 1.5.1b: **COMPLETE** - World & Campaign Management APIs
@@ -83,6 +93,7 @@
 | 9 | Advanced Search | 1 | ✅ Complete | Full-text content search, grouped results, global UI |
 | 9.5 | Auth Architecture | 0.5 | ✅ Complete | Global middleware, centralized HttpClient |
 | 10 | Hierarchical URLs | 1 | ✅ **COMPLETE** | Path-based URLs, slug system, breadcrumb navigation |
+| 10.5 | Tree Navigation Rewrite | 1 | ✅ **COMPLETE** | New TreeStateService, drag-drop, right-click menus |
 | 1.5.1a | Guid ID Migration | 0.5 | ✅ **COMPLETE** | Multi-user foundation, World/Campaign entities |
 | 1.5.1b | World/Campaign APIs | 0.5 | ✅ **COMPLETE** | CRUD endpoints, member management, auto-creation |
 | 11 | Icons & Polish | 1 | 📋 Pending | Custom icons, final touches |
@@ -325,6 +336,71 @@ All criteria met and tested:
 - `Pages/Articles.razor` - Path routing
 - `Components/Articles/ArticleDetail.razor` - Slug confirmation
 - `Components/Articles/ArticleTreeView.razor` - Path navigation
+
+---
+
+## Phase 10.5: Tree Navigation Rewrite
+
+**Status:** ✅ **COMPLETE**
+
+**Completed:** December 23, 2025  
+**Implementation Time:** ~4 hours
+
+**Goal:** Complete architectural rewrite of the article tree navigation to fix dual state management issues and improve UX
+
+### Overview
+
+Phase 10.5 addresses fundamental architectural issues in the original tree implementation: dual state management between component and service, mixed responsibilities, and complex lazy loading. The rewrite provides a clean single source of truth with eager loading for better performance and maintainability.
+
+### Key Changes
+
+**Architecture:**
+- Single source of truth via `TreeStateService`
+- New `TreeNode` model replaces `ArticleTreeItemViewModel`
+- Eager loading (all articles loaded upfront) replaces lazy loading
+- localStorage persistence for expanded node state
+
+**Features:**
+- Real-time search filtering (debounced 200ms)
+- Native HTML5 drag-and-drop for article reorganization
+- Drop zone for moving articles to root level
+- Right-click context menus (replaces three-dot button)
+- Tooltips showing full article titles for truncated items
+- Pending selection queue for direct URL navigation
+
+**CRUD Operations:**
+- Create root article button in tree
+- Create child article via right-click menu
+- Delete with confirmation dialog (warns about children)
+- WorldId properly set from AppContextService
+
+### Files Created
+
+- `Models/TreeNode.cs` - Single canonical tree node model
+- `wwwroot/css/article-tree.css` - New tree-specific styles
+
+### Files Rewritten
+
+- `Services/TreeStateService.cs` - Complete rewrite with eager loading
+- `Services/ITreeStateService.cs` - Updated interface
+- `Components/Articles/ArticleTreeView.razor` - Clean component using service state
+- `Components/Articles/ArticleTreeNode.razor` - Recursive node with drag-drop
+
+### Files Removed
+
+- `ViewModels/ArticleTreeItemViewModel.cs` - Replaced by TreeNode
+- `wwwroot/css/chronicis-nav.css` - Replaced by article-tree.css
+
+### Success Criteria
+
+1. ✅ Tree displays all articles with expand/collapse
+2. ✅ Real-time search filtering works
+3. ✅ Drag-and-drop reorganization works
+4. ✅ Right-click context menus work
+5. ✅ Direct URL navigation expands tree path
+6. ✅ Expanded state persists across page refreshes
+7. ✅ Tooltips show full titles on hover
+8. ✅ Clean build with no warnings
 
 ---
 
@@ -663,7 +739,7 @@ chronicis/
 **What's Working:**
 - ✅ User authentication via Auth0
 - ✅ Article CRUD operations
-- ✅ Hierarchical tree navigation
+- ✅ Hierarchical tree navigation with drag-and-drop
 - ✅ Rich text editing with TipTap
 - ✅ Hashtag system with linking
 - ✅ Backlinks panel
@@ -672,9 +748,8 @@ chronicis/
 - ✅ Auto-save functionality
 
 **Current Progress:**
-**Phase 12 partially complete** (~90% of project)
-- Phases 0-9.5: ✅ Complete
-- Phase 10: 📋 Pending (Drag & Drop)
+**Phase 12 partially complete** (~92% of project)
+- Phases 0-10.5: ✅ Complete
 - Phase 11: 📋 Pending (Icons & Polish)  
 - Phase 12: 🔄 In Progress (Deployment ✅, Testing pending)
 
@@ -688,6 +763,7 @@ chronicis/
 ---
 
 **Version History:**
+- 2.4 (2025-12-23): Phase 10.5 COMPLETE - Tree navigation rewrite, drag-drop, right-click menus, tooltips
 - 2.3 (2025-12-21): Phase 1.5.1b COMPLETE - World & Campaign management APIs, member management, auto-creation logic
 - 2.2 (2025-12-20): Phase 1.5.1a COMPLETE - Guid ID migration, World/Campaign/CampaignMember entities, multi-user foundation
 - 2.1 (2025-12-15): Phase 10 COMPLETE - Hierarchical URL paths, slug system
