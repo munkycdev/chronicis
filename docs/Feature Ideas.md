@@ -1,13 +1,19 @@
+Bugs
+    External links don't actually go to the linked resource
+    Article
+        Ctrl+N seems broken?
+        Link autocomplete further down in the article doesn't seem to work
+        Article breadcrumbs don't work right now
+        Wiki breadcrumbs don't include the world or "WIKI"
+    
 Article Features
-    Add the ability to provide a custom prompt on an article for the AI summary.
-    Add templated AI summaries so the user can choose what type of summary to create.
+    AI Summaries
+        Add the ability to provide a custom prompt on an article for the AI summary.
+        Add templated AI summaries so the user can choose what type of summary to create.
+        When generating AI summaries, the source page should be considered canon and should inform all subsequent interpolation. In this way, we can correct incorrect assumptions made by the model.
+        Link feature: if there's an AI summary already generated, when hovering over the link, display that in a floating modal popup. if not, provide a button to quickly generate an AI summary. On the popup, it should always display the path to the article.
     Mark as private
-    Ctrl+N seems broken?
-    Link autocomplete further down in the article doesn't seem to work
-    Article breadcrumbs don't work right now
-    When generating AI summaries, the source page should be considered canon and should inform all subsequent interpolation. In this way, we can correct incorrect assumptions made by the model.
-    Link feature: if there's an AI summary already generated, when hovering over the link, display that in a floating modal popup. if not, provide a button to quickly generate an AI summary. On the popup, it should always display the path to the article.
-    Wiki breadcrumbs don't include the world or "WIKI"
+    Add Azure AI Search as a replacement for the global search
 
 Campaign and Arc sections
     Add the ability to generate an AI summary of child summary notes
@@ -28,15 +34,8 @@ Utilities
 
 World Features:
     Multi-user setup for worlds, managed by the world owner (GM)
-
-    External Link section in the world areaf
-    Ability to link in information from open source documents
-    Ability to link in information from loaded PDFs (similar to NotebookLLM)
-
+    Ability to add files to the "External Resources" section
     Ability to add maps and track activity across sessions
-    Ability to load files
-
-    NotebookLM type searching and analysis of all loaded content
     When adding a campaign and arc, let the user hit enter to save the dialog
 
 Campaign
