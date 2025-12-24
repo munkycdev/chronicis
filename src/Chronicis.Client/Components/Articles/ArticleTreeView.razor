@@ -1,8 +1,12 @@
 @using Chronicis.Client.Models
+@using Chronicis.Client.Components.Dialogs
+@using Chronicis.Shared.DTOs
 @inject ITreeStateService TreeState
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject IArticleApiService ArticleApi
+@inject IAppContextService AppContext
+@inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 @implements IDisposable
 
@@ -11,21 +15,21 @@
     {
         <div class="article-tree__loading">
             <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
-            <MudText Typo="Typo.body2" Class="ml-2">Loading articles...</MudText>
+            <MudText Typo="Typo.body2" Class="ml-2">Loading...</MudText>
         </div>
     }
     else if (!TreeState.RootNodes.Any())
     {
         <div class="article-tree__empty">
-            <div class="article-tree__empty-icon">📚</div>
-            <MudText Typo="Typo.body2" Class="mt-2 mb-3">No articles yet</MudText>
+            <div class="article-tree__empty-icon">🌍</div>
+            <MudText Typo="Typo.body2" Class="mt-2 mb-3">No worlds yet</MudText>
             <MudButton 
                 Variant="Variant.Text" 
                 Color="Color.Primary"
                 Size="Size.Small"
                 StartIcon="@Icons.Material.Filled.Add"
-                OnClick="CreateRootArticle">
-                Create First Article
+                OnClick="CreateWorld">
+                Create Your First World
             </MudButton>
         </div>
     }
@@ -43,28 +47,19 @@
         <div class="article-tree__nodes">
             @* Dashboard link *@
             <MudNavLink Href="/dashboard" 
-                        Match="NavLinkMatch.All"
-                        Class="article-tree__dashboard-link">
-                <div class="d-flex align-center">
-                    <div style="width: 30px;"></div>
-                    <MudIcon Icon="@Icons.Material.Filled.Home"
-                             Color="Color.Primary" 
-                             Size="Size.Small" 
-                             Style="margin-right: 8px;" />
-                    <span>Dashboard</span>
-                </div>
+                    Match="NavLinkMatch.All"
+                    Class="article-tree__dashboard-link">
+                <div style="width: 30px;"></div>
+                <MudIcon Icon="@Icons.Material.Filled.Home"
+                            Color="Color.Primary" 
+                            Size="Size.Small" 
+                            Style="margin-right: 8px;" />
+                <span style="vertical-align: top;">Dashboard</span>
             </MudNavLink>
             
             <MudDivider Class="my-2" Style="opacity: 0.3;" />
             
-            @* New Root Article button *@
-            <div class="article-tree__new-article" @onclick="CreateRootArticle">
-                <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
-                <span>New Article</span>
-            </div>
-            
-            <MudDivider Class="my-2" Style="opacity: 0.3;" />
-            
+            @* Worlds and their contents *@
             @foreach (var node in TreeState.RootNodes.Where(n => n.IsVisible))
             {
                 <ArticleTreeNode 
@@ -77,6 +72,8 @@
                     DraggedNodeId="_draggedNodeId"
                     DraggedNodeIdChanged="OnDraggedNodeIdChanged" />
             }
+            
+            <MudDivider Class="my-2" Style="opacity: 0.3;" />
             
             @* Drop zone to make items root-level *@
             @if (_draggedNodeId.HasValue)
@@ -122,14 +119,55 @@
     
     private async Task HandleSelect(Guid nodeId)
     {
-        TreeState.SelectNode(nodeId);
+        // Get the node to determine its type
+        var node = TreeState.RootNodes
+            .SelectMany(GetAllNodes)
+            .FirstOrDefault(n => n.Id == nodeId);
         
-        // Navigate to article
-        var article = await ArticleApi.GetArticleDetailAsync(nodeId);
-        if (article != null && article.Breadcrumbs.Any())
+        if (node == null) return;
+        
+        // Route based on node type
+        switch (node.NodeType)
         {
-            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-            Navigation.NavigateTo($"/article/{path}");
+            case TreeNodeType.World:
+                Navigation.NavigateTo($"/world/{nodeId}");
+                break;
+                
+            case TreeNodeType.Campaign:
+                Navigation.NavigateTo($"/campaign/{nodeId}");
+                break;
+                
+            case TreeNodeType.Arc:
+                Navigation.NavigateTo($"/arc/{nodeId}");
+                break;
+                
+            case TreeNodeType.VirtualGroup:
+                // Virtual groups just expand/collapse, don't navigate
+                TreeState.ToggleNode(nodeId);
+                break;
+                
+            case TreeNodeType.Article:
+                TreeState.SelectNode(nodeId);
+                var article = await ArticleApi.GetArticleDetailAsync(nodeId);
+                if (article != null && article.Breadcrumbs.Any())
+                {
+                    var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
+                    Navigation.NavigateTo($"/article/{path}");
+                }
+                break;
+        }
+    }
+    
+    // Helper to flatten tree for searching
+    private IEnumerable<TreeNode> GetAllNodes(TreeNode node)
+    {
+        yield return node;
+        foreach (var child in node.Children)
+        {
+            foreach (var descendant in GetAllNodes(child))
+            {
+                yield return descendant;
+            }
         }
     }
     
@@ -207,25 +245,16 @@
         }
     }
     
-    private async Task CreateRootArticle()
+    private async Task CreateWorld()
     {
-        var newId = await TreeState.CreateRootArticleAsync();
-        
-        if (newId.HasValue)
+        var dialog = await DialogService.ShowAsync<CreateWorldDialog>("New World");
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled && result.Data is WorldDto world)
         {
-            Snackbar.Add("Article created", Severity.Success);
-            
-            // Navigate to the new article
-            var article = await ArticleApi.GetArticleDetailAsync(newId.Value);
-            if (article != null && article.Breadcrumbs.Any())
-            {
-                var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-                Navigation.NavigateTo($"/article/{path}");
-            }
-        }
-        else
-        {
-            Snackbar.Add("Failed to create article", Severity.Error);
+            await TreeState.RefreshAsync();
+            Navigation.NavigateTo($"/world/{world.Id}");
+            Snackbar.Add("World created", Severity.Success);
         }
     }
     

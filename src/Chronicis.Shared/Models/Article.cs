@@ -27,9 +27,15 @@ public class Article
     public Guid? WorldId { get; set; }
     
     /// <summary>
-    /// Campaign this article belongs to. Set for campaign-specific articles (Sessions, Acts, etc.).
+    /// Campaign this article belongs to. Set for campaign-specific articles (Sessions, etc.).
+    /// Denormalized from Arc for query efficiency.
     /// </summary>
     public Guid? CampaignId { get; set; }
+    
+    /// <summary>
+    /// Arc this article belongs to. Required for Session articles.
+    /// </summary>
+    public Guid? ArcId { get; set; }
     
     // ===== Content =====
     
@@ -146,6 +152,11 @@ public class Article
     /// Campaign this article belongs to.
     /// </summary>
     public Campaign? Campaign { get; set; }
+    
+    /// <summary>
+    /// Arc this article belongs to (for Session articles).
+    /// </summary>
+    public Arc? Arc { get; set; }
     
     /// <summary>
     /// User who created this article.

@@ -89,6 +89,12 @@ public class UpdateArticle
                 article.Visibility = dto.Visibility.Value;
             }
 
+            if (dto.Type.HasValue)
+            {
+                article.Type = dto.Type.Value;
+                _logger.LogInformation("Updated article {ArticleId} type to {ArticleType}", id, dto.Type.Value);
+            }
+
             if (dto.SessionDate.HasValue)
             {
                 article.SessionDate = dto.SessionDate.Value;
@@ -134,6 +140,7 @@ public class UpdateArticle
                 ParentId = article.ParentId,
                 WorldId = article.WorldId,
                 CampaignId = article.CampaignId,
+                ArcId = article.ArcId,
                 Body = article.Body ?? string.Empty,
                 Type = article.Type,
                 Visibility = article.Visibility,

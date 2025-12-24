@@ -1,0 +1,114 @@
+@using Chronicis.Shared.DTOs
+@using Chronicis.Shared.Enums
+@inject IArticleApiService ArticleApi
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@GetIcon()" Class="mr-2" />
+            @GetTitle()
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_title"
+                      Label="@GetTitleLabel()"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      RequiredError="Title is required"
+                      Class="mb-3"
+                      @ref="_titleField"
+                      Immediate="true" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled"
+                   OnClick="Submit"
+                   Disabled="@(string.IsNullOrWhiteSpace(_title) || _isSubmitting)">
+            @if (_isSubmitting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Create
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? MudDialog { get; set; }
+
+    [Parameter]
+    public Guid WorldId { get; set; }
+
+    [Parameter]
+    public ArticleType ArticleType { get; set; } = ArticleType.WikiArticle;
+
+    private string _title = string.Empty;
+    private bool _isSubmitting = false;
+    private MudTextField<string>? _titleField;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _titleField != null)
+        {
+            await Task.Delay(100);
+            await _titleField.FocusAsync();
+        }
+    }
+
+    private string GetIcon() => ArticleType switch
+    {
+        ArticleType.Character => Icons.Material.Filled.Person,
+        ArticleType.WikiArticle => Icons.Material.Filled.MenuBook,
+        ArticleType.Session => Icons.Material.Filled.EventNote,
+        _ => Icons.Material.Filled.Article
+    };
+
+    private string GetTitle() => ArticleType switch
+    {
+        ArticleType.Character => "New Player Character",
+        ArticleType.WikiArticle => "New Wiki Article",
+        ArticleType.Session => "New Session",
+        _ => "New Article"
+    };
+
+    private string GetTitleLabel() => ArticleType switch
+    {
+        ArticleType.Character => "Character Name",
+        _ => "Title"
+    };
+
+    private void Cancel() => MudDialog?.Cancel();
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_title) || _isSubmitting) return;
+
+        _isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var createDto = new ArticleCreateDto
+            {
+                Title = _title.Trim(),
+                Body = string.Empty,
+                WorldId = WorldId,
+                Type = ArticleType,
+                EffectiveDate = DateTime.Now
+            };
+
+            var article = await ArticleApi.CreateArticleAsync(createDto);
+            MudDialog?.Close(DialogResult.Ok(article));
+        }
+        catch (Exception ex)
+        {
+            MudDialog?.Close(DialogResult.Cancel());
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

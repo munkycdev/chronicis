@@ -2,7 +2,6 @@ using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
-using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -57,7 +56,7 @@ public class CampaignService : ICampaignService
         _logger.LogInformation("Creating campaign '{Name}' in world {WorldId} for user {UserId}", 
             dto.Name, dto.WorldId, userId);
 
-        // Create the Campaign
+        // Create the Campaign entity
         var campaign = new Campaign
         {
             Id = Guid.NewGuid(),
@@ -80,71 +79,22 @@ public class CampaignService : ICampaignService
         };
         _context.CampaignMembers.Add(dmMember);
 
-        // Find the CampaignRoot article for this world
-        var campaignRoot = await _context.Articles
-            .FirstOrDefaultAsync(a => a.WorldId == dto.WorldId && a.Type == ArticleType.CampaignRoot);
-
-        if (campaignRoot == null)
-            throw new InvalidOperationException("Campaign root not found for world");
-
-        // Create Campaign article under CampaignRoot
-        var campaignSlug = SlugGenerator.GenerateSlug(dto.Name);
-        var campaignArticle = new Article
+        // Create a default Arc (Act 1)
+        var defaultArc = new Arc
         {
             Id = Guid.NewGuid(),
-            Type = ArticleType.Campaign,
-            Title = dto.Name,
-            Slug = campaignSlug,
-            Body = dto.Description ?? string.Empty,
-            WorldId = dto.WorldId,
             CampaignId = campaign.Id,
-            ParentId = campaignRoot.Id,
-            CreatedBy = userId,
+            Name = "Act 1",
+            Description = null,
+            SortOrder = 1,
             CreatedAt = DateTime.UtcNow,
-            EffectiveDate = DateTime.UtcNow,
-            Visibility = ArticleVisibility.Public
+            CreatedBy = userId
         };
-        _context.Articles.Add(campaignArticle);
-
-        // Create Act 1 under Campaign article
-        var act1Article = new Article
-        {
-            Id = Guid.NewGuid(),
-            Type = ArticleType.Act,
-            Title = "Act 1",
-            Slug = "act-1",
-            Body = string.Empty,
-            WorldId = dto.WorldId,
-            CampaignId = campaign.Id,
-            ParentId = campaignArticle.Id,
-            CreatedBy = userId,
-            CreatedAt = DateTime.UtcNow,
-            EffectiveDate = DateTime.UtcNow,
-            Visibility = ArticleVisibility.Public
-        };
-        _context.Articles.Add(act1Article);
-
-        // Create SharedInfoRoot under Act 1
-        var sharedInfoRoot = new Article
-        {
-            Id = Guid.NewGuid(),
-            Type = ArticleType.SharedInfoRoot,
-            Title = "Shared Information",
-            Slug = "shared-information",
-            Body = string.Empty,
-            WorldId = dto.WorldId,
-            CampaignId = campaign.Id,
-            ParentId = act1Article.Id,
-            CreatedBy = userId,
-            CreatedAt = DateTime.UtcNow,
-            EffectiveDate = DateTime.UtcNow,
-            Visibility = ArticleVisibility.Public
-        };
-        _context.Articles.Add(sharedInfoRoot);
+        _context.Arcs.Add(defaultArc);
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Created campaign {CampaignId} with Act 1 and Shared Information for user {UserId}", 
+        _logger.LogInformation("Created campaign {CampaignId} with default Arc for user {UserId}", 
             campaign.Id, userId);
 
         // Return DTO

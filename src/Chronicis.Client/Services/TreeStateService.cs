@@ -1,16 +1,20 @@
 using Chronicis.Client.Models;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Blazored.LocalStorage;
 
 namespace Chronicis.Client.Services;
 
 /// <summary>
-/// Service for managing the article tree navigation state.
-/// This is the single source of truth for all tree-related UI state.
+/// Service for managing the navigation tree state.
+/// Builds a hierarchical tree with Worlds, Virtual Groups, Campaigns, Arcs, and Articles.
 /// </summary>
 public class TreeStateService : ITreeStateService
 {
     private readonly IArticleApiService _articleApi;
+    private readonly IWorldApiService _worldApi;
+    private readonly ICampaignApiService _campaignApi;
+    private readonly IArcApiService _arcApi;
     private readonly IAppContextService _appContext;
     private readonly ILocalStorageService _localStorage;
     private readonly ILogger<TreeStateService> _logger;
@@ -22,18 +26,24 @@ public class TreeStateService : ITreeStateService
     private Dictionary<Guid, TreeNode> _nodeIndex = new();
     private HashSet<Guid> _expandedNodeIds = new();
     private Guid? _selectedNodeId;
-    private Guid? _pendingSelectionId; // For selections requested before tree is loaded
+    private Guid? _pendingSelectionId;
     private string _searchQuery = string.Empty;
     private bool _isLoading;
     private bool _isInitialized;
     
     public TreeStateService(
         IArticleApiService articleApi,
+        IWorldApiService worldApi,
+        ICampaignApiService campaignApi,
+        IArcApiService arcApi,
         IAppContextService appContext,
         ILocalStorageService localStorage,
         ILogger<TreeStateService> logger)
     {
         _articleApi = articleApi;
+        _worldApi = worldApi;
+        _campaignApi = campaignApi;
+        _arcApi = arcApi;
         _appContext = appContext;
         _localStorage = localStorage;
         _logger = logger;
@@ -50,10 +60,6 @@ public class TreeStateService : ITreeStateService
     public bool IsLoading => _isLoading;
     public bool ShouldFocusTitle { get; set; }
     
-    // ============================================
-    // Events
-    // ============================================
-    
     public event Action? OnStateChanged;
     
     private void NotifyStateChanged() => OnStateChanged?.Invoke();
@@ -64,26 +70,19 @@ public class TreeStateService : ITreeStateService
     
     public async Task InitializeAsync()
     {
-        if (_isInitialized) return; // Prevent double initialization
+        if (_isInitialized) return;
         
         _isLoading = true;
         NotifyStateChanged();
         
         try
         {
-            // Load all articles from the server
-            var allArticles = await _articleApi.GetAllArticlesAsync();
-            
-            // Build the tree structure
-            BuildTree(allArticles);
-            
-            // Restore expanded state from local storage
+            await BuildTreeAsync();
             await RestoreExpandedStateAsync();
             
             _isInitialized = true;
-            _logger.LogInformation("Tree initialized with {Count} total articles", allArticles.Count);
+            _logger.LogInformation("Tree initialized with {Count} root nodes", _rootNodes.Count);
             
-            // Apply any pending selection that was requested before initialization
             if (_pendingSelectionId.HasValue)
             {
                 var pendingId = _pendingSelectionId.Value;
@@ -106,7 +105,6 @@ public class TreeStateService : ITreeStateService
     
     public async Task RefreshAsync()
     {
-        // Preserve current expanded state
         var previouslyExpanded = new HashSet<Guid>(_expandedNodeIds);
         var previousSelection = _selectedNodeId;
         
@@ -115,10 +113,9 @@ public class TreeStateService : ITreeStateService
         
         try
         {
-            var allArticles = await _articleApi.GetAllArticlesAsync();
-            BuildTree(allArticles);
+            await BuildTreeAsync();
             
-            // Restore expanded state (nodes that still exist)
+            // Restore expanded state
             foreach (var nodeId in previouslyExpanded)
             {
                 if (_nodeIndex.TryGetValue(nodeId, out var node))
@@ -128,13 +125,12 @@ public class TreeStateService : ITreeStateService
                 }
             }
             
-            // Restore selection if still valid
+            // Restore selection
             if (previousSelection.HasValue && _nodeIndex.ContainsKey(previousSelection.Value))
             {
                 SelectNode(previousSelection.Value);
             }
             
-            // Re-apply search filter if active
             if (IsSearchActive)
             {
                 ApplySearchFilter();
@@ -155,66 +151,280 @@ public class TreeStateService : ITreeStateService
     // Tree Building
     // ============================================
     
-    private void BuildTree(List<ArticleTreeDto> articles)
+    private async Task BuildTreeAsync()
     {
         _nodeIndex.Clear();
         _expandedNodeIds.Clear();
-        
-        // Create all nodes first
-        foreach (var dto in articles)
-        {
-            var node = new TreeNode
-            {
-                Id = dto.Id,
-                Title = dto.Title,
-                Slug = dto.Slug,
-                IconEmoji = dto.IconEmoji,
-                ParentId = dto.ParentId,
-                ChildCount = dto.ChildCount
-            };
-            _nodeIndex[dto.Id] = node;
-        }
-        
-        // Build parent-child relationships
         _rootNodes = new List<TreeNode>();
         
-        foreach (var node in _nodeIndex.Values)
+        // Fetch all data in parallel
+        var worldsTask = _worldApi.GetWorldsAsync();
+        var articlesTask = _articleApi.GetAllArticlesAsync();
+        
+        await Task.WhenAll(worldsTask, articlesTask);
+        
+        var worlds = worldsTask.Result;
+        var allArticles = articlesTask.Result;
+        
+        _logger.LogInformation("Building tree with {WorldCount} worlds and {ArticleCount} articles",
+            worlds.Count, allArticles.Count);
+        
+        // Build article index by ID for quick lookup
+        var articleIndex = allArticles.ToDictionary(a => a.Id);
+        
+        // Process each world
+        foreach (var world in worlds.OrderBy(w => w.Name))
         {
-            if (node.ParentId.HasValue)
-            {
-                if (_nodeIndex.TryGetValue(node.ParentId.Value, out var parent))
-                {
-                    parent.Children.Add(node);
-                }
-                else
-                {
-                    // Orphaned node - treat as root
-                    _logger.LogWarning("Article {Id} has invalid parent {ParentId}, treating as root", 
-                        node.Id, node.ParentId);
-                    _rootNodes.Add(node);
-                }
-            }
-            else
-            {
-                _rootNodes.Add(node);
-            }
+            var worldNode = await BuildWorldNodeAsync(world, allArticles, articleIndex);
+            _rootNodes.Add(worldNode);
+            _nodeIndex[worldNode.Id] = worldNode;
         }
         
-        // Sort children by title at each level
-        SortChildren(_rootNodes);
+        // Handle articles without a world (shouldn't happen, but handle gracefully)
+        var orphanArticles = allArticles.Where(a => !a.WorldId.HasValue && a.ParentId == null).ToList();
+        if (orphanArticles.Any())
+        {
+            _logger.LogWarning("{Count} articles have no world assigned", orphanArticles.Count);
+            
+            var orphanNode = CreateVirtualGroupNode(
+                VirtualGroupType.Uncategorized, 
+                "Unassigned Articles",
+                null);
+            
+            foreach (var article in orphanArticles)
+            {
+                var articleNode = CreateArticleNode(article);
+                orphanNode.Children.Add(articleNode);
+                _nodeIndex[articleNode.Id] = articleNode;
+            }
+            
+            if (orphanNode.Children.Any())
+            {
+                orphanNode.ChildCount = orphanNode.Children.Count;
+                _rootNodes.Add(orphanNode);
+                _nodeIndex[orphanNode.Id] = orphanNode;
+            }
+        }
     }
     
-    private void SortChildren(List<TreeNode> nodes)
+    private async Task<TreeNode> BuildWorldNodeAsync(
+        WorldDto world, 
+        List<ArticleTreeDto> allArticles,
+        Dictionary<Guid, ArticleTreeDto> articleIndex)
     {
-        nodes.Sort((a, b) => string.Compare(a.Title, b.Title, StringComparison.OrdinalIgnoreCase));
-        
-        foreach (var node in nodes)
+        var worldNode = new TreeNode
         {
-            if (node.Children.Count > 0)
-            {
-                SortChildren(node.Children);
-            }
+            Id = world.Id,
+            NodeType = TreeNodeType.World,
+            Title = world.Name,
+            WorldId = world.Id,
+            IconEmoji = "fa-solid fa-globe"
+        };
+        
+        // Get world detail to get campaigns
+        var worldDetail = await _worldApi.GetWorldAsync(world.Id);
+        var campaigns = worldDetail?.Campaigns ?? new List<CampaignDto>();
+        
+        // Filter articles for this world
+        var worldArticles = allArticles.Where(a => a.WorldId == world.Id).ToList();
+        
+        // Create virtual groups
+        var campaignsGroup = CreateVirtualGroupNode(VirtualGroupType.Campaigns, "Campaigns", world.Id);
+        var charactersGroup = CreateVirtualGroupNode(VirtualGroupType.PlayerCharacters, "Player Characters", world.Id);
+        var wikiGroup = CreateVirtualGroupNode(VirtualGroupType.Wiki, "Wiki", world.Id);
+        var uncategorizedGroup = CreateVirtualGroupNode(VirtualGroupType.Uncategorized, "Uncategorized", world.Id);
+        
+        // Build Campaigns group
+        foreach (var campaign in campaigns.OrderBy(c => c.Name))
+        {
+            var campaignNode = await BuildCampaignNodeAsync(campaign, worldArticles, articleIndex);
+            campaignsGroup.Children.Add(campaignNode);
+            _nodeIndex[campaignNode.Id] = campaignNode;
         }
+        campaignsGroup.ChildCount = campaignsGroup.Children.Count;
+        
+        // Build Characters group (top-level Character articles)
+        var characterArticles = worldArticles
+            .Where(a => a.Type == ArticleType.Character && a.ParentId == null)
+            .OrderBy(a => a.Title)
+            .ToList();
+        
+        foreach (var article in characterArticles)
+        {
+            var articleNode = BuildArticleNodeWithChildren(article, worldArticles, articleIndex);
+            charactersGroup.Children.Add(articleNode);
+        }
+        charactersGroup.ChildCount = charactersGroup.Children.Count;
+        
+        // Build Wiki group (top-level WikiArticle articles)
+        var wikiArticles = worldArticles
+            .Where(a => a.Type == ArticleType.WikiArticle && a.ParentId == null)
+            .OrderBy(a => a.Title)
+            .ToList();
+        
+        foreach (var article in wikiArticles)
+        {
+            var articleNode = BuildArticleNodeWithChildren(article, worldArticles, articleIndex);
+            wikiGroup.Children.Add(articleNode);
+        }
+        wikiGroup.ChildCount = wikiGroup.Children.Count;
+        
+        // Build Uncategorized group (Legacy and untyped articles)
+        var uncategorizedArticles = worldArticles
+            .Where(a => a.ParentId == null && 
+                       a.Type != ArticleType.WikiArticle && 
+                       a.Type != ArticleType.Character &&
+                       a.Type != ArticleType.Session &&
+                       a.Type != ArticleType.SessionNote &&
+                       a.Type != ArticleType.CharacterNote)
+            .OrderBy(a => a.Title)
+            .ToList();
+        
+        foreach (var article in uncategorizedArticles)
+        {
+            var articleNode = BuildArticleNodeWithChildren(article, worldArticles, articleIndex);
+            uncategorizedGroup.Children.Add(articleNode);
+        }
+        uncategorizedGroup.ChildCount = uncategorizedGroup.Children.Count;
+        
+        // Add groups to world node
+        worldNode.Children.Add(campaignsGroup);
+        _nodeIndex[campaignsGroup.Id] = campaignsGroup;
+        
+        worldNode.Children.Add(charactersGroup);
+        _nodeIndex[charactersGroup.Id] = charactersGroup;
+        
+        worldNode.Children.Add(wikiGroup);
+        _nodeIndex[wikiGroup.Id] = wikiGroup;
+        
+        // Only add Uncategorized if it has content
+        if (uncategorizedGroup.Children.Any())
+        {
+            worldNode.Children.Add(uncategorizedGroup);
+            _nodeIndex[uncategorizedGroup.Id] = uncategorizedGroup;
+        }
+        
+        worldNode.ChildCount = worldNode.Children.Count;
+        
+        return worldNode;
+    }
+    
+    private async Task<TreeNode> BuildCampaignNodeAsync(
+        CampaignDto campaign,
+        List<ArticleTreeDto> worldArticles,
+        Dictionary<Guid, ArticleTreeDto> articleIndex)
+    {
+        var campaignNode = new TreeNode
+        {
+            Id = campaign.Id,
+            NodeType = TreeNodeType.Campaign,
+            Title = campaign.Name,
+            WorldId = campaign.WorldId,
+            CampaignId = campaign.Id,
+            IconEmoji = "fa-solid fa-dungeon"
+        };
+        
+        // Fetch arcs for this campaign
+        var arcs = await _arcApi.GetArcsByCampaignAsync(campaign.Id);
+        
+        foreach (var arc in arcs.OrderBy(a => a.SortOrder).ThenBy(a => a.Name))
+        {
+            var arcNode = BuildArcNode(arc, worldArticles, articleIndex);
+            campaignNode.Children.Add(arcNode);
+            _nodeIndex[arcNode.Id] = arcNode;
+        }
+        
+        campaignNode.ChildCount = campaignNode.Children.Count;
+        
+        return campaignNode;
+    }
+    
+    private TreeNode BuildArcNode(
+        ArcDto arc,
+        List<ArticleTreeDto> worldArticles,
+        Dictionary<Guid, ArticleTreeDto> articleIndex)
+    {
+        var arcNode = new TreeNode
+        {
+            Id = arc.Id,
+            NodeType = TreeNodeType.Arc,
+            Title = arc.Name,
+            CampaignId = arc.CampaignId,
+            ArcId = arc.Id,
+            IconEmoji = "fa-solid fa-book-open"
+        };
+        
+        // Find session articles for this arc
+        var sessionArticles = worldArticles
+            .Where(a => a.ArcId == arc.Id && a.Type == ArticleType.Session)
+            .OrderBy(a => a.Title)
+            .ToList();
+        
+        foreach (var article in sessionArticles)
+        {
+            var articleNode = BuildArticleNodeWithChildren(article, worldArticles, articleIndex);
+            arcNode.Children.Add(articleNode);
+        }
+        
+        arcNode.ChildCount = arcNode.Children.Count;
+        
+        return arcNode;
+    }
+    
+    private TreeNode BuildArticleNodeWithChildren(
+        ArticleTreeDto article,
+        List<ArticleTreeDto> allArticles,
+        Dictionary<Guid, ArticleTreeDto> articleIndex)
+    {
+        var node = CreateArticleNode(article);
+        _nodeIndex[node.Id] = node;
+        
+        // Find children
+        var children = allArticles
+            .Where(a => a.ParentId == article.Id)
+            .OrderBy(a => a.Title)
+            .ToList();
+        
+        foreach (var child in children)
+        {
+            var childNode = BuildArticleNodeWithChildren(child, allArticles, articleIndex);
+            childNode.ParentId = node.Id;
+            node.Children.Add(childNode);
+        }
+        
+        node.ChildCount = node.Children.Count;
+        
+        return node;
+    }
+    
+    private TreeNode CreateArticleNode(ArticleTreeDto article)
+    {
+        return new TreeNode
+        {
+            Id = article.Id,
+            NodeType = TreeNodeType.Article,
+            ArticleType = article.Type,
+            Title = article.Title,
+            Slug = article.Slug,
+            IconEmoji = article.IconEmoji,
+            ParentId = article.ParentId,
+            WorldId = article.WorldId,
+            CampaignId = article.CampaignId,
+            ArcId = article.ArcId,
+            ChildCount = article.ChildCount
+        };
+    }
+    
+    private TreeNode CreateVirtualGroupNode(VirtualGroupType groupType, string title, Guid? worldId)
+    {
+        return new TreeNode
+        {
+            Id = Guid.NewGuid(),
+            NodeType = TreeNodeType.VirtualGroup,
+            VirtualGroupType = groupType,
+            Title = title,
+            WorldId = worldId
+        };
     }
     
     // ============================================
@@ -248,13 +458,9 @@ public class TreeStateService : ITreeStateService
         if (_nodeIndex.TryGetValue(nodeId, out var node))
         {
             if (node.IsExpanded)
-            {
                 CollapseNode(nodeId);
-            }
             else
-            {
                 ExpandNode(nodeId);
-            }
         }
     }
     
@@ -266,11 +472,24 @@ public class TreeStateService : ITreeStateService
             previousNode.IsSelected = false;
         }
         
-        // Select new
+        // Select new node
         if (_nodeIndex.TryGetValue(nodeId, out var node))
         {
-            node.IsSelected = true;
-            _selectedNodeId = nodeId;
+            // Selectable node types: Article, World, Campaign, Arc
+            if (node.NodeType == TreeNodeType.Article ||
+                node.NodeType == TreeNodeType.World ||
+                node.NodeType == TreeNodeType.Campaign ||
+                node.NodeType == TreeNodeType.Arc)
+            {
+                node.IsSelected = true;
+                _selectedNodeId = nodeId;
+            }
+            else
+            {
+                // For virtual groups, just toggle expand
+                ToggleNode(nodeId);
+                _selectedNodeId = null;
+            }
         }
         else
         {
@@ -282,17 +501,16 @@ public class TreeStateService : ITreeStateService
     
     public void ExpandPathToAndSelect(Guid nodeId)
     {
-        // If tree isn't initialized yet, queue this for later
         if (!_isInitialized)
         {
             _pendingSelectionId = nodeId;
-            _selectedNodeId = nodeId; // Set this so UI knows something is selected
+            _selectedNodeId = nodeId;
             return;
         }
         
         if (!_nodeIndex.TryGetValue(nodeId, out var targetNode))
         {
-            _logger.LogWarning("ExpandPathToAndSelect: Node {NodeId} not found in tree", nodeId);
+            _logger.LogWarning("ExpandPathToAndSelect: Node {NodeId} not found", nodeId);
             return;
         }
         
@@ -310,11 +528,12 @@ public class TreeStateService : ITreeStateService
             }
             else
             {
-                current = null;
+                // Check if this node is a child of a world/group node
+                current = FindParentNode(current);
             }
         }
         
-        // Expand all ancestors (not the target itself unless it has children)
+        // Expand all ancestors
         for (int i = 0; i < path.Count - 1; i++)
         {
             var node = path[i];
@@ -329,12 +548,33 @@ public class TreeStateService : ITreeStateService
         NotifyStateChanged();
     }
     
+    private TreeNode? FindParentNode(TreeNode child)
+    {
+        // Search through all nodes to find the parent
+        foreach (var node in _nodeIndex.Values)
+        {
+            if (node.Children.Contains(child))
+            {
+                return node;
+            }
+        }
+        return null;
+    }
+    
     // ============================================
     // CRUD Operations
     // ============================================
     
     public async Task<Guid?> CreateRootArticleAsync()
     {
+        // For root articles, we need to know the world context
+        var worldId = _appContext.CurrentWorldId;
+        if (!worldId.HasValue)
+        {
+            _logger.LogWarning("Cannot create root article: no world selected");
+            return null;
+        }
+        
         try
         {
             var createDto = new ArticleCreateDto
@@ -342,32 +582,19 @@ public class TreeStateService : ITreeStateService
                 Title = string.Empty,
                 Body = string.Empty,
                 ParentId = null,
-                WorldId = _appContext.CurrentWorldId,
+                WorldId = worldId,
+                Type = ArticleType.WikiArticle,
                 EffectiveDate = DateTime.Now
             };
             
             var created = await _articleApi.CreateArticleAsync(createDto);
             
-            // Add to tree
-            var newNode = new TreeNode
-            {
-                Id = created.Id,
-                Title = created.Title,
-                Slug = created.Slug,
-                IconEmoji = created.IconEmoji,
-                ParentId = null,
-                ChildCount = 0
-            };
-            
-            _nodeIndex[created.Id] = newNode;
-            _rootNodes.Add(newNode);
-            SortChildren(_rootNodes);
+            // Refresh tree to show new article
+            await RefreshAsync();
             
             // Select the new node
             SelectNode(created.Id);
             ShouldFocusTitle = true;
-            
-            NotifyStateChanged();
             
             return created.Id;
         }
@@ -386,43 +613,47 @@ public class TreeStateService : ITreeStateService
             return null;
         }
         
+        // Determine article type based on parent
+        var articleType = parentNode.NodeType switch
+        {
+            TreeNodeType.VirtualGroup => parentNode.VirtualGroupType switch
+            {
+                VirtualGroupType.Wiki => ArticleType.WikiArticle,
+                VirtualGroupType.PlayerCharacters => ArticleType.Character,
+                VirtualGroupType.Uncategorized => ArticleType.Legacy,
+                _ => ArticleType.WikiArticle
+            },
+            TreeNodeType.Arc => ArticleType.Session,
+            TreeNodeType.Article => parentNode.ArticleType ?? ArticleType.WikiArticle,
+            _ => ArticleType.WikiArticle
+        };
+        
+        // For virtual groups, parent is null (top-level in that category)
+        Guid? actualParentId = parentNode.NodeType == TreeNodeType.VirtualGroup ? null : parentId;
+        
         try
         {
             var createDto = new ArticleCreateDto
             {
                 Title = string.Empty,
                 Body = string.Empty,
-                ParentId = parentId,
-                WorldId = _appContext.CurrentWorldId,
+                ParentId = actualParentId,
+                WorldId = parentNode.WorldId ?? _appContext.CurrentWorldId,
+                CampaignId = parentNode.CampaignId,
+                ArcId = parentNode.NodeType == TreeNodeType.Arc ? parentNode.Id : parentNode.ArcId,
+                Type = articleType,
                 EffectiveDate = DateTime.Now
             };
             
             var created = await _articleApi.CreateArticleAsync(createDto);
             
-            // Add to tree
-            var newNode = new TreeNode
-            {
-                Id = created.Id,
-                Title = created.Title,
-                Slug = created.Slug,
-                IconEmoji = created.IconEmoji,
-                ParentId = parentId,
-                ChildCount = 0
-            };
-            
-            _nodeIndex[created.Id] = newNode;
-            parentNode.Children.Add(newNode);
-            parentNode.ChildCount = parentNode.Children.Count;
-            SortChildren(parentNode.Children);
+            // Refresh tree
+            await RefreshAsync();
             
             // Expand parent and select new node
-            parentNode.IsExpanded = true;
-            _expandedNodeIds.Add(parentId);
+            ExpandNode(parentId);
             SelectNode(created.Id);
             ShouldFocusTitle = true;
-            
-            await SaveExpandedStateAsync();
-            NotifyStateChanged();
             
             return created.Id;
         }
@@ -440,24 +671,23 @@ public class TreeStateService : ITreeStateService
             return false;
         }
         
+        if (node.NodeType != TreeNodeType.Article)
+        {
+            _logger.LogWarning("Cannot delete non-article node {NodeId}", articleId);
+            return false;
+        }
+        
         try
         {
             await _articleApi.DeleteArticleAsync(articleId);
             
-            // Remove from tree
-            RemoveNodeFromTree(node);
+            // Refresh tree
+            await RefreshAsync();
             
-            // If the deleted node was selected, select the parent (or nothing)
+            // If deleted node was selected, clear selection
             if (_selectedNodeId == articleId)
             {
-                if (node.ParentId.HasValue && _nodeIndex.ContainsKey(node.ParentId.Value))
-                {
-                    SelectNode(node.ParentId.Value);
-                }
-                else
-                {
-                    _selectedNodeId = null;
-                }
+                _selectedNodeId = null;
             }
             
             NotifyStateChanged();
@@ -470,37 +700,6 @@ public class TreeStateService : ITreeStateService
         }
     }
     
-    private void RemoveNodeFromTree(TreeNode node)
-    {
-        // Remove all descendants from index
-        RemoveDescendantsFromIndex(node);
-        
-        // Remove from parent's children list
-        if (node.ParentId.HasValue && _nodeIndex.TryGetValue(node.ParentId.Value, out var parent))
-        {
-            parent.Children.Remove(node);
-            parent.ChildCount = parent.Children.Count;
-        }
-        else
-        {
-            _rootNodes.Remove(node);
-        }
-        
-        // Remove from index
-        _nodeIndex.Remove(node.Id);
-        _expandedNodeIds.Remove(node.Id);
-    }
-    
-    private void RemoveDescendantsFromIndex(TreeNode node)
-    {
-        foreach (var child in node.Children)
-        {
-            RemoveDescendantsFromIndex(child);
-            _nodeIndex.Remove(child.Id);
-            _expandedNodeIds.Remove(child.Id);
-        }
-    }
-    
     public async Task<bool> MoveArticleAsync(Guid articleId, Guid? newParentId)
     {
         if (!_nodeIndex.TryGetValue(articleId, out var node))
@@ -508,6 +707,84 @@ public class TreeStateService : ITreeStateService
             return false;
         }
         
+        if (node.NodeType != TreeNodeType.Article)
+        {
+            _logger.LogWarning("Cannot move non-article node");
+            return false;
+        }
+        
+        // Check if target is a virtual group
+        TreeNode? targetNode = null;
+        if (newParentId.HasValue)
+        {
+            _nodeIndex.TryGetValue(newParentId.Value, out targetNode);
+        }
+        
+        // Handle drop onto virtual group specially
+        if (targetNode?.NodeType == TreeNodeType.VirtualGroup)
+        {
+            // Campaigns group holds Campaign entities, not articles
+            if (targetNode.VirtualGroupType == VirtualGroupType.Campaigns)
+            {
+                _logger.LogWarning("Cannot drop articles into Campaigns group - campaigns are separate entities");
+                return false;
+            }
+            
+            // Determine new article type based on target group
+            var newType = targetNode.VirtualGroupType switch
+            {
+                VirtualGroupType.Wiki => ArticleType.WikiArticle,
+                VirtualGroupType.PlayerCharacters => ArticleType.Character,
+                VirtualGroupType.Uncategorized => ArticleType.Legacy,
+                _ => node.ArticleType ?? ArticleType.WikiArticle
+            };
+            
+            try
+            {
+                // First, move to root level (null parent)
+                var moveSuccess = await _articleApi.MoveArticleAsync(articleId, null);
+                if (!moveSuccess)
+                {
+                    _logger.LogWarning("Failed to move article to root level");
+                    return false;
+                }
+                
+                // Then update the type if it changed
+                if (node.ArticleType != newType)
+                {
+                    // Fetch the full article to preserve its content
+                    var fullArticle = await _articleApi.GetArticleDetailAsync(articleId);
+                    if (fullArticle != null)
+                    {
+                        var updateDto = new ArticleUpdateDto
+                        {
+                            Title = fullArticle.Title,
+                            Body = fullArticle.Body,
+                            Type = newType,
+                            IconEmoji = fullArticle.IconEmoji,
+                            EffectiveDate = fullArticle.EffectiveDate
+                        };
+                        
+                        var updated = await _articleApi.UpdateArticleAsync(articleId, updateDto);
+                        if (updated == null)
+                        {
+                            _logger.LogWarning("Failed to update article type");
+                            // Move succeeded but type update failed - still refresh
+                        }
+                    }
+                }
+                
+                await RefreshAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to move article to virtual group");
+                return false;
+            }
+        }
+        
+        // Regular move to another article or root
         // Prevent moving to self or descendant
         if (newParentId.HasValue)
         {
@@ -522,56 +799,29 @@ public class TreeStateService : ITreeStateService
                 _logger.LogWarning("Cannot move article to its descendant");
                 return false;
             }
+            
+            // Ensure target is an article (not a World, Campaign, or Arc)
+            if (targetNode != null && targetNode.NodeType != TreeNodeType.Article)
+            {
+                _logger.LogWarning("Cannot move article to non-article node type: {NodeType}", targetNode.NodeType);
+                return false;
+            }
         }
         
         try
         {
             var success = await _articleApi.MoveArticleAsync(articleId, newParentId);
             
-            if (!success)
+            if (success)
             {
-                return false;
+                await RefreshAsync();
             }
             
-            // Update tree structure
-            // Remove from old parent
-            if (node.ParentId.HasValue && _nodeIndex.TryGetValue(node.ParentId.Value, out var oldParent))
-            {
-                oldParent.Children.Remove(node);
-                oldParent.ChildCount = oldParent.Children.Count;
-            }
-            else
-            {
-                _rootNodes.Remove(node);
-            }
-            
-            // Add to new parent
-            node.ParentId = newParentId;
-            
-            if (newParentId.HasValue && _nodeIndex.TryGetValue(newParentId.Value, out var newParent))
-            {
-                newParent.Children.Add(node);
-                newParent.ChildCount = newParent.Children.Count;
-                SortChildren(newParent.Children);
-                
-                // Expand new parent to show the moved node
-                newParent.IsExpanded = true;
-                _expandedNodeIds.Add(newParentId.Value);
-            }
-            else
-            {
-                _rootNodes.Add(node);
-                SortChildren(_rootNodes);
-            }
-            
-            await SaveExpandedStateAsync();
-            NotifyStateChanged();
-            
-            return true;
+            return success;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to move article {ArticleId} to {NewParentId}", articleId, newParentId);
+            _logger.LogError(ex, "Failed to move article {ArticleId}", articleId);
             return false;
         }
     }
@@ -579,22 +829,16 @@ public class TreeStateService : ITreeStateService
     private bool IsDescendantOf(Guid nodeId, Guid potentialAncestorId)
     {
         if (!_nodeIndex.TryGetValue(nodeId, out var node))
-        {
             return false;
-        }
         
         var current = node;
         while (current.ParentId.HasValue)
         {
             if (current.ParentId.Value == potentialAncestorId)
-            {
                 return true;
-            }
             
             if (!_nodeIndex.TryGetValue(current.ParentId.Value, out current))
-            {
                 break;
-            }
         }
         
         return false;
@@ -604,24 +848,8 @@ public class TreeStateService : ITreeStateService
     {
         if (_nodeIndex.TryGetValue(nodeId, out var node))
         {
-            var titleChanged = node.Title != title;
-            
             node.Title = title;
             node.IconEmoji = iconEmoji;
-            
-            // Re-sort if title changed
-            if (titleChanged)
-            {
-                if (node.ParentId.HasValue && _nodeIndex.TryGetValue(node.ParentId.Value, out var parent))
-                {
-                    SortChildren(parent.Children);
-                }
-                else
-                {
-                    SortChildren(_rootNodes);
-                }
-            }
-            
             NotifyStateChanged();
         }
     }
@@ -641,7 +869,6 @@ public class TreeStateService : ITreeStateService
     {
         _searchQuery = string.Empty;
         
-        // Reset visibility for all nodes
         foreach (var node in _nodeIndex.Values)
         {
             node.IsVisible = true;
@@ -661,12 +888,12 @@ public class TreeStateService : ITreeStateService
         var searchLower = _searchQuery.ToLowerInvariant();
         var matchingNodeIds = new HashSet<Guid>();
         
-        // Find all matching nodes
+        // Find all matching nodes (articles only for search)
         foreach (var node in _nodeIndex.Values)
         {
-            if (node.Title.Contains(searchLower, StringComparison.OrdinalIgnoreCase))
+            if (node.NodeType == TreeNodeType.Article && 
+                node.Title.Contains(searchLower, StringComparison.OrdinalIgnoreCase))
             {
-                // Add this node and all its ancestors
                 AddNodeAndAncestors(node, matchingNodeIds);
             }
         }
@@ -682,7 +909,6 @@ public class TreeStateService : ITreeStateService
         {
             if (_nodeIndex.TryGetValue(nodeId, out var node))
             {
-                // If this node has visible children, expand it
                 if (node.Children.Any(c => c.IsVisible))
                 {
                     node.IsExpanded = true;
@@ -694,19 +920,19 @@ public class TreeStateService : ITreeStateService
     
     private void AddNodeAndAncestors(TreeNode node, HashSet<Guid> set)
     {
-        var current = node;
-        while (current != null)
+        set.Add(node.Id);
+        
+        // Add direct parent
+        if (node.ParentId.HasValue && _nodeIndex.TryGetValue(node.ParentId.Value, out var parent))
         {
-            set.Add(current.Id);
-            
-            if (current.ParentId.HasValue && _nodeIndex.TryGetValue(current.ParentId.Value, out var parent))
-            {
-                current = parent;
-            }
-            else
-            {
-                current = null;
-            }
+            AddNodeAndAncestors(parent, set);
+        }
+        
+        // Also find the containing node (for virtual groups, etc.)
+        var container = FindParentNode(node);
+        if (container != null && !set.Contains(container.Id))
+        {
+            AddNodeAndAncestors(container, set);
         }
     }
     
@@ -740,7 +966,7 @@ public class TreeStateService : ITreeStateService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to save expanded state to local storage");
+            _logger.LogWarning(ex, "Failed to save expanded state");
         }
     }
     
@@ -757,7 +983,7 @@ public class TreeStateService : ITreeStateService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to restore expanded state from local storage");
+            _logger.LogWarning(ex, "Failed to restore expanded state");
         }
     }
 }

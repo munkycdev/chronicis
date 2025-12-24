@@ -69,7 +69,12 @@ public class Campaign
     public ICollection<CampaignMember> Members { get; set; } = new List<CampaignMember>();
     
     /// <summary>
-    /// All articles scoped to this campaign (Sessions, Acts, etc.).
+    /// All story arcs within this campaign.
+    /// </summary>
+    public ICollection<Arc> Arcs { get; set; } = new List<Arc>();
+    
+    /// <summary>
+    /// All articles scoped to this campaign (Sessions, etc.).
     /// </summary>
     public ICollection<Article> Articles { get; set; } = new List<Article>();
 }

@@ -1,0 +1,308 @@
+@page "/world/{WorldId:guid}"
+@attribute [Authorize]
+@using Chronicis.Shared.DTOs
+@using Chronicis.Client.Components.Dialogs
+@inject IWorldApiService WorldApi
+@inject ICampaignApiService CampaignApi
+@inject ITreeStateService TreeState
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+@if (_isLoading)
+{
+    <MudPaper Elevation="2" Class="chronicis-article-card">
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="40px" Class="mb-4" />
+        <MudSkeleton SkeletonType="SkeletonType.Text" Width="60%" />
+        <MudSkeleton SkeletonType="SkeletonType.Text" Width="80%" />
+    </MudPaper>
+}
+else if (_world == null)
+{
+    <MudPaper Elevation="2" Class="chronicis-article-card">
+        <MudAlert Severity="Severity.Warning">World not found</MudAlert>
+    </MudPaper>
+}
+else
+{
+    <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
+        <!-- Breadcrumbs -->
+        <div class="mud-toolbar mb-2">
+            <MudBreadcrumbs Items="_breadcrumbs" />
+        </div>
+
+        <!-- World Icon and Title -->
+        <div class="d-flex align-center mb-3">
+            <MudIcon Icon="@Icons.Material.Filled.Public" 
+                     Size="Size.Large" 
+                     Class="mr-3"
+                     Style="color: var(--chronicis-beige-gold); font-size: 2.5rem;" />
+            <MudTextField @bind-Value="_editName"
+                          Variant="Variant.Text"
+                          Placeholder="World Name"
+                          Class="chronicis-article-title flex-grow-1"
+                          Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
+                          Immediate="true"
+                          @onkeyup="OnNameChanged"
+                          @onkeydown="OnKeyDown"
+                          Underline="false" />
+        </div>
+
+        <!-- Divider -->
+        <div class="chronicis-rune-divider mb-4"></div>
+
+        <!-- Description -->
+        <MudTextField @bind-Value="_editDescription"
+                      Label="Description"
+                      Variant="Variant.Outlined"
+                      Lines="3"
+                      Placeholder="Describe your world..."
+                      Class="mb-4"
+                      Immediate="true"
+                      @onkeyup="OnDescriptionChanged" />
+
+        <!-- Quick Actions -->
+        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
+            Quick Actions
+        </MudText>
+        
+        <div class="d-flex gap-3 flex-wrap mb-4">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.AutoStories"
+                       OnClick="CreateCampaign">
+                New Campaign
+            </MudButton>
+            
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Person"
+                       OnClick="CreateCharacter">
+                New Player Character
+            </MudButton>
+            
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.MenuBook"
+                       OnClick="CreateWikiArticle">
+                New Wiki Article
+            </MudButton>
+        </div>
+
+        <!-- Stats -->
+        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
+            World Statistics
+        </MudText>
+        
+        <MudSimpleTable Dense="true" Hover="true" Class="mb-4">
+            <tbody>
+                <tr>
+                    <td><MudIcon Icon="@Icons.Material.Filled.AutoStories" Size="Size.Small" Class="mr-2" />Campaigns</td>
+                    <td>@_world.CampaignCount</td>
+                </tr>
+                <tr>
+                    <td><MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-2" />Owner</td>
+                    <td>@_world.OwnerName</td>
+                </tr>
+                <tr>
+                    <td><MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="mr-2" />Created</td>
+                    <td>@_world.CreatedAt.ToString("MMMM d, yyyy")</td>
+                </tr>
+            </tbody>
+        </MudSimpleTable>
+
+        <!-- Save Status -->
+        <div class="chronicis-flex-between mt-4">
+            <div class="chronicis-save-status @_saveStatusClass">
+                @if (_isSaving)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    <span>Saving...</span>
+                }
+                else if (_hasUnsavedChanges)
+                {
+                    <span>⚠️ Unsaved changes</span>
+                }
+                else
+                {
+                    <span>✓ Saved</span>
+                }
+            </div>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="SaveWorld"
+                       Disabled="_isSaving"
+                       StartIcon="@Icons.Material.Filled.Save">
+                Save
+            </MudButton>
+        </div>
+    </MudPaper>
+}
+
+@code {
+    [Parameter]
+    public Guid WorldId { get; set; }
+
+    private WorldDetailDto? _world;
+    private string _editName = string.Empty;
+    private string _editDescription = string.Empty;
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    private bool _hasUnsavedChanges = false;
+    private List<BreadcrumbItem> _breadcrumbs = new();
+
+    private string _saveStatusClass => _isSaving ? "saving" : _hasUnsavedChanges ? "unsaved" : "saved";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadWorldAsync();
+    }
+
+    private async Task LoadWorldAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _world = await WorldApi.GetWorldAsync(WorldId);
+            if (_world != null)
+            {
+                _editName = _world.Name;
+                _editDescription = _world.Description ?? string.Empty;
+                _hasUnsavedChanges = false;
+
+                _breadcrumbs = new List<BreadcrumbItem>
+                {
+                    new("Dashboard", href: "/dashboard"),
+                    new(_world.Name, href: null, disabled: true)
+                };
+
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(_world.Name)} - Chronicis'");
+                
+                // Highlight in tree
+                TreeState.ExpandPathToAndSelect(WorldId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load world: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OnNameChanged() => _hasUnsavedChanges = true;
+    private void OnDescriptionChanged() => _hasUnsavedChanges = true;
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SaveWorld();
+        }
+    }
+
+    private async Task SaveWorld()
+    {
+        if (_world == null || _isSaving) return;
+
+        _isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var updateDto = new WorldUpdateDto
+            {
+                Name = _editName.Trim(),
+                Description = string.IsNullOrWhiteSpace(_editDescription) ? null : _editDescription.Trim()
+            };
+
+            var updated = await WorldApi.UpdateWorldAsync(WorldId, updateDto);
+            if (updated != null)
+            {
+                _world.Name = updated.Name;
+                _world.Description = updated.Description;
+                _hasUnsavedChanges = false;
+
+                await TreeState.RefreshAsync();
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(_editName)} - Chronicis'");
+                
+                Snackbar.Add("World saved", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to save: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CreateCampaign()
+    {
+        var parameters = new DialogParameters
+        {
+            { "WorldId", WorldId }
+        };
+
+        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("New Campaign", parameters);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled && result.Data is CampaignDto campaign)
+        {
+            await TreeState.RefreshAsync();
+            await LoadWorldAsync();
+            Navigation.NavigateTo($"/campaign/{campaign.Id}");
+            Snackbar.Add("Campaign created", Severity.Success);
+        }
+    }
+
+    private async Task CreateCharacter()
+    {
+        var parameters = new DialogParameters
+        {
+            { "WorldId", WorldId },
+            { "ArticleType", Chronicis.Shared.Enums.ArticleType.Character }
+        };
+
+        var dialog = await DialogService.ShowAsync<CreateArticleDialog>("New Player Character", parameters);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled && result.Data is ArticleDto article)
+        {
+            await TreeState.RefreshAsync();
+            Navigation.NavigateTo($"/article/{article.Slug}");
+            Snackbar.Add("Character created", Severity.Success);
+        }
+    }
+
+    private async Task CreateWikiArticle()
+    {
+        var parameters = new DialogParameters
+        {
+            { "WorldId", WorldId },
+            { "ArticleType", Chronicis.Shared.Enums.ArticleType.WikiArticle }
+        };
+
+        var dialog = await DialogService.ShowAsync<CreateArticleDialog>("New Wiki Article", parameters);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled && result.Data is ArticleDto article)
+        {
+            await TreeState.RefreshAsync();
+            Navigation.NavigateTo($"/article/{article.Slug}");
+            Snackbar.Add("Article created", Severity.Success);
+        }
+    }
+
+    private static string EscapeForJs(string text) => 
+        text.Replace("'", "\\'").Replace("\n", "\\n").Replace("\r", "\\r");
+}

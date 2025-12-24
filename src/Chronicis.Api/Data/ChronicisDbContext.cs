@@ -13,6 +13,7 @@ public class ChronicisDbContext : DbContext
     public DbSet<World> Worlds { get; set; } = null!;
     public DbSet<Campaign> Campaigns { get; set; } = null!;
     public DbSet<CampaignMember> CampaignMembers { get; set; } = null!;
+    public DbSet<Arc> Arcs { get; set; } = null!;
     public DbSet<Article> Articles { get; set; } = null!;
     public DbSet<ArticleLink> ArticleLinks { get; set; } = null!;
     
@@ -29,6 +30,7 @@ public class ChronicisDbContext : DbContext
         ConfigureWorld(modelBuilder);
         ConfigureCampaign(modelBuilder);
         ConfigureCampaignMember(modelBuilder);
+        ConfigureArc(modelBuilder);
         ConfigureArticle(modelBuilder);
         ConfigureArticleLink(modelBuilder);
     }
@@ -141,6 +143,38 @@ public class ChronicisDbContext : DbContext
         });
     }
 
+    private static void ConfigureArc(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Arc>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+
+            entity.Property(a => a.Name)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(a => a.Description)
+                .HasMaxLength(1000);
+
+            // Arc -> Campaign
+            entity.HasOne(a => a.Campaign)
+                .WithMany(c => c.Arcs)
+                .HasForeignKey(a => a.CampaignId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Arc -> Creator (User)
+            entity.HasOne(a => a.Creator)
+                .WithMany(u => u.CreatedArcs)
+                .HasForeignKey(a => a.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes
+            entity.HasIndex(a => a.CampaignId);
+            entity.HasIndex(a => a.CreatedBy);
+            entity.HasIndex(a => new { a.CampaignId, a.SortOrder });
+        });
+    }
+
     private static void ConfigureArticle(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Article>(entity =>
@@ -177,6 +211,12 @@ public class ChronicisDbContext : DbContext
             entity.HasOne(a => a.Campaign)
                 .WithMany(c => c.Articles)
                 .HasForeignKey(a => a.CampaignId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Article -> Arc (for Session articles)
+            entity.HasOne(a => a.Arc)
+                .WithMany(arc => arc.Sessions)
+                .HasForeignKey(a => a.ArcId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Article -> Creator (User)

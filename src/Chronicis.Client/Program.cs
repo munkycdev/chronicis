@@ -124,6 +124,13 @@ builder.Services.AddScoped<ICampaignApiService>(sp =>
     return new CampaignApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
+builder.Services.AddScoped<IArcApiService>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var logger = sp.GetRequiredService<ILogger<ArcApiService>>();
+    return new ArcApiService(factory.CreateClient("ChronicisApi"), logger);
+});
+
 builder.Services.AddScoped<ILinkApiService>(sp =>
 {
     var factory = sp.GetRequiredService<IHttpClientFactory>();

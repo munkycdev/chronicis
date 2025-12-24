@@ -17,6 +17,7 @@ public class CampaignDto
     public DateTime? StartedAt { get; set; }
     public DateTime? EndedAt { get; set; }
     public int MemberCount { get; set; }
+    public int ArcCount { get; set; }
 }
 
 /// <summary>
@@ -25,6 +26,7 @@ public class CampaignDto
 public class CampaignDetailDto : CampaignDto
 {
     public List<CampaignMemberDto> Members { get; set; } = new();
+    public List<ArcDto> Arcs { get; set; } = new();
 }
 
 /// <summary>

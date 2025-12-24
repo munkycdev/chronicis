@@ -14,6 +14,7 @@ public class ArticleDto
     public Guid? ParentId { get; set; }
     public Guid? WorldId { get; set; }
     public Guid? CampaignId { get; set; }
+    public Guid? ArcId { get; set; }
     public string Body { get; set; } = string.Empty;
     public ArticleType Type { get; set; }
     public ArticleVisibility Visibility { get; set; }
@@ -53,6 +54,9 @@ public class ArticleTreeDto
     public string Title { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public Guid? ParentId { get; set; }
+    public Guid? WorldId { get; set; }
+    public Guid? CampaignId { get; set; }
+    public Guid? ArcId { get; set; }
     public ArticleType Type { get; set; }
     public ArticleVisibility Visibility { get; set; }
     public bool HasChildren { get; set; }
@@ -74,6 +78,7 @@ public class ArticleCreateDto
     public Guid? ParentId { get; set; }
     public Guid? WorldId { get; set; }
     public Guid? CampaignId { get; set; }
+    public Guid? ArcId { get; set; }
     public string Body { get; set; } = string.Empty;
     public ArticleType Type { get; set; } = ArticleType.WikiArticle;
     public ArticleVisibility Visibility { get; set; } = ArticleVisibility.Public;
@@ -107,6 +112,11 @@ public class ArticleUpdateDto
     public DateTime? EffectiveDate { get; set; }
     public string? IconEmoji { get; set; }
     public ArticleVisibility? Visibility { get; set; }
+    
+    /// <summary>
+    /// Optional type change. Allows users to recategorize articles.
+    /// </summary>
+    public ArticleType? Type { get; set; }
     
     // Session-specific
     public DateTime? SessionDate { get; set; }

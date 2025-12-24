@@ -1,0 +1,90 @@
+@using Chronicis.Shared.DTOs
+@inject IWorldApiService WorldApi
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Public" Class="mr-2" />
+            New World
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_name"
+                      Label="World Name"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      RequiredError="Name is required"
+                      Placeholder="e.g., Forgotten Realms, My Campaign World"
+                      Class="mb-3"
+                      @ref="_nameField"
+                      Immediate="true" />
+        
+        <MudTextField @bind-Value="_description"
+                      Label="Description (optional)"
+                      Variant="Variant.Outlined"
+                      Lines="3"
+                      Placeholder="Describe your world..." />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled"
+                   OnClick="Submit"
+                   Disabled="@(string.IsNullOrWhiteSpace(_name) || _isSubmitting)">
+            @if (_isSubmitting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Create
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? MudDialog { get; set; }
+
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private bool _isSubmitting = false;
+    private MudTextField<string>? _nameField;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _nameField != null)
+        {
+            await Task.Delay(100);
+            await _nameField.FocusAsync();
+        }
+    }
+
+    private void Cancel() => MudDialog?.Cancel();
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_name) || _isSubmitting) return;
+
+        _isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var createDto = new WorldCreateDto
+            {
+                Name = _name.Trim(),
+                Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim()
+            };
+
+            var world = await WorldApi.CreateWorldAsync(createDto);
+            MudDialog?.Close(DialogResult.Ok(world));
+        }
+        catch (Exception ex)
+        {
+            MudDialog?.Close(DialogResult.Cancel());
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

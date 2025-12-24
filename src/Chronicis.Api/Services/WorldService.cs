@@ -76,52 +76,130 @@ public class WorldService : IWorldService
 
         _logger.LogInformation("Creating world '{Name}' for user {UserId}", dto.Name, userId);
 
-        // Create the World
+        var now = DateTime.UtcNow;
+
+        // Create the World entity
         var world = new World
         {
             Id = Guid.NewGuid(),
             Name = dto.Name,
             Description = dto.Description,
             OwnerId = userId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now
         };
         _context.Worlds.Add(world);
 
-        // Create root structure articles with default icons
-        var worldRoot = CreateRootArticle(ArticleType.WorldRoot, "New World", "new-world", world.Id, null, userId, "fa-solid fa-globe");
-        _context.Articles.Add(worldRoot);
+        // Create default Wiki articles
+        var wikiArticles = new[]
+        {
+            new Article
+            {
+                Id = Guid.NewGuid(),
+                Title = "Bestiary",
+                Slug = "bestiary",
+                Body = "# Bestiary\n\nA collection of creatures and monsters encountered in your adventures.",
+                Type = ArticleType.WikiArticle,
+                Visibility = ArticleVisibility.Public,
+                WorldId = world.Id,
+                CreatedBy = userId,
+                CreatedAt = now,
+                EffectiveDate = now,
+                IconEmoji = "🐉"
+            },
+            new Article
+            {
+                Id = Guid.NewGuid(),
+                Title = "Characters",
+                Slug = "characters",
+                Body = "# Characters\n\nNPCs and notable figures in your world.",
+                Type = ArticleType.WikiArticle,
+                Visibility = ArticleVisibility.Public,
+                WorldId = world.Id,
+                CreatedBy = userId,
+                CreatedAt = now,
+                EffectiveDate = now,
+                IconEmoji = "👤"
+            },
+            new Article
+            {
+                Id = Guid.NewGuid(),
+                Title = "Factions",
+                Slug = "factions",
+                Body = "# Factions\n\nOrganizations, guilds, and groups that shape your world.",
+                Type = ArticleType.WikiArticle,
+                Visibility = ArticleVisibility.Public,
+                WorldId = world.Id,
+                CreatedBy = userId,
+                CreatedAt = now,
+                EffectiveDate = now,
+                IconEmoji = "⚔️"
+            },
+            new Article
+            {
+                Id = Guid.NewGuid(),
+                Title = "Locations",
+                Slug = "locations",
+                Body = "# Locations\n\nPlaces of interest, cities, dungeons, and landmarks.",
+                Type = ArticleType.WikiArticle,
+                Visibility = ArticleVisibility.Public,
+                WorldId = world.Id,
+                CreatedBy = userId,
+                CreatedAt = now,
+                EffectiveDate = now,
+                IconEmoji = "🗺️"
+            }
+        };
+        _context.Articles.AddRange(wikiArticles);
 
-        var wikiRoot = CreateRootArticle(ArticleType.WikiRoot, "Wiki", "wiki", world.Id, worldRoot.Id, userId, "fa-solid fa-book-atlas");
-        _context.Articles.Add(wikiRoot);
+        // Create default Player Character
+        var newCharacter = new Article
+        {
+            Id = Guid.NewGuid(),
+            Title = "New Character",
+            Slug = "new-character",
+            Body = "# New Character\n\nDescribe your character here. Add their backstory, personality, and goals.",
+            Type = ArticleType.Character,
+            Visibility = ArticleVisibility.Public,
+            WorldId = world.Id,
+            CreatedBy = userId,
+            PlayerId = userId,
+            CreatedAt = now,
+            EffectiveDate = now,
+            IconEmoji = "🧙"
+        };
+        _context.Articles.Add(newCharacter);
 
-        // Add default wiki subcategories
-        var bestiary = CreateRootArticle(ArticleType.WikiArticle, "Bestiary", "bestiary", world.Id, wikiRoot.Id, userId, "fa-solid fa-skull");
-        _context.Articles.Add(bestiary);
+        // Create default Campaign
+        var campaign = new Campaign
+        {
+            Id = Guid.NewGuid(),
+            Name = "Campaign 1",
+            Description = "Your first campaign adventure begins here.",
+            WorldId = world.Id,
+            OwnerId = userId,
+            CreatedAt = now
+        };
+        _context.Campaigns.Add(campaign);
 
-        var characters = CreateRootArticle(ArticleType.WikiArticle, "Characters", "characters", world.Id, wikiRoot.Id, userId, "fa-solid fa-user-ninja");
-        _context.Articles.Add(characters);
-
-        var factions = CreateRootArticle(ArticleType.WikiArticle, "Factions", "factions", world.Id, wikiRoot.Id, userId, "fa-solid fa-people-group");
-        _context.Articles.Add(factions);
-
-        var locations = CreateRootArticle(ArticleType.WikiArticle, "Locations", "locations", world.Id, wikiRoot.Id, userId, "fa-solid fa-compass");
-        _context.Articles.Add(locations);
-
-        var campaignRoot = CreateRootArticle(ArticleType.CampaignRoot, "Campaigns", "campaigns", world.Id, worldRoot.Id, userId, "fa-solid fa-scroll");
-        _context.Articles.Add(campaignRoot);
-
-        var characterRoot = CreateRootArticle(ArticleType.CharacterRoot, "Player Characters", "player-characters", world.Id, worldRoot.Id, userId, "fa-solid fa-user-group");
-        _context.Articles.Add(characterRoot);
+        // Create default Arc under the campaign
+        var arc = new Arc
+        {
+            Id = Guid.NewGuid(),
+            Name = "Arc 1",
+            Description = "The first chapter of your adventure.",
+            CampaignId = campaign.Id,
+            SortOrder = 1,
+            CreatedBy = userId,
+            CreatedAt = now
+        };
+        _context.Arcs.Add(arc);
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Created world {WorldId} with root structure for user {UserId}", world.Id, userId);
+        _logger.LogInformation("Created world {WorldId} with default content for user {UserId}", world.Id, userId);
 
-        // Return DTO with WorldRoot ID
         world.Owner = user;
-        var resultDto = MapToDto(world);
-        resultDto.WorldRootArticleId = worldRoot.Id;
-        return resultDto;
+        return MapToDto(world);
     }
 
     public async Task<WorldDto?> UpdateWorldAsync(Guid worldId, WorldUpdateDto dto, Guid userId)
@@ -168,25 +246,6 @@ public class WorldService : IWorldService
     {
         return await _context.Worlds
             .AnyAsync(w => w.Id == worldId && w.OwnerId == userId);
-    }
-
-    private static Article CreateRootArticle(ArticleType type, string title, string slug, Guid worldId, Guid? parentId, Guid userId, string? icon = null)
-    {
-        return new Article
-        {
-            Id = Guid.NewGuid(),
-            Type = type,
-            Title = title,
-            Slug = slug,
-            WorldId = worldId,
-            ParentId = parentId,
-            CreatedBy = userId,
-            CreatedAt = DateTime.UtcNow,
-            EffectiveDate = DateTime.UtcNow,
-            Visibility = ArticleVisibility.Public,
-            Body = string.Empty,
-            IconEmoji = icon
-        };
     }
 
     private static WorldDto MapToDto(World world)

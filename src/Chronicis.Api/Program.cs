@@ -44,6 +44,7 @@ var host = new HostBuilder()
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IWorldService, WorldService>();
         services.AddScoped<ICampaignService, CampaignService>();
+        services.AddScoped<IArcService, ArcService>();
         services.AddScoped<ILinkParser, LinkParser>();
         services.AddScoped<ILinkSyncService, LinkSyncService>();
         services.AddScoped<IAutoLinkService, AutoLinkService>();

@@ -58,6 +58,11 @@ public class User
     /// All campaign memberships for this user.
     /// </summary>
     public ICollection<CampaignMember> CampaignMemberships { get; set; } = new List<CampaignMember>();
+    
+    /// <summary>
+    /// All arcs created by this user.
+    /// </summary>
+    public ICollection<Arc> CreatedArcs { get; set; } = new List<Arc>();
 
     /// <summary>
     /// All articles created by this user.

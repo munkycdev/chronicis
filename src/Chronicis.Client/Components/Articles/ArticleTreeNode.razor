@@ -1,4 +1,5 @@
 @using Chronicis.Client.Models
+@inject NavigationManager Navigation
 
 <div class="tree-node @GetNodeClasses()">
     
@@ -7,7 +8,7 @@
          @onclick:stopPropagation="true"
          @oncontextmenu="OpenContextMenu"
          @oncontextmenu:preventDefault="true"
-         draggable="true"
+         draggable="@Node.IsDraggable.ToString().ToLower()"
          @ondragstart="HandleDragStart"
          @ondragstart:stopPropagation="true"
          @ondragend="HandleDragEnd"
@@ -31,47 +32,34 @@
             <div class="tree-node__expand-spacer"></div>
         }
         
-        @* Icon *@
-        @if (!string.IsNullOrEmpty(Node.IconEmoji) && Node.IconEmoji.StartsWith("fa-"))
-        {
-            <i class="@Node.IconEmoji tree-node__icon tree-node__icon--fa"></i>
+        @* Icon - based on node type *@
+        @{
+            var icon = GetNodeIcon();
+            var iconColorClass = GetIconColorClass();
+            var titleClasses = GetTitleClasses();
         }
-        else if (!string.IsNullOrEmpty(Node.IconEmoji))
+        @if (!string.IsNullOrEmpty(icon) && icon.StartsWith("fa-"))
         {
-            <span class="tree-node__icon tree-node__icon--emoji">@Node.IconEmoji</span>
+            <i class="@($"{icon} tree-node__icon tree-node__icon--fa {iconColorClass}")"></i>
+        }
+        else if (!string.IsNullOrEmpty(icon) && !icon.StartsWith("@"))
+        {
+            <span class="tree-node__icon tree-node__icon--emoji">@icon</span>
         }
         else
         {
             <MudIcon 
-                Icon="@(Node.HasChildren ? Icons.Material.Filled.Folder : Icons.Material.Filled.Description)" 
+                Icon="@GetMaterialIcon()" 
                 Size="Size.Small"
-                Class="tree-node__icon tree-node__icon--material" />
+                Class="@($"tree-node__icon tree-node__icon--material {iconColorClass}")" />
         }
         
         @* Title with tooltip *@
         <MudTooltip Text="@Node.DisplayTitle" Delay="500" Placement="Placement.Bottom">
-            <span class="tree-node__title">@Node.DisplayTitle</span>
+            <span class="@($"tree-node__title {titleClasses}")">@Node.DisplayTitle</span>
         </MudTooltip>
         
-        @* Context menu (right-click activated) *@
-        <MudMenu @ref="_contextMenu"
-                 AnchorOrigin="Origin.BottomRight"
-                 TransformOrigin="Origin.TopRight"
-                 Dense="true"
-                 PositionAtCursor="true">
-            <ChildContent>
-                <MudMenuItem 
-                    Icon="@Icons.Material.Filled.Add"
-                    OnClick="@(() => OnAddChild.InvokeAsync(Node.Id))">
-                    Add Child
-                </MudMenuItem>
-                <MudMenuItem 
-                    Icon="@Icons.Material.Filled.Delete"
-                    OnClick="@(() => OnDelete.InvokeAsync(Node.Id))">
-                    Delete
-                </MudMenuItem>
-            </ChildContent>
-        </MudMenu>
+        
     </div>
     
     @* Children *@
@@ -90,6 +78,22 @@
                     DraggedNodeId="DraggedNodeId"
                     DraggedNodeIdChanged="DraggedNodeIdChanged" />
             }
+        </div>
+    }
+    
+    @* Empty state for virtual groups *@
+    @if (Node.NodeType == TreeNodeType.VirtualGroup && Node.IsExpanded && Node.Children.Count == 0)
+    {
+        <div class="tree-node__children">
+            <div class="tree-node__empty-group">
+                <MudButton 
+                    Variant="Variant.Text"
+                    Size="Size.Small"
+                    StartIcon="@Icons.Material.Filled.Add"
+                    OnClick="@(() => OnAddChild.InvokeAsync(Node.Id))">
+                    @GetAddChildLabel()
+                </MudButton>
+            </div>
         </div>
     }
 </div>
@@ -130,6 +134,9 @@
         if (!Node.IsVisible) classes.Add("tree-node--hidden");
         if (DraggedNodeId == Node.Id) classes.Add("tree-node--dragging");
         
+        // Add type-specific classes
+        classes.Add($"tree-node--{Node.NodeType.ToString().ToLower()}");
+        
         return string.Join(" ", classes);
     }
     
@@ -138,18 +145,121 @@
         var classes = new List<string> { "tree-node__content" };
         
         if (_isDragOver && CanDropHere()) classes.Add("tree-node__content--drop-target");
+        if (!Node.IsSelectable) classes.Add("tree-node__content--not-selectable");
         
         return string.Join(" ", classes);
     }
     
+    private string GetTitleClasses()
+    {
+        return Node.NodeType switch
+        {
+            TreeNodeType.World => "tree-node__title--world",
+            TreeNodeType.Campaign => "tree-node__title--campaign",
+            TreeNodeType.Arc => "tree-node__title--arc",
+            TreeNodeType.VirtualGroup => "tree-node__title--virtual",
+            _ => ""
+        };
+    }
+    
+    private string GetIconColorClass()
+    {
+        return Node.NodeType switch
+        {
+            TreeNodeType.World => "tree-node__icon--world",
+            TreeNodeType.Campaign => "tree-node__icon--campaign",
+            TreeNodeType.Arc => "tree-node__icon--arc",
+            TreeNodeType.VirtualGroup => "tree-node__icon--virtual",
+            _ => ""
+        };
+    }
+    
+    private string GetNodeIcon()
+    {
+        // Use custom icon if set
+        if (!string.IsNullOrEmpty(Node.IconEmoji))
+        {
+            return Node.IconEmoji;
+        }
+        
+        // Otherwise use default based on type
+        return Node.GetDefaultIcon();
+    }
+    
+    private string GetMaterialIcon()
+    {
+        return Node.NodeType switch
+        {
+            TreeNodeType.World => Icons.Material.Filled.Public,
+            TreeNodeType.VirtualGroup => Node.VirtualGroupType switch
+            {
+                VirtualGroupType.Campaigns => Icons.Material.Filled.Book,
+                VirtualGroupType.PlayerCharacters => Icons.Material.Filled.Group,
+                VirtualGroupType.Wiki => Icons.Material.Filled.MenuBook,
+                VirtualGroupType.Uncategorized => Icons.Material.Filled.FolderOpen,
+                _ => Icons.Material.Filled.Folder
+            },
+            TreeNodeType.Campaign => Icons.Material.Filled.AutoStories,
+            TreeNodeType.Arc => Icons.Material.Filled.Bookmark,
+            TreeNodeType.Article => Node.HasChildren ? Icons.Material.Filled.Folder : Icons.Material.Filled.Description,
+            _ => Icons.Material.Filled.Description
+        };
+    }
+    
+    private bool ShowContextMenu()
+    {
+        return Node.CanAddChildren || Node.NodeType == TreeNodeType.Article;
+    }
+    
+    private string GetAddChildLabel()
+    {
+        return Node.NodeType switch
+        {
+            TreeNodeType.VirtualGroup => Node.VirtualGroupType switch
+            {
+                VirtualGroupType.Wiki => "New Wiki Article",
+                VirtualGroupType.PlayerCharacters => "New Character",
+                VirtualGroupType.Campaigns => "New Campaign",
+                VirtualGroupType.Uncategorized => "New Article",
+                _ => "Add Item"
+            },
+            TreeNodeType.Arc => "New Session",
+            TreeNodeType.Article => "Add Child",
+            _ => "Add"
+        };
+    }
+    
     private async Task OnNodeClick()
     {
-        await OnSelect.InvokeAsync(Node.Id);
+        // Navigate based on node type
+        switch (Node.NodeType)
+        {
+            case TreeNodeType.World:
+                Navigation.NavigateTo($"/world/{Node.Id}");
+                break;
+                
+            case TreeNodeType.Campaign:
+                Navigation.NavigateTo($"/campaign/{Node.Id}");
+                break;
+                
+            case TreeNodeType.Arc:
+                Navigation.NavigateTo($"/arc/{Node.Id}");
+                break;
+                
+            case TreeNodeType.Article:
+                await OnSelect.InvokeAsync(Node.Id);
+                break;
+                
+            case TreeNodeType.VirtualGroup:
+                // Just toggle expand for virtual groups
+                await OnToggle.InvokeAsync(Node.Id);
+                break;
+        }
     }
     
     private async Task OpenContextMenu(MouseEventArgs e)
     {
-        if (_contextMenu != null)
+        if (_contextMenu != null && ShowContextMenu())
         {
             await _contextMenu.OpenMenuAsync(e);
         }
@@ -162,8 +272,10 @@
     
     private async Task HandleDragStart(DragEventArgs e)
     {
-        // Set the dragged node ID
-        await DraggedNodeIdChanged.InvokeAsync(Node.Id);
+        if (Node.IsDraggable)
+        {
+            await DraggedNodeIdChanged.InvokeAsync(Node.Id);
+        }
     }
     
     private async Task HandleDragEnd(DragEventArgs e)
@@ -191,7 +303,8 @@
         
         if (DraggedNodeId.HasValue && CanDropHere())
         {
-            // Move the dragged node to be a child of this node
+            // For virtual groups, we drop as a child of the group (becomes root-level in that category)
+            // For articles, we drop as a child of the article
             await OnMove.InvokeAsync((DraggedNodeId.Value, Node.Id));
         }
         
@@ -202,6 +315,7 @@
     {
         if (!DraggedNodeId.HasValue) return false;
         if (DraggedNodeId.Value == Node.Id) return false; // Can't drop on self
+        if (!Node.IsDropTarget) return false;
         
         return true;
     }

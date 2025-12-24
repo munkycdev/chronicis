@@ -1,0 +1,393 @@
+@page "/arc/{ArcId:guid}"
+@attribute [Authorize]
+@using Chronicis.Shared.DTOs
+@using Chronicis.Shared.Enums
+@using Chronicis.Client.Components.Dialogs
+@inject IArcApiService ArcApi
+@inject ICampaignApiService CampaignApi
+@inject IWorldApiService WorldApi
+@inject IArticleApiService ArticleApi
+@inject ITreeStateService TreeState
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+@if (_isLoading)
+{
+    <MudPaper Elevation="2" Class="chronicis-article-card">
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="40px" Class="mb-4" />
+        <MudSkeleton SkeletonType="SkeletonType.Text" Width="60%" />
+        <MudSkeleton SkeletonType="SkeletonType.Text" Width="80%" />
+    </MudPaper>
+}
+else if (_arc == null)
+{
+    <MudPaper Elevation="2" Class="chronicis-article-card">
+        <MudAlert Severity="Severity.Warning">Arc not found</MudAlert>
+    </MudPaper>
+}
+else
+{
+    <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
+        <!-- Breadcrumbs -->
+        <div class="mud-toolbar mb-2">
+            <MudBreadcrumbs Items="_breadcrumbs" />
+        </div>
+
+        <!-- Arc Icon and Title -->
+        <div class="d-flex align-center mb-3">
+            <MudIcon Icon="@Icons.Material.Filled.Bookmark" 
+                     Size="Size.Large" 
+                     Class="mr-3"
+                     Style="color: var(--chronicis-beige-gold); font-size: 2.5rem;" />
+            <MudTextField @bind-Value="_editName"
+                          Variant="Variant.Text"
+                          Placeholder="Arc Name"
+                          Class="chronicis-article-title flex-grow-1"
+                          Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
+                          Immediate="true"
+                          @onkeyup="OnNameChanged"
+                          @onkeydown="OnKeyDown"
+                          Underline="false" />
+        </div>
+
+        <!-- Divider -->
+        <div class="chronicis-rune-divider mb-4"></div>
+
+        <!-- Description -->
+        <MudTextField @bind-Value="_editDescription"
+                      Label="Description"
+                      Variant="Variant.Outlined"
+                      Lines="3"
+                      Placeholder="Describe this arc..."
+                      Class="mb-4"
+                      Immediate="true"
+                      @onkeyup="OnDescriptionChanged" />
+
+        <!-- Sort Order -->
+        <MudNumericField @bind-Value="_editSortOrder"
+                         Label="Sort Order"
+                         Variant="Variant.Outlined"
+                         Min="0"
+                         Class="mb-4"
+                         Style="max-width: 150px;"
+                         Immediate="true"
+                         @onkeyup="OnSortOrderChanged" />
+
+        <!-- Sessions Section -->
+        <div class="d-flex align-center justify-space-between mb-3">
+            <MudText Typo="Typo.h6" Style="color: var(--chronicis-beige-gold);">
+                <MudIcon Icon="@Icons.Material.Filled.EventNote" Size="Size.Small" Class="mr-2" />
+                Sessions
+            </MudText>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="CreateSession">
+                New Session
+            </MudButton>
+        </div>
+
+        @if (_sessions.Any())
+        {
+            <MudList T="ArticleTreeDto" Dense="true" Class="mb-4">
+                @foreach (var session in _sessions.OrderBy(s => s.Title))
+                {
+                    <MudListItem OnClick="@(() => NavigateToSession(session))" Class="session-list-item">
+                        <div class="d-flex align-center" style="width: 100%;">
+                            <MudIcon Icon="@Icons.Material.Filled.EventNote" 
+                                     Size="Size.Small" 
+                                     Class="mr-2"
+                                     Style="color: var(--chronicis-muted-gold);" />
+                            <MudText>@(string.IsNullOrEmpty(session.Title) ? "Untitled Session" : session.Title)</MudText>
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">
+                No sessions yet. Create your first session to start documenting your adventures!
+            </MudAlert>
+        }
+
+        <!-- Arc Info -->
+        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
+            Arc Info
+        </MudText>
+        
+        <MudSimpleTable Dense="true" Hover="true" Class="mb-4">
+            <tbody>
+                <tr>
+                    <td><MudIcon Icon="@Icons.Material.Filled.EventNote" Size="Size.Small" Class="mr-2" />Sessions</td>
+                    <td>@_arc.SessionCount</td>
+                </tr>
+                <tr>
+                    <td><MudIcon Icon="@Icons.Material.Filled.Sort" Size="Size.Small" Class="mr-2" />Sort Order</td>
+                    <td>@_arc.SortOrder</td>
+                </tr>
+                <tr>
+                    <td><MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="mr-2" />Created</td>
+                    <td>@_arc.CreatedAt.ToString("MMMM d, yyyy")</td>
+                </tr>
+            </tbody>
+        </MudSimpleTable>
+
+        <!-- Save Status -->
+        <div class="chronicis-flex-between mt-4">
+            <div class="chronicis-save-status @_saveStatusClass">
+                @if (_isSaving)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    <span>Saving...</span>
+                }
+                else if (_hasUnsavedChanges)
+                {
+                    <span>⚠️ Unsaved changes</span>
+                }
+                else
+                {
+                    <span>✓ Saved</span>
+                }
+            </div>
+
+            <div class="d-flex gap-2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="SaveArc"
+                           Disabled="_isSaving"
+                           StartIcon="@Icons.Material.Filled.Save">
+                    Save
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Error"
+                           OnClick="DeleteArc"
+                           Disabled="_isSaving || _sessions.Any()"
+                           StartIcon="@Icons.Material.Filled.Delete">
+                    Delete
+                </MudButton>
+            </div>
+        </div>
+        
+        @if (_sessions.Any())
+        {
+            <MudText Typo="Typo.caption" Class="mt-2" Style="color: var(--mud-palette-text-secondary);">
+                Delete all sessions before deleting this arc.
+            </MudText>
+        }
+    </MudPaper>
+}
+
+<style>
+    .session-list-item {
+        border: 1px solid rgba(196, 175, 142, 0.2);
+        border-radius: 4px;
+        margin-bottom: 8px;
+        transition: all 0.2s ease;
+    }
+    .session-list-item:hover {
+        background-color: rgba(196, 175, 142, 0.1);
+        border-color: var(--chronicis-beige-gold);
+    }
+</style>
+
+@code {
+    [Parameter]
+    public Guid ArcId { get; set; }
+
+    private ArcDto? _arc;
+    private CampaignDto? _campaign;
+    private WorldDto? _world;
+    private List<ArticleTreeDto> _sessions = new();
+    private string _editName = string.Empty;
+    private string _editDescription = string.Empty;
+    private int _editSortOrder = 0;
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    private bool _hasUnsavedChanges = false;
+    private List<BreadcrumbItem> _breadcrumbs = new();
+
+    private string _saveStatusClass => _isSaving ? "saving" : _hasUnsavedChanges ? "unsaved" : "saved";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadArcAsync();
+    }
+
+    private async Task LoadArcAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _arc = await ArcApi.GetArcAsync(ArcId);
+            if (_arc != null)
+            {
+                _editName = _arc.Name;
+                _editDescription = _arc.Description ?? string.Empty;
+                _editSortOrder = _arc.SortOrder;
+                _hasUnsavedChanges = false;
+
+                // Load sessions (articles with ArcId and Session type)
+                var allArticles = await ArticleApi.GetAllArticlesAsync();
+                _sessions = allArticles
+                    .Where(a => a.ArcId == ArcId && a.Type == ArticleType.Session)
+                    .ToList();
+
+                // Load campaign and world for breadcrumbs
+                _campaign = await CampaignApi.GetCampaignAsync(_arc.CampaignId);
+                if (_campaign != null)
+                {
+                    var worldDetail = await WorldApi.GetWorldAsync(_campaign.WorldId);
+                    _world = worldDetail != null ? new WorldDto 
+                    { 
+                        Id = worldDetail.Id, 
+                        Name = worldDetail.Name 
+                    } : null;
+                }
+
+                _breadcrumbs = new List<BreadcrumbItem>
+                {
+                    new("Dashboard", href: "/dashboard"),
+                    new(_world?.Name ?? "World", href: $"/world/{_campaign?.WorldId}"),
+                    new(_campaign?.Name ?? "Campaign", href: $"/campaign/{_arc.CampaignId}"),
+                    new(_arc.Name, href: null, disabled: true)
+                };
+
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(_arc.Name)} - Chronicis'");
+                
+                // Highlight in tree
+                TreeState.ExpandPathToAndSelect(ArcId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load arc: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OnNameChanged() => _hasUnsavedChanges = true;
+    private void OnDescriptionChanged() => _hasUnsavedChanges = true;
+    private void OnSortOrderChanged() => _hasUnsavedChanges = true;
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SaveArc();
+        }
+    }
+
+    private async Task SaveArc()
+    {
+        if (_arc == null || _isSaving) return;
+
+        _isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var updateDto = new ArcUpdateDto
+            {
+                Name = _editName.Trim(),
+                Description = string.IsNullOrWhiteSpace(_editDescription) ? null : _editDescription.Trim(),
+                SortOrder = _editSortOrder
+            };
+
+            var updated = await ArcApi.UpdateArcAsync(ArcId, updateDto);
+            if (updated != null)
+            {
+                _arc.Name = updated.Name;
+                _arc.Description = updated.Description;
+                _arc.SortOrder = updated.SortOrder;
+                _hasUnsavedChanges = false;
+
+                await TreeState.RefreshAsync();
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(_editName)} - Chronicis'");
+                
+                Snackbar.Add("Arc saved", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to save: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteArc()
+    {
+        if (_arc == null || _sessions.Any()) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to delete '{_arc.Name}'?\n\nThis action cannot be undone.");
+
+        if (!confirmed) return;
+
+        try
+        {
+            await ArcApi.DeleteArcAsync(ArcId);
+            await TreeState.RefreshAsync();
+            
+            Snackbar.Add("Arc deleted", Severity.Success);
+            Navigation.NavigateTo($"/campaign/{_arc.CampaignId}");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to delete: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CreateSession()
+    {
+        if (_arc == null || _campaign == null) return;
+
+        try
+        {
+            var sessionNumber = _sessions.Count + 1;
+            var createDto = new ArticleCreateDto
+            {
+                Title = $"Session {sessionNumber}",
+                Body = string.Empty,
+                WorldId = _campaign.WorldId,
+                CampaignId = _campaign.Id,
+                ArcId = ArcId,
+                Type = ArticleType.Session,
+                EffectiveDate = DateTime.Now
+            };
+
+            var created = await ArticleApi.CreateArticleAsync(createDto);
+            await TreeState.RefreshAsync();
+            await LoadArcAsync();
+
+            // Navigate to the new session
+            Navigation.NavigateTo($"/article/{created.Slug}");
+            Snackbar.Add("Session created", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to create session: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void NavigateToSession(ArticleTreeDto session)
+    {
+        Navigation.NavigateTo($"/article/{session.Slug}");
+    }
+
+    private static string EscapeForJs(string text) => 
+        text.Replace("'", "\\'").Replace("\n", "\\n").Replace("\r", "\\r");
+}
