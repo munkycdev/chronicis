@@ -628,6 +628,23 @@
 }
 
 /* ============================================
+   List Item Styles
+   ============================================ */
+
+/* Clickable list item with hover effect - used in Campaign arcs, Arc sessions, etc. */
+.chronicis-list-item {
+    border: 1px solid rgba(196, 175, 142, 0.2);
+    border-radius: var(--chronicis-radius-sm);
+    margin-bottom: var(--chronicis-space-sm);
+    transition: all var(--chronicis-transition-fast);
+}
+
+.chronicis-list-item:hover {
+    background-color: rgba(196, 175, 142, 0.1);
+    border-color: var(--chronicis-beige-gold);
+}
+
+/* ============================================
    Responsive Adjustments
    ============================================ */
 

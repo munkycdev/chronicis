@@ -3,6 +3,8 @@
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.Enums
 @using Chronicis.Client.Components.Dialogs
+@using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Utilities
 @inject IArcApiService ArcApi
 @inject ICampaignApiService CampaignApi
 @inject IWorldApiService WorldApi
@@ -15,45 +17,21 @@
 
 @if (_isLoading)
 {
-    <MudPaper Elevation="2" Class="chronicis-article-card">
-        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="40px" Class="mb-4" />
-        <MudSkeleton SkeletonType="SkeletonType.Text" Width="60%" />
-        <MudSkeleton SkeletonType="SkeletonType.Text" Width="80%" />
-    </MudPaper>
+    <LoadingSkeleton />
 }
 else if (_arc == null)
 {
-    <MudPaper Elevation="2" Class="chronicis-article-card">
-        <MudAlert Severity="Severity.Warning">Arc not found</MudAlert>
-    </MudPaper>
+    <NotFoundAlert EntityType="Arc" />
 }
 else
 {
     <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
-        <!-- Breadcrumbs -->
-        <div class="mud-toolbar mb-2">
-            <MudBreadcrumbs Items="_breadcrumbs" />
-        </div>
-
-        <!-- Arc Icon and Title -->
-        <div class="d-flex align-center mb-3">
-            <MudIcon Icon="@Icons.Material.Filled.Bookmark" 
-                     Size="Size.Large" 
-                     Class="mr-3 generic-container-icon"
-                     Style="color: var(--chronicis-beige-gold); font-size: 2.5rem;" />
-            <MudTextField @bind-Value="_editName"
-                          Variant="Variant.Text"
+        <DetailPageHeader Breadcrumbs="_breadcrumbs"
+                          Icon="@Icons.Material.Filled.Bookmark"
+                          @bind-Title="_editName"
                           Placeholder="Arc Name"
-                          Class="chronicis-article-title flex-grow-1"
-                          Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
-                          Immediate="true"
-                          @onkeyup="OnNameChanged"
-                          @onkeydown="OnKeyDown"
-                          Underline="false" />
-        </div>
-
-        <!-- Divider -->
-        <div class="chronicis-rune-divider mb-4"></div>
+                          OnTitleEdited="OnNameChanged"
+                          OnEnterPressed="SaveArc" />
 
         <!-- Description -->
         <MudTextField @bind-Value="_editDescription"
@@ -95,15 +73,9 @@ else
             <MudList T="ArticleTreeDto" Dense="true" Class="mb-4">
                 @foreach (var session in _sessions.OrderBy(s => s.Title))
                 {
-                    <MudListItem OnClick="@(() => NavigateToSession(session))" Class="session-list-item">
-                        <div class="d-flex align-center" style="width: 100%;">
-                            <MudIcon Icon="@Icons.Material.Filled.EventNote" 
-                                     Size="Size.Small" 
-                                     Class="mr-2"
-                                     Style="color: var(--chronicis-muted-gold);" />
-                            <MudText>@(string.IsNullOrEmpty(session.Title) ? "Untitled Session" : session.Title)</MudText>
-                        </div>
-                    </MudListItem>
+                    <EntityListItem Icon="@Icons.Material.Filled.EventNote"
+                                    Title="@(string.IsNullOrEmpty(session.Title) ? "Untitled Session" : session.Title)"
+                                    OnClick="@(() => NavigateToSession(session))" />
                 }
             </MudList>
         }
@@ -138,21 +110,7 @@ else
 
         <!-- Save Status -->
         <div class="chronicis-flex-between mt-4">
-            <div class="chronicis-save-status @_saveStatusClass">
-                @if (_isSaving)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-                    <span>Saving...</span>
-                }
-                else if (_hasUnsavedChanges)
-                {
-                    <span>⚠️ Unsaved changes</span>
-                }
-                else
-                {
-                    <span>✓ Saved</span>
-                }
-            </div>
+            <SaveStatusIndicator IsSaving="_isSaving" HasUnsavedChanges="_hasUnsavedChanges" />
 
             <div class="d-flex gap-2">
                 <MudButton Variant="Variant.Filled"
@@ -182,19 +140,6 @@ else
     </MudPaper>
 }
 
-<style>
-    .session-list-item {
-        border: 1px solid rgba(196, 175, 142, 0.2);
-        border-radius: 4px;
-        margin-bottom: 8px;
-        transition: all 0.2s ease;
-    }
-    .session-list-item:hover {
-        background-color: rgba(196, 175, 142, 0.1);
-        border-color: var(--chronicis-beige-gold);
-    }
-</style>
-
 @code {
     [Parameter]
     public Guid ArcId { get; set; }
@@ -210,8 +155,6 @@ else
     private bool _isSaving = false;
     private bool _hasUnsavedChanges = false;
     private List<BreadcrumbItem> _breadcrumbs = new();
-
-    private string _saveStatusClass => _isSaving ? "saving" : _hasUnsavedChanges ? "unsaved" : "saved";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -259,7 +202,7 @@ else
                     new(_arc.Name, href: null, disabled: true)
                 };
 
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(_arc.Name)} - Chronicis'");
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_arc.Name)} - Chronicis'");
                 
                 // Highlight in tree
                 TreeState.ExpandPathToAndSelect(ArcId);
@@ -278,14 +221,6 @@ else
     private void OnNameChanged() => _hasUnsavedChanges = true;
     private void OnDescriptionChanged() => _hasUnsavedChanges = true;
     private void OnSortOrderChanged() => _hasUnsavedChanges = true;
-
-    private async Task OnKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await SaveArc();
-        }
-    }
 
     private async Task SaveArc()
     {
@@ -312,7 +247,7 @@ else
                 _hasUnsavedChanges = false;
 
                 await TreeState.RefreshAsync();
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(_editName)} - Chronicis'");
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_editName)} - Chronicis'");
                 
                 Snackbar.Add("Arc saved", Severity.Success);
             }
@@ -388,6 +323,4 @@ else
         Navigation.NavigateTo($"/article/{session.Slug}");
     }
 
-    private static string EscapeForJs(string text) => 
-        text.Replace("'", "\\'").Replace("\n", "\\n").Replace("\r", "\\r");
 }

@@ -1,0 +1,44 @@
+@* EntityListItem.razor - Reusable clickable list item for entity lists *@
+@* Used for arcs, sessions, and similar entity lists *@
+
+<MudListItem T="string" OnClick="OnClick" Class="chronicis-list-item">
+    <div class="d-flex align-center justify-space-between" style="width: 100%;">
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icon" 
+                     Size="Size.Small" 
+                     Class="mr-2"
+                     Style="color: var(--chronicis-muted-gold);" />
+            <MudText>@Title</MudText>
+        </div>
+        @if (ChildContent != null)
+        {
+            @ChildContent
+        }
+    </div>
+</MudListItem>
+
+@code {
+    /// <summary>
+    /// The Material icon to display.
+    /// </summary>
+    [Parameter]
+    public string Icon { get; set; } = Icons.Material.Filled.Description;
+
+    /// <summary>
+    /// The title/name to display.
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Click handler for navigation.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    /// <summary>
+    /// Optional content to display on the right side (e.g., a chip with count).
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,31 @@
+@* NotFoundAlert.razor - Reusable component for "not found" states *@
+
+<MudPaper Elevation="2" Class="chronicis-article-card">
+    <MudAlert Severity="Severity.Warning">
+        @Message
+    </MudAlert>
+</MudPaper>
+
+@code {
+    /// <summary>
+    /// The message to display. Defaults to "Not found".
+    /// </summary>
+    [Parameter]
+    public string Message { get; set; } = "Not found";
+    
+    /// <summary>
+    /// Optional: The type of entity that wasn't found (e.g., "World", "Campaign").
+    /// If provided, generates a message like "World not found".
+    /// </summary>
+    [Parameter]
+    public string? EntityType { get; set; }
+    
+    protected override void OnParametersSet()
+    {
+        // If EntityType is provided but Message is still default, generate message
+        if (!string.IsNullOrEmpty(EntityType) && Message == "Not found")
+        {
+            Message = $"{EntityType} not found";
+        }
+    }
+}

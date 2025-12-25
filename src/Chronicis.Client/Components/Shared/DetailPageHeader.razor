@@ -1,0 +1,85 @@
+@* DetailPageHeader.razor - Reusable header for entity detail pages *@
+@* Includes breadcrumbs, icon + editable title, and rune divider *@
+
+<!-- Breadcrumbs -->
+<div class="mud-toolbar mb-2">
+    <MudBreadcrumbs Items="Breadcrumbs" />
+</div>
+
+<!-- Icon and Title -->
+<div class="d-flex align-center mb-3">
+    <MudIcon Icon="@Icon" 
+             Size="Size.Large" 
+             Class="mr-3 generic-container-icon"
+             Style="color: var(--chronicis-beige-gold); font-size: 2.5rem;" />
+    <MudTextField @bind-Value="Title"
+                  @bind-Value:after="OnTitleChangedInternal"
+                  Variant="Variant.Text"
+                  Placeholder="@Placeholder"
+                  Class="chronicis-article-title flex-grow-1"
+                  Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
+                  Immediate="true"
+                  @onkeydown="OnKeyDownInternal"
+                  Underline="false" />
+</div>
+
+<!-- Divider -->
+<div class="chronicis-rune-divider mb-4"></div>
+
+@code {
+    /// <summary>
+    /// The breadcrumb items to display.
+    /// </summary>
+    [Parameter]
+    public List<BreadcrumbItem> Breadcrumbs { get; set; } = new();
+
+    /// <summary>
+    /// The Material icon to display (e.g., Icons.Material.Filled.Public).
+    /// </summary>
+    [Parameter]
+    public string Icon { get; set; } = Icons.Material.Filled.Description;
+
+    /// <summary>
+    /// The current title value (two-way bound).
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Callback when title changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> TitleChanged { get; set; }
+
+    /// <summary>
+    /// Placeholder text for the title field.
+    /// </summary>
+    [Parameter]
+    public string Placeholder { get; set; } = "Name";
+
+    /// <summary>
+    /// Callback when the title content changes (for marking unsaved changes).
+    /// </summary>
+    [Parameter]
+    public EventCallback OnTitleEdited { get; set; }
+
+    /// <summary>
+    /// Callback when Enter key is pressed (for triggering save).
+    /// </summary>
+    [Parameter]
+    public EventCallback OnEnterPressed { get; set; }
+
+    private async Task OnTitleChangedInternal()
+    {
+        await TitleChanged.InvokeAsync(Title);
+        await OnTitleEdited.InvokeAsync();
+    }
+
+    private async Task OnKeyDownInternal(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await OnEnterPressed.InvokeAsync();
+        }
+    }
+}

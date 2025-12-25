@@ -1,4 +1,5 @@
 @using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Utilities
 @using Chronicis.Shared.Utilities
 @using MudBlazor.Charts
 @using Blazored.LocalStorage
@@ -133,21 +134,9 @@ else
 
         <!-- Save Status -->
         <div class="chronicis-flex-between mt-4">
-            <div class="chronicis-save-status @_saveStatusClass">
-                @if (_isSaving)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-                    <span>Saving...</span>
-                }
-                else if (_hasUnsavedChanges)
-                {
-                    <span>⚠️ Unsaved changes</span>
-                }
-                else
-                {
-                    <span>✓ Saved @_lastSaveTime</span>
-                }
-            </div>
+            <SaveStatusIndicator IsSaving="_isSaving" 
+                                 HasUnsavedChanges="_hasUnsavedChanges" 
+                                 LastSaveTime="@_lastSaveTime" />
 
             <div class="chronicis-flex" style="gap: 8px;">
                 <MudButton 
@@ -294,8 +283,6 @@ else
     
     private const string LastArticlePathKey = "chronicis_last_article_path";
 
-    private string _saveStatusClass => _isSaving ? "saving" : _hasUnsavedChanges ? "unsaved" : "saved";
-
     protected override async Task OnInitializedAsync()
     {
         TreeState.OnStateChanged += OnTreeStateChanged;
@@ -388,7 +375,7 @@ else
             var pageTitle = string.IsNullOrEmpty(_article?.Title) 
                 ? "Untitled - Chronicis" 
                 : $"{_article.Title} - Chronicis";
-            await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(pageTitle)}'");
+            await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(pageTitle)}'");
 
             // Save last visited article path to localStorage
             if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
@@ -413,12 +400,6 @@ else
         {
             _isLoading = false;
         }
-    }
-
-    // Helper to escape strings for JavaScript
-    private static string EscapeForJs(string text)
-    {
-        return text.Replace("'", "\\'").Replace("\n", "\\n").Replace("\r", "\\r");
     }
 
     private void LoadBreadcrumbs(Guid articleId)
@@ -627,7 +608,7 @@ else
                 var pageTitle = string.IsNullOrEmpty(newTitle) 
                     ? "Untitled - Chronicis" 
                     : $"{newTitle} - Chronicis";
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(pageTitle)}'");
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(pageTitle)}'");
                 
                 // Update tree node display and refresh
                 TreeState.UpdateNodeDisplay(_article.Id, newTitle, _article.IconEmoji);
@@ -651,7 +632,7 @@ else
                 var pageTitle = string.IsNullOrEmpty(newTitle) 
                     ? "Untitled - Chronicis" 
                     : $"{newTitle} - Chronicis";
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(pageTitle)}'");
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(pageTitle)}'");
                 
                 // Update tree node display
                 TreeState.UpdateNodeDisplay(_article.Id, newTitle, _article.IconEmoji);

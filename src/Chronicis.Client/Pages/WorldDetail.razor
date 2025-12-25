@@ -2,6 +2,8 @@
 @attribute [Authorize]
 @using Chronicis.Shared.DTOs
 @using Chronicis.Client.Components.Dialogs
+@using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Utilities
 @inject IWorldApiService WorldApi
 @inject ICampaignApiService CampaignApi
 @inject ITreeStateService TreeState
@@ -12,45 +14,21 @@
 
 @if (_isLoading)
 {
-    <MudPaper Elevation="2" Class="chronicis-article-card">
-        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="40px" Class="mb-4" />
-        <MudSkeleton SkeletonType="SkeletonType.Text" Width="60%" />
-        <MudSkeleton SkeletonType="SkeletonType.Text" Width="80%" />
-    </MudPaper>
+    <LoadingSkeleton />
 }
 else if (_world == null)
 {
-    <MudPaper Elevation="2" Class="chronicis-article-card">
-        <MudAlert Severity="Severity.Warning">World not found</MudAlert>
-    </MudPaper>
+    <NotFoundAlert EntityType="World" />
 }
 else
 {
     <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
-        <!-- Breadcrumbs -->
-        <div class="mud-toolbar mb-2">
-            <MudBreadcrumbs Items="_breadcrumbs" />
-        </div>
-
-        <!-- World Icon and Title -->
-        <div class="d-flex align-center mb-3">
-            <MudIcon Icon="@Icons.Material.Filled.Public" 
-                     Size="Size.Large" 
-                     Class="mr-3 generic-container-icon"
-                     Style="color: var(--chronicis-beige-gold); font-size: 2.5rem;" />
-            <MudTextField @bind-Value="_editName"
-                          Variant="Variant.Text"
+        <DetailPageHeader Breadcrumbs="_breadcrumbs"
+                          Icon="@Icons.Material.Filled.Public"
+                          @bind-Title="_editName"
                           Placeholder="World Name"
-                          Class="chronicis-article-title flex-grow-1"
-                          Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
-                          Immediate="true"
-                          @onkeyup="OnNameChanged"
-                          @onkeydown="OnKeyDown"
-                          Underline="false" />
-        </div>
-
-        <!-- Divider -->
-        <div class="chronicis-rune-divider mb-4"></div>
+                          OnTitleEdited="OnNameChanged"
+                          OnEnterPressed="SaveWorld" />
 
         <!-- Description -->
         <MudTextField @bind-Value="_editDescription"
@@ -245,21 +223,7 @@ else
 
         <!-- Save Status -->
         <div class="chronicis-flex-between mt-4">
-            <div class="chronicis-save-status @_saveStatusClass">
-                @if (_isSaving)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-                    <span>Saving...</span>
-                }
-                else if (_hasUnsavedChanges)
-                {
-                    <span>⚠️ Unsaved changes</span>
-                }
-                else
-                {
-                    <span>✓ Saved</span>
-                }
-            </div>
+            <SaveStatusIndicator IsSaving="_isSaving" HasUnsavedChanges="_hasUnsavedChanges" />
 
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
@@ -298,8 +262,6 @@ else
     private string _editLinkUrl = string.Empty;
     private string _editLinkDescription = string.Empty;
 
-    private string _saveStatusClass => _isSaving ? "saving" : _hasUnsavedChanges ? "unsaved" : "saved";
-
     protected override async Task OnParametersSetAsync()
     {
         await LoadWorldAsync();
@@ -325,7 +287,7 @@ else
                     new(_world.Name, href: null, disabled: true)
                 };
 
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(_world.Name)} - Chronicis'");
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_world.Name)} - Chronicis'");
                 
                 // Load links
                 _links = await WorldApi.GetWorldLinksAsync(WorldId);
@@ -346,14 +308,6 @@ else
 
     private void OnNameChanged() => _hasUnsavedChanges = true;
     private void OnDescriptionChanged() => _hasUnsavedChanges = true;
-
-    private async Task OnKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await SaveWorld();
-        }
-    }
 
     private async Task SaveWorld()
     {
@@ -378,7 +332,7 @@ else
                 _hasUnsavedChanges = false;
 
                 await TreeState.RefreshAsync();
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{EscapeForJs(_editName)} - Chronicis'");
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_editName)} - Chronicis'");
                 
                 Snackbar.Add("World saved", Severity.Success);
             }
@@ -647,6 +601,4 @@ else
         }
     }
 
-    private static string EscapeForJs(string text) => 
-        text.Replace("'", "\\'").Replace("\n", "\\n").Replace("\r", "\\r");
 }
