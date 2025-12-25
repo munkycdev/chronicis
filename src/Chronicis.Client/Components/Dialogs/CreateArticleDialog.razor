@@ -88,27 +88,25 @@
         _isSubmitting = true;
         StateHasChanged();
 
-        try
+        var createDto = new ArticleCreateDto
         {
-            var createDto = new ArticleCreateDto
-            {
-                Title = _title.Trim(),
-                Body = string.Empty,
-                WorldId = WorldId,
-                Type = ArticleType,
-                EffectiveDate = DateTime.Now
-            };
+            Title = _title.Trim(),
+            Body = string.Empty,
+            WorldId = WorldId,
+            Type = ArticleType,
+            EffectiveDate = DateTime.Now
+        };
 
-            var article = await ArticleApi.CreateArticleAsync(createDto);
+        var article = await ArticleApi.CreateArticleAsync(createDto);
+        if (article != null)
+        {
             MudDialog?.Close(DialogResult.Ok(article));
         }
-        catch (Exception ex)
+        else
         {
             MudDialog?.Close(DialogResult.Cancel());
         }
-        finally
-        {
-            _isSubmitting = false;
-        }
+
+        _isSubmitting = false;
     }
 }

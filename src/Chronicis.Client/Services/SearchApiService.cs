@@ -1,17 +1,20 @@
-using System.Net.Http.Json;
 using System.Web;
 using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Services;
 
+/// <summary>
+/// Service for search API operations.
+/// Uses HttpClientExtensions for consistent error handling and logging.
+/// </summary>
 public class SearchApiService : ISearchApiService
 {
-    private readonly HttpClient _httpClient;
+    private readonly HttpClient _http;
     private readonly ILogger<SearchApiService> _logger;
 
-    public SearchApiService(HttpClient httpClient, ILogger<SearchApiService> logger)
+    public SearchApiService(HttpClient http, ILogger<SearchApiService> logger)
     {
-        _httpClient = httpClient;
+        _http = http;
         _logger = logger;
     }
 
@@ -20,24 +23,11 @@ public class SearchApiService : ISearchApiService
         if (string.IsNullOrWhiteSpace(query))
             return null;
 
-        try
-        {
-            var encodedQuery = HttpUtility.UrlEncode(query);
-            var response = await _httpClient.GetAsync($"/api/articles/search?query={encodedQuery}");
+        var encodedQuery = HttpUtility.UrlEncode(query);
 
-            if (!response.IsSuccessStatusCode)
-            {
-
-                _logger.LogError($"Search failed with status: {response.StatusCode}");
-                return null;
-            }
-
-            return await response.Content.ReadFromJsonAsync<GlobalSearchResultsDto>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error searching content: {ex.Message}");
-            return null;
-        }
+        return await _http.GetEntityAsync<GlobalSearchResultsDto>(
+            $"api/articles/search?query={encodedQuery}",
+            _logger,
+            $"search results for '{query}'");
     }
 }

@@ -420,26 +420,23 @@ else
 
     private async Task CreateArticleWithTitle(string title)
     {
-        try
+        var createDto = new ArticleCreateDto
         {
-            var createDto = new ArticleCreateDto
-            {
-                Title = title,
-                Body = string.Empty,
-                ParentId = null,
-                EffectiveDate = DateTime.Now
-            };
+            Title = title,
+            Body = string.Empty,
+            ParentId = null,
+            EffectiveDate = DateTime.Now
+        };
 
-            var created = await ArticleApi.CreateArticleAsync(createDto);
-            await TreeStateService.RefreshAsync();
-
-            // Select the new article
-            TreeStateService.ExpandPathToAndSelect(created.Id);
-        }
-        catch (Exception ex)
+        var created = await ArticleApi.CreateArticleAsync(createDto);
+        if (created == null)
         {
-            Console.Error.WriteLine($"Error creating article: {ex.Message}");
+            Console.Error.WriteLine("Failed to create article");
+            return;
         }
+
+        await TreeStateService.RefreshAsync();
+        TreeStateService.ExpandPathToAndSelect(created.Id);
     }
 
     private string FormatRelativeTime(DateTime dateTime)

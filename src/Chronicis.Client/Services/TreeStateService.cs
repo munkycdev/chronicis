@@ -725,34 +725,31 @@ public class TreeStateService : ITreeStateService
             return null;
         }
         
-        try
+        var createDto = new ArticleCreateDto
         {
-            var createDto = new ArticleCreateDto
-            {
-                Title = string.Empty,
-                Body = string.Empty,
-                ParentId = null,
-                WorldId = worldId,
-                Type = ArticleType.WikiArticle,
-                EffectiveDate = DateTime.Now
-            };
-            
-            var created = await _articleApi.CreateArticleAsync(createDto);
-            
-            // Refresh tree to show new article
-            await RefreshAsync();
-            
-            // Select the new node
-            SelectNode(created.Id);
-            ShouldFocusTitle = true;
-            
-            return created.Id;
-        }
-        catch (Exception ex)
+            Title = string.Empty,
+            Body = string.Empty,
+            ParentId = null,
+            WorldId = worldId,
+            Type = ArticleType.WikiArticle,
+            EffectiveDate = DateTime.Now
+        };
+        
+        var created = await _articleApi.CreateArticleAsync(createDto);
+        if (created == null)
         {
-            _logger.LogError(ex, "Failed to create root article");
+            _logger.LogWarning("Failed to create root article");
             return null;
         }
+        
+        // Refresh tree to show new article
+        await RefreshAsync();
+        
+        // Select the new node
+        SelectNode(created.Id);
+        ShouldFocusTitle = true;
+        
+        return created.Id;
     }
     
     public async Task<Guid?> CreateChildArticleAsync(Guid parentId)
@@ -781,37 +778,34 @@ public class TreeStateService : ITreeStateService
         // For virtual groups, parent is null (top-level in that category)
         Guid? actualParentId = parentNode.NodeType == TreeNodeType.VirtualGroup ? null : parentId;
         
-        try
+        var createDto = new ArticleCreateDto
         {
-            var createDto = new ArticleCreateDto
-            {
-                Title = string.Empty,
-                Body = string.Empty,
-                ParentId = actualParentId,
-                WorldId = parentNode.WorldId ?? _appContext.CurrentWorldId,
-                CampaignId = parentNode.CampaignId,
-                ArcId = parentNode.NodeType == TreeNodeType.Arc ? parentNode.Id : parentNode.ArcId,
-                Type = articleType,
-                EffectiveDate = DateTime.Now
-            };
-            
-            var created = await _articleApi.CreateArticleAsync(createDto);
-            
-            // Refresh tree
-            await RefreshAsync();
-            
-            // Expand parent and select new node
-            ExpandNode(parentId);
-            SelectNode(created.Id);
-            ShouldFocusTitle = true;
-            
-            return created.Id;
-        }
-        catch (Exception ex)
+            Title = string.Empty,
+            Body = string.Empty,
+            ParentId = actualParentId,
+            WorldId = parentNode.WorldId ?? _appContext.CurrentWorldId,
+            CampaignId = parentNode.CampaignId,
+            ArcId = parentNode.NodeType == TreeNodeType.Arc ? parentNode.Id : parentNode.ArcId,
+            Type = articleType,
+            EffectiveDate = DateTime.Now
+        };
+        
+        var created = await _articleApi.CreateArticleAsync(createDto);
+        if (created == null)
         {
-            _logger.LogError(ex, "Failed to create child article under {ParentId}", parentId);
+            _logger.LogWarning("Failed to create child article under {ParentId}", parentId);
             return null;
         }
+        
+        // Refresh tree
+        await RefreshAsync();
+        
+        // Expand parent and select new node
+        ExpandNode(parentId);
+        SelectNode(created.Id);
+        ShouldFocusTitle = true;
+        
+        return created.Id;
     }
     
     public async Task<bool> DeleteArticleAsync(Guid articleId)

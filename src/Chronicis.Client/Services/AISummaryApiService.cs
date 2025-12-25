@@ -1,8 +1,11 @@
-using System.Net.Http.Json;
 using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Services;
 
+/// <summary>
+/// Service for AI Summary API operations.
+/// Uses HttpClientExtensions for consistent error handling and logging.
+/// </summary>
 public class AISummaryApiService : IAISummaryApiService
 {
     private readonly HttpClient _http;
@@ -16,75 +19,40 @@ public class AISummaryApiService : IAISummaryApiService
 
     public async Task<SummaryEstimateDto?> GetEstimateAsync(Guid articleId)
     {
-        try
-        {
-            return await _http.GetFromJsonAsync<SummaryEstimateDto>($"/api/articles/{articleId}/summary/estimate");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error getting summary estimate: {ex.Message}");
-            return null;
-        }
+        return await _http.GetEntityAsync<SummaryEstimateDto>(
+            $"api/articles/{articleId}/summary/estimate",
+            _logger,
+            $"summary estimate for article {articleId}");
     }
 
     public async Task<SummaryGenerationDto?> GenerateSummaryAsync(Guid articleId, int maxOutputTokens = 1500)
     {
-        try
+        var request = new GenerateSummaryRequestDto
         {
-            var request = new GenerateSummaryRequestDto
-            {
-                ArticleId = articleId,
-                MaxOutputTokens = maxOutputTokens
-            };
+            ArticleId = articleId,
+            MaxOutputTokens = maxOutputTokens
+        };
 
-            var response = await _http.PostAsJsonAsync($"/api/articles/{articleId}/summary/generate", request);
-
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadFromJsonAsync<SummaryGenerationDto>();
-            }
-            else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError($"Error generating summary: {response.StatusCode} - {errorContent}");
-                return null;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error generating summary: {ex.Message}");
-            return null;
-        }
+        return await _http.PostEntityAsync<SummaryGenerationDto>(
+            $"api/articles/{articleId}/summary/generate",
+            request,
+            _logger,
+            $"summary generation for article {articleId}");
     }
 
     public async Task<ArticleSummaryDto?> GetSummaryAsync(Guid articleId)
     {
-        try
-        {
-            return await _http.GetFromJsonAsync<ArticleSummaryDto>($"/api/articles/{articleId}/summary");
-        }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error getting summary: {ex.Message}");
-            return null;
-        }
+        return await _http.GetEntityAsync<ArticleSummaryDto>(
+            $"api/articles/{articleId}/summary",
+            _logger,
+            $"summary for article {articleId}");
     }
 
     public async Task<bool> ClearSummaryAsync(Guid articleId)
     {
-        try
-        {
-            var response = await _http.DeleteAsync($"/api/articles/{articleId}/summary");
-            return response.IsSuccessStatusCode;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error clearing summary: {ex.Message}");
-            return false;
-        }
+        return await _http.DeleteEntityAsync(
+            $"api/articles/{articleId}/summary",
+            _logger,
+            $"summary for article {articleId}");
     }
 }

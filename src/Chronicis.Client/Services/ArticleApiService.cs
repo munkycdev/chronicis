@@ -1,10 +1,10 @@
-using System.Net.Http.Json;
 using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Services;
 
 /// <summary>
 /// Service for communicating with the Article API.
+/// Uses HttpClientExtensions for consistent error handling and logging.
 /// </summary>
 public class ArticleApiService : IArticleApiService
 {
@@ -19,158 +19,85 @@ public class ArticleApiService : IArticleApiService
 
     public async Task<List<ArticleTreeDto>> GetRootArticlesAsync(Guid? worldId = null)
     {
-        try
-        {
-            var url = worldId.HasValue
-                ? $"api/articles?worldId={worldId.Value}"
-                : "api/articles";
-            var articles = await _http.GetFromJsonAsync<List<ArticleTreeDto>>(url);
-            return articles ?? new List<ArticleTreeDto>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching root articles");
-            throw;
-        }
+        var url = worldId.HasValue
+            ? $"api/articles?worldId={worldId.Value}"
+            : "api/articles";
+
+        return await _http.GetListAsync<ArticleTreeDto>(url, _logger, "root articles");
     }
 
     public async Task<List<ArticleTreeDto>> GetAllArticlesAsync(Guid? worldId = null)
     {
-        try
-        {
-            var url = worldId.HasValue
-                ? $"api/articles/all?worldId={worldId.Value}"
-                : "api/articles/all";
-            var articles = await _http.GetFromJsonAsync<List<ArticleTreeDto>>(url);
-            return articles ?? new List<ArticleTreeDto>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching all articles");
-            throw;
-        }
+        var url = worldId.HasValue
+            ? $"api/articles/all?worldId={worldId.Value}"
+            : "api/articles/all";
+
+        return await _http.GetListAsync<ArticleTreeDto>(url, _logger, "all articles");
     }
 
     public async Task<List<ArticleTreeDto>> GetChildrenAsync(Guid parentId)
     {
-        try
-        {
-            var children = await _http.GetFromJsonAsync<List<ArticleTreeDto>>($"api/articles/{parentId}/children");
-            return children ?? new List<ArticleTreeDto>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching children for article {ParentId}", parentId);
-            throw;
-        }
+        return await _http.GetListAsync<ArticleTreeDto>(
+            $"api/articles/{parentId}/children",
+            _logger,
+            $"children for article {parentId}");
     }
 
     public async Task<ArticleDto?> GetArticleDetailAsync(Guid id)
     {
-        try
-        {
-            return await _http.GetFromJsonAsync<ArticleDto>($"api/articles/{id}");
-        }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            _logger.LogWarning("Article {ArticleId} not found", id);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching article detail for {ArticleId}", id);
-            throw;
-        }
+        return await _http.GetEntityAsync<ArticleDto>(
+            $"api/articles/{id}",
+            _logger,
+            $"article {id}");
     }
 
     public async Task<ArticleDto?> GetArticleAsync(Guid id) => await GetArticleDetailAsync(id);
 
     public async Task<ArticleDto?> GetArticleByPathAsync(string path)
     {
-        try
-        {
-            var encodedPath = string.Join("/", path.Split('/').Select(Uri.EscapeDataString));
-            return await _http.GetFromJsonAsync<ArticleDto>($"api/articles/by-path/{encodedPath}");
-        }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            _logger.LogWarning("Article not found at path: {Path}", path);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching article by path: {Path}", path);
-            throw;
-        }
+        var encodedPath = string.Join("/", path.Split('/').Select(Uri.EscapeDataString));
+
+        return await _http.GetEntityAsync<ArticleDto>(
+            $"api/articles/by-path/{encodedPath}",
+            _logger,
+            $"article at path '{path}'");
     }
 
-    public async Task<ArticleDto> CreateArticleAsync(ArticleCreateDto dto)
+    public async Task<ArticleDto?> CreateArticleAsync(ArticleCreateDto dto)
     {
-        try
-        {
-            var response = await _http.PostAsJsonAsync("api/articles", dto);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<ArticleDto>()
-                ?? throw new Exception("Failed to deserialize created article");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating article");
-            throw;
-        }
+        return await _http.PostEntityAsync<ArticleDto>(
+            "api/articles",
+            dto,
+            _logger,
+            "article");
     }
 
-    public async Task<ArticleDto> UpdateArticleAsync(Guid id, ArticleUpdateDto dto)
+    public async Task<ArticleDto?> UpdateArticleAsync(Guid id, ArticleUpdateDto dto)
     {
-        try
-        {
-            var response = await _http.PutAsJsonAsync($"api/articles/{id}", dto);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<ArticleDto>()
-                ?? throw new Exception("Failed to deserialize updated article");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating article {ArticleId}", id);
-            throw;
-        }
+        return await _http.PutEntityAsync<ArticleDto>(
+            $"api/articles/{id}",
+            dto,
+            _logger,
+            $"article {id}");
     }
 
-    public async Task DeleteArticleAsync(Guid id)
+    public async Task<bool> DeleteArticleAsync(Guid id)
     {
-        try
-        {
-            var response = await _http.DeleteAsync($"api/articles/{id}");
-            response.EnsureSuccessStatusCode();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting article {ArticleId}", id);
-            throw;
-        }
+        return await _http.DeleteEntityAsync(
+            $"api/articles/{id}",
+            _logger,
+            $"article {id}");
     }
 
     public async Task<bool> MoveArticleAsync(Guid articleId, Guid? newParentId)
     {
-        try
-        {
-            var moveDto = new ArticleMoveDto { NewParentId = newParentId };
-            var response = await _http.PatchAsJsonAsync($"api/articles/{articleId}/parent", moveDto);
+        var moveDto = new ArticleMoveDto { NewParentId = newParentId };
 
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogWarning("Failed to move article {ArticleId}: {Error}", articleId, errorContent);
-                return false;
-            }
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error moving article {ArticleId}", articleId);
-            throw;
-        }
+        return await _http.PatchEntityAsync(
+            $"api/articles/{articleId}/parent",
+            moveDto,
+            _logger,
+            $"move article {articleId}");
     }
 
     public async Task<List<ArticleSearchResultDto>> SearchArticlesAsync(string query)
@@ -178,26 +105,20 @@ public class ArticleApiService : IArticleApiService
         if (string.IsNullOrWhiteSpace(query))
             return new List<ArticleSearchResultDto>();
 
-        try
-        {
-            var results = await _http.GetFromJsonAsync<GlobalSearchResultsDto>(
-                $"api/articles/search?query={Uri.EscapeDataString(query)}");
+        var results = await _http.GetEntityAsync<GlobalSearchResultsDto>(
+            $"api/articles/search?query={Uri.EscapeDataString(query)}",
+            _logger,
+            $"search results for '{query}'");
 
-            if (results == null)
-                return new List<ArticleSearchResultDto>();
+        if (results == null)
+            return new List<ArticleSearchResultDto>();
 
-            // Combine all match types into a single list
-            var allResults = new List<ArticleSearchResultDto>();
-            allResults.AddRange(results.TitleMatches);
-            allResults.AddRange(results.BodyMatches);
-            allResults.AddRange(results.HashtagMatches);
-            return allResults;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error searching articles");
-            throw;
-        }
+        // Combine all match types into a single list
+        var allResults = new List<ArticleSearchResultDto>();
+        allResults.AddRange(results.TitleMatches);
+        allResults.AddRange(results.BodyMatches);
+        allResults.AddRange(results.HashtagMatches);
+        return allResults;
     }
 
     public async Task<List<ArticleSearchResultDto>> SearchArticlesByTitleAsync(string query)
@@ -205,17 +126,11 @@ public class ArticleApiService : IArticleApiService
         if (string.IsNullOrWhiteSpace(query))
             return new List<ArticleSearchResultDto>();
 
-        try
-        {
-            // Use the global search endpoint and extract just title matches
-            var results = await _http.GetFromJsonAsync<GlobalSearchResultsDto>(
-                $"api/articles/search?query={Uri.EscapeDataString(query)}");
-            return results?.TitleMatches ?? new List<ArticleSearchResultDto>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error searching articles by title");
-            throw;
-        }
+        var results = await _http.GetEntityAsync<GlobalSearchResultsDto>(
+            $"api/articles/search?query={Uri.EscapeDataString(query)}",
+            _logger,
+            $"title search results for '{query}'");
+
+        return results?.TitleMatches ?? new List<ArticleSearchResultDto>();
     }
 }

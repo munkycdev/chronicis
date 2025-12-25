@@ -290,37 +290,34 @@ else
     {
         if (_arc == null || _campaign == null) return;
 
-        try
+        var sessionNumber = _sessions.Count + 1;
+        var createDto = new ArticleCreateDto
         {
-            var sessionNumber = _sessions.Count + 1;
-            var createDto = new ArticleCreateDto
-            {
-                Title = $"Session {sessionNumber}",
-                Body = string.Empty,
-                WorldId = _campaign.WorldId,
-                CampaignId = _campaign.Id,
-                ArcId = ArcId,
-                Type = ArticleType.Session,
-                EffectiveDate = DateTime.Now
-            };
+            Title = $"Session {sessionNumber}",
+            Body = string.Empty,
+            WorldId = _campaign.WorldId,
+            CampaignId = _campaign.Id,
+            ArcId = ArcId,
+            Type = ArticleType.Session,
+            EffectiveDate = DateTime.Now
+        };
 
-            var created = await ArticleApi.CreateArticleAsync(createDto);
-            await TreeState.RefreshAsync();
-            await LoadArcAsync();
-
-            // Navigate to the new session
-            Navigation.NavigateTo($"/article/{created.Slug}");
-            Snackbar.Add("Session created", Severity.Success);
-        }
-        catch (Exception ex)
+        var created = await ArticleApi.CreateArticleAsync(createDto);
+        if (created == null)
         {
-            Snackbar.Add($"Failed to create session: {ex.Message}", Severity.Error);
+            Snackbar.Add("Failed to create session", Severity.Error);
+            return;
         }
+
+        await TreeState.RefreshAsync();
+        await LoadArcAsync();
+
+        Navigation.NavigateTo($"/article/{created.Slug}");
+        Snackbar.Add("Session created", Severity.Success);
     }
 
     private void NavigateToSession(ArticleTreeDto session)
     {
         Navigation.NavigateTo($"/article/{session.Slug}");
     }
-
 }
