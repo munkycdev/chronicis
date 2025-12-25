@@ -1,16 +1,15 @@
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Client.Utilities
 @using Chronicis.Shared.Utilities
-@using MudBlazor.Charts
 @using Blazored.LocalStorage
 @inject IArticleApiService ArticleApi
 @inject ILinkApiService LinkApiService
+@inject IWikiLinkService WikiLinkService
 @inject ITreeStateService TreeState
 @inject IAppContextService AppContext
 @inject ISnackbar Snackbar
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@inject IDialogService DialogService
 @inject ILocalStorageService LocalStorage
 @inject ILogger<ArticleDetail> Logger
 @inject IArticleCacheService ArticleCache
@@ -33,30 +32,6 @@ else if (_article == null)
 else
 {
     <style>
-        .metadata-drawer,
-        .metadata-drawer .mud-drawer-content {
-            background-color: transparent !important;
-            border-right-color: transparent;
-        }
-            .metadata-drawer .mud-drawer-content {
-                padding: 8px;
-                background-color: var(--chronicis-soft-off-white) !important;
-            }
-            .metadata-drawer.mud-drawer-persistent {
-                height:auto !important;
-            }
-            .metadata-drawer p {
-                font-size: 0.8rem;
-            }
-
-        /* Scrollable metadata drawer */
-        .metadata-drawer-scrollable {
-            height: calc(100vh - 180px);
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding-bottom: 24px;
-        }
-
         .mud-input.mud-input-underline:before,
         .mud-input.mud-input-underline:after,
         .mud-input.mud-input-underline:hover:not(.mud-disabled):before,
@@ -77,54 +52,18 @@ else
 
     <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
 
-        <div class="mud-toolbar">
-        <!-- Breadcrumbs -->
-        @if (_breadcrumbs != null && _breadcrumbs.Any())
-        {
-            <MudBreadcrumbs Items="_breadcrumbs">
-                <ItemTemplate Context="item">
-                    <MudLink Href="@item.Href" Class="chronicis-breadcrumb-link">
-                        @item.Text
-                    </MudLink>
-                </ItemTemplate>
-            </MudBreadcrumbs>
-        }
-        <MudSpacer />
-    <!-- Metadata Toggle Button -->
-            <MudTooltip Text="Metadata">
-                <MudIconButton Color="Color.Inherit"
-                               OnClick="@ToggleMetadata"
-                               Icon="@Icons.Material.Filled.ChromeReaderMode"
-                               Class="mt-0"
-                Edge="Edge.End">
-                </MudIconButton>
-            </MudTooltip>
-        </div>
+        <!-- Article Header (Breadcrumbs, Icon, Title, Divider) -->
+        <ArticleHeader Breadcrumbs="_breadcrumbs"
+                       @bind-Title="_editTitle"
+                       IconEmoji="@_article.IconEmoji"
+                       OnIconChanged="HandleIconChanged"
+                       OnTitleEdited="HandleTitleEdited"
+                       OnEnterPressed="SaveArticle"
+                       OnMetadataToggle="ToggleMetadata"
+                       ShouldFocusTitle="_shouldFocusTitle"
+                       ShouldFocusTitleChanged="HandleFocusTitleChanged" />
 
-        <!-- Title Row with Icon Picker -->
-        <div class="d-flex align-center mb-3">
-            <!-- Icon Picker Button -->
-            <IconPickerButton 
-                CurrentIcon="@_article.IconEmoji"
-                OnIconChanged="OnIconChanged" />
-            
-            <!-- Title (Always Editable) - NO AUTO-SAVE -->
-            <MudTextField @ref="_titleField"
-                          @bind-Value="_editTitle"
-                          Variant="Variant.Text"
-                          Placeholder="Untitled Article"
-                          Class="chronicis-article-title flex-grow-1"
-                          Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
-                          Immediate="true"
-                          @onkeyup="@(() => OnTitleChanged())"
-                          @onkeydown="@OnTitleKeyDown"
-                          Underline="false"/>
-        </div>
-
-        <!-- Divider -->
-        <div class="chronicis-rune-divider mb-3"></div>
-
-        <!-- TipTap Editor Container (from Phase 4) -->
+        <!-- TipTap Editor Container -->
         <div id="tiptap-editor-@_article.Id" class="chronicis-editor-container mb-4"></div>
 
         <!-- AI Summary Section -->
@@ -132,110 +71,20 @@ else
                           IsExpanded="@_isSummaryExpanded"
                           IsExpandedChanged="@((expanded) => _isSummaryExpanded = expanded)" />
 
-        <!-- Save Status -->
-        <div class="chronicis-flex-between mt-4">
-            <SaveStatusIndicator IsSaving="_isSaving" 
-                                 HasUnsavedChanges="_hasUnsavedChanges" 
-                                 LastSaveTime="@_lastSaveTime" />
-
-            <div class="chronicis-flex" style="gap: 8px;">
-                <MudButton 
-                    Variant="Variant.Outlined" 
-                    Color="Color.Secondary"
-                    OnClick="AutoLinkArticle"
-                    Disabled="_isSaving || _isAutoLinking"
-                    StartIcon="@Icons.Material.Filled.AutoFixHigh">
-                    @if (_isAutoLinking)
-                    {
-                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                        <span>Scanning...</span>
-                    }
-                    else
-                    {
-                        <span>Auto-Link</span>
-                    }
-                </MudButton>
-                
-                <MudButton 
-                    Variant="Variant.Filled" 
-                    Color="Color.Primary"
-                    OnClick="SaveArticle"
-                    Disabled="_isSaving"
-                    StartIcon="@Icons.Material.Filled.Save">
-                    Save
-                </MudButton>
-                
-                <MudButton 
-                    Variant="Variant.Outlined" 
-                    Color="Color.Error"
-                    OnClick="DeleteArticle"
-                    StartIcon="@Icons.Material.Filled.Delete">
-                    Delete
-                </MudButton>
-            </div>
-        </div>
+        <!-- Action Bar (Save Status + Buttons) -->
+        <ArticleActionBar IsSaving="_isSaving"
+                          IsAutoLinking="_isAutoLinking"
+                          HasUnsavedChanges="_hasUnsavedChanges"
+                          LastSaveTime="@_lastSaveTime"
+                          OnSave="SaveArticle"
+                          OnDelete="DeleteArticle"
+                          OnAutoLink="AutoLinkArticle" />
     </MudPaper>
+
     <!-- Metadata Drawer -->
-    <MudDrawer @bind-Open="@_openMetadata"
-               Fixed="true"
-               Anchor="Anchor.End"
-               Elevation="9999"
-               Variant="@DrawerVariant.Persistent"
-               ClipMode="@DrawerClipMode.Always"
-               Class="metadata-drawer">
-        <MudDrawerHeader Class="backlinks-header">
-            <MudText Typo="Typo.h6" Class="backlinks-title">
-                <MudIcon Icon="@Icons.Material.Filled.IntegrationInstructions" Size="Size.Small" />
-                Metadata
-            </MudText>
-        </MudDrawerHeader>
-        <MudDrawerContainer Class="metadata-drawer-scrollable chronicis-scrollbar-light">
-            <!-- Outgoing Links Panel -->
-            <OutgoingLinksPanel @ref="_outgoingLinksPanel" ArticleId="@_article.Id" />
-            
-            <MudDivider Class="my-3" />
-            
-            <!-- Backlinks Panel -->
-            <BacklinksPanel @ref="_backlinksPanel" ArticleId="@_article.Id" />
-            
-            <MudDivider Class="my-3" />
-            
-            <!-- Article Metadata -->
-            <MudText Typo="Typo.subtitle2" Class="px-4 py-2" Style="color: var(--mud-palette-text-secondary);">Article Info</MudText>
-            <MudList T="string">
-                <MudListItem>
-                        <MudText Typo="Typo.subtitle1">Article ID</MudText>
-                        <MudText Typo="Typo.body2">@_article.Id</MudText>
-                </MudListItem>
-                <MudListItem>
-                        <MudText Typo="Typo.subtitle1">World ID</MudText>
-                        <MudText Typo="Typo.body2">@_article.WorldId</MudText>
-                </MudListItem>
-                <MudListItem>
-                        <MudText Typo="Typo.subtitle1">Campaign ID</MudText>
-                        <MudText Typo="Typo.body2">@(_article.CampaignId?.ToString() ?? "None")</MudText>
-                </MudListItem>
-                <MudListItem>
-                        <MudText Typo="Typo.subtitle1">Effective Date</MudText>
-                        <MudText Typo="Typo.body2">
-                            @_article.EffectiveDate.ToString("MMMM d, yyyy 'at' h:mm tt")
-                        </MudText>
-                </MudListItem>
-                <MudListItem>
-                        <MudText Typo="Typo.subtitle1">Created Date</MudText>
-                        <MudText Typo="Typo.body2">
-                            @_article.CreatedAt.ToString("MMMM d, yyyy 'at' h:mm tt")
-                        </MudText>
-                </MudListItem>
-                <MudListItem>
-                        <MudText Typo="Typo.subtitle1">Modified Date</MudText>
-                        <MudText Typo="Typo.body2">
-                            @_article.ModifiedAt?.ToString("MMMM d, yyyy 'at' h:mm tt")
-                        </MudText>
-                </MudListItem>
-            </MudList>
-        </MudDrawerContainer>
-    </MudDrawer>
+    <ArticleMetadataDrawer @ref="_metadataDrawer"
+                           Article="_article"
+                           @bind-IsOpen="_openMetadata" />
 
     <!-- Wiki Link Autocomplete -->
     @if (_showAutocomplete && _article != null)
@@ -252,26 +101,27 @@ else
 }
 
 @code {
+    // Article state
     private ArticleDto? _article;
     private List<BreadcrumbItem>? _breadcrumbs;
     private string _editTitle = string.Empty;
     private string _editBody = string.Empty;
+    
+    // UI state
     private bool _isLoading = false;
     private bool _isSaving = false;
     private bool _isAutoLinking = false;
     private bool _hasUnsavedChanges = false;
     private bool _editorInitialized = false;
     private string _lastSaveTime = "just now";
-    private Timer? _autoSaveTimer;
-    private MudTextField<string>? _titleField;
-    private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
     private bool _openMetadata = false;
     private bool _isSummaryExpanded = false;
     private bool _shouldFocusTitle = false;
     
-    // Panel references for refresh
-    private OutgoingLinksPanel? _outgoingLinksPanel;
-    private BacklinksPanel? _backlinksPanel;
+    // Timer and references
+    private Timer? _autoSaveTimer;
+    private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
+    private ArticleMetadataDrawer? _metadataDrawer;
     
     // Autocomplete state
     private bool _showAutocomplete = false;
@@ -283,6 +133,8 @@ else
     
     private const string LastArticlePathKey = "chronicis_last_article_path";
 
+    #region Lifecycle
+
     protected override async Task OnInitializedAsync()
     {
         TreeState.OnStateChanged += OnTreeStateChanged;
@@ -290,9 +142,14 @@ else
         await Task.CompletedTask;
     }
 
+    protected override void OnInitialized()
+    {
+        OnCtrlNPressed += HandleCtrlNInstance;
+        base.OnInitialized();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // ONLY handle first render
         if (firstRender && TreeState.SelectedArticleId.HasValue)
         {
             await LoadArticleAsync(TreeState.SelectedArticleId.Value);
@@ -300,22 +157,67 @@ else
             await Task.Delay(100);
             await InitializeEditor();
         }
+    }
 
-        // Focus title field if flagged (after component has rendered)
-        if (_shouldFocusTitle && _titleField != null)
+    public void Dispose()
+    {
+        TreeState.OnStateChanged -= OnTreeStateChanged;
+        OnCtrlNPressed -= HandleCtrlNInstance;
+        _autoSaveTimer?.Dispose();
+        _dotNetHelper?.Dispose();
+    }
+
+    #endregion
+
+    #region Header Event Handlers
+
+    private void HandleTitleEdited() => _hasUnsavedChanges = true;
+
+    private async Task HandleIconChanged(string? newIcon)
+    {
+        if (_article == null || _isSaving) return;
+
+        _article.IconEmoji = newIcon;
+        _isSaving = true;
+        StateHasChanged();
+
+        try
         {
-            _shouldFocusTitle = false;
-            await Task.Delay(100);
-            try
+            var updateDto = new ArticleUpdateDto
             {
-                await _titleField.FocusAsync();
-                // Also try JS focus as backup
-                await JSRuntime.InvokeVoidAsync("eval", 
-                    "document.querySelector('.chronicis-article-title input')?.focus();");
-            }
-            catch { /* ignore focus errors */ }
+                Title = _editTitle?.Trim() ?? string.Empty,
+                Body = _editBody,
+                EffectiveDate = _article.EffectiveDate,
+                IconEmoji = newIcon
+            };
+
+            await ArticleApi.UpdateArticleAsync(_article.Id, updateDto);
+            _article.ModifiedAt = DateTime.Now;
+            _lastSaveTime = "just now";
+
+            await TreeState.RefreshAsync();
+            TreeState.UpdateNodeDisplay(_article.Id, _editTitle ?? string.Empty, newIcon);
+
+            Snackbar.Add($"Icon {(string.IsNullOrEmpty(newIcon) ? "removed" : "updated")}", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to save icon: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
         }
     }
+
+    private void HandleFocusTitleChanged(bool value) => _shouldFocusTitle = value;
+
+    private void ToggleMetadata() => _openMetadata = !_openMetadata;
+
+    #endregion
+
+    #region Article Loading
 
     private async void OnTreeStateChanged()
     {
@@ -328,7 +230,6 @@ else
 
             _editorInitialized = false;
 
-            // Check if article is selected AND valid
             if (TreeState.SelectedArticleId.HasValue && TreeState.SelectedArticleId.Value != Guid.Empty)
             {
                 await LoadArticleAsync(TreeState.SelectedArticleId.Value);
@@ -336,8 +237,6 @@ else
             else
             {
                 _article = null;
-
-                // Reset page title to default
                 await JSRuntime.InvokeVoidAsync("eval", "document.title = 'Chronicis'");
             }
 
@@ -363,33 +262,20 @@ else
             _editBody = _article?.Body ?? string.Empty;
             _hasUnsavedChanges = false;
 
-            // Cache the loaded article for tooltips/navigation
             if (_article != null)
             {
                 ArticleCache.CacheArticle(_article);
             }
 
-            LoadBreadcrumbs(articleId);
+            LoadBreadcrumbs();
+            await UpdatePageTitle();
+            await SaveLastArticlePath();
 
-            // Update browser page title
-            var pageTitle = string.IsNullOrEmpty(_article?.Title) 
-                ? "Untitled - Chronicis" 
-                : $"{_article.Title} - Chronicis";
-            await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(pageTitle)}'");
-
-            // Save last visited article path to localStorage
-            if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
-            {
-                var path = string.Join("/", _article.Breadcrumbs.Select(b => b.Slug));
-                await LocalStorage.SetItemAsStringAsync(LastArticlePathKey, $"/article/{path}");
-            }
-
-            // Focus title if it's empty (new article) OR if ShouldFocusTitle flag is set
             if (string.IsNullOrEmpty(_editTitle) || TreeState.ShouldFocusTitle)
             {
                 _shouldFocusTitle = true;
-                TreeState.ShouldFocusTitle = false; // Clear the flag
-                StateHasChanged(); // Trigger re-render so OnAfterRenderAsync runs
+                TreeState.ShouldFocusTitle = false;
+                StateHasChanged();
             }
         }
         catch (Exception ex)
@@ -402,35 +288,41 @@ else
         }
     }
 
-    private void LoadBreadcrumbs(Guid articleId)
+    private void LoadBreadcrumbs()
     {
-        _breadcrumbs = new List<BreadcrumbItem>
-        {
-            new BreadcrumbItem("Home", href: "/dashboard")
-        };
+        _breadcrumbs = new List<BreadcrumbItem> { new("Home", href: "/dashboard") };
 
-        // Build hierarchical paths from breadcrumbs
         if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
         {
             for (int i = 0; i < _article.Breadcrumbs.Count; i++)
             {
                 var crumb = _article.Breadcrumbs[i];
                 var isLast = i == _article.Breadcrumbs.Count - 1;
+                var path = string.Join("/", _article.Breadcrumbs.Take(i + 1).Select(b => b.Slug));
                 
-                // Build path up to this breadcrumb
-                var pathSegments = _article.Breadcrumbs
-                    .Take(i + 1)
-                    .Select(b => b.Slug);
-                var path = string.Join("/", pathSegments);
-                
-                _breadcrumbs.Add(new BreadcrumbItem(
-                    crumb.Title,
-                    href: isLast ? null : $"/article/{path}",
-                    disabled: isLast
-                ));
+                _breadcrumbs.Add(new BreadcrumbItem(crumb.Title, href: isLast ? null : $"/article/{path}", disabled: isLast));
             }
         }
     }
+
+    private async Task UpdatePageTitle()
+    {
+        var pageTitle = string.IsNullOrEmpty(_article?.Title) ? "Untitled - Chronicis" : $"{_article.Title} - Chronicis";
+        await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(pageTitle)}'");
+    }
+
+    private async Task SaveLastArticlePath()
+    {
+        if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
+        {
+            var path = string.Join("/", _article.Breadcrumbs.Select(b => b.Slug));
+            await LocalStorage.SetItemAsStringAsync(LastArticlePathKey, $"/article/{path}");
+        }
+    }
+
+    #endregion
+
+    #region Editor
 
     private async Task InitializeEditor()
     {
@@ -438,20 +330,8 @@ else
         {
             try
             {
-                await JSRuntime.InvokeVoidAsync(
-                    "initializeTipTapEditor",
-                    $"tiptap-editor-{_article.Id}",
-                    _editBody,
-                    _dotNetHelper
-                );
-                
-                // Initialize autocomplete
-                await JSRuntime.InvokeVoidAsync(
-                    "initializeWikiLinkAutocomplete",
-                    $"tiptap-editor-{_article.Id}",
-                    _dotNetHelper
-                );
-                
+                await JSRuntime.InvokeVoidAsync("initializeTipTapEditor", $"tiptap-editor-{_article.Id}", _editBody, _dotNetHelper);
+                await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", $"tiptap-editor-{_article.Id}", _dotNetHelper);
                 _editorInitialized = true;
             }
             catch (Exception ex)
@@ -465,74 +345,6 @@ else
     public void OnEditorUpdate(string markdown)
     {
         _editBody = markdown;
-        OnContentChanged();
-    }
-
-    // NEW: Title changes only mark as unsaved, no auto-save
-    private void OnTitleChanged()
-    {
-        _hasUnsavedChanges = true;
-        // No auto-save timer for title changes
-    }
-
-    // Handle icon changes - auto-save immediately
-    private async Task OnIconChanged(string? newIcon)
-    {
-        if (_article == null || _isSaving) return;
-
-        // Update local state
-        _article.IconEmoji = newIcon;
-        
-        // Save immediately
-        _isSaving = true;
-        StateHasChanged();
-
-        try
-        {
-            var updateDto = new ArticleUpdateDto
-            {
-                Title = _editTitle?.Trim() ?? string.Empty,
-                Body = _editBody,
-                EffectiveDate = _article.EffectiveDate,
-                IconEmoji = newIcon
-            };
-
-            await ArticleApi.UpdateArticleAsync(_article.Id, updateDto);
-            _article.ModifiedAt = DateTime.Now;
-            _lastSaveTime = "just now";
-
-            // Refresh tree to show updated icon
-            await TreeState.RefreshAsync();
-            
-            // Update tree node display
-            TreeState.UpdateNodeDisplay(_article.Id, _editTitle ?? string.Empty, newIcon);
-
-            var action = string.IsNullOrEmpty(newIcon) ? "removed" : "updated";
-            Snackbar.Add($"Icon {action}", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to save icon: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isSaving = false;
-            StateHasChanged();
-        }
-    }
-
-    // NEW: Handle Enter key in title field
-    private async Task OnTitleKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await SaveArticle();
-        }
-    }
-
-    // UPDATED: Only body content triggers auto-save
-    private void OnContentChanged()
-    {
         _hasUnsavedChanges = true;
         _autoSaveTimer?.Dispose();
         _autoSaveTimer = new Timer(async _ => await AutoSave(), null, 500, Timeout.Infinite);
@@ -543,13 +355,14 @@ else
         await InvokeAsync(async () =>
         {
             if (_hasUnsavedChanges && !_isSaving)
-            {
                 await SaveArticle();
-            }
         });
     }
 
-    // UPDATED: Save with title change detection and URL update
+    #endregion
+
+    #region Save & Delete
+
     private async Task SaveArticle()
     {
         if (_article == null || _isSaving) return;
@@ -559,83 +372,52 @@ else
 
         try
         {
-            // Track if title changed
             var originalTitle = _article.Title;
             var newTitle = _editTitle?.Trim() ?? string.Empty;
             var titleChanged = originalTitle != newTitle;
-
             string? newSlug = null;
             
-            // If title changed, ask if user wants to update slug
             if (titleChanged)
             {
                 var suggestedSlug = SlugGenerator.GenerateSlug(newTitle);
-                var currentSlug = _article.Slug;
-                
-                if (suggestedSlug != currentSlug)
-                {
+                if (suggestedSlug != _article.Slug)
                     newSlug = suggestedSlug;
-                }
             }
 
-            // Create update DTO from current state
             var updateDto = new ArticleUpdateDto
             {
                 Title = newTitle,
-                Slug = newSlug, // Only set if user confirmed slug change
+                Slug = newSlug,
                 Body = _editBody,
                 EffectiveDate = _article.EffectiveDate,
                 IconEmoji = _article.IconEmoji
             };
 
             await ArticleApi.UpdateArticleAsync(_article.Id, updateDto);
-
-            // Invalidate cache since article content changed (links may have changed)
             ArticleCache.InvalidateCache();
 
-            // Update local article with changes
             _article.Title = newTitle;
             _article.Body = _editBody;
             _article.ModifiedAt = DateTime.Now;
-
             _hasUnsavedChanges = false;
             _lastSaveTime = "just now";
 
-            // If slug actually changed, update URL and refresh tree
+            if (newSlug != null || titleChanged)
+            {
+                await UpdatePageTitle();
+                TreeState.UpdateNodeDisplay(_article.Id, newTitle, _article.IconEmoji);
+            }
+
             if (newSlug != null)
             {
-                // Update browser page title
-                var pageTitle = string.IsNullOrEmpty(newTitle) 
-                    ? "Untitled - Chronicis" 
-                    : $"{newTitle} - Chronicis";
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(pageTitle)}'");
-                
-                // Update tree node display and refresh
-                TreeState.UpdateNodeDisplay(_article.Id, newTitle, _article.IconEmoji);
-                
-                // Expand path and select the article
                 TreeState.ExpandPathToAndSelect(_article.Id);
-                
-                // Reload article to get updated breadcrumbs with new slug
                 _article = await ArticleApi.GetArticleAsync(_article.Id);
                 
-                // Build full hierarchical path from breadcrumbs
                 if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
                 {
                     var path = string.Join("/", _article.Breadcrumbs.Select(b => b.Slug));
                     Navigation.NavigateTo($"/article/{path}", replace: true);
                 }
-            }
-            else if (titleChanged)
-            {
-                // Title changed but slug didn't - still update browser title
-                var pageTitle = string.IsNullOrEmpty(newTitle) 
-                    ? "Untitled - Chronicis" 
-                    : $"{newTitle} - Chronicis";
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(pageTitle)}'");
-                
-                // Update tree node display
-                TreeState.UpdateNodeDisplay(_article.Id, newTitle, _article.IconEmoji);
             }
         }
         catch (Exception ex)
@@ -646,12 +428,8 @@ else
         {
             _isSaving = false;
             StateHasChanged();
-            
-            // Refresh link panels after save (links may have changed)
-            if (_outgoingLinksPanel != null)
-            {
-                await _outgoingLinksPanel.RefreshAsync();
-            }
+            if (_metadataDrawer != null)
+                await _metadataDrawer.RefreshPanelsAsync();
         }
     }
 
@@ -659,28 +437,20 @@ else
     {
         if (_article == null) return;
 
-        // Build confirmation message with child warning if applicable
         var message = $"Are you sure you want to delete '{_article.Title}'?";
-        
         if (_article.ChildCount > 0)
         {
             var childText = _article.ChildCount == 1 ? "1 child article" : $"{_article.ChildCount} child articles";
             message = $"Are you sure you want to delete '{_article.Title}'?\n\n⚠️ WARNING: This will also delete {childText} and all their descendants.";
         }
-        
         message += "\n\nThis action cannot be undone.";
 
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", message);
-
-        if (!confirmed) return;
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", message)) return;
 
         try
         {
             await ArticleApi.DeleteArticleAsync(_article.Id);
-            
-            // Invalidate cache since article structure changed
             ArticleCache.InvalidateCache();
-            
             Snackbar.Add("Article deleted successfully", Severity.Success);
             await TreeState.RefreshAsync();
             _article = null;
@@ -700,7 +470,6 @@ else
 
         try
         {
-            // Call the auto-link API with current editor content
             var result = await LinkApiService.AutoLinkAsync(_article.Id, _editBody);
 
             if (result == null)
@@ -715,28 +484,14 @@ else
                 return;
             }
 
-            // Build confirmation message with match details
             var matchList = string.Join("\n", result.Matches.Select(m => $"• \"{m.MatchedText}\" → {m.ArticleTitle}"));
-            var message = $"Found {result.LinksFound} potential link(s):\n\n{matchList}\n\nApply these links?";
+            if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Found {result.LinksFound} potential link(s):\n\n{matchList}\n\nApply these links?"))
+                return;
 
-            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", message);
-
-            if (!confirmed) return;
-
-            // Update the editor with the modified body
             _editBody = result.ModifiedBody;
-            
-            // Update TipTap editor content
-            await JSRuntime.InvokeVoidAsync(
-                "setTipTapContent",
-                $"tiptap-editor-{_article.Id}",
-                result.ModifiedBody
-            );
-
-            // Mark as changed and save
+            await JSRuntime.InvokeVoidAsync("setTipTapContent", $"tiptap-editor-{_article.Id}", result.ModifiedBody);
             _hasUnsavedChanges = true;
             await SaveArticle();
-
             Snackbar.Add($"Added {result.LinksFound} link(s)", Severity.Success);
         }
         catch (Exception ex)
@@ -751,17 +506,21 @@ else
         }
     }
 
+    #endregion
+
+    #region Article Creation
+
     private async Task CreateRootArticle()
     {
+        var worldId = AppContext.CurrentWorldId;
+        if (!worldId.HasValue || worldId == Guid.Empty)
+        {
+            Snackbar.Add("Please select a World first", Severity.Warning);
+            return;
+        }
+
         try
         {
-            var worldId = AppContext.CurrentWorldId;
-            if (!worldId.HasValue || worldId == Guid.Empty)
-            {
-                Snackbar.Add("Please select a World first", Severity.Warning);
-                return;
-            }
-
             var createDto = new ArticleCreateDto
             {
                 Title = "Untitled",
@@ -771,7 +530,7 @@ else
                 WorldId = worldId.Value
             };
 
-            var created = await ArticleApi.CreateArticleAsync(createDto);
+            await ArticleApi.CreateArticleAsync(createDto);
             await TreeState.RefreshAsync();
             Snackbar.Add("Article created", Severity.Success);
         }
@@ -781,10 +540,47 @@ else
         }
     }
 
-    private void ToggleMetadata()
+    private async Task CreateSiblingArticle()
     {
-        _openMetadata = !_openMetadata;
+        if (_article == null) return;
+
+        try
+        {
+            var createDto = new ArticleCreateDto
+            {
+                Title = string.Empty,
+                Body = string.Empty,
+                ParentId = _article.ParentId,
+                EffectiveDate = DateTime.Now,
+                WorldId = _article.WorldId,
+                CampaignId = _article.CampaignId
+            };
+
+            var created = await ArticleApi.CreateArticleAsync(createDto);
+            if (created == null)
+            {
+                Snackbar.Add("Failed to create article", Severity.Error);
+                return;
+            }
+            
+            await TreeState.RefreshAsync();
+            TreeState.ExpandPathToAndSelect(created.Id);
+            
+            var path = created.Breadcrumbs?.Any() == true 
+                ? string.Join("/", created.Breadcrumbs.Select(b => b.Slug))
+                : created.Slug;
+            Navigation.NavigateTo($"/article/{path}");
+            Snackbar.Add("New article created", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
+        }
     }
+
+    #endregion
+
+    #region Keyboard Shortcuts
 
     [JSInvokable("HandleCtrlN")]
     public static Task HandleCtrlN()
@@ -795,75 +591,11 @@ else
 
     private static event Action? OnCtrlNPressed;
 
-    protected override void OnInitialized()
-    {
-        OnCtrlNPressed += HandleCtrlNInstance;
-        base.OnInitialized();
-    }
+    private async void HandleCtrlNInstance() => await InvokeAsync(CreateSiblingArticle);
 
-    private async void HandleCtrlNInstance()
-    {
-        await InvokeAsync(async () =>
-        {
-            await CreateSiblingArticle();
-        });
-    }
+    #endregion
 
-    private async Task CreateSiblingArticle()
-    {
-        if (_article == null) return;
-
-        try
-        {
-            // Create sibling = same parent as current article
-            var createDto = new ArticleCreateDto
-            {
-                Title = string.Empty,
-                Body = string.Empty,
-                ParentId = _article.ParentId, // Same parent = sibling
-                EffectiveDate = DateTime.Now,
-                WorldId = _article.WorldId,
-                CampaignId = _article.CampaignId
-            };
-
-            var created = await ArticleApi.CreateArticleAsync(createDto);
-            
-            // Refresh tree to show new article
-            await TreeState.RefreshAsync();
-            
-            // Select and navigate to the new article
-            TreeState.ExpandPathToAndSelect(created.Id);
-            
-            // Navigate to the new article
-            if (created.Breadcrumbs != null && created.Breadcrumbs.Any())
-            {
-                var path = string.Join("/", created.Breadcrumbs.Select(b => b.Slug));
-                Navigation.NavigateTo($"/article/{path}");
-            }
-            else
-            {
-                Navigation.NavigateTo($"/article/{created.Slug}");
-            }
-
-            Snackbar.Add("New article created", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
-        }
-    }
-
-    public void Dispose()
-    {
-        TreeState.OnStateChanged -= OnTreeStateChanged;
-        OnCtrlNPressed -= HandleCtrlNInstance;
-        _autoSaveTimer?.Dispose();
-        _dotNetHelper?.Dispose();
-    }
-
-    // ============================================
-    // WIKI LINK AUTOCOMPLETE
-    // ============================================
+    #region Wiki Link Autocomplete
 
     [JSInvokable]
     public async Task OnAutocompleteTriggered(string query, double x, double y)
@@ -875,7 +607,7 @@ else
         
         if (query.Length < 3)
         {
-            _autocompleteSuggestions = new List<LinkSuggestionDto>();
+            _autocompleteSuggestions = new();
             StateHasChanged();
             return;
         }
@@ -886,17 +618,12 @@ else
         try
         {
             var worldId = AppContext.CurrentWorldId ?? _article?.WorldId ?? Guid.Empty;
-            Logger.LogInformation("Autocomplete triggered: query={Query}, worldId={WorldId}, article.WorldId={ArticleWorldId}", 
-                query, worldId, _article?.WorldId);
-            
             _autocompleteSuggestions = await LinkApiService.GetSuggestionsAsync(worldId, query);
-            
-            Logger.LogInformation("Autocomplete results: {Count} suggestions", _autocompleteSuggestions.Count);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error getting autocomplete suggestions");
-            _autocompleteSuggestions = new List<LinkSuggestionDto>();
+            _autocompleteSuggestions = new();
         }
         finally
         {
@@ -909,51 +636,9 @@ else
     public Task OnAutocompleteHidden()
     {
         _showAutocomplete = false;
-        _autocompleteSuggestions = new List<LinkSuggestionDto>();
+        _autocompleteSuggestions = new();
         StateHasChanged();
         return Task.CompletedTask;
-    }
-
-    private Task OnAutocompleteIndexChanged(int index)
-    {
-        _autocompleteSelectedIndex = index;
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
-
-    private async Task OnAutocompleteSelect(LinkSuggestionDto suggestion)
-    {
-        if (_article == null) return;
-
-        try
-        {
-            Logger.LogInformation("OnAutocompleteSelect called: ArticleId={ArticleId}, Title={Title}", 
-                suggestion.ArticleId, suggestion.Title);
-            
-            // Insert the wiki link via JavaScript
-            await JSRuntime.InvokeVoidAsync(
-                "insertWikiLink",
-                $"tiptap-editor-{_article.Id}",
-                suggestion.ArticleId.ToString(),
-                suggestion.Title
-            );
-
-            Logger.LogInformation("insertWikiLink JavaScript call completed");
-
-            // Hide autocomplete
-            _showAutocomplete = false;
-            _autocompleteSuggestions = new List<LinkSuggestionDto>();
-            StateHasChanged();
-
-            // Save immediately to prevent race condition when clicking the link
-            await Task.Delay(50); // Small delay to let editor update _editBody
-            await SaveArticle();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error inserting wiki link");
-            Snackbar.Add("Failed to insert link", Severity.Error);
-        }
     }
 
     [JSInvokable]
@@ -982,8 +667,33 @@ else
     public async Task OnAutocompleteEnter()
     {
         if (_autocompleteSuggestions.Any() && _autocompleteSelectedIndex < _autocompleteSuggestions.Count)
-        {
             await OnAutocompleteSelect(_autocompleteSuggestions[_autocompleteSelectedIndex]);
+    }
+
+    private Task OnAutocompleteIndexChanged(int index)
+    {
+        _autocompleteSelectedIndex = index;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task OnAutocompleteSelect(LinkSuggestionDto suggestion)
+    {
+        if (_article == null) return;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("insertWikiLink", $"tiptap-editor-{_article.Id}", suggestion.ArticleId.ToString(), suggestion.Title);
+            _showAutocomplete = false;
+            _autocompleteSuggestions = new();
+            StateHasChanged();
+            await Task.Delay(50);
+            await SaveArticle();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error inserting wiki link");
+            Snackbar.Add("Failed to insert link", Severity.Error);
         }
     }
 
@@ -993,54 +703,23 @@ else
 
         try
         {
-            Logger.LogInformation("Creating new article from autocomplete: {Name}", articleName);
-
-            Guid worldId = AppContext.CurrentWorldId.HasValue 
-                ? AppContext.CurrentWorldId.Value 
-                : _article!.WorldId.HasValue ? _article.WorldId.Value : Guid.Empty;
+            var worldId = AppContext.CurrentWorldId ?? _article.WorldId ?? Guid.Empty;
+            var created = await WikiLinkService.CreateArticleFromAutocompleteAsync(articleName, worldId);
             
-            // Find the Wiki folder for this world
-            Guid? wikiParentId = await FindWikiFolderAsync(worldId);
-            
-            if (wikiParentId == null)
+            if (created == null)
             {
-                Logger.LogWarning("No Wiki folder found for world {WorldId}, creating at world root", worldId);
+                Snackbar.Add("Failed to create article", Severity.Error);
+                return;
             }
 
-            var createDto = new ArticleCreateDto
-            {
-                Title = articleName,
-                Body = string.Empty,
-                ParentId = wikiParentId,
-                EffectiveDate = DateTime.Now,
-                WorldId = worldId
-            };
-
-            var created = await ArticleApi.CreateArticleAsync(createDto);
-            
-            Logger.LogInformation("Created article {Id} with title {Title} under parent {ParentId}", 
-                created.Id, created.Title, wikiParentId);
-
-            // Insert the wiki link to the newly created article
-            await JSRuntime.InvokeVoidAsync(
-                "insertWikiLink",
-                $"tiptap-editor-{_article.Id}",
-                created.Id.ToString(),
-                created.Title
-            );
-
-            // Hide autocomplete
+            await JSRuntime.InvokeVoidAsync("insertWikiLink", $"tiptap-editor-{_article.Id}", created.Id.ToString(), created.Title);
             _showAutocomplete = false;
-            _autocompleteSuggestions = new List<LinkSuggestionDto>();
+            _autocompleteSuggestions = new();
             StateHasChanged();
 
-            // Save immediately
             await Task.Delay(50);
             await SaveArticle();
-
-            // Refresh tree to show new article
             await TreeState.RefreshAsync();
-
             Snackbar.Add($"Created and linked '{articleName}'", Severity.Success);
         }
         catch (Exception ex)
@@ -1050,74 +729,18 @@ else
         }
     }
 
-    private async Task<Guid?> FindWikiFolderAsync(Guid worldId)
-    {
-        try
-        {
-            // The Wiki folder is typically a child of the World article
-            // First, get root articles for this world (which should include the World itself)
-            var rootArticles = await ArticleApi.GetRootArticlesAsync(worldId);
-            
-            // The root article for a world is usually the world itself
-            // Get children of the first root article (the world)
-            if (rootArticles.Any())
-            {
-                var worldArticle = rootArticles.First();
-                var worldChildren = await ArticleApi.GetChildrenAsync(worldArticle.Id);
-                
-                // Look for an article named "Wiki" (case-insensitive)
-                var wikiFolder = worldChildren.FirstOrDefault(a => 
-                    a.Title.Equals("Wiki", StringComparison.OrdinalIgnoreCase));
-                
-                if (wikiFolder != null)
-                {
-                    Logger.LogInformation("Found Wiki folder {WikiId} under world {WorldId}", wikiFolder.Id, worldId);
-                    return wikiFolder.Id;
-                }
-            }
-            
-            // Fallback: check if Wiki is at root level
-            var rootWiki = rootArticles.FirstOrDefault(a => 
-                a.Title.Equals("Wiki", StringComparison.OrdinalIgnoreCase));
-            
-            if (rootWiki != null)
-            {
-                Logger.LogInformation("Found Wiki folder {WikiId} at root level", rootWiki.Id);
-                return rootWiki.Id;
-            }
-            
-            Logger.LogWarning("No Wiki folder found for world {WorldId}", worldId);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error finding Wiki folder for world {WorldId}", worldId);
-            return null;
-        }
-    }
-
     [JSInvokable]
     public async Task OnWikiLinkClicked(string targetArticleId)
     {
+        if (!Guid.TryParse(targetArticleId, out var articleId)) return;
+
         try
         {
-            if (!Guid.TryParse(targetArticleId, out var articleId))
-            {
-                Logger.LogWarning("Invalid article ID clicked: {ArticleId}", targetArticleId);
-                return;
-            }
-
-            // Use cache service to get navigation path
             var path = await ArticleCache.GetNavigationPathAsync(articleId);
-            
             if (!string.IsNullOrEmpty(path))
-            {
                 Navigation.NavigateTo($"/article/{path}");
-            }
             else
-            {
                 Snackbar.Add("Article not found", Severity.Warning);
-            }
         }
         catch (Exception ex)
         {
@@ -1129,14 +752,10 @@ else
     [JSInvokable]
     public async Task<string?> GetArticlePath(string targetArticleId)
     {
+        if (!Guid.TryParse(targetArticleId, out var articleId)) return null;
+
         try
         {
-            if (!Guid.TryParse(targetArticleId, out var articleId))
-            {
-                return null;
-            }
-
-            // Use cache service to get the display path
             return await ArticleCache.GetArticlePathAsync(articleId);
         }
         catch (Exception ex)
@@ -1145,4 +764,6 @@ else
             return null;
         }
     }
+
+    #endregion
 }

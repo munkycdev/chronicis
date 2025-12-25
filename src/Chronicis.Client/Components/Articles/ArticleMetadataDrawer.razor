@@ -1,0 +1,136 @@
+@* ArticleMetadataDrawer.razor - Right-side metadata panel for articles *@
+@* Includes outgoing links, backlinks, and article info *@
+
+<style>
+    .metadata-drawer,
+    .metadata-drawer .mud-drawer-content {
+        background-color: transparent !important;
+        border-right-color: transparent;
+    }
+    .metadata-drawer .mud-drawer-content {
+        padding: 8px;
+        background-color: var(--chronicis-soft-off-white) !important;
+    }
+    .metadata-drawer.mud-drawer-persistent {
+        height: auto !important;
+    }
+    .metadata-drawer p {
+        font-size: 0.8rem;
+    }
+
+    /* Scrollable metadata drawer */
+    .metadata-drawer-scrollable {
+        height: calc(100vh - 180px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-bottom: 24px;
+    }
+</style>
+
+<MudDrawer @bind-Open="IsOpen"
+           @bind-Open:after="OnOpenChangedInternal"
+           Fixed="true"
+           Anchor="Anchor.End"
+           Elevation="9999"
+           Variant="@DrawerVariant.Persistent"
+           ClipMode="@DrawerClipMode.Always"
+           Class="metadata-drawer">
+    <MudDrawerHeader Class="backlinks-header">
+        <MudText Typo="Typo.h6" Class="backlinks-title">
+            <MudIcon Icon="@Icons.Material.Filled.IntegrationInstructions" Size="Size.Small" />
+            Metadata
+        </MudText>
+    </MudDrawerHeader>
+    <MudDrawerContainer Class="metadata-drawer-scrollable chronicis-scrollbar-light">
+        <!-- Outgoing Links Panel -->
+        <OutgoingLinksPanel @ref="_outgoingLinksPanel" ArticleId="@Article.Id" />
+        
+        <MudDivider Class="my-3" />
+        
+        <!-- Backlinks Panel -->
+        <BacklinksPanel @ref="_backlinksPanel" ArticleId="@Article.Id" />
+        
+        <MudDivider Class="my-3" />
+        
+        <!-- Article Metadata -->
+        <MudText Typo="Typo.subtitle2" Class="px-4 py-2" Style="color: var(--mud-palette-text-secondary);">
+            Article Info
+        </MudText>
+        <MudList T="string">
+            <MudListItem>
+                <MudText Typo="Typo.subtitle1">Article ID</MudText>
+                <MudText Typo="Typo.body2">@Article.Id</MudText>
+            </MudListItem>
+            <MudListItem>
+                <MudText Typo="Typo.subtitle1">World ID</MudText>
+                <MudText Typo="Typo.body2">@Article.WorldId</MudText>
+            </MudListItem>
+            <MudListItem>
+                <MudText Typo="Typo.subtitle1">Campaign ID</MudText>
+                <MudText Typo="Typo.body2">@(Article.CampaignId?.ToString() ?? "None")</MudText>
+            </MudListItem>
+            <MudListItem>
+                <MudText Typo="Typo.subtitle1">Effective Date</MudText>
+                <MudText Typo="Typo.body2">
+                    @Article.EffectiveDate.ToString("MMMM d, yyyy 'at' h:mm tt")
+                </MudText>
+            </MudListItem>
+            <MudListItem>
+                <MudText Typo="Typo.subtitle1">Created Date</MudText>
+                <MudText Typo="Typo.body2">
+                    @Article.CreatedAt.ToString("MMMM d, yyyy 'at' h:mm tt")
+                </MudText>
+            </MudListItem>
+            <MudListItem>
+                <MudText Typo="Typo.subtitle1">Modified Date</MudText>
+                <MudText Typo="Typo.body2">
+                    @Article.ModifiedAt?.ToString("MMMM d, yyyy 'at' h:mm tt")
+                </MudText>
+            </MudListItem>
+        </MudList>
+    </MudDrawerContainer>
+</MudDrawer>
+
+@code {
+    private OutgoingLinksPanel? _outgoingLinksPanel;
+    private BacklinksPanel? _backlinksPanel;
+
+    /// <summary>
+    /// The article whose metadata to display.
+    /// </summary>
+    [Parameter]
+    public ArticleDto Article { get; set; } = null!;
+
+    /// <summary>
+    /// Whether the drawer is open (two-way bound).
+    /// </summary>
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    /// <summary>
+    /// Callback when drawer open state changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+
+    /// <summary>
+    /// Refreshes the outgoing links panel. Call after saving article content.
+    /// </summary>
+    public async Task RefreshPanelsAsync()
+    {
+        if (_outgoingLinksPanel != null)
+        {
+            await _outgoingLinksPanel.RefreshAsync();
+        }
+        
+        if (_backlinksPanel != null)
+        {
+            await _backlinksPanel.RefreshAsync();
+        }
+    }
+
+    private async Task OnOpenChangedInternal()
+    {
+        await IsOpenChanged.InvokeAsync(IsOpen);
+    }
+}

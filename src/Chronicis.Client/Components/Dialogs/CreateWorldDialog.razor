@@ -78,7 +78,7 @@
             var world = await WorldApi.CreateWorldAsync(createDto);
             MudDialog?.Close(DialogResult.Ok(world));
         }
-        catch (Exception ex)
+        catch
         {
             MudDialog?.Close(DialogResult.Cancel());
         }

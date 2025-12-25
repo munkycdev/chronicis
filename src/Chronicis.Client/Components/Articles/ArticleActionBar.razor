@@ -1,0 +1,114 @@
+@* ArticleActionBar.razor - Action buttons and save status for article editing *@
+
+<div class="chronicis-flex-between mt-4">
+    <SaveStatusIndicator IsSaving="IsSaving" 
+                         HasUnsavedChanges="HasUnsavedChanges" 
+                         LastSaveTime="@LastSaveTime" />
+
+    <div class="chronicis-flex" style="gap: 8px;">
+        <MudButton 
+            Variant="Variant.Outlined" 
+            Color="Color.Secondary"
+            OnClick="OnAutoLinkClick"
+            Disabled="IsSaving || IsAutoLinking"
+            StartIcon="@Icons.Material.Filled.AutoFixHigh">
+            @if (IsAutoLinking)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Scanning...</span>
+            }
+            else
+            {
+                <span>Auto-Link</span>
+            }
+        </MudButton>
+        
+        <MudButton 
+            Variant="Variant.Filled" 
+            Color="Color.Primary"
+            OnClick="OnSaveClick"
+            Disabled="IsSaving"
+            StartIcon="@Icons.Material.Filled.Save">
+            Save
+        </MudButton>
+        
+        <MudButton 
+            Variant="Variant.Outlined" 
+            Color="Color.Error"
+            OnClick="OnDeleteClick"
+            StartIcon="@Icons.Material.Filled.Delete">
+            Delete
+        </MudButton>
+    </div>
+</div>
+
+@code {
+    #region Status Parameters
+
+    /// <summary>
+    /// Whether a save operation is in progress.
+    /// </summary>
+    [Parameter]
+    public bool IsSaving { get; set; }
+
+    /// <summary>
+    /// Whether the auto-link operation is in progress.
+    /// </summary>
+    [Parameter]
+    public bool IsAutoLinking { get; set; }
+
+    /// <summary>
+    /// Whether there are unsaved changes.
+    /// </summary>
+    [Parameter]
+    public bool HasUnsavedChanges { get; set; }
+
+    /// <summary>
+    /// Display text for last save time (e.g., "just now").
+    /// </summary>
+    [Parameter]
+    public string? LastSaveTime { get; set; }
+
+    #endregion
+
+    #region Event Callbacks
+
+    /// <summary>
+    /// Raised when the Save button is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    /// <summary>
+    /// Raised when the Delete button is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnDelete { get; set; }
+
+    /// <summary>
+    /// Raised when the Auto-Link button is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnAutoLink { get; set; }
+
+    #endregion
+
+    #region Event Handlers
+
+    private async Task OnSaveClick()
+    {
+        await OnSave.InvokeAsync();
+    }
+
+    private async Task OnDeleteClick()
+    {
+        await OnDelete.InvokeAsync();
+    }
+
+    private async Task OnAutoLinkClick()
+    {
+        await OnAutoLink.InvokeAsync();
+    }
+
+    #endregion
+}

@@ -91,7 +91,7 @@
             var arc = await ArcApi.CreateArcAsync(createDto);
             MudDialog?.Close(DialogResult.Ok(arc));
         }
-        catch (Exception ex)
+        catch
         {
             MudDialog?.Close(DialogResult.Cancel());
         }

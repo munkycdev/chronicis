@@ -146,6 +146,9 @@ builder.Services.AddScoped<IAppContextService, AppContextService>();
 // Article cache service (for reducing API calls on tooltips/navigation)
 builder.Services.AddScoped<IArticleCacheService, ArticleCacheService>();
 
+// Wiki link service (for creating articles from autocomplete)
+builder.Services.AddScoped<IWikiLinkService, WikiLinkService>();
+
 await builder.Build().RunAsync();
 
 // ============================================

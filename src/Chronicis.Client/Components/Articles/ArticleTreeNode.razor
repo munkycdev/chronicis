@@ -125,7 +125,10 @@
     public EventCallback<Guid?> DraggedNodeIdChanged { get; set; }
     
     private bool _isDragOver;
+    
+#pragma warning disable CS0649 // Field is never assigned - context menu feature not yet implemented
     private MudMenu? _contextMenu;
+#pragma warning restore CS0649
     
     private string GetNodeClasses()
     {

@@ -80,9 +80,8 @@
             var campaign = await CampaignApi.CreateCampaignAsync(createDto);
             MudDialog?.Close(DialogResult.Ok(campaign));
         }
-        catch (Exception ex)
+        catch
         {
-            // Let the parent handle the error
             MudDialog?.Close(DialogResult.Cancel());
         }
         finally

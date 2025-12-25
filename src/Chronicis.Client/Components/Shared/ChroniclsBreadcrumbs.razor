@@ -1,0 +1,50 @@
+@* ChroniclsBreadcrumbs.razor - Reusable breadcrumb toolbar with optional actions *@
+
+<div class="mud-toolbar @Class">
+    @if (Items != null && Items.Any())
+    {
+        @if (UseCustomLinks)
+        {
+            <MudBreadcrumbs Items="Items">
+                <ItemTemplate Context="item">
+                    <MudLink Href="@item.Href" Class="chronicis-breadcrumb-link">
+                        @item.Text
+                    </MudLink>
+                </ItemTemplate>
+            </MudBreadcrumbs>
+        }
+        else
+        {
+            <MudBreadcrumbs Items="Items" />
+        }
+    }
+    <MudSpacer />
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>
+    /// The breadcrumb items to display.
+    /// </summary>
+    [Parameter]
+    public List<BreadcrumbItem>? Items { get; set; }
+
+    /// <summary>
+    /// Whether to use custom MudLink styling for breadcrumb items.
+    /// When false, uses default MudBreadcrumbs rendering.
+    /// </summary>
+    [Parameter]
+    public bool UseCustomLinks { get; set; } = false;
+
+    /// <summary>
+    /// Additional CSS classes for the toolbar container.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Optional content to render on the right side of the toolbar (e.g., action buttons).
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}
