@@ -78,7 +78,7 @@ public class CreateArticle
                 }
 
                 // Check uniqueness
-                if (!await _articleService.IsSlugUniqueAsync(dto.Slug, dto.ParentId, user.Id))
+                if (!await _articleService.IsSlugUniqueAsync(dto.Slug, dto.ParentId, dto.WorldId, user.Id))
                 {
                     var duplicateSlug = req.CreateResponse(HttpStatusCode.Conflict);
                     await duplicateSlug.WriteStringAsync($"An article with slug '{dto.Slug}' already exists in this location");
@@ -90,7 +90,7 @@ public class CreateArticle
             else
             {
                 // Auto-generate unique slug from title
-                slug = await _articleService.GenerateUniqueSlugAsync(dto.Title, dto.ParentId, user.Id);
+                slug = await _articleService.GenerateUniqueSlugAsync(dto.Title, dto.ParentId, dto.WorldId, user.Id);
             }
 
             var article = new Article

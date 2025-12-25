@@ -1,6 +1,7 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
+using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -356,15 +357,33 @@ namespace Chronicis.Api.Services
         }
 
         /// <summary>
-        /// Check if a slug is unique within its parent scope.
+        /// Check if a slug is unique among siblings.
+        /// For root articles (ParentId is null), checks uniqueness within the World.
+        /// For child articles, checks uniqueness within the same parent.
         /// </summary>
-        public async Task<bool> IsSlugUniqueAsync(string slug, Guid? parentId, Guid userId, Guid? excludeArticleId = null)
+        public async Task<bool> IsSlugUniqueAsync(string slug, Guid? parentId, Guid? worldId, Guid userId, Guid? excludeArticleId = null)
         {
-            var query = _context.Articles
-                .AsNoTracking()
-                .Where(a => a.Slug == slug &&
-                            a.ParentId == parentId &&
-                            a.CreatedBy == userId);
+            IQueryable<Article> query;
+
+            if (parentId.HasValue)
+            {
+                // Child article: unique among siblings with same parent
+                query = _context.Articles
+                    .AsNoTracking()
+                    .Where(a => a.Slug == slug &&
+                                a.ParentId == parentId &&
+                                a.CreatedBy == userId);
+            }
+            else
+            {
+                // Root article: unique among root articles in the same world
+                query = _context.Articles
+                    .AsNoTracking()
+                    .Where(a => a.Slug == slug &&
+                                a.ParentId == null &&
+                                a.WorldId == worldId &&
+                                a.CreatedBy == userId);
+            }
 
             if (excludeArticleId.HasValue)
             {
@@ -375,16 +394,32 @@ namespace Chronicis.Api.Services
         }
 
         /// <summary>
-        /// Generate a unique slug for an article within its parent scope.
+        /// Generate a unique slug for an article among its siblings.
+        /// For root articles (ParentId is null), checks uniqueness within the World.
+        /// For child articles, checks uniqueness within the same parent.
         /// </summary>
-        public async Task<string> GenerateUniqueSlugAsync(string title, Guid? parentId, Guid userId, Guid? excludeArticleId = null)
+        public async Task<string> GenerateUniqueSlugAsync(string title, Guid? parentId, Guid? worldId, Guid userId, Guid? excludeArticleId = null)
         {
             var baseSlug = SlugGenerator.GenerateSlug(title);
 
-            // Get all existing slugs in the same parent scope
-            var existingSlugs = await _context.Articles
-                .AsNoTracking()
-                .Where(a => a.ParentId == parentId && a.CreatedBy == userId)
+            IQueryable<Article> query;
+
+            if (parentId.HasValue)
+            {
+                // Child article: get slugs from siblings with same parent
+                query = _context.Articles
+                    .AsNoTracking()
+                    .Where(a => a.ParentId == parentId && a.CreatedBy == userId);
+            }
+            else
+            {
+                // Root article: get slugs from root articles in the same world
+                query = _context.Articles
+                    .AsNoTracking()
+                    .Where(a => a.ParentId == null && a.WorldId == worldId && a.CreatedBy == userId);
+            }
+
+            var existingSlugs = await query
                 .Where(a => !excludeArticleId.HasValue || a.Id != excludeArticleId.Value)
                 .Select(a => a.Slug)
                 .ToHashSetAsync();

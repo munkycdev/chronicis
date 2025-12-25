@@ -117,7 +117,7 @@ public class UpdateArticle
                 }
 
                 // Check uniqueness (excluding current article)
-                if (!await _articleService.IsSlugUniqueAsync(dto.Slug, article.ParentId, user.Id, article.Id))
+                if (!await _articleService.IsSlugUniqueAsync(dto.Slug, article.ParentId, article.WorldId, user.Id, article.Id))
                 {
                     var duplicateSlug = req.CreateResponse(HttpStatusCode.Conflict);
                     await duplicateSlug.WriteStringAsync($"An article with slug '{dto.Slug}' already exists in this location");

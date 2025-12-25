@@ -246,12 +246,12 @@ public class ChronicisDbContext : DbContext
             entity.HasIndex(a => a.Type);
             entity.HasIndex(a => a.Title);
 
-            // Unique constraint: Slug must be unique within parent scope
-            // For root articles (ParentId is null)
-            entity.HasIndex(a => a.Slug)
+            // Unique constraint: Slug must be unique among siblings
+            // For root articles (ParentId is null), scope by WorldId
+            entity.HasIndex(a => new { a.WorldId, a.Slug })
                 .IsUnique()
                 .HasFilter("[ParentId] IS NULL")
-                .HasDatabaseName("IX_Articles_Slug_Root");
+                .HasDatabaseName("IX_Articles_WorldId_Slug_Root");
 
             // For child articles (ParentId is not null)
             entity.HasIndex(a => new { a.ParentId, a.Slug })
