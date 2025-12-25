@@ -88,5 +88,3 @@ function createWikiLinkExtension() {
 
 // Make available globally
 window.createWikiLinkExtension = createWikiLinkExtension;
-
-console.log('✅ Wiki link extension script loaded');

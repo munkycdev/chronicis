@@ -82,7 +82,6 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
         }
     });
 
-    console.log('✅ Wiki link autocomplete initialized for', editorId);
 }
 
 /**
@@ -92,8 +91,6 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
  * @param {string} displayText - The text to display
  */
 function insertWikiLink(editorId, articleId, displayText) {
-    console.log('🔵 insertWikiLink called:', { editorId, articleId, displayText });
-    
     const editor = window.tipTapEditors[editorId];
     if (!editor) {
         console.error('Editor not found:', editorId);
@@ -106,11 +103,8 @@ function insertWikiLink(editorId, articleId, displayText) {
     
     // Clear the stored custom display text
     window._wikiLinkCustomDisplayText = null;
-    
-    console.log('🔵 Using display text:', finalDisplayText, '(custom:', customDisplayText, ')');
 
     const { from } = editor.state.selection;
-    console.log('🔵 Cursor position:', from);
     
     // Search backwards from cursor to find [[
     // We need to search character by character in the document to get accurate positions
@@ -135,12 +129,9 @@ function insertWikiLink(editorId, articleId, displayText) {
     }
     
     if (bracketPos === -1) {
-        console.error('❌ Could not find [[ before cursor');
+        console.error('Could not find [[ before cursor');
         return;
     }
-
-    console.log('🔵 Found [[ at position:', bracketPos);
-    console.log('🔵 Deleting from', bracketPos, 'to', from);
     
     // Use editor chain for cleaner manipulation
     editor
@@ -157,12 +148,8 @@ function insertWikiLink(editorId, articleId, displayText) {
         })
         .insertContent(' ')
         .run();
-
-    console.log('✅ Wiki link inserted:', articleId, finalDisplayText);
 }
 
 // Make functions globally available
 window.initializeWikiLinkAutocomplete = initializeWikiLinkAutocomplete;
 window.insertWikiLink = insertWikiLink;
-
-console.log('✅ Wiki link autocomplete script loaded');

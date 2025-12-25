@@ -70,19 +70,15 @@ window.initializeEmojiPicker = async function (containerId, dotNetHelper) {
 
         // Listen for emoji selection
         picker.addEventListener('emoji:select', (event) => {
-            console.log('Picmo emoji selected:', event);
             const emoji = event.emoji;
-            console.log('Emoji character:', emoji);
             
             if (emoji && dotNetHelper) {
                 dotNetHelper.invokeMethodAsync('OnEmojiSelected', emoji)
-                    .then(() => console.log('Blazor callback succeeded'))
                     .catch(err => console.error('Blazor callback failed:', err));
             }
         });
 
         activePickers.set(containerId, { picker, dotNetHelper });
-        console.log('Picmo picker initialized in container:', containerId);
     } catch (err) {
         console.error('Failed to create Picmo picker:', err);
     }

@@ -7,12 +7,10 @@ window.tipTapEditors = window.tipTapEditors || {};
 
 // Wait for TipTap to be ready
 window.addEventListener('tiptap-ready', function() {
-    console.log('✅ TipTap ready event received');
+    // TipTap is now loaded and ready
 });
 
 async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
-    console.log(`Initializing TipTap editor: ${editorId}`);
-    
     // Check if TipTap is loaded
     if (!window.TipTap || !window.TipTap.Editor) {
         console.error('TipTap not loaded yet, waiting...');
@@ -52,15 +50,12 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
             const wikiLinkExt = window.createWikiLinkExtension();
             if (wikiLinkExt) {
                 extensions.push(wikiLinkExt);
-                console.log('✅ Wiki link extension loaded');
             } else {
-                console.warn('⚠️ Wiki link extension returned null - TipTap.Node may not be available');
+                console.error('Wiki link extension returned null - TipTap.Node may not be available');
             }
         } catch (err) {
-            console.error('❌ Failed to load wiki link extension:', err);
+            console.error('Failed to load wiki link extension:', err);
         }
-    } else {
-        console.warn('⚠️ Wiki link extension not available');
     }
 
     // Create editor
@@ -92,11 +87,9 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
                 if (isBroken) {
                     // Dispatch event for broken link - Blazor will handle via event listener
                     dotNetHelper.invokeMethodAsync('OnBrokenLinkClicked', targetArticleId);
-                    console.log('Broken wiki link clicked:', targetArticleId);
                 } else {
                     // Navigate to the article
                     dotNetHelper.invokeMethodAsync('OnWikiLinkClicked', targetArticleId);
-                    console.log('Wiki link clicked:', targetArticleId);
                 }
             }
         }
@@ -150,7 +143,6 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
         }
     });
 
-    console.log(`✅ TipTap editor created with ID: ${editorId}`);
     return editor;
 }
 
@@ -159,7 +151,6 @@ function destroyTipTapEditor(editorId) {
     if (editor) {
         editor.destroy();
         delete window.tipTapEditors[editorId];
-        console.log(`Editor destroyed: ${editorId}`);
     }
 }
 
@@ -168,9 +159,8 @@ function setTipTapContent(editorId, markdown) {
     if (editor) {
         const html = markdownToHTML(markdown);
         editor.commands.setContent(html);
-        console.log(`Editor content updated: ${editorId}`);
     } else {
-        console.warn(`Editor not found: ${editorId}`);
+        console.error(`Editor not found: ${editorId}`);
     }
 }
 
@@ -369,5 +359,3 @@ function htmlToMarkdown(html) {
 
     return markdown;
 }
-
-console.log('✅ TipTap integration script loaded');

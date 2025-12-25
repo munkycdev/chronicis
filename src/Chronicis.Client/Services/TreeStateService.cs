@@ -95,7 +95,6 @@ public class TreeStateService : ITreeStateService
             await RestoreExpandedStateAsync();
             
             _isInitialized = true;
-            _logger.LogInformation("Tree initialized with {Count} root nodes", _rootNodes.Count);
             
             if (_pendingSelectionId.HasValue)
             {

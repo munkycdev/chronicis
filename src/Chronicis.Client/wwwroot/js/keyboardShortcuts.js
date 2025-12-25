@@ -7,13 +7,11 @@ window.chronicisKeyboardShortcuts = {
         this.dotNetHelper = dotNetHelper;
         
         document.addEventListener('keydown', this.handleKeyDown.bind(this));
-        console.log('Chronicis keyboard shortcuts initialized');
     },
     
     dispose: function() {
         document.removeEventListener('keydown', this.handleKeyDown.bind(this));
         this.dotNetHelper = null;
-        console.log('Chronicis keyboard shortcuts disposed');
     },
     
     handleKeyDown: function(e) {

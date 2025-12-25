@@ -36,23 +36,14 @@ public class WikiLinkService : IWikiLinkService
     {
         if (string.IsNullOrWhiteSpace(articleName))
         {
-            _logger.LogWarning("Cannot create article with empty name");
             return null;
         }
 
         try
         {
-            _logger.LogInformation("Creating new article from autocomplete: {Name} in world {WorldId}", 
-                articleName, worldId);
-
             // Find the Wiki folder for this world
             Guid? wikiParentId = await FindWikiFolderAsync(worldId);
             
-            if (wikiParentId == null)
-            {
-                _logger.LogWarning("No Wiki folder found for world {WorldId}, creating at world root", worldId);
-            }
-
             var createDto = new ArticleCreateDto
             {
                 Title = articleName,
@@ -63,17 +54,6 @@ public class WikiLinkService : IWikiLinkService
             };
 
             var created = await _articleApi.CreateArticleAsync(createDto);
-            
-            if (created != null)
-            {
-                _logger.LogInformation("Created article {Id} with title {Title} under parent {ParentId}", 
-                    created.Id, created.Title, wikiParentId);
-            }
-            else
-            {
-                _logger.LogWarning("Failed to create article from autocomplete");
-            }
-
             return created;
         }
         catch (Exception ex)
@@ -101,7 +81,6 @@ public class WikiLinkService : IWikiLinkService
                 
                 if (wikiFolder != null)
                 {
-                    _logger.LogDebug("Found Wiki folder {WikiId} under world {WorldId}", wikiFolder.Id, worldId);
                     return wikiFolder.Id;
                 }
             }
@@ -112,11 +91,9 @@ public class WikiLinkService : IWikiLinkService
             
             if (rootWiki != null)
             {
-                _logger.LogDebug("Found Wiki folder {WikiId} at root level", rootWiki.Id);
                 return rootWiki.Id;
             }
             
-            _logger.LogDebug("No Wiki folder found for world {WorldId}", worldId);
             return null;
         }
         catch (Exception ex)
