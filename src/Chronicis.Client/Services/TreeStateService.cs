@@ -670,7 +670,20 @@ public class TreeStateService : ITreeStateService
             }
         }
         
-        // Expand all ancestors
+        // Collect the IDs of nodes in the path (for quick lookup)
+        var pathNodeIds = new HashSet<Guid>(path.Select(n => n.Id));
+        
+        // Collapse all nodes that are NOT in the path to the target
+        foreach (var node in _nodeIndex.Values)
+        {
+            if (node.IsExpanded && !pathNodeIds.Contains(node.Id))
+            {
+                node.IsExpanded = false;
+                _expandedNodeIds.Remove(node.Id);
+            }
+        }
+        
+        // Expand all ancestors in the path
         for (int i = 0; i < path.Count - 1; i++)
         {
             var node = path[i];

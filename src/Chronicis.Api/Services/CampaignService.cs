@@ -74,7 +74,7 @@ public class CampaignService : ICampaignService
             Id = Guid.NewGuid(),
             CampaignId = campaign.Id,
             UserId = userId,
-            Role = CampaignRole.DM,
+            Role = CampaignRole.GM,
             JoinedAt = DateTime.UtcNow
         };
         _context.CampaignMembers.Add(dmMember);
@@ -189,10 +189,10 @@ public class CampaignService : ICampaignService
             return null;
 
         // Prevent demoting the last DM
-        if (member.Role == CampaignRole.DM && dto.Role != CampaignRole.DM)
+        if (member.Role == CampaignRole.GM && dto.Role != CampaignRole.GM)
         {
             var dmCount = await _context.CampaignMembers
-                .CountAsync(cm => cm.CampaignId == campaignId && cm.Role == CampaignRole.DM);
+                .CountAsync(cm => cm.CampaignId == campaignId && cm.Role == CampaignRole.GM);
 
             if (dmCount <= 1)
             {
@@ -229,10 +229,10 @@ public class CampaignService : ICampaignService
             return false;
 
         // Prevent removing the last DM
-        if (member.Role == CampaignRole.DM)
+        if (member.Role == CampaignRole.GM)
         {
             var dmCount = await _context.CampaignMembers
-                .CountAsync(cm => cm.CampaignId == campaignId && cm.Role == CampaignRole.DM);
+                .CountAsync(cm => cm.CampaignId == campaignId && cm.Role == CampaignRole.GM);
 
             if (dmCount <= 1)
             {
@@ -268,7 +268,7 @@ public class CampaignService : ICampaignService
         return await _context.CampaignMembers
             .AnyAsync(cm => cm.CampaignId == campaignId 
                         && cm.UserId == userId 
-                        && cm.Role == CampaignRole.DM);
+                        && cm.Role == CampaignRole.GM);
     }
 
     private static CampaignDto MapToDto(Campaign campaign)

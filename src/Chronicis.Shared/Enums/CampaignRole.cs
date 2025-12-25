@@ -9,7 +9,7 @@ public enum CampaignRole
     /// Full control - creates structure (Acts, Sessions), manages membership, sees all public content.
     /// Cannot see private content from other users.
     /// </summary>
-    DM = 0,
+    GM = 0,
     
     /// <summary>
     /// Can create characters, session notes, contribute to Wiki and Shared Info.

@@ -3,8 +3,11 @@
 @inject NavigationManager Navigation
 @inject ITreeStateService TreeState
 @inject IAuthService AuthService
+@inject IArticleApiService ArticleApi
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@implements IDisposable
+@implements IAsyncDisposable
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -124,11 +127,68 @@
     private string? _treeSearch;
     private string _globalSearchQuery = string.Empty;
     private UserInfo? _currentUser;
+    private DotNetObjectReference<AuthenticatedLayout>? _dotNetRef;
 
     protected override async Task OnInitializedAsync()
     {
         _currentUser = await AuthService.GetCurrentUserAsync();
         AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("chronicisKeyboardShortcuts.initialize", _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnCtrlN()
+    {
+        // Create a sibling article to the currently selected article
+        var selectedId = TreeState.SelectedNodeId;
+        
+        if (selectedId.HasValue)
+        {
+            // Get the current article to find its parent
+            var currentArticle = await ArticleApi.GetArticleDetailAsync(selectedId.Value);
+            if (currentArticle != null)
+            {
+                Guid? parentId = currentArticle.ParentId;
+                
+                // Create sibling (same parent)
+                Guid? newArticleId;
+                if (parentId.HasValue)
+                {
+                    newArticleId = await TreeState.CreateChildArticleAsync(parentId.Value);
+                }
+                else
+                {
+                    // Root-level article - create at root
+                    newArticleId = await TreeState.CreateRootArticleAsync();
+                }
+                
+                if (newArticleId.HasValue)
+                {
+                    Snackbar.Add("Article created (Ctrl+N)", Severity.Success);
+                    
+                    // Navigate to the new article
+                    var newArticle = await ArticleApi.GetArticleDetailAsync(newArticleId.Value);
+                    if (newArticle != null && newArticle.Breadcrumbs.Any())
+                    {
+                        var path = string.Join("/", newArticle.Breadcrumbs.Select(b => b.Slug));
+                        Navigation.NavigateTo($"/article/{path}");
+                    }
+                }
+            }
+        }
+        else
+        {
+            // No article selected - show message
+            Snackbar.Add("Select an article first, then press Ctrl+N to create a sibling", Severity.Info);
+        }
     }
 
     private async void OnAuthenticationStateChanged(Task<AuthenticationState> task)
@@ -182,8 +242,21 @@
         Navigation.NavigateToLogout("authentication/logout");
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+        
+        if (_dotNetRef != null)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("chronicisKeyboardShortcuts.dispose");
+            }
+            catch
+            {
+                // Ignore errors during disposal (e.g., if JS context is gone)
+            }
+            _dotNetRef.Dispose();
+        }
     }
 }
