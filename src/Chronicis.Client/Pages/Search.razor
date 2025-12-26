@@ -1,6 +1,7 @@
 @page "/search"
 @attribute [Authorize]
 @inject ISearchApiService SearchApi
+@inject IBreadcrumbService BreadcrumbService
 @inject NavigationManager Navigation
 @inject ITreeStateService TreeState
 
@@ -131,11 +132,11 @@
     {
         TreeState.ExpandPathToAndSelect(result.Id);
         
-        // Build path from breadcrumbs if available
+        // Build path from ancestor breadcrumbs
         if (result.AncestorPath != null && result.AncestorPath.Any())
         {
-            var path = string.Join("/", result.AncestorPath.Select(a => a.Slug));
-            Navigation.NavigateTo($"/article/{path}");
+            var path = BreadcrumbService.BuildArticleUrl(result.AncestorPath);
+            Navigation.NavigateTo(path);
         }
         else
         {

@@ -4,6 +4,7 @@
 @inject IArticleApiService ArticleApi
 @inject IWorldApiService WorldApi
 @inject IQuoteService QuoteService
+@inject IBreadcrumbService BreadcrumbService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @implements IDisposable
@@ -423,8 +424,8 @@
         var article = await ArticleApi.GetArticleDetailAsync(articleId);
         if (article != null && article.Breadcrumbs.Any())
         {
-            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-            Navigation.NavigateTo($"/article/{path}");
+            var path = BreadcrumbService.BuildArticleUrl(article.Breadcrumbs);
+            Navigation.NavigateTo(path);
         }
         else
         {
@@ -464,7 +465,12 @@
                     
                     // Get the article to build the path
                     var article = await ArticleApi.GetArticleAsync(world.WorldRootArticleId.Value);
-                    if (article != null)
+                    if (article != null && article.Breadcrumbs.Any())
+                    {
+                        var path = BreadcrumbService.BuildArticleUrl(article.Breadcrumbs);
+                        Navigation.NavigateTo(path);
+                    }
+                    else if (article != null)
                     {
                         Navigation.NavigateTo($"/article/{article.Slug}");
                     }

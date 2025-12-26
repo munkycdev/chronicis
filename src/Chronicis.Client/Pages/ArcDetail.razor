@@ -323,8 +323,8 @@ else
         // Navigate using full path from breadcrumbs
         if (created.Breadcrumbs.Any())
         {
-            var path = string.Join("/", created.Breadcrumbs.Select(b => b.Slug));
-            Navigation.NavigateTo($"/article/{path}");
+            var path = BreadcrumbService.BuildArticleUrl(created.Breadcrumbs);
+            Navigation.NavigateTo(path);
         }
         else
         {
@@ -339,8 +339,8 @@ else
         var article = await ArticleApi.GetArticleDetailAsync(session.Id);
         if (article != null && article.Breadcrumbs.Any())
         {
-            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-            Navigation.NavigateTo($"/article/{path}");
+            var path = BreadcrumbService.BuildArticleUrl(article.Breadcrumbs);
+            Navigation.NavigateTo(path);
         }
         else
         {

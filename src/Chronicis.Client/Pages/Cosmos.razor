@@ -3,6 +3,7 @@
 @inject ITreeStateService TreeStateService
 @inject IArticleApiService ArticleApi
 @inject IQuoteService QuoteService
+@inject IBreadcrumbService BreadcrumbService
 @inject NavigationManager Navigation
 @implements IDisposable
 
@@ -408,8 +409,8 @@ else
         var article = await ArticleApi.GetArticleDetailAsync(articleId);
         if (article != null && article.Breadcrumbs.Any())
         {
-            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-            Navigation.NavigateTo($"/article/{path}");
+            var path = BreadcrumbService.BuildArticleUrl(article.Breadcrumbs);
+            Navigation.NavigateTo(path);
         }
     }
 
