@@ -149,6 +149,9 @@ builder.Services.AddScoped<IArticleCacheService, ArticleCacheService>();
 // Wiki link service (for creating articles from autocomplete)
 builder.Services.AddScoped<IWikiLinkService, WikiLinkService>();
 
+// Breadcrumb service (for consistent navigation breadcrumbs)
+builder.Services.AddScoped<IBreadcrumbService, BreadcrumbService>();
+
 await builder.Build().RunAsync();
 
 // ============================================

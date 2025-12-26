@@ -280,20 +280,22 @@ namespace Chronicis.Api.Services
         }
 
         /// <summary>
-        /// Recursively build breadcrumb trail from root to current article.
+        /// Recursively build breadcrumb trail from world to current article.
+        /// The first breadcrumb is always the world, followed by the article hierarchy.
         /// </summary>
         private async Task<List<BreadcrumbDto>> BuildBreadcrumbsAsync(Guid articleId, Guid userId)
         {
             var breadcrumbs = new List<BreadcrumbDto>();
             var currentId = (Guid?)articleId;
+            Guid? worldId = null;
 
-            // Walk up the tree to build path
+            // Walk up the tree to build article path
             while (currentId.HasValue)
             {
                 var article = await _context.Articles
                     .AsNoTracking()
                     .Where(a => a.Id == currentId && a.CreatedBy == userId)
-                    .Select(a => new { a.Id, a.Title, a.Slug, a.ParentId, a.Type })
+                    .Select(a => new { a.Id, a.Title, a.Slug, a.ParentId, a.Type, a.WorldId })
                     .FirstOrDefaultAsync();
 
                 if (article == null)
@@ -304,17 +306,48 @@ namespace Chronicis.Api.Services
                     Id = article.Id,
                     Title = article.Title ?? "(Untitled)",
                     Slug = article.Slug,
-                    Type = article.Type
+                    Type = article.Type,
+                    IsWorld = false
                 });
 
+                // Capture the world ID from the first article we find it on
+                if (worldId == null && article.WorldId.HasValue)
+                {
+                    worldId = article.WorldId;
+                }
+
                 currentId = article.ParentId;
+            }
+
+            // Prepend world breadcrumb if we found a world
+            if (worldId.HasValue)
+            {
+                var world = await _context.Worlds
+                    .AsNoTracking()
+                    .Where(w => w.Id == worldId.Value)
+                    .Select(w => new { w.Id, w.Name, w.Slug })
+                    .FirstOrDefaultAsync();
+
+                if (world != null)
+                {
+                    breadcrumbs.Insert(0, new BreadcrumbDto
+                    {
+                        Id = world.Id,
+                        Title = world.Name,
+                        Slug = world.Slug,
+                        Type = default, // Not applicable for worlds
+                        IsWorld = true
+                    });
+                }
             }
 
             return breadcrumbs;
         }
 
         /// <summary>
-        /// Get article by hierarchical path (e.g., "sword-coast/waterdeep/castle-ward").
+        /// Get article by hierarchical path.
+        /// Path format: "world-slug/article-slug/child-slug" (e.g., "stormlight/wiki/characters").
+        /// The first segment is the world slug, remaining segments are article hierarchy.
         /// </summary>
         public async Task<ArticleDto?> GetArticleByPathAsync(string path, Guid userId)
         {
@@ -325,24 +358,66 @@ namespace Chronicis.Api.Services
             if (slugs.Length == 0)
                 return null;
 
+            // First segment is the world slug
+            var worldSlug = slugs[0];
+            
+            // Look up the world by slug for this user
+            var world = await _context.Worlds
+                .AsNoTracking()
+                .Where(w => w.Slug == worldSlug && w.OwnerId == userId)
+                .Select(w => new { w.Id })
+                .FirstOrDefaultAsync();
+
+            if (world == null)
+            {
+                _logger.LogWarning("World not found for slug '{WorldSlug}' for user {UserId}", worldSlug, userId);
+                return null;
+            }
+
+            // If only world slug provided, no article to return
+            if (slugs.Length == 1)
+            {
+                _logger.LogWarning("Path '{Path}' contains only world slug, no article path", path);
+                return null;
+            }
+
+            // Remaining segments are the article path within the world
             Guid? currentParentId = null;
             Guid? articleId = null;
 
-            // Walk down the tree using slugs
-            foreach (var slug in slugs)
+            // Walk down the tree using slugs (starting from index 1, skipping world slug)
+            for (int i = 1; i < slugs.Length; i++)
             {
-                var article = await _context.Articles
-                    .AsNoTracking()
-                    .Where(a => a.Slug == slug &&
-                                a.ParentId == currentParentId &&
-                                a.CreatedBy == userId)
-                    .Select(a => new { a.Id, a.ParentId })
-                    .FirstOrDefaultAsync();
+                var slug = slugs[i];
+                var isRootLevel = (i == 1); // First article slug (index 1) is at root level
+
+                Article? article;
+                if (isRootLevel)
+                {
+                    // Root-level article: filter by WorldId and ParentId = null
+                    article = await _context.Articles
+                        .AsNoTracking()
+                        .Where(a => a.Slug == slug &&
+                                    a.ParentId == null &&
+                                    a.WorldId == world.Id &&
+                                    a.CreatedBy == userId)
+                        .FirstOrDefaultAsync();
+                }
+                else
+                {
+                    // Child article: filter by ParentId
+                    article = await _context.Articles
+                        .AsNoTracking()
+                        .Where(a => a.Slug == slug &&
+                                    a.ParentId == currentParentId &&
+                                    a.CreatedBy == userId)
+                        .FirstOrDefaultAsync();
+                }
 
                 if (article == null)
                 {
-                    _logger.LogWarning("Article not found for slug '{Slug}' under parent {ParentId} for user {UserId}",
-                        slug, currentParentId, userId);
+                    _logger.LogWarning("Article not found for slug '{Slug}' under parent {ParentId} in world {WorldId} for user {UserId}",
+                        slug, currentParentId, world.Id, userId);
                     return null;
                 }
 
@@ -428,11 +503,15 @@ namespace Chronicis.Api.Services
         }
 
         /// <summary>
-        /// Build the full hierarchical path for an article.
+        /// Build the full hierarchical path for an article, including world slug.
+        /// Returns format: "world-slug/article-slug/child-slug"
         /// </summary>
         public async Task<string> BuildArticlePathAsync(Guid articleId, Guid userId)
         {
             var breadcrumbs = await BuildBreadcrumbsAsync(articleId, userId);
+            
+            // Breadcrumbs now include world as first element
+            // Just join all slugs together
             return string.Join("/", breadcrumbs.Select(b => b.Slug));
         }
     }

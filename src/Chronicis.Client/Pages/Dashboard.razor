@@ -417,14 +417,23 @@
         return count;
     }
 
-    private void NavigateToArticle(Guid articleId)
+    private async Task NavigateToArticle(Guid articleId)
     {
-        // Find the article to get its title for the slug
-        var article = _allArticles?.FirstOrDefault(a => a.Id == articleId);
-        if (article != null)
+        // Load full article to get breadcrumbs for proper path
+        var article = await ArticleApi.GetArticleDetailAsync(articleId);
+        if (article != null && article.Breadcrumbs.Any())
         {
-            var slug = CreateSlug(article.Title);
-            Navigation.NavigateTo($"/article/{slug}");
+            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
+            Navigation.NavigateTo($"/article/{path}");
+        }
+        else
+        {
+            // Fallback to slug only
+            var treeArticle = _allArticles?.FirstOrDefault(a => a.Id == articleId);
+            if (treeArticle != null)
+            {
+                Navigation.NavigateTo($"/article/{treeArticle.Slug}");
+            }
         }
     }
 

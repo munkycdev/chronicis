@@ -36,4 +36,9 @@ public interface IWorldService
     /// Check if user owns a world
     /// </summary>
     Task<bool> UserOwnsWorldAsync(Guid worldId, Guid userId);
+
+    /// <summary>
+    /// Get a world by its slug for a specific owner
+    /// </summary>
+    Task<WorldDto?> GetWorldBySlugAsync(string slug, Guid userId);
 }

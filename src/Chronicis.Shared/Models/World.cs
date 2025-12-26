@@ -19,6 +19,12 @@ public class World
     public string Name { get; set; } = string.Empty;
     
     /// <summary>
+    /// URL-friendly slug derived from name (e.g., "forgotten-realms").
+    /// Max 200 characters. Unique per owner.
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
+    
+    /// <summary>
     /// Optional description of the world.
     /// Max 1000 characters.
     /// </summary>

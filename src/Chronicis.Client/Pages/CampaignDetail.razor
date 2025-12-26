@@ -8,6 +8,7 @@
 @inject IArcApiService ArcApi
 @inject IWorldApiService WorldApi
 @inject ITreeStateService TreeState
+@inject IBreadcrumbService BreadcrumbService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
@@ -161,12 +162,19 @@ else
                 // Load world for breadcrumbs
                 _world = (await WorldApi.GetWorldAsync(_campaign.WorldId)) as WorldDto;
 
-                _breadcrumbs = new List<BreadcrumbItem>
+                if (_world != null)
                 {
-                    new("Dashboard", href: "/dashboard"),
-                    new(_world?.Name ?? "World", href: $"/world/{_campaign.WorldId}"),
-                    new(_campaign.Name, href: null, disabled: true)
-                };
+                    _breadcrumbs = BreadcrumbService.ForCampaign(_campaign, _world);
+                }
+                else
+                {
+                    // Fallback if world not loaded
+                    _breadcrumbs = new List<BreadcrumbItem>
+                    {
+                        new("Dashboard", href: "/dashboard"),
+                        new(_campaign.Name, href: null, disabled: true)
+                    };
+                }
 
                 await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_campaign.Name)} - Chronicis'");
                 

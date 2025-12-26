@@ -74,6 +74,10 @@ public class ChronicisDbContext : DbContext
                 .HasMaxLength(200)
                 .IsRequired();
 
+            entity.Property(w => w.Slug)
+                .HasMaxLength(200)
+                .IsRequired();
+
             entity.Property(w => w.Description)
                 .HasMaxLength(1000);
 
@@ -84,6 +88,11 @@ public class ChronicisDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(w => w.OwnerId);
+
+            // Unique constraint: Slug must be unique per owner
+            entity.HasIndex(w => new { w.OwnerId, w.Slug })
+                .IsUnique()
+                .HasDatabaseName("IX_Worlds_OwnerId_Slug");
         });
     }
 

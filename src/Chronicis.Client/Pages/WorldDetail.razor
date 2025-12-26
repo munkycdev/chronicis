@@ -7,6 +7,7 @@
 @inject IWorldApiService WorldApi
 @inject ICampaignApiService CampaignApi
 @inject ITreeStateService TreeState
+@inject IBreadcrumbService BreadcrumbService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
@@ -281,11 +282,7 @@ else
                 _editDescription = _world.Description ?? string.Empty;
                 _hasUnsavedChanges = false;
 
-                _breadcrumbs = new List<BreadcrumbItem>
-                {
-                    new("Dashboard", href: "/dashboard"),
-                    new(_world.Name, href: null, disabled: true)
-                };
+                _breadcrumbs = BreadcrumbService.ForWorld(_world);
 
                 await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_world.Name)} - Chronicis'");
                 
@@ -577,7 +574,7 @@ else
         if (result != null && !result.Canceled && result.Data is ArticleDto article)
         {
             await TreeState.RefreshAsync();
-            Navigation.NavigateTo($"/article/{article.Slug}");
+            NavigateToArticle(article);
             Snackbar.Add("Character created", Severity.Success);
         }
     }
@@ -596,9 +593,23 @@ else
         if (result != null && !result.Canceled && result.Data is ArticleDto article)
         {
             await TreeState.RefreshAsync();
-            Navigation.NavigateTo($"/article/{article.Slug}");
+            NavigateToArticle(article);
             Snackbar.Add("Article created", Severity.Success);
         }
     }
 
+    private void NavigateToArticle(ArticleDto article)
+    {
+        // Build full path from breadcrumbs to ensure correct world context
+        if (article.Breadcrumbs != null && article.Breadcrumbs.Any())
+        {
+            var path = BreadcrumbService.BuildArticleUrl(article.Breadcrumbs);
+            Navigation.NavigateTo(path);
+        }
+        else
+        {
+            // Fallback to slug only (shouldn't happen for properly created articles)
+            Navigation.NavigateTo($"/article/{article.Slug}");
+        }
+    }
 }

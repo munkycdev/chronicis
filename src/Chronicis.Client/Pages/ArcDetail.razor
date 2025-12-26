@@ -10,6 +10,7 @@
 @inject IWorldApiService WorldApi
 @inject IArticleApiService ArticleApi
 @inject ITreeStateService TreeState
+@inject IBreadcrumbService BreadcrumbService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
@@ -190,17 +191,24 @@ else
                     _world = worldDetail != null ? new WorldDto 
                     { 
                         Id = worldDetail.Id, 
-                        Name = worldDetail.Name 
+                        Name = worldDetail.Name,
+                        Slug = worldDetail.Slug
                     } : null;
                 }
 
-                _breadcrumbs = new List<BreadcrumbItem>
+                if (_arc != null && _campaign != null && _world != null)
                 {
-                    new("Dashboard", href: "/dashboard"),
-                    new(_world?.Name ?? "World", href: $"/world/{_campaign?.WorldId}"),
-                    new(_campaign?.Name ?? "Campaign", href: $"/campaign/{_arc.CampaignId}"),
-                    new(_arc.Name, href: null, disabled: true)
-                };
+                    _breadcrumbs = BreadcrumbService.ForArc(_arc, _campaign, _world);
+                }
+                else
+                {
+                    // Fallback if data not fully loaded
+                    _breadcrumbs = new List<BreadcrumbItem>
+                    {
+                        new("Dashboard", href: "/dashboard"),
+                        new(_arc?.Name ?? "Arc", href: null, disabled: true)
+                    };
+                }
 
                 await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_arc.Name)} - Chronicis'");
                 
@@ -312,12 +320,32 @@ else
         await TreeState.RefreshAsync();
         await LoadArcAsync();
 
-        Navigation.NavigateTo($"/article/{created.Slug}");
+        // Navigate using full path from breadcrumbs
+        if (created.Breadcrumbs.Any())
+        {
+            var path = string.Join("/", created.Breadcrumbs.Select(b => b.Slug));
+            Navigation.NavigateTo($"/article/{path}");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/article/{created.Slug}");
+        }
         Snackbar.Add("Session created", Severity.Success);
     }
 
-    private void NavigateToSession(ArticleTreeDto session)
+    private async Task NavigateToSession(ArticleTreeDto session)
     {
-        Navigation.NavigateTo($"/article/{session.Slug}");
+        // Load full article to get breadcrumbs for proper path
+        var article = await ArticleApi.GetArticleDetailAsync(session.Id);
+        if (article != null && article.Breadcrumbs.Any())
+        {
+            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
+            Navigation.NavigateTo($"/article/{path}");
+        }
+        else
+        {
+            // Fallback
+            Navigation.NavigateTo($"/article/{session.Slug}");
+        }
     }
 }

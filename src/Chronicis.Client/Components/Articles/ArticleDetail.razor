@@ -7,6 +7,7 @@
 @inject IWikiLinkService WikiLinkService
 @inject ITreeStateService TreeState
 @inject IAppContextService AppContext
+@inject IBreadcrumbService BreadcrumbService
 @inject ISnackbar Snackbar
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -290,18 +291,13 @@ else
 
     private void LoadBreadcrumbs()
     {
-        _breadcrumbs = new List<BreadcrumbItem> { new("Home", href: "/dashboard") };
-
         if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
         {
-            for (int i = 0; i < _article.Breadcrumbs.Count; i++)
-            {
-                var crumb = _article.Breadcrumbs[i];
-                var isLast = i == _article.Breadcrumbs.Count - 1;
-                var path = string.Join("/", _article.Breadcrumbs.Take(i + 1).Select(b => b.Slug));
-                
-                _breadcrumbs.Add(new BreadcrumbItem(crumb.Title, href: isLast ? null : $"/article/{path}", disabled: isLast));
-            }
+            _breadcrumbs = BreadcrumbService.ForArticle(_article.Breadcrumbs);
+        }
+        else
+        {
+            _breadcrumbs = new List<BreadcrumbItem> { new("Dashboard", href: "/dashboard") };
         }
     }
 
@@ -315,8 +311,8 @@ else
     {
         if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
         {
-            var path = string.Join("/", _article.Breadcrumbs.Select(b => b.Slug));
-            await LocalStorage.SetItemAsStringAsync(LastArticlePathKey, $"/article/{path}");
+            var path = BreadcrumbService.BuildArticleUrl(_article.Breadcrumbs);
+            await LocalStorage.SetItemAsStringAsync(LastArticlePathKey, path);
         }
     }
 
@@ -415,8 +411,8 @@ else
                 
                 if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
                 {
-                    var path = string.Join("/", _article.Breadcrumbs.Select(b => b.Slug));
-                    Navigation.NavigateTo($"/article/{path}", replace: true);
+                    var path = BreadcrumbService.BuildArticleUrl(_article.Breadcrumbs);
+                    Navigation.NavigateTo(path, replace: true);
                 }
             }
         }
@@ -567,9 +563,9 @@ else
             TreeState.ExpandPathToAndSelect(created.Id);
             
             var path = created.Breadcrumbs?.Any() == true 
-                ? string.Join("/", created.Breadcrumbs.Select(b => b.Slug))
-                : created.Slug;
-            Navigation.NavigateTo($"/article/{path}");
+                ? BreadcrumbService.BuildArticleUrl(created.Breadcrumbs)
+                : $"/article/{created.Slug}";
+            Navigation.NavigateTo(path);
             Snackbar.Add("New article created", Severity.Success);
         }
         catch (Exception ex)

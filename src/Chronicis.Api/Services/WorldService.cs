@@ -2,6 +2,7 @@ using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
+using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -78,11 +79,15 @@ public class WorldService : IWorldService
 
         var now = DateTime.UtcNow;
 
+        // Generate unique slug for this owner
+        var slug = await GenerateUniqueWorldSlugAsync(dto.Name, userId);
+
         // Create the World entity
         var world = new World
         {
             Id = Guid.NewGuid(),
             Name = dto.Name,
+            Slug = slug,
             Description = dto.Description,
             OwnerId = userId,
             CreatedAt = now
@@ -216,6 +221,12 @@ public class WorldService : IWorldService
         if (world.OwnerId != userId)
             return null;
 
+        // If name changed, regenerate slug
+        if (world.Name != dto.Name)
+        {
+            world.Slug = await GenerateUniqueWorldSlugAsync(dto.Name, userId, world.Id);
+        }
+
         world.Name = dto.Name;
         world.Description = dto.Description;
 
@@ -248,12 +259,53 @@ public class WorldService : IWorldService
             .AnyAsync(w => w.Id == worldId && w.OwnerId == userId);
     }
 
+    /// <summary>
+    /// Generate a unique slug for a world within an owner's worlds.
+    /// </summary>
+    private async Task<string> GenerateUniqueWorldSlugAsync(string name, Guid ownerId, Guid? excludeWorldId = null)
+    {
+        var baseSlug = SlugGenerator.GenerateSlug(name);
+
+        var existingSlugsQuery = _context.Worlds
+            .AsNoTracking()
+            .Where(w => w.OwnerId == ownerId);
+
+        if (excludeWorldId.HasValue)
+        {
+            existingSlugsQuery = existingSlugsQuery.Where(w => w.Id != excludeWorldId.Value);
+        }
+
+        var existingSlugs = await existingSlugsQuery
+            .Select(w => w.Slug)
+            .ToHashSetAsync();
+
+        return SlugGenerator.GenerateUniqueSlug(baseSlug, existingSlugs);
+    }
+
+    /// <summary>
+    /// Get a world by its slug for a specific owner.
+    /// </summary>
+    public async Task<WorldDto?> GetWorldBySlugAsync(string slug, Guid userId)
+    {
+        var world = await _context.Worlds
+            .AsNoTracking()
+            .Include(w => w.Owner)
+            .Include(w => w.Campaigns)
+            .FirstOrDefaultAsync(w => w.Slug == slug && w.OwnerId == userId);
+
+        if (world == null)
+            return null;
+
+        return MapToDto(world);
+    }
+
     private static WorldDto MapToDto(World world)
     {
         return new WorldDto
         {
             Id = world.Id,
             Name = world.Name,
+            Slug = world.Slug,
             Description = world.Description,
             OwnerId = world.OwnerId,
             OwnerName = world.Owner?.DisplayName ?? "Unknown",
@@ -268,6 +320,7 @@ public class WorldService : IWorldService
         {
             Id = world.Id,
             Name = world.Name,
+            Slug = world.Slug,
             Description = world.Description,
             OwnerId = world.OwnerId,
             OwnerName = world.Owner?.DisplayName ?? "Unknown",

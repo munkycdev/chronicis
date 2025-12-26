@@ -125,13 +125,23 @@ public class ArticleUpdateDto
 
 /// <summary>
 /// Breadcrumb item for navigation path display.
+/// Can represent either a World (when IsWorld=true) or an Article.
 /// </summary>
 public class BreadcrumbDto
 {
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Article type. Only relevant when IsWorld is false.
+    /// </summary>
     public ArticleType Type { get; set; }
+    
+    /// <summary>
+    /// True if this breadcrumb represents a World, false for Articles.
+    /// </summary>
+    public bool IsWorld { get; set; } = false;
 }
 
 /// <summary>
