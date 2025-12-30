@@ -1,5 +1,7 @@
 @using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Components.Characters
 @using Chronicis.Client.Utilities
+@using Chronicis.Shared.Enums
 @using Chronicis.Shared.Utilities
 @using Blazored.LocalStorage
 @inject IArticleApiService ArticleApi
@@ -64,6 +66,14 @@ else
                        OnMetadataToggle="ToggleMetadata"
                        ShouldFocusTitle="_shouldFocusTitle"
                        ShouldFocusTitleChanged="HandleFocusTitleChanged" />
+
+        @* Character Claim Button - only show for Character type articles *@
+        @if (_article.Type == ArticleType.Character)
+        {
+            <div class="mb-3">
+                <CharacterClaimButton CharacterId="@_article.Id" />
+            </div>
+        }
 
         <!-- TipTap Editor Container -->
         <div id="tiptap-editor-@_article.Id" class="chronicis-editor-container mb-4"></div>
