@@ -7,7 +7,7 @@
   
   A modern knowledge management platform for tabletop RPG campaigns
   
-  [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+  [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
   [![Blazor](https://img.shields.io/badge/Blazor-WebAssembly-512BD4?logo=blazor)](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor)
   [![Azure](https://img.shields.io/badge/Azure-Functions-0078D4?logo=microsoftazure)](https://azure.microsoft.com/en-us/services/functions/)
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -26,7 +26,7 @@
 - 📚 Not production-ready or following all best practices
 - 🚧 Code quality reflects AI generation patterns, not human engineering standards
 
-**Please judge accordingly!** This is about the journey of learning to work with AI tools, not about showcasing perfect code. If you're looking for examples of production-quality .NET applications, this probably isn't it. But if you're curious about what AI can build with the right guidance, read on!
+**Please judge accordingly!** This is about the journey of learning to work with AI tools, not about showcasing perfect code.
 
 ---
 
@@ -37,21 +37,19 @@ Chronicis is a web-based knowledge management application designed specifically 
 ### Key Features
 
 - **✅ Hierarchical Article Organization** - Nest articles infinitely deep to mirror your campaign structure
-- **✅ Tree Navigation** - Expandable sidebar with visual hierarchy and search
+- **✅ Wiki-Style Links** - `[[Article Name]]` syntax for intuitive cross-references
 - **✅ Inline WYSIWYG Editor** - Real-time markdown rendering with TipTap
-- **✅ Auto-Save** - Never lose your work (0.5s delay on content changes)
-- **✅ Enhanced Dashboard** - Campaign statistics, recent articles, quick actions
-- **✅ URL Routing** - Readable URLs with article slugs for bookmarking
-- **✅ Hashtag System** - Automatic entity detection and visual styling (#NPC, #Location)
-- **✅ Smart Search** - Title-based tree filtering with ancestor expansion
+- **✅ Auto-Save** - Never lose your work (0.5s debounce on changes)
+- **✅ AI Summaries** - Generate entity summaries from backlink analysis
+- **✅ Full-Text Search** - Search across titles, content, and links
+- **✅ Campaign Taxonomy** - World → Campaign → Arc → Session hierarchy
+- **✅ Backlinks Panel** - See what articles reference the current one
 
 ### Coming Soon
 
-- **🔜 Backlinks & Graph** - Discover which articles reference current entity
-- **🔜 AI Summaries** - Generate comprehensive entity summaries from mentions
-- **🔜 Content Search** - Full-text search across article bodies
 - **🔜 Drag & Drop** - Reorganize hierarchy with mouse
 - **🔜 Custom Icons** - Emoji icons for visual distinction
+- **🔜 Multi-User Collaboration** - Share worlds with your gaming group
 
 ---
 
@@ -60,31 +58,73 @@ Chronicis is a web-based knowledge management application designed specifically 
 Chronicis follows an **Obsidian-inspired inline editing paradigm**:
 
 - **Always Editable** - No modal dialogs; edit directly in place
-- **Auto-Save** - Changes save automatically after 0.5s (no more lost work)
+- **Auto-Save** - Changes save automatically (no more lost work)
 - **Hierarchical** - Infinitely nested articles mirror campaign structure
-- **Connected** - Hashtags create automatic relationships between entities
+- **Connected** - Wiki links create automatic relationships between entities
 - **Fast** - Optimized for quick note-taking during game sessions
 
 ### Visual Style
 
-- **Color Palette**: Deep blue-grey, beige-gold, slate grey
+- **Color Palette**: Deep blue-grey (#1F2A33), beige-gold (#C4AF8E)
 - **Typography**: Spellweaver Display (headings), Roboto (body)
 - **Effects**: Soft gold glows, smooth transitions, subtle shadows
-- **Inspiration**: Fantasy aesthetic meets modern UI
 
 ---
 
-## 🐛 Known Issues & Quirks
+## 📚 Documentation
 
-As AI-generated code, there are some expected quirks:
+| Document | Description |
+|----------|-------------|
+| [STATUS.md](docs/STATUS.md) | Current project state and progress |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Technical architecture and data model |
+| [FEATURES.md](docs/FEATURES.md) | Feature documentation and API reference |
+| [CHANGELOG.md](docs/CHANGELOG.md) | Version history |
+| [Feature Ideas.md](docs/Feature%20Ideas.md) | Backlog and known issues |
 
-- **Occasional over-engineering** - AI sometimes adds unnecessary abstractions
-- **Inconsistent patterns** - Code style varies based on conversation context
-- **Verbose comments** - AI loves to explain everything
-- **Conservative error handling** - Lots of try-catch blocks and null checks
-- **Testing gaps** - AI-generated tests tend to be happy-path focused
+---
 
-These are features, not bugs! They're part of understanding how AI generates code.
+## 🚀 Getting Started
+
+### Prerequisites
+
+- .NET 9 SDK
+- Azure Functions Core Tools
+- Visual Studio 2022 or VS Code
+- SQL Server (LocalDB, Express, or Docker)
+
+### Running Locally
+
+```powershell
+# Run API (terminal 1)
+cd src\Chronicis.Api
+func start
+
+# Run Client (terminal 2)
+cd src\Chronicis.Client
+dotnet watch run
+```
+
+### Database Setup
+
+```powershell
+cd src\Chronicis.Api
+dotnet ef database update
+```
+
+---
+
+## 🏗️ Project Structure
+
+```
+chronicis/
+├── src/
+│   ├── Chronicis.Client/      # Blazor WASM frontend
+│   ├── Chronicis.Api/         # Azure Functions backend
+│   ├── Chronicis.Shared/      # Shared models and DTOs
+│   └── Chronicis.CaptureApp/  # Audio capture utility
+├── docs/                      # Documentation
+└── Chronicis.sln
+```
 
 ---
 
@@ -96,7 +136,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **Claude by Anthropic** - For generating all the code you see here
+- **Claude by Anthropic** - For generating all the code
 - **MudBlazor** - Excellent Blazor component library
 - **TipTap** - Beautiful WYSIWYG editor
 - **The D&D Community** - Inspiration for campaign management needs
