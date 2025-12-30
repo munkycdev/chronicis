@@ -600,13 +600,25 @@ public class SummaryService : ISummaryService
 
     private async Task<string> GetEffectivePromptAsync(Guid? templateId, string? customPrompt, Guid defaultTemplateId)
     {
-        // Custom prompt takes precedence
+        // Custom prompt is used as additional instructions, not a full replacement
         if (!string.IsNullOrWhiteSpace(customPrompt))
         {
-            return customPrompt;
+            // Wrap custom prompt with source content structure
+            return $@"You are analyzing tabletop RPG campaign notes about: {{EntityName}}
+
+Here are the source materials:
+
+{{SourceContent}}
+
+{{WebContent}}
+
+Custom instructions from the user:
+{customPrompt}
+
+Based on the source materials above and following the custom instructions, provide a comprehensive summary.";
         }
 
-        // Then use specified template
+        // Use specified template or default
         var effectiveTemplateId = templateId ?? defaultTemplateId;
         
         var template = await _context.SummaryTemplates

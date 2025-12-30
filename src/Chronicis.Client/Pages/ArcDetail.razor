@@ -109,6 +109,11 @@ else
             </tbody>
         </MudSimpleTable>
 
+        <!-- AI Summary Section -->
+        <EntitySummarySection EntityId="ArcId" 
+                              EntityType="Arc" 
+                              @bind-IsExpanded="_summaryExpanded" />
+
         <!-- Save Status -->
         <div class="chronicis-flex-between mt-4">
             <SaveStatusIndicator IsSaving="_isSaving" HasUnsavedChanges="_hasUnsavedChanges" />
@@ -155,6 +160,7 @@ else
     private bool _isLoading = true;
     private bool _isSaving = false;
     private bool _hasUnsavedChanges = false;
+    private bool _summaryExpanded = false;
     private List<BreadcrumbItem> _breadcrumbs = new();
 
     protected override async Task OnParametersSetAsync()
