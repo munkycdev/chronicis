@@ -20,11 +20,7 @@
 {
     <LoadingSkeleton />
 }
-else if (_arc == null)
-{
-    <NotFoundAlert EntityType="Arc" />
-}
-else
+else if (_arc != null)
 {
     <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
         <DetailPageHeader Breadcrumbs="_breadcrumbs"
@@ -188,7 +184,12 @@ else
         try
         {
             _arc = await ArcApi.GetArcAsync(ArcId);
-            if (_arc != null)
+            if (_arc == null)
+            {
+                Navigation.NavigateTo("/dashboard", replace: true);
+                return;
+            }
+            else
             {
                 _editName = _arc.Name;
                 _editDescription = _arc.Description ?? string.Empty;

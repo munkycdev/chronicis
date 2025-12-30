@@ -17,11 +17,7 @@
 {
     <LoadingSkeleton />
 }
-else if (_world == null)
-{
-    <NotFoundAlert EntityType="World" />
-}
-else
+else if (_world != null)
 {
     <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
         <DetailPageHeader Breadcrumbs="_breadcrumbs"
@@ -276,7 +272,12 @@ else
         try
         {
             _world = await WorldApi.GetWorldAsync(WorldId);
-            if (_world != null)
+            if (_world == null)
+            {
+                Navigation.NavigateTo("/dashboard", replace: true);
+                return;
+            }
+            else
             {
                 _editName = _world.Name;
                 _editDescription = _world.Description ?? string.Empty;

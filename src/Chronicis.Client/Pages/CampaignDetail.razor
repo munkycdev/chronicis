@@ -18,11 +18,7 @@
 {
     <LoadingSkeleton />
 }
-else if (_campaign == null)
-{
-    <NotFoundAlert EntityType="Campaign" />
-}
-else
+else if (_campaign != null)
 {
     <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
         <DetailPageHeader Breadcrumbs="_breadcrumbs"
@@ -168,7 +164,12 @@ else
         try
         {
             _campaign = await CampaignApi.GetCampaignAsync(CampaignId);
-            if (_campaign != null)
+            if (_campaign == null)
+            {
+                Navigation.NavigateTo("/dashboard", replace: true);
+                return;
+            }
+            else
             {
                 _editName = _campaign.Name;
                 _editDescription = _campaign.Description ?? string.Empty;

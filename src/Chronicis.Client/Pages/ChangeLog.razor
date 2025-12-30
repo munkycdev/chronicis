@@ -1,17 +1,328 @@
 @page "/change-log"
 @layout PublicLayout
 
-<PageTitle>Change Log — Chronicis</PageTitle>
+<PageTitle>What's New — Chronicis</PageTitle>
 
 <div class="static-page">
-    <div class="static-page-content">
-        <h1>Change Log</h1>
+    <div class="static-page-content changelog-page">
+        <h1>What's New</h1>
+        <p class="changelog-subtitle">See what we've been working on</p>
 
-        <section class="policy-section">
-            <h2>@DateTime.Now.ToString("MMMM d, yyyy")</h2>
+        @* December 2025 *@
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">2.0</span>
+                <span class="version-date">December 2025</span>
+            </div>
+            <h2>Campaign Organization</h2>
+            <p class="changelog-summary">
+                A complete overhaul of how your content is organized. Create Worlds for different 
+                settings, organize Campaigns with story Arcs, and keep your Wiki, Characters, and 
+                Sessions neatly separated.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🌍</span>
+                    <div>
+                        <strong>Worlds</strong> — Create separate spaces for different campaign settings 
+                        (Forgotten Realms, Eberron, your homebrew)
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">⚔️</span>
+                    <div>
+                        <strong>Campaigns & Arcs</strong> — Organize your adventures into campaigns, 
+                        then break them into story arcs for easier navigation
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">📂</span>
+                    <div>
+                        <strong>Smart Groups</strong> — Your articles automatically organize into 
+                        Characters, Wiki, and Sessions based on type
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">1.9</span>
+                <span class="version-date">December 2025</span>
+            </div>
+            <h2>Wiki-Style Links</h2>
+            <p class="changelog-summary">
+                Link your articles together using familiar wiki syntax. Just type 
+                <code>[[Article Name]]</code> to create a connection.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🔗</span>
+                    <div>
+                        <strong>Easy Linking</strong> — Type <code>[[</code> to see suggestions 
+                        as you type, then select to insert a link
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">✨</span>
+                    <div>
+                        <strong>Create on the Fly</strong> — Link to an article that doesn't exist? 
+                        We'll create it for you automatically
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🔙</span>
+                    <div>
+                        <strong>Backlinks</strong> — See every article that references the one 
+                        you're viewing
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">1.8</span>
+                <span class="version-date">November 2025</span>
+            </div>
+            <h2>Search Everything</h2>
+            <p class="changelog-summary">
+                Find anything in your campaign with powerful full-text search across all your content.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🔍</span>
+                    <div>
+                        <strong>Global Search</strong> — Search across titles, content, and links 
+                        from anywhere in the app
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">📝</span>
+                    <div>
+                        <strong>Context Snippets</strong> — See exactly where your search term 
+                        appears in each result
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">1.7</span>
+                <span class="version-date">November 2025</span>
+            </div>
+            <h2>AI Summaries</h2>
+            <p class="changelog-summary">
+                Let AI analyze how an entity appears across your campaign and generate 
+                a comprehensive summary.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🤖</span>
+                    <div>
+                        <strong>Smart Summaries</strong> — AI reads every mention of a character, 
+                        location, or item to understand their role in your story
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">💰</span>
+                    <div>
+                        <strong>Cost Transparency</strong> — See estimated costs before 
+                        generating a summary
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">1.0</span>
+                <span class="version-date">November 2025</span>
+            </div>
+            <h2>Launch</h2>
+            <p class="changelog-summary">
+                The foundation of Chronicis—everything you need to start organizing your campaign.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🌳</span>
+                    <div>
+                        <strong>Hierarchical Articles</strong> — Nest your notes as deep as you need
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">✏️</span>
+                    <div>
+                        <strong>Inline Editing</strong> — Edit content in place with auto-save
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🎨</span>
+                    <div>
+                        <strong>Rich Text</strong> — Format your notes with headers, lists, 
+                        code blocks, and more
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🏠</span>
+                    <div>
+                        <strong>Dashboard</strong> — Quick access to recent articles and 
+                        campaign statistics
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-footer">
             <p>
-                Initial release
+                Have a feature request or found a bug? 
+                <a href="mailto:feedback@chronicis.app">Let us know</a>
             </p>
         </section>
     </div>
 </div>
+
+<style>
+    .changelog-page {
+        max-width: 720px;
+    }
+
+    .changelog-subtitle {
+        font-size: 1.1rem;
+        color: var(--chronicis-slate-grey);
+        margin-top: calc(var(--chronicis-space-md) * -1);
+        margin-bottom: var(--chronicis-space-xl);
+    }
+
+    .changelog-section {
+        margin-bottom: var(--chronicis-space-xl);
+        padding-bottom: var(--chronicis-space-lg);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .changelog-section:last-of-type {
+        border-bottom: none;
+    }
+
+    .changelog-version {
+        display: flex;
+        align-items: center;
+        gap: var(--chronicis-space-sm);
+        margin-bottom: var(--chronicis-space-sm);
+    }
+
+    .version-badge {
+        background: var(--chronicis-beige-gold);
+        color: var(--chronicis-deep-blue-grey);
+        font-family: var(--chronicis-font-body);
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: var(--chronicis-space-xs) var(--chronicis-space-sm);
+        border-radius: var(--chronicis-radius-sm);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .version-date {
+        font-family: var(--chronicis-font-body);
+        font-size: 0.85rem;
+        color: var(--chronicis-slate-grey);
+    }
+
+    .changelog-section h2 {
+        font-family: var(--chronicis-font-heading);
+        font-size: 1.4rem;
+        color: var(--chronicis-charcoal);
+        margin: 0 0 var(--chronicis-space-sm) 0;
+        padding: 0;
+        border: none;
+    }
+
+    .changelog-summary {
+        font-family: var(--chronicis-font-body);
+        font-size: 1rem;
+        color: var(--chronicis-slate-grey);
+        line-height: 1.7;
+        margin-bottom: var(--chronicis-space-md);
+    }
+
+    .changelog-summary code {
+        background: rgba(196, 175, 142, 0.2);
+        color: var(--chronicis-charcoal);
+        padding: var(--chronicis-space-xs) var(--chronicis-space-sm);
+        border-radius: var(--chronicis-radius-sm);
+        font-size: 0.9em;
+    }
+
+    .changelog-features {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .changelog-features li {
+        display: flex;
+        gap: var(--chronicis-space-sm);
+        padding: var(--chronicis-space-sm) 0;
+        align-items: flex-start;
+    }
+
+    .feature-icon {
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        width: 2rem;
+        text-align: center;
+    }
+
+    .changelog-features li div {
+        flex: 1;
+        font-family: var(--chronicis-font-body);
+    }
+
+    .changelog-features li strong {
+        color: var(--chronicis-charcoal);
+        font-weight: 600;
+    }
+
+    .changelog-features li div {
+        color: var(--chronicis-slate-grey);
+        line-height: 1.6;
+    }
+
+    .changelog-footer {
+        text-align: center;
+        padding-top: var(--chronicis-space-lg);
+        margin-top: var(--chronicis-space-lg);
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .changelog-footer p {
+        font-family: var(--chronicis-font-body);
+        color: var(--chronicis-slate-grey);
+        font-size: 0.95rem;
+    }
+
+    .changelog-footer a {
+        color: var(--chronicis-beige-gold);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color var(--chronicis-transition-fast);
+    }
+
+    .changelog-footer a:hover {
+        color: var(--chronicis-muted-gold);
+        text-decoration: underline;
+    }
+
+    @@media (max-width: 768px) {
+        .changelog-section h2 {
+            font-size: 1.25rem;
+        }
+
+        .feature-icon {
+            font-size: 1.1rem;
+            width: 1.75rem;
+        }
+    }
+</style>

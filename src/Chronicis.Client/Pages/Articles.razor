@@ -57,21 +57,15 @@ else
             }
             else
             {
-                // Article not found
-                if (!TreeStateService.SelectedArticleId.HasValue)
-                {
-                    Console.Error.WriteLine($"Article not found for path: {path}");
-                    Navigation.NavigateTo("/", replace: true);
-                }
+                // Article not found - redirect to dashboard
+                Console.Error.WriteLine($"Article not found for path: {path}");
+                Navigation.NavigateTo("/dashboard", replace: true);
             }
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error loading article by path: {ex.Message}");
-            if (!TreeStateService.SelectedArticleId.HasValue)
-            {
-                Navigation.NavigateTo("/", replace: true);
-            }
+            Navigation.NavigateTo("/dashboard", replace: true);
         }
     }
 
