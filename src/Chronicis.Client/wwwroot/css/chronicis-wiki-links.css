@@ -228,6 +228,74 @@ span[data-type="wiki-link"].broken:hover {
     border-color: #1F2A33 transparent transparent transparent;
 }
 
+/* Summary Tooltip - Rich card style */
+.wiki-link-tooltip--summary {
+    white-space: normal;
+    max-width: 400px;
+    min-width: 280px;
+    padding: 0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.wiki-link-tooltip__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(196, 175, 142, 0.15);
+    border-bottom: 1px solid rgba(196, 175, 142, 0.2);
+    gap: 8px;
+}
+
+.wiki-link-tooltip__title {
+    font-weight: 600;
+    font-size: 13px;
+    color: #C4AF8E;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wiki-link-tooltip__badge {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    background: rgba(196, 175, 142, 0.25);
+    border-radius: 4px;
+    color: #C4AF8E;
+    flex-shrink: 0;
+}
+
+.wiki-link-tooltip__summary {
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #F4F0EA;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Scrollbar styling for summary */
+.wiki-link-tooltip__summary::-webkit-scrollbar {
+    width: 6px;
+}
+
+.wiki-link-tooltip__summary::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.wiki-link-tooltip__summary::-webkit-scrollbar-thumb {
+    background: rgba(196, 175, 142, 0.3);
+    border-radius: 3px;
+}
+
+.wiki-link-tooltip__summary::-webkit-scrollbar-thumb:hover {
+    background: rgba(196, 175, 142, 0.5);
+}
+
 /* ============================================
    ACCESSIBILITY
    ============================================ */

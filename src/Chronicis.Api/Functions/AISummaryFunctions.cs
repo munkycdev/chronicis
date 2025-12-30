@@ -131,6 +131,41 @@ public class AISummaryFunctions
         }
     }
 
+    [Function("GetArticleSummaryPreview")]
+    public async Task<HttpResponseData> GetArticleSummaryPreview(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "articles/{id:guid}/summary/preview")]
+        HttpRequestData req,
+        FunctionContext context,
+        Guid id)
+    {
+        var user = context.GetRequiredUser();
+
+        try
+        {
+            var preview = await _summaryService.GetArticleSummaryPreviewAsync(id);
+
+            if (preview == null)
+            {
+                return req.CreateResponse(HttpStatusCode.NotFound);
+            }
+
+            // Return 204 No Content if article exists but has no summary
+            if (!preview.HasSummary)
+            {
+                return req.CreateResponse(HttpStatusCode.NoContent);
+            }
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(preview);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting summary preview for article {ArticleId}", id);
+            return req.CreateResponse(HttpStatusCode.InternalServerError);
+        }
+    }
+
     [Function("ClearArticleSummary")]
     public async Task<HttpResponseData> ClearArticleSummary(
         [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "articles/{id:guid}/summary")]

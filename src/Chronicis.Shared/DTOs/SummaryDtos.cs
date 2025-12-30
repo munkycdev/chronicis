@@ -127,3 +127,14 @@ public class ArticleSummaryDto
     public string? CustomPrompt { get; set; }
     public bool IncludeWebSources { get; set; }
 }
+
+/// <summary>
+/// Lightweight summary preview for tooltip display
+/// </summary>
+public class SummaryPreviewDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string? Summary { get; set; }
+    public string? TemplateName { get; set; }
+    public bool HasSummary => !string.IsNullOrEmpty(Summary);
+}

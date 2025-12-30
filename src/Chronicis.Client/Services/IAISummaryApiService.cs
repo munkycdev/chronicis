@@ -11,6 +11,7 @@ public interface IAISummaryApiService
     Task<SummaryEstimateDto?> GetEstimateAsync(Guid articleId);
     Task<SummaryGenerationDto?> GenerateSummaryAsync(Guid articleId, GenerateSummaryRequestDto? request = null);
     Task<ArticleSummaryDto?> GetSummaryAsync(Guid articleId);
+    Task<SummaryPreviewDto?> GetSummaryPreviewAsync(Guid articleId);
     Task<bool> ClearSummaryAsync(Guid articleId);
     
     // Entity-generic (Campaign, Arc)

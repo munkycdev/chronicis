@@ -96,50 +96,60 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
     });
 
     // Add hover handler for wiki link tooltips
-    let tooltipTimeout = null;
-    let currentTooltip = null;
+    let tooltipShowTimeout = null;
 
     container.addEventListener('mouseover', (e) => {
         const wikiLink = e.target.closest('span[data-type="wiki-link"]');
         if (wikiLink && !wikiLink.hasAttribute('data-tooltip-loading')) {
             const targetArticleId = wikiLink.getAttribute('data-target-id');
             
-            // Clear any existing timeout
-            if (tooltipTimeout) {
-                clearTimeout(tooltipTimeout);
+            // Cancel any pending hide
+            cancelTooltipHide();
+            
+            // Clear any existing show timeout
+            if (tooltipShowTimeout) {
+                clearTimeout(tooltipShowTimeout);
             }
             
-            // Show tooltip immediately (no delay)
-            tooltipTimeout = setTimeout(async () => {
+            // Add slight delay to avoid flickering on quick mouse passes
+            tooltipShowTimeout = setTimeout(async () => {
                 if (!targetArticleId) return;
                 
                 // Mark as loading to prevent duplicate requests
                 wikiLink.setAttribute('data-tooltip-loading', 'true');
                 
                 try {
-                    // Ask Blazor for the article path
-                    const path = await dotNetHelper.invokeMethodAsync('GetArticlePath', targetArticleId);
+                    // First try to get AI summary preview
+                    const summaryPreview = await dotNetHelper.invokeMethodAsync('GetArticleSummaryPreview', targetArticleId);
                     
-                    if (path) {
-                        showWikiLinkTooltip(wikiLink, path);
+                    if (summaryPreview && summaryPreview.summary) {
+                        // Show rich summary tooltip
+                        showSummaryTooltip(wikiLink, summaryPreview);
+                    } else {
+                        // Fall back to path tooltip
+                        const path = await dotNetHelper.invokeMethodAsync('GetArticlePath', targetArticleId);
+                        if (path) {
+                            showWikiLinkTooltip(wikiLink, path);
+                        }
                     }
                 } catch (err) {
-                    console.error('Error getting article path:', err);
+                    console.error('Error getting tooltip data:', err);
                 } finally {
                     wikiLink.removeAttribute('data-tooltip-loading');
                 }
-            }, 0);
+            }, 300); // 300ms delay
         }
     });
 
     container.addEventListener('mouseout', (e) => {
         const wikiLink = e.target.closest('span[data-type="wiki-link"]');
         if (wikiLink) {
-            if (tooltipTimeout) {
-                clearTimeout(tooltipTimeout);
-                tooltipTimeout = null;
+            if (tooltipShowTimeout) {
+                clearTimeout(tooltipShowTimeout);
+                tooltipShowTimeout = null;
             }
-            hideWikiLinkTooltip();
+            // Delay hide to allow mouse to reach tooltip
+            scheduleTooltipHide(100);
         }
     });
 
@@ -175,6 +185,21 @@ function escapeHtml(text) {
 // ================================================
 
 let currentWikiLinkTooltip = null;
+let globalTooltipHideTimeout = null;
+
+function cancelTooltipHide() {
+    if (globalTooltipHideTimeout) {
+        clearTimeout(globalTooltipHideTimeout);
+        globalTooltipHideTimeout = null;
+    }
+}
+
+function scheduleTooltipHide(delay = 100) {
+    cancelTooltipHide();
+    globalTooltipHideTimeout = setTimeout(() => {
+        hideWikiLinkTooltip();
+    }, delay);
+}
 
 function showWikiLinkTooltip(element, path) {
     hideWikiLinkTooltip();
@@ -183,20 +208,62 @@ function showWikiLinkTooltip(element, path) {
     tooltip.className = 'wiki-link-tooltip';
     tooltip.textContent = path;
     
-    // Position tooltip above the element
+    positionTooltip(tooltip, element);
+    
+    document.body.appendChild(tooltip);
+    currentWikiLinkTooltip = tooltip;
+    
+    addTooltipHoverHandlers(tooltip);
+}
+
+function showSummaryTooltip(element, preview) {
+    hideWikiLinkTooltip();
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'wiki-link-tooltip wiki-link-tooltip--summary';
+    
+    // Build tooltip content
+    const header = document.createElement('div');
+    header.className = 'wiki-link-tooltip__header';
+    
+    const title = document.createElement('span');
+    title.className = 'wiki-link-tooltip__title';
+    title.textContent = preview.title;
+    header.appendChild(title);
+    
+    const badge = document.createElement('span');
+    badge.className = 'wiki-link-tooltip__badge';
+    badge.textContent = 'AI Summary';
+    header.appendChild(badge);
+    
+    tooltip.appendChild(header);
+    
+    const summary = document.createElement('div');
+    summary.className = 'wiki-link-tooltip__summary';
+    summary.textContent = preview.summary;
+    tooltip.appendChild(summary);
+    
+    positionTooltip(tooltip, element);
+    
+    document.body.appendChild(tooltip);
+    currentWikiLinkTooltip = tooltip;
+    
+    addTooltipHoverHandlers(tooltip);
+}
+
+function positionTooltip(tooltip, element) {
     const rect = element.getBoundingClientRect();
     tooltip.style.position = 'fixed';
     tooltip.style.left = `${rect.left}px`;
     tooltip.style.top = `${rect.top - 8}px`;
     tooltip.style.transform = 'translateY(-100%)';
     tooltip.style.zIndex = '10000';
-    
-    document.body.appendChild(tooltip);
-    currentWikiLinkTooltip = tooltip;
-    
-    // Keep tooltip visible if mouse moves to it
+}
+
+function addTooltipHoverHandlers(tooltip) {
     tooltip.addEventListener('mouseenter', () => {
-        // Don't hide while hovering tooltip
+        // Cancel any pending hide when mouse enters tooltip
+        cancelTooltipHide();
     });
     tooltip.addEventListener('mouseleave', () => {
         hideWikiLinkTooltip();

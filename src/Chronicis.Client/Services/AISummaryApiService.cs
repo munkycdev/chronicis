@@ -1,4 +1,5 @@
 using Chronicis.Shared.DTOs;
+using System.Net.Http.Json;
 
 namespace Chronicis.Client.Services;
 
@@ -57,6 +58,32 @@ public class AISummaryApiService : IAISummaryApiService
             $"api/articles/{articleId}/summary",
             _logger,
             $"summary for article {articleId}");
+    }
+
+    public async Task<SummaryPreviewDto?> GetSummaryPreviewAsync(Guid articleId)
+    {
+        try
+        {
+            var response = await _http.GetAsync($"api/articles/{articleId}/summary/preview");
+            
+            if (response.StatusCode == System.Net.HttpStatusCode.NoContent ||
+                response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<SummaryPreviewDto>();
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting summary preview for article {ArticleId}", articleId);
+            return null;
+        }
     }
 
     public async Task<bool> ClearSummaryAsync(Guid articleId)

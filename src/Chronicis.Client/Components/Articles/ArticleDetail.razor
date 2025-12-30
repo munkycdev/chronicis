@@ -5,6 +5,7 @@
 @inject IArticleApiService ArticleApi
 @inject ILinkApiService LinkApiService
 @inject IWikiLinkService WikiLinkService
+@inject IAISummaryApiService SummaryApi
 @inject ITreeStateService TreeState
 @inject IAppContextService AppContext
 @inject IBreadcrumbService BreadcrumbService
@@ -758,6 +759,30 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error getting article path: {ArticleId}", targetArticleId);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public async Task<object?> GetArticleSummaryPreview(string targetArticleId)
+    {
+        if (!Guid.TryParse(targetArticleId, out var articleId)) return null;
+
+        try
+        {
+            var preview = await SummaryApi.GetSummaryPreviewAsync(articleId);
+            if (preview == null || !preview.HasSummary) return null;
+
+            return new
+            {
+                title = preview.Title,
+                summary = preview.Summary,
+                templateName = preview.TemplateName
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting summary preview: {ArticleId}", targetArticleId);
             return null;
         }
     }

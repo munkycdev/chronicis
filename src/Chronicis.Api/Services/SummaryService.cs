@@ -85,13 +85,13 @@ public class SummaryService : ISummaryService
             .FirstOrDefaultAsync(a => a.Id == articleId)
             ?? throw new InvalidOperationException($"Article {articleId} not found");
 
-        var sources = await GetArticleSourcesAsync(articleId);
+        var (primary, backlinks) = await GetArticleSourcesAsync(articleId);
         var promptTemplate = await GetEffectivePromptAsync(
             article.SummaryTemplateId, 
             article.SummaryCustomPrompt, 
             DefaultTemplateId);
 
-        var sourceContent = FormatSources(sources);
+        var sourceContent = FormatArticleSources(primary, backlinks);
         var fullPrompt = BuildPrompt(promptTemplate, article.Title, sourceContent, "");
 
         int estimatedInputTokens = fullPrompt.Length / CharsPerToken;
@@ -101,12 +101,15 @@ public class SummaryService : ISummaryService
             (estimatedInputTokens / 1000m * InputTokenCostPer1K) +
             (estimatedOutputTokens / 1000m * OutputTokenCostPer1K);
 
+        // Count sources: 1 for primary (if exists) + backlink count
+        var sourceCount = (primary != null ? 1 : 0) + backlinks.Count;
+
         return new SummaryEstimateDto
         {
             EntityId = articleId,
             EntityType = "Article",
             EntityName = article.Title,
-            SourceCount = sources.Count,
+            SourceCount = sourceCount,
             EstimatedInputTokens = estimatedInputTokens,
             EstimatedOutputTokens = estimatedOutputTokens,
             EstimatedCostUSD = Math.Round(estimatedCost, 4),
@@ -136,14 +139,15 @@ public class SummaryService : ISummaryService
                 };
             }
 
-            var sources = await GetArticleSourcesAsync(articleId);
+            var (primary, backlinks) = await GetArticleSourcesAsync(articleId);
 
-            if (sources.Count == 0)
+            // Need at least the article's own content OR backlinks
+            if (primary == null && backlinks.Count == 0)
             {
                 return new SummaryGenerationDto
                 {
                     Success = false,
-                    ErrorMessage = "No backlinks found. This article is not referenced by any other articles yet."
+                    ErrorMessage = "No content available. Add content to this article or create links from other articles."
                 };
             }
 
@@ -161,7 +165,12 @@ public class SummaryService : ISummaryService
             }
 
             var promptTemplate = await GetEffectivePromptAsync(templateId, customPrompt, DefaultTemplateId);
-            var sourceContent = FormatSources(sources);
+            var sourceContent = FormatArticleSources(primary, backlinks);
+            
+            // Build sources list for response
+            var allSources = new List<SourceContent>();
+            if (primary != null) allSources.Add(primary);
+            allSources.AddRange(backlinks);
             
             // TODO: Implement web search when includeWeb is true
             var webContent = "";
@@ -171,7 +180,7 @@ public class SummaryService : ISummaryService
                 promptTemplate,
                 sourceContent,
                 webContent,
-                sources,
+                allSources,
                 request?.MaxOutputTokens ?? 1500);
 
             if (result.Success)
@@ -216,6 +225,23 @@ public class SummaryService : ISummaryService
         };
     }
 
+    public async Task<SummaryPreviewDto?> GetArticleSummaryPreviewAsync(Guid articleId)
+    {
+        var article = await _context.Articles
+            .AsNoTracking()
+            .Include(a => a.SummaryTemplate)
+            .Where(a => a.Id == articleId)
+            .Select(a => new SummaryPreviewDto
+            {
+                Title = a.Title,
+                Summary = a.AISummary,
+                TemplateName = a.SummaryTemplate != null ? a.SummaryTemplate.Name : null
+            })
+            .FirstOrDefaultAsync();
+
+        return article;
+    }
+
     public async Task<bool> ClearArticleSummaryAsync(Guid articleId)
     {
         var article = await _context.Articles.FirstOrDefaultAsync(a => a.Id == articleId);
@@ -227,8 +253,25 @@ public class SummaryService : ISummaryService
         return true;
     }
 
-    private async Task<List<SourceContent>> GetArticleSourcesAsync(Guid articleId)
+    private async Task<(SourceContent? Primary, List<SourceContent> Backlinks)> GetArticleSourcesAsync(Guid articleId)
     {
+        // Get the article's own content as the primary/canonical source
+        var article = await _context.Articles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == articleId);
+
+        SourceContent? primarySource = null;
+        if (article != null && !string.IsNullOrEmpty(article.Body))
+        {
+            primarySource = new SourceContent
+            {
+                Type = "Primary",
+                Title = article.Title,
+                Content = article.Body,
+                ArticleId = article.Id
+            };
+        }
+
         // Get all articles that link TO this article (backlinks)
         var backlinks = await _context.ArticleLinks
             .AsNoTracking()
@@ -245,7 +288,7 @@ public class SummaryService : ISummaryService
             })
             .ToListAsync();
 
-        return backlinks;
+        return (primarySource, backlinks);
     }
 
     #endregion
@@ -603,10 +646,10 @@ public class SummaryService : ISummaryService
         // Custom prompt is used as additional instructions, not a full replacement
         if (!string.IsNullOrWhiteSpace(customPrompt))
         {
-            // Wrap custom prompt with source content structure
+            // Wrap custom prompt with source content structure  
             return $@"You are analyzing tabletop RPG campaign notes about: {{EntityName}}
 
-Here are the source materials:
+Here are the source materials. The CANONICAL CONTENT is from the article itself and should be treated as authoritative facts. The REFERENCES show how other articles mention this entity and provide additional context.
 
 {{SourceContent}}
 
@@ -615,7 +658,7 @@ Here are the source materials:
 Custom instructions from the user:
 {customPrompt}
 
-Based on the source materials above and following the custom instructions, provide a comprehensive summary.";
+Based on the source materials above and following the custom instructions, provide a comprehensive summary. Treat the canonical content as the primary source of truth.";
         }
 
         // Use specified template or default
@@ -651,6 +694,28 @@ Based on the source materials above and following the custom instructions, provi
         return string.Join("\n\n", sources.Select(s =>
             $"--- From: {s.Title} ({s.Type}) ---\n{s.Content}\n---"));
     }
+
+    private static string FormatArticleSources(SourceContent? primary, List<SourceContent> backlinks)
+    {
+        var parts = new List<string>();
+        
+        if (primary != null)
+        {
+            parts.Add($"=== CANONICAL CONTENT (from the article itself) ===\n{primary.Content}\n===");
+        }
+        
+        if (backlinks.Any())
+        {
+            parts.Add("=== REFERENCES FROM OTHER ARTICLES ===");
+            foreach (var backlink in backlinks)
+            {
+                parts.Add($"--- From: {backlink.Title} ---\n{backlink.Content}\n---");
+            }
+        }
+        
+        return string.Join("\n\n", parts);
+    }
+
 
     private async Task<SummaryGenerationDto> GenerateSummaryInternalAsync(
         string entityName,

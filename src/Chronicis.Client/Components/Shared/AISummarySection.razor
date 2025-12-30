@@ -198,13 +198,13 @@
 
     private string NoSourcesMessage => EntityType switch
     {
-        "Article" => "This article isn't referenced by other articles yet. Add wiki links like [[Article Name]] to generate a summary.",
+        "Article" => "This article has no content and isn't referenced by other articles. Add content or create wiki links like [[Article Name]] to generate a summary.",
         "Campaign" => "No session notes found. Add sessions to your arcs to generate a campaign summary.",
         "Arc" => "No session notes found in this arc yet.",
         _ => "No sources available for summary generation."
     };
 
-    private string SourceLabel => EntityType == "Article" ? "backlink" : "session";
+    private string SourceLabel => EntityType == "Article" ? "source" : "session";
 
     private string RememberSettingsLabel => $"Remember settings for this {EntityType.ToLower()}";
 

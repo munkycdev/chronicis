@@ -28,6 +28,11 @@ public interface ISummaryService
     Task<ArticleSummaryDto?> GetArticleSummaryAsync(Guid articleId);
     
     /// <summary>
+    /// Get a lightweight summary preview for tooltip display.
+    /// </summary>
+    Task<SummaryPreviewDto?> GetArticleSummaryPreviewAsync(Guid articleId);
+    
+    /// <summary>
     /// Clear the summary for an article.
     /// </summary>
     Task<bool> ClearArticleSummaryAsync(Guid articleId);
