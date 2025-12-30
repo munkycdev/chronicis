@@ -110,9 +110,9 @@ else
         </MudSimpleTable>
 
         <!-- AI Summary Section -->
-        <EntitySummarySection EntityId="ArcId" 
-                              EntityType="Arc" 
-                              @bind-IsExpanded="_summaryExpanded" />
+        <AISummarySection EntityId="ArcId" 
+                          EntityType="Arc" 
+                          @bind-IsExpanded="_summaryExpanded" />
 
         <!-- Save Status -->
         <div class="chronicis-flex-between mt-4">
@@ -216,7 +216,7 @@ else
                     };
                 }
 
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_arc.Name)} - Chronicis'");
+                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_arc?.Name ?? "Arc")} - Chronicis'");
                 
                 // Highlight in tree
                 TreeState.ExpandPathToAndSelect(ArcId);

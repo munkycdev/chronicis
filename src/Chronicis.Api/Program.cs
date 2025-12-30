@@ -40,7 +40,7 @@ var host = new HostBuilder()
         // Services
         services.AddScoped<IArticleService, ArticleService>();
         services.AddScoped<IArticleValidationService, ArticleValidationService>();
-        services.AddScoped<IAISummaryService, AISummaryService>();
+        services.AddScoped<ISummaryService, SummaryService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IWorldService, WorldService>();
         services.AddScoped<ICampaignService, CampaignService>();
@@ -48,9 +48,6 @@ var host = new HostBuilder()
         services.AddScoped<ILinkParser, LinkParser>();
         services.AddScoped<ILinkSyncService, LinkSyncService>();
         services.AddScoped<IAutoLinkService, AutoLinkService>();
-        
-        // New unified summary service
-        services.AddScoped<ISummaryService, SummaryService>();
     })
     .Build();
 

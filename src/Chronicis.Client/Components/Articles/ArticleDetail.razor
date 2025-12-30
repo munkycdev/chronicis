@@ -68,7 +68,8 @@ else
         <div id="tiptap-editor-@_article.Id" class="chronicis-editor-container mb-4"></div>
 
         <!-- AI Summary Section -->
-        <AISummarySection ArticleId="@_article.Id"
+        <AISummarySection EntityId="@_article.Id"
+                          EntityType="Article"
                           IsExpanded="@_isSummaryExpanded"
                           IsExpandedChanged="@((expanded) => _isSummaryExpanded = expanded)" />
 

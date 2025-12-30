@@ -31,14 +31,6 @@ public class SummaryEstimateDto
     public string? TemplateName { get; set; }
     public string? CustomPrompt { get; set; }
     public bool IncludeWebSources { get; set; }
-    
-    // Legacy compatibility
-    [Obsolete("Use EntityId instead")]
-    public Guid ArticleId { get => EntityId; set => EntityId = value; }
-    [Obsolete("Use EntityName instead")]
-    public string ArticleTitle { get => EntityName; set => EntityName = value; }
-    [Obsolete("Use SourceCount instead")]
-    public int BacklinkCount { get => SourceCount; set => SourceCount = value; }
 }
 
 /// <summary>
@@ -70,10 +62,6 @@ public class GenerateSummaryRequestDto
     /// Maximum output tokens for the generated summary.
     /// </summary>
     public int MaxOutputTokens { get; set; } = 1500;
-    
-    // Legacy compatibility
-    [Obsolete("Use other properties instead")]
-    public Guid ArticleId { get; set; }
 }
 
 /// <summary>
@@ -106,7 +94,7 @@ public class SummarySourceDto
 }
 
 /// <summary>
-/// Summary data for display
+/// Summary data for display (for Campaign/Arc)
 /// </summary>
 public class EntitySummaryDto
 {
@@ -124,7 +112,7 @@ public class EntitySummaryDto
 }
 
 /// <summary>
-/// Legacy DTO for backward compatibility
+/// Summary data for Article display
 /// </summary>
 public class ArticleSummaryDto
 {
@@ -133,7 +121,7 @@ public class ArticleSummaryDto
     public DateTime? GeneratedAt { get; set; }
     public bool HasSummary => !string.IsNullOrEmpty(Summary);
     
-    // New fields
+    // Configuration
     public Guid? TemplateId { get; set; }
     public string? TemplateName { get; set; }
     public string? CustomPrompt { get; set; }
