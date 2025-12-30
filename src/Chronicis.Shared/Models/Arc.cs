@@ -45,6 +45,12 @@ public class Arc
     /// </summary>
     public Guid CreatedBy { get; set; }
 
+    /// <summary>
+    /// Whether this is the active arc for quick session creation.
+    /// Only one arc per campaign should be active at a time.
+    /// </summary>
+    public bool IsActive { get; set; }
+
     // ===== AI Features =====
     
     /// <summary>

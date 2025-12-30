@@ -207,4 +207,40 @@ public class ArcFunctions
             return response;
         }
     }
+
+    /// <summary>
+    /// POST /api/arcs/{id}/activate
+    /// Activates an arc (makes it the active arc for quick session creation in its campaign).
+    /// </summary>
+    [Function("ActivateArc")]
+    public async Task<HttpResponseData> ActivateArc(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "arcs/{id:guid}/activate")] HttpRequestData req,
+        FunctionContext context,
+        Guid id)
+    {
+        var user = context.GetRequiredUser();
+
+        try
+        {
+            _logger.LogInformation("Activating arc {ArcId} for user {UserId}", id, user.Id);
+
+            var success = await _arcService.ActivateArcAsync(id, user.Id);
+
+            if (!success)
+            {
+                var badRequest = req.CreateResponse(HttpStatusCode.BadRequest);
+                await badRequest.WriteAsJsonAsync(new { message = "Unable to activate arc. Arc not found or you don't have permission." });
+                return badRequest;
+            }
+
+            return req.CreateResponse(HttpStatusCode.NoContent);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error activating arc {ArcId}", id);
+            var response = req.CreateResponse(HttpStatusCode.InternalServerError);
+            await response.WriteStringAsync("Internal server error");
+            return response;
+        }
+    }
 }

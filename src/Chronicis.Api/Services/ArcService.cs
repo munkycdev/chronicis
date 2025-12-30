@@ -43,6 +43,7 @@ public class ArcService : IArcService
                 Description = a.Description,
                 SortOrder = a.SortOrder,
                 SessionCount = _context.Articles.Count(art => art.ArcId == a.Id),
+                IsActive = a.IsActive,
                 CreatedAt = a.CreatedAt,
                 CreatedBy = a.CreatedBy,
                 CreatedByName = a.Creator.DisplayName
@@ -63,6 +64,7 @@ public class ArcService : IArcService
                 Description = a.Description,
                 SortOrder = a.SortOrder,
                 SessionCount = _context.Articles.Count(art => art.ArcId == a.Id),
+                IsActive = a.IsActive,
                 CreatedAt = a.CreatedAt,
                 CreatedBy = a.CreatedBy,
                 CreatedByName = a.Creator.DisplayName
@@ -118,6 +120,7 @@ public class ArcService : IArcService
             Description = arc.Description,
             SortOrder = arc.SortOrder,
             SessionCount = 0,
+            IsActive = arc.IsActive,
             CreatedAt = arc.CreatedAt,
             CreatedBy = arc.CreatedBy
         };
@@ -157,6 +160,7 @@ public class ArcService : IArcService
             Description = arc.Description,
             SortOrder = arc.SortOrder,
             SessionCount = sessionCount,
+            IsActive = arc.IsActive,
             CreatedAt = arc.CreatedAt,
             CreatedBy = arc.CreatedBy,
             CreatedByName = arc.Creator.DisplayName
@@ -186,6 +190,39 @@ public class ArcService : IArcService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Deleted arc {ArcId}", arcId);
+        return true;
+    }
+
+    public async Task<bool> ActivateArcAsync(Guid arcId, Guid userId)
+    {
+        var arc = await _context.Arcs
+            .Include(a => a.Campaign)
+            .FirstOrDefaultAsync(a => a.Id == arcId);
+
+        if (arc == null)
+            return false;
+
+        // Only campaign owner can activate arcs
+        if (arc.Campaign.OwnerId != userId)
+            return false;
+
+        // Deactivate all arcs in the same campaign
+        var campaignArcs = await _context.Arcs
+            .Where(a => a.CampaignId == arc.CampaignId && a.IsActive)
+            .ToListAsync();
+
+        foreach (var a in campaignArcs)
+        {
+            a.IsActive = false;
+        }
+
+        // Activate this arc
+        arc.IsActive = true;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Activated arc {ArcId} in campaign {CampaignId}", arcId, arc.CampaignId);
+
         return true;
     }
 }

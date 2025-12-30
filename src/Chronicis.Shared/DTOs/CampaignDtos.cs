@@ -16,6 +16,7 @@ public class CampaignDto
     public DateTime CreatedAt { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? EndedAt { get; set; }
+    public bool IsActive { get; set; }
     public int MemberCount { get; set; }
     public int ArcCount { get; set; }
 }

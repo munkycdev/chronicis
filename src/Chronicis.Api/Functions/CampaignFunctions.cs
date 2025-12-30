@@ -234,4 +234,49 @@ public class CampaignFunctions
 
         return req.CreateResponse(HttpStatusCode.NoContent);
     }
+
+    /// <summary>
+    /// Activate a campaign (makes it the active campaign for quick session creation)
+    /// </summary>
+    [Function("ActivateCampaign")]
+    public async Task<HttpResponseData> ActivateCampaign(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "campaigns/{id:guid}/activate")] HttpRequestData req,
+        Guid id,
+        FunctionContext context)
+    {
+        var user = context.GetRequiredUser();
+
+        _logger.LogInformation("Activating campaign {CampaignId} for user {UserId}", id, user.Id);
+
+        var success = await _campaignService.ActivateCampaignAsync(id, user.Id);
+
+        if (!success)
+        {
+            var badRequest = req.CreateResponse(HttpStatusCode.BadRequest);
+            await badRequest.WriteAsJsonAsync(new { error = "Unable to activate campaign. Campaign not found or you don't have permission." });
+            return badRequest;
+        }
+
+        return req.CreateResponse(HttpStatusCode.NoContent);
+    }
+
+    /// <summary>
+    /// Get the active context (campaign/arc) for a world
+    /// </summary>
+    [Function("GetActiveContext")]
+    public async Task<HttpResponseData> GetActiveContext(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "worlds/{worldId:guid}/active-context")] HttpRequestData req,
+        Guid worldId,
+        FunctionContext context)
+    {
+        var user = context.GetRequiredUser();
+
+        _logger.LogInformation("Getting active context for world {WorldId} for user {UserId}", worldId, user.Id);
+
+        var activeContext = await _campaignService.GetActiveContextAsync(worldId, user.Id);
+
+        var response = req.CreateResponse(HttpStatusCode.OK);
+        await response.WriteAsJsonAsync(activeContext);
+        return response;
+    }
 }

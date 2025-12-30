@@ -31,4 +31,9 @@ public interface IArcApiService
     /// Delete an arc (only if empty)
     /// </summary>
     Task<bool> DeleteArcAsync(Guid arcId);
+
+    /// <summary>
+    /// Activate an arc for quick session creation
+    /// </summary>
+    Task<bool> ActivateArcAsync(Guid arcId);
 }

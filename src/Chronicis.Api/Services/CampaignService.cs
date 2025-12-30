@@ -271,6 +271,82 @@ public class CampaignService : ICampaignService
                         && cm.Role == CampaignRole.GM);
     }
 
+    public async Task<bool> ActivateCampaignAsync(Guid campaignId, Guid userId)
+    {
+        var campaign = await _context.Campaigns
+            .FirstOrDefaultAsync(c => c.Id == campaignId);
+
+        if (campaign == null)
+            return false;
+
+        // Only DM can activate
+        if (!await UserIsDungeonMasterAsync(campaignId, userId))
+            return false;
+
+        // Deactivate all campaigns in the same world
+        var worldCampaigns = await _context.Campaigns
+            .Where(c => c.WorldId == campaign.WorldId && c.IsActive)
+            .ToListAsync();
+
+        foreach (var c in worldCampaigns)
+        {
+            c.IsActive = false;
+        }
+
+        // Activate this campaign
+        campaign.IsActive = true;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Activated campaign {CampaignId} in world {WorldId}", campaignId, campaign.WorldId);
+
+        return true;
+    }
+
+    public async Task<ActiveContextDto> GetActiveContextAsync(Guid worldId, Guid userId)
+    {
+        var result = new ActiveContextDto();
+        result.WorldId = worldId;
+
+        // Get all campaigns in this world the user has access to (owner OR member)
+        var campaigns = await _context.Campaigns
+            .Where(c => c.WorldId == worldId)
+            .Where(c => c.OwnerId == userId || c.Members.Any(m => m.UserId == userId))
+            .ToListAsync();
+
+        if (campaigns.Count == 0)
+            return result;
+
+        // Find explicitly active campaign only
+        Campaign? activeCampaign = campaigns.FirstOrDefault(c => c.IsActive);
+
+        if (activeCampaign == null)
+            return result;
+
+        result.CampaignId = activeCampaign.Id;
+        result.CampaignName = activeCampaign.Name;
+
+        // Get arcs for the active campaign
+        var arcs = await _context.Arcs
+            .Where(a => a.CampaignId == activeCampaign.Id)
+            .OrderBy(a => a.SortOrder)
+            .ToListAsync();
+
+        if (arcs.Count == 0)
+            return result;
+
+        // Find explicitly active arc only
+        Arc? activeArc = arcs.FirstOrDefault(a => a.IsActive);
+
+        if (activeArc != null)
+        {
+            result.ArcId = activeArc.Id;
+            result.ArcName = activeArc.Name;
+        }
+
+        return result;
+    }
+
     private static CampaignDto MapToDto(Campaign campaign)
     {
         return new CampaignDto
@@ -284,6 +360,7 @@ public class CampaignService : ICampaignService
             CreatedAt = campaign.CreatedAt,
             StartedAt = campaign.StartedAt,
             EndedAt = campaign.EndedAt,
+            IsActive = campaign.IsActive,
             MemberCount = campaign.Members?.Count ?? 0
         };
     }
@@ -301,6 +378,7 @@ public class CampaignService : ICampaignService
             CreatedAt = campaign.CreatedAt,
             StartedAt = campaign.StartedAt,
             EndedAt = campaign.EndedAt,
+            IsActive = campaign.IsActive,
             MemberCount = campaign.Members?.Count ?? 0,
             Members = campaign.Members?.Select(MapMemberToDto).ToList() ?? new List<CampaignMemberDto>()
         };

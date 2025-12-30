@@ -11,6 +11,7 @@ public class ArcDto
     public string? Description { get; set; }
     public int SortOrder { get; set; }
     public int SessionCount { get; set; }
+    public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public Guid CreatedBy { get; set; }
     public string? CreatedByName { get; set; }
@@ -26,6 +27,7 @@ public class ArcTreeDto
     public string Name { get; set; } = string.Empty;
     public int SortOrder { get; set; }
     public int SessionCount { get; set; }
+    public bool IsActive { get; set; }
 }
 
 /// <summary>

@@ -1,0 +1,158 @@
+@using Chronicis.Shared.DTOs
+@using Chronicis.Shared.Enums
+@inject ICampaignApiService CampaignApi
+@inject IArticleApiService ArticleApi
+@inject ITreeStateService TreeState
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+@if (_showButton)
+{
+    <div class="quick-add-session-container">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   FullWidth="true"
+                   StartIcon="@Icons.Material.Filled.NoteAdd"
+                   OnClick="CreateSessionNote"
+                   Disabled="_isCreating"
+                   Class="quick-add-session-btn">
+            @if (_isCreating)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Creating...</span>
+            }
+            else
+            {
+                <span>New Session Note</span>
+            }
+        </MudButton>
+        @if (!string.IsNullOrEmpty(_contextLabel))
+        {
+            <MudText Typo="Typo.caption" Class="quick-add-context-label">
+                @_contextLabel
+            </MudText>
+        }
+    </div>
+}
+
+@code {
+    private bool _showButton = false;
+    private bool _isCreating = false;
+    private string _contextLabel = string.Empty;
+    private ActiveContextDto? _activeContext;
+    private Guid? _worldId;
+
+    protected override void OnInitialized()
+    {
+        TreeState.OnStateChanged += OnTreeStateChanged;
+    }
+
+    private async void OnTreeStateChanged()
+    {
+        await CheckActiveContextAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CheckActiveContextAsync()
+    {
+        _showButton = false;
+        _contextLabel = string.Empty;
+        _activeContext = null;
+        _worldId = null;
+
+        // Get all world nodes from tree state
+        var worldNodes = TreeState.RootNodes.Where(n => n.NodeType == TreeNodeType.World).ToList();
+        if (!worldNodes.Any()) return;
+
+        try
+        {
+            // Check each world for an active context
+            foreach (var worldNode in worldNodes)
+            {
+                var context = await CampaignApi.GetActiveContextAsync(worldNode.Id);
+                
+                if (context != null && context.HasActiveContext)
+                {
+                    _activeContext = context;
+                    _worldId = worldNode.Id;
+                    _showButton = true;
+                    
+                    // Build context label
+                    var parts = new List<string>();
+                    if (!string.IsNullOrEmpty(_activeContext.CampaignName))
+                        parts.Add(_activeContext.CampaignName);
+                    if (!string.IsNullOrEmpty(_activeContext.ArcName))
+                        parts.Add(_activeContext.ArcName);
+                    
+                    _contextLabel = string.Join(" › ", parts);
+                    break; // Found an active context, stop searching
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Silently fail - button just won't show
+        }
+    }
+
+    private async Task CreateSessionNote()
+    {
+        if (_activeContext?.ArcId == null || _activeContext?.CampaignId == null || _worldId == null || _isCreating) 
+            return;
+
+        _isCreating = true;
+        StateHasChanged();
+
+        try
+        {
+            // Generate session name as YYYY-MM-DD
+            var sessionName = DateTime.Now.ToString("yyyy-MM-dd");
+
+            var createDto = new ArticleCreateDto
+            {
+                Title = sessionName,
+                WorldId = _worldId,
+                CampaignId = _activeContext.CampaignId,
+                ArcId = _activeContext.ArcId,
+                Type = ArticleType.Session
+            };
+
+            var newArticle = await ArticleApi.CreateArticleAsync(createDto);
+            
+            if (newArticle != null)
+            {
+                // Refresh tree to show new session
+                await TreeState.RefreshAsync();
+                TreeState.ExpandPathToAndSelect(newArticle.Id);
+                
+                // Fetch the full article to get breadcrumbs for navigation
+                var articleDetail = await ArticleApi.GetArticleDetailAsync(newArticle.Id);
+                if (articleDetail != null && articleDetail.Breadcrumbs.Any())
+                {
+                    var path = string.Join("/", articleDetail.Breadcrumbs.Select(b => b.Slug));
+                    Navigation.NavigateTo($"/article/{path}");
+                }
+                
+                Snackbar.Add($"Session '{sessionName}' created", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to create session", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isCreating = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        TreeState.OnStateChanged -= OnTreeStateChanged;
+    }
+}

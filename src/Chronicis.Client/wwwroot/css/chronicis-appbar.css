@@ -30,3 +30,38 @@
 .chronicis-home-link.mud-link {
     color: inherit !important;
 }
+
+/* ============================================
+   Quick Add Session Button
+   ============================================ */
+
+.quick-add-session-container {
+    padding: 0 16px 12px 16px;
+    border-bottom: 1px solid rgba(196, 175, 142, 0.2);
+    margin-bottom: 8px;
+}
+
+.quick-add-session-btn {
+    background: linear-gradient(135deg, #C4AF8E 0%, #D9C9A7 100%) !important;
+    color: #1F2A33 !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: 0.3px;
+}
+
+.quick-add-session-btn:hover {
+    background: linear-gradient(135deg, #D9C9A7 0%, #C4AF8E 100%) !important;
+    box-shadow: 0 2px 8px rgba(196, 175, 142, 0.4) !important;
+}
+
+.quick-add-session-btn:disabled {
+    opacity: 0.6 !important;
+}
+
+.quick-add-context-label {
+    display: block;
+    margin-top: 6px;
+    text-align: center;
+    color: rgba(244, 240, 234, 0.6);
+    font-size: 11px;
+}

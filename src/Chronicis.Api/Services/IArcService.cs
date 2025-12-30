@@ -9,4 +9,5 @@ public interface IArcService
     Task<ArcDto?> CreateArcAsync(ArcCreateDto dto, Guid userId);
     Task<ArcDto?> UpdateArcAsync(Guid arcId, ArcUpdateDto dto, Guid userId);
     Task<bool> DeleteArcAsync(Guid arcId, Guid userId);
+    Task<bool> ActivateArcAsync(Guid arcId, Guid userId);
 }

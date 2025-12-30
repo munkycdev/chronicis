@@ -51,6 +51,12 @@ public class Campaign
     /// </summary>
     public DateTime? EndedAt { get; set; }
     
+    /// <summary>
+    /// Whether this is the active campaign for quick session creation.
+    /// Only one campaign per world should be active at a time.
+    /// </summary>
+    public bool IsActive { get; set; }
+    
     // ===== AI Features =====
     
     /// <summary>

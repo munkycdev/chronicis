@@ -36,4 +36,14 @@ public interface ICampaignApiService
     /// Remove a member from a campaign
     /// </summary>
     Task<bool> RemoveMemberAsync(Guid campaignId, Guid userId);
+
+    /// <summary>
+    /// Activate a campaign for quick session creation
+    /// </summary>
+    Task<bool> ActivateCampaignAsync(Guid campaignId);
+
+    /// <summary>
+    /// Get the active context (campaign/arc) for a world
+    /// </summary>
+    Task<ActiveContextDto?> GetActiveContextAsync(Guid worldId);
 }

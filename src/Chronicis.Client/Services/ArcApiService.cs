@@ -60,4 +60,18 @@ public class ArcApiService : IArcApiService
             _logger,
             $"arc {arcId}");
     }
+
+    public async Task<bool> ActivateArcAsync(Guid arcId)
+    {
+        try
+        {
+            var response = await _http.PostAsync($"api/arcs/{arcId}/activate", null);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error activating arc {ArcId}", arcId);
+            return false;
+        }
+    }
 }

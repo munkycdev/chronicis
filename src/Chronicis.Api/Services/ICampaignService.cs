@@ -52,4 +52,14 @@ public interface ICampaignService
     /// Check if user is DM of a campaign
     /// </summary>
     Task<bool> UserIsDungeonMasterAsync(Guid campaignId, Guid userId);
+
+    /// <summary>
+    /// Set a campaign as active (deactivates others in same world)
+    /// </summary>
+    Task<bool> ActivateCampaignAsync(Guid campaignId, Guid userId);
+
+    /// <summary>
+    /// Get the active context (campaign/arc) for a world, or infer if only one exists
+    /// </summary>
+    Task<ActiveContextDto> GetActiveContextAsync(Guid worldId, Guid userId);
 }
