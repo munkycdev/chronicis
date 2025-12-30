@@ -46,7 +46,8 @@ public class UserService : IUserService
                 DisplayName = displayName,
                 AvatarUrl = avatarUrl,
                 CreatedAt = DateTime.UtcNow,
-                LastLoginAt = DateTime.UtcNow
+                LastLoginAt = DateTime.UtcNow,
+                HasCompletedOnboarding = false
             };
 
             _context.Users.Add(user);
@@ -106,6 +107,45 @@ public class UserService : IUserService
             user.LastLoginAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
+    }
+
+    public async Task<UserProfileDto?> GetUserProfileAsync(Guid userId)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return null;
+        }
+
+        return new UserProfileDto
+        {
+            Id = user.Id,
+            Email = user.Email,
+            DisplayName = user.DisplayName,
+            AvatarUrl = user.AvatarUrl,
+            CreatedAt = user.CreatedAt,
+            LastLoginAt = user.LastLoginAt,
+            HasCompletedOnboarding = user.HasCompletedOnboarding
+        };
+    }
+
+    public async Task<bool> CompleteOnboardingAsync(Guid userId)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+        {
+            _logger.LogWarning("Attempted to complete onboarding for non-existent user {UserId}", userId);
+            return false;
+        }
+
+        if (!user.HasCompletedOnboarding)
+        {
+            user.HasCompletedOnboarding = true;
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("User {UserId} completed onboarding", userId);
+        }
+
+        return true;
     }
 
     /// <summary>

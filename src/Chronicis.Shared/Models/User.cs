@@ -42,6 +42,12 @@ public class User
     /// </summary>
     public DateTime LastLoginAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// Whether the user has completed the onboarding flow.
+    /// New users are redirected to onboarding until this is true.
+    /// </summary>
+    public bool HasCompletedOnboarding { get; set; } = false;
+
     // ===== Navigation Properties =====
     
     /// <summary>

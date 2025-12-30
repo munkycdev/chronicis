@@ -1,3 +1,4 @@
+using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 
 namespace Chronicis.Api.Services;
@@ -31,4 +32,18 @@ public interface IUserService
     /// </summary>
     /// <param name="userId">Internal user ID</param>
     Task UpdateLastLoginAsync(Guid userId);
+
+    /// <summary>
+    /// Gets the user's profile information as a DTO
+    /// </summary>
+    /// <param name="userId">Internal user ID</param>
+    /// <returns>User profile DTO or null if not found</returns>
+    Task<UserProfileDto?> GetUserProfileAsync(Guid userId);
+
+    /// <summary>
+    /// Marks the user's onboarding as complete
+    /// </summary>
+    /// <param name="userId">Internal user ID</param>
+    /// <returns>True if successful, false if user not found</returns>
+    Task<bool> CompleteOnboardingAsync(Guid userId);
 }

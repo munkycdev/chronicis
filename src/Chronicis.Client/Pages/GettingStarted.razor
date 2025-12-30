@@ -1,0 +1,481 @@
+@page "/getting-started"
+@attribute [Authorize]
+@layout PublicLayout
+@inject IUserApiService UserApi
+@inject IWorldApiService WorldApi
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Welcome to Chronicis</PageTitle>
+
+<div class="getting-started-page">
+    <div class="getting-started-content">
+        @if (_currentStep == 0)
+        {
+            <!-- Step 1: Welcome -->
+            <div class="step-container chronicis-fade-in">
+                <div class="welcome-icon">📖✨</div>
+                <h1>Welcome to Chronicis</h1>
+                <p class="welcome-subtitle">
+                    Your personal chronicle for tabletop adventures
+                </p>
+                
+                <div class="welcome-features">
+                    <div class="feature-item">
+                        <span class="feature-icon">🌍</span>
+                        <div>
+                            <strong>Build Your World</strong>
+                            <p>Create rich settings with locations, NPCs, and lore</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📝</span>
+                        <div>
+                            <strong>Track Your Sessions</strong>
+                            <p>Document adventures and never forget what happened</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🔗</span>
+                        <div>
+                            <strong>Connect Everything</strong>
+                            <p>Link articles together with wiki-style [[brackets]]</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🤖</span>
+                        <div>
+                            <strong>AI-Powered Summaries</strong>
+                            <p>Let AI help you remember the important details</p>
+                        </div>
+                    </div>
+                </div>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           OnClick="NextStep"
+                           Class="mt-6"
+                           EndIcon="@Icons.Material.Filled.ArrowForward">
+                    Let's Get Started
+                </MudButton>
+            </div>
+        }
+        else if (_currentStep == 1)
+        {
+            <!-- Step 2: Your First World -->
+            <div class="step-container chronicis-fade-in">
+                <div class="step-icon">🌍</div>
+                <h1>Your First World</h1>
+                <p class="step-subtitle">
+                    We've created a starter world for you. You can rename it or create more worlds later.
+                </p>
+
+                @if (_defaultWorld != null)
+                {
+                    <div class="world-preview">
+                        <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Large" Style="color: var(--chronicis-beige-gold);" />
+                        <div>
+                            <h3>@_defaultWorld.Name</h3>
+                            <p>@(_defaultWorld.Description ?? "Your personal world for campaigns and adventures")</p>
+                        </div>
+                    </div>
+                }
+
+                <div class="tips-box">
+                    <h4>💡 Quick Tips</h4>
+                    <ul>
+                        <li>A <strong>World</strong> is your campaign setting (like Forgotten Realms or your homebrew)</li>
+                        <li>Each world can have multiple <strong>Campaigns</strong> (different adventures)</li>
+                        <li>Campaigns are divided into <strong>Arcs</strong> (story chapters)</li>
+                    </ul>
+                </div>
+
+                <div class="button-row">
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Default"
+                               OnClick="PreviousStep"
+                               StartIcon="@Icons.Material.Filled.ArrowBack">
+                        Back
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               OnClick="NextStep"
+                               EndIcon="@Icons.Material.Filled.ArrowForward">
+                        Continue
+                    </MudButton>
+                </div>
+            </div>
+        }
+        else if (_currentStep == 2)
+        {
+            <!-- Step 3: Ready to Go -->
+            <div class="step-container chronicis-fade-in">
+                <div class="step-icon">🎉</div>
+                <h1>You're All Set!</h1>
+                <p class="step-subtitle">
+                    Your chronicle awaits. Here's what you can do next:
+                </p>
+
+                <div class="next-steps">
+                    <div class="next-step-item">
+                        <span class="step-number">1</span>
+                        <div>
+                            <strong>Create a Campaign</strong>
+                            <p>Start tracking your adventures</p>
+                        </div>
+                    </div>
+                    <div class="next-step-item">
+                        <span class="step-number">2</span>
+                        <div>
+                            <strong>Add Your Character</strong>
+                            <p>Document who you're playing</p>
+                        </div>
+                    </div>
+                    <div class="next-step-item">
+                        <span class="step-number">3</span>
+                        <div>
+                            <strong>Write Your First Note</strong>
+                            <p>Capture locations, NPCs, or lore</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Default"
+                               OnClick="PreviousStep"
+                               StartIcon="@Icons.Material.Filled.ArrowBack">
+                        Back
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               OnClick="CompleteOnboarding"
+                               Disabled="_isCompleting"
+                               EndIcon="@Icons.Material.Filled.Check">
+                        @if (_isCompleting)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Finishing up...</span>
+                        }
+                        else
+                        {
+                            <span>Go to Dashboard</span>
+                        }
+                    </MudButton>
+                </div>
+            </div>
+        }
+
+        <!-- Progress Dots -->
+        <div class="progress-dots">
+            @for (int i = 0; i < 3; i++)
+            {
+                var step = i;
+                <div class="dot @(step == _currentStep ? "active" : "") @(step < _currentStep ? "completed" : "")"
+                     @onclick="() => GoToStep(step)"></div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .getting-started-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--chronicis-space-lg);
+        background: linear-gradient(135deg, var(--chronicis-soft-off-white) 0%, #e8e4dc 100%);
+    }
+
+    .getting-started-content {
+        max-width: 600px;
+        width: 100%;
+    }
+
+    .step-container {
+        background: white;
+        border-radius: var(--chronicis-radius-xl);
+        padding: var(--chronicis-space-xl);
+        box-shadow: var(--chronicis-shadow-lg);
+        text-align: center;
+    }
+
+    .welcome-icon, .step-icon {
+        font-size: 4rem;
+        margin-bottom: var(--chronicis-space-md);
+    }
+
+    .step-container h1 {
+        font-family: var(--chronicis-font-heading);
+        color: var(--chronicis-charcoal);
+        margin: 0 0 var(--chronicis-space-sm) 0;
+        font-size: 2rem;
+    }
+
+    .welcome-subtitle, .step-subtitle {
+        font-family: var(--chronicis-font-body);
+        color: var(--chronicis-slate-grey);
+        font-size: 1.1rem;
+        margin-bottom: var(--chronicis-space-lg);
+    }
+
+    .welcome-features {
+        text-align: left;
+        margin: var(--chronicis-space-lg) 0;
+    }
+
+    .feature-item {
+        display: flex;
+        gap: var(--chronicis-space-md);
+        padding: var(--chronicis-space-md) 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .feature-item:last-child {
+        border-bottom: none;
+    }
+
+    .feature-item .feature-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .feature-item strong {
+        color: var(--chronicis-charcoal);
+        display: block;
+        margin-bottom: var(--chronicis-space-xs);
+    }
+
+    .feature-item p {
+        color: var(--chronicis-slate-grey);
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .world-preview {
+        display: flex;
+        align-items: center;
+        gap: var(--chronicis-space-md);
+        background: var(--chronicis-soft-off-white);
+        padding: var(--chronicis-space-md);
+        border-radius: var(--chronicis-radius-md);
+        text-align: left;
+        margin-bottom: var(--chronicis-space-lg);
+    }
+
+    .world-preview h3 {
+        margin: 0 0 var(--chronicis-space-xs) 0;
+        color: var(--chronicis-charcoal);
+        font-family: var(--chronicis-font-heading);
+    }
+
+    .world-preview p {
+        margin: 0;
+        color: var(--chronicis-slate-grey);
+        font-size: 0.9rem;
+    }
+
+    .tips-box {
+        background: rgba(196, 175, 142, 0.1);
+        border: 1px solid rgba(196, 175, 142, 0.3);
+        border-radius: var(--chronicis-radius-md);
+        padding: var(--chronicis-space-md);
+        text-align: left;
+        margin-bottom: var(--chronicis-space-lg);
+    }
+
+    .tips-box h4 {
+        margin: 0 0 var(--chronicis-space-sm) 0;
+        color: var(--chronicis-charcoal);
+    }
+
+    .tips-box ul {
+        margin: 0;
+        padding-left: var(--chronicis-space-lg);
+        color: var(--chronicis-slate-grey);
+    }
+
+    .tips-box li {
+        margin-bottom: var(--chronicis-space-xs);
+    }
+
+    .next-steps {
+        text-align: left;
+        margin: var(--chronicis-space-lg) 0;
+    }
+
+    .next-step-item {
+        display: flex;
+        gap: var(--chronicis-space-md);
+        padding: var(--chronicis-space-md) 0;
+        align-items: flex-start;
+    }
+
+    .step-number {
+        background: var(--chronicis-beige-gold);
+        color: var(--chronicis-deep-blue-grey);
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .next-step-item strong {
+        color: var(--chronicis-charcoal);
+        display: block;
+        margin-bottom: var(--chronicis-space-xs);
+    }
+
+    .next-step-item p {
+        margin: 0;
+        color: var(--chronicis-slate-grey);
+        font-size: 0.9rem;
+    }
+
+    .button-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: var(--chronicis-space-lg);
+    }
+
+    .progress-dots {
+        display: flex;
+        justify-content: center;
+        gap: var(--chronicis-space-sm);
+        margin-top: var(--chronicis-space-lg);
+    }
+
+    .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: rgba(196, 175, 142, 0.3);
+        cursor: pointer;
+        transition: all var(--chronicis-transition-fast);
+    }
+
+    .dot:hover {
+        background: rgba(196, 175, 142, 0.5);
+    }
+
+    .dot.active {
+        background: var(--chronicis-beige-gold);
+        transform: scale(1.2);
+    }
+
+    .dot.completed {
+        background: var(--chronicis-beige-gold);
+    }
+
+    @@media (max-width: 600px) {
+        .step-container {
+            padding: var(--chronicis-space-lg);
+        }
+
+        .step-container h1 {
+            font-size: 1.5rem;
+        }
+
+        .welcome-icon, .step-icon {
+            font-size: 3rem;
+        }
+    }
+</style>
+
+@code {
+    private int _currentStep = 0;
+    private bool _isCompleting = false;
+    private WorldDto? _defaultWorld;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if user already completed onboarding
+        var profile = await UserApi.GetUserProfileAsync();
+        if (profile?.HasCompletedOnboarding == true)
+        {
+            Navigation.NavigateTo("/dashboard", replace: true);
+            return;
+        }
+
+        // Load user's default world
+        await LoadDefaultWorld();
+    }
+
+    private async Task LoadDefaultWorld()
+    {
+        try
+        {
+            var worlds = await WorldApi.GetWorldsAsync();
+            _defaultWorld = worlds?.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading worlds: {ex.Message}");
+        }
+    }
+
+    private void NextStep()
+    {
+        if (_currentStep < 2)
+        {
+            _currentStep++;
+            StateHasChanged();
+        }
+    }
+
+    private void PreviousStep()
+    {
+        if (_currentStep > 0)
+        {
+            _currentStep--;
+            StateHasChanged();
+        }
+    }
+
+    private void GoToStep(int step)
+    {
+        if (step >= 0 && step <= 2)
+        {
+            _currentStep = step;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CompleteOnboarding()
+    {
+        _isCompleting = true;
+        StateHasChanged();
+
+        try
+        {
+            var success = await UserApi.CompleteOnboardingAsync();
+            if (success)
+            {
+                Navigation.NavigateTo("/dashboard", replace: true);
+            }
+            else
+            {
+                Snackbar.Add("Failed to complete setup. Please try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error completing onboarding: {ex.Message}");
+            Snackbar.Add("An error occurred. Please try again.", Severity.Error);
+        }
+        finally
+        {
+            _isCompleting = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -3,6 +3,7 @@
 @inject ITreeStateService TreeStateService
 @inject IArticleApiService ArticleApi
 @inject IWorldApiService WorldApi
+@inject IUserApiService UserApi
 @inject IQuoteService QuoteService
 @inject IBreadcrumbService BreadcrumbService
 @inject NavigationManager Navigation
@@ -233,6 +234,14 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Check if user needs onboarding
+        var profile = await UserApi.GetUserProfileAsync();
+        if (profile != null && !profile.HasCompletedOnboarding)
+        {
+            Navigation.NavigateTo("/getting-started", replace: true);
+            return;
+        }
+
         TreeStateService.OnStateChanged += OnTreeStateChanged;
 
         // If URL has article slug, find and load it
