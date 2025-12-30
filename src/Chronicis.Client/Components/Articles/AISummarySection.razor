@@ -39,6 +39,12 @@
                 <div class="summary-text">
                     <MudText Typo="Typo.body1">@_summaryData.Summary</MudText>
                 </div>
+                @if (!string.IsNullOrEmpty(_summaryData.TemplateName))
+                {
+                    <MudText Typo="Typo.caption" Class="template-info">
+                        Template: @_summaryData.TemplateName
+                    </MudText>
+                }
                 <div class="summary-actions">
                     <MudButton StartIcon="@Icons.Material.Filled.Refresh"
                                Size="Size.Small"
@@ -69,18 +75,55 @@
                         No summary generated yet.
                     </MudText>
                     
-                    @if (_estimate.BacklinkCount == 0)
+                    @if (_estimate.SourceCount == 0)
                     {
                         <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
                             This article is not referenced by any other articles yet. 
-                            Add hashtags linking to this article in your campaign notes to generate a summary.
+                            Add wiki links to this article in your campaign notes to generate a summary.
                         </MudAlert>
                     }
                     else
                     {
+                        @* Template Selection *@
+                        <div class="template-selection mb-3">
+                            <MudSelect T="Guid?" 
+                                       Label="Summary Template" 
+                                       @bind-Value="_selectedTemplateId"
+                                       Variant="Variant.Outlined"
+                                       Dense="true"
+                                       AnchorOrigin="Origin.BottomCenter">
+                                <MudSelectItem T="Guid?" Value="@((Guid?)null)">Default</MudSelectItem>
+                                @foreach (var template in _templates)
+                                {
+                                    <MudSelectItem T="Guid?" Value="@template.Id">
+                                        @template.Name
+                                        @if (!string.IsNullOrEmpty(template.Description))
+                                        {
+                                            <MudText Typo="Typo.caption" Class="ml-2" Style="color: var(--mud-palette-text-secondary);">
+                                                - @template.Description
+                                            </MudText>
+                                        }
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                        </div>
+
+                        @* Custom Prompt (expandable) *@
+                        <MudExpansionPanels Class="mb-3">
+                            <MudExpansionPanel Text="Custom Instructions (Optional)" Dense="true">
+                                <MudTextField T="string"
+                                              @bind-Value="_customPrompt"
+                                              Label="Custom prompt (overrides template)"
+                                              Variant="Variant.Outlined"
+                                              Lines="3"
+                                              Placeholder="e.g., Focus on this character's relationships and motivations..."
+                                              HelperText="Leave blank to use selected template" />
+                            </MudExpansionPanel>
+                        </MudExpansionPanels>
+
                         <div class="estimate-info">
                             <MudText Typo="Typo.caption">
-                                <strong>Backlinks:</strong> @_estimate.BacklinkCount article@(_estimate.BacklinkCount == 1 ? "" : "s")
+                                <strong>Sources:</strong> @_estimate.SourceCount article@(_estimate.SourceCount == 1 ? "" : "s")
                             </MudText>
                             <MudText Typo="Typo.caption">
                                 <strong>Estimated tokens:</strong> ~@_estimate.EstimatedInputTokens input, ~@_estimate.EstimatedOutputTokens output
@@ -90,14 +133,21 @@
                             </MudText>
                         </div>
 
-                        <MudButton StartIcon="@Icons.Material.Filled.Psychology"
-                                   Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   Class="mt-3"
-                                   OnClick="GenerateSummary"
-                                   Disabled="_isLoading">
-                            Generate AI Summary
-                        </MudButton>
+                        <div class="generate-actions mt-3">
+                            <MudButton StartIcon="@Icons.Material.Filled.Psychology"
+                                       Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       OnClick="GenerateSummary"
+                                       Disabled="_isLoading">
+                                Generate AI Summary
+                            </MudButton>
+                            
+                            <MudCheckBox T="bool" 
+                                         @bind-Value="_saveConfiguration"
+                                         Label="Remember these settings"
+                                         Dense="true"
+                                         Class="ml-3" />
+                        </div>
                     }
                 </div>
             }
@@ -123,9 +173,21 @@
 
     private ArticleSummaryDto? _summaryData;
     private SummaryEstimateDto? _estimate;
+    private List<SummaryTemplateDto> _templates = new();
     private bool _isLoading = false;
     private string _loadingMessage = "";
     private string _errorMessage = "";
+    
+    // Generation options
+    private Guid? _selectedTemplateId;
+    private string? _customPrompt;
+    private bool _saveConfiguration = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load templates once on init
+        _templates = await SummaryApi.GetTemplatesAsync();
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -143,19 +205,39 @@
         if (_summaryData?.HasSummary != true)
         {
             _estimate = await SummaryApi.GetEstimateAsync(ArticleId);
+            
+            // Pre-select saved settings from estimate (which reads from article)
+            if (_estimate != null)
+            {
+                _selectedTemplateId = _estimate.TemplateId;
+                _customPrompt = _estimate.CustomPrompt;
+            }
+        }
+        else
+        {
+            // Summary exists - load saved settings from summary data
+            _selectedTemplateId = _summaryData.TemplateId;
+            _customPrompt = _summaryData.CustomPrompt;
         }
     }
 
     private async Task GenerateSummary()
     {
         _isLoading = true;
-        _loadingMessage = "Analyzing backlinks and generating summary...";
+        _loadingMessage = "Analyzing sources and generating summary...";
         _errorMessage = "";
         StateHasChanged();
 
         try
         {
-            var result = await SummaryApi.GenerateSummaryAsync(ArticleId);
+            var request = new GenerateSummaryRequestDto
+            {
+                TemplateId = _selectedTemplateId,
+                CustomPrompt = string.IsNullOrWhiteSpace(_customPrompt) ? null : _customPrompt,
+                SaveConfiguration = _saveConfiguration
+            };
+            
+            var result = await SummaryApi.GenerateSummaryAsync(ArticleId, request);
             
             if (result?.Success == true)
             {
@@ -163,7 +245,9 @@
                 {
                     ArticleId = ArticleId,
                     Summary = result.Summary,
-                    GeneratedAt = result.GeneratedDate
+                    GeneratedAt = result.GeneratedDate,
+                    TemplateId = _selectedTemplateId,
+                    TemplateName = _templates.FirstOrDefault(t => t.Id == _selectedTemplateId)?.Name
                 };
                 
                 Snackbar.Add(
@@ -214,7 +298,6 @@
     {
         if (_summaryData?.Summary != null)
         {
-            // Note: Blazor WASM clipboard API
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", _summaryData.Summary);
             Snackbar.Add("Summary copied to clipboard", Severity.Success);
         }

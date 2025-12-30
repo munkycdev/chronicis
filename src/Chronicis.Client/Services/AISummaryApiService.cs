@@ -17,6 +17,15 @@ public class AISummaryApiService : IAISummaryApiService
         _logger = logger;
     }
 
+    public async Task<List<SummaryTemplateDto>> GetTemplatesAsync()
+    {
+        var result = await _http.GetEntityAsync<List<SummaryTemplateDto>>(
+            "api/summary/templates",
+            _logger,
+            "summary templates");
+        return result ?? new List<SummaryTemplateDto>();
+    }
+
     public async Task<SummaryEstimateDto?> GetEstimateAsync(Guid articleId)
     {
         return await _http.GetEntityAsync<SummaryEstimateDto>(
@@ -25,13 +34,9 @@ public class AISummaryApiService : IAISummaryApiService
             $"summary estimate for article {articleId}");
     }
 
-    public async Task<SummaryGenerationDto?> GenerateSummaryAsync(Guid articleId, int maxOutputTokens = 1500)
+    public async Task<SummaryGenerationDto?> GenerateSummaryAsync(Guid articleId, GenerateSummaryRequestDto? request = null)
     {
-        var request = new GenerateSummaryRequestDto
-        {
-            ArticleId = articleId,
-            MaxOutputTokens = maxOutputTokens
-        };
+        request ??= new GenerateSummaryRequestDto();
 
         return await _http.PostEntityAsync<SummaryGenerationDto>(
             $"api/articles/{articleId}/summary/generate",

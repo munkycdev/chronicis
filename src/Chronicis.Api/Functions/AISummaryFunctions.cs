@@ -13,16 +13,13 @@ namespace Chronicis.Api.Functions;
 
 public class AISummaryFunctions
 {
-    private readonly ChronicisDbContext _context;
-    private readonly IAISummaryService _summaryService;
+    private readonly ISummaryService _summaryService;
     private readonly ILogger<AISummaryFunctions> _logger;
 
     public AISummaryFunctions(
-        ChronicisDbContext context,
-        IAISummaryService summaryService,
+        ISummaryService summaryService,
         ILogger<AISummaryFunctions> logger)
     {
-        _context = context;
         _summaryService = summaryService;
         _logger = logger;
     }
@@ -38,7 +35,7 @@ public class AISummaryFunctions
 
         try
         {
-            var estimate = await _summaryService.EstimateCostAsync(id);
+            var estimate = await _summaryService.EstimateArticleSummaryAsync(id);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(estimate);
@@ -75,13 +72,14 @@ public class AISummaryFunctions
             var requestBody = await reader.ReadToEndAsync();
             reader.Dispose();
 
-            var request = string.IsNullOrEmpty(requestBody)
-                ? new GenerateSummaryRequestDto { ArticleId = id }
-                : JsonSerializer.Deserialize<GenerateSummaryRequestDto>(requestBody,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                  ?? new GenerateSummaryRequestDto { ArticleId = id };
+            GenerateSummaryRequestDto? request = null;
+            if (!string.IsNullOrEmpty(requestBody))
+            {
+                request = JsonSerializer.Deserialize<GenerateSummaryRequestDto>(requestBody,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
 
-            var result = await _summaryService.GenerateSummaryAsync(id, request.MaxOutputTokens);
+            var result = await _summaryService.GenerateArticleSummaryAsync(id, request);
 
             var response = req.CreateResponse(result.Success ? HttpStatusCode.OK : HttpStatusCode.BadRequest);
             await response.WriteAsJsonAsync(result);
@@ -111,18 +109,9 @@ public class AISummaryFunctions
 
         try
         {
-            var article = await _context.Articles
-                .AsNoTracking()
-                .Where(a => a.Id == id && a.CreatedBy == user.Id)
-                .Select(a => new ArticleSummaryDto
-                {
-                    ArticleId = a.Id,
-                    Summary = a.AISummary,
-                    GeneratedAt = a.AISummaryGeneratedAt
-                })
-                .FirstOrDefaultAsync();
+            var summary = await _summaryService.GetArticleSummaryAsync(id);
 
-            if (article == null)
+            if (summary == null)
             {
                 var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
                 await notFoundResponse.WriteStringAsync("Article " + id + " not found");
@@ -130,7 +119,7 @@ public class AISummaryFunctions
             }
 
             var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(article);
+            await response.WriteAsJsonAsync(summary);
             return response;
         }
         catch (Exception ex)
@@ -153,19 +142,14 @@ public class AISummaryFunctions
 
         try
         {
-            var article = await _context.Articles
-                .FirstOrDefaultAsync(a => a.Id == id && a.CreatedBy == user.Id);
+            var success = await _summaryService.ClearArticleSummaryAsync(id);
 
-            if (article == null)
+            if (!success)
             {
                 var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
                 await notFoundResponse.WriteStringAsync("Article " + id + " not found");
                 return notFoundResponse;
             }
-
-            article.AISummary = null;
-            article.AISummaryGeneratedAt = null;
-            await _context.SaveChangesAsync();
 
             return req.CreateResponse(HttpStatusCode.NoContent);
         }

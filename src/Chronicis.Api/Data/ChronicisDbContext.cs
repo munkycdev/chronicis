@@ -17,6 +17,7 @@ public class ChronicisDbContext : DbContext
     public DbSet<Article> Articles { get; set; } = null!;
     public DbSet<ArticleLink> ArticleLinks { get; set; } = null!;
     public DbSet<WorldLink> WorldLinks { get; set; } = null!;
+    public DbSet<SummaryTemplate> SummaryTemplates { get; set; } = null!;
 
 
     public ChronicisDbContext(DbContextOptions<ChronicisDbContext> options)
@@ -34,6 +35,7 @@ public class ChronicisDbContext : DbContext
         ConfigureArticle(modelBuilder);
         ConfigureArticleLink(modelBuilder);
         ConfigureWorldLink(modelBuilder);
+        ConfigureSummaryTemplate(modelBuilder);
     }
 
     private static void ConfigureUser(ModelBuilder modelBuilder)
@@ -328,6 +330,67 @@ public class ChronicisDbContext : DbContext
 
             // Index for query performance
             entity.HasIndex(wl => wl.WorldId);
+        });
+    }
+
+    private static void ConfigureSummaryTemplate(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<SummaryTemplate>(entity =>
+        {
+            entity.HasKey(st => st.Id);
+
+            entity.Property(st => st.Name)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(st => st.Description)
+                .HasMaxLength(500);
+
+            entity.Property(st => st.PromptTemplate)
+                .IsRequired();
+
+            // SummaryTemplate -> World (optional, for future world-specific templates)
+            entity.HasOne(st => st.World)
+                .WithMany()
+                .HasForeignKey(st => st.WorldId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // SummaryTemplate -> Creator (optional, for future user-created templates)
+            entity.HasOne(st => st.Creator)
+                .WithMany()
+                .HasForeignKey(st => st.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes
+            entity.HasIndex(st => st.WorldId);
+            entity.HasIndex(st => st.IsSystem);
+        });
+
+        // Article -> SummaryTemplate relationship
+        modelBuilder.Entity<Article>(entity =>
+        {
+            entity.HasOne(a => a.SummaryTemplate)
+                .WithMany()
+                .HasForeignKey(a => a.SummaryTemplateId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Campaign -> SummaryTemplate relationship
+        modelBuilder.Entity<Campaign>(entity =>
+        {
+            entity.HasOne(c => c.SummaryTemplate)
+                .WithMany()
+                .HasForeignKey(c => c.SummaryTemplateId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Arc -> SummaryTemplate relationship
+        modelBuilder.Entity<Arc>(entity =>
+        {
+            entity.HasOne(a => a.SummaryTemplate)
+                .WithMany()
+                .HasForeignKey(a => a.SummaryTemplateId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

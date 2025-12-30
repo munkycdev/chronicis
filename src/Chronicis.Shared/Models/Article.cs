@@ -115,6 +115,21 @@ public class Article
     // ===== AI Features =====
     
     /// <summary>
+    /// Template to use for AI summary generation. Null uses default behavior.
+    /// </summary>
+    public Guid? SummaryTemplateId { get; set; }
+    
+    /// <summary>
+    /// Custom prompt that overrides the template when generating summaries.
+    /// </summary>
+    public string? SummaryCustomPrompt { get; set; }
+    
+    /// <summary>
+    /// Whether to include web search results when generating summaries.
+    /// </summary>
+    public bool SummaryIncludeWebSources { get; set; }
+    
+    /// <summary>
     /// AI-generated summary of the article.
     /// </summary>
     public string? AISummary { get; set; }
@@ -157,6 +172,11 @@ public class Article
     /// Arc this article belongs to (for Session articles).
     /// </summary>
     public Arc? Arc { get; set; }
+    
+    /// <summary>
+    /// Template used for AI summary generation.
+    /// </summary>
+    public SummaryTemplate? SummaryTemplate { get; set; }
     
     /// <summary>
     /// User who created this article.

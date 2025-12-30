@@ -51,6 +51,33 @@ public class Campaign
     /// </summary>
     public DateTime? EndedAt { get; set; }
     
+    // ===== AI Features =====
+    
+    /// <summary>
+    /// Template to use for AI summary generation. Null uses default behavior.
+    /// </summary>
+    public Guid? SummaryTemplateId { get; set; }
+    
+    /// <summary>
+    /// Custom prompt that overrides the template when generating summaries.
+    /// </summary>
+    public string? SummaryCustomPrompt { get; set; }
+    
+    /// <summary>
+    /// Whether to include web search results when generating summaries.
+    /// </summary>
+    public bool SummaryIncludeWebSources { get; set; }
+    
+    /// <summary>
+    /// AI-generated summary of the campaign.
+    /// </summary>
+    public string? AISummary { get; set; }
+    
+    /// <summary>
+    /// When the AI summary was last generated.
+    /// </summary>
+    public DateTime? AISummaryGeneratedAt { get; set; }
+    
     // ===== Navigation Properties =====
     
     /// <summary>
@@ -62,6 +89,11 @@ public class Campaign
     /// The user who owns this campaign.
     /// </summary>
     public User Owner { get; set; } = null!;
+    
+    /// <summary>
+    /// Template used for AI summary generation.
+    /// </summary>
+    public SummaryTemplate? SummaryTemplate { get; set; }
     
     /// <summary>
     /// All members of this campaign (DM, Players, Observers).

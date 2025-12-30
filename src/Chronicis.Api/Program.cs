@@ -48,6 +48,9 @@ var host = new HostBuilder()
         services.AddScoped<ILinkParser, LinkParser>();
         services.AddScoped<ILinkSyncService, LinkSyncService>();
         services.AddScoped<IAutoLinkService, AutoLinkService>();
+        
+        // New unified summary service
+        services.AddScoped<ISummaryService, SummaryService>();
     })
     .Build();
 
