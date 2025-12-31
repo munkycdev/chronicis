@@ -1,0 +1,151 @@
+@using Chronicis.Client.Components.Shared
+@inject NavigationManager Navigation
+
+@if (Prompts.Any())
+{
+    <MudPaper Elevation="1" Class="prompt-panel">
+        <MudText Typo="Typo.h6" Class="panel-title">
+            <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Class="mr-2" />
+            Suggestions
+        </MudText>
+        
+        <div class="prompts-list">
+            @foreach (var prompt in Prompts)
+            {
+                <div class="prompt-item @GetCategoryClass(prompt.Category)">
+                    <div class="prompt-icon">
+                        <IconDisplay Icon="@prompt.Icon" DefaultIcon="💡" />
+                    </div>
+                    <div class="prompt-content">
+                        <MudText Typo="Typo.subtitle2" Class="prompt-title">@prompt.Title</MudText>
+                        <MudText Typo="Typo.body2" Class="prompt-message">@prompt.Message</MudText>
+                        @if (!string.IsNullOrEmpty(prompt.ActionText) && !string.IsNullOrEmpty(prompt.ActionUrl))
+                        {
+                            <MudButton Variant="Variant.Text" 
+                                       Color="Color.Primary" 
+                                       Size="Size.Small"
+                                       OnClick="@(() => NavigateTo(prompt.ActionUrl))"
+                                       Class="prompt-action">
+                                @prompt.ActionText →
+                            </MudButton>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </MudPaper>
+}
+
+<style>
+    .prompt-panel {
+        padding: var(--chronicis-space-lg);
+        border-radius: var(--chronicis-radius-lg);
+        background: linear-gradient(135deg, rgba(196, 175, 142, 0.08) 0%, rgba(196, 175, 142, 0.02) 100%);
+    }
+
+    .panel-title {
+        display: flex;
+        align-items: center;
+        margin-bottom: var(--chronicis-space-md);
+        color: var(--chronicis-charcoal);
+    }
+
+    .prompts-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--chronicis-space-md);
+    }
+
+    .prompt-item {
+        display: flex;
+        gap: var(--chronicis-space-md);
+        padding: var(--chronicis-space-md);
+        border-radius: var(--chronicis-radius-md);
+        background: rgba(255, 255, 255, 0.6);
+        border-left: 3px solid var(--chronicis-beige-gold);
+        transition: all var(--chronicis-transition-fast);
+    }
+
+    .prompt-item:hover {
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .prompt-item.missing-fundamental {
+        border-left-color: #e57373;
+        background: rgba(229, 115, 115, 0.05);
+    }
+
+    .prompt-item.missing-fundamental:hover {
+        background: rgba(229, 115, 115, 0.1);
+    }
+
+    .prompt-item.needs-attention {
+        border-left-color: #ffb74d;
+        background: rgba(255, 183, 77, 0.05);
+    }
+
+    .prompt-item.needs-attention:hover {
+        background: rgba(255, 183, 77, 0.1);
+    }
+
+    .prompt-item.suggestion {
+        border-left-color: #64b5f6;
+        background: rgba(100, 181, 246, 0.05);
+    }
+
+    .prompt-item.suggestion:hover {
+        background: rgba(100, 181, 246, 0.1);
+    }
+
+    .prompt-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        width: 32px;
+        text-align: center;
+    }
+
+    .prompt-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .prompt-title {
+        color: var(--chronicis-charcoal);
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .prompt-message {
+        color: var(--chronicis-slate-grey);
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
+
+    .prompt-action {
+        margin-top: var(--chronicis-space-xs);
+        padding: 0;
+        min-width: auto;
+        font-size: 0.8rem;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public List<PromptDto> Prompts { get; set; } = new();
+
+    private void NavigateTo(string url)
+    {
+        Navigation.NavigateTo(url);
+    }
+
+    private string GetCategoryClass(PromptCategory category)
+    {
+        return category switch
+        {
+            PromptCategory.MissingFundamental => "missing-fundamental",
+            PromptCategory.NeedsAttention => "needs-attention",
+            PromptCategory.Suggestion => "suggestion",
+            _ => ""
+        };
+    }
+}

@@ -19,6 +19,11 @@ public class DashboardDto
     /// Characters claimed by the user across all worlds.
     /// </summary>
     public List<ClaimedCharacterDto> ClaimedCharacters { get; set; } = new();
+    
+    /// <summary>
+    /// Contextual prompts/suggestions for the user.
+    /// </summary>
+    public List<PromptDto> Prompts { get; set; } = new();
 }
 
 /// <summary>

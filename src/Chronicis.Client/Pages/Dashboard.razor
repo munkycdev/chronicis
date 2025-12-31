@@ -35,157 +35,344 @@ else if (_dashboard == null)
 }
 else
 {
-    <MudPaper Elevation="2" Class="dashboard-container">
-        <div class="chronicis-dashboard">
-            <!-- Welcome Header -->
-            <div class="dashboard-header">
-                <div class="welcome-section">
-                    <MudText Typo="Typo.h4" Class="welcome-text">
-                        Welcome back, <span class="user-name">@_dashboard.UserDisplayName</span>!
+    <div class="dashboard-wrapper">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <MudText Typo="Typo.h3" Class="hero-title">
+                        Welcome back, <span class="user-name">@_dashboard.UserDisplayName</span>
                     </MudText>
-                    <MudText Typo="Typo.body2" Class="welcome-subtitle">
+                    <MudText Typo="Typo.body1" Class="hero-subtitle">
                         Your chronicle awaits. What story will you tell today?
                     </MudText>
-                </div>
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="CreateNewWorld">
-                    + New World
-                </MudButton>
-            </div>
-
-            <MudGrid>
-                <!-- Main Content: World Panels -->
-                <MudItem xs="12" md="8">
-                    @if (_orderedWorlds.Any())
-                    {
-                        <!-- Primary World (world with active campaign, or most recent) -->
-                        <WorldPanel World="@_orderedWorlds.First()" 
-                                    IsExpanded="true" />
-
-                        <!-- Other Worlds (collapsed by default) -->
-                        @if (_orderedWorlds.Count > 1)
-                        {
-                            <MudText Typo="Typo.subtitle1" Class="other-worlds-header">
-                                Other Worlds
-                            </MudText>
-                            @foreach (var world in _orderedWorlds.Skip(1))
-                            {
-                                <WorldPanel World="@world" 
-                                            IsExpanded="false"
-                                            Class="mb-3" />
-                            }
-                        }
-                    }
-                    else
-                    {
-                        <!-- Empty State: No Worlds -->
-                        <MudPaper Elevation="0" Class="empty-state-panel">
-                            <div class="empty-state-content">
-                                <div class="empty-icon">🌍</div>
-                                <MudText Typo="Typo.h5" Class="empty-title">
-                                    Begin Your Chronicle
-                                </MudText>
-                                <MudText Typo="Typo.body1" Class="empty-message">
-                                    Create your first world to start organizing your campaign knowledge.
-                                    Every great adventure needs a home.
-                                </MudText>
-                                <MudButton Variant="Variant.Filled"
-                                           Color="Color.Primary"
-                                           Size="Size.Large"
-                                           StartIcon="@Icons.Material.Filled.Add"
-                                           OnClick="CreateNewWorld"
-                                           Class="mt-4">
-                                    Create Your First World
-                                </MudButton>
-                            </div>
-                        </MudPaper>
-                    }
-                </MudItem>
-
-                <!-- Sidebar: Quick Tips & Actions -->
-                <MudItem xs="12" md="4">
-                    <!-- My Characters Summary (if any) -->
-                    @if (_dashboard.ClaimedCharacters.Any())
-                    {
-                        <MudPaper Elevation="1" Class="sidebar-panel mb-4">
-                            <MudText Typo="Typo.h6" Class="panel-title">
-                                <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
-                                My Characters
-                            </MudText>
-                            <div class="characters-summary">
-                                @foreach (var character in _dashboard.ClaimedCharacters.Take(5))
-                                {
-                                    <div class="character-item" @onclick="() => NavigateToCharacter(character.Id)">
-                                        <IconDisplay Icon="@character.IconEmoji" DefaultIcon="👤" CssClass="character-icon" />
-                                        <div class="character-info">
-                                            <span class="character-name">@character.Title</span>
-                                            <span class="character-world">@character.WorldName</span>
-                                        </div>
-                                    </div>
-                                }
-                                @if (_dashboard.ClaimedCharacters.Count > 5)
-                                {
-                                    <MudText Typo="Typo.caption" Class="more-characters">
-                                        +@(_dashboard.ClaimedCharacters.Count - 5) more characters
-                                    </MudText>
-                                }
-                            </div>
-                        </MudPaper>
-                    }
-
-                    <!-- Quick Tips -->
-                    <MudPaper Elevation="1" Class="sidebar-panel tips-panel">
-                        <MudText Typo="Typo.h6" Class="panel-title">
-                            <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Class="mr-2" />
-                            Quick Tips
-                        </MudText>
-                        <div class="tips-list">
-                            <div class="tip-item">
-                                <strong>Wiki Links</strong>
-                                <p>Use [[Article Name]] to link articles together</p>
-                            </div>
-                            <MudDivider Class="my-2" />
-                            <div class="tip-item">
-                                <strong>Claim Characters</strong>
-                                <p>Mark characters as yours to see them on your dashboard</p>
-                            </div>
-                            <MudDivider Class="my-2" />
-                            <div class="tip-item">
-                                <strong>AI Summaries</strong>
-                                <p>Generate summaries from linked content automatically</p>
-                            </div>
-                        </div>
-                    </MudPaper>
-
-                    <!-- Inspirational Quote -->
                     @if (_quote != null)
                     {
-                        <MudPaper Elevation="0" Class="quote-panel mt-4">
+                        <div class="hero-quote">
                             <MudText Typo="Typo.body2" Class="quote-text">
                                 "@_quote.Content"
                             </MudText>
                             <MudText Typo="Typo.caption" Class="quote-author">
                                 — @_quote.Author
                             </MudText>
-                            <MudIconButton Icon="@Icons.Material.Filled.Refresh"
-                                           Size="Size.Small"
-                                           OnClick="LoadNewQuote"
-                                           Class="quote-refresh" />
-                        </MudPaper>
+                        </div>
                     }
-                </MudItem>
-            </MudGrid>
+                </div>
+                <div class="hero-actions">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="CreateNewWorld"
+                               Class="hero-button">
+                        Create New World
+                    </MudButton>
+                </div>
+            </div>
+            
+            <!-- Prompts in Hero -->
+            @if (_dashboard.Prompts.Any())
+            {
+                <div class="hero-prompts">
+                    @foreach (var prompt in _dashboard.Prompts.Take(3))
+                    {
+                        <div class="hero-prompt-card @GetCategoryClass(prompt.Category)" @onclick="() => HandlePromptClick(prompt)">
+                            <div class="prompt-icon">
+                                <IconDisplay Icon="@prompt.Icon" DefaultIcon="💡" />
+                            </div>
+                            <div class="prompt-content">
+                                <span class="prompt-title">@prompt.Title</span>
+                                <span class="prompt-message">@prompt.Message</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(prompt.ActionUrl))
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Class="prompt-arrow" />
+                            }
+                        </div>
+                    }
+                </div>
+            }
         </div>
-    </MudPaper>
+
+        <!-- Main Content -->
+        <MudPaper Elevation="2" Class="dashboard-container">
+            <div class="chronicis-dashboard">
+                <MudGrid>
+                    <!-- Main Content: World Panels -->
+                    <MudItem xs="12" md="8">
+                        @if (_orderedWorlds.Any())
+                        {
+                            <!-- Primary World -->
+                            <WorldPanel World="@_orderedWorlds.First()" 
+                                        IsExpanded="true" />
+
+                            <!-- Other Worlds -->
+                            @if (_orderedWorlds.Count > 1)
+                            {
+                                <MudText Typo="Typo.overline" Class="other-worlds-header">
+                                    Other Worlds
+                                </MudText>
+                                @foreach (var world in _orderedWorlds.Skip(1))
+                                {
+                                    <WorldPanel World="@world" 
+                                                IsExpanded="false"
+                                                Class="mb-3" />
+                                }
+                            }
+                        }
+                        else
+                        {
+                            <!-- Empty State: No Worlds -->
+                            <MudPaper Elevation="0" Class="empty-state-panel">
+                                <div class="empty-state-content">
+                                    <div class="empty-icon">🌍</div>
+                                    <MudText Typo="Typo.h5" Class="empty-title">
+                                        Begin Your Chronicle
+                                    </MudText>
+                                    <MudText Typo="Typo.body1" Class="empty-message">
+                                        Create your first world to start organizing your campaign knowledge.
+                                        Every great adventure needs a home.
+                                    </MudText>
+                                    <MudButton Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               Size="Size.Large"
+                                               StartIcon="@Icons.Material.Filled.Add"
+                                               OnClick="CreateNewWorld"
+                                               Class="mt-4">
+                                        Create Your First World
+                                    </MudButton>
+                                </div>
+                            </MudPaper>
+                        }
+                    </MudItem>
+
+                    <!-- Sidebar -->
+                    <MudItem xs="12" md="4">
+                        <!-- My Characters Summary -->
+                        @if (_dashboard.ClaimedCharacters.Any())
+                        {
+                            <MudPaper Elevation="1" Class="sidebar-panel mb-4">
+                                <MudText Typo="Typo.h6" Class="panel-title">
+                                    <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
+                                    My Characters
+                                </MudText>
+                                <div class="characters-summary">
+                                    @foreach (var character in _dashboard.ClaimedCharacters.Take(5))
+                                    {
+                                        <div class="character-item" @onclick="() => NavigateToCharacter(character.Id)">
+                                            <IconDisplay Icon="@character.IconEmoji" DefaultIcon="👤" CssClass="character-icon" />
+                                            <div class="character-info">
+                                                <span class="character-name">@character.Title</span>
+                                                <span class="character-world">@character.WorldName</span>
+                                            </div>
+                                        </div>
+                                    }
+                                    @if (_dashboard.ClaimedCharacters.Count > 5)
+                                    {
+                                        <MudText Typo="Typo.caption" Class="more-characters">
+                                            +@(_dashboard.ClaimedCharacters.Count - 5) more characters
+                                        </MudText>
+                                    }
+                                </div>
+                            </MudPaper>
+                        }
+
+                        <!-- Quick Stats -->
+                        <MudPaper Elevation="1" Class="sidebar-panel stats-panel">
+                            <MudText Typo="Typo.h6" Class="panel-title">
+                                <MudIcon Icon="@Icons.Material.Filled.Analytics" Class="mr-2" />
+                                Your Chronicle
+                            </MudText>
+                            <div class="stats-grid">
+                                <div class="stat-box">
+                                    <span class="stat-number">@_dashboard.Worlds.Count</span>
+                                    <span class="stat-label">Worlds</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-number">@_dashboard.Worlds.Sum(w => w.Campaigns.Count)</span>
+                                    <span class="stat-label">Campaigns</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-number">@_dashboard.Worlds.Sum(w => w.ArticleCount)</span>
+                                    <span class="stat-label">Articles</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-number">@_dashboard.ClaimedCharacters.Count</span>
+                                    <span class="stat-label">Characters</span>
+                                </div>
+                            </div>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+            </div>
+        </MudPaper>
+    </div>
 }
 
 <style>
-    .dashboard-container {
-        margin: var(--chronicis-space-lg);
+    .dashboard-wrapper {
+        padding: var(--chronicis-space-lg);
+    }
+
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, var(--chronicis-deep-blue-grey) 0%, #2a3a47 100%);
         border-radius: var(--chronicis-radius-lg);
-        min-height: calc(100vh - 100px);
+        padding: var(--chronicis-space-xl);
+        margin-bottom: var(--chronicis-space-lg);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 40%;
+        height: 100%;
+        background: radial-gradient(ellipse at top right, rgba(196, 175, 142, 0.15) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .hero-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        position: relative;
+        z-index: 1;
+        margin-bottom: var(--chronicis-space-lg);
+    }
+
+    .hero-text {
+        flex: 1;
+    }
+
+    .hero-title {
+        font-family: var(--chronicis-font-heading);
+        color: var(--chronicis-beige-gold);
+        margin: 0 0 var(--chronicis-space-sm) 0;
+    }
+
+    .hero-title .user-name {
+        color: var(--chronicis-off-white);
+    }
+
+    .hero-subtitle {
+        color: rgba(244, 240, 234, 0.7);
+        margin-bottom: var(--chronicis-space-md);
+    }
+
+    .hero-quote {
+        max-width: 500px;
+        padding: var(--chronicis-space-md);
+        background: rgba(196, 175, 142, 0.1);
+        border-left: 3px solid var(--chronicis-beige-gold);
+        border-radius: 0 var(--chronicis-radius-sm) var(--chronicis-radius-sm) 0;
+    }
+
+    .hero-quote .quote-text {
+        font-style: italic;
+        color: rgba(244, 240, 234, 0.8);
+        margin-bottom: var(--chronicis-space-xs);
+    }
+
+    .hero-quote .quote-author {
+        color: var(--chronicis-beige-gold);
+    }
+
+    .hero-actions {
+        flex-shrink: 0;
+        margin-left: var(--chronicis-space-lg);
+    }
+
+    .hero-button {
+        background: var(--chronicis-beige-gold) !important;
+        color: var(--chronicis-deep-blue-grey) !important;
+    }
+
+    /* Hero Prompts */
+    .hero-prompts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: var(--chronicis-space-md);
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero-prompt-card {
+        display: flex;
+        align-items: center;
+        gap: var(--chronicis-space-md);
+        padding: var(--chronicis-space-md);
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: var(--chronicis-radius-md);
+        border-left: 3px solid var(--chronicis-beige-gold);
+        cursor: pointer;
+        transition: all var(--chronicis-transition-fast);
+    }
+
+    .hero-prompt-card:hover {
+        background: rgba(255, 255, 255, 0.12);
+        transform: translateX(4px);
+    }
+
+    .hero-prompt-card.missing-fundamental {
+        border-left-color: #ef9a9a;
+    }
+
+    .hero-prompt-card.needs-attention {
+        border-left-color: #ffcc80;
+    }
+
+    .hero-prompt-card.suggestion {
+        border-left-color: #90caf9;
+    }
+
+    .hero-prompt-card .prompt-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .hero-prompt-card .prompt-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .hero-prompt-card .prompt-title {
+        display: block;
+        font-weight: 600;
+        color: var(--chronicis-beige-gold);
+        font-size: 0.9rem;
+        margin-bottom: 2px;
+    }
+
+    .hero-prompt-card .prompt-message {
+        display: block;
+        color: rgba(244, 240, 234, 0.6);
+        font-size: 0.8rem;
+        line-height: 1.3;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .hero-prompt-card .prompt-arrow {
+        color: var(--chronicis-beige-gold);
+        opacity: 0.5;
+        transition: opacity var(--chronicis-transition-fast);
+    }
+
+    .hero-prompt-card:hover .prompt-arrow {
+        opacity: 1;
+    }
+
+    /* Main Dashboard Container */
+    .dashboard-container {
+        border-radius: var(--chronicis-radius-lg);
+        min-height: 400px;
     }
 
     .dashboard-loading, .dashboard-error {
@@ -201,36 +388,14 @@ else
         padding: var(--chronicis-space-xl);
     }
 
-    .dashboard-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: var(--chronicis-space-xl);
-        padding-bottom: var(--chronicis-space-lg);
-        border-bottom: 1px solid rgba(196, 175, 142, 0.2);
-    }
-
-    .welcome-text {
-        font-family: var(--chronicis-font-heading);
-        color: var(--chronicis-charcoal);
-        margin: 0;
-    }
-
-    .user-name {
-        color: var(--chronicis-beige-gold);
-    }
-
-    .welcome-subtitle {
-        color: var(--chronicis-slate-grey);
-        margin-top: var(--chronicis-space-xs);
-    }
-
     .other-worlds-header {
         color: var(--chronicis-slate-grey);
         margin: var(--chronicis-space-lg) 0 var(--chronicis-space-md) 0;
         font-weight: 500;
+        letter-spacing: 1px;
     }
 
+    /* Empty State */
     .empty-state-panel {
         padding: var(--chronicis-space-xl);
         text-align: center;
@@ -258,6 +423,7 @@ else
         color: var(--chronicis-slate-grey);
     }
 
+    /* Sidebar */
     .sidebar-panel {
         padding: var(--chronicis-space-lg);
         border-radius: var(--chronicis-radius-lg);
@@ -317,63 +483,56 @@ else
         margin-top: var(--chronicis-space-sm);
     }
 
-    .tips-panel {
-        background: linear-gradient(135deg, rgba(196, 175, 142, 0.08) 0%, rgba(196, 175, 142, 0.03) 100%);
+    /* Stats Panel */
+    .stats-panel {
+        background: linear-gradient(135deg, rgba(196, 175, 142, 0.08) 0%, rgba(196, 175, 142, 0.02) 100%);
     }
 
-    .tips-list {
-        font-size: 0.875rem;
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--chronicis-space-md);
     }
 
-    .tip-item strong {
-        color: var(--chronicis-charcoal);
+    .stat-box {
+        text-align: center;
+        padding: var(--chronicis-space-md);
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: var(--chronicis-radius-md);
+    }
+
+    .stat-number {
         display: block;
-        margin-bottom: var(--chronicis-space-xs);
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: var(--chronicis-beige-gold);
+        font-family: var(--chronicis-font-heading);
     }
 
-    .tip-item p {
+    .stat-label {
+        display: block;
+        font-size: 0.75rem;
         color: var(--chronicis-slate-grey);
-        margin: 0;
-        font-size: 0.8rem;
-    }
-
-    .quote-panel {
-        padding: var(--chronicis-space-lg);
-        background: rgba(196, 175, 142, 0.05);
-        border: 1px solid rgba(196, 175, 142, 0.15);
-        border-radius: var(--chronicis-radius-lg);
-        position: relative;
-    }
-
-    .quote-text {
-        font-style: italic;
-        color: var(--chronicis-slate-grey);
-        margin-bottom: var(--chronicis-space-sm);
-    }
-
-    .quote-author {
-        color: var(--chronicis-charcoal);
-    }
-
-    .quote-refresh {
-        position: absolute;
-        top: var(--chronicis-space-sm);
-        right: var(--chronicis-space-sm);
-        opacity: 0.5;
-    }
-
-    .quote-refresh:hover {
-        opacity: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     @@media (max-width: 960px) {
-        .dashboard-header {
+        .hero-content {
             flex-direction: column;
-            gap: var(--chronicis-space-md);
         }
         
-        .dashboard-container {
-            margin: var(--chronicis-space-sm);
+        .hero-actions {
+            margin-left: 0;
+            margin-top: var(--chronicis-space-md);
+        }
+
+        .hero-prompts {
+            grid-template-columns: 1fr;
+        }
+        
+        .dashboard-wrapper {
+            padding: var(--chronicis-space-sm);
         }
     }
 </style>
@@ -415,13 +574,13 @@ else
             {
                 // Order worlds: prioritize those with active campaigns, then by most recent activity
                 _orderedWorlds = _dashboard.Worlds
-                    .OrderByDescending(w => w.Campaigns.Any(c => c.IsActive)) // Active campaign first
+                    .OrderByDescending(w => w.Campaigns.Any(c => c.IsActive))
                     .ThenByDescending(w => w.Campaigns
                         .Where(c => c.CurrentArc?.LatestSessionDate != null)
                         .Select(c => c.CurrentArc!.LatestSessionDate)
                         .DefaultIfEmpty(DateTime.MinValue)
-                        .Max()) // Most recent session
-                    .ThenByDescending(w => w.CreatedAt) // Newest world
+                        .Max())
+                    .ThenByDescending(w => w.CreatedAt)
                     .ToList();
             }
         }
@@ -449,12 +608,6 @@ else
         }
     }
 
-    private async Task LoadNewQuote()
-    {
-        await LoadQuote();
-        StateHasChanged();
-    }
-
     private async Task CreateNewWorld()
     {
         try
@@ -472,7 +625,6 @@ else
                 Snackbar.Add($"World '{world.Name}' created!", Severity.Success);
                 await TreeStateService.RefreshAsync();
 
-                // Navigate to the new world
                 if (world.WorldRootArticleId.HasValue)
                 {
                     TreeStateService.ShouldFocusTitle = true;
@@ -497,8 +649,26 @@ else
 
     private void NavigateToCharacter(Guid characterId)
     {
-        // For now, just navigate by ID - we can improve path building later
-        Navigation.NavigateTo($"/article/{characterId}");
+        Navigation.NavigateTo($"/article/{characterId}", forceLoad: true);
+    }
+
+    private void HandlePromptClick(PromptDto prompt)
+    {
+        if (!string.IsNullOrEmpty(prompt.ActionUrl))
+        {
+            Navigation.NavigateTo(prompt.ActionUrl, forceLoad: true);
+        }
+    }
+
+    private string GetCategoryClass(PromptCategory category)
+    {
+        return category switch
+        {
+            PromptCategory.MissingFundamental => "missing-fundamental",
+            PromptCategory.NeedsAttention => "needs-attention",
+            PromptCategory.Suggestion => "suggestion",
+            _ => ""
+        };
     }
 
     private void OnTreeStateChanged()

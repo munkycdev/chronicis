@@ -1,13 +1,13 @@
 # Chronicis - Project Status
 
 **Last Updated:** December 30, 2025  
-**Project Phase:** Implementation Complete (Phase 10 of 13)
+**Project Phase:** Dashboard Redesign Complete
 
 ---
 
 ## Current State
 
-Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented.
+Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented, including the recently completed dashboard redesign.
 
 ### What's Working
 
@@ -21,6 +21,7 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 - AI-powered summary generation using Azure OpenAI
 - Full-text search across titles, bodies, and links
 - URL routing with slugs for bookmarking
+- Drag & drop article reorganization
 
 **Entity Management:**
 - World → Campaign → Arc → Session hierarchy
@@ -28,6 +29,14 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 - Entity detail pages for Worlds, Campaigns, and Arcs
 - Creation dialogs for all entity types
 - Article type categorization (WikiArticle, Character, Session, etc.)
+- Character claiming system
+
+**Dashboard:**
+- World-centric dashboard with expandable world panels
+- Active campaign highlighting with session stats
+- Claimed characters display
+- First-time user onboarding flow
+- Quick tips panel
 
 **Infrastructure:**
 - Auth0 authentication (Discord and Google OAuth)
@@ -60,34 +69,38 @@ See `Feature Ideas.md` for the complete bug list.
 | 8 | AI Summaries | ✅ Complete |
 | 9 | Advanced Search | ✅ Complete |
 | 9.5 | Auth Architecture | ✅ Complete |
-| 10 | Taxonomy & Entities | ✅ Complete |
-| 11 | Drag & Drop Enhancements | 📜 Next |
-| 12 | Icons & Polish | ⏳ Pending |
-| 13 | Testing & Deploy | ⏳ Pending |
+| 10 | Drag & Drop | ✅ Complete |
+| 11 | Icons & Polish | ⏳ Pending |
+| 12 | Testing & Deploy | ⏳ Pending |
 
-**Overall Progress:** 10 of 13 phases complete (~77%)
+**Additional Work Completed:**
+- Taxonomy & Entity System (Worlds, Campaigns, Arcs)
+- Dashboard Redesign with World Panels
+- Character Claiming System
+- First-time User Onboarding
+
+**Overall Progress:** ~85% of core features complete
 
 ---
 
 ## Next Steps
 
-### Phase 11: Drag & Drop Enhancements
-- Drag articles between parent articles
-- Drag to reorder within same parent
-- Visual drop indicators
-- Undo functionality for moves
-
-### Phase 12: Icons & Polish
+### Phase 11: Icons & Polish
 - EmojiPicker component improvements
 - Icon display in breadcrumbs and headers
 - Animation polish
 - Enhanced tooltips
 
-### Phase 13: Testing & Deployment
+### Phase 12: Testing & Deployment
 - Unit tests for all services
 - Integration tests for API endpoints
 - Performance optimization
 - Production deployment validation
+
+### Optional Enhancements
+- Contextual prompt system for dashboard
+- Advanced collaboration features
+- Audio capture integration
 
 ---
 
@@ -126,8 +139,9 @@ dotnet ef database update
 | Route | Page | Description |
 |-------|------|-------------|
 | `/` | Landing | Public landing page |
-| `/dashboard` | Dashboard | Home with stats and quick actions |
-| `/world/{id}` | WorldDetail | Edit world, create content |
+| `/dashboard` | Dashboard | World panels and quick actions |
+| `/getting-started` | Onboarding | First-time user wizard |
+| `/world/{slug}` | WorldDetail | Edit world, create content |
 | `/campaign/{id}` | CampaignDetail | Edit campaign, manage arcs |
 | `/arc/{id}` | ArcDetail | Edit arc, manage sessions |
 | `/article/{path}` | Articles | Article detail with editing |

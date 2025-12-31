@@ -1,6 +1,7 @@
 using System.Net;
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
+using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Microsoft.Azure.Functions.Worker;
@@ -16,11 +17,16 @@ namespace Chronicis.Api.Functions;
 public class DashboardFunctions
 {
     private readonly ChronicisDbContext _context;
+    private readonly IPromptService _promptService;
     private readonly ILogger<DashboardFunctions> _logger;
 
-    public DashboardFunctions(ChronicisDbContext context, ILogger<DashboardFunctions> logger)
+    public DashboardFunctions(
+        ChronicisDbContext context, 
+        IPromptService promptService,
+        ILogger<DashboardFunctions> logger)
     {
         _context = context;
+        _promptService = promptService;
         _logger = logger;
     }
 
@@ -148,6 +154,9 @@ public class DashboardFunctions
                 CreatedAt = ch.CreatedAt
             }).ToList()
         };
+
+        // Generate contextual prompts
+        dashboard.Prompts = _promptService.GeneratePrompts(dashboard);
 
         var response = req.CreateResponse(HttpStatusCode.OK);
         await response.WriteAsJsonAsync(dashboard);

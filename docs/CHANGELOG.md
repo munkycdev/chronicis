@@ -7,9 +7,32 @@ All notable changes to this project are documented in this file.
 ## [Unreleased]
 
 ### Planned
-- Phase 11: Drag & Drop Enhancements
-- Phase 12: Icons & Polish
-- Phase 13: Testing & Deployment
+- Phase 11: Icons & Polish
+- Phase 12: Testing & Deployment
+
+---
+
+## [2.1.0] - 2025-12-30
+
+### Dashboard Redesign & Character Claiming
+
+**Added:**
+- World-centric dashboard with expandable world panels
+- Character claiming system (claim/unclaim characters as yours)
+- CharacterFunctions API (`/api/characters/claimed`, `/api/characters/{id}/claim`)
+- DashboardFunctions API (`/api/dashboard`) for aggregated data
+- DashboardApiService and CharacterApiService on client
+- WorldPanel component showing campaigns, characters, and stats
+- IconDisplay component for rendering Font Awesome icons and emojis
+- First-time user onboarding wizard (`/getting-started`)
+- User onboarding flag (`HasCompletedOnboarding`)
+- UserFunctions API (`/api/users/me`, `/api/users/me/complete-onboarding`)
+
+**Changed:**
+- Dashboard now prioritizes worlds with active campaigns
+- Dashboard shows claimed characters in sidebar
+- Dashboard wrapped in paper container for better visual hierarchy
+- Quick Tips panel with contextual guidance
 
 ---
 
