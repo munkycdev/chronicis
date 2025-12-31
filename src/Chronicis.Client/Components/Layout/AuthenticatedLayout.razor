@@ -39,6 +39,12 @@
                       Immediate="true"
                       @onkeydown="OnGlobalSearchKeyDown" />
 
+        <MudTooltip Text="Quick Start Guide">
+            <MudIconButton Icon="@Icons.Material.Filled.Help"
+                           Color="Color.Inherit"
+                           OnClick="@(() => Navigation.NavigateTo("/getting-started"))" />
+        </MudTooltip>
+
         <MudMenu Icon="@Icons.Material.Filled.AccountCircle"
                  Color="Color.Inherit"
                  AnchorOrigin="Origin.BottomRight"

@@ -1,12 +1,11 @@
 @page "/getting-started"
 @attribute [Authorize]
-@layout PublicLayout
 @inject IUserApiService UserApi
 @inject IWorldApiService WorldApi
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
-<PageTitle>Welcome to Chronicis</PageTitle>
+<PageTitle>Quick Start Guide - Chronicis</PageTitle>
 
 <div class="getting-started-page">
     <div class="getting-started-content">
@@ -15,7 +14,7 @@
             <!-- Step 1: Welcome -->
             <div class="step-container chronicis-fade-in">
                 <div class="welcome-icon">📖✨</div>
-                <h1>Welcome to Chronicis</h1>
+                <h1>@(_isReturningUser ? "Quick Start Guide" : "Welcome to Chronicis")</h1>
                 <p class="welcome-subtitle">
                     Your personal chronicle for tabletop adventures
                 </p>
@@ -57,38 +56,67 @@
                            OnClick="NextStep"
                            Class="mt-6"
                            EndIcon="@Icons.Material.Filled.ArrowForward">
-                    Let's Get Started
+                    @(_isReturningUser ? "Review the Basics" : "Let's Get Started")
                 </MudButton>
             </div>
         }
         else if (_currentStep == 1)
         {
-            <!-- Step 2: Your First World -->
+            <!-- Step 2: Understanding the Structure -->
             <div class="step-container chronicis-fade-in">
-                <div class="step-icon">🌍</div>
-                <h1>Your First World</h1>
+                <div class="step-icon">🏗️</div>
+                <h1>How Chronicis is Organized</h1>
                 <p class="step-subtitle">
-                    We've created a starter world for you. You can rename it or create more worlds later.
+                    Your content is organized in a hierarchy that mirrors how tabletop campaigns work.
                 </p>
 
-                @if (_defaultWorld != null)
-                {
-                    <div class="world-preview">
-                        <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Large" Style="color: var(--chronicis-beige-gold);" />
-                        <div>
-                            <h3>@_defaultWorld.Name</h3>
-                            <p>@(_defaultWorld.Description ?? "Your personal world for campaigns and adventures")</p>
+                <div class="structure-explanation">
+                    <div class="structure-item">
+                        <div class="structure-header">
+                            <span class="structure-icon">🌍</span>
+                            <strong>World</strong>
                         </div>
+                        <p>
+                            Your campaign setting — the universe where your adventures take place. 
+                            This could be an official setting like <em>Forgotten Realms</em> or <em>Eberron</em>, 
+                            or your own homebrew creation. Everything else lives inside a World.
+                        </p>
                     </div>
-                }
 
-                <div class="tips-box">
-                    <h4>💡 Quick Tips</h4>
-                    <ul>
-                        <li>A <strong>World</strong> is your campaign setting (like Forgotten Realms or your homebrew)</li>
-                        <li>Each world can have multiple <strong>Campaigns</strong> (different adventures)</li>
-                        <li>Campaigns are divided into <strong>Arcs</strong> (story chapters)</li>
-                    </ul>
+                    <div class="structure-item">
+                        <div class="structure-header">
+                            <span class="structure-icon">📜</span>
+                            <strong>Campaign</strong>
+                        </div>
+                        <p>
+                            A specific adventure or ongoing game with your group. You might run 
+                            <em>Curse of Strahd</em> and <em>Tomb of Annihilation</em> in the same world — 
+                            those would be two separate campaigns. Each campaign tracks its own story.
+                        </p>
+                    </div>
+
+                    <div class="structure-item">
+                        <div class="structure-header">
+                            <span class="structure-icon">📚</span>
+                            <strong>Arc</strong>
+                        </div>
+                        <p>
+                            Story chapters within a campaign. Maybe your party spent several sessions 
+                            in Waterdeep, then traveled to Baldur's Gate — those could be separate arcs. 
+                            Arcs help you organize sessions into meaningful chunks.
+                        </p>
+                    </div>
+
+                    <div class="structure-item">
+                        <div class="structure-header">
+                            <span class="structure-icon">🎲</span>
+                            <strong>Session</strong>
+                        </div>
+                        <p>
+                            A single game night. Each session belongs to an arc and captures what 
+                            happened during that play session — encounters, discoveries, memorable moments.
+                        </p>
+                    </div>
                 </div>
 
                 <div class="button-row">
@@ -110,35 +138,142 @@
         }
         else if (_currentStep == 2)
         {
-            <!-- Step 3: Ready to Go -->
+            <!-- Step 3: Sidebar Sections -->
             <div class="step-container chronicis-fade-in">
-                <div class="step-icon">🎉</div>
-                <h1>You're All Set!</h1>
+                <div class="step-icon">📂</div>
+                <h1>Your Sidebar Sections</h1>
                 <p class="step-subtitle">
-                    Your chronicle awaits. Here's what you can do next:
+                    Each world has four main sections in the sidebar to organize your content.
                 </p>
 
-                <div class="next-steps">
-                    <div class="next-step-item">
-                        <span class="step-number">1</span>
-                        <div>
-                            <strong>Create a Campaign</strong>
-                            <p>Start tracking your adventures</p>
+                <div class="sections-explanation">
+                    <div class="section-item campaigns">
+                        <div class="section-header">
+                            <span class="section-badge">📁</span>
+                            <strong>CAMPAIGNS</strong>
+                        </div>
+                        <p>
+                            Where your game sessions live. Create campaigns, add arcs to organize 
+                            the story, then log sessions as you play. This is your adventure timeline.
+                        </p>
+                        <div class="section-tip">
+                            <strong>Tip:</strong> After each session, jot down key events, NPCs met, 
+                            and decisions made. Future you will thank present you.
                         </div>
                     </div>
-                    <div class="next-step-item">
-                        <span class="step-number">2</span>
-                        <div>
-                            <strong>Add Your Character</strong>
-                            <p>Document who you're playing</p>
+
+                    <div class="section-item characters">
+                        <div class="section-header">
+                            <span class="section-badge">👥</span>
+                            <strong>PLAYER CHARACTERS</strong>
+                        </div>
+                        <p>
+                            Home for player characters in your group. Create a character article, 
+                            then <strong>claim it as yours</strong> to see it on your dashboard. 
+                            Track backstory, goals, relationships, and growth.
+                        </p>
+                        <div class="section-tip">
+                            <strong>Tip:</strong> Link your character to NPCs and locations using 
+                            [[wiki links]] to build a web of connections.
                         </div>
                     </div>
-                    <div class="next-step-item">
-                        <span class="step-number">3</span>
-                        <div>
-                            <strong>Write Your First Note</strong>
-                            <p>Capture locations, NPCs, or lore</p>
+
+                    <div class="section-item wiki">
+                        <div class="section-header">
+                            <span class="section-badge">📖</span>
+                            <strong>WIKI</strong>
                         </div>
+                        <p>
+                            Your world-building encyclopedia. Document locations, NPCs, factions, 
+                            items, lore, religions, history — anything that makes your world feel alive. 
+                            Nest articles to create hierarchies (e.g., Continent → Region → City → District).
+                        </p>
+                        <div class="section-tip">
+                            <strong>Tip:</strong> Use the AI Summary feature on articles with lots of 
+                            backlinks to auto-generate useful overviews.
+                        </div>
+                    </div>
+
+                    <div class="section-item resources">
+                        <div class="section-header">
+                            <span class="section-badge">🔗</span>
+                            <strong>EXTERNAL RESOURCES</strong>
+                        </div>
+                        <p>
+                            Quick links to tools your group uses — D&D Beyond character sheets, 
+                            Roll20 or Foundry VTT, shared Google Drives, Discord servers, 
+                            or any other external resources.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Default"
+                               OnClick="PreviousStep"
+                               StartIcon="@Icons.Material.Filled.ArrowBack">
+                        Back
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               OnClick="NextStep"
+                               EndIcon="@Icons.Material.Filled.ArrowForward">
+                        Continue
+                    </MudButton>
+                </div>
+            </div>
+        }
+        else if (_currentStep == 3)
+        {
+            <!-- Step 4: Ready to Go -->
+            <div class="step-container chronicis-fade-in">
+                <div class="step-icon">🎉</div>
+                <h1>You're Ready!</h1>
+                <p class="step-subtitle">
+                    Here's how to get the most out of Chronicis:
+                </p>
+
+                <div class="tips-grid">
+                    <div class="tip-card">
+                        <div class="tip-icon">🔗</div>
+                        <strong>Link Everything</strong>
+                        <p>Type <code>[[Article Name]]</code> to create links between articles. 
+                        This builds a connected knowledge base.</p>
+                    </div>
+
+                    <div class="tip-card">
+                        <div class="tip-icon">👤</div>
+                        <strong>Claim Your Character</strong>
+                        <p>Open your character article and click "Claim as My Character" 
+                        to see it on your dashboard.</p>
+                    </div>
+
+                    <div class="tip-card">
+                        <div class="tip-icon">🤖</div>
+                        <strong>Generate Summaries</strong>
+                        <p>Articles with backlinks can generate AI summaries. 
+                        Click the summary button in the article sidebar.</p>
+                    </div>
+
+                    <div class="tip-card">
+                        <div class="tip-icon">⌨️</div>
+                        <strong>Keyboard Shortcuts</strong>
+                        <p><code>Ctrl+S</code> to save, <code>Ctrl+N</code> to create a new article. 
+                        Your work also auto-saves as you type.</p>
+                    </div>
+
+                    <div class="tip-card">
+                        <div class="tip-icon">📂</div>
+                        <strong>Drag to Organize</strong>
+                        <p>Drag articles in the sidebar to reorganize your hierarchy. 
+                        Nest content however makes sense for your world.</p>
+                    </div>
+
+                    <div class="tip-card">
+                        <div class="tip-icon">❓</div>
+                        <strong>Need Help?</strong>
+                        <p>Click the help icon in the top bar anytime to return to this guide.</p>
                     </div>
                 </div>
 
@@ -160,9 +295,13 @@
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
                             <span>Finishing up...</span>
                         }
+                        else if (_isReturningUser)
+                        {
+                            <span>Back to Dashboard</span>
+                        }
                         else
                         {
-                            <span>Go to Dashboard</span>
+                            <span>Start Your Chronicle</span>
                         }
                     </MudButton>
                 </div>
@@ -171,7 +310,7 @@
 
         <!-- Progress Dots -->
         <div class="progress-dots">
-            @for (int i = 0; i < 3; i++)
+            @for (int i = 0; i < 4; i++)
             {
                 var step = i;
                 <div class="dot @(step == _currentStep ? "active" : "") @(step < _currentStep ? "completed" : "")"
@@ -183,16 +322,15 @@
 
 <style>
     .getting-started-page {
-        min-height: 100vh;
+        min-height: calc(100vh - 200px);
         display: flex;
         align-items: center;
         justify-content: center;
         padding: var(--chronicis-space-lg);
-        background: linear-gradient(135deg, var(--chronicis-soft-off-white) 0%, #e8e4dc 100%);
     }
 
     .getting-started-content {
-        max-width: 600px;
+        max-width: 700px;
         width: 100%;
     }
 
@@ -205,7 +343,7 @@
     }
 
     .welcome-icon, .step-icon {
-        font-size: 4rem;
+        font-size: 3.5rem;
         margin-bottom: var(--chronicis-space-md);
     }
 
@@ -213,16 +351,17 @@
         font-family: var(--chronicis-font-heading);
         color: var(--chronicis-charcoal);
         margin: 0 0 var(--chronicis-space-sm) 0;
-        font-size: 2rem;
+        font-size: 1.75rem;
     }
 
     .welcome-subtitle, .step-subtitle {
         font-family: var(--chronicis-font-body);
         color: var(--chronicis-slate-grey);
-        font-size: 1.1rem;
+        font-size: 1rem;
         margin-bottom: var(--chronicis-space-lg);
     }
 
+    /* Welcome Features */
     .welcome-features {
         text-align: left;
         margin: var(--chronicis-space-lg) 0;
@@ -256,90 +395,163 @@
         font-size: 0.9rem;
     }
 
-    .world-preview {
-        display: flex;
-        align-items: center;
-        gap: var(--chronicis-space-md);
-        background: var(--chronicis-soft-off-white);
-        padding: var(--chronicis-space-md);
-        border-radius: var(--chronicis-radius-md);
-        text-align: left;
-        margin-bottom: var(--chronicis-space-lg);
-    }
-
-    .world-preview h3 {
-        margin: 0 0 var(--chronicis-space-xs) 0;
-        color: var(--chronicis-charcoal);
-        font-family: var(--chronicis-font-heading);
-    }
-
-    .world-preview p {
-        margin: 0;
-        color: var(--chronicis-slate-grey);
-        font-size: 0.9rem;
-    }
-
-    .tips-box {
-        background: rgba(196, 175, 142, 0.1);
-        border: 1px solid rgba(196, 175, 142, 0.3);
-        border-radius: var(--chronicis-radius-md);
-        padding: var(--chronicis-space-md);
-        text-align: left;
-        margin-bottom: var(--chronicis-space-lg);
-    }
-
-    .tips-box h4 {
-        margin: 0 0 var(--chronicis-space-sm) 0;
-        color: var(--chronicis-charcoal);
-    }
-
-    .tips-box ul {
-        margin: 0;
-        padding-left: var(--chronicis-space-lg);
-        color: var(--chronicis-slate-grey);
-    }
-
-    .tips-box li {
-        margin-bottom: var(--chronicis-space-xs);
-    }
-
-    .next-steps {
+    /* Structure Explanation */
+    .structure-explanation {
         text-align: left;
         margin: var(--chronicis-space-lg) 0;
     }
 
-    .next-step-item {
-        display: flex;
-        gap: var(--chronicis-space-md);
-        padding: var(--chronicis-space-md) 0;
-        align-items: flex-start;
+    .structure-item {
+        padding: var(--chronicis-space-md);
+        margin-bottom: var(--chronicis-space-md);
+        background: var(--chronicis-soft-off-white);
+        border-radius: var(--chronicis-radius-md);
+        border-left: 4px solid var(--chronicis-beige-gold);
     }
 
-    .step-number {
-        background: var(--chronicis-beige-gold);
-        color: var(--chronicis-deep-blue-grey);
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
+    .structure-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .structure-header {
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        flex-shrink: 0;
-    }
-
-    .next-step-item strong {
-        color: var(--chronicis-charcoal);
-        display: block;
+        gap: var(--chronicis-space-sm);
         margin-bottom: var(--chronicis-space-xs);
     }
 
-    .next-step-item p {
-        margin: 0;
+    .structure-icon {
+        font-size: 1.25rem;
+    }
+
+    .structure-header strong {
+        color: var(--chronicis-charcoal);
+        font-size: 1rem;
+    }
+
+    .structure-item p {
         color: var(--chronicis-slate-grey);
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .structure-item em {
+        color: var(--chronicis-charcoal);
+    }
+
+    /* Sections Explanation */
+    .sections-explanation {
+        text-align: left;
+        margin: var(--chronicis-space-lg) 0;
+    }
+
+    .section-item {
+        padding: var(--chronicis-space-md);
+        margin-bottom: var(--chronicis-space-md);
+        background: var(--chronicis-soft-off-white);
+        border-radius: var(--chronicis-radius-md);
+        border-left: 4px solid var(--chronicis-beige-gold);
+    }
+
+    .section-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .section-item.campaigns {
+        border-left-color: #64b5f6;
+    }
+
+    .section-item.characters {
+        border-left-color: #81c784;
+    }
+
+    .section-item.wiki {
+        border-left-color: #ffb74d;
+    }
+
+    .section-item.resources {
+        border-left-color: #ba68c8;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: var(--chronicis-space-sm);
+        margin-bottom: var(--chronicis-space-xs);
+    }
+
+    .section-badge {
+        font-size: 1.1rem;
+    }
+
+    .section-header strong {
+        color: var(--chronicis-charcoal);
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+
+    .section-item > p {
+        color: var(--chronicis-slate-grey);
+        margin: 0 0 var(--chronicis-space-sm) 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .section-tip {
+        background: rgba(196, 175, 142, 0.15);
+        padding: var(--chronicis-space-sm);
+        border-radius: var(--chronicis-radius-sm);
+        font-size: 0.8rem;
+        color: var(--chronicis-slate-grey);
+    }
+
+    .section-tip strong {
+        color: var(--chronicis-charcoal);
+    }
+
+    /* Tips Grid */
+    .tips-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--chronicis-space-md);
+        text-align: left;
+        margin: var(--chronicis-space-lg) 0;
+    }
+
+    .tip-card {
+        padding: var(--chronicis-space-md);
+        background: var(--chronicis-soft-off-white);
+        border-radius: var(--chronicis-radius-md);
+    }
+
+    .tip-icon {
+        font-size: 1.5rem;
+        margin-bottom: var(--chronicis-space-xs);
+    }
+
+    .tip-card strong {
+        display: block;
+        color: var(--chronicis-charcoal);
+        margin-bottom: var(--chronicis-space-xs);
         font-size: 0.9rem;
     }
 
+    .tip-card p {
+        color: var(--chronicis-slate-grey);
+        margin: 0;
+        font-size: 0.8rem;
+        line-height: 1.4;
+    }
+
+    .tip-card code {
+        background: rgba(196, 175, 142, 0.2);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+    /* Button Row */
     .button-row {
         display: flex;
         justify-content: space-between;
@@ -347,6 +559,7 @@
         margin-top: var(--chronicis-space-lg);
     }
 
+    /* Progress Dots */
     .progress-dots {
         display: flex;
         justify-content: center;
@@ -386,7 +599,11 @@
         }
 
         .welcome-icon, .step-icon {
-            font-size: 3rem;
+            font-size: 2.5rem;
+        }
+
+        .tips-grid {
+            grid-template-columns: 1fr;
         }
     }
 </style>
@@ -394,38 +611,17 @@
 @code {
     private int _currentStep = 0;
     private bool _isCompleting = false;
-    private WorldDto? _defaultWorld;
+    private bool _isReturningUser = false;
 
     protected override async Task OnInitializedAsync()
     {
-        // Check if user already completed onboarding
         var profile = await UserApi.GetUserProfileAsync();
-        if (profile?.HasCompletedOnboarding == true)
-        {
-            Navigation.NavigateTo("/dashboard", replace: true);
-            return;
-        }
-
-        // Load user's default world
-        await LoadDefaultWorld();
-    }
-
-    private async Task LoadDefaultWorld()
-    {
-        try
-        {
-            var worlds = await WorldApi.GetWorldsAsync();
-            _defaultWorld = worlds?.FirstOrDefault();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading worlds: {ex.Message}");
-        }
+        _isReturningUser = profile?.HasCompletedOnboarding == true;
     }
 
     private void NextStep()
     {
-        if (_currentStep < 2)
+        if (_currentStep < 3)
         {
             _currentStep++;
             StateHasChanged();
@@ -443,7 +639,7 @@
 
     private void GoToStep(int step)
     {
-        if (step >= 0 && step <= 2)
+        if (step >= 0 && step <= 3)
         {
             _currentStep = step;
             StateHasChanged();
@@ -452,6 +648,12 @@
 
     private async Task CompleteOnboarding()
     {
+        if (_isReturningUser)
+        {
+            Navigation.NavigateTo("/dashboard");
+            return;
+        }
+
         _isCompleting = true;
         StateHasChanged();
 

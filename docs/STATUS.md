@@ -7,7 +7,7 @@
 
 ## Current State
 
-Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented, including the recently completed dashboard redesign.
+Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented, including the recently completed dashboard redesign with hero section and contextual prompts.
 
 ### What's Working
 
@@ -32,11 +32,13 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 - Character claiming system
 
 **Dashboard:**
-- World-centric dashboard with expandable world panels
+- Hero section with gradient background and welcome message
+- Contextual server-generated prompts based on user state
+- World-centric panels with expandable content
 - Active campaign highlighting with session stats
-- Claimed characters display
+- Claimed characters display with click-to-navigate
+- Stats panel showing chronicle totals
 - First-time user onboarding flow
-- Quick tips panel
 
 **Infrastructure:**
 - Auth0 authentication (Discord and Google OAuth)
@@ -46,11 +48,7 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 
 ### Known Issues
 
-- Autocomplete popup occasionally fails to appear for `[[` links in long articles after scrolling
-- Navigation tree doesn't reload after adding external links to a World
-- First API call is slow when Azure Functions cold-starts
-
-See `Feature Ideas.md` for the complete bug list.
+See `Feature Ideas.md` for the complete bug list and backlog.
 
 ---
 

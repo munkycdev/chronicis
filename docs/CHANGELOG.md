@@ -17,22 +17,28 @@ All notable changes to this project are documented in this file.
 ### Dashboard Redesign & Character Claiming
 
 **Added:**
+- Hero section with dark gradient background, welcome message, and inspirational quote
 - World-centric dashboard with expandable world panels
 - Character claiming system (claim/unclaim characters as yours)
 - CharacterFunctions API (`/api/characters/claimed`, `/api/characters/{id}/claim`)
 - DashboardFunctions API (`/api/dashboard`) for aggregated data
+- Server-side prompt generation with priority-based rules
+- PromptService evaluating user state for contextual suggestions
 - DashboardApiService and CharacterApiService on client
 - WorldPanel component showing campaigns, characters, and stats
 - IconDisplay component for rendering Font Awesome icons and emojis
+- Stats panel showing Worlds, Campaigns, Articles, Characters counts
 - First-time user onboarding wizard (`/getting-started`)
 - User onboarding flag (`HasCompletedOnboarding`)
 - UserFunctions API (`/api/users/me`, `/api/users/me/complete-onboarding`)
 
 **Changed:**
 - Dashboard now prioritizes worlds with active campaigns
-- Dashboard shows claimed characters in sidebar
-- Dashboard wrapped in paper container for better visual hierarchy
-- Quick Tips panel with contextual guidance
+- Prompts displayed in hero section with color-coded categories
+- World titles visually prominent, section headers subtle (overline style)
+- Navigation uses forceLoad for reliable page transitions
+- Character chips use custom div elements for proper click handling
+- Welcome text and prompt titles use beige-gold color scheme
 
 ---
 
