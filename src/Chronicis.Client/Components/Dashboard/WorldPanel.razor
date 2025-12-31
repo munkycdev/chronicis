@@ -1,0 +1,320 @@
+@using Chronicis.Client.Components.Shared
+@inject NavigationManager Navigation
+@inject IBreadcrumbService BreadcrumbService
+
+<MudPaper Elevation="2" Class="@($"world-panel {(IsExpanded ? "expanded" : "collapsed")} {Class}")">
+    <!-- World Header -->
+    <div class="world-header" @onclick="ToggleExpanded">
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.Public" 
+                     Size="Size.Large" 
+                     Style="color: var(--chronicis-beige-gold); margin-right: 12px;" />
+            <div class="flex-grow-1">
+                <MudText Typo="Typo.h5" Class="world-name">@World.Name</MudText>
+                @if (!string.IsNullOrEmpty(World.Description))
+                {
+                    <MudText Typo="Typo.body2" Class="world-description">@World.Description</MudText>
+                }
+            </div>
+            <MudIcon Icon="@(IsExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" 
+                     Class="expand-icon" />
+        </div>
+    </div>
+
+    @if (IsExpanded)
+    {
+        <div class="world-content">
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-item">
+                    <MudIcon Icon="@Icons.Material.Filled.Article" Size="Size.Small" />
+                    <span>@World.ArticleCount articles</span>
+                </div>
+                <div class="stat-item">
+                    <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" />
+                    <span>@World.Campaigns.Count campaign@(World.Campaigns.Count != 1 ? "s" : "")</span>
+                </div>
+                <div class="stat-item">
+                    <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
+                    <span>@World.MyCharacters.Count character@(World.MyCharacters.Count != 1 ? "s" : "")</span>
+                </div>
+            </div>
+
+            <!-- Active Campaign Section -->
+            @if (World.Campaigns.Any(c => c.IsActive))
+            {
+                var activeCampaign = World.Campaigns.First(c => c.IsActive);
+                <div class="section">
+                    <MudText Typo="Typo.subtitle2" Class="section-title">
+                        <MudIcon Icon="@Icons.Material.Filled.PlayCircle" Size="Size.Small" Class="mr-1" />
+                        Active Campaign
+                    </MudText>
+                    <MudPaper Elevation="0" Class="campaign-card">
+                        <MudText Typo="Typo.body1" Class="campaign-name">@activeCampaign.Name</MudText>
+                        @if (activeCampaign.CurrentArc != null)
+                        {
+                            <MudText Typo="Typo.caption" Class="arc-info">
+                                Current Arc: <strong>@activeCampaign.CurrentArc.Name</strong>
+                                (@activeCampaign.CurrentArc.SessionCount session@(activeCampaign.CurrentArc.SessionCount != 1 ? "s" : ""))
+                            </MudText>
+                            @if (activeCampaign.CurrentArc.LatestSessionDate.HasValue)
+                            {
+                                <MudText Typo="Typo.caption" Class="last-session">
+                                    Last session: @FormatRelativeTime(activeCampaign.CurrentArc.LatestSessionDate.Value)
+                                </MudText>
+                            }
+                        }
+                        <div class="campaign-stats">
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text">
+                                @activeCampaign.SessionCount sessions
+                            </MudChip>
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text">
+                                @activeCampaign.ArcCount arcs
+                            </MudChip>
+                        </div>
+                    </MudPaper>
+                </div>
+            }
+            else if (!World.Campaigns.Any())
+            {
+                <div class="section empty-section">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        No campaigns yet. Create your first campaign to start tracking your adventures!
+                    </MudText>
+                </div>
+            }
+
+            <!-- My Characters Section -->
+            @if (World.MyCharacters.Any())
+            {
+                <div class="section">
+                    <MudText Typo="Typo.subtitle2" Class="section-title">
+                        <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
+                        My Characters
+                    </MudText>
+                    <div class="characters-list">
+                        @foreach (var character in World.MyCharacters)
+                        {
+                            <MudChip T="string" 
+                                     Size="Size.Small"
+                                     Variant="Variant.Outlined"
+                                     Color="Color.Primary"
+                                     OnClick="@(() => NavigateToCharacter(character.Id))"
+                                     Class="character-chip">
+                                <IconDisplay Icon="@character.IconEmoji" DefaultIcon="👤" CssClass="character-chip-icon" />
+                                @character.Title
+                            </MudChip>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Quick Actions -->
+            <div class="section actions-section">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Visibility"
+                           OnClick="ViewWorld">
+                    View World
+                </MudButton>
+                @if (World.Campaigns.Any(c => c.IsActive))
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="AddSessionNote">
+                        + Session Note
+                    </MudButton>
+                }
+            </div>
+        </div>
+    }
+</MudPaper>
+
+<style>
+    .world-panel {
+        border-radius: var(--chronicis-radius-lg);
+        overflow: hidden;
+        transition: all var(--chronicis-transition-normal);
+    }
+
+    .world-header {
+        padding: var(--chronicis-space-lg);
+        cursor: pointer;
+        background: linear-gradient(135deg, rgba(31, 42, 51, 0.03) 0%, rgba(196, 175, 142, 0.05) 100%);
+        border-bottom: 1px solid rgba(196, 175, 142, 0.1);
+    }
+
+    .world-header:hover {
+        background: linear-gradient(135deg, rgba(31, 42, 51, 0.05) 0%, rgba(196, 175, 142, 0.08) 100%);
+    }
+
+    .world-name {
+        font-family: var(--chronicis-font-heading);
+        color: var(--chronicis-charcoal);
+        margin: 0;
+    }
+
+    .world-description {
+        color: var(--chronicis-slate-grey);
+        margin-top: var(--chronicis-space-xs);
+        opacity: 0.8;
+    }
+
+    .expand-icon {
+        color: var(--chronicis-slate-grey);
+        transition: transform var(--chronicis-transition-fast);
+    }
+
+    .world-content {
+        padding: var(--chronicis-space-lg);
+    }
+
+    .stats-row {
+        display: flex;
+        gap: var(--chronicis-space-lg);
+        margin-bottom: var(--chronicis-space-lg);
+        padding-bottom: var(--chronicis-space-md);
+        border-bottom: 1px solid rgba(196, 175, 142, 0.1);
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: var(--chronicis-space-xs);
+        color: var(--chronicis-slate-grey);
+        font-size: 0.875rem;
+    }
+
+    .section {
+        margin-bottom: var(--chronicis-space-lg);
+    }
+
+    .section:last-child {
+        margin-bottom: 0;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        color: var(--chronicis-charcoal);
+        margin-bottom: var(--chronicis-space-sm);
+        font-weight: 600;
+    }
+
+    .campaign-card {
+        background: rgba(196, 175, 142, 0.05);
+        border: 1px solid rgba(196, 175, 142, 0.15);
+        border-radius: var(--chronicis-radius-md);
+        padding: var(--chronicis-space-md);
+    }
+
+    .campaign-name {
+        font-weight: 500;
+        color: var(--chronicis-charcoal);
+    }
+
+    .arc-info, .last-session {
+        color: var(--chronicis-slate-grey);
+        display: block;
+        margin-top: var(--chronicis-space-xs);
+    }
+
+    .campaign-stats {
+        margin-top: var(--chronicis-space-sm);
+        display: flex;
+        gap: var(--chronicis-space-sm);
+    }
+
+    .characters-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--chronicis-space-sm);
+    }
+
+    .character-chip {
+        cursor: pointer;
+    }
+
+    .character-chip-icon {
+        margin-right: 4px;
+    }
+
+    .actions-section {
+        display: flex;
+        gap: var(--chronicis-space-sm);
+        flex-wrap: wrap;
+    }
+
+    .empty-section {
+        padding: var(--chronicis-space-md);
+        background: rgba(196, 175, 142, 0.03);
+        border-radius: var(--chronicis-radius-md);
+        text-align: center;
+    }
+</style>
+
+@code {
+    [Parameter, EditorRequired]
+    public DashboardWorldDto World { get; set; } = null!;
+
+    [Parameter]
+    public bool IsExpanded { get; set; } = true;
+
+    [Parameter]
+    public EventCallback<bool> IsExpandedChanged { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    private void ToggleExpanded()
+    {
+        IsExpanded = !IsExpanded;
+        IsExpandedChanged.InvokeAsync(IsExpanded);
+    }
+
+    private void ViewWorld()
+    {
+        if (World.WorldRootArticleId.HasValue)
+        {
+            // Navigate to the world's root article
+            Navigation.NavigateTo($"/world/{World.Slug}");
+        }
+    }
+
+    private void AddSessionNote()
+    {
+        // Navigate to campaign to add a session note
+        var activeCampaign = World.Campaigns.FirstOrDefault(c => c.IsActive);
+        if (activeCampaign != null)
+        {
+            Navigation.NavigateTo($"/world/{World.Slug}/campaign/{activeCampaign.Id}");
+        }
+    }
+
+    private void NavigateToCharacter(Guid characterId)
+    {
+        // TODO: Build proper URL path to character
+        Navigation.NavigateTo($"/article/{characterId}");
+    }
+
+    private string FormatRelativeTime(DateTime dateTime)
+    {
+        var timeSpan = DateTime.UtcNow - dateTime;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours}h ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays}d ago";
+        if (timeSpan.TotalDays < 30)
+            return $"{(int)(timeSpan.TotalDays / 7)}w ago";
+
+        return dateTime.ToString("MMM d, yyyy");
+    }
+}

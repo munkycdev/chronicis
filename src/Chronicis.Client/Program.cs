@@ -152,6 +152,13 @@ builder.Services.AddScoped<ICharacterApiService>(sp =>
     return new CharacterApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
+builder.Services.AddScoped<IDashboardApiService>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var logger = sp.GetRequiredService<ILogger<DashboardApiService>>();
+    return new DashboardApiService(factory.CreateClient("ChronicisApi"), logger);
+});
+
 // State & Auth services
 builder.Services.AddScoped<ITreeStateService, TreeStateService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

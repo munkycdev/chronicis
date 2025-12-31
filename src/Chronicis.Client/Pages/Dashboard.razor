@@ -1,236 +1,388 @@
 @page "/dashboard"
 @attribute [Authorize]
-@inject ITreeStateService TreeStateService
-@inject IArticleApiService ArticleApi
-@inject IWorldApiService WorldApi
+@using Chronicis.Client.Components.Shared
+@inject IDashboardApiService DashboardApi
 @inject IUserApiService UserApi
+@inject IWorldApiService WorldApi
 @inject IQuoteService QuoteService
-@inject IBreadcrumbService BreadcrumbService
+@inject ITreeStateService TreeStateService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @implements IDisposable
 
-<div class="chronicis-welcome-page">
-    <!-- Hero Section -->
-    <MudPaper Elevation="0" Class="chronicis-hero pa-8 mb-6" Style="background: linear-gradient(135deg, rgba(31, 42, 51, 0.95) 0%, rgba(58, 71, 80, 0.95) 100%); color: #F4F0EA; border-radius: 12px;">
-        <div class="text-center">
-            <div style="font-size: 4rem; margin-bottom: 16px;">📖✨</div>
-            <MudText Typo="Typo.h2" Class="mb-3" Style="font-family: 'Spellweaver Display', serif; color: #C4AF8E;">
-                Your Chronicle Awaits
-            </MudText>
-            <MudText Typo="Typo.h6" Class="mb-4" Style="opacity: 0.9; max-width: 600px; margin: 0 auto;">
-                Every great campaign deserves a legendary chronicle. Organize your world, track your story, and never forget a detail.
-            </MudText>
-            <MudButton Variant="Variant.Filled"
-                        Color="Color.Primary"
-                        Size="Size.Large"
-                        OnClick="CreateFirstArticle"
-                        Class="mt-2">
-                + Create a New World
+<PageTitle>Dashboard - Chronicis</PageTitle>
+
+@if (_isLoading)
+{
+    <MudPaper Elevation="2" Class="dashboard-container">
+        <div class="dashboard-loading">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+            <MudText Typo="Typo.body1" Class="mt-4">Loading your chronicle...</MudText>
+        </div>
+    </MudPaper>
+}
+else if (_dashboard == null)
+{
+    <MudPaper Elevation="2" Class="dashboard-container">
+        <div class="dashboard-error">
+            <MudIcon Icon="@Icons.Material.Filled.Error" Size="Size.Large" Color="Color.Error" />
+            <MudText Typo="Typo.h6" Class="mt-4">Unable to load dashboard</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadDashboard" Class="mt-4">
+                Try Again
             </MudButton>
         </div>
     </MudPaper>
-
-    <!-- Stats Cards -->
-    @if (_stats != null)
-    {
-        <MudGrid Class="mb-6">
-            <MudItem xs="12" sm="6" md="3">
-                <MudPaper Elevation="2" Class="pa-4 text-center chronicis-stat-card">
-                    <div style="font-size: 2.5rem;">📚</div>
-                    <MudText Typo="Typo.h4" Class="mt-2">@_stats.TotalArticles</MudText>
-                    <MudText Typo="Typo.body2">Total Articles</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <MudPaper Elevation="2" Class="pa-4 text-center chronicis-stat-card">
-                    <div style="font-size: 2.5rem;">🗂️</div>
-                    <MudText Typo="Typo.h4" Class="mt-2">@_stats.RootArticles</MudText>
-                    <MudText Typo="Typo.body2">Top-Level Topics</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <MudPaper Elevation="2" Class="pa-4 text-center chronicis-stat-card">
-                    <div style="font-size: 2.5rem;">✍️</div>
-                    <MudText Typo="Typo.h4" Class="mt-2">@_stats.RecentlyModified</MudText>
-                    <MudText Typo="Typo.body2">Edited This Week</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <MudPaper Elevation="2" Class="pa-4 text-center chronicis-stat-card">
-                    <div style="font-size: 2.5rem;">🎲</div>
-                    <MudText Typo="Typo.h4" Class="mt-2">@_stats.DaysSinceStart</MudText>
-                    <MudText Typo="Typo.body2">Days Chronicling</MudText>
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
-    }
-
-    <!-- Main Content Grid -->
-    <MudGrid>
-        <!-- Recent Articles -->
-        <MudItem xs="12" md="8">
-            <MudPaper Elevation="2" Class="pa-6">
-                <div class="d-flex align-center justify-space-between mb-4">
-                    <MudText Typo="Typo.h5">
-                        📜 Recent Articles
+}
+else
+{
+    <MudPaper Elevation="2" Class="dashboard-container">
+        <div class="chronicis-dashboard">
+            <!-- Welcome Header -->
+            <div class="dashboard-header">
+                <div class="welcome-section">
+                    <MudText Typo="Typo.h4" Class="welcome-text">
+                        Welcome back, <span class="user-name">@_dashboard.UserDisplayName</span>!
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="welcome-subtitle">
+                        Your chronicle awaits. What story will you tell today?
                     </MudText>
                 </div>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="CreateNewWorld">
+                    + New World
+                </MudButton>
+            </div>
 
-                @if (_isLoadingRecent)
-                {
-                    <div class="text-center py-4">
-                        <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" />
-                    </div>
-                }
-                else if (_allArticles?.Any() ?? false)
-                {
-                    <MudList T="string">
-                        @foreach (var article in _allArticles.Take(7))
+            <MudGrid>
+                <!-- Main Content: World Panels -->
+                <MudItem xs="12" md="8">
+                    @if (_orderedWorlds.Any())
+                    {
+                        <!-- Primary World (world with active campaign, or most recent) -->
+                        <WorldPanel World="@_orderedWorlds.First()" 
+                                    IsExpanded="true" />
+
+                        <!-- Other Worlds (collapsed by default) -->
+                        @if (_orderedWorlds.Count > 1)
                         {
-                            <MudListItem T="string" OnClick="@(() => NavigateToArticle(article.Id))">
-                                <div class="d-flex align-center">
-                                    <MudIcon Icon="@(string.IsNullOrEmpty(article.IconEmoji) ? Icons.Material.Filled.Description : article.IconEmoji)"
-                                                Color="Color.Primary"
-                                                Class="mr-3" />
-                                    <div style="flex: 1;">
-                                        <MudText Typo="Typo.body1">
-                                            @(string.IsNullOrEmpty(article.Title) ? "(Untitled)" : article.Title)
-                                        </MudText>
-                                        <MudText Typo="Typo.caption">
-                                            Modified @FormatRelativeTime(article.CreatedAt)
-                                        </MudText>
-                                    </div>
-                                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
-                                </div>
-                            </MudListItem>
-                            <MudDivider />
+                            <MudText Typo="Typo.subtitle1" Class="other-worlds-header">
+                                Other Worlds
+                            </MudText>
+                            @foreach (var world in _orderedWorlds.Skip(1))
+                            {
+                                <WorldPanel World="@world" 
+                                            IsExpanded="false"
+                                            Class="mb-3" />
+                            }
                         }
-                    </MudList>
-                }
-                else
-                {
-                    <div class="text-center py-6" style="opacity: 0.6;">
-                        <div style="font-size: 3rem; margin-bottom: 12px;">📝</div>
-                        <MudText Typo="Typo.body1" Color="Color.Secondary">
-                            No articles yet. Start building your chronicle!
-                        </MudText>
-                    </div>
-                }
-            </MudPaper>
-        </MudItem>
+                    }
+                    else
+                    {
+                        <!-- Empty State: No Worlds -->
+                        <MudPaper Elevation="0" Class="empty-state-panel">
+                            <div class="empty-state-content">
+                                <div class="empty-icon">🌍</div>
+                                <MudText Typo="Typo.h5" Class="empty-title">
+                                    Begin Your Chronicle
+                                </MudText>
+                                <MudText Typo="Typo.body1" Class="empty-message">
+                                    Create your first world to start organizing your campaign knowledge.
+                                    Every great adventure needs a home.
+                                </MudText>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           Size="Size.Large"
+                                           StartIcon="@Icons.Material.Filled.Add"
+                                           OnClick="CreateNewWorld"
+                                           Class="mt-4">
+                                    Create Your First World
+                                </MudButton>
+                            </div>
+                        </MudPaper>
+                    }
+                </MudItem>
 
-        <!-- Quick Actions & Tips -->
-        <MudItem xs="12" md="4">
-            <!-- Quick Actions -->
-            <MudPaper Elevation="2" Class="pa-6 mb-4">
-                <MudText Typo="Typo.h6" Class="mb-3">
-                    ⚡ Quick Actions
-                </MudText>
-                <MudStack Spacing="2">
-                    <MudButton Variant="Variant.Outlined"
-                                Color="Color.Primary"
-                                FullWidth="true"
-                                StartIcon="@Icons.Material.Filled.PersonAdd"
-                                OnClick="@(() => CreateArticleWithTitle("New Character"))">
-                        Create Character
-                    </MudButton>
-                    <MudButton Variant="Variant.Outlined"
-                                Color="Color.Primary"
-                                FullWidth="true"
-                                StartIcon="@Icons.Material.Filled.Place"
-                                OnClick="@(() => CreateArticleWithTitle("New Location"))">
-                        Add Location
-                    </MudButton>
-                    <MudButton Variant="Variant.Outlined"
-                                Color="Color.Primary"
-                                FullWidth="true"
-                                StartIcon="@Icons.Material.Filled.CalendarToday"
-                                OnClick="@(() => CreateArticleWithTitle("Session Notes"))">
-                        Session Notes
-                    </MudButton>
-                    <MudButton Variant="Variant.Outlined"
-                                Color="Color.Primary"
-                                FullWidth="true"
-                                StartIcon="@Icons.Material.Filled.AutoStories"
-                                OnClick="@(() => CreateArticleWithTitle("Lore Entry"))">
-                        Lore Entry
-                    </MudButton>
-                </MudStack>
-            </MudPaper>
+                <!-- Sidebar: Quick Tips & Actions -->
+                <MudItem xs="12" md="4">
+                    <!-- My Characters Summary (if any) -->
+                    @if (_dashboard.ClaimedCharacters.Any())
+                    {
+                        <MudPaper Elevation="1" Class="sidebar-panel mb-4">
+                            <MudText Typo="Typo.h6" Class="panel-title">
+                                <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
+                                My Characters
+                            </MudText>
+                            <div class="characters-summary">
+                                @foreach (var character in _dashboard.ClaimedCharacters.Take(5))
+                                {
+                                    <div class="character-item" @onclick="() => NavigateToCharacter(character.Id)">
+                                        <IconDisplay Icon="@character.IconEmoji" DefaultIcon="👤" CssClass="character-icon" />
+                                        <div class="character-info">
+                                            <span class="character-name">@character.Title</span>
+                                            <span class="character-world">@character.WorldName</span>
+                                        </div>
+                                    </div>
+                                }
+                                @if (_dashboard.ClaimedCharacters.Count > 5)
+                                {
+                                    <MudText Typo="Typo.caption" Class="more-characters">
+                                        +@(_dashboard.ClaimedCharacters.Count - 5) more characters
+                                    </MudText>
+                                }
+                            </div>
+                        </MudPaper>
+                    }
 
-            <!-- Tips Card -->
-            <MudPaper Elevation="2" Class="pa-6" Style="background: linear-gradient(135deg, rgba(196, 175, 142, 0.1) 0%, rgba(196, 175, 142, 0.05) 100%);">
-                <MudText Typo="Typo.h6" Class="mb-3">
-                    💡 Pro Tips
-                </MudText>
-                <MudStack Spacing="3">
-                    <div>
-                        <MudText Typo="Typo.body2" Class="mb-1">
-                            <strong>Search Tree:</strong>
+                    <!-- Quick Tips -->
+                    <MudPaper Elevation="1" Class="sidebar-panel tips-panel">
+                        <MudText Typo="Typo.h6" Class="panel-title">
+                            <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Class="mr-2" />
+                            Quick Tips
                         </MudText>
-                        <MudText Typo="Typo.caption">
-                            Use the search box in the sidebar to filter articles by title
-                        </MudText>
-                    </div>
-                    <MudDivider />
-                    <div>
-                        <MudText Typo="Typo.body2" Class="mb-1">
-                            <strong>Organize with Hierarchy:</strong>
-                        </MudText>
-                        <MudText Typo="Typo.caption">
-                            Use the three-dot menu to add child articles and build your knowledge tree
-                        </MudText>
-                    </div>
-                    <MudDivider />
-                    <div>
-                        <MudText Typo="Typo.body2" Class="mb-1">
-                            <strong>Auto-Save:</strong>
-                        </MudText>
-                        <MudText Typo="Typo.caption">
-                            Your work saves automatically as you type—no need to click Save!
-                        </MudText>
-                    </div>
-                </MudStack>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
+                        <div class="tips-list">
+                            <div class="tip-item">
+                                <strong>Wiki Links</strong>
+                                <p>Use [[Article Name]] to link articles together</p>
+                            </div>
+                            <MudDivider Class="my-2" />
+                            <div class="tip-item">
+                                <strong>Claim Characters</strong>
+                                <p>Mark characters as yours to see them on your dashboard</p>
+                            </div>
+                            <MudDivider Class="my-2" />
+                            <div class="tip-item">
+                                <strong>AI Summaries</strong>
+                                <p>Generate summaries from linked content automatically</p>
+                            </div>
+                        </div>
+                    </MudPaper>
 
-    <!-- Inspirational Quote Footer -->
-    <MudPaper Elevation="0" Class="pa-6 mt-6 text-center chronicis-quote-footer" Style="background: rgba(196, 175, 142, 0.05); border: 1px solid rgba(196, 175, 142, 0.2); border-radius: 8px;">
-        @if (_loadingQuote)
-        {
-            <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" />
-        }
-        else if (_quote != null)
-        {
-            <MudText Typo="Typo.body1" Style="font-style: italic; color: #3A4750;">
-                "@_quote.Content"
-            </MudText>
-            <MudText Typo="Typo.caption" Class="mt-2">
-                — @_quote.Author
-            </MudText>
-            <MudTooltip Text="Get a new quote">
-                <MudIconButton Icon="@Icons.Material.Filled.Refresh"
-                                Size="Size.Small"
-                                Color="Color.Primary"
-                                OnClick="LoadNewQuote"
-                                Class="mt-2"
-                                Style="opacity: 0.6;" />
-            </MudTooltip>
-        }
+                    <!-- Inspirational Quote -->
+                    @if (_quote != null)
+                    {
+                        <MudPaper Elevation="0" Class="quote-panel mt-4">
+                            <MudText Typo="Typo.body2" Class="quote-text">
+                                "@_quote.Content"
+                            </MudText>
+                            <MudText Typo="Typo.caption" Class="quote-author">
+                                — @_quote.Author
+                            </MudText>
+                            <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                                           Size="Size.Small"
+                                           OnClick="LoadNewQuote"
+                                           Class="quote-refresh" />
+                        </MudPaper>
+                    }
+                </MudItem>
+            </MudGrid>
+        </div>
     </MudPaper>
-</div>
+}
+
+<style>
+    .dashboard-container {
+        margin: var(--chronicis-space-lg);
+        border-radius: var(--chronicis-radius-lg);
+        min-height: calc(100vh - 100px);
+    }
+
+    .dashboard-loading, .dashboard-error {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        text-align: center;
+    }
+
+    .chronicis-dashboard {
+        padding: var(--chronicis-space-xl);
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: var(--chronicis-space-xl);
+        padding-bottom: var(--chronicis-space-lg);
+        border-bottom: 1px solid rgba(196, 175, 142, 0.2);
+    }
+
+    .welcome-text {
+        font-family: var(--chronicis-font-heading);
+        color: var(--chronicis-charcoal);
+        margin: 0;
+    }
+
+    .user-name {
+        color: var(--chronicis-beige-gold);
+    }
+
+    .welcome-subtitle {
+        color: var(--chronicis-slate-grey);
+        margin-top: var(--chronicis-space-xs);
+    }
+
+    .other-worlds-header {
+        color: var(--chronicis-slate-grey);
+        margin: var(--chronicis-space-lg) 0 var(--chronicis-space-md) 0;
+        font-weight: 500;
+    }
+
+    .empty-state-panel {
+        padding: var(--chronicis-space-xl);
+        text-align: center;
+        background: linear-gradient(135deg, rgba(196, 175, 142, 0.05) 0%, rgba(31, 42, 51, 0.02) 100%);
+        border-radius: var(--chronicis-radius-lg);
+    }
+
+    .empty-state-content {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        margin-bottom: var(--chronicis-space-md);
+    }
+
+    .empty-title {
+        font-family: var(--chronicis-font-heading);
+        color: var(--chronicis-charcoal);
+        margin-bottom: var(--chronicis-space-sm);
+    }
+
+    .empty-message {
+        color: var(--chronicis-slate-grey);
+    }
+
+    .sidebar-panel {
+        padding: var(--chronicis-space-lg);
+        border-radius: var(--chronicis-radius-lg);
+    }
+
+    .panel-title {
+        display: flex;
+        align-items: center;
+        margin-bottom: var(--chronicis-space-md);
+        color: var(--chronicis-charcoal);
+    }
+
+    .characters-summary {
+        display: flex;
+        flex-direction: column;
+        gap: var(--chronicis-space-sm);
+    }
+
+    .character-item {
+        display: flex;
+        align-items: center;
+        gap: var(--chronicis-space-sm);
+        padding: var(--chronicis-space-sm);
+        border-radius: var(--chronicis-radius-sm);
+        cursor: pointer;
+        transition: background var(--chronicis-transition-fast);
+    }
+
+    .character-item:hover {
+        background: rgba(196, 175, 142, 0.1);
+    }
+
+    .character-icon {
+        font-size: 1.5rem;
+        width: 32px;
+        text-align: center;
+    }
+
+    .character-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .character-name {
+        font-weight: 500;
+        color: var(--chronicis-charcoal);
+    }
+
+    .character-world {
+        font-size: 0.75rem;
+        color: var(--chronicis-slate-grey);
+    }
+
+    .more-characters {
+        color: var(--chronicis-slate-grey);
+        text-align: center;
+        margin-top: var(--chronicis-space-sm);
+    }
+
+    .tips-panel {
+        background: linear-gradient(135deg, rgba(196, 175, 142, 0.08) 0%, rgba(196, 175, 142, 0.03) 100%);
+    }
+
+    .tips-list {
+        font-size: 0.875rem;
+    }
+
+    .tip-item strong {
+        color: var(--chronicis-charcoal);
+        display: block;
+        margin-bottom: var(--chronicis-space-xs);
+    }
+
+    .tip-item p {
+        color: var(--chronicis-slate-grey);
+        margin: 0;
+        font-size: 0.8rem;
+    }
+
+    .quote-panel {
+        padding: var(--chronicis-space-lg);
+        background: rgba(196, 175, 142, 0.05);
+        border: 1px solid rgba(196, 175, 142, 0.15);
+        border-radius: var(--chronicis-radius-lg);
+        position: relative;
+    }
+
+    .quote-text {
+        font-style: italic;
+        color: var(--chronicis-slate-grey);
+        margin-bottom: var(--chronicis-space-sm);
+    }
+
+    .quote-author {
+        color: var(--chronicis-charcoal);
+    }
+
+    .quote-refresh {
+        position: absolute;
+        top: var(--chronicis-space-sm);
+        right: var(--chronicis-space-sm);
+        opacity: 0.5;
+    }
+
+    .quote-refresh:hover {
+        opacity: 1;
+    }
+
+    @@media (max-width: 960px) {
+        .dashboard-header {
+            flex-direction: column;
+            gap: var(--chronicis-space-md);
+        }
+        
+        .dashboard-container {
+            margin: var(--chronicis-space-sm);
+        }
+    }
+</style>
 
 @code {
-    [Parameter]
-    public string? ArticleSlug { get; set; }
-
-    private CampaignStats? _stats;
-    private List<ArticleTreeDto>? _allArticles;
-    private bool _isLoadingRecent = true;
+    private DashboardDto? _dashboard;
+    private List<DashboardWorldDto> _orderedWorlds = new();
     private Quote? _quote;
-    private bool _loadingQuote = true;
+    private bool _isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -244,114 +396,49 @@
 
         TreeStateService.OnStateChanged += OnTreeStateChanged;
 
-        // If URL has article slug, find and load it
-        if (!string.IsNullOrEmpty(ArticleSlug))
-        {
-            await LoadArticleBySlug(ArticleSlug);
-        }
-
         await Task.WhenAll(
-            LoadDashboardData(),
+            LoadDashboard(),
             LoadQuote()
         );
     }
 
-    protected override void OnParametersSet()
+    private async Task LoadDashboard()
     {
-        // Handle URL changes (browser back/forward)
-        // Only load if the slug changed AND it's different from what we have selected
-        if (!string.IsNullOrEmpty(ArticleSlug))
-        {
-            var currentSlug = TreeStateService.SelectedArticleId.HasValue
-                ? CreateSlug(GetArticleTitleById(TreeStateService.SelectedArticleId.Value))
-                : null;
+        _isLoading = true;
+        StateHasChanged();
 
-            // Only load if slug actually changed (not from our own navigation)
-            if (currentSlug != ArticleSlug)
-            {
-                _ = LoadArticleBySlug(ArticleSlug);
-            }
-        }
-    }
-
-    private string? GetArticleTitleById(Guid articleId)
-    {
-        // Try to find title in recent articles cache
-        return _allArticles?.FirstOrDefault(a => a.Id == articleId)?.Title;
-    }
-
-    private async Task LoadArticleBySlug(string slug)
-    {
         try
         {
-            // Search for article by title
-            var results = await ArticleApi.SearchArticlesAsync(slug);
-
-            // Try exact match first (case-insensitive)
-            var exactMatch = results.FirstOrDefault(r =>
-                CreateSlug(r.Title) == slug.ToLowerInvariant());
-
-            if (exactMatch != null)
+            _dashboard = await DashboardApi.GetDashboardAsync();
+            
+            if (_dashboard != null)
             {
-                if (exactMatch.Id != TreeStateService.SelectedArticleId)
-                {
-                    TreeStateService.ExpandPathToAndSelect(exactMatch.Id);
-                }
-            }
-            else
-            {
-                // Article not found by search
-                // Only redirect if we don't already have an article selected
-                // (This prevents flickering when the article is already loaded)
-                if (!TreeStateService.SelectedArticleId.HasValue)
-                {
-                    Console.Error.WriteLine($"Article not found for slug: {slug}");
-                    Navigation.NavigateTo("/", replace: true);
-                }
+                // Order worlds: prioritize those with active campaigns, then by most recent activity
+                _orderedWorlds = _dashboard.Worlds
+                    .OrderByDescending(w => w.Campaigns.Any(c => c.IsActive)) // Active campaign first
+                    .ThenByDescending(w => w.Campaigns
+                        .Where(c => c.CurrentArc?.LatestSessionDate != null)
+                        .Select(c => c.CurrentArc!.LatestSessionDate)
+                        .DefaultIfEmpty(DateTime.MinValue)
+                        .Max()) // Most recent session
+                    .ThenByDescending(w => w.CreatedAt) // Newest world
+                    .ToList();
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading article by slug: {ex.Message}");
-            // Only redirect on error if no article is selected
-            if (!TreeStateService.SelectedArticleId.HasValue)
-            {
-                Navigation.NavigateTo("/", replace: true);
-            }
+            Console.Error.WriteLine($"Error loading dashboard: {ex.Message}");
+            Snackbar.Add("Failed to load dashboard", Severity.Error);
         }
-    }
-
-    private static string CreateSlug(string? title)
-    {
-        if (string.IsNullOrEmpty(title))
-            return "untitled";
-
-        // Convert to lowercase
-        var slug = title.ToLowerInvariant();
-
-        // Replace spaces with hyphens
-        slug = slug.Replace(" ", "-");
-
-        // Remove invalid characters (keep only letters, numbers, hyphens)
-        slug = new string(slug.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
-
-        // Replace multiple consecutive hyphens with single hyphen
-        while (slug.Contains("--"))
+        finally
         {
-            slug = slug.Replace("--", "-");
+            _isLoading = false;
+            StateHasChanged();
         }
-
-        // Trim hyphens from start and end
-        slug = slug.Trim('-');
-
-        return string.IsNullOrEmpty(slug) ? "untitled" : slug;
     }
 
     private async Task LoadQuote()
     {
-        _loadingQuote = true;
-        StateHasChanged();
-
         try
         {
             _quote = await QuoteService.GetRandomQuoteAsync();
@@ -359,99 +446,19 @@
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error loading quote: {ex.Message}");
-            // Fallback quote already handled in service
-        }
-        finally
-        {
-            _loadingQuote = false;
-            StateHasChanged();
         }
     }
 
     private async Task LoadNewQuote()
     {
         await LoadQuote();
-    }
-
-    private async Task LoadDashboardData()
-    {
-        _isLoadingRecent = true;
         StateHasChanged();
-
-        try
-        {
-            // Use cached data from TreeStateService if available (avoids duplicate API call)
-            if (TreeStateService.HasCachedData)
-            {
-                _allArticles = TreeStateService.CachedArticles.ToList();
-            }
-            else
-            {
-                // Fallback: fetch directly (e.g., if tree hasn't initialized yet)
-                _allArticles = await ArticleApi.GetAllArticlesAsync();
-            }
-
-            // Calculate stats
-            _stats = new CampaignStats
-            {
-                TotalArticles = CountTotalArticles(_allArticles),
-                RootArticles = _allArticles.Count(a => !a.ParentId.HasValue),
-                RecentlyModified = _allArticles.Count(a =>
-                    (a.CreatedAt) > DateTime.Now.AddDays(-7)),
-                DaysSinceStart = _allArticles.Any()
-                    ? (int)(DateTime.Now - _allArticles.Min(a => a.CreatedAt)).TotalDays
-                    : 0
-            };
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading dashboard: {ex.Message}");
-        }
-        finally
-        {
-            _isLoadingRecent = false;
-            StateHasChanged();
-        }
     }
 
-    private int CountTotalArticles(List<ArticleTreeDto> articles)
-    {
-        int count = articles.Count;
-        foreach (var article in articles)
-        {
-            if (article.Children != null)
-            {
-                count += CountTotalArticles(article.Children.ToList());
-            }
-        }
-        return count;
-    }
-
-    private async Task NavigateToArticle(Guid articleId)
-    {
-        // Load full article to get breadcrumbs for proper path
-        var article = await ArticleApi.GetArticleDetailAsync(articleId);
-        if (article != null && article.Breadcrumbs.Any())
-        {
-            var path = BreadcrumbService.BuildArticleUrl(article.Breadcrumbs);
-            Navigation.NavigateTo(path);
-        }
-        else
-        {
-            // Fallback to slug only
-            var treeArticle = _allArticles?.FirstOrDefault(a => a.Id == articleId);
-            if (treeArticle != null)
-            {
-                Navigation.NavigateTo($"/article/{treeArticle.Slug}");
-            }
-        }
-    }
-
-    private async Task CreateFirstArticle()
+    private async Task CreateNewWorld()
     {
         try
         {
-            // Create a new world with full structure (WorldRoot, Wiki, Campaigns, Player Characters)
             var createDto = new WorldCreateDto
             {
                 Name = "New World",
@@ -459,35 +466,21 @@
             };
 
             var world = await WorldApi.CreateWorldAsync(createDto);
-            
+
             if (world != null)
             {
-                Snackbar.Add($"World '{world.Name}' created with Wiki, Campaigns, and Player Characters!", Severity.Success);
+                Snackbar.Add($"World '{world.Name}' created!", Severity.Success);
                 await TreeStateService.RefreshAsync();
-                
-                // Navigate to the WorldRoot article so user can rename it
+
+                // Navigate to the new world
                 if (world.WorldRootArticleId.HasValue)
                 {
-                    // Set flag to focus title when article loads
                     TreeStateService.ShouldFocusTitle = true;
-                    TreeStateService.ExpandPathToAndSelect(world.WorldRootArticleId.Value);
-                    
-                    // Get the article to build the path
-                    var article = await ArticleApi.GetArticleAsync(world.WorldRootArticleId.Value);
-                    if (article != null && article.Breadcrumbs.Any())
-                    {
-                        var path = BreadcrumbService.BuildArticleUrl(article.Breadcrumbs);
-                        Navigation.NavigateTo(path);
-                    }
-                    else if (article != null)
-                    {
-                        Navigation.NavigateTo($"/article/{article.Slug}");
-                    }
+                    Navigation.NavigateTo($"/world/{world.Slug}");
                 }
                 else
                 {
-                    // Fallback: reload dashboard
-                    await LoadDashboardData();
+                    await LoadDashboard();
                 }
             }
             else
@@ -498,84 +491,23 @@
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error creating world: {ex.Message}");
-            Snackbar.Add($"Error creating world: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
     }
 
-    private async Task CreateArticleWithTitle(string title)
+    private void NavigateToCharacter(Guid characterId)
     {
-        var createDto = new ArticleCreateDto
-        {
-            Title = title,
-            Body = string.Empty,
-            ParentId = null,
-            EffectiveDate = DateTime.Now
-        };
-
-        var created = await ArticleApi.CreateArticleAsync(createDto);
-        if (created == null)
-        {
-            Console.Error.WriteLine("Failed to create article");
-            return;
-        }
-
-        await TreeStateService.RefreshAsync();
-        TreeStateService.ExpandPathToAndSelect(created.Id);
-    }
-
-    private string FormatRelativeTime(DateTime dateTime)
-    {
-        var timeSpan = DateTime.Now - dateTime;
-
-        if (timeSpan.TotalMinutes < 1)
-            return "just now";
-        if (timeSpan.TotalMinutes < 60)
-            return $"{(int)timeSpan.TotalMinutes}m ago";
-        if (timeSpan.TotalHours < 24)
-            return $"{(int)timeSpan.TotalHours}h ago";
-        if (timeSpan.TotalDays < 7)
-            return $"{(int)timeSpan.TotalDays}d ago";
-        if (timeSpan.TotalDays < 30)
-            return $"{(int)(timeSpan.TotalDays / 7)}w ago";
-
-        return dateTime.ToString("MMM d, yyyy");
+        // For now, just navigate by ID - we can improve path building later
+        Navigation.NavigateTo($"/article/{characterId}");
     }
 
     private void OnTreeStateChanged()
     {
-        // When tree state changes, update our cached articles
-        if (TreeStateService.HasCachedData && (_allArticles == null || !_allArticles.Any()))
-        {
-            _allArticles = TreeStateService.CachedArticles.ToList();
-            
-            // Recalculate stats
-            _stats = new CampaignStats
-            {
-                TotalArticles = CountTotalArticles(_allArticles),
-                RootArticles = _allArticles.Count(a => !a.ParentId.HasValue),
-                RecentlyModified = _allArticles.Count(a =>
-                    (a.CreatedAt) > DateTime.Now.AddDays(-7)),
-                DaysSinceStart = _allArticles.Any()
-                    ? (int)(DateTime.Now - _allArticles.Min(a => a.CreatedAt)).TotalDays
-                    : 0
-            };
-            
-            _isLoadingRecent = false;
-        }
-        
         InvokeAsync(StateHasChanged);
     }
 
     public void Dispose()
     {
         TreeStateService.OnStateChanged -= OnTreeStateChanged;
-    }
-
-    private class CampaignStats
-    {
-        public int TotalArticles { get; set; }
-        public int RootArticles { get; set; }
-        public int RecentlyModified { get; set; }
-        public int DaysSinceStart { get; set; }
     }
 }
