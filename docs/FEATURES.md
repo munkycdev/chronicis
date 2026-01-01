@@ -1,6 +1,6 @@
 # Chronicis - Feature Documentation
 
-**Last Updated:** December 30, 2025
+**Last Updated:** January 1, 2026
 
 ---
 
@@ -183,6 +183,45 @@ Home page with campaign overview and quick actions.
 
 ---
 
+### Public World Sharing
+
+Share your world publicly with anyone via a unique URL.
+
+**How It Works:**
+1. Navigate to your World detail page
+2. In "Public Sharing" section, toggle "Make this world publicly accessible"
+3. Choose a unique public slug (e.g., `forgotten-realms`)
+4. Save your changes
+5. Share the URL: `https://chronicis.app/w/your-slug`
+
+**Article Visibility:**
+Articles have three visibility levels:
+- **Public** - Visible to anyone (anonymous access)
+- **MembersOnly** - Visible only to authenticated world/campaign members
+- **Private** - Visible only to the article creator
+
+**Public Slug Rules:**
+- 3-100 characters
+- Lowercase letters, numbers, and hyphens only
+- No leading or trailing hyphens
+- Must be globally unique
+- Some slugs are reserved (api, admin, public, private, etc.)
+
+**Public Viewer Features:**
+- Anonymous read-only access at `/w/{publicSlug}`
+- Article tree sidebar with navigation
+- Basic markdown rendering
+- Breadcrumb navigation
+- Mobile-responsive layout
+
+**Security:**
+- Only articles marked as "Public" visibility are shown
+- MembersOnly and Private articles are completely hidden (no placeholder)
+- No authentication required to view public content
+- World owner maintains full control over what's shared
+
+---
+
 ## API Reference
 
 ### Article Endpoints
@@ -210,6 +249,15 @@ Home page with campaign overview and quick actions.
 | PUT | `/api/worlds/{id}` | Update world |
 | DELETE | `/api/worlds/{id}` | Delete world |
 | GET | `/api/worlds/{id}/link-suggestions` | Autocomplete suggestions |
+| POST | `/api/worlds/{id}/check-public-slug` | Check slug availability |
+
+### Public World Endpoints (Anonymous)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/public/worlds/{publicSlug}` | Get public world |
+| GET | `/api/public/worlds/{publicSlug}/articles` | Get public article tree |
+| GET | `/api/public/worlds/{publicSlug}/articles/{*path}` | Get public article |
 
 ### Campaign Endpoints
 
@@ -258,6 +306,7 @@ Home page with campaign overview and quick actions.
 | `LinkApiService` | Link suggestions, resolution |
 | `AISummaryApiService` | Summary generation |
 | `QuoteService` | Inspirational quotes |
+| `PublicApiService` | Anonymous public world access |
 
 ### State Services
 

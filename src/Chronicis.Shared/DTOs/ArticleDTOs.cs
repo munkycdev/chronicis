@@ -66,6 +66,13 @@ public class ArticleTreeDto
     public DateTime EffectiveDate { get; set; }
     public string? IconEmoji { get; set; }
     public Guid CreatedBy { get; set; }
+    
+    /// <summary>
+    /// True if this is a virtual group (Campaigns, Player Characters, Wiki, etc.)
+    /// that doesn't correspond to a real article in the database.
+    /// Virtual groups should only expand/collapse, not navigate.
+    /// </summary>
+    public bool IsVirtualGroup { get; set; } = false;
 }
 
 /// <summary>

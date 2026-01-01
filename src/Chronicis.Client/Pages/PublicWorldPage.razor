@@ -3,7 +3,9 @@
 @layout PublicLayout
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.Enums
+@using Chronicis.Client.Components.Shared
 @inject IPublicApiService PublicApi
+@inject IMarkdownService MarkdownService
 @inject NavigationManager Navigation
 
 <PageTitle>@(_world?.Name ?? "World") — Chronicis</PageTitle>
@@ -40,24 +42,22 @@ else
         <!-- Sidebar with article tree -->
         <aside class="public-world-sidebar">
             <div class="public-world-sidebar-header">
-                <MudText Typo="Typo.h6" Style="color: var(--chronicis-beige-gold);">
-                    @_world.Name
-                </MudText>
-                @if (!string.IsNullOrEmpty(_world.Description))
-                {
-                    <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">
-                        @_world.Description
+                <a href="/w/@PublicSlug" class="public-world-title-link">
+                    <MudText Typo="Typo.subtitle1" Style="color: var(--chronicis-beige-gold); font-weight: 600;">
+                        @_world.Name
                     </MudText>
-                }
+                </a>
             </div>
 
-            <MudDivider Class="my-2" />
+            <MudDivider Class="my-2" Style="opacity: 0.3;" />
 
             @if (_articleTree.Count == 0)
             {
-                <MudText Typo="Typo.body2" Class="mud-text-secondary pa-3">
-                    No public articles in this world yet.
-                </MudText>
+                <div class="pa-3">
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        No public articles in this world yet.
+                    </MudText>
+                </div>
             }
             else
             {
@@ -97,32 +97,9 @@ else
                     @if (_articleTree.Count > 0)
                     {
                         <MudDivider Class="my-4" />
-                        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
-                            Browse Articles
-                        </MudText>
                         <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                            Select an article from the sidebar to start reading, or click one of the top-level articles below:
+                            Select an article from the sidebar to start reading.
                         </MudText>
-                        <div class="public-article-cards mt-3">
-                            @foreach (var article in _articleTree.Take(6))
-                            {
-                                <MudCard Class="public-article-card" 
-                                         @onclick="() => NavigateToArticle(article.Slug)">
-                                    <MudCardContent>
-                                        <div class="d-flex align-center gap-2">
-                                            @if (!string.IsNullOrEmpty(article.IconEmoji))
-                                            {
-                                                <span style="font-size: 1.5rem;">@article.IconEmoji</span>
-                                            }
-                                            <MudText Typo="Typo.subtitle1">@article.Title</MudText>
-                                        </div>
-                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                            @GetArticleTypeLabel(article.Type)
-                                        </MudText>
-                                    </MudCardContent>
-                                </MudCard>
-                            }
-                        </div>
                     }
                 </MudPaper>
             }
@@ -160,7 +137,7 @@ else
                     <!-- Breadcrumbs -->
                     @if (_currentArticle!.Breadcrumbs?.Any() == true)
                     {
-                        <MudBreadcrumbs Items="@GetBreadcrumbItems()" Class="mb-3 pa-0" />
+                        <ChroniclsBreadcrumbs Items="@GetBreadcrumbItems()" UseCustomLinks="true" Class="mb-3 pa-0" />
                     }
 
                     <!-- Article header -->
@@ -193,7 +170,7 @@ else
                     <div class="public-article-body">
                         @if (!string.IsNullOrEmpty(_currentArticle.Body))
                         {
-                            @((MarkupString)RenderMarkdown(_currentArticle.Body))
+                            @((MarkupString)MarkdownService.ToHtml(_currentArticle.Body))
                         }
                         else
                         {
@@ -229,9 +206,10 @@ else
     }
 
     .public-world-sidebar {
-        background: var(--mud-palette-surface);
+        background: var(--mud-palette-drawer-background, #1F2A33);
+        color: var(--mud-palette-drawer-text, #F4F0EA);
         border-radius: 8px;
-        padding: 1rem;
+        padding: 0.75rem;
         position: sticky;
         top: 80px;
         max-height: calc(100vh - 100px);
@@ -239,15 +217,28 @@ else
     }
 
     .public-world-sidebar-header {
-        padding: 0.5rem;
+        padding: 0.5rem 0.5rem 0.25rem;
+    }
+
+    .public-world-title-link {
+        text-decoration: none;
+        display: block;
+    }
+
+    .public-world-title-link:hover {
+        opacity: 0.85;
     }
 
     .public-article-tree {
-        padding: 0.5rem 0;
+        padding: 0.25rem 0;
     }
 
     .public-world-main {
         min-width: 0;
+    }
+
+    .public-world-main .mud-paper {
+        background-color: #ffffff !important;
     }
 
     .public-world-hero {
@@ -446,27 +437,4 @@ else
         ArticleType.Legacy => "Article",
         _ => "Article"
     };
-
-    private static string RenderMarkdown(string markdown)
-    {
-        // Basic HTML escaping and simple markdown conversion
-        // In production, you'd use a proper markdown library like Markdig
-        var html = System.Net.WebUtility.HtmlEncode(markdown);
-        
-        // Convert basic markdown patterns
-        // Headers
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"^### (.+)$", "<h3>$1</h3>", System.Text.RegularExpressions.RegexOptions.Multiline);
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"^## (.+)$", "<h2>$1</h2>", System.Text.RegularExpressions.RegexOptions.Multiline);
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"^# (.+)$", "<h1>$1</h1>", System.Text.RegularExpressions.RegexOptions.Multiline);
-        
-        // Bold and italic
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"\*(.+?)\*", "<em>$1</em>");
-        
-        // Line breaks to paragraphs
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"\n\n+", "</p><p>");
-        html = $"<p>{html}</p>";
-        
-        return html;
-    }
 }

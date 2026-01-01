@@ -12,6 +12,41 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.2.0] - 2026-01-01
+
+### Public World Sharing
+
+**Added:**
+- Public world sharing with globally unique slugs
+- Three-tier article visibility system (Public, MembersOnly, Private)
+- `World.IsPublic` and `World.PublicSlug` database columns
+- `ArticleVisibility` enum with Public (0), MembersOnly (1), Private (2) values
+- Public slug validation (3-100 chars, lowercase alphanumeric + hyphens)
+- Reserved slug protection (api, admin, public, private, etc.)
+- Auto-suggestion of alternative slugs when slug is taken
+- PublicWorldService for anonymous world/article access
+- PublicWorldFunctions API endpoints (AllowAnonymous)
+- PublicApiService client without auth headers
+- PublicWorldPage at `/w/{publicSlug}` and `/w/{publicSlug}/{*articlePath}`
+- PublicArticleTreeItem component for sidebar navigation
+- World settings "Public Sharing" section with toggle and slug editor
+- Real-time slug availability checking with debounce
+- Copy-to-clipboard button for public URLs
+- Preview button to open public URL in new tab
+
+**API Endpoints:**
+- `POST /api/worlds/{id}/check-public-slug` - Check slug availability
+- `GET /api/public/worlds/{publicSlug}` - Get public world (anonymous)
+- `GET /api/public/worlds/{publicSlug}/articles` - Get public article tree (anonymous)
+- `GET /api/public/worlds/{publicSlug}/articles/{*path}` - Get public article (anonymous)
+
+**Changed:**
+- WorldUpdateDto now includes IsPublic and PublicSlug properties
+- WorldDto and WorldDetailDto now include IsPublic and PublicSlug
+- Program.cs registers ChronicisPublicApi HttpClient without auth handler
+
+---
+
 ## [2.1.0] - 2025-12-30
 
 ### Dashboard Redesign & Character Claiming

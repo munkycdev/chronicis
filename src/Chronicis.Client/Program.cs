@@ -186,6 +186,9 @@ builder.Services.AddScoped<IWikiLinkService, WikiLinkService>();
 // Breadcrumb service (for consistent navigation breadcrumbs)
 builder.Services.AddScoped<IBreadcrumbService, BreadcrumbService>();
 
+// Markdown service (for rendering markdown to HTML)
+builder.Services.AddScoped<IMarkdownService, MarkdownService>();
+
 await builder.Build().RunAsync();
 
 // ============================================

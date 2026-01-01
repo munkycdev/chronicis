@@ -77,8 +77,19 @@ public class PublicWorldFunctions
     public async Task<HttpResponseData> GetPublicArticle(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "public/worlds/{publicSlug}/articles/{*articlePath}")] HttpRequestData req,
         string publicSlug,
-        string articlePath)
+        string? articlePath)
     {
+        // If articlePath is empty/null, this should have been handled by GetPublicArticleTree
+        // but Azure Functions catch-all routes can capture empty strings
+        if (string.IsNullOrEmpty(articlePath))
+        {
+            _logger.LogDebug("Empty articlePath, redirecting to GetPublicArticleTree logic");
+            var articles = await _publicWorldService.GetPublicArticleTreeAsync(publicSlug);
+            var treeResponse = req.CreateResponse(System.Net.HttpStatusCode.OK);
+            await treeResponse.WriteAsJsonAsync(articles);
+            return treeResponse;
+        }
+
         _logger.LogInformation("Anonymous request for public article '{ArticlePath}' in world '{PublicSlug}'", 
             articlePath, publicSlug);
 

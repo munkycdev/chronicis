@@ -1,7 +1,8 @@
 @using Chronicis.Shared.DTOs
+@using Chronicis.Client.Components.Shared
 
 <div class="public-tree-item @(_isExpanded ? "expanded" : "") @(IsSelected ? "selected" : "")"
-     style="padding-left: @(Level * 16)px;">
+     style="padding-left: @(Level * 12)px;">
     
     <div class="public-tree-item-content" @onclick="OnItemClick">
         @if (Article.HasChildren)
@@ -16,12 +17,11 @@
             <span class="public-tree-spacer"></span>
         }
 
-        @if (!string.IsNullOrEmpty(Article.IconEmoji))
-        {
-            <span class="public-tree-icon">@Article.IconEmoji</span>
-        }
+        <span class="public-tree-icon">
+            <IconDisplay Icon="@Article.IconEmoji" DefaultIcon="" CssClass="tree-icon" />
+        </span>
 
-        <span class="public-tree-title">@Article.Title</span>
+        <span class="public-tree-title" title="@Article.Title">@Article.Title</span>
     </div>
 
     @if (_isExpanded && Article.Children?.Any() == true)
@@ -29,10 +29,11 @@
         <div class="public-tree-children">
             @foreach (var child in Article.Children.OrderBy(c => c.Title))
             {
+                @* Virtual groups don't contribute to path - pass through the parent's real path *@
                 <PublicArticleTreeItem Article="@child"
                                        PublicSlug="@PublicSlug"
                                        CurrentPath="@CurrentPath"
-                                       ParentPath="@GetCurrentItemPath()"
+                                       ParentPath="@GetPathForChildren()"
                                        Level="@(Level + 1)"
                                        OnArticleSelected="OnArticleSelected" />
             }
@@ -49,43 +50,59 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        padding: 6px 8px;
+        padding: 4px 8px;
         border-radius: 4px;
         cursor: pointer;
         transition: background-color 0.15s;
+        min-height: 32px;
+        color: var(--mud-palette-drawer-text, #F4F0EA);
     }
 
     .public-tree-item-content:hover {
-        background-color: rgba(196, 175, 142, 0.1);
+        background-color: rgba(196, 175, 142, 0.15);
     }
 
     .public-tree-item.selected > .public-tree-item-content {
-        background-color: rgba(196, 175, 142, 0.2);
+        background-color: rgba(196, 175, 142, 0.25);
+        border-left: 2px solid var(--chronicis-beige-gold, #C4AF8E);
+        margin-left: -2px;
     }
 
     .public-tree-expand-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 24px;
-        height: 24px;
+        width: 20px;
+        height: 20px;
         flex-shrink: 0;
         cursor: pointer;
+        border-radius: 3px;
+        color: rgba(244, 240, 234, 0.7);
     }
 
     .public-tree-expand-btn:hover {
         background-color: rgba(196, 175, 142, 0.2);
-        border-radius: 4px;
     }
 
     .public-tree-spacer {
-        width: 24px;
+        width: 20px;
         flex-shrink: 0;
     }
 
     .public-tree-icon {
-        font-size: 1rem;
         flex-shrink: 0;
+        width: 20px;
+        text-align: center;
+        font-size: 0.85rem;
+    }
+
+    .public-tree-icon .tree-icon {
+        font-size: 0.85rem;
+    }
+
+    .public-tree-icon i {
+        font-size: 0.8rem;
+        color: var(--chronicis-beige-gold, #C4AF8E);
     }
 
     .public-tree-title {
@@ -93,7 +110,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: 0.9rem;
+        font-size: 0.875rem;
     }
 
     .public-tree-children {
@@ -126,7 +143,10 @@
     {
         get
         {
-            var itemPath = GetCurrentItemPath();
+            // Virtual groups can't be selected
+            if (Article.IsVirtualGroup) return false;
+            
+            var itemPath = GetArticlePath();
             return !string.IsNullOrEmpty(CurrentPath) && 
                    CurrentPath.Equals(itemPath, StringComparison.OrdinalIgnoreCase);
         }
@@ -134,24 +154,120 @@
 
     protected override void OnParametersSet()
     {
-        // Auto-expand if a child is selected
-        if (!string.IsNullOrEmpty(CurrentPath) && Article.Children?.Any() == true)
+        // Auto-expand if this node or any descendant matches the current path
+        if (!string.IsNullOrEmpty(CurrentPath))
         {
-            var itemPath = GetCurrentItemPath();
-            if (CurrentPath.StartsWith(itemPath + "/", StringComparison.OrdinalIgnoreCase))
+            // Check if THIS node is selected (for non-virtual groups)
+            if (!Article.IsVirtualGroup)
             {
-                _isExpanded = true;
+                var myPath = GetArticlePath();
+                if (CurrentPath.StartsWith(myPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Current path starts with our path - we're on the path to the selected article
+                    // Expand if we have children and the path continues past us
+                    if (Article.HasChildren && 
+                        (CurrentPath.Length > myPath.Length || HasMatchingDescendant()))
+                    {
+                        _isExpanded = true;
+                    }
+                }
+            }
+            else
+            {
+                // Virtual groups: check if any descendant matches
+                if (HasMatchingDescendant())
+                {
+                    _isExpanded = true;
+                }
             }
         }
     }
 
-    private string GetCurrentItemPath()
+    private bool HasMatchingDescendant()
+    {
+        if (Article.Children == null || string.IsNullOrEmpty(CurrentPath)) 
+            return false;
+        
+        // Get the path prefix for children of this node
+        var childPathPrefix = GetPathForChildren() ?? "";
+        
+        return CheckDescendantsRecursively(Article.Children, childPathPrefix);
+    }
+
+    private bool CheckDescendantsRecursively(IEnumerable<ArticleTreeDto> children, string pathPrefix)
+    {
+        foreach (var child in children)
+        {
+            if (!child.IsVirtualGroup)
+            {
+                // Build the child's full path
+                var childPath = string.IsNullOrEmpty(pathPrefix) 
+                    ? child.Slug 
+                    : $"{pathPrefix}/{child.Slug}";
+                    
+                if (CurrentPath!.Equals(childPath, StringComparison.OrdinalIgnoreCase) ||
+                    CurrentPath.StartsWith(childPath + "/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                
+                // Check this child's descendants
+                if (child.Children?.Any() == true)
+                {
+                    if (CheckDescendantsRecursively(child.Children, childPath))
+                        return true;
+                }
+            }
+            else
+            {
+                // Virtual groups pass through the path prefix
+                if (child.Children?.Any() == true)
+                {
+                    if (CheckDescendantsRecursively(child.Children, pathPrefix))
+                        return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Get the path for this article (only for real articles, not virtual groups)
+    /// </summary>
+    private string GetArticlePath()
+    {
+        if (Article.IsVirtualGroup) return string.Empty;
+        return BuildPathForArticle(Article);
+    }
+
+    /// <summary>
+    /// Build path for a specific article, using ParentPath as base
+    /// </summary>
+    private string BuildPathForArticle(ArticleTreeDto article)
     {
         if (string.IsNullOrEmpty(ParentPath))
         {
-            return Article.Slug;
+            return article.Slug;
         }
-        return $"{ParentPath}/{Article.Slug}";
+        return $"{ParentPath}/{article.Slug}";
+    }
+
+    /// <summary>
+    /// Get the path to pass to children.
+    /// Virtual groups don't contribute to the path - pass through ParentPath.
+    /// Real articles add their slug to the path.
+    /// </summary>
+    private string? GetPathForChildren()
+    {
+        if (Article.IsVirtualGroup)
+        {
+            // Virtual groups don't contribute to path - pass through parent's path
+            return ParentPath;
+        }
+        
+        // Real articles add their slug
+        return GetArticlePath();
     }
 
     private void ToggleExpand()
@@ -161,7 +277,14 @@
 
     private async Task OnItemClick()
     {
-        var path = GetCurrentItemPath();
+        // Virtual groups only expand/collapse, don't navigate
+        if (Article.IsVirtualGroup)
+        {
+            _isExpanded = !_isExpanded;
+            return;
+        }
+        
+        var path = GetArticlePath();
         await OnArticleSelected.InvokeAsync(path);
     }
 }

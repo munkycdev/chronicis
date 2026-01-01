@@ -1,13 +1,13 @@
 # Chronicis - Project Status
 
-**Last Updated:** December 30, 2025  
-**Project Phase:** Dashboard Redesign Complete
+**Last Updated:** January 1, 2026  
+**Project Phase:** Public World Sharing Complete
 
 ---
 
 ## Current State
 
-Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented, including the recently completed dashboard redesign with hero section and contextual prompts.
+Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented, including the recently completed public world sharing feature allowing anonymous read-only access to shared worlds.
 
 ### What's Working
 
@@ -30,6 +30,14 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 - Creation dialogs for all entity types
 - Article type categorization (WikiArticle, Character, Session, etc.)
 - Character claiming system
+
+**Public Sharing:**
+- Public world toggle with globally unique slugs
+- Three-tier article visibility (Public, MembersOnly, Private)
+- Anonymous read-only access at `/w/{publicSlug}`
+- Public article tree with navigation
+- Public slug availability checking with suggestions
+- Copy-to-clipboard for public URLs
 
 **Dashboard:**
 - Hero section with gradient background and welcome message
@@ -68,6 +76,7 @@ See `Feature Ideas.md` for the complete bug list and backlog.
 | 9 | Advanced Search | ✅ Complete |
 | 9.5 | Auth Architecture | ✅ Complete |
 | 10 | Drag & Drop | ✅ Complete |
+| 10.5 | Public World Sharing | ✅ Complete |
 | 11 | Icons & Polish | ⏳ Pending |
 | 12 | Testing & Deploy | ⏳ Pending |
 
@@ -76,8 +85,9 @@ See `Feature Ideas.md` for the complete bug list and backlog.
 - Dashboard Redesign with World Panels
 - Character Claiming System
 - First-time User Onboarding
+- Public World Sharing with Anonymous Access
 
-**Overall Progress:** ~85% of core features complete
+**Overall Progress:** ~90% of core features complete
 
 ---
 
@@ -139,11 +149,13 @@ dotnet ef database update
 | `/` | Landing | Public landing page |
 | `/dashboard` | Dashboard | World panels and quick actions |
 | `/getting-started` | Onboarding | First-time user wizard |
-| `/world/{slug}` | WorldDetail | Edit world, create content |
+| `/world/{slug}` | WorldDetail | Edit world, create content, public sharing settings |
 | `/campaign/{id}` | CampaignDetail | Edit campaign, manage arcs |
 | `/arc/{id}` | ArcDetail | Edit arc, manage sessions |
 | `/article/{path}` | Articles | Article detail with editing |
 | `/search` | Search | Global search results |
+| `/w/{publicSlug}` | PublicWorld | Anonymous world view |
+| `/w/{publicSlug}/{path}` | PublicArticle | Anonymous article view |
 
 ---
 
