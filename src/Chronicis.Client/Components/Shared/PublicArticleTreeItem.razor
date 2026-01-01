@@ -1,0 +1,167 @@
+@using Chronicis.Shared.DTOs
+
+<div class="public-tree-item @(_isExpanded ? "expanded" : "") @(IsSelected ? "selected" : "")"
+     style="padding-left: @(Level * 16)px;">
+    
+    <div class="public-tree-item-content" @onclick="OnItemClick">
+        @if (Article.HasChildren)
+        {
+            <span class="public-tree-expand-btn" @onclick="ToggleExpand" @onclick:stopPropagation="true">
+                <MudIcon Icon="@(_isExpanded ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)"
+                         Size="Size.Small" />
+            </span>
+        }
+        else
+        {
+            <span class="public-tree-spacer"></span>
+        }
+
+        @if (!string.IsNullOrEmpty(Article.IconEmoji))
+        {
+            <span class="public-tree-icon">@Article.IconEmoji</span>
+        }
+
+        <span class="public-tree-title">@Article.Title</span>
+    </div>
+
+    @if (_isExpanded && Article.Children?.Any() == true)
+    {
+        <div class="public-tree-children">
+            @foreach (var child in Article.Children.OrderBy(c => c.Title))
+            {
+                <PublicArticleTreeItem Article="@child"
+                                       PublicSlug="@PublicSlug"
+                                       CurrentPath="@CurrentPath"
+                                       ParentPath="@GetCurrentItemPath()"
+                                       Level="@(Level + 1)"
+                                       OnArticleSelected="OnArticleSelected" />
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .public-tree-item {
+        user-select: none;
+    }
+
+    .public-tree-item-content {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+
+    .public-tree-item-content:hover {
+        background-color: rgba(196, 175, 142, 0.1);
+    }
+
+    .public-tree-item.selected > .public-tree-item-content {
+        background-color: rgba(196, 175, 142, 0.2);
+    }
+
+    .public-tree-expand-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    .public-tree-expand-btn:hover {
+        background-color: rgba(196, 175, 142, 0.2);
+        border-radius: 4px;
+    }
+
+    .public-tree-spacer {
+        width: 24px;
+        flex-shrink: 0;
+    }
+
+    .public-tree-icon {
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .public-tree-title {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.9rem;
+    }
+
+    .public-tree-children {
+        margin-left: 0;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public ArticleTreeDto Article { get; set; } = null!;
+
+    [Parameter]
+    public string PublicSlug { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? CurrentPath { get; set; }
+
+    [Parameter]
+    public string? ParentPath { get; set; }
+
+    [Parameter]
+    public int Level { get; set; } = 0;
+
+    [Parameter]
+    public EventCallback<string> OnArticleSelected { get; set; }
+
+    private bool _isExpanded = false;
+
+    private bool IsSelected
+    {
+        get
+        {
+            var itemPath = GetCurrentItemPath();
+            return !string.IsNullOrEmpty(CurrentPath) && 
+                   CurrentPath.Equals(itemPath, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Auto-expand if a child is selected
+        if (!string.IsNullOrEmpty(CurrentPath) && Article.Children?.Any() == true)
+        {
+            var itemPath = GetCurrentItemPath();
+            if (CurrentPath.StartsWith(itemPath + "/", StringComparison.OrdinalIgnoreCase))
+            {
+                _isExpanded = true;
+            }
+        }
+    }
+
+    private string GetCurrentItemPath()
+    {
+        if (string.IsNullOrEmpty(ParentPath))
+        {
+            return Article.Slug;
+        }
+        return $"{ParentPath}/{Article.Slug}";
+    }
+
+    private void ToggleExpand()
+    {
+        _isExpanded = !_isExpanded;
+    }
+
+    private async Task OnItemClick()
+    {
+        var path = GetCurrentItemPath();
+        await OnArticleSelected.InvokeAsync(path);
+    }
+}

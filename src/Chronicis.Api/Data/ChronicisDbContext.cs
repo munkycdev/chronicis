@@ -83,6 +83,13 @@ public class ChronicisDbContext : DbContext
             entity.Property(w => w.Description)
                 .HasMaxLength(1000);
 
+            // Public access fields
+            entity.Property(w => w.IsPublic)
+                .HasDefaultValue(false);
+
+            entity.Property(w => w.PublicSlug)
+                .HasMaxLength(100);
+
             // World -> Owner (User)
             entity.HasOne(w => w.Owner)
                 .WithMany(u => u.OwnedWorlds)
@@ -95,6 +102,12 @@ public class ChronicisDbContext : DbContext
             entity.HasIndex(w => new { w.OwnerId, w.Slug })
                 .IsUnique()
                 .HasDatabaseName("IX_Worlds_OwnerId_Slug");
+
+            // Unique constraint: PublicSlug must be globally unique (when not null)
+            entity.HasIndex(w => w.PublicSlug)
+                .IsUnique()
+                .HasFilter("[PublicSlug] IS NOT NULL")
+                .HasDatabaseName("IX_Worlds_PublicSlug");
         });
     }
 

@@ -1,0 +1,28 @@
+using Chronicis.Shared.DTOs;
+
+namespace Chronicis.Api.Services;
+
+/// <summary>
+/// Service interface for anonymous public access to worlds.
+/// All methods return only publicly visible content.
+/// </summary>
+public interface IPublicWorldService
+{
+    /// <summary>
+    /// Get a public world by its public slug.
+    /// Returns null if world doesn't exist or is not public.
+    /// </summary>
+    Task<WorldDetailDto?> GetPublicWorldAsync(string publicSlug);
+
+    /// <summary>
+    /// Get the article tree for a public world.
+    /// Only returns articles with Public visibility.
+    /// </summary>
+    Task<List<ArticleTreeDto>> GetPublicArticleTreeAsync(string publicSlug);
+
+    /// <summary>
+    /// Get a specific article by path in a public world.
+    /// Returns null if article doesn't exist, world is not public, or article is not Public visibility.
+    /// </summary>
+    Task<ArticleDto?> GetPublicArticleAsync(string publicSlug, string articlePath);
+}

@@ -1,0 +1,472 @@
+@page "/w/{PublicSlug}"
+@page "/w/{PublicSlug}/{*ArticlePath}"
+@layout PublicLayout
+@using Chronicis.Shared.DTOs
+@using Chronicis.Shared.Enums
+@inject IPublicApiService PublicApi
+@inject NavigationManager Navigation
+
+<PageTitle>@(_world?.Name ?? "World") — Chronicis</PageTitle>
+
+@if (_isLoading)
+{
+    <div class="public-world-loading">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        <MudText Typo="Typo.body1" Class="mt-3">Loading world...</MudText>
+    </div>
+}
+else if (_world == null)
+{
+    <div class="public-world-not-found">
+        <MudPaper Elevation="2" Class="pa-6 text-center">
+            <MudIcon Icon="@Icons.Material.Filled.SearchOff" 
+                     Style="font-size: 64px; color: var(--chronicis-beige-gold);" />
+            <MudText Typo="Typo.h5" Class="mt-4 mb-2">World Not Found</MudText>
+            <MudText Typo="Typo.body1" Class="mud-text-secondary mb-4">
+                This world doesn't exist or isn't publicly shared.
+            </MudText>
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       Href="/"
+                       StartIcon="@Icons.Material.Filled.Home">
+                Go Home
+            </MudButton>
+        </MudPaper>
+    </div>
+}
+else
+{
+    <div class="public-world-container">
+        <!-- Sidebar with article tree -->
+        <aside class="public-world-sidebar">
+            <div class="public-world-sidebar-header">
+                <MudText Typo="Typo.h6" Style="color: var(--chronicis-beige-gold);">
+                    @_world.Name
+                </MudText>
+                @if (!string.IsNullOrEmpty(_world.Description))
+                {
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">
+                        @_world.Description
+                    </MudText>
+                }
+            </div>
+
+            <MudDivider Class="my-2" />
+
+            @if (_articleTree.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary pa-3">
+                    No public articles in this world yet.
+                </MudText>
+            }
+            else
+            {
+                <div class="public-article-tree">
+                    @foreach (var article in _articleTree)
+                    {
+                        <PublicArticleTreeItem Article="@article" 
+                                               PublicSlug="@PublicSlug"
+                                               CurrentPath="@ArticlePath"
+                                               OnArticleSelected="NavigateToArticle" />
+                    }
+                </div>
+            }
+        </aside>
+
+        <!-- Main content area -->
+        <main class="public-world-main">
+            @if (string.IsNullOrEmpty(ArticlePath))
+            {
+                <!-- World landing view -->
+                <MudPaper Elevation="2" Class="pa-6">
+                    <div class="public-world-hero">
+                        <MudIcon Icon="@Icons.Material.Filled.Public" 
+                                 Style="font-size: 48px; color: var(--chronicis-beige-gold);" />
+                        <MudText Typo="Typo.h4" Class="mt-3">@_world.Name</MudText>
+                        @if (!string.IsNullOrEmpty(_world.Description))
+                        {
+                            <MudText Typo="Typo.body1" Class="mud-text-secondary mt-2">
+                                @_world.Description
+                            </MudText>
+                        }
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary mt-3">
+                            Created by @_world.OwnerName
+                        </MudText>
+                    </div>
+
+                    @if (_articleTree.Count > 0)
+                    {
+                        <MudDivider Class="my-4" />
+                        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
+                            Browse Articles
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                            Select an article from the sidebar to start reading, or click one of the top-level articles below:
+                        </MudText>
+                        <div class="public-article-cards mt-3">
+                            @foreach (var article in _articleTree.Take(6))
+                            {
+                                <MudCard Class="public-article-card" 
+                                         @onclick="() => NavigateToArticle(article.Slug)">
+                                    <MudCardContent>
+                                        <div class="d-flex align-center gap-2">
+                                            @if (!string.IsNullOrEmpty(article.IconEmoji))
+                                            {
+                                                <span style="font-size: 1.5rem;">@article.IconEmoji</span>
+                                            }
+                                            <MudText Typo="Typo.subtitle1">@article.Title</MudText>
+                                        </div>
+                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                            @GetArticleTypeLabel(article.Type)
+                                        </MudText>
+                                    </MudCardContent>
+                                </MudCard>
+                            }
+                        </div>
+                    }
+                </MudPaper>
+            }
+            else if (_currentArticle == null && !_isLoadingArticle)
+            {
+                <!-- Article not found -->
+                <MudPaper Elevation="2" Class="pa-6 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Article" 
+                             Style="font-size: 48px; color: var(--chronicis-beige-gold);" />
+                    <MudText Typo="Typo.h6" Class="mt-3">Article Not Found</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mt-2">
+                        This article doesn't exist or isn't publicly visible.
+                    </MudText>
+                    <MudButton Variant="Variant.Text" 
+                               Color="Color.Primary" 
+                               Class="mt-3"
+                               OnClick="() => NavigateToArticle(string.Empty)">
+                        Back to World Overview
+                    </MudButton>
+                </MudPaper>
+            }
+            else if (_isLoadingArticle)
+            {
+                <MudPaper Elevation="2" Class="pa-6">
+                    <MudSkeleton Width="60%" Height="32px" />
+                    <MudSkeleton Width="100%" Height="20px" Class="mt-4" />
+                    <MudSkeleton Width="100%" Height="20px" Class="mt-2" />
+                    <MudSkeleton Width="80%" Height="20px" Class="mt-2" />
+                </MudPaper>
+            }
+            else
+            {
+                <!-- Article view -->
+                <MudPaper Elevation="2" Class="pa-6">
+                    <!-- Breadcrumbs -->
+                    @if (_currentArticle!.Breadcrumbs?.Any() == true)
+                    {
+                        <MudBreadcrumbs Items="@GetBreadcrumbItems()" Class="mb-3 pa-0" />
+                    }
+
+                    <!-- Article header -->
+                    <div class="d-flex align-center gap-3 mb-4">
+                        @if (!string.IsNullOrEmpty(_currentArticle.IconEmoji))
+                        {
+                            <span style="font-size: 2rem;">@_currentArticle.IconEmoji</span>
+                        }
+                        <div>
+                            <MudText Typo="Typo.h4">@_currentArticle.Title</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                @GetArticleTypeLabel(_currentArticle.Type)
+                                @if (_currentArticle.ModifiedAt.HasValue)
+                                {
+                                    <text> · Updated @_currentArticle.ModifiedAt.Value.ToString("MMM d, yyyy")</text>
+                                }
+                            </MudText>
+                        </div>
+                    </div>
+
+                    <!-- AI Summary (if available) -->
+                    @if (!string.IsNullOrEmpty(_currentArticle.AISummary))
+                    {
+                        <MudAlert Severity="Severity.Info" Class="mb-4" Dense="true">
+                            <strong>AI Summary:</strong> @_currentArticle.AISummary
+                        </MudAlert>
+                    }
+
+                    <!-- Article body -->
+                    <div class="public-article-body">
+                        @if (!string.IsNullOrEmpty(_currentArticle.Body))
+                        {
+                            @((MarkupString)RenderMarkdown(_currentArticle.Body))
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                <em>No content available.</em>
+                            </MudText>
+                        }
+                    </div>
+                </MudPaper>
+            }
+        </main>
+    </div>
+}
+
+<style>
+    .public-world-loading,
+    .public-world-not-found {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        padding: 2rem;
+    }
+
+    .public-world-container {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 1.5rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem;
+    }
+
+    .public-world-sidebar {
+        background: var(--mud-palette-surface);
+        border-radius: 8px;
+        padding: 1rem;
+        position: sticky;
+        top: 80px;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+    }
+
+    .public-world-sidebar-header {
+        padding: 0.5rem;
+    }
+
+    .public-article-tree {
+        padding: 0.5rem 0;
+    }
+
+    .public-world-main {
+        min-width: 0;
+    }
+
+    .public-world-hero {
+        text-align: center;
+        padding: 2rem 0;
+    }
+
+    .public-article-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .public-article-card {
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .public-article-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .public-article-body {
+        line-height: 1.7;
+    }
+
+    .public-article-body h1,
+    .public-article-body h2,
+    .public-article-body h3 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: var(--chronicis-beige-gold);
+    }
+
+    .public-article-body p {
+        margin-bottom: 1rem;
+    }
+
+    .public-article-body ul,
+    .public-article-body ol {
+        margin-bottom: 1rem;
+        padding-left: 1.5rem;
+    }
+
+    .public-article-body code {
+        background: rgba(0, 0, 0, 0.1);
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+        font-family: monospace;
+    }
+
+    .public-article-body pre {
+        background: rgba(0, 0, 0, 0.1);
+        padding: 1rem;
+        border-radius: 4px;
+        overflow-x: auto;
+        margin-bottom: 1rem;
+    }
+
+    .public-article-body blockquote {
+        border-left: 3px solid var(--chronicis-beige-gold);
+        padding-left: 1rem;
+        margin: 1rem 0;
+        font-style: italic;
+        color: var(--mud-palette-text-secondary);
+    }
+
+    @@media (max-width: 900px) {
+        .public-world-container {
+            grid-template-columns: 1fr;
+        }
+
+        .public-world-sidebar {
+            position: static;
+            max-height: none;
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string PublicSlug { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? ArticlePath { get; set; }
+
+    private WorldDetailDto? _world;
+    private List<ArticleTreeDto> _articleTree = new();
+    private ArticleDto? _currentArticle;
+    private bool _isLoading = true;
+    private bool _isLoadingArticle = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadWorldAsync();
+    }
+
+    private async Task LoadWorldAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Load world info
+            _world = await PublicApi.GetPublicWorldAsync(PublicSlug);
+            
+            if (_world != null)
+            {
+                // Load article tree
+                _articleTree = await PublicApi.GetPublicArticleTreeAsync(PublicSlug);
+
+                // Load specific article if path provided
+                if (!string.IsNullOrEmpty(ArticlePath))
+                {
+                    await LoadArticleAsync();
+                }
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadArticleAsync()
+    {
+        if (string.IsNullOrEmpty(ArticlePath)) return;
+
+        _isLoadingArticle = true;
+        StateHasChanged();
+
+        try
+        {
+            _currentArticle = await PublicApi.GetPublicArticleAsync(PublicSlug, ArticlePath);
+        }
+        finally
+        {
+            _isLoadingArticle = false;
+            StateHasChanged();
+        }
+    }
+
+    private void NavigateToArticle(string articlePath)
+    {
+        if (string.IsNullOrEmpty(articlePath))
+        {
+            Navigation.NavigateTo($"/w/{PublicSlug}");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/w/{PublicSlug}/{articlePath}");
+        }
+    }
+
+    private List<BreadcrumbItem> GetBreadcrumbItems()
+    {
+        var items = new List<BreadcrumbItem>();
+        
+        if (_currentArticle?.Breadcrumbs == null) return items;
+
+        foreach (var crumb in _currentArticle.Breadcrumbs)
+        {
+            if (crumb.IsWorld)
+            {
+                items.Add(new BreadcrumbItem(crumb.Title, $"/w/{PublicSlug}"));
+            }
+            else
+            {
+                // Build path from world to this article
+                var pathSegments = _currentArticle.Breadcrumbs
+                    .Where(b => !b.IsWorld)
+                    .TakeWhile(b => b.Id != crumb.Id)
+                    .Select(b => b.Slug)
+                    .ToList();
+                pathSegments.Add(crumb.Slug);
+                var path = string.Join("/", pathSegments);
+                
+                var isLast = crumb.Id == _currentArticle.Id;
+                items.Add(new BreadcrumbItem(crumb.Title, isLast ? null : $"/w/{PublicSlug}/{path}", isLast));
+            }
+        }
+
+        return items;
+    }
+
+    private static string GetArticleTypeLabel(ArticleType type) => type switch
+    {
+        ArticleType.WikiArticle => "Wiki Article",
+        ArticleType.Character => "Character",
+        ArticleType.CharacterNote => "Character Note",
+        ArticleType.Session => "Session",
+        ArticleType.SessionNote => "Session Note",
+        ArticleType.Legacy => "Article",
+        _ => "Article"
+    };
+
+    private static string RenderMarkdown(string markdown)
+    {
+        // Basic HTML escaping and simple markdown conversion
+        // In production, you'd use a proper markdown library like Markdig
+        var html = System.Net.WebUtility.HtmlEncode(markdown);
+        
+        // Convert basic markdown patterns
+        // Headers
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"^### (.+)$", "<h3>$1</h3>", System.Text.RegularExpressions.RegexOptions.Multiline);
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"^## (.+)$", "<h2>$1</h2>", System.Text.RegularExpressions.RegexOptions.Multiline);
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"^# (.+)$", "<h1>$1</h1>", System.Text.RegularExpressions.RegexOptions.Multiline);
+        
+        // Bold and italic
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"\*(.+?)\*", "<em>$1</em>");
+        
+        // Line breaks to paragraphs
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"\n\n+", "</p><p>");
+        html = $"<p>{html}</p>";
+        
+        return html;
+    }
+}

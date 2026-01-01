@@ -48,4 +48,11 @@ public interface IWorldApiService
     /// Delete a world link
     /// </summary>
     Task<bool> DeleteWorldLinkAsync(Guid worldId, Guid linkId);
+
+    // ===== Public Sharing =====
+
+    /// <summary>
+    /// Check if a public slug is available for a world
+    /// </summary>
+    Task<PublicSlugCheckResultDto?> CheckPublicSlugAsync(Guid worldId, string slug);
 }

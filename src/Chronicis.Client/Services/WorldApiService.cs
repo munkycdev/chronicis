@@ -88,4 +88,16 @@ public class WorldApiService : IWorldApiService
             _logger,
             $"link {linkId} from world {worldId}");
     }
+
+    // ===== Public Sharing =====
+
+    public async Task<PublicSlugCheckResultDto?> CheckPublicSlugAsync(Guid worldId, string slug)
+    {
+        var dto = new PublicSlugCheckDto { Slug = slug };
+        return await _http.PostEntityAsync<PublicSlugCheckResultDto>(
+            $"api/worlds/{worldId}/check-public-slug",
+            dto,
+            _logger,
+            $"public slug check for world {worldId}");
+    }
 }

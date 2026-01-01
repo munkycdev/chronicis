@@ -2,16 +2,23 @@ namespace Chronicis.Shared.Enums;
 
 /// <summary>
 /// Defines the visibility of an article.
+/// Ordered by restriction level: Public (least) → MembersOnly → Private (most).
 /// </summary>
 public enum ArticleVisibility
 {
     /// <summary>
-    /// Everyone in the campaign can see this article.
+    /// Visible to everyone, including anonymous users on public worlds.
     /// </summary>
     Public = 0,
     
     /// <summary>
-    /// Only the owner can see this article. Absolute privacy - no DM override.
+    /// Visible only to authenticated world/campaign members.
+    /// Hidden from anonymous users viewing public worlds.
     /// </summary>
-    Private = 1
+    MembersOnly = 1,
+    
+    /// <summary>
+    /// Visible only to the article creator. Absolute privacy - no DM override.
+    /// </summary>
+    Private = 2
 }

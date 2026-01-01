@@ -159,6 +159,19 @@ builder.Services.AddScoped<IDashboardApiService>(sp =>
     return new DashboardApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
+// Public API service - uses base client WITHOUT auth handler (for anonymous access)
+builder.Services.AddHttpClient("ChronicisPublicApi", client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
+
+builder.Services.AddScoped<IPublicApiService>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var logger = sp.GetRequiredService<ILogger<PublicApiService>>();
+    return new PublicApiService(factory.CreateClient("ChronicisPublicApi"), logger);
+});
+
 // State & Auth services
 builder.Services.AddScoped<ITreeStateService, TreeStateService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

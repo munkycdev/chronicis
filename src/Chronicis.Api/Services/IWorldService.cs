@@ -23,7 +23,7 @@ public interface IWorldService
     Task<WorldDto> CreateWorldAsync(WorldCreateDto dto, Guid userId);
 
     /// <summary>
-    /// Update a world's name and description
+    /// Update a world's name, description, and public visibility
     /// </summary>
     Task<WorldDto?> UpdateWorldAsync(Guid worldId, WorldUpdateDto dto, Guid userId);
 
@@ -41,4 +41,19 @@ public interface IWorldService
     /// Get a world by its slug for a specific owner
     /// </summary>
     Task<WorldDto?> GetWorldBySlugAsync(string slug, Guid userId);
+
+    /// <summary>
+    /// Check if a public slug is available (not already in use)
+    /// </summary>
+    Task<bool> IsPublicSlugAvailableAsync(string publicSlug, Guid? excludeWorldId = null);
+
+    /// <summary>
+    /// Check public slug availability and return detailed result with suggestions
+    /// </summary>
+    Task<PublicSlugCheckResultDto> CheckPublicSlugAsync(string slug, Guid? excludeWorldId = null);
+
+    /// <summary>
+    /// Get a world by its public slug (for anonymous access to public worlds)
+    /// </summary>
+    Task<WorldDto?> GetWorldByPublicSlugAsync(string publicSlug);
 }

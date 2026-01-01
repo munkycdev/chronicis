@@ -40,6 +40,21 @@ public class World
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
+    // ===== Public Access =====
+    
+    /// <summary>
+    /// Whether this world is publicly accessible to anonymous users.
+    /// When true, articles with Public visibility can be viewed without authentication.
+    /// </summary>
+    public bool IsPublic { get; set; } = false;
+    
+    /// <summary>
+    /// Globally unique URL-friendly slug for public access (e.g., "forgotten-realms").
+    /// Only set when IsPublic is true. Max 100 characters.
+    /// Lowercase alphanumeric with hyphens only, no leading/trailing hyphens.
+    /// </summary>
+    public string? PublicSlug { get; set; }
+    
     // ===== Navigation Properties =====
     
     /// <summary>

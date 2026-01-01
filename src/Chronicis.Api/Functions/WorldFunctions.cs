@@ -96,6 +96,43 @@ public class WorldFunctions
     }
 
     /// <summary>
+    /// Check if a public slug is available
+    /// </summary>
+    [Function("CheckPublicSlug")]
+    public async Task<HttpResponseData> CheckPublicSlug(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "worlds/{id:guid}/check-public-slug")] HttpRequestData req,
+        Guid id,
+        FunctionContext context)
+    {
+        var user = context.GetRequiredUser();
+
+        // Verify user owns this world
+        var world = await _worldService.GetWorldAsync(id, user.Id);
+        if (world == null || world.OwnerId != user.Id)
+        {
+            var forbidden = req.CreateResponse(HttpStatusCode.Forbidden);
+            await forbidden.WriteAsJsonAsync(new { error = "Only the world owner can check public slugs" });
+            return forbidden;
+        }
+
+        var dto = await JsonSerializer.DeserializeAsync<PublicSlugCheckDto>(req.Body, _jsonOptions);
+        if (dto == null || string.IsNullOrWhiteSpace(dto.Slug))
+        {
+            var badRequest = req.CreateResponse(HttpStatusCode.BadRequest);
+            await badRequest.WriteAsJsonAsync(new { error = "Slug is required" });
+            return badRequest;
+        }
+
+        _logger.LogInformation("Checking public slug '{Slug}' for world {WorldId}", dto.Slug, id);
+
+        var result = await _worldService.CheckPublicSlugAsync(dto.Slug, id);
+
+        var response = req.CreateResponse(HttpStatusCode.OK);
+        await response.WriteAsJsonAsync(result);
+        return response;
+    }
+
+    /// <summary>
     /// Update a world
     /// </summary>
     [Function("UpdateWorld")]

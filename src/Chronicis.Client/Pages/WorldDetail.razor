@@ -196,6 +196,80 @@ else if (_world != null)
             }
         </div>
 
+        <!-- Public Sharing -->
+        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
+            Public Sharing
+        </MudText>
+
+        <div class="mb-4 pa-3 rounded" style="background: var(--mud-palette-background-grey);">
+            <div class="d-flex align-center gap-3 mb-3">
+                <MudSwitch @bind-Value="_isPublic"
+                           Color="Color.Primary"
+                           Label="Make this world publicly accessible"
+                           T="bool"
+                           @bind-Value:after="OnPublicToggleChanged" />
+            </div>
+
+            @if (_isPublic)
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+                    Anyone with the link can view articles marked as "Public". Members-only and private articles remain hidden.
+                </MudText>
+
+                <div class="d-flex align-center gap-2 mb-2">
+                    <MudText Typo="Typo.body2" Style="white-space: nowrap;">@GetPublicUrlBase()</MudText>
+                    <MudTextField @bind-Value="_publicSlug"
+                                  Placeholder="your-world-slug"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Immediate="true"
+                                  DebounceInterval="500"
+                                  @bind-Value:after="CheckSlugAvailability"
+                                  Style="max-width: 300px;"
+                                  Disabled="_isCheckingSlug"
+                                  Error="@(!string.IsNullOrEmpty(_slugError))"
+                                  ErrorText="@_slugError"
+                                  HelperText="@_slugHelperText" />
+                    @if (_isCheckingSlug)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    }
+                    else if (_slugIsAvailable && !string.IsNullOrEmpty(_publicSlug))
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                    }
+                </div>
+
+                @if (_world?.IsPublic == true && !string.IsNullOrEmpty(_world?.PublicSlug))
+                {
+                    <div class="d-flex align-center gap-2 mt-3">
+                        <MudTextField Value="@GetFullPublicUrl()"
+                                      Label="Public URL"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      ReadOnly="true"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                                      OnAdornmentClick="CopyPublicUrl"
+                                      Style="max-width: 500px;" />
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.OpenInNew"
+                                   Href="@GetFullPublicUrl()"
+                                   Target="_blank">
+                            Preview
+                        </MudButton>
+                    </div>
+                }
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    Your world is currently private. Only you and campaign members can access it.
+                </MudText>
+            }
+        </div>
+
         <!-- Stats -->
         <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
             World Statistics
@@ -259,6 +333,14 @@ else if (_world != null)
     private string _editLinkUrl = string.Empty;
     private string _editLinkDescription = string.Empty;
 
+    // Public sharing state
+    private bool _isPublic = false;
+    private string _publicSlug = string.Empty;
+    private bool _isCheckingSlug = false;
+    private bool _slugIsAvailable = false;
+    private string? _slugError = null;
+    private string? _slugHelperText = null;
+
     protected override async Task OnParametersSetAsync()
     {
         await LoadWorldAsync();
@@ -282,6 +364,13 @@ else if (_world != null)
                 _editName = _world.Name;
                 _editDescription = _world.Description ?? string.Empty;
                 _hasUnsavedChanges = false;
+
+                // Initialize public sharing state
+                _isPublic = _world.IsPublic;
+                _publicSlug = _world.PublicSlug ?? string.Empty;
+                _slugIsAvailable = _world.IsPublic; // If already public, slug is valid
+                _slugError = null;
+                _slugHelperText = null;
 
                 _breadcrumbs = BreadcrumbService.ForWorld(_world);
 
@@ -311,6 +400,13 @@ else if (_world != null)
     {
         if (_world == null || _isSaving) return;
 
+        // Validate public slug if making public
+        if (_isPublic && !_slugIsAvailable)
+        {
+            Snackbar.Add("Please enter a valid, available public slug before saving", Severity.Warning);
+            return;
+        }
+
         _isSaving = true;
         StateHasChanged();
 
@@ -319,7 +415,9 @@ else if (_world != null)
             var updateDto = new WorldUpdateDto
             {
                 Name = _editName.Trim(),
-                Description = string.IsNullOrWhiteSpace(_editDescription) ? null : _editDescription.Trim()
+                Description = string.IsNullOrWhiteSpace(_editDescription) ? null : _editDescription.Trim(),
+                IsPublic = _isPublic,
+                PublicSlug = _isPublic ? _publicSlug.Trim().ToLowerInvariant() : null
             };
 
             var updated = await WorldApi.UpdateWorldAsync(WorldId, updateDto);
@@ -327,6 +425,8 @@ else if (_world != null)
             {
                 _world.Name = updated.Name;
                 _world.Description = updated.Description;
+                _world.IsPublic = updated.IsPublic;
+                _world.PublicSlug = updated.PublicSlug;
                 _hasUnsavedChanges = false;
 
                 await TreeState.RefreshAsync();
@@ -611,6 +711,123 @@ else if (_world != null)
         {
             // Fallback to slug only (shouldn't happen for properly created articles)
             Navigation.NavigateTo($"/article/{article.Slug}");
+        }
+    }
+
+    // ===== Public Sharing =====
+
+    private void OnPublicToggleChanged()
+    {
+        _hasUnsavedChanges = true;
+        
+        if (_isPublic && string.IsNullOrEmpty(_publicSlug))
+        {
+            // Suggest a slug based on world name
+            _publicSlug = GenerateSlugFromName(_world?.Name ?? "");
+            _ = CheckSlugAvailability();
+        }
+    }
+
+    private static string GenerateSlugFromName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+        
+        var slug = name.Trim().ToLowerInvariant();
+        slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[\s_]+", "-");
+        slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[^a-z0-9-]", "");
+        slug = System.Text.RegularExpressions.Regex.Replace(slug, @"-+", "-");
+        slug = slug.Trim('-');
+        
+        return slug.Length >= 3 ? slug : slug.PadRight(3, '0');
+    }
+
+    private async Task CheckSlugAvailability()
+    {
+        if (string.IsNullOrWhiteSpace(_publicSlug))
+        {
+            _slugIsAvailable = false;
+            _slugError = null;
+            _slugHelperText = null;
+            return;
+        }
+
+        _isCheckingSlug = true;
+        _slugError = null;
+        _slugHelperText = null;
+        StateHasChanged();
+
+        try
+        {
+            var result = await WorldApi.CheckPublicSlugAsync(WorldId, _publicSlug);
+            
+            if (result == null)
+            {
+                _slugError = "Failed to check availability";
+                _slugIsAvailable = false;
+            }
+            else if (!string.IsNullOrEmpty(result.ValidationError))
+            {
+                _slugError = result.ValidationError;
+                _slugIsAvailable = false;
+                if (!string.IsNullOrEmpty(result.SuggestedSlug))
+                {
+                    _slugHelperText = $"Try: {result.SuggestedSlug}";
+                }
+            }
+            else if (!result.IsAvailable)
+            {
+                _slugError = "This slug is already taken";
+                _slugIsAvailable = false;
+                if (!string.IsNullOrEmpty(result.SuggestedSlug))
+                {
+                    _slugHelperText = $"Try: {result.SuggestedSlug}";
+                }
+            }
+            else
+            {
+                _slugIsAvailable = true;
+                _slugHelperText = "Available!";
+            }
+            
+            _hasUnsavedChanges = true;
+        }
+        catch (Exception ex)
+        {
+            _slugError = $"Error: {ex.Message}";
+            _slugIsAvailable = false;
+        }
+        finally
+        {
+            _isCheckingSlug = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetPublicUrlBase()
+    {
+        var baseUri = Navigation.BaseUri.TrimEnd('/');
+        return $"{baseUri}/w/";
+    }
+
+    private string GetFullPublicUrl()
+    {
+        if (_world == null || string.IsNullOrEmpty(_world.PublicSlug)) return string.Empty;
+        return $"{GetPublicUrlBase()}{_world.PublicSlug}";
+    }
+
+    private async Task CopyPublicUrl()
+    {
+        var url = GetFullPublicUrl();
+        if (string.IsNullOrEmpty(url)) return;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", url);
+            Snackbar.Add("Public URL copied to clipboard", Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add("Failed to copy URL", Severity.Error);
         }
     }
 }

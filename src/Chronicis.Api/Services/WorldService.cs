@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
@@ -15,6 +16,9 @@ public class WorldService : IWorldService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<WorldService> _logger;
+
+    // Regex for valid public slug: lowercase alphanumeric with hyphens, no leading/trailing hyphens
+    private static readonly Regex PublicSlugRegex = new(@"^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.Compiled);
 
     public WorldService(ChronicisDbContext context, ILogger<WorldService> logger)
     {
@@ -90,7 +94,9 @@ public class WorldService : IWorldService
             Slug = slug,
             Description = dto.Description,
             OwnerId = userId,
-            CreatedAt = now
+            CreatedAt = now,
+            IsPublic = false,
+            PublicSlug = null
         };
         _context.Worlds.Add(world);
 
@@ -230,6 +236,51 @@ public class WorldService : IWorldService
         world.Name = dto.Name;
         world.Description = dto.Description;
 
+        // Handle public visibility changes if specified
+        if (dto.IsPublic.HasValue)
+        {
+            if (dto.IsPublic.Value)
+            {
+                // Making world public - require a valid public slug
+                if (string.IsNullOrWhiteSpace(dto.PublicSlug))
+                {
+                    _logger.LogWarning("Attempted to make world {WorldId} public without a public slug", worldId);
+                    return null; // Or throw a validation exception
+                }
+
+                var normalizedSlug = dto.PublicSlug.Trim().ToLowerInvariant();
+                
+                // Validate slug format
+                var validationError = ValidatePublicSlug(normalizedSlug);
+                if (validationError != null)
+                {
+                    _logger.LogWarning("Invalid public slug '{Slug}' for world {WorldId}: {Error}", 
+                        normalizedSlug, worldId, validationError);
+                    return null;
+                }
+
+                // Check availability
+                if (!await IsPublicSlugAvailableAsync(normalizedSlug, worldId))
+                {
+                    _logger.LogWarning("Public slug '{Slug}' is already taken", normalizedSlug);
+                    return null;
+                }
+
+                world.IsPublic = true;
+                world.PublicSlug = normalizedSlug;
+                
+                _logger.LogInformation("World {WorldId} is now public with slug '{PublicSlug}'", worldId, normalizedSlug);
+            }
+            else
+            {
+                // Making world private - clear public slug
+                world.IsPublic = false;
+                world.PublicSlug = null;
+                
+                _logger.LogInformation("World {WorldId} is now private", worldId);
+            }
+        }
+
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Updated world {WorldId}", worldId);
@@ -257,6 +308,143 @@ public class WorldService : IWorldService
     {
         return await _context.Worlds
             .AnyAsync(w => w.Id == worldId && w.OwnerId == userId);
+    }
+
+    /// <summary>
+    /// Check if a public slug is available (not already in use by another world).
+    /// </summary>
+    public async Task<bool> IsPublicSlugAvailableAsync(string publicSlug, Guid? excludeWorldId = null)
+    {
+        var normalizedSlug = publicSlug.Trim().ToLowerInvariant();
+
+        var query = _context.Worlds
+            .AsNoTracking()
+            .Where(w => w.PublicSlug == normalizedSlug);
+
+        if (excludeWorldId.HasValue)
+        {
+            query = query.Where(w => w.Id != excludeWorldId.Value);
+        }
+
+        return !await query.AnyAsync();
+    }
+
+    /// <summary>
+    /// Check public slug availability and return detailed result.
+    /// </summary>
+    public async Task<PublicSlugCheckResultDto> CheckPublicSlugAsync(string slug, Guid? excludeWorldId = null)
+    {
+        var normalizedSlug = slug.Trim().ToLowerInvariant();
+
+        // Validate format first
+        var validationError = ValidatePublicSlug(normalizedSlug);
+        if (validationError != null)
+        {
+            return new PublicSlugCheckResultDto
+            {
+                IsAvailable = false,
+                ValidationError = validationError,
+                SuggestedSlug = GenerateSuggestedSlug(slug)
+            };
+        }
+
+        // Check availability
+        var isAvailable = await IsPublicSlugAvailableAsync(normalizedSlug, excludeWorldId);
+        
+        return new PublicSlugCheckResultDto
+        {
+            IsAvailable = isAvailable,
+            ValidationError = null,
+            SuggestedSlug = isAvailable ? null : await GenerateAvailableSlugAsync(normalizedSlug)
+        };
+    }
+
+    /// <summary>
+    /// Get a world by its public slug (for anonymous access).
+    /// </summary>
+    public async Task<WorldDto?> GetWorldByPublicSlugAsync(string publicSlug)
+    {
+        var normalizedSlug = publicSlug.Trim().ToLowerInvariant();
+
+        var world = await _context.Worlds
+            .AsNoTracking()
+            .Include(w => w.Owner)
+            .Include(w => w.Campaigns)
+            .FirstOrDefaultAsync(w => w.PublicSlug == normalizedSlug && w.IsPublic);
+
+        if (world == null)
+            return null;
+
+        return MapToDto(world);
+    }
+
+    /// <summary>
+    /// Validate a public slug format.
+    /// Returns null if valid, or an error message if invalid.
+    /// </summary>
+    private static string? ValidatePublicSlug(string slug)
+    {
+        if (string.IsNullOrWhiteSpace(slug))
+            return "Public slug is required";
+
+        if (slug.Length < 3)
+            return "Public slug must be at least 3 characters";
+
+        if (slug.Length > 100)
+            return "Public slug must be 100 characters or less";
+
+        if (!PublicSlugRegex.IsMatch(slug))
+            return "Public slug must contain only lowercase letters, numbers, and hyphens (no leading/trailing hyphens)";
+
+        // Reserved slugs that shouldn't be used
+        var reserved = new[] { "api", "admin", "public", "private", "new", "edit", "delete", "search", "login", "logout", "settings" };
+        if (reserved.Contains(slug))
+            return "This slug is reserved and cannot be used";
+
+        return null;
+    }
+
+    /// <summary>
+    /// Generate a suggested slug from user input.
+    /// </summary>
+    private static string GenerateSuggestedSlug(string input)
+    {
+        // Convert to lowercase, replace spaces and underscores with hyphens
+        var slug = input.Trim().ToLowerInvariant();
+        slug = Regex.Replace(slug, @"[\s_]+", "-");
+        // Remove invalid characters
+        slug = Regex.Replace(slug, @"[^a-z0-9-]", "");
+        // Remove consecutive hyphens
+        slug = Regex.Replace(slug, @"-+", "-");
+        // Remove leading/trailing hyphens
+        slug = slug.Trim('-');
+
+        // Ensure minimum length
+        if (slug.Length < 3)
+            slug = slug.PadRight(3, '0');
+
+        return slug;
+    }
+
+    /// <summary>
+    /// Generate an available slug by appending numbers.
+    /// </summary>
+    private async Task<string> GenerateAvailableSlugAsync(string baseSlug)
+    {
+        var suffix = 1;
+        var candidate = $"{baseSlug}-{suffix}";
+
+        while (!await IsPublicSlugAvailableAsync(candidate))
+        {
+            suffix++;
+            candidate = $"{baseSlug}-{suffix}";
+
+            // Safety limit
+            if (suffix > 100)
+                return $"{baseSlug}-{Guid.NewGuid().ToString()[..8]}";
+        }
+
+        return candidate;
     }
 
     /// <summary>
@@ -310,7 +498,9 @@ public class WorldService : IWorldService
             OwnerId = world.OwnerId,
             OwnerName = world.Owner?.DisplayName ?? "Unknown",
             CreatedAt = world.CreatedAt,
-            CampaignCount = world.Campaigns?.Count ?? 0
+            CampaignCount = world.Campaigns?.Count ?? 0,
+            IsPublic = world.IsPublic,
+            PublicSlug = world.PublicSlug
         };
     }
 
@@ -326,6 +516,8 @@ public class WorldService : IWorldService
             OwnerName = world.Owner?.DisplayName ?? "Unknown",
             CreatedAt = world.CreatedAt,
             CampaignCount = world.Campaigns?.Count ?? 0,
+            IsPublic = world.IsPublic,
+            PublicSlug = world.PublicSlug,
             Campaigns = world.Campaigns?.Select(c => new CampaignDto
             {
                 Id = c.Id,
