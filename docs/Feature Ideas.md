@@ -17,7 +17,8 @@
 
 ## Quick Wins
 
-- When adding a campaign and arc, let the user hit enter to save the dialog
+* When adding a campaign and arc, let the user hit enter to save the dialog
+* Take away the redirect to the most recently viewed page
 - Do away with right-click popups where possible
 - Run a cleanup to remove all unused code and styles
 

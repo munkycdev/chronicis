@@ -68,6 +68,14 @@ public static class Auth0AuthenticationHelper
                 return null;
             }
 
+            // DEBUG: Log all claims to help diagnose missing user info
+            Console.WriteLine("=== JWT Claims ===");
+            foreach (var claim in claimsPrincipal.Claims)
+            {
+                Console.WriteLine($"  {claim.Type}: {claim.Value}");
+            }
+            Console.WriteLine("==================");
+
             var auth0UserId = claimsPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value
                              ?? claimsPrincipal.FindFirst("sub")?.Value;
 

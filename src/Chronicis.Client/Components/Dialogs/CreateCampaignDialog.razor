@@ -16,7 +16,8 @@
                       RequiredError="Name is required"
                       Class="mb-3"
                       @ref="_nameField"
-                      Immediate="true" />
+                      Immediate="true"
+                      OnKeyDown="@OnNameKeyDown" />
         
         <MudTextField @bind-Value="_description"
                       Label="Description (optional)"
@@ -60,6 +61,14 @@
     }
 
     private void Cancel() => MudDialog?.Cancel();
+
+    private async Task OnNameKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_name) && !_isSubmitting)
+        {
+            await Submit();
+        }
+    }
 
     private async Task Submit()
     {
