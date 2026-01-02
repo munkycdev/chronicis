@@ -12,6 +12,26 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.2.2] - 2026-01-02
+
+### Public World Viewer Fixes
+
+**Fixed:**
+- Article tree auto-expand now correctly opens to selected article
+- Virtual groups (Player Characters, Wiki) no longer contribute to URL paths
+- Breadcrumbs now include virtual group names (Player Characters, Wiki, Campaign, Arc)
+- Virtual group breadcrumbs are no longer clickable (disabled links)
+- Article icons now render properly using IconDisplay component instead of showing raw Font Awesome class names
+- Markdown rendering now uses Markdig via MarkdownService (replaces basic regex)
+- Main content area now has white background as designed
+
+**Changed:**
+- PublicArticleTreeItem now properly tracks path accumulation for nested articles
+- GetBreadcrumbItems detects virtual groups by Guid.Empty or known slugs
+- BuildPublicBreadcrumbsAsync walks up article hierarchy to determine root article type
+
+---
+
 ## [2.2.1] - 2026-01-01
 
 ### Infrastructure: Application Insights Integration

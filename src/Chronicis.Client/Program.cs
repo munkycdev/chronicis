@@ -20,7 +20,7 @@ var baseUrl = builder.HostEnvironment.BaseAddress.TrimEnd('/');
 // Auth0 Authentication
 builder.Services.AddOidcAuthentication(options =>
 {
-    options.ProviderOptions.Authority = "https://dev-843pl5nrwg3p1xkq.us.auth0.com";
+    options.ProviderOptions.Authority = "https://auth.chronicis.app";
     options.ProviderOptions.ClientId = "Itq22vH9FBHKlYHL1j0A9EgVjA9f6NZQ";
     options.ProviderOptions.ResponseType = "code";
     options.ProviderOptions.RedirectUri = $"{baseUrl}/authentication/login-callback";
