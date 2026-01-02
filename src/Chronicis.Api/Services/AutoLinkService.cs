@@ -59,14 +59,17 @@ public class AutoLinkService : IAutoLinkService
         }
 
         // Get all articles in this world that could be linked to
+        // User must have access to the world via WorldMembers
         // Exclude the current article and get titles with their IDs
-        var linkableArticles = await _context.Articles
-            .Where(a => a.WorldId == worldId)
-            .Where(a => a.CreatedBy == userId)
-            .Where(a => a.Id != articleId)
-            .Where(a => !string.IsNullOrEmpty(a.Title))
-            .Select(a => new { a.Id, a.Title })
-            .ToListAsync();
+        var linkableArticles = await (
+            from a in _context.Articles
+            join wm in _context.WorldMembers on a.WorldId equals wm.WorldId
+            where wm.UserId == userId
+            where a.WorldId == worldId
+            where a.Id != articleId
+            where !string.IsNullOrEmpty(a.Title)
+            select new { a.Id, a.Title }
+        ).ToListAsync();
 
         if (!linkableArticles.Any())
         {

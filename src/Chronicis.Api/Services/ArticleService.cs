@@ -20,14 +20,26 @@ namespace Chronicis.Api.Services
         }
 
         /// <summary>
-        /// Get all root-level articles (ParentId is null) for a specific user.
+        /// Get all articles the user has access to via WorldMembers.
+        /// This is the base query for all article access - use this instead of filtering by CreatedBy.
+        /// </summary>
+        private IQueryable<Article> GetAccessibleArticles(Guid userId)
+        {
+            return from a in _context.Articles
+                   join wm in _context.WorldMembers on a.WorldId equals wm.WorldId
+                   where wm.UserId == userId
+                   select a;
+        }
+
+        /// <summary>
+        /// Get all root-level articles (ParentId is null) for worlds the user has access to.
         /// Optionally filter by WorldId.
         /// </summary>
         public async Task<List<ArticleTreeDto>> GetRootArticlesAsync(Guid userId, Guid? worldId = null)
         {
-            var query = _context.Articles
+            var query = GetAccessibleArticles(userId)
                 .AsNoTracking()
-                .Where(a => a.ParentId == null && a.CreatedBy == userId);
+                .Where(a => a.ParentId == null);
 
             if (worldId.HasValue)
             {
@@ -61,15 +73,13 @@ namespace Chronicis.Api.Services
         }
 
         /// <summary>
-        /// Get all articles for a user in a flat list (no hierarchy).
+        /// Get all articles for worlds the user has access to, in a flat list (no hierarchy).
         /// Useful for dropdowns, linking dialogs, etc.
         /// Optionally filter by WorldId.
         /// </summary>
         public async Task<List<ArticleTreeDto>> GetAllArticlesAsync(Guid userId, Guid? worldId = null)
         {
-            var query = _context.Articles
-                .AsNoTracking()
-                .Where(a => a.CreatedBy == userId);
+            var query = GetAccessibleArticles(userId).AsNoTracking();
 
             if (worldId.HasValue)
             {
@@ -104,12 +114,13 @@ namespace Chronicis.Api.Services
 
         /// <summary>
         /// Get all child articles of a specific parent.
+        /// User must have access to the article's world via WorldMembers.
         /// </summary>
         public async Task<List<ArticleTreeDto>> GetChildrenAsync(Guid parentId, Guid userId)
         {
-            var children = await _context.Articles
+            var children = await GetAccessibleArticles(userId)
                 .AsNoTracking()
-                .Where(a => a.ParentId == parentId && a.CreatedBy == userId)
+                .Where(a => a.ParentId == parentId)
                 .Select(a => new ArticleTreeDto
                 {
                     Id = a.Id,
@@ -137,12 +148,13 @@ namespace Chronicis.Api.Services
 
         /// <summary>
         /// Get full article details including breadcrumb path from root.
+        /// User must have access to the article's world via WorldMembers.
         /// </summary>
         public async Task<ArticleDto?> GetArticleDetailAsync(Guid id, Guid userId)
         {
-            var article = await _context.Articles
+            var article = await GetAccessibleArticles(userId)
                 .AsNoTracking()
-                .Where(a => a.Id == id && a.CreatedBy == userId)
+                .Where(a => a.Id == id)
                 .Select(a => new ArticleDto
                 {
                     Id = a.Id,
@@ -172,7 +184,7 @@ namespace Chronicis.Api.Services
 
             if (article == null)
             {
-                _logger.LogWarning("Article {ArticleId} not found for user {UserId}", id, userId);
+                _logger.LogWarning("Article {ArticleId} not found", id);
                 return null;
             }
 
@@ -187,9 +199,9 @@ namespace Chronicis.Api.Services
         /// </summary>
         public async Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(Guid articleId, Guid? newParentId, Guid userId)
         {
-            // 1. Get the article to move
-            var article = await _context.Articles
-                .FirstOrDefaultAsync(a => a.Id == articleId && a.CreatedBy == userId);
+            // 1. Get the article to move (must be in a world user has access to)
+            var article = await GetAccessibleArticles(userId)
+                .FirstOrDefaultAsync(a => a.Id == articleId);
 
             if (article == null)
             {
@@ -203,12 +215,12 @@ namespace Chronicis.Api.Services
                 return (true, null);
             }
 
-            // 3. If newParentId is specified, validate the target exists and belongs to user
+            // 3. If newParentId is specified, validate the target exists and user has access
             if (newParentId.HasValue)
             {
-                var targetParent = await _context.Articles
+                var targetParent = await GetAccessibleArticles(userId)
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(a => a.Id == newParentId.Value && a.CreatedBy == userId);
+                    .FirstOrDefaultAsync(a => a.Id == newParentId.Value);
 
                 if (targetParent == null)
                 {
@@ -267,9 +279,9 @@ namespace Chronicis.Api.Services
                 }
 
                 // Move up to parent
-                var parent = await _context.Articles
+                var parent = await GetAccessibleArticles(userId)
                     .AsNoTracking()
-                    .Where(a => a.Id == currentId.Value && a.CreatedBy == userId)
+                    .Where(a => a.Id == currentId.Value)
                     .Select(a => new { a.ParentId })
                     .FirstOrDefaultAsync();
 
@@ -292,9 +304,9 @@ namespace Chronicis.Api.Services
             // Walk up the tree to build article path
             while (currentId.HasValue)
             {
-                var article = await _context.Articles
+                var article = await GetAccessibleArticles(userId)
                     .AsNoTracking()
-                    .Where(a => a.Id == currentId && a.CreatedBy == userId)
+                    .Where(a => a.Id == currentId)
                     .Select(a => new { a.Id, a.Title, a.Slug, a.ParentId, a.Type, a.WorldId })
                     .FirstOrDefaultAsync();
 
@@ -361,16 +373,16 @@ namespace Chronicis.Api.Services
             // First segment is the world slug
             var worldSlug = slugs[0];
             
-            // Look up the world by slug for this user
+            // Look up the world by slug - user must be a member of the world
             var world = await _context.Worlds
                 .AsNoTracking()
-                .Where(w => w.Slug == worldSlug && w.OwnerId == userId)
+                .Where(w => w.Slug == worldSlug && w.Members.Any(m => m.UserId == userId))
                 .Select(w => new { w.Id })
                 .FirstOrDefaultAsync();
 
             if (world == null)
             {
-                _logger.LogWarning("World not found for slug '{WorldSlug}' for user {UserId}", worldSlug, userId);
+                _logger.LogWarning("World not found for slug '{WorldSlug}' or user {UserId} doesn't have access", worldSlug, userId);
                 return null;
             }
 
@@ -395,22 +407,20 @@ namespace Chronicis.Api.Services
                 if (isRootLevel)
                 {
                     // Root-level article: filter by WorldId and ParentId = null
-                    article = await _context.Articles
+                    article = await GetAccessibleArticles(userId)
                         .AsNoTracking()
                         .Where(a => a.Slug == slug &&
                                     a.ParentId == null &&
-                                    a.WorldId == world.Id &&
-                                    a.CreatedBy == userId)
+                                    a.WorldId == world.Id)
                         .FirstOrDefaultAsync();
                 }
                 else
                 {
                     // Child article: filter by ParentId
-                    article = await _context.Articles
+                    article = await GetAccessibleArticles(userId)
                         .AsNoTracking()
                         .Where(a => a.Slug == slug &&
-                                    a.ParentId == currentParentId &&
-                                    a.CreatedBy == userId)
+                                    a.ParentId == currentParentId)
                         .FirstOrDefaultAsync();
                 }
 
@@ -443,21 +453,19 @@ namespace Chronicis.Api.Services
             if (parentId.HasValue)
             {
                 // Child article: unique among siblings with same parent
-                query = _context.Articles
+                query = GetAccessibleArticles(userId)
                     .AsNoTracking()
                     .Where(a => a.Slug == slug &&
-                                a.ParentId == parentId &&
-                                a.CreatedBy == userId);
+                                a.ParentId == parentId);
             }
             else
             {
                 // Root article: unique among root articles in the same world
-                query = _context.Articles
+                query = GetAccessibleArticles(userId)
                     .AsNoTracking()
                     .Where(a => a.Slug == slug &&
                                 a.ParentId == null &&
-                                a.WorldId == worldId &&
-                                a.CreatedBy == userId);
+                                a.WorldId == worldId);
             }
 
             if (excludeArticleId.HasValue)
@@ -482,16 +490,16 @@ namespace Chronicis.Api.Services
             if (parentId.HasValue)
             {
                 // Child article: get slugs from siblings with same parent
-                query = _context.Articles
+                query = GetAccessibleArticles(userId)
                     .AsNoTracking()
-                    .Where(a => a.ParentId == parentId && a.CreatedBy == userId);
+                    .Where(a => a.ParentId == parentId);
             }
             else
             {
                 // Root article: get slugs from root articles in the same world
-                query = _context.Articles
+                query = GetAccessibleArticles(userId)
                     .AsNoTracking()
-                    .Where(a => a.ParentId == null && a.WorldId == worldId && a.CreatedBy == userId);
+                    .Where(a => a.ParentId == null && a.WorldId == worldId);
             }
 
             var existingSlugs = await query

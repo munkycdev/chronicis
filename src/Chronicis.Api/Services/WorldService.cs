@@ -448,7 +448,8 @@ public class WorldService : IWorldService
     }
 
     /// <summary>
-    /// Get a world by its slug for a specific owner.
+    /// <summary>
+    /// Get a world by its slug - user must be a member of the world.
     /// </summary>
     public async Task<WorldDto?> GetWorldBySlugAsync(string slug, Guid userId)
     {
@@ -456,7 +457,8 @@ public class WorldService : IWorldService
             .AsNoTracking()
             .Include(w => w.Owner)
             .Include(w => w.Campaigns)
-            .FirstOrDefaultAsync(w => w.Slug == slug && w.OwnerId == userId);
+            .Include(w => w.Members)
+            .FirstOrDefaultAsync(w => w.Slug == slug && w.Members.Any(m => m.UserId == userId));
 
         if (world == null)
             return null;

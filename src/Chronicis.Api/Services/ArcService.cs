@@ -17,16 +17,21 @@ public class ArcService : IArcService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Check if user has access to a campaign (via world membership).
+    /// </summary>
+    private async Task<bool> UserHasCampaignAccessAsync(Guid campaignId, Guid userId)
+    {
+        return await _context.Campaigns
+            .AnyAsync(c => c.Id == campaignId && c.World.Members.Any(m => m.UserId == userId));
+    }
+
     public async Task<List<ArcDto>> GetArcsByCampaignAsync(Guid campaignId, Guid userId)
     {
-        // Verify user has access to the campaign
-        var campaign = await _context.Campaigns
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == campaignId && c.OwnerId == userId);
-
-        if (campaign == null)
+        // Verify user has access to the campaign via world membership
+        if (!await UserHasCampaignAccessAsync(campaignId, userId))
         {
-            _logger.LogWarning("Campaign {CampaignId} not found for user {UserId}", campaignId, userId);
+            _logger.LogWarning("Campaign {CampaignId} not found or user {UserId} doesn't have access", campaignId, userId);
             return new List<ArcDto>();
         }
 
@@ -55,7 +60,7 @@ public class ArcService : IArcService
     {
         return await _context.Arcs
             .AsNoTracking()
-            .Where(a => a.Id == arcId && a.Campaign.OwnerId == userId)
+            .Where(a => a.Id == arcId && a.Campaign.World.Members.Any(m => m.UserId == userId))
             .Select(a => new ArcDto
             {
                 Id = a.Id,
@@ -74,14 +79,10 @@ public class ArcService : IArcService
 
     public async Task<ArcDto?> CreateArcAsync(ArcCreateDto dto, Guid userId)
     {
-        // Verify user owns the campaign
-        var campaign = await _context.Campaigns
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == dto.CampaignId && c.OwnerId == userId);
-
-        if (campaign == null)
+        // Verify user has access to the campaign via world membership
+        if (!await UserHasCampaignAccessAsync(dto.CampaignId, userId))
         {
-            _logger.LogWarning("Campaign {CampaignId} not found for user {UserId}", dto.CampaignId, userId);
+            _logger.LogWarning("Campaign {CampaignId} not found or user {UserId} doesn't have access", dto.CampaignId, userId);
             return null;
         }
 
@@ -130,11 +131,11 @@ public class ArcService : IArcService
     {
         var arc = await _context.Arcs
             .Include(a => a.Creator)
-            .FirstOrDefaultAsync(a => a.Id == arcId && a.Campaign.OwnerId == userId);
+            .FirstOrDefaultAsync(a => a.Id == arcId && a.Campaign.World.Members.Any(m => m.UserId == userId));
 
         if (arc == null)
         {
-            _logger.LogWarning("Arc {ArcId} not found for user {UserId}", arcId, userId);
+            _logger.LogWarning("Arc {ArcId} not found or user {UserId} doesn't have access", arcId, userId);
             return null;
         }
 
@@ -170,11 +171,11 @@ public class ArcService : IArcService
     public async Task<bool> DeleteArcAsync(Guid arcId, Guid userId)
     {
         var arc = await _context.Arcs
-            .FirstOrDefaultAsync(a => a.Id == arcId && a.Campaign.OwnerId == userId);
+            .FirstOrDefaultAsync(a => a.Id == arcId && a.Campaign.World.Members.Any(m => m.UserId == userId));
 
         if (arc == null)
         {
-            _logger.LogWarning("Arc {ArcId} not found for user {UserId}", arcId, userId);
+            _logger.LogWarning("Arc {ArcId} not found or user {UserId} doesn't have access", arcId, userId);
             return false;
         }
 
@@ -197,13 +198,15 @@ public class ArcService : IArcService
     {
         var arc = await _context.Arcs
             .Include(a => a.Campaign)
+                .ThenInclude(c => c.World)
+                    .ThenInclude(w => w.Members)
             .FirstOrDefaultAsync(a => a.Id == arcId);
 
         if (arc == null)
             return false;
 
-        // Only campaign owner can activate arcs
-        if (arc.Campaign.OwnerId != userId)
+        // User must be a member of the world to activate arcs
+        if (!arc.Campaign.World.Members.Any(m => m.UserId == userId))
             return false;
 
         // Deactivate all arcs in the same campaign
