@@ -4,6 +4,23 @@
    ============================================ */
 
 /* ============================================
+   Focus Outline Prevention for Non-Interactive Elements
+   ============================================ */
+
+/* Remove focus outline from non-interactive elements */
+h1:focus, h2:focus, h3:focus, h4:focus, h5:focus, h6:focus,
+p:focus, span:focus, div:focus, section:focus,
+.hero-title:focus, .section-title:focus {
+    outline: none;
+}
+
+/* Keep focus outlines for interactive elements (accessibility) */
+a:focus, button:focus, input:focus, textarea:focus, select:focus,
+[tabindex]:not([tabindex="-1"]):focus {
+    outline: auto;
+}
+
+/* ============================================
    Public Layout
    ============================================ */
 

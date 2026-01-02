@@ -7,12 +7,18 @@
 
 ### General
 - Make it work on an iPad
+    - Figure out how to perform the right-click operations
+    - Drag and drop reorganization doesn't work
 
+---
+
+## Styling
+
+- Campaign pages that have an intro blurb - make the textbox grow as large as it needs to
 ---
 
 ## Quick Wins
 
-* Take away the redirect to the most recently viewed page
 - Do away with right-click popups where possible
 - Run a cleanup to remove all unused code and styles
 
@@ -22,6 +28,7 @@
 
 - Mark as private
 - Add Azure AI Search as a replacement for the global search
+- Ability to link to external documents and view summaries
 
 ---
 
@@ -29,14 +36,6 @@
 
 - Add the ability to generate an AI summary of child summary notes
 - Perhaps not require an Arc, so can add either an arc or a session?
-
----
-
-## User Profile
-
-- Ability to set a name
-- Profile picture
-- Email
 
 ---
 
@@ -65,6 +64,3 @@
 ## General / Infrastructure
 
 - Make sure global search works with linked entries and the links themselves
-- Icons in breadcrumbs and tree view consistency
-- Unit tests for services
-- Integration tests for API endpoints

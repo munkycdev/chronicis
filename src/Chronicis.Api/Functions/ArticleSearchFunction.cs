@@ -143,7 +143,9 @@ public class ArticleSearchFunction
     {
         var breadcrumbs = new List<BreadcrumbDto>();
         var current = await _context.Articles.FindAsync(articleId);
+        Guid? worldId = null;
 
+        // Walk up the tree to build article path
         while (current != null)
         {
             breadcrumbs.Insert(0, new BreadcrumbDto
@@ -151,13 +153,42 @@ public class ArticleSearchFunction
                 Id = current.Id,
                 Title = string.IsNullOrEmpty(current.Title) ? "(Untitled)" : current.Title,
                 Slug = current.Slug,
-                Type = current.Type
+                Type = current.Type,
+                IsWorld = false
             });
+
+            // Capture the world ID from the first article we find it on
+            if (worldId == null && current.WorldId.HasValue)
+            {
+                worldId = current.WorldId;
+            }
 
             if (current.ParentId.HasValue)
                 current = await _context.Articles.FindAsync(current.ParentId.Value);
             else
                 break;
+        }
+
+        // Prepend world breadcrumb if we found a world
+        if (worldId.HasValue)
+        {
+            var world = await _context.Worlds
+                .AsNoTracking()
+                .Where(w => w.Id == worldId.Value)
+                .Select(w => new { w.Id, w.Name, w.Slug })
+                .FirstOrDefaultAsync();
+
+            if (world != null)
+            {
+                breadcrumbs.Insert(0, new BreadcrumbDto
+                {
+                    Id = world.Id,
+                    Title = world.Name,
+                    Slug = world.Slug,
+                    Type = default, // Not applicable for worlds
+                    IsWorld = true
+                });
+            }
         }
 
         return breadcrumbs;

@@ -4,6 +4,7 @@
 @using Chronicis.Shared.Enums
 @using Chronicis.Shared.Utilities
 @using Blazored.LocalStorage
+@using Microsoft.JSInterop
 @inject IArticleApiService ArticleApi
 @inject ILinkApiService LinkApiService
 @inject IWikiLinkService WikiLinkService
@@ -135,6 +136,7 @@ else
     private Timer? _autoSaveTimer;
     private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
     private ArticleMetadataDrawer? _metadataDrawer;
+    private bool _disposed = false;
     
     // Autocomplete state
     private bool _showAutocomplete = false;
@@ -174,10 +176,15 @@ else
 
     public void Dispose()
     {
+        _disposed = true;
         TreeState.OnStateChanged -= OnTreeStateChanged;
         OnCtrlNPressed -= HandleCtrlNInstance;
         _autoSaveTimer?.Dispose();
-        _dotNetHelper?.Dispose();
+        
+        // Clear and dispose the DotNetObjectReference
+        var helper = _dotNetHelper;
+        _dotNetHelper = null;
+        helper?.Dispose();
     }
 
     #endregion
@@ -234,31 +241,55 @@ else
 
     private async void OnTreeStateChanged()
     {
+        if (_disposed) return;
+        
         await InvokeAsync(async () =>
         {
-            if (_editorInitialized && _article != null)
+            if (_disposed) return;
+            
+            try
             {
-                await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{_article.Id}");
+                if (_editorInitialized && _article != null)
+                {
+                    await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{_article.Id}");
+                }
+
+                _editorInitialized = false;
+
+                if (_disposed) return;
+
+                if (TreeState.SelectedArticleId.HasValue && TreeState.SelectedArticleId.Value != Guid.Empty)
+                {
+                    await LoadArticleAsync(TreeState.SelectedArticleId.Value);
+                }
+                else
+                {
+                    _article = null;
+                    if (!_disposed)
+                    {
+                        await JSRuntime.InvokeVoidAsync("eval", "document.title = 'Chronicis'");
+                    }
+                }
+
+                if (_disposed) return;
+                StateHasChanged();
+
+                if (_article != null && !_disposed)
+                {
+                    await Task.Delay(100);
+                    if (!_disposed)
+                    {
+                        await InitializeEditor();
+                    }
+                }
             }
-
-            _editorInitialized = false;
-
-            if (TreeState.SelectedArticleId.HasValue && TreeState.SelectedArticleId.Value != Guid.Empty)
+            catch (ObjectDisposedException)
             {
-                await LoadArticleAsync(TreeState.SelectedArticleId.Value);
+                // Component was disposed during async operation - this is expected during navigation
             }
-            else
+            catch (JSDisconnectedException)
             {
-                _article = null;
-                await JSRuntime.InvokeVoidAsync("eval", "document.title = 'Chronicis'");
-            }
-
-            StateHasChanged();
-
-            if (_article != null)
-            {
-                await Task.Delay(100);
-                await InitializeEditor();
+                // JS runtime disconnected - this is expected during navigation
             }
         });
     }
@@ -334,17 +365,31 @@ else
 
     private async Task InitializeEditor()
     {
-        if (_article != null && !_editorInitialized)
+        if (_article != null && !_editorInitialized && !_disposed && _dotNetHelper != null)
         {
             try
             {
                 await JSRuntime.InvokeVoidAsync("initializeTipTapEditor", $"tiptap-editor-{_article.Id}", _editBody, _dotNetHelper);
+                
+                if (_disposed) return;
+                
                 await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", $"tiptap-editor-{_article.Id}", _dotNetHelper);
                 _editorInitialized = true;
             }
+            catch (ObjectDisposedException)
+            {
+                // Component was disposed during async operation - this is expected during navigation
+            }
+            catch (JSDisconnectedException)
+            {
+                // JS runtime disconnected - this is expected during navigation
+            }
             catch (Exception ex)
             {
-                Snackbar.Add($"Failed to initialize editor: {ex.Message}", Severity.Warning);
+                if (!_disposed)
+                {
+                    Snackbar.Add($"Failed to initialize editor: {ex.Message}", Severity.Warning);
+                }
             }
         }
     }
