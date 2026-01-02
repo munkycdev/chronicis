@@ -497,6 +497,7 @@ else if (_world != null)
             {
                 // Reload links to get proper alphabetical order
                 _links = await WorldApi.GetWorldLinksAsync(WorldId);
+                await TreeState.RefreshAsync();
                 _isAddingLink = false;
                 _newLinkTitle = string.Empty;
                 _newLinkUrl = string.Empty;
@@ -570,6 +571,7 @@ else if (_world != null)
             {
                 // Reload links to get proper alphabetical order
                 _links = await WorldApi.GetWorldLinksAsync(WorldId);
+                await TreeState.RefreshAsync();
                 _editingLinkId = null;
                 _editLinkTitle = string.Empty;
                 _editLinkUrl = string.Empty;
@@ -608,6 +610,7 @@ else if (_world != null)
             if (deleted)
             {
                 _links.Remove(link);
+                await TreeState.RefreshAsync();
                 Snackbar.Add("Link deleted", Severity.Success);
                 StateHasChanged();
             }

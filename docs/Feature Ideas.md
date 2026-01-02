@@ -5,19 +5,13 @@
 ### Article
 - Sometimes, when I load a long article, scroll down a ways, and type [[, it doesn't load the link autocomplete popup. Sometimes it does. Seems inconsistent.
 
-### World
-- After adding an external link, the nav tree should reload
-
 ### General
-- When reloading the nav tree, is it possible to only reload the appropriate node?
 - Make it work on an iPad
-- Can we keep the Azure API from going to sleep? The first time I use it things are really slow
 
 ---
 
 ## Quick Wins
 
-* When adding a campaign and arc, let the user hit enter to save the dialog
 * Take away the redirect to the most recently viewed page
 - Do away with right-click popups where possible
 - Run a cleanup to remove all unused code and styles
