@@ -31,12 +31,19 @@ Chronicis is a web-based knowledge management application for tabletop RPG campa
 
 ### Infrastructure
 - **Hosting:** Azure Static Web Apps
-- **Secrets:** Azure Key Vault
+- **Secrets:** Azure Key Vault (`kv-chronicis-dev`)
 - **CI/CD:** GitHub Actions
 - **AI Services:** Azure OpenAI (GPT-4.1-mini)
 - **Monitoring:** Application Insights (`appi-chronicis-dev`)
   - Telemetry from Azure Functions (Worker Service integration)
   - Availability test for keep-alive (5-minute interval)
+
+### Auth0 Configuration
+- **Custom Domain:** `auth.chronicis.app`
+- **Tenant:** `dev-843pl5nrwg3p1xkq.us.auth0.com`
+- **Social Connections:** Discord, Google
+- **Key Vault Secrets:**
+  - `Discord-ClientSecret` - Discord OAuth client secret (for Auth0 social connection)
 
 ---
 
