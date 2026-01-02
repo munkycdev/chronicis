@@ -446,7 +446,7 @@ public class PublicWorldService : IPublicWorldService
 
     /// <summary>
     /// Build breadcrumb trail for public article viewing.
-    /// Includes Campaign and Arc for session articles.
+    /// Includes virtual groups (Campaigns/Arc, Player Characters, Wiki) based on article type.
     /// Only includes articles that are publicly visible.
     /// </summary>
     private async Task<List<BreadcrumbDto>> BuildPublicBreadcrumbsAsync(
@@ -457,11 +457,11 @@ public class PublicWorldService : IPublicWorldService
     {
         var breadcrumbs = new List<BreadcrumbDto>();
         
-        // Get the article to check for Campaign/Arc
+        // Get the article to check for Campaign/Arc and Type
         var targetArticle = await _context.Articles
             .AsNoTracking()
             .Where(a => a.Id == articleId)
-            .Select(a => new { a.CampaignId, a.ArcId, a.ParentId })
+            .Select(a => new { a.CampaignId, a.ArcId, a.ParentId, a.Type })
             .FirstOrDefaultAsync();
 
         // Start with World breadcrumb
@@ -474,9 +474,10 @@ public class PublicWorldService : IPublicWorldService
             IsWorld = true
         });
 
-        // Add Campaign breadcrumb if article belongs to a campaign
+        // Add virtual group breadcrumb based on article type and context
         if (targetArticle?.CampaignId.HasValue == true)
         {
+            // Session articles: Add Campaign breadcrumb
             var campaign = await _context.Campaigns
                 .AsNoTracking()
                 .Where(c => c.Id == targetArticle.CampaignId.Value)
@@ -494,24 +495,71 @@ public class PublicWorldService : IPublicWorldService
                     IsWorld = false
                 });
             }
+
+            // Add Arc breadcrumb if article belongs to an arc
+            if (targetArticle.ArcId.HasValue)
+            {
+                var arc = await _context.Arcs
+                    .AsNoTracking()
+                    .Where(a => a.Id == targetArticle.ArcId.Value)
+                    .Select(a => new { a.Id, a.Name })
+                    .FirstOrDefaultAsync();
+
+                if (arc != null)
+                {
+                    breadcrumbs.Add(new BreadcrumbDto
+                    {
+                        Id = arc.Id,
+                        Title = arc.Name,
+                        Slug = arc.Name.ToLowerInvariant().Replace(" ", "-"),
+                        Type = default,
+                        IsWorld = false
+                    });
+                }
+            }
         }
-
-        // Add Arc breadcrumb if article belongs to an arc
-        if (targetArticle?.ArcId.HasValue == true)
+        else if (targetArticle != null)
         {
-            var arc = await _context.Arcs
-                .AsNoTracking()
-                .Where(a => a.Id == targetArticle.ArcId.Value)
-                .Select(a => new { a.Id, a.Name })
-                .FirstOrDefaultAsync();
-
-            if (arc != null)
+            // Non-session articles: Add virtual group based on type
+            // We need to check the root article's type (walk up to find it)
+            var rootArticleType = targetArticle.Type;
+            var currentParentId = targetArticle.ParentId;
+            
+            // Walk up to find the root article's type
+            while (currentParentId.HasValue)
+            {
+                var parentArticle = await _context.Articles
+                    .AsNoTracking()
+                    .Where(a => a.Id == currentParentId.Value)
+                    .Select(a => new { a.Type, a.ParentId })
+                    .FirstOrDefaultAsync();
+                    
+                if (parentArticle == null)
+                    break;
+                    
+                rootArticleType = parentArticle.Type;
+                currentParentId = parentArticle.ParentId;
+            }
+            
+            // Add virtual group breadcrumb based on root article type
+            if (rootArticleType == ArticleType.Character)
             {
                 breadcrumbs.Add(new BreadcrumbDto
                 {
-                    Id = arc.Id,
-                    Title = arc.Name,
-                    Slug = arc.Name.ToLowerInvariant().Replace(" ", "-"),
+                    Id = Guid.Empty, // Virtual group marker
+                    Title = "Player Characters",
+                    Slug = "characters",
+                    Type = default,
+                    IsWorld = false
+                });
+            }
+            else if (rootArticleType == ArticleType.WikiArticle)
+            {
+                breadcrumbs.Add(new BreadcrumbDto
+                {
+                    Id = Guid.Empty, // Virtual group marker
+                    Title = "Wiki",
+                    Slug = "wiki",
                     Type = default,
                     IsWorld = false
                 });
@@ -545,7 +593,7 @@ public class PublicWorldService : IPublicWorldService
             currentId = article.ParentId;
         }
 
-        // Add article breadcrumbs after world/campaign/arc
+        // Add article breadcrumbs after world/virtual group
         breadcrumbs.AddRange(articleBreadcrumbs);
 
         return breadcrumbs;

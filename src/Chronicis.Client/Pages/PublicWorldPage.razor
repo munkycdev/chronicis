@@ -144,7 +144,7 @@ else
                     <div class="d-flex align-center gap-3 mb-4">
                         @if (!string.IsNullOrEmpty(_currentArticle.IconEmoji))
                         {
-                            <span style="font-size: 2rem;">@_currentArticle.IconEmoji</span>
+                            <IconDisplay Icon="@_currentArticle.IconEmoji" DefaultIcon="" Style="font-size: 2rem;" />
                         }
                         <div>
                             <MudText Typo="Typo.h4">@_currentArticle.Title</MudText>
@@ -402,25 +402,62 @@ else
         
         if (_currentArticle?.Breadcrumbs == null) return items;
 
+        // Determine which breadcrumbs are virtual (Campaign/Arc/Player Characters/Wiki) vs real articles
+        var campaignId = _currentArticle.CampaignId;
+        var arcId = _currentArticle.ArcId;
+        
+        // Virtual group slugs that shouldn't be clickable
+        var virtualGroupSlugs = new HashSet<string> { "characters", "wiki", "campaigns", "uncategorized" };
+
         foreach (var crumb in _currentArticle.Breadcrumbs)
         {
+            var isLast = crumb.Id == _currentArticle.Id;
+            
             if (crumb.IsWorld)
             {
+                // World - always clickable, goes back to world landing
                 items.Add(new BreadcrumbItem(crumb.Title, $"/w/{PublicSlug}"));
+            }
+            else if (crumb.Id == Guid.Empty || virtualGroupSlugs.Contains(crumb.Slug.ToLowerInvariant()))
+            {
+                // Virtual group breadcrumb (Player Characters, Wiki, etc.) - not clickable
+                items.Add(new BreadcrumbItem(crumb.Title, null, disabled: true));
+            }
+            else if (campaignId.HasValue && crumb.Id == campaignId.Value)
+            {
+                // Campaign breadcrumb - virtual, not clickable
+                items.Add(new BreadcrumbItem(crumb.Title, null, disabled: true));
+            }
+            else if (arcId.HasValue && crumb.Id == arcId.Value)
+            {
+                // Arc breadcrumb - virtual, not clickable
+                items.Add(new BreadcrumbItem(crumb.Title, null, disabled: true));
             }
             else
             {
-                // Build path from world to this article
-                var pathSegments = _currentArticle.Breadcrumbs
-                    .Where(b => !b.IsWorld)
-                    .TakeWhile(b => b.Id != crumb.Id)
-                    .Select(b => b.Slug)
-                    .ToList();
-                pathSegments.Add(crumb.Slug);
-                var path = string.Join("/", pathSegments);
-                
-                var isLast = crumb.Id == _currentArticle.Id;
-                items.Add(new BreadcrumbItem(crumb.Title, isLast ? null : $"/w/{PublicSlug}/{path}", isLast));
+                // Real article breadcrumb
+                if (isLast)
+                {
+                    items.Add(new BreadcrumbItem(crumb.Title, null, disabled: true));
+                }
+                else
+                {
+                    // Build path for this article
+                    // Only include real article slugs (not virtual groups)
+                    var articleSlugs = _currentArticle.Breadcrumbs
+                        .Where(b => !b.IsWorld && 
+                               b.Id != Guid.Empty &&
+                               !virtualGroupSlugs.Contains(b.Slug.ToLowerInvariant()) &&
+                               !(campaignId.HasValue && b.Id == campaignId.Value) &&
+                               !(arcId.HasValue && b.Id == arcId.Value))
+                        .TakeWhile(b => b.Id != crumb.Id)
+                        .Select(b => b.Slug)
+                        .ToList();
+                    articleSlugs.Add(crumb.Slug);
+                    var path = string.Join("/", articleSlugs);
+                    
+                    items.Add(new BreadcrumbItem(crumb.Title, $"/w/{PublicSlug}/{path}"));
+                }
             }
         }
 
