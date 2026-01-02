@@ -53,6 +53,7 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 - Azure Functions backend with global authentication middleware
 - Azure SQL Database with Entity Framework Core
 - Centralized HttpClient with automatic token attachment
+- Application Insights telemetry with availability test keep-alive
 
 ### Known Issues
 

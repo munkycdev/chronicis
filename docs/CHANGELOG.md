@@ -12,6 +12,22 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.2.1] - 2026-01-01
+
+### Infrastructure: Application Insights Integration
+
+**Added:**
+- Application Insights resource (`appi-chronicis-dev`) for telemetry and monitoring
+- `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable in Azure and local settings
+- Availability test configured to ping `/api/health` every 5 minutes (keeps Functions warm)
+
+**Context:**
+- Azure Functions cold starts were causing client timeouts on first API calls
+- Availability test acts as a keep-alive ping to prevent scale-to-zero
+- Telemetry provides logging, performance metrics, and error tracking for future debugging
+
+---
+
 ## [2.2.0] - 2026-01-01
 
 ### Public World Sharing

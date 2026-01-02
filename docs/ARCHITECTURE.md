@@ -34,7 +34,9 @@ Chronicis is a web-based knowledge management application for tabletop RPG campa
 - **Secrets:** Azure Key Vault
 - **CI/CD:** GitHub Actions
 - **AI Services:** Azure OpenAI (GPT-4.1-mini)
-- **Monitoring:** Application Insights
+- **Monitoring:** Application Insights (`appi-chronicis-dev`)
+  - Telemetry from Azure Functions (Worker Service integration)
+  - Availability test for keep-alive (5-minute interval)
 
 ---
 
