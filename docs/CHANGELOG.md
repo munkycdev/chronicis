@@ -12,6 +12,51 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.4.0] - 2026-01-02
+
+### Private Articles
+
+**Added:**
+- Privacy toggle in article metadata drawer (right panel)
+- Only article creators can toggle their articles' privacy
+- Private articles show lock icon in tree view (replaces normal icon)
+- Lock icon updates immediately when toggling privacy (no tree reload)
+- `UpdateNodeVisibility()` method in TreeStateService for real-time UI updates
+
+**Backend:**
+- `GetAccessibleArticles()` helper filters private articles server-side
+- Private articles only returned to their creator via WorldMembers join
+- Refactored all ArticleService methods to use centralized access helper
+
+**UI:**
+- Private articles display 🔒 lock icon instead of article type icon
+- Tooltip "Private - only you can see this" on hover
+- `.tree-node__icon--private` CSS class with muted gold styling
+
+---
+
+## [2.3.1] - 2026-01-02
+
+### World Membership Article Access Fix
+
+**Fixed:**
+- Invited users can now see and navigate articles in worlds they've joined
+- Article tree loads correctly for non-owner world members
+- Clicking articles in nav tree now works for all world members
+
+**Changed:**
+- Refactored ArticleService to use `GetAccessibleArticles()` IQueryable helper
+- Replaced `CreatedBy == userId` checks with WorldMembers join pattern
+- All article queries now check world membership instead of article ownership
+- AutoLinkService updated to use WorldMembers for linkable articles
+
+**Technical:**
+- Added reusable `GetAccessibleArticles(Guid userId)` method
+- Uses LINQ join: `Articles JOIN WorldMembers ON WorldId WHERE UserId`
+- Private articles filtered: `Visibility != Private OR CreatedBy == userId`
+
+---
+
 ## [2.3.0] - 2026-01-02
 
 ### Multi-User World Collaboration

@@ -139,6 +139,12 @@
     text-align: center;
 }
 
+/* Private article icon */
+.tree-node__icon--private {
+    color: var(--chronicis-muted-gold) !important;
+    opacity: 0.8;
+}
+
 /* Title */
 .tree-node__title {
     flex: 1;

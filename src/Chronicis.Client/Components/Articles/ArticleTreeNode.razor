@@ -1,4 +1,5 @@
 @using Chronicis.Client.Models
+@using Chronicis.Shared.Enums
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
@@ -33,13 +34,23 @@
             <div class="tree-node__expand-spacer"></div>
         }
         
-        @* Icon - based on node type *@
+        @* Icon - based on node type, or lock icon if private *@
         @{
+            var isPrivate = Node.NodeType == TreeNodeType.Article && Node.Visibility == ArticleVisibility.Private;
             var icon = GetNodeIcon();
             var iconColorClass = GetIconColorClass();
             var titleClasses = GetTitleClasses();
         }
-        @if (!string.IsNullOrEmpty(icon) && icon.StartsWith("fa-"))
+        @if (isPrivate)
+        {
+            <MudTooltip Text="Private - only you can see this" Delay="300">
+                <MudIcon 
+                    Icon="@Icons.Material.Filled.Lock" 
+                    Size="Size.Small"
+                    Class="tree-node__icon tree-node__icon--material tree-node__icon--private" />
+            </MudTooltip>
+        }
+        else if (!string.IsNullOrEmpty(icon) && icon.StartsWith("fa-"))
         {
             <i class="@($"{icon} tree-node__icon tree-node__icon--fa {iconColorClass}")"></i>
         }

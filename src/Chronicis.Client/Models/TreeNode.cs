@@ -68,6 +68,11 @@ public class TreeNode
     /// For ExternalLink nodes, the URL to navigate to.
     /// </summary>
     public string? Url { get; set; }
+    
+    /// <summary>
+    /// For article nodes, the visibility setting.
+    /// </summary>
+    public ArticleVisibility Visibility { get; set; } = ArticleVisibility.Public;
 
     /// <summary>
     /// Number of children (from server or computed).

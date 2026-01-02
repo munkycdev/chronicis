@@ -1,5 +1,6 @@
 using Chronicis.Client.Models;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 
 namespace Chronicis.Client.Services;
 
@@ -141,6 +142,11 @@ public interface ITreeStateService
     /// Update a node's display properties (title, icon) after an article is saved.
     /// </summary>
     void UpdateNodeDisplay(Guid nodeId, string title, string? iconEmoji);
+    
+    /// <summary>
+    /// Update a node's visibility after privacy is toggled.
+    /// </summary>
+    void UpdateNodeVisibility(Guid nodeId, ArticleVisibility visibility);
     
     // ============================================
     // Search/Filter

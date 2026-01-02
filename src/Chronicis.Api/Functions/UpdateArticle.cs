@@ -62,15 +62,29 @@ public class UpdateArticle
                 return validationError;
             }
 
+            // Get article if user has access via world membership
             var article = await _context.Articles
                 .Include(a => a.Children)
-                .FirstOrDefaultAsync(a => a.Id == id && a.CreatedBy == user.Id);
+                .Where(a => a.Id == id)
+                .Where(a => a.WorldId.HasValue && 
+                            _context.WorldMembers.Any(wm => wm.WorldId == a.WorldId.Value && wm.UserId == user.Id))
+                .FirstOrDefaultAsync();
 
             if (article == null)
             {
                 var notFound = req.CreateResponse(HttpStatusCode.NotFound);
                 await notFound.WriteStringAsync("Article not found");
                 return notFound;
+            }
+
+            // Only the creator can change visibility to Private
+            if (dto.Visibility.HasValue && 
+                dto.Visibility.Value == Chronicis.Shared.Enums.ArticleVisibility.Private && 
+                article.CreatedBy != user.Id)
+            {
+                var forbidden = req.CreateResponse(HttpStatusCode.Forbidden);
+                await forbidden.WriteStringAsync("Only the article creator can make an article private");
+                return forbidden;
             }
 
             article.Title = dto.Title;

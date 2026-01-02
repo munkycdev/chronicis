@@ -1,6 +1,13 @@
 @* ArticleMetadataDrawer.razor - Right-side metadata panel for articles *@
 @* Includes outgoing links, backlinks, and article info *@
 
+@using Chronicis.Shared.Enums
+@using Chronicis.Shared.DTOs
+@inject IArticleApiService ArticleApi
+@inject IUserApiService UserApi
+@inject ITreeStateService TreeState
+@inject ISnackbar Snackbar
+
 <style>
     .metadata-drawer,
     .metadata-drawer .mud-drawer-content {
@@ -56,6 +63,38 @@
         <MudText Typo="Typo.subtitle2" Class="px-4 py-2" Style="color: var(--mud-palette-text-secondary);">
             Article Info
         </MudText>
+        
+        @* Privacy Toggle - only visible to article creator *@
+        @if (_isCreator)
+        {
+            <div class="px-4 py-2">
+                <MudSwitch T="bool" 
+                           Value="@_isPrivate" 
+                           ValueChanged="@OnPrivacyToggled"
+                           Color="Color.Primary"
+                           Label="@(_isPrivate ? "Private (only you can see this)" : "Visible to world members")"
+                           Disabled="_isSavingPrivacy" />
+                @if (_isPrivate)
+                {
+                    <MudText Typo="Typo.caption" Class="mt-1" Style="color: var(--mud-palette-text-secondary);">
+                        <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Style="vertical-align: middle;" />
+                        Only you can view this article
+                    </MudText>
+                }
+            </div>
+            <MudDivider Class="my-2" />
+        }
+        else if (Article.Visibility == ArticleVisibility.Private)
+        {
+            <div class="px-4 py-2">
+                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                    <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Style="vertical-align: middle;" />
+                    This article is private to its creator
+                </MudText>
+            </div>
+            <MudDivider Class="my-2" />
+        }
+        
         <MudList T="string">
             <MudListItem>
                 <MudText Typo="Typo.subtitle1">Article ID</MudText>
@@ -94,6 +133,10 @@
 @code {
     private OutgoingLinksPanel? _outgoingLinksPanel;
     private BacklinksPanel? _backlinksPanel;
+    private bool _isCreator;
+    private bool _isPrivate;
+    private bool _isSavingPrivacy;
+    private Guid? _currentUserId;
 
     /// <summary>
     /// The article whose metadata to display.
@@ -112,6 +155,68 @@
     /// </summary>
     [Parameter]
     public EventCallback<bool> IsOpenChanged { get; set; }
+
+    /// <summary>
+    /// Callback when visibility changes (for refreshing the parent).
+    /// </summary>
+    [Parameter]
+    public EventCallback OnVisibilityChanged { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await UserApi.GetUserProfileAsync();
+        _currentUserId = user?.Id;
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Check if current user is the creator
+        _isCreator = _currentUserId.HasValue && Article.CreatedBy == _currentUserId.Value;
+        _isPrivate = Article.Visibility == ArticleVisibility.Private;
+    }
+
+    private async Task OnPrivacyToggled(bool isPrivate)
+    {
+        if (_isSavingPrivacy) return;
+
+        _isSavingPrivacy = true;
+        StateHasChanged();
+
+        try
+        {
+            var newVisibility = isPrivate ? ArticleVisibility.Private : ArticleVisibility.Public;
+            
+            var updateDto = new ArticleUpdateDto
+            {
+                Title = Article.Title,
+                Body = Article.Body,
+                Visibility = newVisibility
+            };
+
+            await ArticleApi.UpdateArticleAsync(Article.Id, updateDto);
+            
+            _isPrivate = isPrivate;
+            Article.Visibility = newVisibility;
+            
+            // Update tree node to show/hide lock icon immediately
+            TreeState.UpdateNodeVisibility(Article.Id, newVisibility);
+            
+            Snackbar.Add(isPrivate ? "Article is now private" : "Article is now visible to world members", Severity.Success);
+            
+            await OnVisibilityChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to update visibility: {ex.Message}", Severity.Error);
+            // Revert UI state
+            _isPrivate = !isPrivate;
+        }
+        finally
+        {
+            _isSavingPrivacy = false;
+            StateHasChanged();
+        }
+    }
 
     /// <summary>
     /// Refreshes the outgoing links panel. Call after saving article content.

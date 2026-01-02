@@ -21,6 +21,7 @@ namespace Chronicis.Api.Services
 
         /// <summary>
         /// Get all articles the user has access to via WorldMembers.
+        /// Private articles are only visible to their creator.
         /// This is the base query for all article access - use this instead of filtering by CreatedBy.
         /// </summary>
         private IQueryable<Article> GetAccessibleArticles(Guid userId)
@@ -28,6 +29,8 @@ namespace Chronicis.Api.Services
             return from a in _context.Articles
                    join wm in _context.WorldMembers on a.WorldId equals wm.WorldId
                    where wm.UserId == userId
+                   // Private articles only visible to creator
+                   where a.Visibility != ArticleVisibility.Private || a.CreatedBy == userId
                    select a;
         }
 

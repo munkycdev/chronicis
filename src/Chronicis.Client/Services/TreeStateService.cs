@@ -539,7 +539,8 @@ public class TreeStateService : ITreeStateService
             WorldId = article.WorldId,
             CampaignId = article.CampaignId,
             ArcId = article.ArcId,
-            ChildCount = article.ChildCount
+            ChildCount = article.ChildCount,
+            Visibility = article.Visibility
         };
     }
     
@@ -993,6 +994,15 @@ public class TreeStateService : ITreeStateService
         {
             node.Title = title;
             node.IconEmoji = iconEmoji;
+            NotifyStateChanged();
+        }
+    }
+    
+    public void UpdateNodeVisibility(Guid nodeId, ArticleVisibility visibility)
+    {
+        if (_nodeIndex.TryGetValue(nodeId, out var node))
+        {
+            node.Visibility = visibility;
             NotifyStateChanged();
         }
     }

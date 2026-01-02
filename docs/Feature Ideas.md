@@ -26,9 +26,8 @@
 
 ## Article Features
 
-- Mark as private
 - Add Azure AI Search as a replacement for the global search
-- Ability to link to external documents and view summaries
+- Ability to link to external sources and view summaries
 
 ---
 
@@ -36,6 +35,7 @@
 
 - Add the ability to generate an AI summary of child summary notes
 - Perhaps not require an Arc, so can add either an arc or a session?
+- Add ability to load files to the External Resources section
 
 ---
 

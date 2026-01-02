@@ -1,13 +1,13 @@
 # Chronicis - Project Status
 
 **Last Updated:** January 2, 2026  
-**Project Phase:** Multi-User Collaboration Complete
+**Project Phase:** Private Articles & Multi-User Collaboration Complete
 
 ---
 
 ## Current State
 
-Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented, including the recently completed multi-user collaboration feature allowing players to join worlds via invitation codes.
+Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented, including multi-user collaboration with invitation codes and private article support.
 
 ### What's Working
 
@@ -38,6 +38,14 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 - Member management UI (view, change roles, remove)
 - Join world flow from Dashboard
 - New users start with empty dashboard (no auto-created world)
+- Private articles visible only to their creator
+
+**Private Articles:**
+- Toggle article privacy from the metadata drawer (right panel)
+- Only article creators can mark their articles as private
+- Private articles show a lock icon in the tree view (replaces normal icon)
+- Lock icon updates immediately without tree reload
+- Private articles filtered from other users' views
 
 **Public Sharing:**
 - Public world toggle with globally unique slugs
@@ -87,6 +95,7 @@ See `Feature Ideas.md` for the complete bug list and backlog.
 | 10 | Drag & Drop | ✅ Complete |
 | 10.5 | Public World Sharing | ✅ Complete |
 | 10.6 | Multi-User Collaboration | ✅ Complete |
+| 10.7 | Private Articles | ✅ Complete |
 | 11 | Icons & Polish | ⏳ Pending |
 | 12 | Testing & Deploy | ⏳ Pending |
 
