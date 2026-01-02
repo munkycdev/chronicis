@@ -8,7 +8,7 @@ namespace Chronicis.Client.Services;
 public interface ICampaignApiService
 {
     /// <summary>
-    /// Get a specific campaign with its members
+    /// Get a specific campaign
     /// </summary>
     Task<CampaignDetailDto?> GetCampaignAsync(Guid campaignId);
 
@@ -21,21 +21,6 @@ public interface ICampaignApiService
     /// Update a campaign
     /// </summary>
     Task<CampaignDto?> UpdateCampaignAsync(Guid campaignId, CampaignUpdateDto dto);
-
-    /// <summary>
-    /// Add a member to a campaign
-    /// </summary>
-    Task<CampaignMemberDto?> AddMemberAsync(Guid campaignId, CampaignMemberAddDto dto);
-
-    /// <summary>
-    /// Update a campaign member's role
-    /// </summary>
-    Task<CampaignMemberDto?> UpdateMemberAsync(Guid campaignId, Guid userId, CampaignMemberUpdateDto dto);
-
-    /// <summary>
-    /// Remove a member from a campaign
-    /// </summary>
-    Task<bool> RemoveMemberAsync(Guid campaignId, Guid userId);
 
     /// <summary>
     /// Activate a campaign for quick session creation

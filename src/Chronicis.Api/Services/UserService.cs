@@ -55,8 +55,8 @@ public class UserService : IUserService
 
             _logger.LogInformation("Created new user {UserId} for Auth0 ID {Auth0UserId}", user.Id, auth0UserId);
 
-            // Create default world for new user
-            await CreateDefaultWorldAsync(user.Id);
+            // Note: We no longer auto-create a default world for new users.
+            // Users can create their own world or join an existing one via invitation code.
         }
         else
         {

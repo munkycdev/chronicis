@@ -61,9 +61,19 @@ public class User
     public ICollection<Campaign> OwnedCampaigns { get; set; } = new List<Campaign>();
     
     /// <summary>
-    /// All campaign memberships for this user.
+    /// All world memberships for this user.
     /// </summary>
-    public ICollection<CampaignMember> CampaignMemberships { get; set; } = new List<CampaignMember>();
+    public ICollection<WorldMember> WorldMemberships { get; set; } = new List<WorldMember>();
+
+    /// <summary>
+    /// All users this user has invited to worlds.
+    /// </summary>
+    public ICollection<WorldMember> InvitedMembers { get; set; } = new List<WorldMember>();
+
+    /// <summary>
+    /// All world invitations created by this user.
+    /// </summary>
+    public ICollection<WorldInvitation> CreatedInvitations { get; set; } = new List<WorldInvitation>();
     
     /// <summary>
     /// All arcs created by this user.

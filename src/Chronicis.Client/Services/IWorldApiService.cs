@@ -55,4 +55,43 @@ public interface IWorldApiService
     /// Check if a public slug is available for a world
     /// </summary>
     Task<PublicSlugCheckResultDto?> CheckPublicSlugAsync(Guid worldId, string slug);
+
+    // ===== Member Management =====
+
+    /// <summary>
+    /// Get all members of a world
+    /// </summary>
+    Task<List<WorldMemberDto>> GetMembersAsync(Guid worldId);
+
+    /// <summary>
+    /// Update a member's role
+    /// </summary>
+    Task<WorldMemberDto?> UpdateMemberRoleAsync(Guid worldId, Guid memberId, WorldMemberUpdateDto dto);
+
+    /// <summary>
+    /// Remove a member from a world
+    /// </summary>
+    Task<bool> RemoveMemberAsync(Guid worldId, Guid memberId);
+
+    // ===== Invitation Management =====
+
+    /// <summary>
+    /// Get all invitations for a world
+    /// </summary>
+    Task<List<WorldInvitationDto>> GetInvitationsAsync(Guid worldId);
+
+    /// <summary>
+    /// Create a new invitation
+    /// </summary>
+    Task<WorldInvitationDto?> CreateInvitationAsync(Guid worldId, WorldInvitationCreateDto dto);
+
+    /// <summary>
+    /// Revoke an invitation
+    /// </summary>
+    Task<bool> RevokeInvitationAsync(Guid worldId, Guid invitationId);
+
+    /// <summary>
+    /// Join a world using an invitation code
+    /// </summary>
+    Task<WorldJoinResultDto?> JoinWorldAsync(string code);
 }

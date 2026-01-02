@@ -100,4 +100,68 @@ public class WorldApiService : IWorldApiService
             _logger,
             $"public slug check for world {worldId}");
     }
+
+    // ===== Member Management =====
+
+    public async Task<List<WorldMemberDto>> GetMembersAsync(Guid worldId)
+    {
+        return await _http.GetListAsync<WorldMemberDto>(
+            $"api/worlds/{worldId}/members",
+            _logger,
+            $"members for world {worldId}");
+    }
+
+    public async Task<WorldMemberDto?> UpdateMemberRoleAsync(Guid worldId, Guid memberId, WorldMemberUpdateDto dto)
+    {
+        return await _http.PutEntityAsync<WorldMemberDto>(
+            $"api/worlds/{worldId}/members/{memberId}",
+            dto,
+            _logger,
+            $"member {memberId} in world {worldId}");
+    }
+
+    public async Task<bool> RemoveMemberAsync(Guid worldId, Guid memberId)
+    {
+        return await _http.DeleteEntityAsync(
+            $"api/worlds/{worldId}/members/{memberId}",
+            _logger,
+            $"member {memberId} from world {worldId}");
+    }
+
+    // ===== Invitation Management =====
+
+    public async Task<List<WorldInvitationDto>> GetInvitationsAsync(Guid worldId)
+    {
+        return await _http.GetListAsync<WorldInvitationDto>(
+            $"api/worlds/{worldId}/invitations",
+            _logger,
+            $"invitations for world {worldId}");
+    }
+
+    public async Task<WorldInvitationDto?> CreateInvitationAsync(Guid worldId, WorldInvitationCreateDto dto)
+    {
+        return await _http.PostEntityAsync<WorldInvitationDto>(
+            $"api/worlds/{worldId}/invitations",
+            dto,
+            _logger,
+            $"invitation for world {worldId}");
+    }
+
+    public async Task<bool> RevokeInvitationAsync(Guid worldId, Guid invitationId)
+    {
+        return await _http.DeleteEntityAsync(
+            $"api/worlds/{worldId}/invitations/{invitationId}",
+            _logger,
+            $"invitation {invitationId} from world {worldId}");
+    }
+
+    public async Task<WorldJoinResultDto?> JoinWorldAsync(string code)
+    {
+        var dto = new WorldJoinDto { Code = code };
+        return await _http.PostEntityAsync<WorldJoinResultDto>(
+            "api/worlds/join",
+            dto,
+            _logger,
+            "join world");
+    }
 }

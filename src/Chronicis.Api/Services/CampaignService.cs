@@ -25,14 +25,13 @@ public class CampaignService : ICampaignService
     {
         var campaign = await _context.Campaigns
             .Include(c => c.Owner)
-            .Include(c => c.Members)
-                .ThenInclude(m => m.User)
+            .Include(c => c.Arcs)
             .FirstOrDefaultAsync(c => c.Id == campaignId);
 
         if (campaign == null)
             return null;
 
-        // Check access
+        // Check access via world membership
         if (!await UserHasAccessAsync(campaignId, userId))
             return null;
 
@@ -41,13 +40,16 @@ public class CampaignService : ICampaignService
 
     public async Task<CampaignDto> CreateCampaignAsync(CampaignCreateDto dto, Guid userId)
     {
-        // Verify user owns the world
+        // Verify user is GM in the world
         var world = await _context.Worlds.FindAsync(dto.WorldId);
         if (world == null)
             throw new InvalidOperationException("World not found");
 
-        if (world.OwnerId != userId)
-            throw new UnauthorizedAccessException("Only the world owner can create campaigns");
+        var isGM = await _context.WorldMembers
+            .AnyAsync(wm => wm.WorldId == dto.WorldId && wm.UserId == userId && wm.Role == WorldRole.GM);
+
+        if (!isGM)
+            throw new UnauthorizedAccessException("Only GMs can create campaigns");
 
         var user = await _context.Users.FindAsync(userId);
         if (user == null)
@@ -67,17 +69,6 @@ public class CampaignService : ICampaignService
             CreatedAt = DateTime.UtcNow
         };
         _context.Campaigns.Add(campaign);
-
-        // Add creator as DM
-        var dmMember = new CampaignMember
-        {
-            Id = Guid.NewGuid(),
-            CampaignId = campaign.Id,
-            UserId = userId,
-            Role = CampaignRole.GM,
-            JoinedAt = DateTime.UtcNow
-        };
-        _context.CampaignMembers.Add(dmMember);
 
         // Create a default Arc (Act 1)
         var defaultArc = new Arc
@@ -99,7 +90,6 @@ public class CampaignService : ICampaignService
 
         // Return DTO
         campaign.Owner = user;
-        campaign.Members = new List<CampaignMember> { dmMember };
         return MapToDto(campaign);
     }
 
@@ -107,14 +97,13 @@ public class CampaignService : ICampaignService
     {
         var campaign = await _context.Campaigns
             .Include(c => c.Owner)
-            .Include(c => c.Members)
             .FirstOrDefaultAsync(c => c.Id == campaignId);
 
         if (campaign == null)
             return null;
 
-        // Only DM can update
-        if (!await UserIsDungeonMasterAsync(campaignId, userId))
+        // Only GM can update
+        if (!await UserIsGMAsync(campaignId, userId))
             return null;
 
         campaign.Name = dto.Name;
@@ -129,146 +118,41 @@ public class CampaignService : ICampaignService
         return MapToDto(campaign);
     }
 
-    public async Task<CampaignMemberDto?> AddMemberAsync(Guid campaignId, CampaignMemberAddDto dto, Guid requestingUserId)
+    public async Task<WorldRole?> GetUserRoleAsync(Guid campaignId, Guid userId)
     {
-        // Only DM can add members
-        if (!await UserIsDungeonMasterAsync(campaignId, requestingUserId))
+        // Get the world for this campaign, then check world membership
+        var campaign = await _context.Campaigns.FindAsync(campaignId);
+        if (campaign == null)
             return null;
 
-        // Find user by email
-        var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == dto.Email);
-
-        if (user == null)
-        {
-            _logger.LogWarning("Cannot add member: user with email {Email} not found", dto.Email);
-            return null;
-        }
-
-        // Check if already a member
-        var existingMember = await _context.CampaignMembers
-            .FirstOrDefaultAsync(cm => cm.CampaignId == campaignId && cm.UserId == user.Id);
-
-        if (existingMember != null)
-        {
-            _logger.LogWarning("User {UserId} is already a member of campaign {CampaignId}", user.Id, campaignId);
-            return null;
-        }
-
-        var member = new CampaignMember
-        {
-            Id = Guid.NewGuid(),
-            CampaignId = campaignId,
-            UserId = user.Id,
-            Role = dto.Role,
-            JoinedAt = DateTime.UtcNow,
-            CharacterName = dto.CharacterName
-        };
-        _context.CampaignMembers.Add(member);
-
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Added user {UserId} to campaign {CampaignId} with role {Role}", 
-            user.Id, campaignId, dto.Role);
-
-        member.User = user;
-        return MapMemberToDto(member);
-    }
-
-    public async Task<CampaignMemberDto?> UpdateMemberAsync(Guid campaignId, Guid userId, CampaignMemberUpdateDto dto, Guid requestingUserId)
-    {
-        // Only DM can update members
-        if (!await UserIsDungeonMasterAsync(campaignId, requestingUserId))
-            return null;
-
-        var member = await _context.CampaignMembers
-            .Include(cm => cm.User)
-            .FirstOrDefaultAsync(cm => cm.CampaignId == campaignId && cm.UserId == userId);
-
-        if (member == null)
-            return null;
-
-        // Prevent demoting the last DM
-        if (member.Role == CampaignRole.GM && dto.Role != CampaignRole.GM)
-        {
-            var dmCount = await _context.CampaignMembers
-                .CountAsync(cm => cm.CampaignId == campaignId && cm.Role == CampaignRole.GM);
-
-            if (dmCount <= 1)
-            {
-                _logger.LogWarning("Cannot demote the last DM of campaign {CampaignId}", campaignId);
-                return null;
-            }
-        }
-
-        member.Role = dto.Role;
-        member.CharacterName = dto.CharacterName;
-
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Updated member {UserId} in campaign {CampaignId} to role {Role}", 
-            userId, campaignId, dto.Role);
-
-        return MapMemberToDto(member);
-    }
-
-    public async Task<bool> RemoveMemberAsync(Guid campaignId, Guid userId, Guid requestingUserId)
-    {
-        // DM can remove anyone except themselves if they're the last DM
-        // Users can remove themselves (leave)
-        var isDm = await UserIsDungeonMasterAsync(campaignId, requestingUserId);
-        var isSelf = requestingUserId == userId;
-
-        if (!isDm && !isSelf)
-            return false;
-
-        var member = await _context.CampaignMembers
-            .FirstOrDefaultAsync(cm => cm.CampaignId == campaignId && cm.UserId == userId);
-
-        if (member == null)
-            return false;
-
-        // Prevent removing the last DM
-        if (member.Role == CampaignRole.GM)
-        {
-            var dmCount = await _context.CampaignMembers
-                .CountAsync(cm => cm.CampaignId == campaignId && cm.Role == CampaignRole.GM);
-
-            if (dmCount <= 1)
-            {
-                _logger.LogWarning("Cannot remove the last DM of campaign {CampaignId}", campaignId);
-                return false;
-            }
-        }
-
-        _context.CampaignMembers.Remove(member);
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Removed user {UserId} from campaign {CampaignId}", userId, campaignId);
-
-        return true;
-    }
-
-    public async Task<CampaignRole?> GetUserRoleAsync(Guid campaignId, Guid userId)
-    {
-        var member = await _context.CampaignMembers
-            .FirstOrDefaultAsync(cm => cm.CampaignId == campaignId && cm.UserId == userId);
+        var member = await _context.WorldMembers
+            .FirstOrDefaultAsync(wm => wm.WorldId == campaign.WorldId && wm.UserId == userId);
 
         return member?.Role;
     }
 
     public async Task<bool> UserHasAccessAsync(Guid campaignId, Guid userId)
     {
-        return await _context.CampaignMembers
-            .AnyAsync(cm => cm.CampaignId == campaignId && cm.UserId == userId);
+        // User has access if they're a member of the campaign's world
+        var campaign = await _context.Campaigns.FindAsync(campaignId);
+        if (campaign == null)
+            return false;
+
+        return await _context.WorldMembers
+            .AnyAsync(wm => wm.WorldId == campaign.WorldId && wm.UserId == userId);
     }
 
-    public async Task<bool> UserIsDungeonMasterAsync(Guid campaignId, Guid userId)
+    public async Task<bool> UserIsGMAsync(Guid campaignId, Guid userId)
     {
-        return await _context.CampaignMembers
-            .AnyAsync(cm => cm.CampaignId == campaignId 
-                        && cm.UserId == userId 
-                        && cm.Role == CampaignRole.GM);
+        // User is GM if they have GM role in the campaign's world
+        var campaign = await _context.Campaigns.FindAsync(campaignId);
+        if (campaign == null)
+            return false;
+
+        return await _context.WorldMembers
+            .AnyAsync(wm => wm.WorldId == campaign.WorldId 
+                        && wm.UserId == userId 
+                        && wm.Role == WorldRole.GM);
     }
 
     public async Task<bool> ActivateCampaignAsync(Guid campaignId, Guid userId)
@@ -279,8 +163,8 @@ public class CampaignService : ICampaignService
         if (campaign == null)
             return false;
 
-        // Only DM can activate
-        if (!await UserIsDungeonMasterAsync(campaignId, userId))
+        // Only GM can activate
+        if (!await UserIsGMAsync(campaignId, userId))
             return false;
 
         // Deactivate all campaigns in the same world
@@ -308,10 +192,16 @@ public class CampaignService : ICampaignService
         var result = new ActiveContextDto();
         result.WorldId = worldId;
 
-        // Get all campaigns in this world the user has access to (owner OR member)
+        // Check if user has access to this world
+        var hasAccess = await _context.WorldMembers
+            .AnyAsync(wm => wm.WorldId == worldId && wm.UserId == userId);
+
+        if (!hasAccess)
+            return result;
+
+        // Get all campaigns in this world
         var campaigns = await _context.Campaigns
             .Where(c => c.WorldId == worldId)
-            .Where(c => c.OwnerId == userId || c.Members.Any(m => m.UserId == userId))
             .ToListAsync();
 
         if (campaigns.Count == 0)
@@ -361,7 +251,7 @@ public class CampaignService : ICampaignService
             StartedAt = campaign.StartedAt,
             EndedAt = campaign.EndedAt,
             IsActive = campaign.IsActive,
-            MemberCount = campaign.Members?.Count ?? 0
+            ArcCount = campaign.Arcs?.Count ?? 0
         };
     }
 
@@ -379,23 +269,17 @@ public class CampaignService : ICampaignService
             StartedAt = campaign.StartedAt,
             EndedAt = campaign.EndedAt,
             IsActive = campaign.IsActive,
-            MemberCount = campaign.Members?.Count ?? 0,
-            Members = campaign.Members?.Select(MapMemberToDto).ToList() ?? new List<CampaignMemberDto>()
-        };
-    }
-
-    private static CampaignMemberDto MapMemberToDto(CampaignMember member)
-    {
-        return new CampaignMemberDto
-        {
-            Id = member.Id,
-            UserId = member.UserId,
-            DisplayName = member.User?.DisplayName ?? "Unknown",
-            Email = member.User?.Email ?? "",
-            AvatarUrl = member.User?.AvatarUrl,
-            Role = member.Role,
-            JoinedAt = member.JoinedAt,
-            CharacterName = member.CharacterName
+            ArcCount = campaign.Arcs?.Count ?? 0,
+            Arcs = campaign.Arcs?.Select(a => new ArcDto
+            {
+                Id = a.Id,
+                CampaignId = a.CampaignId,
+                Name = a.Name,
+                Description = a.Description,
+                SortOrder = a.SortOrder,
+                IsActive = a.IsActive,
+                CreatedAt = a.CreatedAt
+            }).ToList() ?? new List<ArcDto>()
         };
     }
 }

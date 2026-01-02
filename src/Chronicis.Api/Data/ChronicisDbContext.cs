@@ -11,8 +11,9 @@ public class ChronicisDbContext : DbContext
     // ===== Core Entities =====
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<World> Worlds { get; set; } = null!;
+    public DbSet<WorldMember> WorldMembers { get; set; } = null!;
+    public DbSet<WorldInvitation> WorldInvitations { get; set; } = null!;
     public DbSet<Campaign> Campaigns { get; set; } = null!;
-    public DbSet<CampaignMember> CampaignMembers { get; set; } = null!;
     public DbSet<Arc> Arcs { get; set; } = null!;
     public DbSet<Article> Articles { get; set; } = null!;
     public DbSet<ArticleLink> ArticleLinks { get; set; } = null!;
@@ -29,8 +30,9 @@ public class ChronicisDbContext : DbContext
     {
         ConfigureUser(modelBuilder);
         ConfigureWorld(modelBuilder);
+        ConfigureWorldMember(modelBuilder);
+        ConfigureWorldInvitation(modelBuilder);
         ConfigureCampaign(modelBuilder);
-        ConfigureCampaignMember(modelBuilder);
         ConfigureArc(modelBuilder);
         ConfigureArticle(modelBuilder);
         ConfigureArticleLink(modelBuilder);
@@ -141,30 +143,64 @@ public class ChronicisDbContext : DbContext
         });
     }
 
-    private static void ConfigureCampaignMember(ModelBuilder modelBuilder)
+    private static void ConfigureWorldMember(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<CampaignMember>(entity =>
+        modelBuilder.Entity<WorldMember>(entity =>
         {
-            entity.HasKey(cm => cm.Id);
+            entity.HasKey(wm => wm.Id);
 
-            entity.Property(cm => cm.CharacterName)
-                .HasMaxLength(100);
-
-            // CampaignMember -> Campaign
-            entity.HasOne(cm => cm.Campaign)
-                .WithMany(c => c.Members)
-                .HasForeignKey(cm => cm.CampaignId)
+            // WorldMember -> World
+            entity.HasOne(wm => wm.World)
+                .WithMany(w => w.Members)
+                .HasForeignKey(wm => wm.WorldId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // CampaignMember -> User
-            entity.HasOne(cm => cm.User)
-                .WithMany(u => u.CampaignMemberships)
-                .HasForeignKey(cm => cm.UserId)
+            // WorldMember -> User
+            entity.HasOne(wm => wm.User)
+                .WithMany(u => u.WorldMemberships)
+                .HasForeignKey(wm => wm.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Unique constraint: One membership per user per campaign
-            entity.HasIndex(cm => new { cm.CampaignId, cm.UserId })
+            // WorldMember -> Inviter (User)
+            entity.HasOne(wm => wm.Inviter)
+                .WithMany(u => u.InvitedMembers)
+                .HasForeignKey(wm => wm.InvitedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Unique constraint: One membership per user per world
+            entity.HasIndex(wm => new { wm.WorldId, wm.UserId })
                 .IsUnique();
+        });
+    }
+
+    private static void ConfigureWorldInvitation(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<WorldInvitation>(entity =>
+        {
+            entity.HasKey(wi => wi.Id);
+
+            entity.Property(wi => wi.Code)
+                .HasMaxLength(9) // XXXX-XXXX format
+                .IsRequired();
+
+            // WorldInvitation -> World
+            entity.HasOne(wi => wi.World)
+                .WithMany(w => w.Invitations)
+                .HasForeignKey(wi => wi.WorldId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // WorldInvitation -> Creator (User)
+            entity.HasOne(wi => wi.Creator)
+                .WithMany(u => u.CreatedInvitations)
+                .HasForeignKey(wi => wi.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Unique constraint: Invitation codes must be globally unique
+            entity.HasIndex(wi => wi.Code)
+                .IsUnique();
+
+            // Index for looking up active invitations by world
+            entity.HasIndex(wi => new { wi.WorldId, wi.IsActive });
         });
     }
 

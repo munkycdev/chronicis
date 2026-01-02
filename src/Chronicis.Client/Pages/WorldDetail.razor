@@ -1,8 +1,10 @@
 @page "/world/{WorldId:guid}"
 @attribute [Authorize]
 @using Chronicis.Shared.DTOs
+@using Chronicis.Shared.Enums
 @using Chronicis.Client.Components.Dialogs
 @using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Components.World
 @using Chronicis.Client.Utilities
 @inject IWorldApiService WorldApi
 @inject ICampaignApiService CampaignApi
@@ -12,6 +14,7 @@
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthStateProvider
 
 @if (_isLoading)
 {
@@ -270,6 +273,12 @@ else if (_world != null)
             }
         </div>
 
+        <!-- Members & Invitations -->
+        <WorldMembersPanel WorldId="WorldId" 
+                           CurrentUserId="_currentUserId"
+                           IsCurrentUserGM="_isCurrentUserGM"
+                           OnMembersChanged="OnMembersChanged" />
+
         <!-- Stats -->
         <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
             World Statistics
@@ -280,6 +289,10 @@ else if (_world != null)
                 <tr>
                     <td><MudIcon Icon="@Icons.Material.Filled.AutoStories" Size="Size.Small" Class="mr-2" />Campaigns</td>
                     <td>@_world.CampaignCount</td>
+                </tr>
+                <tr>
+                    <td><MudIcon Icon="@Icons.Material.Filled.Group" Size="Size.Small" Class="mr-2" />Members</td>
+                    <td>@_world.MemberCount</td>
                 </tr>
                 <tr>
                     <td><MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-2" />Owner</td>
@@ -319,6 +332,10 @@ else if (_world != null)
     private bool _hasUnsavedChanges = false;
     private List<BreadcrumbItem> _breadcrumbs = new();
 
+    // Current user info
+    private Guid _currentUserId;
+    private bool _isCurrentUserGM = false;
+
     // Links state
     private List<WorldLinkDto> _links = new();
     private bool _isAddingLink = false;
@@ -353,6 +370,9 @@ else if (_world != null)
 
         try
         {
+            // Get auth state for current user matching
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            
             _world = await WorldApi.GetWorldAsync(WorldId);
             if (_world == null)
             {
@@ -371,6 +391,27 @@ else if (_world != null)
                 _slugIsAvailable = _world.IsPublic; // If already public, slug is valid
                 _slugError = null;
                 _slugHelperText = null;
+
+                // Check current user's role
+                if (_world.Members != null)
+                {
+                    // Get current user's email from auth claims
+                    var userEmail = authState.User.FindFirst("https://chronicis.app/email")?.Value
+                                 ?? authState.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                                 ?? authState.User.FindFirst("email")?.Value;
+
+                    if (!string.IsNullOrEmpty(userEmail))
+                    {
+                        var currentMember = _world.Members.FirstOrDefault(m => 
+                            m.Email.Equals(userEmail, StringComparison.OrdinalIgnoreCase));
+                        
+                        if (currentMember != null)
+                        {
+                            _currentUserId = currentMember.UserId;
+                            _isCurrentUserGM = currentMember.Role == WorldRole.GM;
+                        }
+                    }
+                }
 
                 _breadcrumbs = BreadcrumbService.ForWorld(_world);
 
@@ -395,6 +436,21 @@ else if (_world != null)
 
     private void OnNameChanged() => _hasUnsavedChanges = true;
     private void OnDescriptionChanged() => _hasUnsavedChanges = true;
+
+    private async Task OnMembersChanged()
+    {
+        // Reload world to get updated member count
+        if (_world != null)
+        {
+            var updated = await WorldApi.GetWorldAsync(WorldId);
+            if (updated != null)
+            {
+                _world.MemberCount = updated.MemberCount;
+                _world.Members = updated.Members;
+                StateHasChanged();
+            }
+        }
+    }
 
     private async Task SaveWorld()
     {

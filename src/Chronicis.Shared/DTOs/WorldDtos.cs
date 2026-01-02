@@ -13,6 +13,7 @@ public class WorldDto
     public string OwnerName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public int CampaignCount { get; set; }
+    public int MemberCount { get; set; }
     
     /// <summary>
     /// The ID of the WorldRoot article (top-level article for this world)
@@ -31,11 +32,13 @@ public class WorldDto
 }
 
 /// <summary>
-/// Detailed world information including campaigns
+/// Detailed world information including campaigns and members
 /// </summary>
 public class WorldDetailDto : WorldDto
 {
     public List<CampaignDto> Campaigns { get; set; } = new();
+    public List<WorldMemberDto> Members { get; set; } = new();
+    public List<WorldInvitationDto> Invitations { get; set; } = new();
 }
 
 /// <summary>

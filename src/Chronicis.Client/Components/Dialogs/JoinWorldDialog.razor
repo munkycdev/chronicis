@@ -1,0 +1,123 @@
+@using Chronicis.Shared.DTOs
+@inject IWorldApiService WorldApi
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.GroupAdd" Class="mr-2" />
+            Join a World
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-4">
+            Enter the invitation code shared by the world's GM to join their world.
+        </MudText>
+        
+        <MudTextField @bind-Value="_code"
+                      Label="Invitation Code"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      RequiredError="Code is required"
+                      Placeholder="e.g., FROG-AXLE"
+                      Class="mb-3"
+                      @ref="_codeField"
+                      Immediate="true"
+                      Style="font-family: monospace; font-size: 1.2em; letter-spacing: 2px;"
+                      Error="@(!string.IsNullOrEmpty(_error))"
+                      ErrorText="@_error" />
+
+        @if (_result != null && _result.Success)
+        {
+            <MudAlert Severity="Severity.Success" Class="mt-3">
+                <MudText Typo="Typo.body1">
+                    Successfully joined <strong>@_result.WorldName</strong> as <strong>@_result.AssignedRole</strong>!
+                </MudText>
+            </MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        @if (_result?.Success == true)
+        {
+            <MudButton Color="Color.Primary" 
+                       Variant="Variant.Filled"
+                       OnClick="GoToWorld">
+                Go to World
+            </MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton Color="Color.Primary" 
+                       Variant="Variant.Filled"
+                       OnClick="Submit"
+                       Disabled="@(string.IsNullOrWhiteSpace(_code) || _isSubmitting)">
+                @if (_isSubmitting)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                }
+                Join
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? MudDialog { get; set; }
+
+    private string _code = string.Empty;
+    private string? _error = null;
+    private bool _isSubmitting = false;
+    private WorldJoinResultDto? _result = null;
+    private MudTextField<string>? _codeField;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _codeField != null)
+        {
+            await Task.Delay(100);
+            await _codeField.FocusAsync();
+        }
+    }
+
+    private void Cancel() => MudDialog?.Cancel();
+
+    private void GoToWorld()
+    {
+        MudDialog?.Close(DialogResult.Ok(_result));
+    }
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_code) || _isSubmitting) return;
+
+        _isSubmitting = true;
+        _error = null;
+        StateHasChanged();
+
+        try
+        {
+            _result = await WorldApi.JoinWorldAsync(_code.Trim());
+            
+            if (_result == null)
+            {
+                _error = "Failed to join world. Please try again.";
+            }
+            else if (!_result.Success)
+            {
+                _error = _result.ErrorMessage ?? "Failed to join world.";
+            }
+            // Success case is handled by the UI showing the success message
+        }
+        catch (Exception ex)
+        {
+            _error = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+}

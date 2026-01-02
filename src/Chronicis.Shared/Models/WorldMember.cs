@@ -3,10 +3,10 @@ using Chronicis.Shared.Enums;
 namespace Chronicis.Shared.Models;
 
 /// <summary>
-/// Represents a user's membership in a campaign with their assigned role.
-/// This is the many-to-many relationship between Users and Campaigns.
+/// Represents a user's membership in a world with their assigned role.
+/// World membership grants access to all campaigns within that world.
 /// </summary>
-public class CampaignMember
+public class WorldMember
 {
     /// <summary>
     /// Unique identifier for this membership record.
@@ -14,9 +14,9 @@ public class CampaignMember
     public Guid Id { get; set; }
     
     /// <summary>
-    /// The campaign this membership is for.
+    /// The world this membership is for.
     /// </summary>
-    public Guid CampaignId { get; set; }
+    public Guid WorldId { get; set; }
     
     /// <summary>
     /// The user who is a member.
@@ -24,30 +24,34 @@ public class CampaignMember
     public Guid UserId { get; set; }
     
     /// <summary>
-    /// The user's role in this campaign (DM, Player, Observer).
+    /// The user's role in this world (GM, Player, Observer).
     /// </summary>
-    public CampaignRole Role { get; set; }
+    public WorldRole Role { get; set; }
     
     /// <summary>
-    /// When the user joined this campaign.
+    /// When the user joined this world.
     /// </summary>
     public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
     
     /// <summary>
-    /// Optional character name for Players.
-    /// Max 100 characters.
+    /// User who invited this member. Null if they are the world creator or joined via public access.
     /// </summary>
-    public string? CharacterName { get; set; }
+    public Guid? InvitedBy { get; set; }
     
     // ===== Navigation Properties =====
     
     /// <summary>
-    /// The campaign this membership is for.
+    /// The world this membership is for.
     /// </summary>
-    public Campaign Campaign { get; set; } = null!;
+    public World World { get; set; } = null!;
     
     /// <summary>
     /// The user who is a member.
     /// </summary>
     public User User { get; set; } = null!;
+    
+    /// <summary>
+    /// The user who invited this member.
+    /// </summary>
+    public User? Inviter { get; set; }
 }

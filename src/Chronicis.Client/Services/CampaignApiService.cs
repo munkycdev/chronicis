@@ -45,32 +45,6 @@ public class CampaignApiService : ICampaignApiService
             $"campaign {campaignId}");
     }
 
-    public async Task<CampaignMemberDto?> AddMemberAsync(Guid campaignId, CampaignMemberAddDto dto)
-    {
-        return await _http.PostEntityAsync<CampaignMemberDto>(
-            $"api/campaigns/{campaignId}/members",
-            dto,
-            _logger,
-            $"member for campaign {campaignId}");
-    }
-
-    public async Task<CampaignMemberDto?> UpdateMemberAsync(Guid campaignId, Guid userId, CampaignMemberUpdateDto dto)
-    {
-        return await _http.PutEntityAsync<CampaignMemberDto>(
-            $"api/campaigns/{campaignId}/members/{userId}",
-            dto,
-            _logger,
-            $"member {userId} in campaign {campaignId}");
-    }
-
-    public async Task<bool> RemoveMemberAsync(Guid campaignId, Guid userId)
-    {
-        return await _http.DeleteEntityAsync(
-            $"api/campaigns/{campaignId}/members/{userId}",
-            _logger,
-            $"member {userId} from campaign {campaignId}");
-    }
-
     public async Task<bool> ActivateCampaignAsync(Guid campaignId)
     {
         try

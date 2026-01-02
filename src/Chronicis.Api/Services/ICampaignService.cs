@@ -9,7 +9,7 @@ namespace Chronicis.Api.Services;
 public interface ICampaignService
 {
     /// <summary>
-    /// Get a campaign by ID with members
+    /// Get a campaign by ID
     /// </summary>
     Task<CampaignDetailDto?> GetCampaignAsync(Guid campaignId, Guid userId);
 
@@ -24,34 +24,19 @@ public interface ICampaignService
     Task<CampaignDto?> UpdateCampaignAsync(Guid campaignId, CampaignUpdateDto dto, Guid userId);
 
     /// <summary>
-    /// Add a member to a campaign
+    /// Get the user's role in a campaign's world
     /// </summary>
-    Task<CampaignMemberDto?> AddMemberAsync(Guid campaignId, CampaignMemberAddDto dto, Guid requestingUserId);
+    Task<WorldRole?> GetUserRoleAsync(Guid campaignId, Guid userId);
 
     /// <summary>
-    /// Update a member's role
-    /// </summary>
-    Task<CampaignMemberDto?> UpdateMemberAsync(Guid campaignId, Guid userId, CampaignMemberUpdateDto dto, Guid requestingUserId);
-
-    /// <summary>
-    /// Remove a member from a campaign
-    /// </summary>
-    Task<bool> RemoveMemberAsync(Guid campaignId, Guid userId, Guid requestingUserId);
-
-    /// <summary>
-    /// Get the user's role in a campaign
-    /// </summary>
-    Task<CampaignRole?> GetUserRoleAsync(Guid campaignId, Guid userId);
-
-    /// <summary>
-    /// Check if user has access to a campaign
+    /// Check if user has access to a campaign (via world membership)
     /// </summary>
     Task<bool> UserHasAccessAsync(Guid campaignId, Guid userId);
 
     /// <summary>
-    /// Check if user is DM of a campaign
+    /// Check if user is GM of a campaign's world
     /// </summary>
-    Task<bool> UserIsDungeonMasterAsync(Guid campaignId, Guid userId);
+    Task<bool> UserIsGMAsync(Guid campaignId, Guid userId);
 
     /// <summary>
     /// Set a campaign as active (deactivates others in same world)

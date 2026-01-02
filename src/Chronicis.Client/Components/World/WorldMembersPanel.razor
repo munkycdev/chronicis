@@ -1,0 +1,377 @@
+@using Chronicis.Shared.DTOs
+@using Chronicis.Shared.Enums
+@inject IWorldApiService WorldApi
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
+<MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
+    Members & Invitations
+</MudText>
+
+<div class="mb-4 pa-3 rounded" style="background: var(--mud-palette-background-grey);">
+    <!-- Members List -->
+    <div class="d-flex align-center justify-space-between mb-2">
+        <MudText Typo="Typo.subtitle1">Members (@_members.Count)</MudText>
+    </div>
+
+    @if (_members.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+            No members yet. Create an invitation to add players.
+        </MudText>
+    }
+    else
+    {
+        <MudSimpleTable Dense="true" Hover="true" Class="mb-3">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Role</th>
+                    <th>Joined</th>
+                    <th style="width: 100px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var member in _members)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-center gap-2">
+                                @if (!string.IsNullOrEmpty(member.AvatarUrl))
+                                {
+                                    <MudAvatar Size="Size.Small">
+                                        <MudImage Src="@member.AvatarUrl" />
+                                    </MudAvatar>
+                                }
+                                else
+                                {
+                                    <MudAvatar Size="Size.Small" Color="Color.Primary">
+                                        @member.DisplayName[0]
+                                    </MudAvatar>
+                                }
+                                <div>
+                                    <MudText Typo="Typo.body2">@member.DisplayName</MudText>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@member.Email</MudText>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            @if (IsCurrentUserGM && member.UserId != CurrentUserId)
+                            {
+                                <MudSelect T="WorldRole" 
+                                           Value="member.Role" 
+                                           ValueChanged="(role) => UpdateMemberRole(member, role)"
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.Dense"
+                                           Dense="true"
+                                           Style="min-width: 120px;">
+                                    <MudSelectItem Value="WorldRole.GM">GM</MudSelectItem>
+                                    <MudSelectItem Value="WorldRole.Player">Player</MudSelectItem>
+                                    <MudSelectItem Value="WorldRole.Observer">Observer</MudSelectItem>
+                                </MudSelect>
+                            }
+                            else
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="@GetRoleColor(member.Role)">
+                                    @member.Role
+                                </MudChip>
+                            }
+                        </td>
+                        <td>
+                            <MudText Typo="Typo.body2">@member.JoinedAt.ToString("MMM d, yyyy")</MudText>
+                        </td>
+                        <td>
+                            @if (IsCurrentUserGM && member.UserId != CurrentUserId)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.PersonRemove"
+                                               Color="Color.Error"
+                                               Size="Size.Small"
+                                               OnClick="() => RemoveMember(member)"
+                                               Title="Remove member" />
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+
+    <!-- Invitations Section (GM only) -->
+    @if (IsCurrentUserGM)
+    {
+        <MudDivider Class="my-3" />
+        
+        <div class="d-flex align-center justify-space-between mb-2">
+            <MudText Typo="Typo.subtitle1">Invitations</MudText>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.PersonAdd"
+                       OnClick="CreateInvitation"
+                       Disabled="_isCreatingInvitation">
+                @if (_isCreatingInvitation)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                }
+                Create Invitation
+            </MudButton>
+        </div>
+
+        @if (_invitations.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                No active invitations. Create one to invite players to your world.
+            </MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Role</th>
+                        <th>Uses</th>
+                        <th>Expires</th>
+                        <th style="width: 100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var inv in _invitations.Where(i => i.IsActive))
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-center gap-1">
+                                    <code style="font-size: 1.1em; letter-spacing: 1px;">@inv.Code</code>
+                                    <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                                                   Size="Size.Small"
+                                                   OnClick="() => CopyInvitationCode(inv.Code)"
+                                                   Title="Copy code" />
+                                </div>
+                            </td>
+                            <td>
+                                <MudChip T="string" Size="Size.Small" Color="@GetRoleColor(inv.Role)">
+                                    @inv.Role
+                                </MudChip>
+                            </td>
+                            <td>
+                                @if (inv.MaxUses.HasValue)
+                                {
+                                    <span>@inv.UsedCount / @inv.MaxUses</span>
+                                }
+                                else
+                                {
+                                    <span>@inv.UsedCount / ∞</span>
+                                }
+                            </td>
+                            <td>
+                                @if (inv.ExpiresAt.HasValue)
+                                {
+                                    <span>@inv.ExpiresAt.Value.ToString("MMM d, yyyy")</span>
+                                }
+                                else
+                                {
+                                    <span class="mud-text-secondary">Never</span>
+                                }
+                            </td>
+                            <td>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Color="Color.Error"
+                                               Size="Size.Small"
+                                               OnClick="() => RevokeInvitation(inv)"
+                                               Title="Revoke invitation" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Guid WorldId { get; set; }
+
+    [Parameter]
+    public Guid CurrentUserId { get; set; }
+
+    [Parameter]
+    public bool IsCurrentUserGM { get; set; }
+
+    [Parameter]
+    public EventCallback OnMembersChanged { get; set; }
+
+    private List<WorldMemberDto> _members = new();
+    private List<WorldInvitationDto> _invitations = new();
+    private bool _isCreatingInvitation = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            _members = await WorldApi.GetMembersAsync(WorldId);
+            
+            if (IsCurrentUserGM)
+            {
+                _invitations = await WorldApi.GetInvitationsAsync(WorldId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load members: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task UpdateMemberRole(WorldMemberDto member, WorldRole newRole)
+    {
+        try
+        {
+            var dto = new WorldMemberUpdateDto { Role = newRole };
+            var updated = await WorldApi.UpdateMemberRoleAsync(WorldId, member.Id, dto);
+            
+            if (updated != null)
+            {
+                member.Role = updated.Role;
+                Snackbar.Add($"Updated {member.DisplayName}'s role to {newRole}", Severity.Success);
+                await OnMembersChanged.InvokeAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to update role. Cannot demote the last GM.", Severity.Warning);
+                await LoadDataAsync(); // Refresh to get correct state
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to update role: {ex.Message}", Severity.Error);
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task RemoveMember(WorldMemberDto member)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Remove Member",
+            $"Are you sure you want to remove {member.DisplayName} from this world?",
+            yesText: "Remove",
+            cancelText: "Cancel");
+
+        if (confirmed != true) return;
+
+        try
+        {
+            var success = await WorldApi.RemoveMemberAsync(WorldId, member.Id);
+            
+            if (success)
+            {
+                _members.Remove(member);
+                Snackbar.Add($"Removed {member.DisplayName} from the world", Severity.Success);
+                await OnMembersChanged.InvokeAsync();
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Failed to remove member. Cannot remove the last GM.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to remove member: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CreateInvitation()
+    {
+        _isCreatingInvitation = true;
+        StateHasChanged();
+
+        try
+        {
+            var dto = new WorldInvitationCreateDto
+            {
+                Role = WorldRole.Player // Default to Player
+            };
+
+            var invitation = await WorldApi.CreateInvitationAsync(WorldId, dto);
+            
+            if (invitation != null)
+            {
+                _invitations.Insert(0, invitation);
+                Snackbar.Add($"Invitation created: {invitation.Code}", Severity.Success);
+                await CopyInvitationCode(invitation.Code);
+            }
+            else
+            {
+                Snackbar.Add("Failed to create invitation", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to create invitation: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isCreatingInvitation = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RevokeInvitation(WorldInvitationDto invitation)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Revoke Invitation",
+            $"Are you sure you want to revoke invitation {invitation.Code}?",
+            yesText: "Revoke",
+            cancelText: "Cancel");
+
+        if (confirmed != true) return;
+
+        try
+        {
+            var success = await WorldApi.RevokeInvitationAsync(WorldId, invitation.Id);
+            
+            if (success)
+            {
+                invitation.IsActive = false;
+                Snackbar.Add("Invitation revoked", Severity.Success);
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Failed to revoke invitation", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to revoke invitation: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CopyInvitationCode(string code)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", code);
+            Snackbar.Add($"Copied {code} to clipboard", Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add("Failed to copy code", Severity.Error);
+        }
+    }
+
+    private static Color GetRoleColor(WorldRole role) => role switch
+    {
+        WorldRole.GM => Color.Warning,
+        WorldRole.Player => Color.Primary,
+        WorldRole.Observer => Color.Default,
+        _ => Color.Default
+    };
+}

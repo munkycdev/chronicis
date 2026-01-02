@@ -102,11 +102,6 @@ public class Campaign
     public SummaryTemplate? SummaryTemplate { get; set; }
     
     /// <summary>
-    /// All members of this campaign (DM, Players, Observers).
-    /// </summary>
-    public ICollection<CampaignMember> Members { get; set; } = new List<CampaignMember>();
-    
-    /// <summary>
     /// All story arcs within this campaign.
     /// </summary>
     public ICollection<Arc> Arcs { get; set; } = new List<Arc>();

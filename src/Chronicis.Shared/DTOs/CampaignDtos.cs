@@ -1,5 +1,3 @@
-using Chronicis.Shared.Enums;
-
 namespace Chronicis.Shared.DTOs;
 
 /// <summary>
@@ -17,16 +15,14 @@ public class CampaignDto
     public DateTime? StartedAt { get; set; }
     public DateTime? EndedAt { get; set; }
     public bool IsActive { get; set; }
-    public int MemberCount { get; set; }
     public int ArcCount { get; set; }
 }
 
 /// <summary>
-/// Detailed campaign information including members
+/// Detailed campaign information including arcs
 /// </summary>
 public class CampaignDetailDto : CampaignDto
 {
-    public List<CampaignMemberDto> Members { get; set; } = new();
     public List<ArcDto> Arcs { get; set; } = new();
 }
 
@@ -49,38 +45,4 @@ public class CampaignUpdateDto
     public string? Description { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? EndedAt { get; set; }
-}
-
-/// <summary>
-/// Campaign member information
-/// </summary>
-public class CampaignMemberDto
-{
-    public Guid Id { get; set; }
-    public Guid UserId { get; set; }
-    public string DisplayName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string? AvatarUrl { get; set; }
-    public CampaignRole Role { get; set; }
-    public DateTime JoinedAt { get; set; }
-    public string? CharacterName { get; set; }
-}
-
-/// <summary>
-/// DTO for adding a member to a campaign
-/// </summary>
-public class CampaignMemberAddDto
-{
-    public string Email { get; set; } = string.Empty;
-    public CampaignRole Role { get; set; } = CampaignRole.Player;
-    public string? CharacterName { get; set; }
-}
-
-/// <summary>
-/// DTO for updating a member's role
-/// </summary>
-public class CampaignMemberUpdateDto
-{
-    public CampaignRole Role { get; set; }
-    public string? CharacterName { get; set; }
 }
