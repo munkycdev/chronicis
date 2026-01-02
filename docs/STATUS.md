@@ -1,13 +1,13 @@
 # Chronicis - Project Status
 
-**Last Updated:** January 1, 2026  
-**Project Phase:** Public World Sharing Complete
+**Last Updated:** January 2, 2026  
+**Project Phase:** Multi-User Collaboration Complete
 
 ---
 
 ## Current State
 
-Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented, including the recently completed public world sharing feature allowing anonymous read-only access to shared worlds.
+Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented, including the recently completed multi-user collaboration feature allowing players to join worlds via invitation codes.
 
 ### What's Working
 
@@ -31,6 +31,14 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 - Article type categorization (WikiArticle, Character, Session, etc.)
 - Character claiming system
 
+**Multi-User Collaboration:**
+- World-level membership (all campaigns in a world share members)
+- Invitation codes in XXXX-XXXX format for easy sharing
+- Role-based access (GM, Player, Observer)
+- Member management UI (view, change roles, remove)
+- Join world flow from Dashboard
+- New users start with empty dashboard (no auto-created world)
+
 **Public Sharing:**
 - Public world toggle with globally unique slugs
 - Three-tier article visibility (Public, MembersOnly, Private)
@@ -41,12 +49,12 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 
 **Dashboard:**
 - Hero section with gradient background and welcome message
+- "Create New World" and "Join a World" action buttons
 - Contextual server-generated prompts based on user state
 - World-centric panels with expandable content
 - Active campaign highlighting with session stats
 - Claimed characters display with click-to-navigate
 - Stats panel showing chronicle totals
-- First-time user onboarding flow
 
 **Infrastructure:**
 - Auth0 authentication (Discord and Google OAuth)
@@ -78,6 +86,7 @@ See `Feature Ideas.md` for the complete bug list and backlog.
 | 9.5 | Auth Architecture | ✅ Complete |
 | 10 | Drag & Drop | ✅ Complete |
 | 10.5 | Public World Sharing | ✅ Complete |
+| 10.6 | Multi-User Collaboration | ✅ Complete |
 | 11 | Icons & Polish | ⏳ Pending |
 | 12 | Testing & Deploy | ⏳ Pending |
 
@@ -87,8 +96,9 @@ See `Feature Ideas.md` for the complete bug list and backlog.
 - Character Claiming System
 - First-time User Onboarding
 - Public World Sharing with Anonymous Access
+- Multi-User Collaboration with Invitation Codes
 
-**Overall Progress:** ~90% of core features complete
+**Overall Progress:** ~92% of core features complete
 
 ---
 

@@ -12,6 +12,51 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.3.0] - 2026-01-02
+
+### Multi-User World Collaboration
+
+**Added:**
+- World-level membership system (replaces campaign-level membership)
+- `WorldMember` entity with Role (GM, Player, Observer)
+- `WorldInvitation` entity with memorable codes (XXXX-XXXX format)
+- `WorldRole` enum for role-based access control
+- Invitation code generator with pronounceable patterns
+- WorldMembersPanel component for member/invitation management
+- JoinWorldDialog for entering invitation codes
+- "Join a World" button on Dashboard hero section
+- Member list with role display and management
+- Role change dropdown (GM only)
+- Remove member functionality (GM only)
+- Create invitation with auto-copy to clipboard
+- Revoke invitation functionality
+- Member count in World Statistics
+
+**API Endpoints:**
+- `GET /api/worlds/{id}/members` - List world members
+- `PUT /api/worlds/{worldId}/members/{memberId}` - Update member role
+- `DELETE /api/worlds/{worldId}/members/{memberId}` - Remove member
+- `GET /api/worlds/{id}/invitations` - List invitations (GM only)
+- `POST /api/worlds/{id}/invitations` - Create invitation (GM only)
+- `DELETE /api/worlds/{worldId}/invitations/{invitationId}` - Revoke invitation
+- `POST /api/worlds/join` - Join world via invitation code
+
+**Changed:**
+- New users no longer get an auto-created default world
+- Dashboard now shows "Create New World" and "Join a World" buttons
+- World detail page includes Members & Invitations section
+- Membership is now at world level (all campaigns in a world share members)
+
+**Removed:**
+- `CampaignMember` entity (replaced by WorldMember)
+- `CampaignRole` enum (replaced by WorldRole)
+- Auto-creation of default world for new users
+
+**Database:**
+- Migration `20260102041237_WorldMembership` converts CampaignMembers to WorldMembers
+
+---
+
 ## [2.2.2] - 2026-01-02
 
 ### Public World Viewer Fixes
