@@ -32,6 +32,72 @@
         overflow-x: hidden;
         padding-bottom: 24px;
     }
+    
+    /* Metadata row styling */
+    .metadata-row {
+        display: flex;
+        align-items: flex-start;
+        padding: 8px 16px;
+        gap: 12px;
+    }
+    
+    .metadata-row .mud-icon-root {
+        color: var(--mud-palette-text-secondary);
+        margin-top: 2px;
+    }
+    
+    .metadata-content {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .metadata-label {
+        font-size: 0.75rem;
+        color: var(--mud-palette-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+    
+    .metadata-value {
+        font-size: 0.875rem;
+        color: var(--mud-palette-text-primary);
+        word-break: break-word;
+    }
+    
+    .metadata-value-secondary {
+        font-size: 0.75rem;
+        color: var(--mud-palette-text-secondary);
+    }
+    
+    /* Visibility selector styling */
+    .visibility-section {
+        padding: 12px 16px;
+    }
+    
+    .visibility-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+    
+    .visibility-option:hover {
+        background-color: var(--mud-palette-action-default-hover);
+    }
+    
+    .visibility-option.selected {
+        background-color: var(--mud-palette-primary-lighten);
+    }
+    
+    .visibility-description {
+        font-size: 0.75rem;
+        color: var(--mud-palette-text-secondary);
+        margin-top: 2px;
+    }
 </style>
 
 <MudDrawer @bind-Open="IsOpen"
@@ -59,74 +125,154 @@
         
         <MudDivider Class="my-3" />
         
-        <!-- Article Metadata -->
+        <!-- Visibility Section -->
+        <MudText Typo="Typo.subtitle2" Class="px-4 py-2" Style="color: var(--mud-palette-text-secondary);">
+            Visibility
+        </MudText>
+        
+        <div class="visibility-section">
+            @if (_isCreator)
+            {
+                <MudSelect T="ArticleVisibility" 
+                           Value="@_currentVisibility"
+                           ValueChanged="@HandleVisibilityChanged"
+                           Label="Who can see this article"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Disabled="_isSavingVisibility"
+                           AnchorOrigin="Origin.BottomCenter"
+                           TransformOrigin="Origin.TopCenter">
+                    <MudSelectItem Value="ArticleVisibility.Public">
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Small" />
+                            <span>Public</span>
+                        </div>
+                    </MudSelectItem>
+                    <MudSelectItem Value="ArticleVisibility.MembersOnly">
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Group" Size="Size.Small" />
+                            <span>Members Only</span>
+                        </div>
+                    </MudSelectItem>
+                    <MudSelectItem Value="ArticleVisibility.Private">
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" />
+                            <span>Private</span>
+                        </div>
+                    </MudSelectItem>
+                </MudSelect>
+                <MudText Typo="Typo.caption" Class="mt-2" Style="color: var(--mud-palette-text-secondary);">
+                    @GetVisibilityDescription(_currentVisibility)
+                </MudText>
+            }
+            else
+            {
+                <div class="d-flex align-center gap-2">
+                    <MudIcon Icon="@GetVisibilityIcon(Article.Visibility)" Size="Size.Small" 
+                             Style="color: var(--mud-palette-text-secondary);" />
+                    <div>
+                        <MudText Typo="Typo.body2">@GetVisibilityLabel(Article.Visibility)</MudText>
+                        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                            @GetVisibilityDescription(Article.Visibility)
+                        </MudText>
+                    </div>
+                </div>
+            }
+        </div>
+        
+        <MudDivider Class="my-3" />
+        
+        <!-- Article Info Section -->
         <MudText Typo="Typo.subtitle2" Class="px-4 py-2" Style="color: var(--mud-palette-text-secondary);">
             Article Info
         </MudText>
         
-        @* Privacy Toggle - only visible to article creator *@
-        @if (_isCreator)
-        {
-            <div class="px-4 py-2">
-                <MudSwitch T="bool" 
-                           Value="@_isPrivate" 
-                           ValueChanged="@OnPrivacyToggled"
-                           Color="Color.Primary"
-                           Label="@(_isPrivate ? "Private (only you can see this)" : "Visible to world members")"
-                           Disabled="_isSavingPrivacy" />
-                @if (_isPrivate)
-                {
-                    <MudText Typo="Typo.caption" Class="mt-1" Style="color: var(--mud-palette-text-secondary);">
-                        <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Style="vertical-align: middle;" />
-                        Only you can view this article
-                    </MudText>
-                }
+        <!-- Article Type -->
+        <div class="metadata-row">
+            <MudIcon Icon="@GetArticleTypeIcon(Article.Type)" Size="Size.Small" />
+            <div class="metadata-content">
+                <div class="metadata-label">Type</div>
+                <div class="metadata-value">@GetArticleTypeLabel(Article.Type)</div>
             </div>
-            <MudDivider Class="my-2" />
-        }
-        else if (Article.Visibility == ArticleVisibility.Private)
-        {
-            <div class="px-4 py-2">
-                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
-                    <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Style="vertical-align: middle;" />
-                    This article is private to its creator
-                </MudText>
+        </div>
+        
+        <!-- Created By -->
+        <div class="metadata-row">
+            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" />
+            <div class="metadata-content">
+                <div class="metadata-label">Created</div>
+                <div class="metadata-value">@(Article.CreatedByName ?? "Unknown")</div>
+                <div class="metadata-value-secondary">@Article.CreatedAt.ToString("MMM d, yyyy 'at' h:mm tt")</div>
             </div>
-            <MudDivider Class="my-2" />
+        </div>
+        
+        <!-- Last Modified By (only show if different from created or has been modified) -->
+        @if (Article.ModifiedAt.HasValue)
+        {
+            <div class="metadata-row">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                <div class="metadata-content">
+                    <div class="metadata-label">Last Modified</div>
+                    <div class="metadata-value">@(Article.LastModifiedByName ?? Article.CreatedByName ?? "Unknown")</div>
+                    <div class="metadata-value-secondary">@Article.ModifiedAt.Value.ToString("MMM d, yyyy 'at' h:mm tt")</div>
+                </div>
+            </div>
         }
         
-        <MudList T="string">
-            <MudListItem>
-                <MudText Typo="Typo.subtitle1">Article ID</MudText>
-                <MudText Typo="Typo.body2">@Article.Id</MudText>
-            </MudListItem>
-            <MudListItem>
-                <MudText Typo="Typo.subtitle1">World ID</MudText>
-                <MudText Typo="Typo.body2">@Article.WorldId</MudText>
-            </MudListItem>
-            <MudListItem>
-                <MudText Typo="Typo.subtitle1">Campaign ID</MudText>
-                <MudText Typo="Typo.body2">@(Article.CampaignId?.ToString() ?? "None")</MudText>
-            </MudListItem>
-            <MudListItem>
-                <MudText Typo="Typo.subtitle1">Effective Date</MudText>
-                <MudText Typo="Typo.body2">
-                    @Article.EffectiveDate.ToString("MMMM d, yyyy 'at' h:mm tt")
-                </MudText>
-            </MudListItem>
-            <MudListItem>
-                <MudText Typo="Typo.subtitle1">Created Date</MudText>
-                <MudText Typo="Typo.body2">
-                    @Article.CreatedAt.ToString("MMMM d, yyyy 'at' h:mm tt")
-                </MudText>
-            </MudListItem>
-            <MudListItem>
-                <MudText Typo="Typo.subtitle1">Modified Date</MudText>
-                <MudText Typo="Typo.body2">
-                    @Article.ModifiedAt?.ToString("MMMM d, yyyy 'at' h:mm tt")
-                </MudText>
-            </MudListItem>
-        </MudList>
+        <!-- Effective Date -->
+        <div class="metadata-row">
+            <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Small" />
+            <div class="metadata-content">
+                <div class="metadata-label">Effective Date</div>
+                <div class="metadata-value">@Article.EffectiveDate.ToString("MMMM d, yyyy")</div>
+                <div class="metadata-value-secondary">@Article.EffectiveDate.ToString("h:mm tt")</div>
+            </div>
+        </div>
+        
+        <MudDivider Class="my-3" />
+        
+        <!-- Technical IDs (collapsed by default) -->
+        <MudExpansionPanels Elevation="0" Dense="true">
+            <MudExpansionPanel Text="Technical Details" Style="background: transparent;">
+                <div class="metadata-row">
+                    <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Size="Size.Small" />
+                    <div class="metadata-content">
+                        <div class="metadata-label">Article ID</div>
+                        <div class="metadata-value" style="font-family: monospace; font-size: 0.7rem;">@Article.Id</div>
+                    </div>
+                </div>
+                @if (Article.WorldId.HasValue)
+                {
+                    <div class="metadata-row">
+                        <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Small" />
+                        <div class="metadata-content">
+                            <div class="metadata-label">World ID</div>
+                            <div class="metadata-value" style="font-family: monospace; font-size: 0.7rem;">@Article.WorldId</div>
+                        </div>
+                    </div>
+                }
+                @if (Article.CampaignId.HasValue)
+                {
+                    <div class="metadata-row">
+                        <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" />
+                        <div class="metadata-content">
+                            <div class="metadata-label">Campaign ID</div>
+                            <div class="metadata-value" style="font-family: monospace; font-size: 0.7rem;">@Article.CampaignId</div>
+                        </div>
+                    </div>
+                }
+                @if (Article.ArcId.HasValue)
+                {
+                    <div class="metadata-row">
+                        <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Small" />
+                        <div class="metadata-content">
+                            <div class="metadata-label">Arc ID</div>
+                            <div class="metadata-value" style="font-family: monospace; font-size: 0.7rem;">@Article.ArcId</div>
+                        </div>
+                    </div>
+                }
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     </MudDrawerContainer>
 </MudDrawer>
 
@@ -134,33 +280,21 @@
     private OutgoingLinksPanel? _outgoingLinksPanel;
     private BacklinksPanel? _backlinksPanel;
     private bool _isCreator;
-    private bool _isPrivate;
-    private bool _isSavingPrivacy;
+    private ArticleVisibility _currentVisibility;
+    private bool _isSavingVisibility;
     private Guid? _currentUserId;
 
-    /// <summary>
-    /// The article whose metadata to display.
-    /// </summary>
     [Parameter]
     public ArticleDto Article { get; set; } = null!;
 
-    /// <summary>
-    /// Whether the drawer is open (two-way bound).
-    /// </summary>
     [Parameter]
     public bool IsOpen { get; set; }
 
-    /// <summary>
-    /// Callback when drawer open state changes.
-    /// </summary>
     [Parameter]
     public EventCallback<bool> IsOpenChanged { get; set; }
 
-    /// <summary>
-    /// Callback when visibility changes (for refreshing the parent).
-    /// </summary>
     [Parameter]
-    public EventCallback OnVisibilityChanged { get; set; }
+    public EventCallback OnArticleVisibilityChanged { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -170,22 +304,21 @@
 
     protected override void OnParametersSet()
     {
-        // Check if current user is the creator
         _isCreator = _currentUserId.HasValue && Article.CreatedBy == _currentUserId.Value;
-        _isPrivate = Article.Visibility == ArticleVisibility.Private;
+        _currentVisibility = Article.Visibility;
     }
 
-    private async Task OnPrivacyToggled(bool isPrivate)
+    private async Task HandleVisibilityChanged(ArticleVisibility newVisibility)
     {
-        if (_isSavingPrivacy) return;
+        if (_isSavingVisibility || newVisibility == _currentVisibility) return;
 
-        _isSavingPrivacy = true;
+        var previousVisibility = _currentVisibility;
+        _isSavingVisibility = true;
+        _currentVisibility = newVisibility; // Optimistic update
         StateHasChanged();
 
         try
         {
-            var newVisibility = isPrivate ? ArticleVisibility.Private : ArticleVisibility.Public;
-            
             var updateDto = new ArticleUpdateDto
             {
                 Title = Article.Title,
@@ -195,32 +328,71 @@
 
             await ArticleApi.UpdateArticleAsync(Article.Id, updateDto);
             
-            _isPrivate = isPrivate;
             Article.Visibility = newVisibility;
-            
-            // Update tree node to show/hide lock icon immediately
             TreeState.UpdateNodeVisibility(Article.Id, newVisibility);
             
-            Snackbar.Add(isPrivate ? "Article is now private" : "Article is now visible to world members", Severity.Success);
+            Snackbar.Add($"Visibility changed to {GetVisibilityLabel(newVisibility)}", Severity.Success);
             
-            await OnVisibilityChanged.InvokeAsync();
+            await OnArticleVisibilityChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Failed to update visibility: {ex.Message}", Severity.Error);
-            // Revert UI state
-            _isPrivate = !isPrivate;
+            _currentVisibility = previousVisibility; // Revert on failure
         }
         finally
         {
-            _isSavingPrivacy = false;
+            _isSavingVisibility = false;
             StateHasChanged();
         }
     }
 
-    /// <summary>
-    /// Refreshes the outgoing links panel. Call after saving article content.
-    /// </summary>
+    private static string GetVisibilityIcon(ArticleVisibility visibility) => visibility switch
+    {
+        ArticleVisibility.Public => Icons.Material.Filled.Public,
+        ArticleVisibility.MembersOnly => Icons.Material.Filled.Group,
+        ArticleVisibility.Private => Icons.Material.Filled.Lock,
+        _ => Icons.Material.Filled.Help
+    };
+
+    private static string GetVisibilityLabel(ArticleVisibility visibility) => visibility switch
+    {
+        ArticleVisibility.Public => "Public",
+        ArticleVisibility.MembersOnly => "Members Only",
+        ArticleVisibility.Private => "Private",
+        _ => "Unknown"
+    };
+
+    private static string GetVisibilityDescription(ArticleVisibility visibility) => visibility switch
+    {
+        ArticleVisibility.Public => "Anyone can view this article, including visitors to public worlds.",
+        ArticleVisibility.MembersOnly => "Only members of this world can view this article.",
+        ArticleVisibility.Private => "Only you can view this article. Hidden from all other users.",
+        _ => ""
+    };
+
+    private static string GetArticleTypeIcon(ArticleType type) => type switch
+    {
+        ArticleType.WikiArticle => Icons.Material.Filled.Article,
+        ArticleType.Character => Icons.Material.Filled.Person,
+        ArticleType.CharacterNote => Icons.Material.Filled.Note,
+        ArticleType.Session => Icons.Material.Filled.Casino,
+        ArticleType.SessionNote => Icons.Material.Filled.EditNote,
+        ArticleType.Legacy => Icons.Material.Filled.History,
+        _ => Icons.Material.Filled.Description
+    };
+
+    private static string GetArticleTypeLabel(ArticleType type) => type switch
+    {
+        ArticleType.WikiArticle => "Wiki Article",
+        ArticleType.Character => "Character",
+        ArticleType.CharacterNote => "Character Note",
+        ArticleType.Session => "Session",
+        ArticleType.SessionNote => "Session Note",
+        ArticleType.Legacy => "Legacy Article",
+        _ => "Article"
+    };
+
     public async Task RefreshPanelsAsync()
     {
         if (_outgoingLinksPanel != null)

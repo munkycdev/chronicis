@@ -4,9 +4,7 @@
 
 ### Article
 - Sometimes, when I load a long article, scroll down a ways, and type [[, it doesn't load the link autocomplete popup. Sometimes it does. Seems inconsistent.
-- Review the usability of the metadata drawer
 - Maybe add something to an article icon to indicate that an AI summary has been generated for it?
-- I was wrong, I want to convert the markdown to html in bulk instead of on every load. Or at least, detect markdown files and convert them the first time the article is loaded
 
 ### General
 - Make it work on an iPad
@@ -19,8 +17,6 @@
 ## Cleanup
 
 - Run a cleanup to remove all unused code and styles - this includes cleaning up styling overrides for the fixed mud theme
-- For World Detail page, make External Links and Documents be children of a higher header named "External Resources", probably the tab name
-- World Detail page - let's look at header taxonomy. The sizing of elements feels kind of "off"
 - Buttons everywhere are not using the right color. Maybe have Claude look at everything and do some cleanup?
 
 ---
