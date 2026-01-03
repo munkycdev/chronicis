@@ -212,15 +212,17 @@ public class TreeStateService : ITreeStateService
             .SelectMany(wd => wd!.Campaigns ?? new List<CampaignDto>())
             .ToList();
         
-        _logger.LogInformation("Phase 3: Fetching arcs for {Count} campaigns and world links in parallel...", allCampaigns.Count);
+        _logger.LogInformation("Phase 3: Fetching arcs for {Count} campaigns, world links, and documents in parallel...", allCampaigns.Count);
 
-        // Fetch all arcs and world links in parallel
+        // Fetch all arcs, world links, and world documents in parallel
         var arcTasks = allCampaigns.Select(c => _arcApi.GetArcsByCampaignAsync(c.Id)).ToList();
         var linkTasks = worlds.Select(w => _worldApi.GetWorldLinksAsync(w.Id)).ToList();
+        var documentTasks = worlds.Select(w => _worldApi.GetWorldDocumentsAsync(w.Id)).ToList();
 
         await Task.WhenAll(
             Task.WhenAll(arcTasks),
-            Task.WhenAll(linkTasks)
+            Task.WhenAll(linkTasks),
+            Task.WhenAll(documentTasks)
         );
 
         var arcResults = arcTasks.Select(t => t.Result).ToArray();
@@ -230,6 +232,13 @@ public class TreeStateService : ITreeStateService
         for (int i = 0; i < worlds.Count; i++)
         {
             linksByWorld[worlds[i].Id] = linkTasks[i].Result;
+        }
+
+        // Create lookup: WorldId -> List<WorldDocumentDto>
+        var documentsByWorld = new Dictionary<Guid, List<WorldDocumentDto>>();
+        for (int i = 0; i < worlds.Count; i++)
+        {
+            documentsByWorld[worlds[i].Id] = documentTasks[i].Result;
         }
         
         // Create lookup: CampaignId -> List<ArcDto>
@@ -258,6 +267,7 @@ public class TreeStateService : ITreeStateService
             }
             
             var worldLinks = linksByWorld.TryGetValue(world.Id, out var links) ? links : new List<WorldLinkDto>();
+            var worldDocuments = documentsByWorld.TryGetValue(world.Id, out var docs) ? docs : new List<WorldDocumentDto>();
 
             var worldNode = BuildWorldNode(
                 world, 
@@ -265,7 +275,8 @@ public class TreeStateService : ITreeStateService
                 allArticles, 
                 articleIndex, 
                 arcsByCampaign,
-                worldLinks);
+                worldLinks,
+                worldDocuments);
             
             _rootNodes.Add(worldNode);
             _nodeIndex[worldNode.Id] = worldNode;
@@ -310,7 +321,8 @@ public class TreeStateService : ITreeStateService
         List<ArticleTreeDto> allArticles,
         Dictionary<Guid, ArticleTreeDto> articleIndex,
         Dictionary<Guid, List<ArcDto>> arcsByCampaign,
-        List<WorldLinkDto> worldLinks)
+        List<WorldLinkDto> worldLinks,
+        List<WorldDocumentDto> worldDocuments)
     {
         var worldNode = new TreeNode
         {
@@ -387,6 +399,31 @@ public class TreeStateService : ITreeStateService
             linksGroup.Children.Add(linkNode);
             _nodeIndex[linkNode.Id] = linkNode;
         }
+        
+        // Add documents to the Links group
+        foreach (var document in worldDocuments.OrderBy(d => d.Title))
+        {
+            var documentNode = new TreeNode
+            {
+                Id = document.Id,
+                NodeType = TreeNodeType.ExternalLink, // Reuse ExternalLink type for documents
+                Title = document.Title,
+                Url = null, // Documents don't have direct URLs, they need download flow
+                WorldId = world.Id,
+                IconEmoji = GetDocumentIcon(document.ContentType),
+                // Store document-specific data
+                AdditionalData = new Dictionary<string, object>
+                {
+                    { "IsDocument", true },
+                    { "ContentType", document.ContentType },
+                    { "FileSizeBytes", document.FileSizeBytes },
+                    { "FileName", document.FileName }
+                }
+            };
+            linksGroup.Children.Add(documentNode);
+            _nodeIndex[documentNode.Id] = documentNode;
+        }
+        
         linksGroup.ChildCount = linksGroup.Children.Count;
         
         // Build Uncategorized group (Legacy and untyped articles)
@@ -1138,5 +1175,20 @@ public class TreeStateService : ITreeStateService
         {
             _logger.LogWarning(ex, "Failed to restore expanded state");
         }
+    }
+    
+    private static string GetDocumentIcon(string contentType)
+    {
+        return contentType.ToLowerInvariant() switch
+        {
+            "application/pdf" => "fa-solid fa-file-pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => "fa-solid fa-file-word",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => "fa-solid fa-file-excel",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation" => "fa-solid fa-file-powerpoint",
+            "text/plain" => "fa-solid fa-file-lines",
+            "text/markdown" => "fa-solid fa-file-lines",
+            string ct when ct.StartsWith("image/") => "fa-solid fa-file-image",
+            _ => "fa-solid fa-file"
+        };
     }
 }

@@ -94,4 +94,9 @@ public class User
     /// All characters owned by this user (where they are the player).
     /// </summary>
     public ICollection<Article> OwnedCharacters { get; set; } = new List<Article>();
+
+    /// <summary>
+    /// All documents uploaded by this user.
+    /// </summary>
+    public ICollection<WorldDocument> UploadedDocuments { get; set; } = new List<WorldDocument>();
 }

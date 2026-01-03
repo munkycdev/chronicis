@@ -12,6 +12,58 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.5.0] - 2026-01-03
+
+### Document Storage
+
+**Added:**
+- Document upload and management for worlds (PDF, DOCX, XLSX, PPTX, TXT, MD, images)
+- Azure Blob Storage integration with SAS token security
+- WorldDocument entity with metadata tracking
+- BlobStorageService for file operations
+- Direct client-to-blob upload (bypasses 4MB HTTP limit)
+- WorldDocumentUploadDialog with file validation
+- Documents section on WorldDetail page with inline editing
+- Document list/management panel with title, description, size, upload date
+- File-type-specific icons in tree navigation (PDF, Word, Excel, PowerPoint, image, text)
+- Auto-rename for duplicate filenames (e.g., "Document (2).pdf")
+- 200 MB file size limit with client-side validation
+- 15-minute SAS token expiration for security
+- Download via temporary SAS URLs
+
+**API Endpoints:**
+- `POST /api/worlds/{id}/documents/request-upload` - Request upload SAS URL
+- `POST /api/worlds/{id}/documents/{documentId}/confirm` - Confirm upload completion
+- `GET /api/worlds/{id}/documents` - List world documents
+- `GET /api/worlds/{id}/documents/{documentId}/download` - Get download SAS URL
+- `PUT /api/worlds/{id}/documents/{documentId}` - Update document metadata
+- `DELETE /api/worlds/{id}/documents/{documentId}` - Delete document
+
+**Changed:**
+- TreeStateService loads documents alongside links in External Resources section
+- TreeNode.AdditionalData dictionary stores document metadata
+- ArticleTreeNode handles document download via click
+- InputFile component used instead of MudFileUpload (fixes Blazor WASM file reference bug)
+- Files read into byte array immediately upon selection to avoid disposal issues
+
+**Permissions:**
+- Upload/Edit/Delete: World owner (GM) only
+- Download/View: All world members
+
+**Infrastructure:**
+- Azure Blob Storage container: `chronicis-documents` (private access)
+- CORS configuration required for browser uploads
+- Blob path pattern: `worlds/{worldId}/documents/{documentId}/{filename}`
+- NuGet package: Azure.Storage.Blobs v12.22.2
+
+**Documentation:**
+- Document-Storage-Testing-Guide.md (33 test scenarios)
+- Document-Storage-User-Guide.md (user-facing documentation)
+- Document-Storage-API.md (API reference with examples)
+- Document-Storage-Implementation-Summary.md (technical overview)
+
+---
+
 ## [2.4.0] - 2026-01-02
 
 ### Private Articles

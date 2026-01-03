@@ -49,6 +49,38 @@ public interface IWorldApiService
     /// </summary>
     Task<bool> DeleteWorldLinkAsync(Guid worldId, Guid linkId);
 
+    // ===== World Documents =====
+
+    /// <summary>
+    /// Request a document upload (get SAS URL for client upload)
+    /// </summary>
+    Task<WorldDocumentUploadResponseDto?> RequestDocumentUploadAsync(Guid worldId, WorldDocumentUploadRequestDto dto);
+
+    /// <summary>
+    /// Confirm a document upload completed successfully
+    /// </summary>
+    Task<WorldDocumentDto?> ConfirmDocumentUploadAsync(Guid worldId, Guid documentId);
+
+    /// <summary>
+    /// Get all documents for a world
+    /// </summary>
+    Task<List<WorldDocumentDto>> GetWorldDocumentsAsync(Guid worldId);
+
+    /// <summary>
+    /// Get download URL for a document
+    /// </summary>
+    Task<WorldDocumentDownloadResponseDto?> GetDocumentDownloadUrlAsync(Guid worldId, Guid documentId);
+
+    /// <summary>
+    /// Update document metadata (title, description)
+    /// </summary>
+    Task<WorldDocumentDto?> UpdateDocumentAsync(Guid worldId, Guid documentId, WorldDocumentUpdateDto dto);
+
+    /// <summary>
+    /// Delete a document
+    /// </summary>
+    Task<bool> DeleteDocumentAsync(Guid worldId, Guid documentId);
+
     // ===== Public Sharing =====
 
     /// <summary>

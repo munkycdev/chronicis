@@ -1,0 +1,229 @@
+@using Chronicis.Shared.DTOs
+@using Microsoft.AspNetCore.Components.Forms
+@inject IWorldApiService WorldApi
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (_isUploading)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                <MudText Typo="Typo.body2" Align="Align.Center">
+                    @_uploadStatus
+                </MudText>
+            }
+            else
+            {
+                <MudPaper Outlined="true" Class="pa-4" Style="border-style: dashed;">
+                    <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" Color="Color.Primary" />
+                        <InputFile id="fileInput" 
+                                   OnChange="OnFileSelected" 
+                                   accept=".pdf,.docx,.xlsx,.pptx,.txt,.md,.png,.jpg,.jpeg,.gif,.webp"
+                                   style="display: none;" />
+                        <label for="fileInput" style="cursor: pointer; width: 100%;">
+                            <MudText Typo="Typo.h6" Align="Align.Center">
+                                @(_selectedFile == null ? "Click to select file" : _selectedFile.Name)
+                            </MudText>
+                        </label>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            Maximum file size: 200 MB
+                        </MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            Supported: PDF, Word, Excel, PowerPoint, Text, Markdown, Images
+                        </MudText>
+                    </MudStack>
+                </MudPaper>
+
+                @if (_selectedFile != null)
+                {
+                    <MudTextField @bind-Value="_title" 
+                                  Label="Title" 
+                                  Variant="Variant.Outlined"
+                                  HelperText="Optional: Customize the display name (defaults to filename)" />
+                    
+                    <MudTextField @bind-Value="_description" 
+                                  Label="Description" 
+                                  Variant="Variant.Outlined"
+                                  Lines="3"
+                                  HelperText="Optional: Add a description for this document" />
+
+                    @if (!string.IsNullOrEmpty(_validationError))
+                    {
+                        <MudAlert Severity="Severity.Error">@_validationError</MudAlert>
+                    }
+                }
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_isUploading">Cancel</MudButton>
+        <MudButton Color="Color.Primary" 
+                   OnClick="Upload" 
+                   Disabled="_selectedFile == null || _isUploading">
+            Upload
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public Guid WorldId { get; set; }
+
+    private IBrowserFile? _selectedFile;
+    private byte[]? _fileData;
+    private string _title = string.Empty;
+    private string _description = string.Empty;
+    private string _validationError = string.Empty;
+    private bool _isUploading = false;
+    private string _uploadStatus = string.Empty;
+
+    private const long MaxFileSize = 200 * 1024 * 1024; // 200 MB
+    private static readonly HashSet<string> AllowedExtensions = new()
+    {
+        ".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".md",
+        ".png", ".jpg", ".jpeg", ".gif", ".webp"
+    };
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        _selectedFile = e.File;
+        _fileData = null;
+        _validationError = string.Empty;
+
+        if (_selectedFile != null)
+        {
+            // Default title to filename without extension
+            if (string.IsNullOrWhiteSpace(_title))
+            {
+                _title = Path.GetFileNameWithoutExtension(_selectedFile.Name);
+            }
+
+            // Validate file
+            if (_selectedFile.Size > MaxFileSize)
+            {
+                _validationError = $"File size ({FormatFileSize(_selectedFile.Size)}) exceeds maximum of 200 MB";
+                _selectedFile = null;
+                return;
+            }
+
+            var extension = Path.GetExtension(_selectedFile.Name).ToLowerInvariant();
+            if (!AllowedExtensions.Contains(extension))
+            {
+                _validationError = $"File type {extension} is not supported";
+                _selectedFile = null;
+                return;
+            }
+
+            // Read file data immediately to avoid disposal issues
+            try
+            {
+                using var stream = _selectedFile.OpenReadStream(MaxFileSize);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                _fileData = memoryStream.ToArray();
+            }
+            catch (Exception ex)
+            {
+                _validationError = $"Failed to read file: {ex.Message}";
+                _selectedFile = null;
+                _fileData = null;
+            }
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task Upload()
+    {
+        if (_selectedFile == null || _fileData == null) return;
+
+        _isUploading = true;
+        _uploadStatus = "Preparing upload...";
+        StateHasChanged();
+
+        try
+        {
+            // Step 1: Request upload (get SAS URL)
+            var request = new WorldDocumentUploadRequestDto
+            {
+                FileName = _selectedFile.Name,
+                ContentType = _selectedFile.ContentType,
+                FileSizeBytes = _selectedFile.Size,
+                Description = _description
+            };
+
+            var uploadResponse = await WorldApi.RequestDocumentUploadAsync(WorldId, request);
+            
+            if (uploadResponse == null)
+            {
+                throw new Exception("Failed to get upload URL");
+            }
+
+            // Use the server-generated title (may have been renamed for uniqueness)
+            var finalTitle = uploadResponse.Title;
+
+            _uploadStatus = "Uploading file...";
+            StateHasChanged();
+
+            // Step 2: Upload file directly to blob storage using SAS URL (from byte array)
+            using var content = new ByteArrayContent(_fileData);
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(_selectedFile.ContentType);
+            
+            // Add required blob headers for Azure Storage
+            content.Headers.Add("x-ms-blob-type", "BlockBlob");
+
+            using var httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromMinutes(5); // Allow time for large uploads
+            
+            var uploadResult = await httpClient.PutAsync(uploadResponse.UploadUrl, content);
+
+            if (!uploadResult.IsSuccessStatusCode)
+            {
+                var errorBody = await uploadResult.Content.ReadAsStringAsync();
+                throw new Exception($"Blob upload failed ({uploadResult.StatusCode}): {errorBody}");
+            }
+
+            _uploadStatus = "Finalizing...";
+            StateHasChanged();
+
+            // Step 3: Confirm upload
+            var document = await WorldApi.ConfirmDocumentUploadAsync(WorldId, uploadResponse.DocumentId);
+
+            if (document == null)
+            {
+                throw new Exception("Failed to confirm upload");
+            }
+
+            Snackbar.Add($"Document '{document.Title}' uploaded successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(document));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
+            _isUploading = false;
+            _uploadStatus = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len /= 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}

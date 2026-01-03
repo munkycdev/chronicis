@@ -78,6 +78,11 @@ public class TreeNode
     /// Number of children (from server or computed).
     /// </summary>
     public int ChildCount { get; set; }
+
+    /// <summary>
+    /// Additional data for specialized node types (e.g., documents).
+    /// </summary>
+    public Dictionary<string, object>? AdditionalData { get; set; }
     
     // ===== UI State =====
     

@@ -196,6 +196,114 @@ else if (_world != null)
                            Size="Size.Small">
                     Add Resource
                 </MudButton>
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Upload"
+                           OnClick="OpenUploadDialog"
+                           Size="Size.Small">
+                    Upload Document
+                </MudButton>
+            }
+        </div>
+
+        <!-- Documents -->
+        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
+            Documents
+        </MudText>
+
+        <div class="mb-4">
+            @if (_documents.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+                    No documents uploaded yet. Upload PDFs, Office files, images, or other documents.
+                </MudText>
+            }
+            else
+            {
+                <!-- Document List -->
+                @foreach (var doc in _documents.OrderBy(d => d.Title))
+                {
+                    <div class="world-link-item d-flex align-center gap-2 mb-2 pa-2 rounded" 
+                         style="background: var(--mud-palette-background-grey);">
+                        @if (_editingDocumentId == doc.Id)
+                        {
+                            <!-- Edit Mode -->
+                            <MudIcon Icon="@GetDocumentIcon(doc.ContentType)" 
+                                     Size="Size.Small" 
+                                     Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
+                            <MudTextField @bind-Value="_editDocumentTitle"
+                                          Placeholder="Title"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Style="min-width: 200px;" />
+                            <MudTextField @bind-Value="_editDocumentDescription"
+                                          Placeholder="Description (optional)"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Style="flex: 1;" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                           Color="Color.Success"
+                                           Size="Size.Small"
+                                           OnClick="SaveDocumentEdit"
+                                           Disabled="_isSavingDocument" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                           Color="Color.Default"
+                                           Size="Size.Small"
+                                           OnClick="CancelDocumentEdit" />
+                        }
+                        else
+                        {
+                            <!-- View Mode -->
+                            <MudIcon Icon="@GetDocumentIcon(doc.ContentType)" 
+                                     Size="Size.Small" 
+                                     Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
+                            <div style="flex: 1; min-width: 0;">
+                                <MudText Typo="Typo.body2" Style="font-weight: 500;">
+                                    @doc.Title
+                                </MudText>
+                                @if (!string.IsNullOrEmpty(doc.Description))
+                                {
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                        @doc.Description
+                                    </MudText>
+                                }
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    @FormatFileSize(doc.FileSizeBytes) • Uploaded @doc.UploadedAt.ToString("MMM d, yyyy")
+                                </MudText>
+                            </div>
+                            <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           OnClick="@(() => DownloadDocument(doc.Id))"
+                                           Title="Download" />
+                            @if (_isCurrentUserGM)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Color="Color.Default"
+                                               Size="Size.Small"
+                                               OnClick="@(() => StartEditDocument(doc))"
+                                               Title="Edit" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Color="Color.Error"
+                                               Size="Size.Small"
+                                               OnClick="@(() => DeleteDocument(doc.Id))"
+                                               Title="Delete" />
+                            }
+                        }
+                    </div>
+                }
+            }
+            
+            @if (_isCurrentUserGM)
+            {
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Upload"
+                           OnClick="OpenUploadDialog"
+                           Size="Size.Small"
+                           Class="mt-2">
+                    Upload Document
+                </MudButton>
             }
         </div>
 
@@ -350,6 +458,13 @@ else if (_world != null)
     private string _editLinkUrl = string.Empty;
     private string _editLinkDescription = string.Empty;
 
+    // Documents state
+    private List<WorldDocumentDto> _documents = new();
+    private Guid? _editingDocumentId = null;
+    private string _editDocumentTitle = string.Empty;
+    private string _editDocumentDescription = string.Empty;
+    private bool _isSavingDocument = false;
+
     // Public sharing state
     private bool _isPublic = false;
     private string _publicSlug = string.Empty;
@@ -419,6 +534,9 @@ else if (_world != null)
                 
                 // Load links
                 _links = await WorldApi.GetWorldLinksAsync(WorldId);
+                
+                // Load documents
+                _documents = await WorldApi.GetWorldDocumentsAsync(WorldId);
                 
                 // Highlight in tree
                 TreeState.ExpandPathToAndSelect(WorldId);
@@ -697,6 +815,173 @@ else if (_world != null)
     private void HandleFaviconError()
     {
         // Favicon errors are handled via CSS fallback
+    }
+
+    // ===== Document Upload =====
+
+    private async Task OpenUploadDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            { "WorldId", WorldId }
+        };
+
+        var options = new DialogOptions 
+        { 
+            MaxWidth = MaxWidth.Small, 
+            FullWidth = true 
+        };
+
+        var dialog = await DialogService.ShowAsync<WorldDocumentUploadDialog>("Upload Document", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            // Refresh document list and tree to show new document
+            await LoadWorldAsync();
+            Snackbar.Add("Document uploaded successfully", Severity.Success);
+        }
+    }
+
+    private void StartEditDocument(WorldDocumentDto document)
+    {
+        _editingDocumentId = document.Id;
+        _editDocumentTitle = document.Title;
+        _editDocumentDescription = document.Description ?? string.Empty;
+    }
+
+    private void CancelDocumentEdit()
+    {
+        _editingDocumentId = null;
+        _editDocumentTitle = string.Empty;
+        _editDocumentDescription = string.Empty;
+    }
+
+    private async Task SaveDocumentEdit()
+    {
+        if (_editingDocumentId == null) return;
+
+        _isSavingDocument = true;
+        StateHasChanged();
+
+        try
+        {
+            var updateDto = new WorldDocumentUpdateDto
+            {
+                Title = _editDocumentTitle,
+                Description = _editDocumentDescription
+            };
+
+            var updated = await WorldApi.UpdateDocumentAsync(WorldId, _editingDocumentId.Value, updateDto);
+            
+            if (updated != null)
+            {
+                // Update local list
+                var doc = _documents.FirstOrDefault(d => d.Id == _editingDocumentId.Value);
+                if (doc != null)
+                {
+                    doc.Title = updated.Title;
+                    doc.Description = updated.Description;
+                }
+
+                _editingDocumentId = null;
+                _editDocumentTitle = string.Empty;
+                _editDocumentDescription = string.Empty;
+
+                // Refresh tree to show updated name
+                await TreeState.RefreshAsync();
+                
+                Snackbar.Add("Document updated", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to update document: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSavingDocument = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteDocument(Guid documentId)
+    {
+        var doc = _documents.FirstOrDefault(d => d.Id == documentId);
+        if (doc == null) return;
+
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete Document",
+            $"Are you sure you want to delete \"{doc.Title}\"? This action cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            var success = await WorldApi.DeleteDocumentAsync(WorldId, documentId);
+            
+            if (success)
+            {
+                _documents.Remove(doc);
+                await TreeState.RefreshAsync();
+                Snackbar.Add("Document deleted", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete document", Severity.Error);
+            }
+        }
+    }
+
+    private async Task DownloadDocument(Guid documentId)
+    {
+        try
+        {
+            var response = await WorldApi.GetDocumentDownloadUrlAsync(WorldId, documentId);
+            
+            if (response == null || string.IsNullOrEmpty(response.DownloadUrl))
+            {
+                Snackbar.Add("Failed to generate download link", Severity.Error);
+                return;
+            }
+
+            // Open download URL in new tab
+            await JSRuntime.InvokeVoidAsync("open", response.DownloadUrl, "_blank");
+            
+            Snackbar.Add($"Downloading {response.FileName}", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error downloading document: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private string GetDocumentIcon(string contentType)
+    {
+        return contentType.ToLowerInvariant() switch
+        {
+            "application/pdf" => Icons.Material.Filled.PictureAsPdf,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => Icons.Material.Filled.Description,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => Icons.Material.Filled.TableChart,
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation" => Icons.Material.Filled.Slideshow,
+            "text/plain" => Icons.Material.Filled.TextSnippet,
+            "text/markdown" => Icons.Material.Filled.Article,
+            string ct when ct.StartsWith("image/") => Icons.Material.Filled.Image,
+            _ => Icons.Material.Filled.InsertDriveFile
+        };
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
     }
 
     // ===== Article Creation =====

@@ -2,6 +2,8 @@
 @using Chronicis.Shared.Enums
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject IWorldApiService WorldApi
+@inject ISnackbar Snackbar
 
 <div class="tree-node @GetNodeClasses()">
     
@@ -266,9 +268,15 @@
                 break;
                 
             case TreeNodeType.ExternalLink:
-                // Open external URL in new tab
-                if (!string.IsNullOrEmpty(Node.Url))
+                // Check if this is a document (not a regular external link)
+                if (Node.AdditionalData?.ContainsKey("IsDocument") == true)
                 {
+                    // Handle document download
+                    await HandleDocumentDownload();
+                }
+                else if (!string.IsNullOrEmpty(Node.Url))
+                {
+                    // Open external URL in new tab
                     await JSRuntime.InvokeVoidAsync("open", Node.Url, "_blank");
                 }
                 break;
@@ -341,5 +349,35 @@
         if (!Node.IsDropTarget) return false;
         
         return true;
+    }
+    
+    private async Task HandleDocumentDownload()
+    {
+        try
+        {
+            if (!Node.WorldId.HasValue)
+            {
+                Snackbar.Add("Document world not found", Severity.Error);
+                return;
+            }
+
+            // Get download URL from API
+            var response = await WorldApi.GetDocumentDownloadUrlAsync(Node.WorldId.Value, Node.Id);
+            
+            if (response == null || string.IsNullOrEmpty(response.DownloadUrl))
+            {
+                Snackbar.Add("Failed to generate download link", Severity.Error);
+                return;
+            }
+
+            // Open download URL in new tab (browser will handle download)
+            await JSRuntime.InvokeVoidAsync("open", response.DownloadUrl, "_blank");
+            
+            Snackbar.Add($"Downloading {response.FileName}", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error downloading document: {ex.Message}", Severity.Error);
+        }
     }
 }

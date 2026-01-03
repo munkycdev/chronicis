@@ -18,6 +18,7 @@ public class ChronicisDbContext : DbContext
     public DbSet<Article> Articles { get; set; } = null!;
     public DbSet<ArticleLink> ArticleLinks { get; set; } = null!;
     public DbSet<WorldLink> WorldLinks { get; set; } = null!;
+    public DbSet<WorldDocument> WorldDocuments { get; set; } = null!;
     public DbSet<SummaryTemplate> SummaryTemplates { get; set; } = null!;
 
 
@@ -37,6 +38,7 @@ public class ChronicisDbContext : DbContext
         ConfigureArticle(modelBuilder);
         ConfigureArticleLink(modelBuilder);
         ConfigureWorldLink(modelBuilder);
+        ConfigureWorldDocument(modelBuilder);
         ConfigureSummaryTemplate(modelBuilder);
     }
 
@@ -379,6 +381,49 @@ public class ChronicisDbContext : DbContext
 
             // Index for query performance
             entity.HasIndex(wl => wl.WorldId);
+        });
+    }
+
+    private static void ConfigureWorldDocument(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<WorldDocument>(entity =>
+        {
+            entity.HasKey(wd => wd.Id);
+
+            entity.Property(wd => wd.FileName)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(wd => wd.Title)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(wd => wd.BlobPath)
+                .HasMaxLength(1024)
+                .IsRequired();
+
+            entity.Property(wd => wd.ContentType)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(wd => wd.Description)
+                .HasMaxLength(500);
+
+            // WorldDocument -> World (CASCADE delete - when world is deleted, remove its documents)
+            entity.HasOne(wd => wd.World)
+                .WithMany(w => w.Documents)
+                .HasForeignKey(wd => wd.WorldId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // WorldDocument -> UploadedBy (User)
+            entity.HasOne(wd => wd.UploadedBy)
+                .WithMany(u => u.UploadedDocuments)
+                .HasForeignKey(wd => wd.UploadedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Index for query performance
+            entity.HasIndex(wd => wd.WorldId);
+            entity.HasIndex(wd => wd.UploadedById);
         });
     }
 

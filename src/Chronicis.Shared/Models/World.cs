@@ -78,6 +78,11 @@ public class World
     public ICollection<WorldLink> Links { get; set; } = new List<WorldLink>();
 
     /// <summary>
+    /// Documents stored in blob storage associated with this world.
+    /// </summary>
+    public ICollection<WorldDocument> Documents { get; set; } = new List<WorldDocument>();
+
+    /// <summary>
     /// All members of this world (GMs, Players, Observers).
     /// </summary>
     public ICollection<WorldMember> Members { get; set; } = new List<WorldMember>();

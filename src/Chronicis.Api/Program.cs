@@ -50,6 +50,8 @@ var host = new HostBuilder()
         services.AddScoped<IAutoLinkService, AutoLinkService>();
         services.AddScoped<IPromptService, PromptService>();
         services.AddScoped<IPublicWorldService, PublicWorldService>();
+        services.AddScoped<IBlobStorageService, BlobStorageService>();
+        services.AddScoped<IWorldDocumentService, WorldDocumentService>();
     })
     .Build();
 

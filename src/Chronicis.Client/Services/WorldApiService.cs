@@ -164,4 +164,65 @@ public class WorldApiService : IWorldApiService
             _logger,
             "join world");
     }
+
+    // ===== World Documents =====
+
+    public async Task<WorldDocumentUploadResponseDto?> RequestDocumentUploadAsync(
+        Guid worldId, 
+        WorldDocumentUploadRequestDto dto)
+    {
+        return await _http.PostEntityAsync<WorldDocumentUploadResponseDto>(
+            $"api/worlds/{worldId}/documents/request-upload",
+            dto,
+            _logger,
+            $"document upload request for world {worldId}");
+    }
+
+    public async Task<WorldDocumentDto?> ConfirmDocumentUploadAsync(Guid worldId, Guid documentId)
+    {
+        var dto = new WorldDocumentConfirmUploadDto { DocumentId = documentId };
+        return await _http.PostEntityAsync<WorldDocumentDto>(
+            $"api/worlds/{worldId}/documents/{documentId}/confirm",
+            dto,
+            _logger,
+            $"document upload confirmation for {documentId}");
+    }
+
+    public async Task<List<WorldDocumentDto>> GetWorldDocumentsAsync(Guid worldId)
+    {
+        return await _http.GetListAsync<WorldDocumentDto>(
+            $"api/worlds/{worldId}/documents",
+            _logger,
+            $"documents for world {worldId}");
+    }
+
+    public async Task<WorldDocumentDownloadResponseDto?> GetDocumentDownloadUrlAsync(
+        Guid worldId, 
+        Guid documentId)
+    {
+        return await _http.GetEntityAsync<WorldDocumentDownloadResponseDto>(
+            $"api/worlds/{worldId}/documents/{documentId}/download",
+            _logger,
+            $"download URL for document {documentId}");
+    }
+
+    public async Task<WorldDocumentDto?> UpdateDocumentAsync(
+        Guid worldId, 
+        Guid documentId, 
+        WorldDocumentUpdateDto dto)
+    {
+        return await _http.PutEntityAsync<WorldDocumentDto>(
+            $"api/worlds/{worldId}/documents/{documentId}",
+            dto,
+            _logger,
+            $"document {documentId} for world {worldId}");
+    }
+
+    public async Task<bool> DeleteDocumentAsync(Guid worldId, Guid documentId)
+    {
+        return await _http.DeleteEntityAsync(
+            $"api/worlds/{worldId}/documents/{documentId}",
+            _logger,
+            $"document {documentId} from world {worldId}");
+    }
 }
