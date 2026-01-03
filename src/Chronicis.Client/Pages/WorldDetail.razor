@@ -837,9 +837,13 @@ else if (_world != null)
 
         if (result != null && !result.Canceled)
         {
-            // Refresh document list and tree to show new document
-            await LoadWorldAsync();
-            Snackbar.Add("Document uploaded successfully", Severity.Success);
+            // Reload documents
+            _documents = await WorldApi.GetWorldDocumentsAsync(WorldId);
+            
+            // Refresh tree to show new document
+            await TreeState.RefreshAsync();
+            
+            StateHasChanged();
         }
     }
 
