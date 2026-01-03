@@ -5,8 +5,8 @@
 ### Article
 - Sometimes, when I load a long article, scroll down a ways, and type [[, it doesn't load the link autocomplete popup. Sometimes it does. Seems inconsistent.
 - Review the usability of the metadata drawer
-- Another bug for nested list items
 - Maybe add something to an article icon to indicate that an AI summary has been generated for it?
+- I was wrong, I want to convert the markdown to html in bulk instead of on every load. Or at least, detect markdown files and convert them the first time the article is loaded
 
 ### General
 - Make it work on an iPad

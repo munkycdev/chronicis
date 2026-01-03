@@ -42,3 +42,32 @@ window.chronicisKeyboardShortcuts = {
         // Future shortcuts can be added here
     }
 };
+
+// ================================================
+// File Download Utility
+// ================================================
+
+/**
+ * Trigger a file download in the browser
+ * @param {string} fileName - Name for the downloaded file
+ * @param {string} contentType - MIME type of the file
+ * @param {Uint8Array} content - File content as byte array
+ */
+window.chronicisDownloadFile = function(fileName, contentType, content) {
+    // Create a blob from the byte array
+    const blob = new Blob([content], { type: contentType });
+    
+    // Create a temporary URL for the blob
+    const url = URL.createObjectURL(blob);
+    
+    // Create a temporary anchor element and trigger download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};

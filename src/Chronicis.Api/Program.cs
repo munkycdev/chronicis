@@ -52,6 +52,7 @@ var host = new HostBuilder()
         services.AddScoped<IPublicWorldService, PublicWorldService>();
         services.AddScoped<IBlobStorageService, BlobStorageService>();
         services.AddScoped<IWorldDocumentService, WorldDocumentService>();
+        services.AddScoped<IExportService, ExportService>();
     })
     .Build();
 

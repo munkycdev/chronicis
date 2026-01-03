@@ -189,6 +189,15 @@ builder.Services.AddScoped<IBreadcrumbService, BreadcrumbService>();
 // Markdown service (for rendering markdown to HTML)
 builder.Services.AddScoped<IMarkdownService, MarkdownService>();
 
+// Export service (for downloading world data as zip archives)
+builder.Services.AddScoped<IExportApiService>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var jsRuntime = sp.GetRequiredService<Microsoft.JSInterop.IJSRuntime>();
+    var logger = sp.GetRequiredService<ILogger<ExportApiService>>();
+    return new ExportApiService(factory.CreateClient("ChronicisApi"), jsRuntime, logger);
+});
+
 await builder.Build().RunAsync();
 
 // ============================================

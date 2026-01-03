@@ -50,7 +50,7 @@ public class Article
     public string Slug { get; set; } = string.Empty;
     
     /// <summary>
-    /// Article body content (Markdown/HTML).
+    /// Article body content (HTML from TipTap editor).
     /// </summary>
     public string? Body { get; set; }
     
