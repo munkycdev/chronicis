@@ -3,7 +3,7 @@
 @if (_isLoading)
 {
     <div class="d-flex justify-center pa-4">
-        <MudProgressCircular Indeterminate="true" Size="Size.Medium" />
+        <MudProgressCircular Indeterminate="true" Size="Size.Medium" Color="Color.Primary" />
     </div>
 }
 else if (_user != null)
@@ -11,20 +11,19 @@ else if (_user != null)
     <div class="d-flex flex-column flex-sm-row gap-4 align-start mb-4">
         @if (!string.IsNullOrEmpty(_user.AvatarUrl))
         {
-            <MudAvatar Size="Size.Large" Style="width: 96px; height: 96px; border: 3px solid var(--chronicis-beige-gold);">
+            <MudAvatar Size="Size.Large" Class="profile-avatar">
                 <MudImage Src="@_user.AvatarUrl" Alt="@_user.DisplayName" />
             </MudAvatar>
         }
         else
         {
-            <MudAvatar Size="Size.Large" 
-                       Style="width: 96px; height: 96px; background-color: var(--chronicis-beige-gold); color: var(--chronicis-deep-blue-grey); font-size: 2rem; font-weight: 600;">
+            <MudAvatar Size="Size.Large" Color="Color.Primary" Class="profile-avatar profile-avatar--initials">
                 @(_user.DisplayName?.FirstOrDefault())
             </MudAvatar>
         }
 
         <div class="flex-grow-1">
-            <MudText Typo="Typo.h5" Style="color: var(--chronicis-deep-blue-grey); font-weight: 600;">
+            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight: 600;">
                 @_user.DisplayName
             </MudText>
             <MudText Typo="Typo.body1" Class="mud-text-secondary mt-1">
@@ -35,7 +34,7 @@ else if (_user != null)
 
     <MudDivider Class="my-4" />
 
-    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="color: var(--chronicis-deep-blue-grey); font-weight: 600;">
+    <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="mb-2" Style="font-weight: 600;">
         Account Information
     </MudText>
     
@@ -51,6 +50,19 @@ else
         Unable to load profile information. Please try refreshing the page.
     </MudAlert>
 }
+
+<style>
+    .profile-avatar {
+        width: 96px;
+        height: 96px;
+        border: 3px solid var(--mud-palette-primary);
+    }
+
+    .profile-avatar--initials {
+        font-size: 2rem;
+        font-weight: 600;
+    }
+</style>
 
 @code {
     [Inject] private IAuthService AuthService { get; set; } = default!;

@@ -1,20 +1,20 @@
 # Chronicis - Project Status
 
-**Last Updated:** January 2, 2026  
-**Project Phase:** Private Articles & Multi-User Collaboration Complete
+**Last Updated:** January 3, 2026  
+**Project Phase:** Export & Settings Complete
 
 ---
 
 ## Current State
 
-Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented, including multi-user collaboration with invitation codes and private article support.
+Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented, including multi-user collaboration, private articles, document storage, and data export.
 
 ### What's Working
 
 **Core Functionality:**
 - Hierarchical article organization with infinite nesting
 - Tree navigation with lazy loading and search
-- Inline WYSIWYG editing with TipTap
+- Inline WYSIWYG editing with TipTap (HTML storage for proper nested list support)
 - Auto-save on content changes (0.5s debounce)
 - Wiki-style links using `[[Article Name]]` syntax
 - Backlinks panel showing articles that reference current article
@@ -54,6 +54,14 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 - Public article tree with navigation
 - Public slug availability checking with suggestions
 - Copy-to-clipboard for public URLs
+
+**Export & Settings:**
+- Export world data to Markdown zip archive
+- Settings page with Profile, Data, and Preferences tabs
+- YAML frontmatter in exported files (title, type, visibility, dates, icon)
+- AI summaries included in exported markdown files
+- Folder structure matching tree hierarchy
+- Nested list support in HTML→Markdown conversion for export
 
 **Dashboard:**
 - Hero section with gradient background and welcome message
@@ -96,6 +104,8 @@ See `Feature Ideas.md` for the complete bug list and backlog.
 | 10.5 | Public World Sharing | ✅ Complete |
 | 10.6 | Multi-User Collaboration | ✅ Complete |
 | 10.7 | Private Articles | ✅ Complete |
+| 10.8 | Document Storage | ✅ Complete |
+| 10.9 | Export & Settings | ✅ Complete |
 | 11 | Icons & Polish | ⏳ Pending |
 | 12 | Testing & Deploy | ⏳ Pending |
 
@@ -106,8 +116,10 @@ See `Feature Ideas.md` for the complete bug list and backlog.
 - First-time User Onboarding
 - Public World Sharing with Anonymous Access
 - Multi-User Collaboration with Invitation Codes
+- Document Storage with Azure Blob Storage
+- World Export to Markdown with Settings Page
 
-**Overall Progress:** ~92% of core features complete
+**Overall Progress:** ~95% of core features complete
 
 ---
 
@@ -174,6 +186,7 @@ dotnet ef database update
 | `/arc/{id}` | ArcDetail | Edit arc, manage sessions |
 | `/article/{path}` | Articles | Article detail with editing |
 | `/search` | Search | Global search results |
+| `/settings` | Settings | User profile, data export, preferences |
 | `/w/{publicSlug}` | PublicWorld | Anonymous world view |
 | `/w/{publicSlug}/{path}` | PublicArticle | Anonymous article view |
 

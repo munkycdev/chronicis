@@ -12,6 +12,60 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.6.0] - 2026-01-03
+
+### Export & Settings
+
+**Added:**
+- Export world data to Markdown zip archive
+- Settings page at `/settings` with Profile, Data, and Preferences tabs
+- World selector for choosing which world to export
+- YAML frontmatter in exported files (title, type, visibility, dates, icon)
+- AI Summary section included in exported markdown files
+- Folder structure matching tree hierarchy (`ArticleName/ArticleName.md` pattern)
+- Nested list support in HTML→Markdown conversion for export
+- Profile section showing user info from Auth0
+- Data management section with export UI
+- Preferences section with placeholders for future settings
+- Settings link in user dropdown menu
+- `chronicisDownloadFile` JavaScript function for triggering browser downloads
+
+**Export Folder Structure:**
+```
+WorldName/
+├── Wiki/
+│   └── Locations/
+│       └── Waterdeep/
+│           ├── Waterdeep.md
+│           └── Castle Ward/
+│               └── Castle Ward.md
+├── Characters/
+│   └── Character Name/
+│       └── Character Name.md
+└── Campaigns/
+    └── Campaign Name/
+        ├── Campaign Name.md
+        └── Arc Name/
+            ├── Arc Name.md
+            └── Session 1/
+                └── Session 1.md
+```
+
+**API Endpoints:**
+- `GET /api/worlds/{worldId}/export` - Generate and download world export zip
+
+**Technical:**
+- ExportService with recursive folder building
+- HtmlToMarkdown converter handles nested lists, wiki links, formatting
+- Server-side zip generation with streaming response
+- MudTheme now properly wired to MudThemeProvider in layouts
+
+**Fixed:**
+- TipTap editor now stores HTML directly (fixes nested list formatting loss on reload)
+- Custom Chronicis theme colors now apply to MudBlazor components
+
+---
+
 ## [2.5.0] - 2026-01-03
 
 ### Document Storage

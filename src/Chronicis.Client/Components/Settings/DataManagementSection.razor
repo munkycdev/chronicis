@@ -2,7 +2,7 @@
 
 <!-- Export Section -->
 <div class="mb-6">
-    <MudText Typo="Typo.subtitle2" Style="color: var(--chronicis-deep-blue-grey); font-weight: 600;" Class="mb-2">
+    <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="mb-2" Style="font-weight: 600;">
         Export World Data
     </MudText>
     <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
@@ -37,13 +37,13 @@
             </MudSelect>
 
             <MudButton Variant="Variant.Filled"
-                       Style="background-color: var(--chronicis-beige-gold); color: var(--chronicis-deep-blue-grey);"
+                       Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Download"
                        OnClick="ExportWorld"
                        Disabled="@(_selectedWorld == null || _isExporting)">
                 @if (_isExporting)
                 {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" Style="color: var(--chronicis-deep-blue-grey);" />
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
                     <span>Exporting...</span>
                 }
                 else
@@ -78,7 +78,7 @@
 
 <!-- Import Section (Placeholder) -->
 <div>
-    <MudText Typo="Typo.subtitle2" Style="color: var(--chronicis-deep-blue-grey); font-weight: 600;" Class="mb-2">
+    <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="mb-2" Style="font-weight: 600;">
         Import Data
     </MudText>
     <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">

@@ -166,16 +166,19 @@ Share your world with others:
 - Can upload/delete documents
 - Can manage members and invitations
 - Can make the world public
+- Can export world data
 
 **Player:**
 - Can view all public and members-only articles
 - Can create and edit their own articles
 - Can view and download documents
+- Can export world data
 - Cannot upload or delete documents
 
 **Observer:**
 - Read-only access
 - Can view but not edit content
+- Can export world data
 
 ## Public Sharing
 
@@ -221,9 +224,72 @@ Get AI-powered summaries of articles and their connections:
 
 **Note:** AI summaries use Azure OpenAI and consume credits. Check the estimate before generating.
 
-## Tips & Best Practices
+## Exporting Your Data
 
-### Content Organization
+### Export World to Markdown
+
+Backup your world or migrate to other tools like Obsidian:
+
+1. Click your profile icon in the top right
+2. Select **"Settings"**
+3. Go to the **"Data"** tab
+4. Select the world you want to export from the dropdown
+5. Click **"Export to Markdown"**
+6. Wait for the export to complete (may take a moment for large worlds)
+7. Your browser will automatically download a zip file
+
+**What's Included:**
+- All articles organized in folders matching your tree structure
+- YAML frontmatter with metadata (title, type, dates, visibility)
+- AI summaries included at the bottom of each article
+- Campaigns and Arcs in their own folders
+- Wiki links converted to `[[Article Name]]` format
+
+**Folder Structure:**
+```
+YourWorld/
+├── Wiki/
+│   └── Locations/
+│       └── Waterdeep/
+│           └── Waterdeep.md
+├── Characters/
+│   └── Hero Name/
+│       └── Hero Name.md
+└── Campaigns/
+    └── Dragon Heist/
+        ├── Dragon Heist.md
+        └── Chapter 1/
+            ├── Chapter 1.md
+            └── Session 1/
+                └── Session 1.md
+```
+
+**Use Cases:**
+- **Backup:** Keep a local copy of your campaign data
+- **Migration:** Move to Obsidian, Notion, or other markdown tools
+- **Sharing:** Send campaign files to players who prefer offline access
+- **Archival:** Preserve completed campaigns
+
+## Settings
+
+Access settings via the profile menu in the top right corner.
+
+### Profile Tab
+View your account information including:
+- Display name and email from your login provider
+- Avatar (from Google, Discord, etc.)
+
+### Data Tab
+- **Export World Data:** Download your world as markdown files (see above)
+- **Import Data:** Coming soon - import from Obsidian, Notion, and other tools
+
+### Preferences Tab
+Customization options (coming soon):
+- Theme settings and dark mode
+- Editor preferences
+- Notification settings
+
+## Tips & Best Practices
 
 1. **Use Descriptive Names:** Clear article titles make navigation easier
 2. **Link Liberally:** Connect related articles with `[[wiki links]]`

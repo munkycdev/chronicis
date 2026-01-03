@@ -16,6 +16,8 @@
              Rounded="true" 
              ApplyEffectsToContainer="true" 
              PanelClass="pt-6"
+             Color="Color.Primary"
+             SliderColor="Color.Primary"
              Class="settings-tabs">
         <MudTabPanel Text="Profile" Icon="@Icons.Material.Filled.Person">
             <ProfileSection />
@@ -43,45 +45,15 @@
     }
 
     .settings-title {
-        color: var(--chronicis-deep-blue-grey);
-        font-family: var(--chronicis-font-heading);
+        color: var(--mud-palette-primary);
     }
 
     .settings-tabs .mud-tab {
         text-transform: none;
         font-weight: 500;
-        color: var(--chronicis-slate-grey);
-    }
-
-    .settings-tabs .mud-tab:hover {
-        color: var(--chronicis-beige-gold);
-        background-color: rgba(196, 175, 142, 0.08);
-    }
-
-    .settings-tabs .mud-tab.mud-tab-active {
-        color: var(--chronicis-beige-gold) !important;
     }
 
     .settings-tabs .mud-tabs-toolbar {
         background-color: transparent;
-    }
-
-    .settings-tabs .mud-tab-slider {
-        background-color: var(--chronicis-beige-gold) !important;
-    }
-
-    .settings-section-title {
-        color: var(--chronicis-deep-blue-grey);
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-
-    .settings-section-description {
-        color: var(--mud-palette-text-secondary);
-        margin-bottom: 1rem;
-    }
-
-    .settings-divider {
-        margin: 1.5rem 0;
     }
 </style>

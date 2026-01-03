@@ -7,9 +7,10 @@
 @inject ISnackbar Snackbar
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject MudTheme ChronicisTheme
 @implements IAsyncDisposable
 
-<MudThemeProvider />
+<MudThemeProvider Theme="ChronicisTheme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />

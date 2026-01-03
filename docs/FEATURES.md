@@ -222,6 +222,73 @@ Articles have three visibility levels:
 
 ---
 
+### World Export
+
+Export your entire world to a downloadable zip archive containing organized Markdown files.
+
+**How It Works:**
+1. Navigate to Settings → Data tab
+2. Select the world to export
+3. Click "Export to Markdown"
+4. Browser downloads a zip file with all content
+
+**Export Contents:**
+- All articles organized by type and hierarchy
+- YAML frontmatter with metadata (title, type, visibility, dates, icon)
+- AI summaries included at the end of each file
+- Campaigns and Arcs with their sessions
+- Wiki links converted to `[[Article Name]]` format
+
+**Folder Structure:**
+```
+WorldName/
+├── Wiki/
+│   └── [hierarchical article folders]
+├── Characters/
+│   └── [character article folders]
+└── Campaigns/
+    └── CampaignName/
+        ├── CampaignName.md
+        └── ArcName/
+            ├── ArcName.md
+            └── SessionName/
+                └── SessionName.md
+```
+
+**Article File Format:**
+```markdown
+---
+title: "Article Title"
+type: WikiArticle
+visibility: Public
+created: 2025-12-15 10:30:00
+modified: 2025-12-20 14:22:00
+icon: "🏰"
+---
+
+# Article Title
+
+[Article content in Markdown...]
+
+---
+
+## AI Summary
+
+[AI-generated summary if available]
+
+*Generated: 2025-12-18 09:15:00*
+```
+
+**Use Cases:**
+- Backup campaign data locally
+- Migrate to Obsidian, Notion, or other tools
+- Share with players who prefer offline access
+- Archive completed campaigns
+
+**API:** `GET /api/worlds/{worldId}/export`
+
+---
+
 ## API Reference
 
 ### Article Endpoints
@@ -250,6 +317,7 @@ Articles have three visibility levels:
 | DELETE | `/api/worlds/{id}` | Delete world |
 | GET | `/api/worlds/{id}/link-suggestions` | Autocomplete suggestions |
 | POST | `/api/worlds/{id}/check-public-slug` | Check slug availability |
+| GET | `/api/worlds/{id}/export` | Export world to markdown zip |
 
 ### Public World Endpoints (Anonymous)
 
