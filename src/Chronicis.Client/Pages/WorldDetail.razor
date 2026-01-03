@@ -34,384 +34,387 @@ else if (_world != null)
         <MudTextField @bind-Value="_editDescription"
                       Label="Description"
                       Variant="Variant.Outlined"
-                      Lines="3"
+                      Lines="5"
+                      AutoGrow="true"
+                      MaxLines="20"
                       Placeholder="Describe your world..."
                       Class="mb-4"
                       Immediate="true"
                       @onkeyup="OnDescriptionChanged" />
 
-        <!-- Quick Actions -->
-        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
-            Quick Actions
-        </MudText>
-        
-        <div class="d-flex gap-3 flex-wrap mb-4">
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       StartIcon="@Icons.Material.Filled.AutoStories"
-                       OnClick="CreateCampaign">
-                New Campaign
-            </MudButton>
-            
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Primary"
-                       StartIcon="@Icons.Material.Filled.Person"
-                       OnClick="CreateCharacter">
-                New Player Character
-            </MudButton>
-            
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Primary"
-                       StartIcon="@Icons.Material.Filled.MenuBook"
-                       OnClick="CreateWikiArticle">
-                New Wiki Article
-            </MudButton>
+        <!-- Overview Section: Stats + Quick Actions -->
+        <div class="world-overview mb-4">
+            <div class="world-stats-grid">
+                <div class="stat-card">
+                    <MudIcon Icon="@Icons.Material.Filled.AutoStories" Class="stat-icon" />
+                    <div class="stat-content">
+                        <div class="stat-value">@_world.CampaignCount</div>
+                        <div class="stat-label">Campaigns</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <MudIcon Icon="@Icons.Material.Filled.Group" Class="stat-icon" />
+                    <div class="stat-content">
+                        <div class="stat-value">@_world.MemberCount</div>
+                        <div class="stat-label">Members</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Class="stat-icon" />
+                    <div class="stat-content">
+                        <div class="stat-value">@_world.CreatedAt.ToString("MMM yyyy")</div>
+                        <div class="stat-label">Created</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-actions-compact">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AutoStories"
+                           OnClick="CreateCampaign"
+                           Size="Size.Small">
+                    New Campaign
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Person"
+                           OnClick="CreateCharacter"
+                           Size="Size.Small">
+                    New Character
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.MenuBook"
+                           OnClick="CreateWikiArticle"
+                           Size="Size.Small">
+                    New Article
+                </MudButton>
+            </div>
         </div>
 
-        <!-- External Resources -->
-        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
-            External Resources
-        </MudText>
+        <!-- Tabbed Content -->
+        <MudTabs Elevation="0" 
+                 Rounded="true" 
+                 ApplyEffectsToContainer="true"
+                 PanelClass="pa-4"
+                 @bind-ActivePanelIndex="_activeTabIndex">
+            
+            <!-- Resources Tab -->
+            <MudTabPanel Text="Resources" Icon="@Icons.Material.Filled.Folder">
+                <div class="resources-section">
+                    <!-- Links Subsection -->
+                    <div class="resource-subsection mb-4">
+                        <div class="d-flex align-center justify-space-between mb-2">
+                            <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">External Links</MudText>
+                            <MudButton Variant="Variant.Text"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Add"
+                                       OnClick="StartAddLink"
+                                       Size="Size.Small">
+                                Add Link
+                            </MudButton>
+                        </div>
 
-        <div class="mb-4">
-            @if (_links.Count == 0 && !_isAddingLink)
-            {
-                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
-                    No external resources yet. Add links to Roll20, D&D Beyond, SRD, or other useful resources.
-                </MudText>
-            }
+                        @if (_links.Count == 0 && !_isAddingLink)
+                        {
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                No external links yet. Add links to Roll20, D&D Beyond, or other resources.
+                            </MudText>
+                        }
 
-            <!-- Existing Links -->
-            @foreach (var link in _links)
-            {
-                <div class="world-link-item d-flex align-center gap-2 mb-2 pa-2 rounded" 
-                     style="background: var(--mud-palette-background-grey);">
-                    @if (_editingLinkId == link.Id)
-                    {
-                        <!-- Edit Mode -->
-                        <MudIcon Icon="@Icons.Material.Filled.Link" 
-                                 Size="Size.Small" 
-                                 Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
-                        <MudTextField @bind-Value="_editLinkTitle"
-                                      Placeholder="Title"
-                                      Variant="Variant.Outlined"
-                                      Margin="Margin.Dense"
-                                      Style="min-width: 150px;" />
-                        <MudTextField @bind-Value="_editLinkUrl"
-                                      Placeholder="URL"
-                                      Variant="Variant.Outlined"
-                                      Margin="Margin.Dense"
-                                      Class="flex-grow-1" />
-                        <MudTextField @bind-Value="_editLinkDescription"
-                                      Placeholder="Description (optional)"
-                                      Variant="Variant.Outlined"
-                                      Margin="Margin.Dense"
-                                      Style="min-width: 150px;" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Check"
-                                       Color="Color.Success"
-                                       Size="Size.Small"
-                                       OnClick="SaveEditLink"
-                                       Disabled="_isSavingLink" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                       Color="Color.Default"
-                                       Size="Size.Small"
-                                       OnClick="CancelEditLink" />
-                    }
-                    else
-                    {
-                        <!-- View Mode -->
-                        <img src="@GetFaviconUrl(link.Url)" 
-                             alt="" 
-                             style="width: 20px; height: 20px; flex-shrink: 0;"
-                             @onerror="HandleFaviconError" />
-                        <div class="flex-grow-1">
-                            <MudLink Href="@link.Url" 
-                                     Target="_blank" 
-                                     Typo="Typo.body1"
-                                     Style="color: var(--chronicis-beige-gold);">
-                                @link.Title
-                                <MudIcon Icon="@Icons.Material.Filled.OpenInNew" 
+                        @foreach (var link in _links)
+                        {
+                            <div class="resource-item">
+                                @if (_editingLinkId == link.Id)
+                                {
+                                    <!-- Edit Mode -->
+                                    <MudIcon Icon="@Icons.Material.Filled.Link" 
+                                             Size="Size.Small" 
+                                             Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
+                                    <MudTextField @bind-Value="_editLinkTitle"
+                                                  Placeholder="Title"
+                                                  Variant="Variant.Outlined"
+                                                  Margin="Margin.Dense"
+                                                  Style="min-width: 150px;" />
+                                    <MudTextField @bind-Value="_editLinkUrl"
+                                                  Placeholder="URL"
+                                                  Variant="Variant.Outlined"
+                                                  Margin="Margin.Dense"
+                                                  Class="flex-grow-1" />
+                                    <MudTextField @bind-Value="_editLinkDescription"
+                                                  Placeholder="Description (optional)"
+                                                  Variant="Variant.Outlined"
+                                                  Margin="Margin.Dense"
+                                                  Style="min-width: 150px;" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                                   Color="Color.Success"
+                                                   Size="Size.Small"
+                                                   OnClick="SaveEditLink"
+                                                   Disabled="_isSavingLink" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                                   Color="Color.Default"
+                                                   Size="Size.Small"
+                                                   OnClick="CancelEditLink" />
+                                }
+                                else
+                                {
+                                    <!-- View Mode -->
+                                    <img src="@GetFaviconUrl(link.Url)" 
+                                         alt="" 
+                                         style="width: 20px; height: 20px; flex-shrink: 0;"
+                                         @onerror="HandleFaviconError" />
+                                    <div class="flex-grow-1">
+                                        <MudLink Href="@link.Url" 
+                                                 Target="_blank" 
+                                                 Typo="Typo.body1"
+                                                 Style="color: var(--chronicis-beige-gold);">
+                                            @link.Title
+                                            <MudIcon Icon="@Icons.Material.Filled.OpenInNew" 
+                                                     Size="Size.Small" 
+                                                     Style="font-size: 14px; vertical-align: middle; margin-left: 4px;" />
+                                        </MudLink>
+                                        @if (!string.IsNullOrWhiteSpace(link.Description))
+                                        {
+                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                                @link.Description
+                                            </MudText>
+                                        }
+                                    </div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                   Color="Color.Default"
+                                                   Size="Size.Small"
+                                                   OnClick="() => StartEditLink(link)" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Color="Color.Error"
+                                                   Size="Size.Small"
+                                                   OnClick="() => DeleteLink(link)" />
+                                }
+                            </div>
+                        }
+
+                        @if (_isAddingLink)
+                        {
+                            <div class="resource-item">
+                                <MudIcon Icon="@Icons.Material.Filled.AddLink" 
                                          Size="Size.Small" 
-                                         Style="font-size: 14px; vertical-align: middle; margin-left: 4px;" />
-                            </MudLink>
-                            @if (!string.IsNullOrWhiteSpace(link.Description))
+                                         Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
+                                <MudTextField @bind-Value="_newLinkTitle"
+                                              Placeholder="Title (e.g., Roll20 Campaign)"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              Style="min-width: 150px;" />
+                                <MudTextField @bind-Value="_newLinkUrl"
+                                              Placeholder="URL (e.g., https://roll20.net/...)"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              Class="flex-grow-1" />
+                                <MudTextField @bind-Value="_newLinkDescription"
+                                              Placeholder="Description (optional)"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              Style="min-width: 150px;" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                               Color="Color.Success"
+                                               Size="Size.Small"
+                                               OnClick="SaveNewLink"
+                                               Disabled="_isSavingLink" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                               Color="Color.Default"
+                                               Size="Size.Small"
+                                               OnClick="CancelAddLink" />
+                            </div>
+                        }
+                    </div>
+
+                    <MudDivider Class="my-4" />
+
+                    <!-- Documents Subsection -->
+                    <div class="resource-subsection">
+                        <div class="d-flex align-center justify-space-between mb-2">
+                            <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">Documents</MudText>
+                            @if (_isCurrentUserGM)
                             {
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                    @link.Description
-                                </MudText>
+                                <MudButton Variant="Variant.Text"
+                                           Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Upload"
+                                           OnClick="OpenUploadDialog"
+                                           Size="Size.Small">
+                                    Upload
+                                </MudButton>
                             }
                         </div>
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                       Color="Color.Default"
-                                       Size="Size.Small"
-                                       OnClick="() => StartEditLink(link)" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                       Color="Color.Error"
-                                       Size="Size.Small"
-                                       OnClick="() => DeleteLink(link)" />
-                    }
-                </div>
-            }
 
-            <!-- Add New Link Form -->
-            @if (_isAddingLink)
-            {
-                <div class="world-link-item d-flex align-center gap-2 mb-2 pa-2 rounded" 
-                     style="background: var(--mud-palette-background-grey);">
-                    <MudIcon Icon="@Icons.Material.Filled.AddLink" 
-                             Size="Size.Small" 
-                             Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
-                    <MudTextField @bind-Value="_newLinkTitle"
-                                  Placeholder="Title (e.g., Roll20 Campaign)"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense"
-                                  Style="min-width: 150px;" />
-                    <MudTextField @bind-Value="_newLinkUrl"
-                                  Placeholder="URL (e.g., https://roll20.net/...)"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense"
-                                  Class="flex-grow-1" />
-                    <MudTextField @bind-Value="_newLinkDescription"
-                                  Placeholder="Description (optional)"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense"
-                                  Style="min-width: 150px;" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Check"
-                                   Color="Color.Success"
-                                   Size="Size.Small"
-                                   OnClick="SaveNewLink"
-                                   Disabled="_isSavingLink" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                   Color="Color.Default"
-                                   Size="Size.Small"
-                                   OnClick="CancelAddLink" />
-                </div>
-            }
-            else
-            {
-                <MudButton Variant="Variant.Text"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="StartAddLink"
-                           Size="Size.Small">
-                    Add Resource
-                </MudButton>
-                <MudButton Variant="Variant.Text"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.Upload"
-                           OnClick="OpenUploadDialog"
-                           Size="Size.Small">
-                    Upload Document
-                </MudButton>
-            }
-        </div>
-
-        <!-- Documents -->
-        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
-            Documents
-        </MudText>
-
-        <div class="mb-4">
-            @if (_documents.Count == 0)
-            {
-                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
-                    No documents uploaded yet. Upload PDFs, Office files, images, or other documents.
-                </MudText>
-            }
-            else
-            {
-                <!-- Document List -->
-                @foreach (var doc in _documents.OrderBy(d => d.Title))
-                {
-                    <div class="world-link-item d-flex align-center gap-2 mb-2 pa-2 rounded" 
-                         style="background: var(--mud-palette-background-grey);">
-                        @if (_editingDocumentId == doc.Id)
+                        @if (_documents.Count == 0)
                         {
-                            <!-- Edit Mode -->
-                            <MudIcon Icon="@GetDocumentIcon(doc.ContentType)" 
-                                     Size="Size.Small" 
-                                     Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
-                            <MudTextField @bind-Value="_editDocumentTitle"
-                                          Placeholder="Title"
-                                          Variant="Variant.Outlined"
-                                          Margin="Margin.Dense"
-                                          Style="min-width: 200px;" />
-                            <MudTextField @bind-Value="_editDocumentDescription"
-                                          Placeholder="Description (optional)"
-                                          Variant="Variant.Outlined"
-                                          Margin="Margin.Dense"
-                                          Style="flex: 1;" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Check"
-                                           Color="Color.Success"
-                                           Size="Size.Small"
-                                           OnClick="SaveDocumentEdit"
-                                           Disabled="_isSavingDocument" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                           Color="Color.Default"
-                                           Size="Size.Small"
-                                           OnClick="CancelDocumentEdit" />
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                No documents uploaded yet. Upload PDFs, Office files, images, or other documents.
+                            </MudText>
                         }
                         else
                         {
-                            <!-- View Mode -->
-                            <MudIcon Icon="@GetDocumentIcon(doc.ContentType)" 
-                                     Size="Size.Small" 
-                                     Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
-                            <div style="flex: 1; min-width: 0;">
-                                <MudText Typo="Typo.body2" Style="font-weight: 500;">
-                                    @doc.Title
-                                </MudText>
-                                @if (!string.IsNullOrEmpty(doc.Description))
-                                {
-                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                        @doc.Description
-                                    </MudText>
-                                }
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                    @FormatFileSize(doc.FileSizeBytes) • Uploaded @doc.UploadedAt.ToString("MMM d, yyyy")
-                                </MudText>
-                            </div>
-                            <MudIconButton Icon="@Icons.Material.Filled.Download"
-                                           Color="Color.Primary"
-                                           Size="Size.Small"
-                                           OnClick="@(() => DownloadDocument(doc.Id))"
-                                           Title="Download" />
-                            @if (_isCurrentUserGM)
+                            @foreach (var doc in _documents.OrderBy(d => d.Title))
                             {
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                               Color="Color.Default"
-                                               Size="Size.Small"
-                                               OnClick="@(() => StartEditDocument(doc))"
-                                               Title="Edit" />
-                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                               Color="Color.Error"
-                                               Size="Size.Small"
-                                               OnClick="@(() => DeleteDocument(doc.Id))"
-                                               Title="Delete" />
+                                <div class="resource-item">
+                                    @if (_editingDocumentId == doc.Id)
+                                    {
+                                        <!-- Edit Mode -->
+                                        <MudIcon Icon="@GetDocumentIcon(doc.ContentType)" 
+                                                 Size="Size.Small" 
+                                                 Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
+                                        <MudTextField @bind-Value="_editDocumentTitle"
+                                                      Placeholder="Title"
+                                                      Variant="Variant.Outlined"
+                                                      Margin="Margin.Dense"
+                                                      Style="min-width: 200px;" />
+                                        <MudTextField @bind-Value="_editDocumentDescription"
+                                                      Placeholder="Description (optional)"
+                                                      Variant="Variant.Outlined"
+                                                      Margin="Margin.Dense"
+                                                      Style="flex: 1;" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                                       Color="Color.Success"
+                                                       Size="Size.Small"
+                                                       OnClick="SaveDocumentEdit"
+                                                       Disabled="_isSavingDocument" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                                       Color="Color.Default"
+                                                       Size="Size.Small"
+                                                       OnClick="CancelDocumentEdit" />
+                                    }
+                                    else
+                                    {
+                                        <!-- View Mode -->
+                                        <MudIcon Icon="@GetDocumentIcon(doc.ContentType)" 
+                                                 Size="Size.Small" 
+                                                 Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
+                                        <div style="flex: 1; min-width: 0;">
+                                            <MudText Typo="Typo.body2" Style="font-weight: 500;">
+                                                @doc.Title
+                                            </MudText>
+                                            @if (!string.IsNullOrEmpty(doc.Description))
+                                            {
+                                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                                    @doc.Description
+                                                </MudText>
+                                            }
+                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                                @FormatFileSize(doc.FileSizeBytes) • Uploaded @doc.UploadedAt.ToString("MMM d, yyyy")
+                                            </MudText>
+                                        </div>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                                       Color="Color.Primary"
+                                                       Size="Size.Small"
+                                                       OnClick="@(() => DownloadDocument(doc.Id))"
+                                                       title="Download" />
+                                        @if (_isCurrentUserGM)
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                           Color="Color.Default"
+                                                           Size="Size.Small"
+                                                           OnClick="@(() => StartEditDocument(doc))"
+                                                           title="Edit" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                           Color="Color.Error"
+                                                           Size="Size.Small"
+                                                           OnClick="@(() => DeleteDocument(doc.Id))"
+                                                           title="Delete" />
+                                        }
+                                    }
+                                </div>
                             }
                         }
                     </div>
-                }
-            }
-            
-            @if (_isCurrentUserGM)
-            {
-                <MudButton Variant="Variant.Text"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.Upload"
-                           OnClick="OpenUploadDialog"
-                           Size="Size.Small"
-                           Class="mt-2">
-                    Upload Document
-                </MudButton>
-            }
-        </div>
-
-        <!-- Public Sharing -->
-        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
-            Public Sharing
-        </MudText>
-
-        <div class="mb-4 pa-3 rounded" style="background: var(--mud-palette-background-grey);">
-            <div class="d-flex align-center gap-3 mb-3">
-                <MudSwitch @bind-Value="_isPublic"
-                           Color="Color.Primary"
-                           Label="Make this world publicly accessible"
-                           T="bool"
-                           @bind-Value:after="OnPublicToggleChanged" />
-            </div>
-
-            @if (_isPublic)
-            {
-                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
-                    Anyone with the link can view articles marked as "Public". Members-only and private articles remain hidden.
-                </MudText>
-
-                <div class="d-flex align-center gap-2 mb-2">
-                    <MudText Typo="Typo.body2" Style="white-space: nowrap;">@GetPublicUrlBase()</MudText>
-                    <MudTextField @bind-Value="_publicSlug"
-                                  Placeholder="your-world-slug"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense"
-                                  Immediate="true"
-                                  DebounceInterval="500"
-                                  @bind-Value:after="CheckSlugAvailability"
-                                  Style="max-width: 300px;"
-                                  Disabled="_isCheckingSlug"
-                                  Error="@(!string.IsNullOrEmpty(_slugError))"
-                                  ErrorText="@_slugError"
-                                  HelperText="@_slugHelperText" />
-                    @if (_isCheckingSlug)
-                    {
-                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-                    }
-                    else if (_slugIsAvailable && !string.IsNullOrEmpty(_publicSlug))
-                    {
-                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
-                    }
                 </div>
+            </MudTabPanel>
 
-                @if (_world?.IsPublic == true && !string.IsNullOrEmpty(_world?.PublicSlug))
-                {
-                    <div class="d-flex align-center gap-2 mt-3">
-                        <MudTextField Value="@GetFullPublicUrl()"
-                                      Label="Public URL"
-                                      Variant="Variant.Outlined"
-                                      Margin="Margin.Dense"
-                                      ReadOnly="true"
-                                      Adornment="Adornment.End"
-                                      AdornmentIcon="@Icons.Material.Filled.ContentCopy"
-                                      OnAdornmentClick="CopyPublicUrl"
-                                      Style="max-width: 500px;" />
-                        <MudButton Variant="Variant.Outlined"
-                                   Color="Color.Primary"
-                                   StartIcon="@Icons.Material.Filled.OpenInNew"
-                                   Href="@GetFullPublicUrl()"
-                                   Target="_blank">
-                            Preview
-                        </MudButton>
+            <!-- Members & Sharing Tab -->
+            <MudTabPanel Text="Members & Sharing" Icon="@Icons.Material.Filled.People">
+                <!-- Members Section -->
+                <WorldMembersPanel WorldId="WorldId" 
+                                   CurrentUserId="_currentUserId"
+                                   IsCurrentUserGM="_isCurrentUserGM"
+                                   OnMembersChanged="OnMembersChanged" />
+
+                <MudDivider Class="my-4" />
+
+                <!-- Public Sharing Section -->
+                <div class="sharing-section">
+                    <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight: 600;">
+                        Public Sharing
+                    </MudText>
+
+                    <div class="pa-3 rounded" style="background: var(--mud-palette-background-grey);">
+                        <div class="d-flex align-center gap-3 mb-3">
+                            <MudSwitch @bind-Value="_isPublic"
+                                       Color="Color.Primary"
+                                       Label="Make this world publicly accessible"
+                                       T="bool"
+                                       @bind-Value:after="OnPublicToggleChanged" />
+                        </div>
+
+                        @if (_isPublic)
+                        {
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+                                Anyone with the link can view articles marked as "Public". Members-only and private articles remain hidden.
+                            </MudText>
+
+                            <div class="d-flex align-center gap-2 mb-2">
+                                <MudText Typo="Typo.body2" Style="white-space: nowrap;">@GetPublicUrlBase()</MudText>
+                                <MudTextField @bind-Value="_publicSlug"
+                                              Placeholder="your-world-slug"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              Immediate="true"
+                                              DebounceInterval="500"
+                                              @bind-Value:after="CheckSlugAvailability"
+                                              Style="max-width: 300px;"
+                                              Disabled="_isCheckingSlug"
+                                              Error="@(!string.IsNullOrEmpty(_slugError))"
+                                              ErrorText="@_slugError"
+                                              HelperText="@_slugHelperText" />
+                                @if (_isCheckingSlug)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                }
+                                else if (_slugIsAvailable && !string.IsNullOrEmpty(_publicSlug))
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                                }
+                            </div>
+
+                            @if (_world?.IsPublic == true && !string.IsNullOrEmpty(_world?.PublicSlug))
+                            {
+                                <div class="d-flex align-center gap-2 mt-3">
+                                    <MudTextField Value="@GetFullPublicUrl()"
+                                                  Label="Public URL"
+                                                  Variant="Variant.Outlined"
+                                                  Margin="Margin.Dense"
+                                                  ReadOnly="true"
+                                                  Adornment="Adornment.End"
+                                                  AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                                                  OnAdornmentClick="CopyPublicUrl"
+                                                  Style="max-width: 500px;" />
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Primary"
+                                               StartIcon="@Icons.Material.Filled.OpenInNew"
+                                               Href="@GetFullPublicUrl()"
+                                               Target="_blank">
+                                        Preview
+                                    </MudButton>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                Your world is currently private. Only you and campaign members can access it.
+                            </MudText>
+                        }
                     </div>
-                }
-            }
-            else
-            {
-                <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                    Your world is currently private. Only you and campaign members can access it.
-                </MudText>
-            }
-        </div>
-
-        <!-- Members & Invitations -->
-        <WorldMembersPanel WorldId="WorldId" 
-                           CurrentUserId="_currentUserId"
-                           IsCurrentUserGM="_isCurrentUserGM"
-                           OnMembersChanged="OnMembersChanged" />
-
-        <!-- Stats -->
-        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
-            World Statistics
-        </MudText>
-        
-        <MudSimpleTable Dense="true" Hover="true" Class="mb-4">
-            <tbody>
-                <tr>
-                    <td><MudIcon Icon="@Icons.Material.Filled.AutoStories" Size="Size.Small" Class="mr-2" />Campaigns</td>
-                    <td>@_world.CampaignCount</td>
-                </tr>
-                <tr>
-                    <td><MudIcon Icon="@Icons.Material.Filled.Group" Size="Size.Small" Class="mr-2" />Members</td>
-                    <td>@_world.MemberCount</td>
-                </tr>
-                <tr>
-                    <td><MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-2" />Owner</td>
-                    <td>@_world.OwnerName</td>
-                </tr>
-                <tr>
-                    <td><MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="mr-2" />Created</td>
-                    <td>@_world.CreatedAt.ToString("MMMM d, yyyy")</td>
-                </tr>
-            </tbody>
-        </MudSimpleTable>
+                </div>
+            </MudTabPanel>
+        </MudTabs>
 
         <!-- Save Status -->
         <div class="chronicis-flex-between mt-4">
@@ -472,6 +475,9 @@ else if (_world != null)
     private bool _slugIsAvailable = false;
     private string? _slugError = null;
     private string? _slugHelperText = null;
+
+    // Tab state
+    private int _activeTabIndex = 0;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -1179,3 +1185,108 @@ else if (_world != null)
         }
     }
 }
+
+<style>
+    /* World Overview Section */
+    .world-overview {
+        display: grid;
+        gap: var(--chronicis-space-md);
+        grid-template-columns: 1fr auto;
+        align-items: start;
+    }
+
+    .world-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--chronicis-space-sm);
+    }
+
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: var(--chronicis-space-sm);
+        padding: var(--chronicis-space-md);
+        background: var(--mud-palette-background-grey);
+        border-radius: var(--chronicis-radius-md);
+        border: 1px solid rgba(196, 175, 142, 0.2);
+    }
+
+    .stat-icon {
+        color: var(--chronicis-beige-gold);
+        font-size: 2rem;
+    }
+
+    .stat-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-value {
+        font-family: var(--chronicis-font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--chronicis-charcoal);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-family: var(--chronicis-font-body);
+        font-size: 0.75rem;
+        color: var(--chronicis-slate-grey);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 4px;
+    }
+
+    .quick-actions-compact {
+        display: flex;
+        gap: var(--chronicis-space-xs);
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    /* Resource Items */
+    .resource-item {
+        display: flex;
+        align-items: center;
+        gap: var(--chronicis-space-sm);
+        padding: var(--chronicis-space-sm) var(--chronicis-space-md);
+        margin-bottom: var(--chronicis-space-xs);
+        background: var(--mud-palette-background-grey);
+        border-radius: var(--chronicis-radius-sm);
+        transition: background var(--chronicis-transition-fast);
+    }
+
+    .resource-item:hover {
+        background: rgba(196, 175, 142, 0.08);
+    }
+
+    /* Responsive */
+    @@media (max-width: 1024px) {
+        .world-overview {
+            grid-template-columns: 1fr;
+        }
+
+        .quick-actions-compact {
+            justify-content: flex-start;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .world-stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stat-card {
+            padding: var(--chronicis-space-sm);
+        }
+
+        .stat-icon {
+            font-size: 1.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+        }
+    }
+</style>
