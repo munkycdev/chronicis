@@ -4,46 +4,53 @@
 
 ### Article
 - Sometimes, when I load a long article, scroll down a ways, and type [[, it doesn't load the link autocomplete popup. Sometimes it does. Seems inconsistent.
+- Review the usability of the metadata drawer
+- Another bug for nested list items
+- Maybe add something to an article icon to indicate that an AI summary has been generated for it?
 
 ### General
 - Make it work on an iPad
     - Figure out how to perform the right-click operations
     - Drag and drop reorganization doesn't work
+- Default world that new users get added to as an example of how to use the system
 
 ---
 
-## Styling
+## Cleanup
 
-- Campaign pages that have an intro blurb - make the textbox grow as large as it needs to
----
-
-## Quick Wins
-
-- Do away with right-click popups where possible
 - Run a cleanup to remove all unused code and styles
+- For World Detail page, make External Links and Documents be children of a higher header named "External Resources", probably the tab name
+- World Detail page - let's look at header taxonomy. The sizing of elements feels kind of "off"
+- Buttons everywhere are not using the right color. Maybe have Claude look at everything and do some cleanup?
+
+---
+
+## Session Notes
+- Some way to track quests?
 
 ---
 
 ## Article Features
 
-- Add Azure AI Search as a replacement for the global search
-- Ability to link to external sources and view summaries
+* Ability to view summaries for external resources/links
+- Add Azure AI Search as a replacement for the global search (deferred feature until we need it - it's expensive!)
 
 ---
 
 ## Campaign and Arc Features
 
-- Add the ability to generate an AI summary of child summary notes
+- Add the ability to generate an AI summary of child summary notes - this needs to be implemented first!
+    - When the player creates a summary, maybe a parent dated article is created and then a child for the player's notes?
 - Perhaps not require an Arc, so can add either an arc or a session?
-- Add ability to load files to the External Resources section
 
 ---
 
 ## World Features
 
-- Multi-user setup for worlds, managed by the world owner (GM)
-- Ability to add files to the "External Resources" section
-- Ability to add maps and track activity across sessions
+* Ability to add maps and track activity across sessions
+    - Maps
+    - Nights slept
+    - Other stuff?
 
 ---
 
@@ -60,7 +67,3 @@
 - Bulk AI summary generator - displays articles and allows them to be selected for a quick summary creation
 
 ---
-
-## General / Infrastructure
-
-- Make sure global search works with linked entries and the links themselves

@@ -59,15 +59,16 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
     }
 
     // Create editor
+    // Note: We store HTML directly now (no markdown conversion)
+    // This preserves all formatting including nested lists
     const editor = new window.TipTap.Editor({
         element: container,
         extensions: extensions,
-        content: initialContent ? markdownToHTML(initialContent) : '<p></p>',
+        content: initialContent || '<p></p>',
         editable: true,
         onUpdate: ({ editor }) => {
             const html = editor.getHTML();
-            const markdown = htmlToMarkdown(html);
-            dotNetHelper.invokeMethodAsync('OnEditorUpdate', markdown);
+            dotNetHelper.invokeMethodAsync('OnEditorUpdate', html);
         },
     });
 
@@ -164,11 +165,11 @@ function destroyTipTapEditor(editorId) {
     }
 }
 
-function setTipTapContent(editorId, markdown) {
+function setTipTapContent(editorId, content) {
     const editor = window.tipTapEditors[editorId];
     if (editor) {
-        const html = markdownToHTML(markdown);
-        editor.commands.setContent(html);
+        // Content is now stored as HTML directly
+        editor.commands.setContent(content || '<p></p>');
     } else {
         console.error(`Editor not found: ${editorId}`);
     }
