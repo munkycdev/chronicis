@@ -11,6 +11,55 @@
         @* January 2026 *@
         <section class="changelog-section">
             <div class="changelog-version">
+                <span class="version-badge">2.5</span>
+                <span class="version-date">January 2026</span>
+            </div>
+            <h2>Document Storage</h2>
+            <p class="changelog-summary">
+                Upload and manage campaign documents! Store character sheets, maps, handouts, 
+                and reference materials directly in your world.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">📎</span>
+                    <div>
+                        <strong>File Upload</strong> — Upload PDFs, Office documents (Word, Excel, 
+                        PowerPoint), images, text files, and markdown up to 200MB each
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🗂️</span>
+                    <div>
+                        <strong>Organized Storage</strong> — Documents appear in the navigation 
+                        tree under External Resources with file-type icons
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">✏️</span>
+                    <div>
+                        <strong>Metadata Management</strong> — Add titles and descriptions to 
+                        documents, edit them anytime
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">⬇️</span>
+                    <div>
+                        <strong>Secure Downloads</strong> — All world members can download documents 
+                        with time-limited secure links
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🔐</span>
+                    <div>
+                        <strong>GM-Controlled</strong> — Only world owners can upload, edit, or 
+                        delete documents
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
                 <span class="version-badge">2.4</span>
                 <span class="version-date">January 2026</span>
             </div>
@@ -420,7 +469,7 @@
         display: flex;
         gap: var(--chronicis-space-sm);
         padding: var(--chronicis-space-sm) 0;
-        align-items: flex-start;
+        align-items: center;
     }
 
     .feature-icon {
@@ -428,6 +477,7 @@
         flex-shrink: 0;
         width: 2rem;
         text-align: center;
+        line-height: 1;
     }
 
     .changelog-features li div {
