@@ -5,6 +5,7 @@
 @using Chronicis.Shared.Enums
 @using Chronicis.Client.Components.Shared
 @inject IPublicApiService PublicApi
+@inject IMarkdownService MarkdownService
 @inject NavigationManager Navigation
 
 <PageTitle>@(_world?.Name ?? "World") — Chronicis</PageTitle>
@@ -169,7 +170,7 @@ else
                     <div class="public-article-body chronicis-editor-content">
                         @if (!string.IsNullOrEmpty(_currentArticle.Body))
                         {
-                            @((MarkupString)_currentArticle.Body)
+                            @((MarkupString)MarkdownService.EnsureHtml(_currentArticle.Body))
                         }
                         else
                         {

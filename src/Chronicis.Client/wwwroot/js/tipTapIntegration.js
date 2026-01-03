@@ -10,6 +10,41 @@ window.addEventListener('tiptap-ready', function() {
     // TipTap is now loaded and ready
 });
 
+// ================================================
+// HTML/MARKDOWN DETECTION & CONVERSION
+// ================================================
+
+// Detect if content is HTML or markdown
+// HTML from TipTap will have tags like <p>, <h1>, <ul>, etc.
+// Markdown will have #, *, -, etc. without HTML tags
+function isHtmlContent(content) {
+    if (!content || content.trim() === '') return false;
+    
+    // Check for common HTML tags that TipTap produces
+    const htmlTagPattern = /<(p|h[1-6]|ul|ol|li|strong|em|a|pre|code|blockquote|div|span|br)[^>]*>/i;
+    return htmlTagPattern.test(content);
+}
+
+// Ensure content is HTML - convert from markdown if needed
+function ensureHtml(content) {
+    if (!content || content.trim() === '') return '<p></p>';
+    
+    if (isHtmlContent(content)) {
+        return content;
+    }
+    
+    // Content appears to be markdown - convert to HTML
+    return markdownToHTML(content);
+}
+
+// Expose for Blazor interop
+window.ensureHtml = ensureHtml;
+window.isHtmlContent = isHtmlContent;
+
+// ================================================
+// EDITOR INITIALIZATION
+// ================================================
+
 async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
     // Check if TipTap is loaded
     if (!window.TipTap || !window.TipTap.Editor) {
@@ -59,12 +94,13 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
     }
 
     // Create editor
-    // Note: We store HTML directly now (no markdown conversion)
-    // This preserves all formatting including nested lists
+    // Auto-detect if content is HTML or markdown and convert if needed
+    // This provides backwards compatibility for existing markdown content
+    const htmlContent = ensureHtml(initialContent);
     const editor = new window.TipTap.Editor({
         element: container,
         extensions: extensions,
-        content: initialContent || '<p></p>',
+        content: htmlContent,
         editable: true,
         onUpdate: ({ editor }) => {
             const html = editor.getHTML();
@@ -168,8 +204,9 @@ function destroyTipTapEditor(editorId) {
 function setTipTapContent(editorId, content) {
     const editor = window.tipTapEditors[editorId];
     if (editor) {
-        // Content is now stored as HTML directly
-        editor.commands.setContent(content || '<p></p>');
+        // Auto-detect if content is HTML or markdown and convert if needed
+        const htmlContent = ensureHtml(content);
+        editor.commands.setContent(htmlContent);
     } else {
         console.error(`Editor not found: ${editorId}`);
     }

@@ -115,4 +115,40 @@ public class MarkdownService : IMarkdownService
 
         return plainText.Substring(0, maxLength) + "...";
     }
+    
+    /// <summary>
+    /// Detects if content is HTML (vs markdown).
+    /// HTML from TipTap will have tags like p, h1, ul, etc.
+    /// Markdown will have #, *, -, etc. without HTML tags.
+    /// </summary>
+    public bool IsHtml(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return false;
+        
+        // Check for common HTML tags that TipTap produces
+        return System.Text.RegularExpressions.Regex.IsMatch(
+            content, 
+            @"<(p|h[1-6]|ul|ol|li|strong|em|a|pre|code|blockquote|div|span|br)[^>]*>",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    }
+    
+    /// <summary>
+    /// Ensures content is HTML. If content appears to be markdown, converts it to HTML.
+    /// If content is already HTML, returns it as-is (after sanitization).
+    /// </summary>
+    public string EnsureHtml(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return string.Empty;
+        
+        if (IsHtml(content))
+        {
+            // Already HTML - just sanitize and return
+            return _sanitizer.Sanitize(content);
+        }
+        
+        // Content appears to be markdown - convert to HTML
+        return ToHtml(content);
+    }
 }
