@@ -25,17 +25,33 @@ public class BlobStorageService : IBlobStorageService
         _logger = logger;
 
         var connectionString = configuration["BlobStorage:ConnectionString"]
-            ?? throw new InvalidOperationException("BlobStorage:ConnectionString not configured");
+            ?? configuration["BlobStorage__ConnectionString"];  // Try double underscore format
 
-        _containerName = configuration["BlobStorage:ContainerName"] ?? "chronicis-documents";
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            _logger.LogError("BlobStorage:ConnectionString not configured. Check Azure app settings.");
+            throw new InvalidOperationException("BlobStorage:ConnectionString not configured. Please add BlobStorage__ConnectionString to Azure configuration.");
+        }
 
-        _blobServiceClient = new BlobServiceClient(connectionString);
+        _containerName = configuration["BlobStorage:ContainerName"] 
+            ?? configuration["BlobStorage__ContainerName"]
+            ?? "chronicis-documents";
 
-        // Ensure container exists (idempotent)
-        var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
-        containerClient.CreateIfNotExists(PublicAccessType.None);
+        try
+        {
+            _blobServiceClient = new BlobServiceClient(connectionString);
 
-        _logger.LogInformation("BlobStorageService initialized with container: {ContainerName}", _containerName);
+            // Ensure container exists (idempotent)
+            var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+            containerClient.CreateIfNotExists(PublicAccessType.None);
+
+            _logger.LogInformation("BlobStorageService initialized with container: {ContainerName}", _containerName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize BlobStorageService. Connection string may be invalid.");
+            throw;
+        }
     }
 
     /// <inheritdoc/>
