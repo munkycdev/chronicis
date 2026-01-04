@@ -4,6 +4,7 @@
 
 ### Article
 - Sometimes, when I load a long article, scroll down a ways, and type [[, it doesn't load the link autocomplete popup. Sometimes it does. Seems inconsistent.
+- The DM can choose to define article templates for various article types
 
 ### General
 - Make it work on an iPad

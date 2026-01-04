@@ -44,8 +44,12 @@ public class DeleteArticle
                 return validationError;
             }
 
+            // Get article if user has access via world membership (same pattern as UpdateArticle)
             var article = await _context.Articles
-                .FirstOrDefaultAsync(a => a.Id == id && a.CreatedBy == user.Id);
+                .Where(a => a.Id == id)
+                .Where(a => a.WorldId.HasValue && 
+                            _context.WorldMembers.Any(wm => wm.WorldId == a.WorldId.Value && wm.UserId == user.Id))
+                .FirstOrDefaultAsync();
 
             if (article == null)
             {

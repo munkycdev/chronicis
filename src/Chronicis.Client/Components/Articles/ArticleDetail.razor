@@ -88,11 +88,13 @@ else
         <!-- Action Bar (Save Status + Buttons) -->
         <ArticleActionBar IsSaving="_isSaving"
                           IsAutoLinking="_isAutoLinking"
+                          IsCreatingChild="_isCreatingChild"
                           HasUnsavedChanges="_hasUnsavedChanges"
                           LastSaveTime="@_lastSaveTime"
                           OnSave="SaveArticle"
                           OnDelete="DeleteArticle"
-                          OnAutoLink="AutoLinkArticle" />
+                          OnAutoLink="AutoLinkArticle"
+                          OnCreateChild="CreateChildArticle" />
     </MudPaper>
 
     <!-- Metadata Drawer -->
@@ -125,6 +127,7 @@ else
     private bool _isLoading = false;
     private bool _isSaving = false;
     private bool _isAutoLinking = false;
+    private bool _isCreatingChild = false;
     private bool _hasUnsavedChanges = false;
     private bool _editorInitialized = false;
     private string _lastSaveTime = "just now";
@@ -502,11 +505,18 @@ else
 
         try
         {
-            await ArticleApi.DeleteArticleAsync(_article.Id);
-            ArticleCache.InvalidateCache();
-            Snackbar.Add("Article deleted successfully", Severity.Success);
-            await TreeState.RefreshAsync();
-            _article = null;
+            var success = await ArticleApi.DeleteArticleAsync(_article.Id);
+            if (success)
+            {
+                ArticleCache.InvalidateCache();
+                Snackbar.Add("Article deleted successfully", Severity.Success);
+                await TreeState.RefreshAsync();
+                _article = null;
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete article. You may not have permission.", Severity.Error);
+            }
         }
         catch (Exception ex)
         {
@@ -619,15 +629,81 @@ else
             await TreeState.RefreshAsync();
             TreeState.ExpandPathToAndSelect(created.Id);
             
-            var path = created.Breadcrumbs?.Any() == true 
-                ? BreadcrumbService.BuildArticleUrl(created.Breadcrumbs)
-                : $"/article/{created.Slug}";
-            Navigation.NavigateTo(path);
+            // Fetch the full article to get breadcrumbs for navigation
+            var articleDetail = await ArticleApi.GetArticleDetailAsync(created.Id);
+            if (articleDetail != null && articleDetail.Breadcrumbs.Any())
+            {
+                var path = BreadcrumbService.BuildArticleUrl(articleDetail.Breadcrumbs);
+                Navigation.NavigateTo(path);
+            }
+            else
+            {
+                // Fallback to slug-only path
+                Navigation.NavigateTo($"/article/{created.Slug}");
+            }
+            
             Snackbar.Add("New article created", Severity.Success);
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CreateChildArticle()
+    {
+        if (_article == null || _isCreatingChild) return;
+
+        _isCreatingChild = true;
+        StateHasChanged();
+
+        try
+        {
+            var createDto = new ArticleCreateDto
+            {
+                Title = string.Empty,
+                Body = string.Empty,
+                ParentId = _article.Id, // Current article becomes the parent
+                EffectiveDate = DateTime.Now,
+                WorldId = _article.WorldId,
+                CampaignId = _article.CampaignId
+            };
+
+            var created = await ArticleApi.CreateArticleAsync(createDto);
+            if (created == null)
+            {
+                Snackbar.Add("Failed to create child article", Severity.Error);
+                return;
+            }
+            
+            await TreeState.RefreshAsync();
+            TreeState.ExpandPathToAndSelect(created.Id);
+            TreeState.ShouldFocusTitle = true;
+            
+            // Fetch the full article to get breadcrumbs for navigation
+            var articleDetail = await ArticleApi.GetArticleDetailAsync(created.Id);
+            if (articleDetail != null && articleDetail.Breadcrumbs.Any())
+            {
+                var path = BreadcrumbService.BuildArticleUrl(articleDetail.Breadcrumbs);
+                Navigation.NavigateTo(path);
+            }
+            else
+            {
+                // Fallback to slug-only path
+                Navigation.NavigateTo($"/article/{created.Slug}");
+            }
+            
+            Snackbar.Add("Child article created", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error creating child article under {ParentId}", _article.Id);
+            Snackbar.Add($"Failed to create child article: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isCreatingChild = false;
+            StateHasChanged();
         }
     }
 

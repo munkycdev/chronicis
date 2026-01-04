@@ -1192,4 +1192,20 @@ public class TreeStateService : ITreeStateService
             _ => "fa-solid fa-file"
         };
     }
+    
+    // ============================================
+    // Node Lookup
+    // ============================================
+    
+    public bool TryGetNode(Guid nodeId, out TreeNode? node)
+    {
+        if (_nodeIndex.TryGetValue(nodeId, out var foundNode))
+        {
+            node = foundNode;
+            return true;
+        }
+        
+        node = null;
+        return false;
+    }
 }

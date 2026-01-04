@@ -175,4 +175,12 @@ public interface ITreeStateService
     /// Restore expanded state from a saved set of IDs.
     /// </summary>
     void RestoreExpandedNodes(IEnumerable<Guid> nodeIds);
+    
+    /// <summary>
+    /// Try to get a node by its ID.
+    /// </summary>
+    /// <param name="nodeId">The node ID to look up.</param>
+    /// <param name="node">The node if found, null otherwise.</param>
+    /// <returns>True if the node was found, false otherwise.</returns>
+    bool TryGetNode(Guid nodeId, out TreeNode? node);
 }

@@ -1,4 +1,5 @@
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Chronicis.Client.Models
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
 @inject ITreeStateService TreeState
@@ -164,44 +165,68 @@
         // Create a sibling article to the currently selected article
         var selectedId = TreeState.SelectedNodeId;
         
-        if (selectedId.HasValue)
+        if (!selectedId.HasValue)
         {
-            // Get the current article to find its parent
-            var currentArticle = await ArticleApi.GetArticleDetailAsync(selectedId.Value);
-            if (currentArticle != null)
+            Snackbar.Add("Select an article first, then press Ctrl+N to create a sibling", Severity.Info);
+            return;
+        }
+        
+        // Check if the selected node is an article
+        if (!TreeState.TryGetNode(selectedId.Value, out var selectedNode) || selectedNode == null)
+        {
+            Snackbar.Add("Select an article first, then press Ctrl+N to create a sibling", Severity.Info);
+            return;
+        }
+        
+        // Only allow Ctrl+N for Article nodes
+        if (selectedNode.NodeType != TreeNodeType.Article)
+        {
+            var nodeTypeName = selectedNode.NodeType switch
             {
-                Guid? parentId = currentArticle.ParentId;
-                
-                // Create sibling (same parent)
-                Guid? newArticleId;
-                if (parentId.HasValue)
-                {
-                    newArticleId = await TreeState.CreateChildArticleAsync(parentId.Value);
-                }
-                else
-                {
-                    // Root-level article - create at root
-                    newArticleId = await TreeState.CreateRootArticleAsync();
-                }
-                
-                if (newArticleId.HasValue)
-                {
-                    Snackbar.Add("Article created (Ctrl+N)", Severity.Success);
-                    
-                    // Navigate to the new article
-                    var newArticle = await ArticleApi.GetArticleDetailAsync(newArticleId.Value);
-                    if (newArticle != null && newArticle.Breadcrumbs.Any())
-                    {
-                        var path = string.Join("/", newArticle.Breadcrumbs.Select(b => b.Slug));
-                        Navigation.NavigateTo($"/article/{path}");
-                    }
-                }
-            }
+                TreeNodeType.World => "World",
+                TreeNodeType.Campaign => "Campaign",
+                TreeNodeType.Arc => "Arc",
+                TreeNodeType.VirtualGroup => "folder",
+                TreeNodeType.ExternalLink => "link",
+                _ => "item"
+            };
+            Snackbar.Add($"Ctrl+N creates sibling articles. Select an article instead of a {nodeTypeName}.", Severity.Info);
+            return;
+        }
+        
+        // Get the current article to find its parent
+        var currentArticle = await ArticleApi.GetArticleDetailAsync(selectedId.Value);
+        if (currentArticle == null)
+        {
+            Snackbar.Add("Could not load the selected article", Severity.Warning);
+            return;
+        }
+        
+        Guid? parentId = currentArticle.ParentId;
+        
+        // Create sibling (same parent)
+        Guid? newArticleId;
+        if (parentId.HasValue)
+        {
+            newArticleId = await TreeState.CreateChildArticleAsync(parentId.Value);
         }
         else
         {
-            // No article selected - show message
-            Snackbar.Add("Select an article first, then press Ctrl+N to create a sibling", Severity.Info);
+            // Root-level article - create at root
+            newArticleId = await TreeState.CreateRootArticleAsync();
+        }
+        
+        if (newArticleId.HasValue)
+        {
+            Snackbar.Add("Article created (Ctrl+N)", Severity.Success);
+            
+            // Navigate to the new article
+            var newArticle = await ArticleApi.GetArticleDetailAsync(newArticleId.Value);
+            if (newArticle != null && newArticle.Breadcrumbs.Any())
+            {
+                var path = string.Join("/", newArticle.Breadcrumbs.Select(b => b.Slug));
+                Navigation.NavigateTo($"/article/{path}");
+            }
         }
     }
 

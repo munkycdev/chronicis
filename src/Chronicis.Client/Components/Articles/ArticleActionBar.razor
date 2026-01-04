@@ -8,6 +8,23 @@
     <div class="chronicis-flex" style="gap: 8px;">
         <MudButton 
             Variant="Variant.Outlined" 
+            Color="Color.Primary"
+            OnClick="OnCreateChildClick"
+            Disabled="IsSaving || IsCreatingChild"
+            StartIcon="@Icons.Material.Filled.PostAdd">
+            @if (IsCreatingChild)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Creating...</span>
+            }
+            else
+            {
+                <span>New Child</span>
+            }
+        </MudButton>
+        
+        <MudButton 
+            Variant="Variant.Outlined" 
             Color="Color.Secondary"
             OnClick="OnAutoLinkClick"
             Disabled="IsSaving || IsAutoLinking"
@@ -58,6 +75,12 @@
     public bool IsAutoLinking { get; set; }
 
     /// <summary>
+    /// Whether a child article is being created.
+    /// </summary>
+    [Parameter]
+    public bool IsCreatingChild { get; set; }
+
+    /// <summary>
     /// Whether there are unsaved changes.
     /// </summary>
     [Parameter]
@@ -91,6 +114,12 @@
     [Parameter]
     public EventCallback OnAutoLink { get; set; }
 
+    /// <summary>
+    /// Raised when the New Child button is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnCreateChild { get; set; }
+
     #endregion
 
     #region Event Handlers
@@ -108,6 +137,11 @@
     private async Task OnAutoLinkClick()
     {
         await OnAutoLink.InvokeAsync();
+    }
+
+    private async Task OnCreateChildClick()
+    {
+        await OnCreateChild.InvokeAsync();
     }
 
     #endregion
