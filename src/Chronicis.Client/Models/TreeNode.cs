@@ -75,6 +75,11 @@ public class TreeNode
     public ArticleVisibility Visibility { get; set; } = ArticleVisibility.Public;
 
     /// <summary>
+    /// Indicates whether this article has an AI-generated summary.
+    /// </summary>
+    public bool HasAISummary { get; set; }
+
+    /// <summary>
     /// Number of children (from server or computed).
     /// </summary>
     public int ChildCount { get; set; }

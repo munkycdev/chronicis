@@ -67,7 +67,8 @@ namespace Chronicis.Api.Services
                     CreatedAt = a.CreatedAt,
                     EffectiveDate = a.EffectiveDate,
                     IconEmoji = a.IconEmoji,
-                    CreatedBy = a.CreatedBy
+                    CreatedBy = a.CreatedBy,
+                    HasAISummary = a.AISummary != null
                 })
                 .OrderBy(a => a.Title)
                 .ToListAsync();
@@ -107,7 +108,8 @@ namespace Chronicis.Api.Services
                     CreatedAt = a.CreatedAt,
                     EffectiveDate = a.EffectiveDate,
                     IconEmoji = a.IconEmoji,
-                    CreatedBy = a.CreatedBy
+                    CreatedBy = a.CreatedBy,
+                    HasAISummary = a.AISummary != null
                 })
                 .OrderBy(a => a.Title)
                 .ToListAsync();
@@ -141,7 +143,8 @@ namespace Chronicis.Api.Services
                     CreatedAt = a.CreatedAt,
                     EffectiveDate = a.EffectiveDate,
                     IconEmoji = a.IconEmoji,
-                    CreatedBy = a.CreatedBy
+                    CreatedBy = a.CreatedBy,
+                    HasAISummary = a.AISummary != null
                 })
                 .OrderBy(a => a.Title)
                 .ToListAsync();

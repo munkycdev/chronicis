@@ -39,6 +39,7 @@
         @* Icon - based on node type, or lock icon if private *@
         @{
             var isPrivate = Node.NodeType == TreeNodeType.Article && Node.Visibility == ArticleVisibility.Private;
+            var showAiBadge = Node.NodeType == TreeNodeType.Article && Node.HasAISummary;
             var icon = GetNodeIcon();
             var iconColorClass = GetIconColorClass();
             var titleClasses = GetTitleClasses();
@@ -54,18 +55,36 @@
         }
         else if (!string.IsNullOrEmpty(icon) && icon.StartsWith("fa-"))
         {
-            <i class="@($"{icon} tree-node__icon tree-node__icon--fa {iconColorClass}")"></i>
+            <span class="tree-node__icon-wrapper">
+                <i class="@($"{icon} tree-node__icon tree-node__icon--fa {iconColorClass}")"></i>
+                @if (showAiBadge)
+                {
+                    <span class="tree-node__ai-badge" title="Has AI Summary">✨</span>
+                }
+            </span>
         }
         else if (!string.IsNullOrEmpty(icon) && !icon.StartsWith("@"))
         {
-            <span class="tree-node__icon tree-node__icon--emoji">@icon</span>
+            <span class="tree-node__icon-wrapper">
+                <span class="tree-node__icon tree-node__icon--emoji">@icon</span>
+                @if (showAiBadge)
+                {
+                    <span class="tree-node__ai-badge" title="Has AI Summary">✨</span>
+                }
+            </span>
         }
         else
         {
-            <MudIcon 
-                Icon="@GetMaterialIcon()" 
-                Size="Size.Small"
-                Class="@($"tree-node__icon tree-node__icon--material {iconColorClass}")" />
+            <span class="tree-node__icon-wrapper">
+                <MudIcon 
+                    Icon="@GetMaterialIcon()" 
+                    Size="Size.Small"
+                    Class="@($"tree-node__icon tree-node__icon--material {iconColorClass}")" />
+                @if (showAiBadge)
+                {
+                    <span class="tree-node__ai-badge" title="Has AI Summary">✨</span>
+                }
+            </span>
         }
         
         @* Title with tooltip *@

@@ -4,13 +4,14 @@
 
 ### Article
 - Sometimes, when I load a long article, scroll down a ways, and type [[, it doesn't load the link autocomplete popup. Sometimes it does. Seems inconsistent.
-- Maybe add something to an article icon to indicate that an AI summary has been generated for it?
 
 ### General
 - Make it work on an iPad
     - Figure out how to perform the right-click operations
     - Drag and drop reorganization doesn't work
 - Default world that new users get added to as an example of how to use the system
+- /change-log seems to be missing some stuff
+- Should I consider a different license, if I want to monetize this eventually?
 
 ---
 

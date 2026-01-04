@@ -577,7 +577,8 @@ public class TreeStateService : ITreeStateService
             CampaignId = article.CampaignId,
             ArcId = article.ArcId,
             ChildCount = article.ChildCount,
-            Visibility = article.Visibility
+            Visibility = article.Visibility,
+            HasAISummary = article.HasAISummary
         };
     }
     

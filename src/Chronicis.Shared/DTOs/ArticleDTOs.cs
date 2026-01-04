@@ -68,6 +68,12 @@ public class ArticleTreeDto
     public Guid CreatedBy { get; set; }
     
     /// <summary>
+    /// Indicates whether this article has an AI-generated summary.
+    /// Used to display a visual indicator in the navigation tree.
+    /// </summary>
+    public bool HasAISummary { get; set; }
+    
+    /// <summary>
     /// True if this is a virtual group (Campaigns, Player Characters, Wiki, etc.)
     /// that doesn't correspond to a real article in the database.
     /// Virtual groups should only expand/collapse, not navigate.

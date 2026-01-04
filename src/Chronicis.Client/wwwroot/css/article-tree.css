@@ -145,6 +145,28 @@
     opacity: 0.8;
 }
 
+/* Icon wrapper for overlay badges */
+.tree-node__icon-wrapper {
+    position: relative;
+    display: inline-flex;
+    margin-right: var(--chronicis-space-sm);
+    flex-shrink: 0;
+}
+
+.tree-node__icon-wrapper .tree-node__icon {
+    margin-right: 0;
+}
+
+/* AI Summary indicator badge */
+.tree-node__ai-badge {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    font-size: 0.6rem;
+    line-height: 1;
+    pointer-events: none;
+}
+
 /* Title */
 .tree-node__title {
     flex: 1;
