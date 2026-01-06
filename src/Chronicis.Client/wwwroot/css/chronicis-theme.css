@@ -397,8 +397,13 @@
     color: var(--chronicis-slate-grey);
 }
 
-.mud-breadcrumb-item {
-    color: var(--chronicis-slate-grey);
+    .mud-breadcrumbs .mud-disabled a {
+        color:var(--chronicis-slate-grey) !important;
+        cursor:pointer !important;
+    }
+
+.mud-breadcrumb-item a{
+    color: var(--chronicis-slate-grey) !important;
 }
 
 .mud-breadcrumb-item:hover {
