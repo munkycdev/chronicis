@@ -62,7 +62,7 @@
                                 <MudSelect T="WorldRole" 
                                            Value="member.Role" 
                                            ValueChanged="(role) => UpdateMemberRole(member, role)"
-                                           Variant="Variant.Outlined"
+                                           Variant="Variant.Filled"
                                            Margin="Margin.Dense"
                                            Dense="true"
                                            Style="min-width: 120px;">
@@ -105,7 +105,7 @@
         <div class="d-flex align-center justify-space-between mb-2">
             <MudText Typo="Typo.subtitle1">Invitations</MudText>
             <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
+                       Color="Color.Secondary"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.PersonAdd"
                        OnClick="CreateInvitation"

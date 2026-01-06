@@ -9,7 +9,7 @@ else if (_claimStatus != null)
 {
     @if (_claimStatus.IsClaimedByMe)
     {
-        <MudButton Variant="Variant.Outlined"
+        <MudButton Variant="Variant.Filled"
                    Color="Color.Success"
                    Size="Size.Small"
                    StartIcon="@Icons.Material.Filled.CheckCircle"
@@ -27,7 +27,7 @@ else if (_claimStatus != null)
         <MudTooltip Text="@($"Claimed by {_claimStatus.ClaimedByName}")">
             <MudChip T="string" 
                      Size="Size.Small" 
-                     Variant="Variant.Outlined"
+                     Variant="Variant.Filled"
                      Icon="@Icons.Material.Filled.Person">
                 @_claimStatus.ClaimedByName's Character
             </MudChip>
@@ -35,8 +35,8 @@ else if (_claimStatus != null)
     }
     else
     {
-        <MudButton Variant="Variant.Outlined"
-                   Color="Color.Primary"
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Secondary"
                    Size="Size.Small"
                    StartIcon="@Icons.Material.Filled.PersonAdd"
                    OnClick="ClaimCharacter"

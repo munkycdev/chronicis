@@ -34,7 +34,7 @@
                       Placeholder="Search content..."
                       Adornment="Adornment.Start"
                       AdornmentIcon="@Icons.Material.Filled.Search"
-                      Variant="Variant.Outlined"
+                      Variant="Variant.Filled"
                       Margin="Margin.Dense"
                       Style="max-width: 400px; background-color: rgba(255,255,255,0.1);"
                       Class="global-search-input"
@@ -90,7 +90,7 @@
                           AdornmentIcon="@(_treeSearch?.Length > 0 ? Icons.Material.Filled.Clear : Icons.Material.Filled.Search)"
                           AdornmentColor="Color.Primary"
                           OnAdornmentClick="ClearSearch"
-                          Variant="Variant.Outlined"
+                          Variant="Variant.Filled"
                           Margin="Margin.Dense"
                           Immediate="true"
                           DebounceInterval="200"
@@ -121,7 +121,7 @@
                                         An unexpected error occurred. Please try refreshing the page.
                                     </MudText>
                                     <MudButton Variant="Variant.Filled"
-                                               Color="Color.Primary"
+                                               Color="Color.Secondary"
                                                OnClick="@(() => Navigation.NavigateTo(Navigation.Uri, forceLoad: true))">
                                         Refresh Page
                                     </MudButton>

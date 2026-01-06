@@ -20,7 +20,7 @@
                        Value="_selectedWorldId"
                        ValueChanged="OnWorldChanged"
                        Label="World"
-                       Variant="Variant.Outlined"
+                       Variant="Variant.Filled"
                        Dense="true"
                        Margin="Margin.Dense"
                        Class="selector-dropdown">
@@ -49,7 +49,7 @@
                            Value="_selectedCampaignId"
                            ValueChanged="OnCampaignChanged"
                            Label="Campaign"
-                           Variant="Variant.Outlined"
+                           Variant="Variant.Filled"
                            Dense="true"
                            Margin="Margin.Dense"
                            Class="selector-dropdown">
@@ -72,7 +72,7 @@
                 
                 <MudIconButton Icon="@Icons.Material.Filled.Add"
                                Size="Size.Small"
-                               Color="Color.Primary"
+                               Color="Color.Secondary"
                                OnClick="OpenCreateCampaignDialog"
                                title="Create new campaign" />
             </div>
@@ -80,8 +80,8 @@
         else
         {
             <div class="selector-row">
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Primary"
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Secondary"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="OpenCreateCampaignDialog"
                            FullWidth="true"

@@ -11,7 +11,7 @@
     <DialogContent>
         <MudTextField @bind-Value="_name"
                       Label="Campaign Name"
-                      Variant="Variant.Outlined"
+                      Variant="Variant.Filled"
                       Required="true"
                       RequiredError="Name is required"
                       Class="mb-3"
@@ -21,12 +21,12 @@
         
         <MudTextField @bind-Value="_description"
                       Label="Description (optional)"
-                      Variant="Variant.Outlined"
+                      Variant="Variant.Filled"
                       Lines="3" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" 
+        <MudButton Color="Color.Secondary" 
                    Variant="Variant.Filled"
                    OnClick="Submit"
                    Disabled="@(string.IsNullOrWhiteSpace(_name) || _isSubmitting)">

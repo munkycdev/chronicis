@@ -31,7 +31,7 @@ else if (_campaign != null)
         <!-- Description -->
         <MudTextField @bind-Value="_editDescription"
                       Label="Description"
-                      Variant="Variant.Outlined"
+                      Variant="Variant.Filled"
                       Lines="3"
                       Placeholder="Describe your campaign..."
                       Class="mb-4"
@@ -45,7 +45,7 @@ else if (_campaign != null)
                 Arcs / Acts
             </MudText>
             <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
+                       Color="Color.Secondary"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Add"
                        OnClick="CreateArc">
@@ -61,7 +61,7 @@ else if (_campaign != null)
                     <EntityListItem Icon="@Icons.Material.Filled.Bookmark"
                                     Title="@arc.Name"
                                     OnClick="@(() => NavigateToArc(arc.Id))">
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled">
                             @arc.SessionCount sessions
                         </MudChip>
                     </EntityListItem>
@@ -125,7 +125,7 @@ else if (_campaign != null)
             <SaveStatusIndicator IsSaving="_isSaving" HasUnsavedChanges="_hasUnsavedChanges" />
 
             <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
+                       Color="Color.Secondary"
                        OnClick="SaveCampaign"
                        Disabled="_isSaving"
                        StartIcon="@Icons.Material.Filled.Save">

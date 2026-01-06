@@ -12,7 +12,7 @@
     <DialogContent>
         <MudTextField @bind-Value="_title"
                       Label="@GetTitleLabel()"
-                      Variant="Variant.Outlined"
+                      Variant="Variant.Filled"
                       Required="true"
                       RequiredError="Title is required"
                       Class="mb-3"
@@ -21,7 +21,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" 
+        <MudButton Color="Color.Secondary" 
                    Variant="Variant.Filled"
                    OnClick="Submit"
                    Disabled="@(string.IsNullOrWhiteSpace(_title) || _isSubmitting)">

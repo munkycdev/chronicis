@@ -6,9 +6,27 @@
                          LastSaveTime="@LastSaveTime" />
 
     <div class="chronicis-flex" style="gap: 8px;">
+        
         <MudButton 
-            Variant="Variant.Outlined" 
-            Color="Color.Primary"
+            Variant="Variant.Filled" 
+            Color="Color.Secondary"
+            OnClick="OnAutoLinkClick"
+            Disabled="IsSaving || IsAutoLinking"
+            StartIcon="@Icons.Material.Filled.AutoFixHigh">
+            @if (IsAutoLinking)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Scanning...</span>
+            }
+            else
+            {
+                <span>Auto-Link</span>
+            }
+        </MudButton>
+
+        <MudButton 
+            Variant="Variant.Filled" 
+            Color="Color.Secondary"
             OnClick="OnCreateChildClick"
             Disabled="IsSaving || IsCreatingChild"
             StartIcon="@Icons.Material.Filled.PostAdd">
@@ -24,25 +42,8 @@
         </MudButton>
         
         <MudButton 
-            Variant="Variant.Outlined" 
-            Color="Color.Secondary"
-            OnClick="OnAutoLinkClick"
-            Disabled="IsSaving || IsAutoLinking"
-            StartIcon="@Icons.Material.Filled.AutoFixHigh">
-            @if (IsAutoLinking)
-            {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                <span>Scanning...</span>
-            }
-            else
-            {
-                <span>Auto-Link</span>
-            }
-        </MudButton>
-        
-        <MudButton 
             Variant="Variant.Filled" 
-            Color="Color.Primary"
+            Color="Color.Secondary"
             OnClick="OnSaveClick"
             Disabled="IsSaving"
             StartIcon="@Icons.Material.Filled.Save">
@@ -50,7 +51,7 @@
         </MudButton>
         
         <MudButton 
-            Variant="Variant.Outlined" 
+            Variant="Variant.Filled" 
             Color="Color.Error"
             OnClick="OnDeleteClick"
             StartIcon="@Icons.Material.Filled.Delete">

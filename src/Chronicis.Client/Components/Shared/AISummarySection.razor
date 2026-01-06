@@ -14,7 +14,7 @@
             {
                 <MudChip T="string" 
                          Size="Size.Small" 
-                         Variant="Variant.Outlined" 
+                         Variant="Variant.Filled" 
                          Class="timestamp-chip">
                     @GetRelativeTime(_summaryData.GeneratedAt!.Value)
                 </MudChip>
@@ -92,7 +92,7 @@
                             <MudSelect T="Guid?" 
                                        @bind-Value="_selectedTemplateId"
                                        Label="Template"
-                                       Variant="Variant.Outlined"
+                                       Variant="Variant.Filled"
                                        Dense="true"
                                        Class="template-select">
                                 @foreach (var template in _templates)
@@ -104,7 +104,7 @@
                             </MudSelect>
                             
                             <MudButton Variant="Variant.Filled"
-                                       Color="Color.Primary"
+                                       Color="Color.Secondary"
                                        StartIcon="@Icons.Material.Filled.AutoAwesome"
                                        OnClick="GenerateSummary"
                                        Disabled="_isLoading"
@@ -125,7 +125,7 @@
                                     <MudTextField T="string"
                                                   @bind-Value="_customPrompt"
                                                   Label="Custom Instructions"
-                                                  Variant="Variant.Outlined"
+                                                  Variant="Variant.Filled"
                                                   Lines="2"
                                                   Placeholder="@CustomPromptPlaceholder"
                                                   HelperText="Add extra guidance for the AI (optional)"

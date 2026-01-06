@@ -11,7 +11,7 @@
     <DialogContent>
         <MudTextField @bind-Value="_name"
                       Label="World Name"
-                      Variant="Variant.Outlined"
+                      Variant="Variant.Filled"
                       Required="true"
                       RequiredError="Name is required"
                       Placeholder="e.g., Forgotten Realms, My Campaign World"
@@ -21,13 +21,13 @@
         
         <MudTextField @bind-Value="_description"
                       Label="Description (optional)"
-                      Variant="Variant.Outlined"
+                      Variant="Variant.Filled"
                       Lines="3"
                       Placeholder="Describe your world..." />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" 
+        <MudButton Color="Color.Secondary" 
                    Variant="Variant.Filled"
                    OnClick="Submit"
                    Disabled="@(string.IsNullOrWhiteSpace(_name) || _isSubmitting)">

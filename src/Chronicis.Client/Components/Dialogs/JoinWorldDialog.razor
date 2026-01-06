@@ -16,7 +16,7 @@
         
         <MudTextField @bind-Value="_code"
                       Label="Invitation Code"
-                      Variant="Variant.Outlined"
+                      Variant="Variant.Filled"
                       Required="true"
                       RequiredError="Code is required"
                       Placeholder="e.g., FROG-AXLE"
@@ -39,7 +39,7 @@
     <DialogActions>
         @if (_result?.Success == true)
         {
-            <MudButton Color="Color.Primary" 
+            <MudButton Color="Color.Secondary" 
                        Variant="Variant.Filled"
                        OnClick="GoToWorld">
                 Go to World
@@ -48,7 +48,7 @@
         else
         {
             <MudButton OnClick="Cancel">Cancel</MudButton>
-            <MudButton Color="Color.Primary" 
+            <MudButton Color="Color.Secondary" 
                        Variant="Variant.Filled"
                        OnClick="Submit"
                        Disabled="@(string.IsNullOrWhiteSpace(_code) || _isSubmitting)">
