@@ -105,8 +105,8 @@
 
             <!-- Quick Actions -->
             <div class="section actions-section">
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Secondary"
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
                            Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.Visibility"
                            OnClick="ViewWorld">
@@ -114,12 +114,12 @@
                 </MudButton>
                 @if (World.Campaigns.Any(c => c.IsActive))
                 {
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Secondary"
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
                                Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.Add"
                                OnClick="AddSessionNote">
-                        Session Note
+                        + Session Note
                     </MudButton>
                 }
             </div>

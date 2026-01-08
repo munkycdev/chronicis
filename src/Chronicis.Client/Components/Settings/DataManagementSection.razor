@@ -16,7 +16,7 @@
     }
     else if (_worlds == null || !_worlds.Any())
     {
-        <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Filled">
+        <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Outlined">
             You don't have any worlds to export yet. Create a world first!
         </MudAlert>
     }
@@ -26,7 +26,7 @@
             <MudSelect T="WorldDto" 
                        @bind-Value="_selectedWorld" 
                        Label="Select World"
-                       Variant="Variant.Filled"
+                       Variant="Variant.Outlined"
                        AnchorOrigin="Origin.BottomCenter"
                        Dense="true"
                        Style="min-width: 280px;">
@@ -37,7 +37,7 @@
             </MudSelect>
 
             <MudButton Variant="Variant.Filled"
-                       Color="Color.Secondary"
+                       Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Download"
                        OnClick="ExportWorld"
                        Disabled="@(_selectedWorld == null || _isExporting)">
@@ -58,7 +58,7 @@
             <MudAlert Severity="@(_exportSuccess.Value ? Severity.Success : Severity.Error)" 
                       Class="mt-4" 
                       Dense="true"
-                      Variant="Variant.Filled"
+                      Variant="Variant.Outlined"
                       ShowCloseIcon="true"
                       CloseIconClicked="() => _exportSuccess = null">
                 @if (_exportSuccess.Value)
@@ -85,7 +85,7 @@
         Import content from other tools or restore from a backup.
     </MudText>
     
-    <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Construction">
+    <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Construction">
         Import functionality is coming soon! We're working on support for importing from 
         Markdown files, Notion exports, and other popular campaign management tools.
     </MudAlert>

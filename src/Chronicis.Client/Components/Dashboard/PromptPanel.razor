@@ -22,7 +22,7 @@
                         @if (!string.IsNullOrEmpty(prompt.ActionText) && !string.IsNullOrEmpty(prompt.ActionUrl))
                         {
                             <MudButton Variant="Variant.Text" 
-                                       Color="Color.Secondary" 
+                                       Color="Color.Primary" 
                                        Size="Size.Small"
                                        OnClick="@(() => NavigateTo(prompt.ActionUrl))"
                                        Class="prompt-action">

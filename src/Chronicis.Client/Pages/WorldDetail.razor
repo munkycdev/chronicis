@@ -33,7 +33,7 @@ else if (_world != null)
         <!-- Description -->
         <MudTextField @bind-Value="_editDescription"
                       Label="Description"
-                      Variant="Variant.Filled"
+                      Variant="Variant.Outlined"
                       Lines="5"
                       AutoGrow="true"
                       MaxLines="20"
@@ -70,21 +70,21 @@ else if (_world != null)
 
             <div class="quick-actions-compact">
                 <MudButton Variant="Variant.Filled"
-                           Color="Color.Secondary"
+                           Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.AutoStories"
                            OnClick="CreateCampaign"
                            Size="Size.Small">
                     New Campaign
                 </MudButton>
                 <MudButton Variant="Variant.Filled"
-                           Color="Color.Secondary"
+                           Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Person"
                            OnClick="CreateCharacter"
                            Size="Size.Small">
                     New Character
                 </MudButton>
                 <MudButton Variant="Variant.Filled"
-                           Color="Color.Secondary"
+                           Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.MenuBook"
                            OnClick="CreateWikiArticle"
                            Size="Size.Small">
@@ -108,7 +108,7 @@ else if (_world != null)
                         <div class="d-flex align-center justify-space-between mb-2">
                             <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">External Links</MudText>
                             <MudButton Variant="Variant.Text"
-                                       Color="Color.Secondary"
+                                       Color="Color.Primary"
                                        StartIcon="@Icons.Material.Filled.Add"
                                        OnClick="StartAddLink"
                                        Size="Size.Small">
@@ -134,17 +134,17 @@ else if (_world != null)
                                              Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
                                     <MudTextField @bind-Value="_editLinkTitle"
                                                   Placeholder="Title"
-                                                  Variant="Variant.Filled"
+                                                  Variant="Variant.Outlined"
                                                   Margin="Margin.Dense"
                                                   Style="min-width: 150px;" />
                                     <MudTextField @bind-Value="_editLinkUrl"
                                                   Placeholder="URL"
-                                                  Variant="Variant.Filled"
+                                                  Variant="Variant.Outlined"
                                                   Margin="Margin.Dense"
                                                   Class="flex-grow-1" />
                                     <MudTextField @bind-Value="_editLinkDescription"
                                                   Placeholder="Description (optional)"
-                                                  Variant="Variant.Filled"
+                                                  Variant="Variant.Outlined"
                                                   Margin="Margin.Dense"
                                                   Style="min-width: 150px;" />
                                     <MudIconButton Icon="@Icons.Material.Filled.Check"
@@ -201,17 +201,17 @@ else if (_world != null)
                                          Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
                                 <MudTextField @bind-Value="_newLinkTitle"
                                               Placeholder="Title (e.g., Roll20 Campaign)"
-                                              Variant="Variant.Filled"
+                                              Variant="Variant.Outlined"
                                               Margin="Margin.Dense"
                                               Style="min-width: 150px;" />
                                 <MudTextField @bind-Value="_newLinkUrl"
                                               Placeholder="URL (e.g., https://roll20.net/...)"
-                                              Variant="Variant.Filled"
+                                              Variant="Variant.Outlined"
                                               Margin="Margin.Dense"
                                               Class="flex-grow-1" />
                                 <MudTextField @bind-Value="_newLinkDescription"
                                               Placeholder="Description (optional)"
-                                              Variant="Variant.Filled"
+                                              Variant="Variant.Outlined"
                                               Margin="Margin.Dense"
                                               Style="min-width: 150px;" />
                                 <MudIconButton Icon="@Icons.Material.Filled.Check"
@@ -236,7 +236,7 @@ else if (_world != null)
                             @if (_isCurrentUserGM)
                             {
                                 <MudButton Variant="Variant.Text"
-                                           Color="Color.Secondary"
+                                           Color="Color.Primary"
                                            StartIcon="@Icons.Material.Filled.Upload"
                                            OnClick="OpenUploadDialog"
                                            Size="Size.Small">
@@ -264,12 +264,12 @@ else if (_world != null)
                                                  Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
                                         <MudTextField @bind-Value="_editDocumentTitle"
                                                       Placeholder="Title"
-                                                      Variant="Variant.Filled"
+                                                      Variant="Variant.Outlined"
                                                       Margin="Margin.Dense"
                                                       Style="min-width: 200px;" />
                                         <MudTextField @bind-Value="_editDocumentDescription"
                                                       Placeholder="Description (optional)"
-                                                      Variant="Variant.Filled"
+                                                      Variant="Variant.Outlined"
                                                       Margin="Margin.Dense"
                                                       Style="flex: 1;" />
                                         <MudIconButton Icon="@Icons.Material.Filled.Check"
@@ -303,7 +303,7 @@ else if (_world != null)
                                             </MudText>
                                         </div>
                                         <MudIconButton Icon="@Icons.Material.Filled.Download"
-                                                       Color="Color.Secondary"
+                                                       Color="Color.Primary"
                                                        Size="Size.Small"
                                                        OnClick="@(() => DownloadDocument(doc.Id))"
                                                        title="Download" />
@@ -347,7 +347,7 @@ else if (_world != null)
                     <div class="pa-3 rounded" style="background: var(--mud-palette-background-grey);">
                         <div class="d-flex align-center gap-3 mb-3">
                             <MudSwitch @bind-Value="_isPublic"
-                                       Color="Color.Secondary"
+                                       Color="Color.Primary"
                                        Label="Make this world publicly accessible"
                                        T="bool"
                                        @bind-Value:after="OnPublicToggleChanged" />
@@ -363,7 +363,7 @@ else if (_world != null)
                                 <MudText Typo="Typo.body2" Style="white-space: nowrap;">@GetPublicUrlBase()</MudText>
                                 <MudTextField @bind-Value="_publicSlug"
                                               Placeholder="your-world-slug"
-                                              Variant="Variant.Filled"
+                                              Variant="Variant.Outlined"
                                               Margin="Margin.Dense"
                                               Immediate="true"
                                               DebounceInterval="500"
@@ -388,15 +388,15 @@ else if (_world != null)
                                 <div class="d-flex align-center gap-2 mt-3">
                                     <MudTextField Value="@GetFullPublicUrl()"
                                                   Label="Public URL"
-                                                  Variant="Variant.Filled"
+                                                  Variant="Variant.Outlined"
                                                   Margin="Margin.Dense"
                                                   ReadOnly="true"
                                                   Adornment="Adornment.End"
                                                   AdornmentIcon="@Icons.Material.Filled.ContentCopy"
                                                   OnAdornmentClick="CopyPublicUrl"
                                                   Style="max-width: 500px;" />
-                                    <MudButton Variant="Variant.Filled"
-                                               Color="Color.Secondary"
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Primary"
                                                StartIcon="@Icons.Material.Filled.OpenInNew"
                                                Href="@GetFullPublicUrl()"
                                                Target="_blank">
@@ -421,7 +421,7 @@ else if (_world != null)
             <SaveStatusIndicator IsSaving="_isSaving" HasUnsavedChanges="_hasUnsavedChanges" />
 
             <MudButton Variant="Variant.Filled"
-                       Color="Color.Secondary"
+                       Color="Color.Primary"
                        OnClick="SaveWorld"
                        Disabled="_isSaving"
                        StartIcon="@Icons.Material.Filled.Save">

@@ -33,7 +33,7 @@ else if (_arc != null)
         <!-- Description -->
         <MudTextField @bind-Value="_editDescription"
                       Label="Description"
-                      Variant="Variant.Filled"
+                      Variant="Variant.Outlined"
                       Lines="3"
                       Placeholder="Describe this arc..."
                       Class="mb-4"
@@ -43,7 +43,7 @@ else if (_arc != null)
         <!-- Sort Order -->
         <MudNumericField @bind-Value="_editSortOrder"
                          Label="Sort Order"
-                         Variant="Variant.Filled"
+                         Variant="Variant.Outlined"
                          Min="0"
                          Class="mb-4"
                          Style="max-width: 150px;"
@@ -57,7 +57,7 @@ else if (_arc != null)
                 Sessions
             </MudText>
             <MudButton Variant="Variant.Filled"
-                       Color="Color.Secondary"
+                       Color="Color.Primary"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Add"
                        OnClick="CreateSession">
@@ -127,14 +127,14 @@ else if (_arc != null)
 
             <div class="d-flex gap-2">
                 <MudButton Variant="Variant.Filled"
-                           Color="Color.Secondary"
+                           Color="Color.Primary"
                            OnClick="SaveArc"
                            Disabled="_isSaving"
                            StartIcon="@Icons.Material.Filled.Save">
                     Save
                 </MudButton>
                 
-                <MudButton Variant="Variant.Filled"
+                <MudButton Variant="Variant.Outlined"
                            Color="Color.Error"
                            OnClick="DeleteArc"
                            Disabled="_isSaving || _sessions.Any()"

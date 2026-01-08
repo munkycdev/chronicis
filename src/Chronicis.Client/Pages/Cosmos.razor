@@ -25,7 +25,7 @@ else
                     Every great campaign deserves a legendary chronicle. Organize your world, track your story, and never forget a detail.
                 </MudText>
                 <MudButton Variant="Variant.Filled"
-                           Color="Color.Secondary"
+                           Color="Color.Primary"
                            Size="Size.Large"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="CreateFirstArticle"
@@ -82,7 +82,7 @@ else
                         @if (_recentArticles?.Any() ?? false)
                         {
                             <MudButton Variant="Variant.Text"
-                                       Color="Color.Secondary"
+                                       Color="Color.Primary"
                                        Size="Size.Small">
                                 View All
                             </MudButton>
@@ -103,7 +103,7 @@ else
                                 <MudListItem T="string" OnClick="@(() => NavigateToArticle(article.Id))">
                                     <div class="d-flex align-center">
                                         <MudIcon Icon="@(string.IsNullOrEmpty(article.IconEmoji) ? Icons.Material.Filled.Description : article.IconEmoji)"
-                                                 Color="Color.Secondary"
+                                                 Color="Color.Primary"
                                                  Class="mr-3" />
                                         <div style="flex: 1;">
                                             <MudText Typo="Typo.body1">
@@ -140,29 +140,29 @@ else
                         ⚡ Quick Actions
                     </MudText>
                     <MudStack Spacing="2">
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Secondary"
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
                                    FullWidth="true"
                                    StartIcon="@Icons.Material.Filled.PersonAdd"
                                    OnClick="@(() => CreateArticleWithTitle("New Character"))">
                             Create Character
                         </MudButton>
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Secondary"
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
                                    FullWidth="true"
                                    StartIcon="@Icons.Material.Filled.Place"
                                    OnClick="@(() => CreateArticleWithTitle("New Location"))">
                             Add Location
                         </MudButton>
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Secondary"
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
                                    FullWidth="true"
                                    StartIcon="@Icons.Material.Filled.CalendarToday"
                                    OnClick="@(() => CreateArticleWithTitle("Session Notes"))">
                             Session Notes
                         </MudButton>
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Secondary"
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
                                    FullWidth="true"
                                    StartIcon="@Icons.Material.Filled.AutoStories"
                                    OnClick="@(() => CreateArticleWithTitle("Lore Entry"))">

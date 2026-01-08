@@ -12,7 +12,7 @@
     <DialogContent>
         <MudTextField @bind-Value="_name"
                       Label="Arc Name"
-                      Variant="Variant.Filled"
+                      Variant="Variant.Outlined"
                       Required="true"
                       RequiredError="Name is required"
                       Placeholder="e.g., Act 1, Chapter 1, The Beginning"
@@ -23,19 +23,19 @@
         
         <MudTextField @bind-Value="_description"
                       Label="Description (optional)"
-                      Variant="Variant.Filled"
+                      Variant="Variant.Outlined"
                       Lines="3"
                       Class="mb-3" />
         
         <MudNumericField @bind-Value="_sortOrder"
                          Label="Sort Order"
-                         Variant="Variant.Filled"
+                         Variant="Variant.Outlined"
                          Min="0"
                          HelperText="Lower numbers appear first" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Secondary" 
+        <MudButton Color="Color.Primary" 
                    Variant="Variant.Filled"
                    OnClick="Submit"
                    Disabled="@(string.IsNullOrWhiteSpace(_name) || _isSubmitting)">

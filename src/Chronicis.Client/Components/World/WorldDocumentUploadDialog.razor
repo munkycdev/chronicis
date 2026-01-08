@@ -41,12 +41,12 @@
                 {
                     <MudTextField @bind-Value="_title" 
                                   Label="Title" 
-                                  Variant="Variant.Filled"
+                                  Variant="Variant.Outlined"
                                   HelperText="Optional: Customize the display name (defaults to filename)" />
                     
                     <MudTextField @bind-Value="_description" 
                                   Label="Description" 
-                                  Variant="Variant.Filled"
+                                  Variant="Variant.Outlined"
                                   Lines="3"
                                   HelperText="Optional: Add a description for this document" />
 
@@ -60,7 +60,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel" Disabled="_isUploading">Cancel</MudButton>
-        <MudButton Color="Color.Secondary" 
+        <MudButton Color="Color.Primary" 
                    OnClick="Upload" 
                    Disabled="_selectedFile == null || _isUploading">
             Upload
