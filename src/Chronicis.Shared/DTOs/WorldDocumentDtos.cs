@@ -13,7 +13,7 @@ public class WorldDocumentDto
     public long FileSizeBytes { get; set; }
     public string? Description { get; set; }
     public DateTime UploadedAt { get; set; }
-    public string UploadedById { get; set; } = string.Empty;
+    public Guid UploadedById { get; set; }
 }
 
 /// <summary>

@@ -66,3 +66,10 @@ __azurite_db*__.json
 Migrations
 /docs/features-bugs.md
 /src/Chronicis.CaptureApp/Properties/PublishProfiles/FolderProfile.pubxml
+
+# Log files
+/scripts/logs/*
+
+# Local AI helper files
+/scripts/codex.ps1
+/CODEX_INSTRUCTIONS.md
