@@ -42,16 +42,16 @@
 }
 
 .quick-add-session-btn {
-    background: linear-gradient(135deg, #C4AF8E 0%, #D9C9A7 100%) !important;
-    color: #1F2A33 !important;
+    background: linear-gradient(135deg, var(--chronicis-secondary) 0%, var(--chronicis-secondary-muted) 100%) !important;
+    color: var(--chronicis-background-dark) !important;
     font-weight: 600 !important;
     text-transform: none !important;
     letter-spacing: 0.3px;
 }
 
 .quick-add-session-btn:hover {
-    background: linear-gradient(135deg, #D9C9A7 0%, #C4AF8E 100%) !important;
-    box-shadow: 0 2px 8px rgba(196, 175, 142, 0.4) !important;
+    background: linear-gradient(135deg, var(--chronicis-secondary-muted) 0%, var(--chronicis-secondary) 100%) !important;
+    box-shadow: var(--chronicis-glow-secondary) !important;
 }
 
 .quick-add-session-btn:disabled {

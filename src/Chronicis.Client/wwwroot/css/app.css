@@ -6,8 +6,8 @@ html, body {
     font-family: var(--chronicis-font-body);
     margin: 0;
     padding: 0;
-    background-color: var(--chronicis-soft-off-white);
-    color: var(--chronicis-charcoal);
+    background-color: var(--chronicis-background-light);
+    color: var(--chronicis-text-primary);
 }
 
 /* ============================================
@@ -20,7 +20,7 @@ html, body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, var(--chronicis-deep-blue-grey) 0%, var(--chronicis-slate-grey) 100%);
+    background: linear-gradient(135deg, var(--chronicis-background-dark) 0%, var(--chronicis-primary) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -44,7 +44,7 @@ html, body {
 
 .chronicis-loading-text {
     font-family: var(--chronicis-font-heading);
-    color: var(--chronicis-beige-gold);
+    color: var(--chronicis-secondary);
     letter-spacing: 1px;
     font-size: 2rem;
     text-transform: uppercase;
@@ -58,7 +58,7 @@ html, body {
 .chronicis-loading-subtext {
     font-family: var(--chronicis-font-heading);
     font-size: 1.25rem;
-    color: var(--chronicis-beige-gold);
+    color: var(--chronicis-secondary);
     letter-spacing: 1px;
     animation: chronicis-pulse 1.5s ease-in-out infinite;
 }
@@ -124,7 +124,7 @@ html, body {
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--chronicis-font-heading);
     font-weight: 500;
-    color: var(--chronicis-charcoal);
+    color: var(--chronicis-text-primary);
     margin: 0;
 }
 
@@ -217,7 +217,7 @@ p {
    ============================================ */
 
 :focus-visible {
-    outline: 2px solid var(--chronicis-beige-gold);
+    outline: 2px solid var(--chronicis-secondary);
     outline-offset: 2px;
 }
 

@@ -7,12 +7,12 @@
     min-height: 500px;
     border: 1px solid rgba(0, 0, 0, 0.23);
     border-radius: var(--chronicis-radius-sm);
-    background-color: var(--chronicis-soft-off-white);
+    background-color: var(--chronicis-background-light);
     overflow: hidden;
 }
 
 .tiptap-editor-container:focus-within {
-    border-color: var(--chronicis-beige-gold);
+    border-color: var(--chronicis-secondary);
     box-shadow: 0 0 0 2px rgba(196, 175, 142, 0.2);
 }
 
@@ -23,7 +23,7 @@
     font-family: var(--chronicis-font-body);
     font-size: 1rem;
     line-height: 1.6;
-    color: var(--chronicis-charcoal);
+    color: var(--chronicis-text-primary);
     outline: none;
 }
 
@@ -59,7 +59,7 @@
 .chronicis-editor-content h5,
 .chronicis-editor-content h6 {
     font-family: var(--chronicis-font-heading);
-    color: var(--chronicis-deep-blue-grey);
+    color: var(--chronicis-background-dark);
     margin-top: var(--chronicis-space-lg);
     margin-bottom: var(--chronicis-space-md);
     font-weight: 500;
@@ -68,13 +68,13 @@
 
 .chronicis-editor-content h1 {
     font-size: 2.5rem;
-    border-bottom: 2px solid var(--chronicis-beige-gold);
+    border-bottom: 2px solid var(--chronicis-secondary);
     padding-bottom: var(--chronicis-space-sm);
 }
 
 .chronicis-editor-content h2 {
     font-size: 2rem;
-    border-bottom: 1px solid var(--chronicis-muted-gold);
+    border-bottom: 1px solid var(--chronicis-secondary-muted);
     padding-bottom: 6px;
 }
 
@@ -84,13 +84,13 @@
 
 .chronicis-editor-content h6 {
     font-size: 1rem;
-    color: var(--chronicis-slate-grey);
+    color: var(--chronicis-primary);
 }
 
 /* Paragraphs */
 .chronicis-editor-content p {
     margin-bottom: var(--chronicis-space-md);
-    color: var(--chronicis-charcoal);
+    color: var(--chronicis-text-primary);
 }
 
 /* ============================================
@@ -98,12 +98,12 @@
    ============================================ */
 
 .chronicis-editor-content strong {
-    color: var(--chronicis-deep-blue-grey);
+    color: var(--chronicis-background-dark);
     font-weight: 600;
 }
 
 .chronicis-editor-content em {
-    color: var(--chronicis-slate-grey);
+    color: var(--chronicis-primary);
     font-style: italic;
 }
 
@@ -117,7 +117,7 @@
    ============================================ */
 
 .chronicis-editor-content a {
-    color: var(--chronicis-beige-gold);
+    color: var(--chronicis-secondary);
     text-decoration: none;
     border-bottom: 1px solid transparent;
     transition: all var(--chronicis-transition-fast);
@@ -125,8 +125,8 @@
 }
 
 .chronicis-editor-content a:hover {
-    color: var(--chronicis-muted-gold);
-    border-bottom-color: var(--chronicis-muted-gold);
+    color: var(--chronicis-secondary-muted);
+    border-bottom-color: var(--chronicis-secondary-muted);
     text-shadow: 0 0 8px rgba(201, 175, 142, 0.3);
 }
 
@@ -188,28 +188,28 @@
     display:inline;
 }
 
-  /* ============================================
+/* ============================================
    Code
    ============================================ */
-  /* Inline code */
-  .chronicis-editor-content code {
-    background-color: var(--chronicis-slate-grey);
-    color: var(--chronicis-soft-off-white);
+/* Inline code */
+.chronicis-editor-content code {
+    background-color: var(--chronicis-primary);
+    color: var(--chronicis-text-on-dark);
     padding: 2px 6px;
     border-radius: 3px;
     font-family: 'Courier New', monospace;
     font-size: 0.9em;
-  }
+}
 
 /* Code blocks */
 .chronicis-editor-content pre {
-    background-color: var(--chronicis-deep-blue-grey);
-    color: var(--chronicis-soft-off-white);
+    background-color: var(--chronicis-background-dark);
+    color: var(--chronicis-text-on-dark);
     padding: var(--chronicis-space-md);
     border-radius: var(--chronicis-radius-md);
     overflow-x: auto;
     margin-bottom: var(--chronicis-space-md);
-    border-left: 4px solid var(--chronicis-beige-gold);
+    border-left: 4px solid var(--chronicis-secondary);
 }
 
 .chronicis-editor-content pre code {
@@ -220,8 +220,8 @@
 }
 
 .chronicis-editor-content .chronicis-code-block {
-    background-color: var(--chronicis-deep-blue-grey);
-    color: var(--chronicis-soft-off-white);
+    background-color: var(--chronicis-background-dark);
+    color: var(--chronicis-text-on-dark);
 }
 
 /* ============================================
@@ -229,10 +229,10 @@
    ============================================ */
 
 .chronicis-editor-content blockquote {
-    border-left: 4px solid var(--chronicis-beige-gold);
+    border-left: 4px solid var(--chronicis-secondary);
     padding: var(--chronicis-space-md);
     margin: var(--chronicis-space-md) 0;
-    color: var(--chronicis-slate-grey);
+    color: var(--chronicis-primary);
     font-style: italic;
     background-color: rgba(196, 175, 142, 0.05);
     border-radius: var(--chronicis-radius-sm);
@@ -248,7 +248,7 @@
 
 .chronicis-editor-content hr {
     border: none;
-    border-top: 2px solid var(--chronicis-beige-gold);
+    border-top: 2px solid var(--chronicis-secondary);
     margin: var(--chronicis-space-xl) 0;
     position: relative;
 }
@@ -259,9 +259,9 @@
     top: -12px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: var(--chronicis-soft-off-white);
+    background-color: var(--chronicis-background-light);
     padding: 0 var(--chronicis-space-md);
-    color: var(--chronicis-beige-gold);
+    color: var(--chronicis-secondary);
     font-size: 1.2rem;
 }
 
@@ -291,8 +291,8 @@
 }
 
 .chronicis-editor-content thead {
-    background-color: var(--chronicis-deep-blue-grey);
-    color: var(--chronicis-soft-off-white);
+    background-color: var(--chronicis-background-dark);
+    color: var(--chronicis-text-on-dark);
 }
 
 .chronicis-editor-content th {
@@ -300,12 +300,12 @@
     text-align: left;
     font-family: var(--chronicis-font-heading);
     font-weight: 500;
-    border-bottom: 2px solid var(--chronicis-beige-gold);
+    border-bottom: 2px solid var(--chronicis-secondary);
 }
 
 .chronicis-editor-content td {
     padding: 10px var(--chronicis-space-md);
-    border-bottom: 1px solid var(--chronicis-muted-gold);
+    border-bottom: 1px solid var(--chronicis-secondary-muted);
 }
 
 .chronicis-editor-content tbody tr:hover {
@@ -333,7 +333,7 @@
 }
 
 .ProseMirror .ProseMirror-gapcursor:after {
-    border-top: 1px solid var(--chronicis-beige-gold);
+    border-top: 1px solid var(--chronicis-secondary);
 }
 
 /* ============================================

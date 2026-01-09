@@ -9,20 +9,20 @@
 }
 
 .search-result-card:hover {
-    border-left-color: var(--chronicis-beige-gold);
+    border-left-color: var(--chronicis-secondary);
     box-shadow: var(--chronicis-shadow-md) !important;
     transform: translateX(4px);
 }
 
 .search-snippet {
-    color: var(--chronicis-slate-grey);
+    color: var(--chronicis-primary);
     line-height: 1.6;
     font-size: 0.95rem;
 }
 
 .search-highlight {
-    background-color: var(--chronicis-muted-gold);
-    color: var(--chronicis-charcoal);
+    background-color: var(--chronicis-secondary-muted);
+    color: var(--chronicis-text-primary);
     padding: 2px 4px;
     border-radius: 3px;
     font-weight: 600;
@@ -30,7 +30,7 @@
 
 /* Search group headers */
 .search-group-header {
-    border-bottom: 2px solid var(--chronicis-beige-gold);
+    border-bottom: 2px solid var(--chronicis-secondary);
     padding-bottom: var(--chronicis-space-sm);
     margin-bottom: var(--chronicis-space-md);
     display: flex;
@@ -43,7 +43,7 @@
 
 /* Global search box in app bar */
 .global-search-input .mud-input-outlined .mud-input-root {
-    color: var(--chronicis-deep-blue-grey);
+    color: var(--chronicis-background-dark);
 }
 
 .global-search-input .mud-input-outlined.mud-input-adorned-start .mud-input-adornment-start {
@@ -67,10 +67,10 @@
 
 /* Fix text visibility */
 .search-result-card .mud-typography {
-    color: var(--chronicis-charcoal) !important;
+    color: var(--chronicis-text-primary) !important;
 }
 
 .search-result-card .mud-chip {
     background-color: rgba(196, 175, 142, 0.2) !important;
-    color: var(--chronicis-beige-gold) !important;
+    color: var(--chronicis-secondary) !important;
 }

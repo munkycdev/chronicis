@@ -1,0 +1,170 @@
+/* ==========================================================================
+   Chronicis World Detail Styles
+   Styles for the World Detail page (/world/{id})
+   ========================================================================== */
+
+/* ==========================================================================
+   World Overview Section
+   ========================================================================== */
+
+.world-overview {
+    display: grid;
+    gap: var(--chronicis-space-md);
+    grid-template-columns: 1fr auto;
+    align-items: start;
+}
+
+.world-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--chronicis-space-sm);
+}
+
+.world-detail-stat-card {
+    display: flex;
+    align-items: center;
+    gap: var(--chronicis-space-sm);
+    padding: var(--chronicis-space-md);
+    background: var(--mud-palette-background-grey);
+    border-radius: var(--chronicis-radius-md);
+    border: 1px solid rgba(196, 175, 142, 0.2);
+}
+
+.world-detail-stat-card .stat-icon {
+    color: var(--chronicis-secondary);
+    font-size: 2rem;
+}
+
+.world-detail-stat-card .stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.world-detail-stat-card .stat-value {
+    font-family: var(--chronicis-font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--chronicis-text-primary);
+    line-height: 1;
+}
+
+.world-detail-stat-card .stat-label {
+    font-family: var(--chronicis-font-body);
+    font-size: 0.75rem;
+    color: var(--chronicis-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+.quick-actions-compact {
+    display: flex;
+    gap: var(--chronicis-space-xs);
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+/* ==========================================================================
+   Resource Items (Links & Documents)
+   ========================================================================== */
+
+.resources-section {
+    /* Container for resources tab content */
+}
+
+.resource-subsection {
+    /* Subsection within resources */
+}
+
+.resource-item {
+    display: flex;
+    align-items: center;
+    gap: var(--chronicis-space-sm);
+    padding: var(--chronicis-space-sm) var(--chronicis-space-md);
+    margin-bottom: var(--chronicis-space-xs);
+    background: var(--mud-palette-background-grey);
+    border-radius: var(--chronicis-radius-sm);
+    transition: background var(--chronicis-transition-fast);
+}
+
+.resource-item:hover {
+    background: rgba(196, 175, 142, 0.08);
+}
+
+/* Resource item icons */
+.resource-item .resource-icon {
+    color: var(--chronicis-secondary);
+    flex-shrink: 0;
+}
+
+/* External link favicon */
+.resource-item .favicon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+/* Link title styling */
+.resource-item .resource-link {
+    color: var(--chronicis-secondary);
+}
+
+.resource-item .resource-link-icon {
+    font-size: 14px;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+/* Document info container */
+.resource-item .document-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.resource-item .document-title {
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   Sharing Section
+   ========================================================================== */
+
+.sharing-section {
+    /* Container for public sharing controls */
+}
+
+.sharing-section .sharing-background {
+    background: var(--mud-palette-background-grey);
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+    .world-overview {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-actions-compact {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 768px) {
+    .world-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .world-detail-stat-card {
+        padding: var(--chronicis-space-sm);
+    }
+
+    .world-detail-stat-card .stat-icon {
+        font-size: 1.5rem;
+    }
+
+    .world-detail-stat-card .stat-value {
+        font-size: 1.25rem;
+    }
+}

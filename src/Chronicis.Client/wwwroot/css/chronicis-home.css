@@ -125,7 +125,7 @@
 }
 
 .home-article-area::-webkit-scrollbar-thumb:hover {
-    background: var(--chronicis-beige-gold);
+    background: var(--chronicis-secondary);
 }
 
 /* ============================================

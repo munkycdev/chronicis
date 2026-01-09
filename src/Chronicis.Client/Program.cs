@@ -207,8 +207,8 @@ static MudTheme CreateChronicisTheme() => new MudTheme
 {
     PaletteLight = new PaletteLight
     {
-        Primary = "#C4AF8E",
-        Secondary = "#3A4750",
+        Primary = "#3A4750",      // Slate blue-grey - main action color (buttons, links)
+        Secondary = "#C4AF8E",    // Beige-gold - accent color (decorative, highlights)
         Background = "#F4F0EA",
         Surface = "#FFFFFF",
         AppbarBackground = "#1F2A33",
@@ -217,9 +217,9 @@ static MudTheme CreateChronicisTheme() => new MudTheme
         AppbarText = "#F4F0EA",
         TextPrimary = "#1A1A1A",
         TextSecondary = "#3A4750",
-        ActionDefault = "#C4AF8E",
-        ActionDisabled = "rgba(196, 175, 142, 0.38)",
-        ActionDisabledBackground = "rgba(196, 175, 142, 0.12)",
+        ActionDefault = "#3A4750",
+        ActionDisabled = "rgba(58, 71, 80, 0.38)",
+        ActionDisabledBackground = "rgba(58, 71, 80, 0.12)",
         Divider = "rgba(196, 175, 142, 0.12)",
         DividerLight = "rgba(196, 175, 142, 0.06)",
         TableLines = "rgba(196, 175, 142, 0.12)",
@@ -233,8 +233,8 @@ static MudTheme CreateChronicisTheme() => new MudTheme
     },
     PaletteDark = new PaletteDark
     {
-        Primary = "#C4AF8E",
-        Secondary = "#3A4750",
+        Primary = "#F4F0EA",      // Off-white - main action color (visible on dark bg)
+        Secondary = "#C4AF8E",    // Beige-gold - accent color
         Background = "#1F2A33",
         Surface = "#1F2A33",
         AppbarBackground = "#1A2027",
@@ -243,7 +243,7 @@ static MudTheme CreateChronicisTheme() => new MudTheme
         AppbarText = "#F4F0EA",
         TextPrimary = "#F4F0EA",
         TextSecondary = "#C4AF8E",
-        ActionDefault = "#C4AF8E",
+        ActionDefault = "#F4F0EA",
         Divider = "rgba(196, 175, 142, 0.12)",
         Success = "#4CAF50",
         Warning = "#FFA726",

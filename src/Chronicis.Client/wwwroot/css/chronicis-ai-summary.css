@@ -45,23 +45,23 @@
 }
 
 .header-icon {
-    color: var(--chronicis-beige-gold);
+    color: var(--chronicis-secondary);
 }
 
 .header-title {
     font-weight: 600;
-    color: var(--chronicis-deep-blue-grey);
+    color: var(--chronicis-background-dark);
 }
 
 .timestamp-chip {
     font-size: 0.7rem !important;
     height: 20px !important;
     border-color: rgba(196, 175, 142, 0.4) !important;
-    color: var(--chronicis-slate-grey) !important;
+    color: var(--chronicis-primary) !important;
 }
 
 .expand-icon {
-    color: var(--chronicis-slate-grey);
+    color: var(--chronicis-primary);
     transition: transform 0.2s ease;
 }
 
@@ -93,7 +93,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    color: var(--chronicis-slate-grey);
+    color: var(--chronicis-primary);
 }
 
 .loading-text .mud-icon-root {
@@ -119,10 +119,10 @@
     padding: 1rem 1.25rem;
     background: white;
     border-radius: 8px;
-    border-left: 3px solid var(--chronicis-beige-gold);
+    border-left: 3px solid var(--chronicis-secondary);
     line-height: 1.7;
     white-space: pre-wrap;
-    color: var(--chronicis-charcoal);
+    color: var(--chronicis-text-primary);
     font-size: 0.95rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
@@ -138,7 +138,7 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    color: var(--chronicis-slate-grey);
+    color: var(--chronicis-primary);
     font-size: 0.75rem;
 }
 
@@ -152,11 +152,11 @@
 }
 
 .summary-actions .mud-icon-button {
-    color: var(--chronicis-slate-grey);
+    color: var(--chronicis-primary);
 }
 
 .summary-actions .mud-icon-button:hover {
-    color: var(--chronicis-beige-gold);
+    color: var(--chronicis-secondary);
 }
 
 /* ============================================
@@ -205,7 +205,7 @@
 }
 
 .source-hint {
-    color: var(--chronicis-slate-grey);
+    color: var(--chronicis-primary);
     font-size: 0.8rem;
     padding-left: 0.25rem;
 }
@@ -230,7 +230,7 @@
 
 .advanced-panel .mud-expansion-panel-text {
     font-size: 0.8rem;
-    color: var(--chronicis-slate-grey);
+    color: var(--chronicis-primary);
 }
 
 .advanced-panel .mud-expansion-panel-content {
@@ -253,14 +253,14 @@
 
 .remember-checkbox .mud-typography {
     font-size: 0.85rem;
-    color: var(--chronicis-slate-grey);
+    color: var(--chronicis-primary);
 }
 
 .cost-hint {
     display: flex;
     align-items: center;
     gap: 0.375rem;
-    color: var(--chronicis-slate-grey);
+    color: var(--chronicis-primary);
     font-size: 0.75rem;
     cursor: help;
 }

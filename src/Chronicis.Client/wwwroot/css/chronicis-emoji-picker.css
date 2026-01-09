@@ -18,7 +18,7 @@
     width: 48px;
     height: 48px;
     border-radius: var(--chronicis-radius-lg);
-    border: 2px dashed var(--chronicis-beige-gold);
+    border: 2px dashed var(--chronicis-secondary);
     background-color: transparent;
     cursor: pointer;
     transition: all var(--chronicis-transition-fast);
@@ -33,12 +33,12 @@
 
 .chronicis-emoji-button.has-emoji {
     border-style: solid;
-    border-color: var(--chronicis-beige-gold);
+    border-color: var(--chronicis-secondary);
 }
 
 /* Placeholder icon */
 .chronicis-emoji-button .placeholder-icon {
-    color: var(--chronicis-beige-gold);
+    color: var(--chronicis-secondary);
     opacity: 0.6;
 }
 
@@ -56,13 +56,13 @@
     border-radius: var(--chronicis-radius-xl);
     box-shadow: var(--chronicis-shadow-lg);
     overflow: hidden;
-    background-color: var(--chronicis-soft-off-white);
+    background-color: var(--chronicis-background-light);
 }
 
 /* Picmo picker styling */
 .chronicis-emoji-picker-dropdown .picmo__picker {
-    background-color: var(--chronicis-soft-off-white) !important;
-    border: 1px solid var(--chronicis-beige-gold);
+    background-color: var(--chronicis-background-light) !important;
+    border: 1px solid var(--chronicis-secondary);
     border-radius: var(--chronicis-radius-xl);
 }
 
@@ -70,7 +70,7 @@
 .chronicis-emoji-picker-dropdown .picmo__categoryButtons,
 .chronicis-emoji-picker-dropdown .picmo__searchContainer,
 .chronicis-emoji-picker-dropdown .picmo__emojiArea {
-    background-color: var(--chronicis-soft-off-white) !important;
+    background-color: var(--chronicis-background-light) !important;
 }
 
 /* emoji-mart overrides */
@@ -92,7 +92,7 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background-color: var(--chronicis-slate-grey);
+    background-color: var(--chronicis-primary);
     color: white;
     border: none;
     cursor: pointer;

@@ -1,0 +1,355 @@
+/* ==========================================================================
+   Chronicis Dashboard Styles
+   Styles for the main dashboard page (/dashboard)
+   ========================================================================== */
+
+/* Dashboard Wrapper */
+.dashboard-wrapper {
+    padding: var(--chronicis-space-lg);
+}
+
+/* ==========================================================================
+   Hero Section
+   ========================================================================== */
+
+.hero-section {
+    background: linear-gradient(135deg, var(--chronicis-background-dark) 0%, #2a3a47 100%);
+    border-radius: var(--chronicis-radius-lg);
+    padding: var(--chronicis-space-xl);
+    margin-bottom: var(--chronicis-space-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 40%;
+    height: 100%;
+    background: radial-gradient(ellipse at top right, rgba(196, 175, 142, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.hero-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+    margin-bottom: var(--chronicis-space-lg);
+}
+
+.hero-text {
+    flex: 1;
+}
+
+.hero-title {
+    font-family: var(--chronicis-font-heading);
+    color: var(--chronicis-secondary);
+    margin: 0 0 var(--chronicis-space-sm) 0;
+}
+
+.hero-title .user-name {
+    color: var(--chronicis-text-on-dark);
+}
+
+.hero-subtitle {
+    color: rgba(244, 240, 234, 0.7);
+    margin-bottom: var(--chronicis-space-md);
+}
+
+.hero-quote {
+    max-width: 500px;
+    padding: var(--chronicis-space-md);
+    background: rgba(196, 175, 142, 0.1);
+    border-left: 3px solid var(--chronicis-secondary);
+    border-radius: 0 var(--chronicis-radius-sm) var(--chronicis-radius-sm) 0;
+}
+
+.hero-quote .quote-text {
+    font-style: italic;
+    color: rgba(244, 240, 234, 0.8);
+    margin-bottom: var(--chronicis-space-xs);
+}
+
+.hero-quote .quote-author {
+    color: var(--chronicis-secondary);
+}
+
+.hero-actions {
+    flex-shrink: 0;
+    margin-left: var(--chronicis-space-lg);
+}
+
+.hero-button {
+    background: var(--chronicis-secondary) !important;
+    color: var(--chronicis-background-dark) !important;
+}
+
+/* ==========================================================================
+   Hero Prompts
+   ========================================================================== */
+
+.hero-prompts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--chronicis-space-md);
+    position: relative;
+    z-index: 1;
+}
+
+.hero-prompt-card {
+    display: flex;
+    align-items: center;
+    gap: var(--chronicis-space-md);
+    padding: var(--chronicis-space-md);
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: var(--chronicis-radius-md);
+    border-left: 3px solid var(--chronicis-secondary);
+    cursor: pointer;
+    transition: all var(--chronicis-transition-fast);
+}
+
+.hero-prompt-card:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateX(4px);
+}
+
+.hero-prompt-card.missing-fundamental {
+    border-left-color: #ef9a9a;
+}
+
+.hero-prompt-card.needs-attention {
+    border-left-color: #ffcc80;
+}
+
+.hero-prompt-card.suggestion {
+    border-left-color: #90caf9;
+}
+
+.hero-prompt-card .prompt-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.hero-prompt-card .prompt-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.hero-prompt-card .prompt-title {
+    display: block;
+    font-weight: 600;
+    color: var(--chronicis-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+}
+
+.hero-prompt-card .prompt-message {
+    display: block;
+    color: rgba(244, 240, 234, 0.6);
+    font-size: 0.8rem;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.hero-prompt-card .prompt-arrow {
+    color: var(--chronicis-secondary);
+    opacity: 0.5;
+    transition: opacity var(--chronicis-transition-fast);
+}
+
+.hero-prompt-card:hover .prompt-arrow {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   Dashboard Container
+   ========================================================================== */
+
+.dashboard-container {
+    border-radius: var(--chronicis-radius-lg);
+    min-height: 400px;
+}
+
+.dashboard-loading,
+.dashboard-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+}
+
+.chronicis-dashboard {
+    padding: var(--chronicis-space-xl);
+}
+
+.other-worlds-header {
+    color: var(--chronicis-primary);
+    margin: var(--chronicis-space-lg) 0 var(--chronicis-space-md) 0;
+    font-weight: 500;
+    letter-spacing: 1px;
+}
+
+/* ==========================================================================
+   Empty State
+   ========================================================================== */
+
+.empty-state-panel {
+    padding: var(--chronicis-space-xl);
+    text-align: center;
+    background: linear-gradient(135deg, rgba(196, 175, 142, 0.05) 0%, rgba(31, 42, 51, 0.02) 100%);
+    border-radius: var(--chronicis-radius-lg);
+}
+
+.empty-state-content {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: var(--chronicis-space-md);
+}
+
+.empty-title {
+    font-family: var(--chronicis-font-heading);
+    color: var(--chronicis-text-primary);
+    margin-bottom: var(--chronicis-space-sm);
+}
+
+.empty-message {
+    color: var(--chronicis-primary);
+}
+
+/* ==========================================================================
+   Sidebar Panels
+   ========================================================================== */
+
+.sidebar-panel {
+    padding: var(--chronicis-space-lg);
+    border-radius: var(--chronicis-radius-lg);
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--chronicis-space-md);
+    color: var(--chronicis-text-primary);
+}
+
+/* Characters Summary */
+.characters-summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--chronicis-space-sm);
+}
+
+.character-item {
+    display: flex;
+    align-items: center;
+    gap: var(--chronicis-space-sm);
+    padding: var(--chronicis-space-sm);
+    border-radius: var(--chronicis-radius-sm);
+    cursor: pointer;
+    transition: background var(--chronicis-transition-fast);
+}
+
+.character-item:hover {
+    background: rgba(196, 175, 142, 0.1);
+}
+
+.character-icon {
+    font-size: 1.5rem;
+    width: 32px;
+    text-align: center;
+}
+
+.character-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.character-name {
+    font-weight: 500;
+    color: var(--chronicis-text-primary);
+}
+
+.character-world {
+    font-size: 0.75rem;
+    color: var(--chronicis-primary);
+}
+
+.more-characters {
+    color: var(--chronicis-primary);
+    text-align: center;
+    margin-top: var(--chronicis-space-sm);
+}
+
+/* ==========================================================================
+   Stats Panel
+   ========================================================================== */
+
+.stats-panel {
+    background: linear-gradient(135deg, rgba(196, 175, 142, 0.08) 0%, rgba(196, 175, 142, 0.02) 100%);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--chronicis-space-md);
+}
+
+.stat-box {
+    text-align: center;
+    padding: var(--chronicis-space-md);
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: var(--chronicis-radius-md);
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--chronicis-secondary);
+    font-family: var(--chronicis-font-heading);
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--chronicis-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 960px) {
+    .hero-content {
+        flex-direction: column;
+    }
+
+    .hero-actions {
+        margin-left: 0;
+        margin-top: var(--chronicis-space-md);
+    }
+
+    .hero-prompts {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-wrapper {
+        padding: var(--chronicis-space-sm);
+    }
+}

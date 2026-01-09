@@ -38,8 +38,8 @@ span[data-type="wiki-link"]:active {
 /* Broken link indicator */
 span[data-type="wiki-link"][data-broken="true"],
 span[data-type="wiki-link"].broken {
-    color: #ad1412; /* Chronicis error color */
-    border-bottom: 1px dashed #ad1412;
+    color: var(--chronicis-error);
+    border-bottom: 1px dashed var(--chronicis-error);
     text-decoration: line-through;
     opacity: 0.7;
 }
@@ -60,10 +60,10 @@ span[data-type="wiki-link"].broken:hover {
 /* Autocomplete container */
 .wiki-link-autocomplete {
     position: absolute;
-    background: #FFFFFF;
-    border: 1px solid #C4AF8E;
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(31, 42, 51, 0.15);
+    background: var(--chronicis-surface);
+    border: 1px solid var(--chronicis-secondary);
+    border-radius: var(--chronicis-radius-sm);
+    box-shadow: var(--chronicis-shadow-md);
     max-height: 300px;
     overflow-y: auto;
     z-index: 1000;
@@ -75,7 +75,7 @@ span[data-type="wiki-link"].broken:hover {
 .wiki-link-suggestion {
     padding: 10px 16px;
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: background-color var(--chronicis-transition-fast);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -83,14 +83,14 @@ span[data-type="wiki-link"].broken:hover {
 
 /* Suggestion title */
 .wiki-link-suggestion-title {
-    color: #1A1A1A;
+    color: var(--chronicis-text-primary);
     font-weight: 500;
     font-size: 14px;
 }
 
 /* Suggestion path */
 .wiki-link-suggestion-path {
-    color: #3A4750;
+    color: var(--chronicis-primary);
     font-size: 12px;
     opacity: 0.8;
 }
@@ -111,10 +111,10 @@ span[data-type="wiki-link"].broken:hover {
     padding: 10px 16px;
     cursor: pointer;
     border-top: 1px solid rgba(196, 175, 142, 0.2);
-    color: #C4AF8E;
+    color: var(--chronicis-secondary);
     font-weight: 500;
     font-size: 14px;
-    transition: background-color 0.15s ease;
+    transition: background-color var(--chronicis-transition-fast);
 }
 
 .wiki-link-create-option:hover {
@@ -131,7 +131,7 @@ span[data-type="wiki-link"].broken:hover {
 .wiki-link-no-results {
     padding: 16px;
     text-align: center;
-    color: #3A4750;
+    color: var(--chronicis-primary);
     font-size: 14px;
     opacity: 0.7;
 }
@@ -140,7 +140,7 @@ span[data-type="wiki-link"].broken:hover {
 .wiki-link-loading {
     padding: 16px;
     text-align: center;
-    color: #C4AF8E;
+    color: var(--chronicis-secondary);
     font-size: 14px;
 }
 
@@ -174,17 +174,17 @@ span[data-type="wiki-link"].broken:hover {
 
     /* Autocomplete in dark mode */
     .wiki-link-autocomplete {
-        background: #1F2A33;
-        border-color: #3A4750;
+        background: var(--chronicis-background-dark);
+        border-color: var(--chronicis-primary);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
 
     .wiki-link-suggestion-title {
-        color: #F4F0EA;
+        color: var(--chronicis-text-on-dark);
     }
 
     .wiki-link-suggestion-path {
-        color: #C4AF8E;
+        color: var(--chronicis-secondary);
     }
 
     .wiki-link-suggestion:hover,
@@ -194,11 +194,11 @@ span[data-type="wiki-link"].broken:hover {
 
     .wiki-link-create-option {
         border-top-color: rgba(196, 175, 142, 0.3);
-        color: #D9C9A7;
+        color: var(--chronicis-secondary-muted);
     }
 
     .wiki-link-no-results {
-        color: #C4AF8E;
+        color: var(--chronicis-secondary);
     }
 }
 
@@ -207,13 +207,13 @@ span[data-type="wiki-link"].broken:hover {
    ============================================ */
 
 .wiki-link-tooltip {
-    background: #1F2A33;
-    color: #F4F0EA;
+    background: var(--chronicis-background-dark);
+    color: var(--chronicis-text-on-dark);
     padding: 6px 10px;
-    border-radius: 4px;
+    border-radius: var(--chronicis-radius-sm);
     font-size: 12px;
     font-weight: 500;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--chronicis-shadow-md);
     white-space: nowrap;
     pointer-events: auto;
 }
@@ -225,7 +225,7 @@ span[data-type="wiki-link"].broken:hover {
     left: 12px;
     border-width: 6px;
     border-style: solid;
-    border-color: #1F2A33 transparent transparent transparent;
+    border-color: var(--chronicis-background-dark) transparent transparent transparent;
 }
 
 /* Summary Tooltip - Rich card style */
@@ -234,7 +234,7 @@ span[data-type="wiki-link"].broken:hover {
     max-width: 400px;
     min-width: 280px;
     padding: 0;
-    border-radius: 8px;
+    border-radius: var(--chronicis-radius-lg);
     overflow: hidden;
 }
 
@@ -251,7 +251,7 @@ span[data-type="wiki-link"].broken:hover {
 .wiki-link-tooltip__title {
     font-weight: 600;
     font-size: 13px;
-    color: #C4AF8E;
+    color: var(--chronicis-secondary);
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -264,8 +264,8 @@ span[data-type="wiki-link"].broken:hover {
     letter-spacing: 0.5px;
     padding: 2px 6px;
     background: rgba(196, 175, 142, 0.25);
-    border-radius: 4px;
-    color: #C4AF8E;
+    border-radius: var(--chronicis-radius-sm);
+    color: var(--chronicis-secondary);
     flex-shrink: 0;
 }
 
@@ -273,7 +273,7 @@ span[data-type="wiki-link"].broken:hover {
     padding: 10px 12px;
     font-size: 12px;
     line-height: 1.5;
-    color: #F4F0EA;
+    color: var(--chronicis-text-on-dark);
     max-height: 200px;
     overflow-y: auto;
 }
@@ -302,12 +302,12 @@ span[data-type="wiki-link"].broken:hover {
 
 /* Focus states for keyboard navigation */
 span[data-type="wiki-link"]:focus {
-    outline: 2px solid #C4AF8E;
+    outline: 2px solid var(--chronicis-secondary);
     outline-offset: 2px;
 }
 
 .wiki-link-suggestion:focus {
-    outline: 2px solid #C4AF8E;
+    outline: 2px solid var(--chronicis-secondary);
     outline-offset: -2px;
 }
 
