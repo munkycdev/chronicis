@@ -169,60 +169,6 @@ public class WorldDocumentFunctions
     }
 
     /// <summary>
-    /// Get download URL for a document (generates time-limited SAS token)
-    /// GET /api/worlds/{worldId}/documents/{documentId}/download
-    /// </summary>
-    [Function("GetDocumentDownloadUrl")]
-    public async Task<HttpResponseData> GetDocumentDownloadUrl(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "worlds/{worldId:guid}/documents/{documentId:guid}/download")] 
-        HttpRequestData req,
-        Guid worldId,
-        Guid documentId,
-        FunctionContext context)
-    {
-        var user = context.GetRequiredUser();
-        _logger.LogInformation("User {UserId} requesting download URL for document {DocumentId}", 
-            user.Id, documentId);
-
-        try
-        {
-            var result = await _documentService.GetDownloadUrlAsync(worldId, documentId, user.Id);
-
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(result);
-            return response;
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized download request");
-            var forbidden = req.CreateResponse(HttpStatusCode.Forbidden);
-            await forbidden.WriteAsJsonAsync(new { error = ex.Message });
-            return forbidden;
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Document not found for download");
-            var notFound = req.CreateResponse(HttpStatusCode.NotFound);
-            await notFound.WriteAsJsonAsync(new { error = ex.Message });
-            return notFound;
-        }
-        catch (FileNotFoundException ex)
-        {
-            _logger.LogWarning(ex, "Blob not found for document");
-            var notFound = req.CreateResponse(HttpStatusCode.NotFound);
-            await notFound.WriteAsJsonAsync(new { error = "File not found in storage" });
-            return notFound;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating download URL");
-            var error = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await error.WriteAsJsonAsync(new { error = "Failed to generate download URL" });
-            return error;
-        }
-    }
-
-    /// <summary>
     /// Update document metadata (title, description)
     /// PUT /api/worlds/{worldId}/documents/{documentId}
     /// </summary>

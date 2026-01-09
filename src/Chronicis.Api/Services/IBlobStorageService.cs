@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace Chronicis.Api.Services;
 
 /// <summary>
@@ -16,18 +18,18 @@ public interface IBlobStorageService
     Task<string> GenerateUploadSasUrlAsync(Guid worldId, Guid documentId, string fileName, string contentType);
 
     /// <summary>
-    /// Generate a SAS URL for downloading a file.
-    /// </summary>
-    /// <param name="blobPath">The blob path to the file.</param>
-    /// <returns>SAS URL valid for 15 minutes with read-only permissions.</returns>
-    Task<string> GenerateDownloadSasUrlAsync(string blobPath);
-
-    /// <summary>
     /// Verify that a blob exists and get its metadata.
     /// </summary>
     /// <param name="blobPath">The blob path to verify.</param>
     /// <returns>Metadata including size and content type, or null if not found.</returns>
     Task<BlobMetadata?> GetBlobMetadataAsync(string blobPath);
+
+    /// <summary>
+    /// Open a read-only stream for the blob content.
+    /// </summary>
+    /// <param name="blobPath">The blob path to read.</param>
+    /// <returns>Stream for reading the blob content.</returns>
+    Task<Stream> OpenReadAsync(string blobPath);
 
     /// <summary>
     /// Delete a blob from storage.

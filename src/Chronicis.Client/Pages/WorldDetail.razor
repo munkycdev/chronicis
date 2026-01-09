@@ -947,18 +947,22 @@ else if (_world != null)
     {
         try
         {
-            var response = await WorldApi.GetDocumentDownloadUrlAsync(WorldId, documentId);
-            
-            if (response == null || string.IsNullOrEmpty(response.DownloadUrl))
+            await JSRuntime.InvokeVoidAsync("chronicisOpenDocumentTab");
+            var download = await WorldApi.DownloadDocumentAsync(documentId);
+
+            if (download == null)
             {
-                Snackbar.Add("Failed to generate download link", Severity.Error);
+                Snackbar.Add("Failed to download document", Severity.Error);
                 return;
             }
 
-            // Open download URL in new tab
-            await JSRuntime.InvokeVoidAsync("open", response.DownloadUrl, "_blank");
-            
-            Snackbar.Add($"Downloading {response.FileName}", Severity.Success);
+            await JSRuntime.InvokeVoidAsync(
+                "chronicisLoadDocumentInTab",
+                download.FileName,
+                download.ContentType,
+                download.Content);
+
+            Snackbar.Add($"Downloading {download.FileName}", Severity.Success);
         }
         catch (Exception ex)
         {
@@ -1185,4 +1189,3 @@ else if (_world != null)
         }
     }
 }
-

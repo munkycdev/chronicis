@@ -89,7 +89,7 @@ WorldName/
 - `POST /api/worlds/{id}/documents/request-upload` - Request upload SAS URL
 - `POST /api/worlds/{id}/documents/{documentId}/confirm` - Confirm upload completion
 - `GET /api/worlds/{id}/documents` - List world documents
-- `GET /api/worlds/{id}/documents/{documentId}/download` - Get download SAS URL
+- `GET /api/documents/{documentId}/content` - Stream document content
 - `PUT /api/worlds/{id}/documents/{documentId}` - Update document metadata
 - `DELETE /api/worlds/{id}/documents/{documentId}` - Delete document
 

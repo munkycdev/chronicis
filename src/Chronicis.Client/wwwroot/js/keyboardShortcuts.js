@@ -71,3 +71,48 @@ window.chronicisDownloadFile = function(fileName, contentType, content) {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 };
+
+// ================================================
+// File Open Utility (New Tab)
+// ================================================
+
+window.chronicisDocumentTab = {
+    lastWindow: null
+};
+
+/**
+ * Open a placeholder tab so pop-up blockers allow the window.
+ */
+window.chronicisOpenDocumentTab = function() {
+    const docWindow = window.open("", "_blank");
+    if (docWindow) {
+        docWindow.document.title = "Loading document...";
+        docWindow.document.body.innerHTML = "<p style=\"font-family: sans-serif; padding: 16px;\">Loading document...</p>";
+    }
+    window.chronicisDocumentTab.lastWindow = docWindow;
+};
+
+/**
+ * Load a file into the most recently opened tab (or open a new one).
+ * @param {string} fileName - Name for the document
+ * @param {string} contentType - MIME type of the file
+ * @param {Uint8Array} content - File content as byte array
+ */
+window.chronicisLoadDocumentInTab = function(fileName, contentType, content) {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const docWindow = window.chronicisDocumentTab.lastWindow;
+
+    if (docWindow && !docWindow.closed) {
+        docWindow.location = url;
+        try {
+            docWindow.document.title = fileName;
+        } catch {
+            // Ignore cross-origin updates if browser blocks access.
+        }
+    } else {
+        window.open(url, "_blank");
+    }
+
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+};

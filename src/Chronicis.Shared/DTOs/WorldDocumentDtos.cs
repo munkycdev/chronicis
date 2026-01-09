@@ -92,24 +92,3 @@ public class WorldDocumentUpdateDto
     public string? Description { get; set; }
 }
 
-/// <summary>
-/// Response DTO for document download containing time-limited SAS URL.
-/// </summary>
-public class WorldDocumentDownloadResponseDto
-{
-    /// <summary>
-    /// SAS URL for downloading the document.
-    /// Valid for 15 minutes.
-    /// </summary>
-    public string DownloadUrl { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Filename for download.
-    /// </summary>
-    public string FileName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Content type.
-    /// </summary>
-    public string ContentType { get; set; } = string.Empty;
-}

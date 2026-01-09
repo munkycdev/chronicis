@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Net.Http.Headers;
 using Chronicis.Shared.DTOs;
 using Microsoft.Extensions.Logging;
 
@@ -196,14 +197,30 @@ public class WorldApiService : IWorldApiService
             $"documents for world {worldId}");
     }
 
-    public async Task<WorldDocumentDownloadResponseDto?> GetDocumentDownloadUrlAsync(
-        Guid worldId, 
-        Guid documentId)
+    public async Task<DocumentDownloadResult?> DownloadDocumentAsync(Guid documentId)
     {
-        return await _http.GetEntityAsync<WorldDocumentDownloadResponseDto>(
-            $"api/worlds/{worldId}/documents/{documentId}/download",
-            _logger,
-            $"download URL for document {documentId}");
+        try
+        {
+            var response = await _http.GetAsync($"api/documents/{documentId}/content");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to download document {DocumentId}. Status: {StatusCode}",
+                    documentId, response.StatusCode);
+                return null;
+            }
+
+            var content = await response.Content.ReadAsByteArrayAsync();
+            var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+            var fileName = GetFileName(response.Content.Headers, documentId);
+
+            return new DocumentDownloadResult(content, fileName, contentType);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error downloading document {DocumentId}", documentId);
+            return null;
+        }
     }
 
     public async Task<WorldDocumentDto?> UpdateDocumentAsync(
@@ -224,5 +241,17 @@ public class WorldApiService : IWorldApiService
             $"api/worlds/{worldId}/documents/{documentId}",
             _logger,
             $"document {documentId} from world {worldId}");
+    }
+
+    private static string GetFileName(HttpContentHeaders headers, Guid documentId)
+    {
+        var fileName = headers.ContentDisposition?.FileNameStar ?? headers.ContentDisposition?.FileName;
+
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return documentId.ToString();
+        }
+
+        return fileName.Trim('"');
     }
 }

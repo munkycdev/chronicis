@@ -63,7 +63,7 @@ public class BlobStorageService : IBlobStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<string> GenerateUploadSasUrlAsync(
+    public Task<string> GenerateUploadSasUrlAsync(
         Guid worldId,
         Guid documentId,
         string fileName,
@@ -89,38 +89,7 @@ public class BlobStorageService : IBlobStorageService
 
         _logger.LogInformation("Generated upload SAS URL for blob: {BlobPath}", blobPath);
 
-        return sasToken.ToString();
-    }
-
-    /// <inheritdoc/>
-    public async Task<string> GenerateDownloadSasUrlAsync(string blobPath)
-    {
-        var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
-        var blobClient = containerClient.GetBlobClient(blobPath);
-
-        // Verify blob exists
-        if (!await blobClient.ExistsAsync())
-        {
-            throw new FileNotFoundException($"Blob not found: {blobPath}");
-        }
-
-        // Generate SAS token with read permissions, 15-minute expiry
-        var sasBuilder = new BlobSasBuilder
-        {
-            BlobContainerName = _containerName,
-            BlobName = blobPath,
-            Resource = "b", // blob
-            StartsOn = DateTimeOffset.UtcNow.AddMinutes(-5), // Allow for clock skew
-            ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(15),
-        };
-
-        sasBuilder.SetPermissions(BlobSasPermissions.Read);
-
-        var sasToken = blobClient.GenerateSasUri(sasBuilder);
-
-        _logger.LogInformation("Generated download SAS URL for blob: {BlobPath}", blobPath);
-
-        return sasToken.ToString();
+        return Task.FromResult(sasToken.ToString());
     }
 
     /// <inheritdoc/>
@@ -150,6 +119,20 @@ public class BlobStorageService : IBlobStorageService
             _logger.LogError(ex, "Error getting blob metadata for: {BlobPath}", blobPath);
             return null;
         }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Stream> OpenReadAsync(string blobPath)
+    {
+        var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+        var blobClient = containerClient.GetBlobClient(blobPath);
+
+        if (!await blobClient.ExistsAsync())
+        {
+            throw new FileNotFoundException($"Blob not found: {blobPath}");
+        }
+
+        return await blobClient.OpenReadAsync();
     }
 
     /// <inheritdoc/>

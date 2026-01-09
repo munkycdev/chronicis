@@ -374,25 +374,22 @@
     {
         try
         {
-            if (!Node.WorldId.HasValue)
+            await JSRuntime.InvokeVoidAsync("chronicisOpenDocumentTab");
+            var download = await WorldApi.DownloadDocumentAsync(Node.Id);
+
+            if (download == null)
             {
-                Snackbar.Add("Document world not found", Severity.Error);
+                Snackbar.Add("Failed to download document", Severity.Error);
                 return;
             }
 
-            // Get download URL from API
-            var response = await WorldApi.GetDocumentDownloadUrlAsync(Node.WorldId.Value, Node.Id);
-            
-            if (response == null || string.IsNullOrEmpty(response.DownloadUrl))
-            {
-                Snackbar.Add("Failed to generate download link", Severity.Error);
-                return;
-            }
+            await JSRuntime.InvokeVoidAsync(
+                "chronicisLoadDocumentInTab",
+                download.FileName,
+                download.ContentType,
+                download.Content);
 
-            // Open download URL in new tab (browser will handle download)
-            await JSRuntime.InvokeVoidAsync("open", response.DownloadUrl, "_blank");
-            
-            Snackbar.Add($"Downloading {response.FileName}", Severity.Success);
+            Snackbar.Add($"Downloading {download.FileName}", Severity.Success);
         }
         catch (Exception ex)
         {

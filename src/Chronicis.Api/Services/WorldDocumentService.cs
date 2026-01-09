@@ -188,41 +188,23 @@ public class WorldDocumentService : IWorldDocumentService
         return documents.Select(MapToDto).ToList();
     }
 
-    public async Task<WorldDocumentDownloadResponseDto> GetDownloadUrlAsync(
-        Guid worldId,
-        Guid documentId,
-        Guid userId)
+    public async Task<DocumentContentResult> GetDocumentContentAsync(Guid documentId, Guid userId)
     {
-        _logger.LogInformation("User {UserId} requesting download URL for document {DocumentId}",
+        _logger.LogInformation("User {UserId} requesting document content for {DocumentId}",
             userId, documentId);
 
-        var document = await _db.WorldDocuments
-            .Include(d => d.World)
-            .FirstOrDefaultAsync(d => d.Id == documentId && d.WorldId == worldId);
+        var document = await GetAuthorizedDocumentAsync(documentId, userId);
+        var contentType = string.IsNullOrWhiteSpace(document.ContentType)
+            ? "application/octet-stream"
+            : document.ContentType;
 
-        if (document == null)
-        {
-            throw new InvalidOperationException("Document not found");
-        }
+        var contentStream = await _blobStorage.OpenReadAsync(document.BlobPath);
 
-        // Verify user has access (owner or member)
-        var hasAccess = document.World.OwnerId == userId ||
-            await _db.WorldMembers.AnyAsync(m => m.WorldId == worldId && m.UserId == userId);
-
-        if (!hasAccess)
-        {
-            throw new UnauthorizedAccessException("Access denied");
-        }
-
-        // Generate download SAS URL
-        var downloadUrl = await _blobStorage.GenerateDownloadSasUrlAsync(document.BlobPath);
-
-        return new WorldDocumentDownloadResponseDto
-        {
-            DownloadUrl = downloadUrl,
-            FileName = document.FileName,
-            ContentType = document.ContentType
-        };
+        return new DocumentContentResult(
+            contentStream,
+            document.FileName,
+            contentType,
+            document.FileSizeBytes);
     }
 
     public async Task<WorldDocumentDto> UpdateDocumentAsync(
@@ -396,7 +378,39 @@ public class WorldDocumentService : IWorldDocumentService
             FileSizeBytes = document.FileSizeBytes,
             Description = document.Description,
             UploadedAt = document.UploadedAt,
-            UploadedById = document.UploadedById.ToString()
+            UploadedById = document.UploadedById
         };
+    }
+
+    private async Task<WorldDocument> GetAuthorizedDocumentAsync(
+        Guid documentId,
+        Guid userId,
+        Guid? worldId = null)
+    {
+        var query = _db.WorldDocuments
+            .Include(d => d.World)
+            .AsQueryable();
+
+        if (worldId.HasValue)
+        {
+            query = query.Where(d => d.WorldId == worldId.Value);
+        }
+
+        var document = await query.FirstOrDefaultAsync(d => d.Id == documentId);
+
+        if (document == null)
+        {
+            throw new InvalidOperationException("Document not found");
+        }
+
+        var hasAccess = document.World.OwnerId == userId ||
+            await _db.WorldMembers.AnyAsync(m => m.WorldId == document.WorldId && m.UserId == userId);
+
+        if (!hasAccess)
+        {
+            throw new UnauthorizedAccessException("Access denied");
+        }
+
+        return document;
     }
 }
