@@ -38,7 +38,11 @@ public static class Auth0AuthenticationHelper
 
         if (string.IsNullOrEmpty(token))
         {
-            error = "Token value is empty";
+            foreach (var header in req.Headers)
+            {
+                error += header.Key+"="+string.Join(";", header.Value)+", ";
+            }
+            //error = "Token value is empty";
             return null;
         }
 
