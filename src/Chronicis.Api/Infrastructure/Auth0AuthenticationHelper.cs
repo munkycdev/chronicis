@@ -114,7 +114,7 @@ public static class Auth0AuthenticationHelper
         }
         catch (Exception ex)
         {
-            error = $"Token: {token}, Exception: {ex.Message}";
+            error = $"Exception: {ex.Message}";
             return null;
         }
     }
@@ -161,7 +161,7 @@ public static class Auth0AuthenticationHelper
         }
         catch (SecurityTokenSignatureKeyNotFoundException ex)
         {
-            error = $"KeyNotFound: {ex.Message}";
+            error = $"KeyNotFound: {ex.Message}, Token: {token}";
             return null;
         }
         catch (SecurityTokenValidationException ex)
