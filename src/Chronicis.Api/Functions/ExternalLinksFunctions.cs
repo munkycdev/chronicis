@@ -59,8 +59,6 @@ public class ExternalLinksFunctions
                 query,
                 context.CancellationToken);
 
-            _logger.LogInformation("Suggestions returned by the service: " + suggestions.Count());
-
             var responseDtos = suggestions
                 .Select(s => new ExternalLinkSuggestionDto
                 {
@@ -72,13 +70,6 @@ public class ExternalLinksFunctions
                     Href = s.Href
                 })
                 .ToList();
-
-            if (!responseDtos.Any())
-            {
-                var response1 = req.CreateResponse(HttpStatusCode.ExpectationFailed);
-                await response1.WriteAsJsonAsync(suggestions);
-                return response1;
-            }
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(responseDtos);
@@ -98,10 +89,7 @@ public class ExternalLinksFunctions
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "external-links/content")] HttpRequestData req,
         FunctionContext context)
     {
-        if (context.GetUser() == null)
-        {
-            return await CreateUnauthorizedResponseAsync(req);
-        }
+        var user = context.GetRequiredUser();
 
         try
         {
