@@ -38,8 +38,9 @@ Chronicis is a web-based knowledge management application designed specifically 
 
 #### Content Management
 - **Hierarchical Article Organization** - Nest articles infinitely deep to mirror your campaign structure
-- **Wiki-Style Links** - `[[Article Name]]` syntax for intuitive cross-references with autocomplete
 - **Inline WYSIWYG Editor** - Real-time rich text editing with TipTap
+- **Wiki-Style Links** - `[[Article Name]]` syntax for intuitive cross-references with autocomplete
+- **External Resource Links** - `[[srd/*` syntax for looking up external reference information
 - **Auto-Save** - Never lose your work (automatic save on changes)
 - **Drag & Drop** - Reorganize your content hierarchy with ease
 - **Custom Icons** - Emoji icons for visual distinction in the tree

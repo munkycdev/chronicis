@@ -18,7 +18,11 @@
             }
             else
             {
-                @if (IsExternalQuery)
+                @if (IsExternalQuery && ShowAuthRequiredMessage)
+                {
+                    <text>Sign in required</text>
+                }
+                else if (IsExternalQuery)
                 {
                     <text>No results found</text>
                 }
@@ -87,6 +91,9 @@
 
     [Parameter]
     public bool IsExternalQuery { get; set; }
+
+    [Parameter]
+    public bool ShowAuthRequiredMessage { get; set; }
 
     private async Task OnSuggestionClick(WikiLinkAutocompleteItem suggestion)
     {

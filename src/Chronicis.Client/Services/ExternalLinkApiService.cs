@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using Chronicis.Shared.DTOs;
 using Microsoft.Extensions.Logging;
@@ -15,14 +16,14 @@ public class ExternalLinkApiService : IExternalLinkApiService
         _logger = logger;
     }
 
-    public async Task<List<ExternalLinkSuggestionDto>> GetSuggestionsAsync(
+    public async Task<ExternalLinkSuggestionsResult> GetSuggestionsAsync(
         string source,
         string query,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(source))
         {
-            return new List<ExternalLinkSuggestionDto>();
+            return new ExternalLinkSuggestionsResult();
         }
 
         var url =
@@ -30,17 +31,35 @@ public class ExternalLinkApiService : IExternalLinkApiService
 
         try
         {
-            var results = await _http.GetFromJsonAsync<List<ExternalLinkSuggestionDto>>(url, ct);
-            return results ?? new List<ExternalLinkSuggestionDto>();
+            using var response = await _http.GetAsync(url, ct);
+            if (response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                return new ExternalLinkSuggestionsResult
+                {
+                    RequiresSignIn = true
+                };
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to fetch external link suggestions for source {Source}: {StatusCode}", source, response.StatusCode);
+                return new ExternalLinkSuggestionsResult();
+            }
+
+            var results = await response.Content.ReadFromJsonAsync<List<ExternalLinkSuggestionDto>>(cancellationToken: ct);
+            return new ExternalLinkSuggestionsResult
+            {
+                Suggestions = results ?? new List<ExternalLinkSuggestionDto>()
+            };
         }
         catch (OperationCanceledException)
         {
-            return new List<ExternalLinkSuggestionDto>();
+            return new ExternalLinkSuggestionsResult();
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to fetch external link suggestions for source {Source}", source);
-            return new List<ExternalLinkSuggestionDto>();
+            return new ExternalLinkSuggestionsResult();
         }
     }
 

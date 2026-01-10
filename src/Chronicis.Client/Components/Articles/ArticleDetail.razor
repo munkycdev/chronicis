@@ -167,7 +167,8 @@ else
                               OnCreate="OnAutocompleteCreate"
                               Position="@_autocompletePosition"
                               Query="@_autocompleteQuery"
-                              IsExternalQuery="@_autocompleteIsExternalQuery" />
+                              IsExternalQuery="@_autocompleteIsExternalQuery"
+                              ShowAuthRequiredMessage="@_autocompleteRequiresSignIn" />
     }
 }
 
@@ -205,6 +206,7 @@ else
     private string _autocompleteQuery = string.Empty;
     private bool _autocompleteIsExternalQuery = false;
     private string? _autocompleteExternalSourceKey;
+    private bool _autocompleteRequiresSignIn = false;
 
     // External link preview
     private bool _externalPreviewOpen = false;
@@ -804,6 +806,7 @@ else
         _autocompleteIsExternalQuery = TryParseExternalAutocompleteQuery(query, out var sourceKey, out var remainder);
         _autocompleteExternalSourceKey = _autocompleteIsExternalQuery ? sourceKey : null;
         _autocompleteQuery = _autocompleteIsExternalQuery ? remainder : query;
+        _autocompleteRequiresSignIn = false;
 
         if (_autocompleteQuery.Length < 3)
         {
@@ -819,11 +822,12 @@ else
         {
             if (_autocompleteIsExternalQuery)
             {
-                var externalSuggestions = await ExternalLinkApiService.GetSuggestionsAsync(
+                var externalResult = await ExternalLinkApiService.GetSuggestionsAsync(
                     _autocompleteExternalSourceKey ?? string.Empty,
                     _autocompleteQuery,
                     CancellationToken.None);
-                _autocompleteSuggestions = externalSuggestions
+                _autocompleteRequiresSignIn = externalResult.RequiresSignIn;
+                _autocompleteSuggestions = externalResult.Suggestions
                     .Select(WikiLinkAutocompleteItem.FromExternal)
                     .ToList();
             }
@@ -855,6 +859,7 @@ else
         _autocompleteSuggestions = new();
         _autocompleteIsExternalQuery = false;
         _autocompleteExternalSourceKey = null;
+        _autocompleteRequiresSignIn = false;
         StateHasChanged();
         return Task.CompletedTask;
     }
