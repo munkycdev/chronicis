@@ -59,7 +59,7 @@ public class ExternalLinksFunctions
                 query,
                 context.CancellationToken);
 
-                _logger.LogInformation("Suggestions returned by the service: " + suggestions.Count());
+            _logger.LogInformation("Suggestions returned by the service: " + suggestions.Count());
 
             var responseDtos = suggestions
                 .Select(s => new ExternalLinkSuggestionDto
@@ -75,8 +75,8 @@ public class ExternalLinksFunctions
 
             if (!responseDtos.Any())
             {
-                var response1 = req.CreateResponse(HttpStatusCode.OK);
-                await response1.WriteAsJsonAsync(new { "responseCount", suggestions.Count()});
+                var response1 = req.CreateResponse(HttpStatusCode.ExpectationFailed);
+                await response1.WriteAsJsonAsync(suggestions);
                 return response1;
             }
 
