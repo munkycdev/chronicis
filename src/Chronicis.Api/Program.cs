@@ -1,6 +1,7 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
+using Chronicis.Api.Services.ExternalLinks;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -36,6 +37,22 @@ var host = new HostBuilder()
         // Database
         services.AddDbContext<ChronicisDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("ChronicisDb")));
+
+        // External links
+        services.AddMemoryCache();
+        services.AddHttpClient("SrdExternalLinks", client =>
+        {
+            var baseUrl = configuration.GetValue<string>("ExternalLinks:Srd:BaseUrl");
+            if (!string.IsNullOrWhiteSpace(baseUrl))
+            {
+                client.BaseAddress = new Uri(baseUrl);
+            }
+        });
+        services.AddScoped<IExternalLinkProviderRegistry, ExternalLinkProviderRegistry>();
+        services.AddScoped<ExternalLinkSuggestionService>();
+        services.AddScoped<ExternalLinkContentService>();
+        services.AddScoped<ExternalLinkValidationService>();
+        services.AddScoped<IExternalLinkProvider, SrdExternalLinkProvider>();
 
         // Services
         services.AddScoped<IArticleService, ArticleService>();

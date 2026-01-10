@@ -150,6 +150,74 @@ function insertWikiLink(editorId, articleId, displayText) {
         .run();
 }
 
+/**
+ * Insert an external link token at the current cursor position
+ * @param {string} editorId - The editor container ID
+ * @param {string} source - External source key
+ * @param {string} id - External id value
+ * @param {string} title - Display title
+ */
+function insertExternalLinkToken(editorId, source, id, title) {
+    const editor = window.tipTapEditors[editorId];
+    if (!editor) {
+        console.error('Editor not found:', editorId);
+        return;
+    }
+
+    if (!source || !id) {
+        console.error('External link token missing source or id');
+        return;
+    }
+
+    // Check if user provided custom display text via pipe syntax
+    const customDisplayText = window._wikiLinkCustomDisplayText;
+    const finalTitle = customDisplayText && customDisplayText.trim() ? customDisplayText.trim() : title;
+
+    // Clear the stored custom display text
+    window._wikiLinkCustomDisplayText = null;
+
+    const { from } = editor.state.selection;
+
+    // Search backwards from cursor to find [[
+    const doc = editor.state.doc;
+    let bracketPos = -1;
+
+    for (let pos = from - 1; pos >= Math.max(0, from - 100); pos--) {
+        try {
+            const char1 = doc.textBetween(pos, pos + 1, '');
+            const char2 = pos > 0 ? doc.textBetween(pos - 1, pos, '') : '';
+
+            if (char2 === '[' && char1 === '[') {
+                bracketPos = pos - 1;
+                break;
+            }
+        } catch (e) {
+            continue;
+        }
+    }
+
+    if (bracketPos === -1) {
+        console.error('Could not find [[ before cursor');
+        return;
+    }
+
+    editor
+        .chain()
+        .focus()
+        .deleteRange({ from: bracketPos, to: from })
+        .insertContent({
+            type: 'externalLink',
+            attrs: {
+                source: source,
+                externalId: id,
+                title: finalTitle
+            }
+        })
+        .insertContent(' ')
+        .run();
+}
+
 // Make functions globally available
 window.initializeWikiLinkAutocomplete = initializeWikiLinkAutocomplete;
 window.insertWikiLink = insertWikiLink;
+window.insertExternalLinkToken = insertExternalLinkToken;

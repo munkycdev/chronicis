@@ -4,11 +4,32 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [Unreleased]
+## [2.7] - 2026-01-09
 
-### Planned
-- Phase 11: Icons & Polish
-- Phase 12: Testing & Deployment
+### Added
+- External knowledge links in the article editor using wiki-style autocomplete
+  - Trigger external sources with `[[sourceKey/` (initial provider: `srd`)
+  - External links are stored as stable tokens: `[[source|id|title]]`
+- In-app preview drawer for external links
+  - Preview content is fetched live from the provider API
+  - Content is rendered as normalized Markdown
+  - Optional link to open the source site in a new tab
+- Provider-based external link architecture
+  - External sources are keyed by prefix (example: `srd`)
+  - Architecture supports adding additional providers without editor changes
+
+### Improved
+- Editor linking experience now supports mixing internal articles and external references seamlessly
+- Autocomplete behavior now routes intelligently based on link prefix
+
+### Technical
+- New API endpoints for external link integration:
+  - `GET /api/external-links/suggestions`
+  - `GET /api/external-links/content`
+- Added server-side provider abstraction for external data sources
+- Added SSRF-safe validation for external content identifiers
+- External link preview content cached in-memory per session to reduce repeat API calls
+
 
 ---
 

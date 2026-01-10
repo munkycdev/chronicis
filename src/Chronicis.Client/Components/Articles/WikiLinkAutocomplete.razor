@@ -1,7 +1,5 @@
 @inject ILogger<WikiLinkAutocomplete> Logger
 
-@using Chronicis.Shared.DTOs
-
 <div class="wiki-link-autocomplete" 
      style="left: @($"{Position.X}px"); top: @($"{Position.Y}px");">
     
@@ -20,11 +18,18 @@
             }
             else
             {
-                <text>No articles found</text>
-                <div class="wiki-link-create-option" @onclick="OnCreateClick">
-                    <span class="wiki-link-create-icon">+</span>
-                    Create "@GetArticleName()" in Wiki root
-                </div>
+                @if (IsExternalQuery)
+                {
+                    <text>No results found</text>
+                }
+                else
+                {
+                    <text>No articles found</text>
+                    <div class="wiki-link-create-option" @onclick="OnCreateClick">
+                        <span class="wiki-link-create-icon">+</span>
+                        Create "@GetArticleName()" in Wiki root
+                    </div>
+                }
             }
         </div>
     }
@@ -39,8 +44,17 @@
             <div class="wiki-link-suggestion @(isSelected ? "selected" : "")"
                  @onclick="() => OnSuggestionClick(suggestion)"
                  @onmouseenter="() => OnSuggestionHover(index)">
-                <div class="wiki-link-suggestion-title">@suggestion.Title</div>
-                <div class="wiki-link-suggestion-path">@suggestion.DisplayPath</div>
+                <div class="wiki-link-suggestion-title">
+                    @suggestion.Title
+                    @if (suggestion.IsExternal && !string.IsNullOrWhiteSpace(suggestion.SourceBadge))
+                    {
+                        <span class="wiki-link-suggestion-badge">@suggestion.SourceBadge</span>
+                    }
+                </div>
+                @if (!string.IsNullOrWhiteSpace(suggestion.SecondaryText))
+                {
+                    <div class="wiki-link-suggestion-path">@suggestion.SecondaryText</div>
+                }
             </div>
         }
     }
@@ -48,7 +62,7 @@
 
 @code {
     [Parameter]
-    public List<LinkSuggestionDto> Suggestions { get; set; } = new();
+    public List<WikiLinkAutocompleteItem> Suggestions { get; set; } = new();
 
     [Parameter]
     public bool Loading { get; set; }
@@ -60,7 +74,7 @@
     public EventCallback<int> SelectedIndexChanged { get; set; }
 
     [Parameter]
-    public EventCallback<LinkSuggestionDto> OnSelect { get; set; }
+    public EventCallback<WikiLinkAutocompleteItem> OnSelect { get; set; }
 
     [Parameter]
     public (double X, double Y) Position { get; set; }
@@ -71,7 +85,10 @@
     [Parameter]
     public EventCallback<string> OnCreate { get; set; }
 
-    private async Task OnSuggestionClick(LinkSuggestionDto suggestion)
+    [Parameter]
+    public bool IsExternalQuery { get; set; }
+
+    private async Task OnSuggestionClick(WikiLinkAutocompleteItem suggestion)
     {
         Logger.LogInformation("WikiLinkAutocomplete: OnSuggestionClick called for {Title}", suggestion.Title);
         await OnSelect.InvokeAsync(suggestion);

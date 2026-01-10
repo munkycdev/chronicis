@@ -1,0 +1,89 @@
+@page "/dev/external-links"
+@using Chronicis.Shared.DTOs
+@inject IExternalLinkApiService ExternalLinks
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-6">
+    <MudPaper Class="pa-6">
+        <MudText Typo="Typo.h4">External Links Dev</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4">Manual check for external link endpoints.</MudText>
+
+        <MudTextField Label="Source" @bind-Value="_source" Immediate="true" />
+        <MudTextField Label="Query" @bind-Value="_query" Immediate="true" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="LoadSuggestionsAsync">
+            Fetch Suggestions
+        </MudButton>
+
+        <MudDivider Class="my-4" />
+
+        <MudText Typo="Typo.subtitle1">Suggestions</MudText>
+        @if (_isLoadingSuggestions)
+        {
+            <MudProgressLinear Indeterminate="true" Class="my-2" />
+        }
+        else if (_suggestions.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No suggestions loaded.</MudText>
+        }
+        else
+        {
+            <MudList T="ExternalLinkSuggestionDto" Dense="true">
+                @foreach (var suggestion in _suggestions)
+                {
+                    <MudListItem T="ExternalLinkSuggestionDto">
+                        <MudText Typo="Typo.body1">@suggestion.Title</MudText>
+                        <MudText Typo="Typo.caption">@suggestion.Id</MudText>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+
+        <MudDivider Class="my-4" />
+
+        <MudTextField Label="Content Id" @bind-Value="_contentId" Immediate="true" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2" OnClick="LoadContentAsync">
+            Fetch Content
+        </MudButton>
+
+        <MudDivider Class="my-4" />
+
+        <MudText Typo="Typo.subtitle1">Content</MudText>
+        @if (_isLoadingContent)
+        {
+            <MudProgressLinear Indeterminate="true" Class="my-2" />
+        }
+        else if (_content is null)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No content loaded.</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6">@_content.Title</MudText>
+            <MudText Typo="Typo.caption">@_content.Kind</MudText>
+            <MudText Typo="Typo.body2" Class="mt-2">@_content.Markdown</MudText>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _source = "srd";
+    private string _query = "acid";
+    private string _contentId = "/api/2014/spells/acid-arrow";
+    private bool _isLoadingSuggestions;
+    private bool _isLoadingContent;
+    private List<ExternalLinkSuggestionDto> _suggestions = new();
+    private ExternalLinkContentDto? _content;
+
+    private async Task LoadSuggestionsAsync()
+    {
+        _isLoadingSuggestions = true;
+        _suggestions = await ExternalLinks.GetSuggestionsAsync(_source, _query, CancellationToken.None);
+        _isLoadingSuggestions = false;
+    }
+
+    private async Task LoadContentAsync()
+    {
+        _isLoadingContent = true;
+        _content = await ExternalLinks.GetContentAsync(_source, _contentId, CancellationToken.None);
+        _isLoadingContent = false;
+    }
+}

@@ -138,6 +138,13 @@ builder.Services.AddScoped<ILinkApiService>(sp =>
     return new LinkApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
+builder.Services.AddScoped<IExternalLinkApiService>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var logger = sp.GetRequiredService<ILogger<ExternalLinkApiService>>();
+    return new ExternalLinkApiService(factory.CreateClient("ChronicisApi"), logger);
+});
+
 builder.Services.AddScoped<IUserApiService>(sp =>
 {
     var factory = sp.GetRequiredService<IHttpClientFactory>();

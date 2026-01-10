@@ -64,6 +64,29 @@ The right sidebar shows all articles that link to the current article.
 
 ---
 
+### External Knowledge Links
+
+Chronicis supports linking to external reference sources using the wiki-link workflow.
+
+**Syntax:**
+- Trigger autocomplete with: `[[sourceKey/`
+- External token format: `[[source|id|title]]`
+
+**Example:**
+- Typing `[[srd/acid` shows SRD suggestions
+- Selecting an entry inserts an external link chip
+
+**Preview:**
+- Clicking an external chip opens an in-app preview drawer
+- Preview content is fetched live from the provider and rendered as Markdown
+- A link to the source site is available when provided by the provider
+
+**Extensibility:**
+- Providers are keyed by a short prefix (example: `srd`, future: `kobold`)
+- Additional providers can be added without changing the editor token format
+
+---
+
 ### AI Summary Generation
 
 Generate comprehensive summaries of entities by analyzing all backlinks.
@@ -352,6 +375,14 @@ icon: "🏰"
 | GET | `/api/worlds/{id}/link-suggestions?query=` | Autocomplete |
 | POST | `/api/articles/resolve-links` | Resolve link targets |
 
+### External Link Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/external-links/suggestions?source=&query=` | Autocomplete suggestions for external providers |
+| GET | `/api/external-links/content?source=&id=` | Fetch external content preview as Markdown |
+
+
 ### Utility Endpoints
 
 | Method | Endpoint | Description |
@@ -375,6 +406,7 @@ icon: "🏰"
 | `AISummaryApiService` | Summary generation |
 | `QuoteService` | Inspirational quotes |
 | `PublicApiService` | Anonymous public world access |
+| `ExternalLinkApiService` | External link suggestions and preview content |
 
 ### State Services
 

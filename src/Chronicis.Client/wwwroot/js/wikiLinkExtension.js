@@ -86,5 +86,79 @@ function createWikiLinkExtension() {
     });
 }
 
+/**
+ * Creates a TipTap Node extension for external links
+ * @returns {Object} TipTap Node extension
+ */
+function createExternalLinkExtension() {
+    if (!window.TipTap || !window.TipTap.Node) {
+        console.error('TipTap Node not available - cannot create external link extension');
+        return null;
+    }
+
+    return window.TipTap.Node.create({
+        name: 'externalLink',
+
+        group: 'inline',
+
+        inline: true,
+
+        atom: true,
+
+        addAttributes() {
+            return {
+                source: {
+                    default: null,
+                    parseHTML: element => element.getAttribute('data-source'),
+                    renderHTML: attributes => ({
+                        'data-source': attributes.source
+                    })
+                },
+                externalId: {
+                    default: null,
+                    parseHTML: element => element.getAttribute('data-id'),
+                    renderHTML: attributes => ({
+                        'data-id': attributes.externalId
+                    })
+                },
+                title: {
+                    default: null,
+                    parseHTML: element => element.getAttribute('data-title'),
+                    renderHTML: attributes => ({
+                        'data-title': attributes.title
+                    })
+                }
+            };
+        },
+
+        parseHTML() {
+            return [
+                {
+                    tag: 'span[data-type="external-link"]'
+                }
+            ];
+        },
+
+        renderHTML({ node, HTMLAttributes }) {
+            const title = node.attrs.title || 'External Link';
+            const source = node.attrs.source || '';
+            const sourceLabel = source ? source.toUpperCase() : 'EXT';
+
+            return [
+                'span',
+                {
+                    'data-type': 'external-link',
+                    class: 'external-link-node',
+                    ...HTMLAttributes
+                },
+                ['span', { class: 'external-link-badge' }, sourceLabel],
+                ['span', { class: 'external-link-text' }, title],
+                ['i', { class: 'external-link-icon fa-solid fa-arrow-up-right-from-square', 'aria-hidden': 'true' }]
+            ];
+        }
+    });
+}
+
 // Make available globally
 window.createWikiLinkExtension = createWikiLinkExtension;
+window.createExternalLinkExtension = createExternalLinkExtension;

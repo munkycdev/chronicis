@@ -93,6 +93,20 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
         }
     }
 
+    // Add external link extension if available
+    if (window.createExternalLinkExtension) {
+        try {
+            const externalLinkExt = window.createExternalLinkExtension();
+            if (externalLinkExt) {
+                extensions.push(externalLinkExt);
+            } else {
+                console.error('External link extension returned null - TipTap.Node may not be available');
+            }
+        } catch (err) {
+            console.error('Failed to load external link extension:', err);
+        }
+    }
+
     // Create editor
     // Auto-detect if content is HTML or markdown and convert if needed
     // This provides backwards compatibility for existing markdown content
@@ -128,6 +142,23 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
                     // Navigate to the article
                     dotNetHelper.invokeMethodAsync('OnWikiLinkClicked', targetArticleId);
                 }
+            }
+        }
+    });
+
+    // Add click handler for external links
+    container.addEventListener('click', (e) => {
+        const externalLink = e.target.closest('span[data-type="external-link"]');
+        if (externalLink) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const source = externalLink.getAttribute('data-source');
+            const id = externalLink.getAttribute('data-id');
+            const title = externalLink.getAttribute('data-title');
+
+            if (source && id) {
+                dotNetHelper.invokeMethodAsync('OnExternalLinkClicked', source, id, title || '');
             }
         }
     });
@@ -324,6 +355,16 @@ function markdownToHTML(markdown) {
 
     let html = markdown;
 
+    // External links: [[source|id|title]]
+    // Convert to: <span data-type="external-link" data-source="source" data-id="id" data-title="title">...</span>
+    html = html.replace(/\[\[([^|\]]+)\|([^|\]]+)\|([^\]]+)\]\]/g, (match, source, id, title) => {
+        const safeSource = escapeHtml(source.trim());
+        const safeId = escapeHtml(id.trim());
+        const safeTitle = escapeHtml(title.trim());
+        const sourceLabel = safeSource ? safeSource.toUpperCase() : 'EXT';
+        return `<span data-type="external-link" class="external-link-node" data-source="${safeSource}" data-id="${safeId}" data-title="${safeTitle}"><span class="external-link-badge">${sourceLabel}</span><span class="external-link-text">${safeTitle}</span><i class="external-link-icon fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span>`;
+    });
+
     // Wiki links: [[guid]] or [[guid|display text]]
     // Convert to: <span data-type="wiki-link" data-target-id="guid" data-display="display">display</span>
     html = html.replace(/\[\[([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:\|([^\]]+))?\]\]/g, (match, guid, display) => {
@@ -394,6 +435,10 @@ function htmlToMarkdown(html) {
     if (!html) return '';
 
     let markdown = html;
+
+    // External links: <span data-type="external-link" data-source="source" data-id="id" data-title="title">...</span>
+    // Convert to: [[source|id|title]]
+    markdown = markdown.replace(/<span[^>]*data-type="external-link"[^>]*data-source="([^"]+)"[^>]*data-id="([^"]+)"[^>]*data-title="([^"]*)"[^>]*>.*?<\/span>/gi, '[[$1|$2|$3]]');
 
     // Wiki links: <span data-type="wiki-link" data-target-id="guid" data-display="display">text</span>
     // Convert to: [[guid|display]] or [[guid]]

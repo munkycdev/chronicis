@@ -226,7 +226,20 @@ POST   /api/articles/{id}/summary/generate - Generate AI summary
 GET    /api/articles/search                - Full-text search
 GET    /api/worlds/{id}/link-suggestions   - Autocomplete suggestions
 POST   /api/articles/resolve-links         - Resolve link targets
+
+GET    /api/external-links/suggestions   - External autocomplete suggestions by provider
+GET    /api/external-links/content       - External content preview by provider + id
+
 ```
+
+### External Link Providers
+
+External link providers are resolved by key via `IExternalLinkProviderRegistry`.
+
+To add a new provider:
+- Create a provider in `src/Chronicis.Api/Services/ExternalLinks/` that implements `IExternalLinkProvider`.
+- Register the provider in `src/Chronicis.Api/Program.cs`.
+- Add configuration under `ExternalLinks:<ProviderKey>:BaseUrl` in `src/Chronicis.Api/local.settings.json` for local runs.
 
 ---
 
@@ -260,6 +273,33 @@ Custom TipTap extensions via JavaScript interop:
 - Links stored as: `[[guid|display text]]` or `[[guid]]`
 - Rendered as clickable inline elements
 - Broken links shown with visual indicator
+
+### External Link Tokens
+
+Chronicis supports external link tokens in the editor for integrating third-party reference data sources.
+
+**Editor Trigger:**
+- Typing `[[<sourceKey>/` routes autocomplete to an external provider
+- Example: `[[srd/` queries the SRD provider
+
+**Storage Format (External v1):**
+- External links are stored as: `[[source|id|title]]`
+- `source` is the provider key (example: `srd`)
+- `id` is provider-specific stable identifier (for SRD, the API resource path)
+- `title` is the display text
+
+**Rendering and Interaction:**
+- External links render as distinct "chips" with external styling
+- Clicking an external chip opens an in-app preview drawer
+- Preview content is normalized as Markdown returned by the API layer
+
+### External Link Providers
+
+External sources are integrated via provider services:
+
+- `IExternalLinkProvider` abstraction (Key, Search, Content)
+- Provider registry resolves providers by `sourceKey` (example: `srd`)
+- SSRF-safe validation for provider ids (ids are relative paths, not full URLs)
 
 ---
 

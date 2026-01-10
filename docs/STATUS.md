@@ -79,6 +79,13 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 - Centralized HttpClient with automatic token attachment
 - Application Insights telemetry with availability test keep-alive
 
+**External Knowledge Links:**
+- External wiki-style links using `[[sourceKey/` autocomplete triggers (example: `[[srd/`)
+- External link tokens stored as `[[source|id|title]]`
+- In-app preview drawer for external links (content fetched live from provider API)
+- Provider-based architecture for adding additional sources in the future
+
+
 ### Known Issues
 
 See `Feature Ideas.md` for the complete bug list and backlog.
@@ -141,6 +148,7 @@ See `Feature Ideas.md` for the complete bug list and backlog.
 - Contextual prompt system for dashboard
 - Advanced collaboration features
 - Audio capture integration
+- Add additional external providers (example: Kobold Press) and expand SRD coverage beyond spells and monsters
 
 ---
 

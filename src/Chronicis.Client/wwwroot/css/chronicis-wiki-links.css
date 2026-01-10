@@ -54,6 +54,121 @@ span[data-type="wiki-link"].broken:hover {
 }
 
 /* ============================================
+   EXTERNAL LINK CHIPS
+   ============================================ */
+
+span[data-type="external-link"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid rgba(30, 64, 175, 0.6);
+    background: rgba(219, 234, 254, 0.9);
+    color: var(--chronicis-text-primary);
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+span[data-type="external-link"]:hover {
+    background: rgba(219, 234, 254, 1);
+    border-color: rgba(30, 64, 175, 0.85);
+}
+
+.external-link-badge {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1px 5px;
+    border-radius: 6px;
+    background: rgba(30, 64, 175, 0.12);
+    border: 1px solid rgba(30, 64, 175, 0.5);
+    color: var(--chronicis-text-primary);
+}
+
+.external-link-text {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.external-link-icon {
+    font-size: 11px;
+    color: var(--chronicis-text-primary);
+}
+
+/* ============================================
+   EXTERNAL LINK PREVIEW
+   ============================================ */
+
+.external-link-preview-drawer .mud-drawer-content {
+    padding: 16px;
+    background-color: var(--chronicis-soft-off-white);
+}
+
+.external-link-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.external-link-preview-header .mud-typography-h6 {
+    color: var(--chronicis-secondary);
+}
+
+.external-link-preview-source {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    background: rgba(37, 99, 235, 0.15);
+    border: 1px solid rgba(37, 99, 235, 0.3);
+    color: #1d4ed8;
+    font-weight: 600;
+}
+
+.external-link-preview-body {
+    margin-top: 12px;
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+}
+
+.external-link-preview-body h1,
+.external-link-preview-body h2,
+.external-link-preview-body h3,
+.external-link-preview-body h4 {
+    color: var(--chronicis-secondary);
+}
+
+.external-link-preview-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+    span[data-type="external-link"] {
+        color: #eff6ff;
+        background: rgba(30, 64, 175, 0.35);
+        border-color: rgba(191, 219, 254, 0.6);
+    }
+
+    .external-link-badge,
+    .external-link-preview-source {
+        color: #eff6ff;
+        background: rgba(30, 64, 175, 0.4);
+        border-color: rgba(191, 219, 254, 0.6);
+    }
+
+    .external-link-icon {
+        color: #eff6ff;
+    }
+}
+
+/* ============================================
    WIKI LINK AUTOCOMPLETE DROPDOWN
    ============================================ */
 
@@ -86,6 +201,9 @@ span[data-type="wiki-link"].broken:hover {
     color: var(--chronicis-text-primary);
     font-weight: 500;
     font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* Suggestion path */
@@ -93,6 +211,18 @@ span[data-type="wiki-link"].broken:hover {
     color: var(--chronicis-primary);
     font-size: 12px;
     opacity: 0.8;
+}
+
+/* External source badge */
+.wiki-link-suggestion-badge {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    background: rgba(37, 99, 235, 0.12);
+    border-radius: var(--chronicis-radius-sm);
+    color: #1d4ed8;
+    border: 1px solid rgba(37, 99, 235, 0.25);
 }
 
 /* Hover state for suggestion */
@@ -185,6 +315,12 @@ span[data-type="wiki-link"].broken:hover {
 
     .wiki-link-suggestion-path {
         color: var(--chronicis-secondary);
+    }
+
+    .wiki-link-suggestion-badge {
+        background: rgba(96, 165, 250, 0.2);
+        color: #93c5fd;
+        border-color: rgba(96, 165, 250, 0.4);
     }
 
     .wiki-link-suggestion:hover,

@@ -1,14 +1,17 @@
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Client.Components.Characters
 @using Chronicis.Client.Utilities
+@using Chronicis.Shared.DTOs
 @using Chronicis.Shared.Enums
 @using Chronicis.Shared.Utilities
 @using Blazored.LocalStorage
 @using Microsoft.JSInterop
 @inject IArticleApiService ArticleApi
 @inject ILinkApiService LinkApiService
+@inject IExternalLinkApiService ExternalLinkApiService
 @inject IWikiLinkService WikiLinkService
 @inject IAISummaryApiService SummaryApi
+@inject IMarkdownService MarkdownService
 @inject ITreeStateService TreeState
 @inject IAppContextService AppContext
 @inject IBreadcrumbService BreadcrumbService
@@ -102,6 +105,57 @@ else
                            Article="_article"
                            @bind-IsOpen="_openMetadata" />
 
+    <!-- External Link Preview Drawer -->
+    <MudDrawer @bind-Open="_externalPreviewOpen"
+               Anchor="Anchor.End"
+               Variant="@DrawerVariant.Temporary"
+               Elevation="9999"
+               Class="external-link-preview-drawer">
+        <MudDrawerHeader>
+            <div class="external-link-preview-header">
+                @if (!string.IsNullOrWhiteSpace(_externalPreviewSource))
+                {
+                    <span class="external-link-preview-source">@_externalPreviewSource.ToUpperInvariant()</span>
+                }
+                <MudText Typo="Typo.h6">@(_externalPreviewTitle ?? "External Link")</MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseExternalPreview" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_externalPreviewContent?.Kind))
+            {
+                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                    @_externalPreviewContent.Kind
+                </MudText>
+            }
+        </MudDrawerHeader>
+        <MudDrawerContainer>
+            @if (_externalPreviewLoading)
+            {
+                <div class="d-flex justify-center align-center" style="padding: 24px;">
+                    <MudProgressCircular Indeterminate="true" />
+                </div>
+            }
+            else if (!string.IsNullOrWhiteSpace(_externalPreviewError))
+            {
+                <MudAlert Severity="Severity.Error">@_externalPreviewError</MudAlert>
+            }
+            else if (_externalPreviewContent != null)
+            {
+                <div class="external-link-preview-body chronicis-scrollbar-light">
+                    @((MarkupString)MarkdownService.ToHtml(_externalPreviewContent.Markdown))
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_externalPreviewContent.Attribution))
+                {
+                    <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary); margin-top: 8px;">
+                        @_externalPreviewContent.Attribution
+                    </MudText>
+                }
+
+            }
+        </MudDrawerContainer>
+    </MudDrawer>
+
     <!-- Wiki Link Autocomplete -->
     @if (_showAutocomplete && _article != null)
     {
@@ -112,7 +166,8 @@ else
                               OnSelect="OnAutocompleteSelect"
                               OnCreate="OnAutocompleteCreate"
                               Position="@_autocompletePosition"
-                              Query="@_autocompleteQuery" />
+                              Query="@_autocompleteQuery"
+                              IsExternalQuery="@_autocompleteIsExternalQuery" />
     }
 }
 
@@ -144,10 +199,22 @@ else
     // Autocomplete state
     private bool _showAutocomplete = false;
     private bool _autocompleteLoading = false;
-    private List<LinkSuggestionDto> _autocompleteSuggestions = new();
+    private List<WikiLinkAutocompleteItem> _autocompleteSuggestions = new();
     private int _autocompleteSelectedIndex = 0;
     private (double X, double Y) _autocompletePosition = (0, 0);
     private string _autocompleteQuery = string.Empty;
+    private bool _autocompleteIsExternalQuery = false;
+    private string? _autocompleteExternalSourceKey;
+
+    // External link preview
+    private bool _externalPreviewOpen = false;
+    private bool _externalPreviewLoading = false;
+    private string? _externalPreviewError;
+    private ExternalLinkContentDto? _externalPreviewContent;
+    private string? _externalPreviewSource;
+    private string? _externalPreviewId;
+    private string? _externalPreviewTitle;
+    private readonly Dictionary<string, ExternalLinkContentDto> _externalLinkCache = new(StringComparer.OrdinalIgnoreCase);
     
     private const string LastArticlePathKey = "chronicis_last_article_path";
 
@@ -300,6 +367,7 @@ else
     private async Task LoadArticleAsync(Guid articleId)
     {
         _isLoading = true;
+        _externalPreviewOpen = false;
         StateHasChanged();
 
         try
@@ -730,11 +798,14 @@ else
     public async Task OnAutocompleteTriggered(string query, double x, double y)
     {
         _autocompletePosition = (x, y);
-        _autocompleteQuery = query;
         _showAutocomplete = true;
         _autocompleteSelectedIndex = 0;
-        
-        if (query.Length < 3)
+
+        _autocompleteIsExternalQuery = TryParseExternalAutocompleteQuery(query, out var sourceKey, out var remainder);
+        _autocompleteExternalSourceKey = _autocompleteIsExternalQuery ? sourceKey : null;
+        _autocompleteQuery = _autocompleteIsExternalQuery ? remainder : query;
+
+        if (_autocompleteQuery.Length < 3)
         {
             _autocompleteSuggestions = new();
             StateHasChanged();
@@ -746,8 +817,24 @@ else
 
         try
         {
-            var worldId = AppContext.CurrentWorldId ?? _article?.WorldId ?? Guid.Empty;
-            _autocompleteSuggestions = await LinkApiService.GetSuggestionsAsync(worldId, query);
+            if (_autocompleteIsExternalQuery)
+            {
+                var externalSuggestions = await ExternalLinkApiService.GetSuggestionsAsync(
+                    _autocompleteExternalSourceKey ?? string.Empty,
+                    _autocompleteQuery,
+                    CancellationToken.None);
+                _autocompleteSuggestions = externalSuggestions
+                    .Select(WikiLinkAutocompleteItem.FromExternal)
+                    .ToList();
+            }
+            else
+            {
+                var worldId = AppContext.CurrentWorldId ?? _article?.WorldId ?? Guid.Empty;
+                var internalSuggestions = await LinkApiService.GetSuggestionsAsync(worldId, _autocompleteQuery);
+                _autocompleteSuggestions = internalSuggestions
+                    .Select(WikiLinkAutocompleteItem.FromInternal)
+                    .ToList();
+            }
         }
         catch (Exception ex)
         {
@@ -766,6 +853,8 @@ else
     {
         _showAutocomplete = false;
         _autocompleteSuggestions = new();
+        _autocompleteIsExternalQuery = false;
+        _autocompleteExternalSourceKey = null;
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -806,13 +895,41 @@ else
         return Task.CompletedTask;
     }
 
-    private async Task OnAutocompleteSelect(LinkSuggestionDto suggestion)
+    private async Task OnAutocompleteSelect(WikiLinkAutocompleteItem suggestion)
     {
         if (_article == null) return;
 
         try
         {
-            await JSRuntime.InvokeVoidAsync("insertWikiLink", $"tiptap-editor-{_article.Id}", suggestion.ArticleId.ToString(), suggestion.Title);
+            if (suggestion.IsExternal)
+            {
+                if (string.IsNullOrWhiteSpace(suggestion.Source) || string.IsNullOrWhiteSpace(suggestion.ExternalId))
+                {
+                    Logger.LogWarning("External suggestion missing source or id");
+                    return;
+                }
+
+                await JSRuntime.InvokeVoidAsync(
+                    "insertExternalLinkToken",
+                    $"tiptap-editor-{_article.Id}",
+                    suggestion.Source,
+                    suggestion.ExternalId,
+                    suggestion.Title);
+            }
+            else
+            {
+                if (!suggestion.ArticleId.HasValue)
+                {
+                    Logger.LogWarning("Internal suggestion missing article id");
+                    return;
+                }
+
+                await JSRuntime.InvokeVoidAsync(
+                    "insertWikiLink",
+                    $"tiptap-editor-{_article.Id}",
+                    suggestion.ArticleId.Value.ToString(),
+                    suggestion.Title);
+            }
             _showAutocomplete = false;
             _autocompleteSuggestions = new();
             StateHasChanged();
@@ -828,6 +945,11 @@ else
 
     private async Task OnAutocompleteCreate(string articleName)
     {
+        if (_autocompleteIsExternalQuery)
+        {
+            return;
+        }
+
         if (_article == null || string.IsNullOrWhiteSpace(articleName)) return;
 
         try
@@ -856,6 +978,28 @@ else
             Logger.LogError(ex, "Error creating article from autocomplete");
             Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
         }
+    }
+
+    private static bool TryParseExternalAutocompleteQuery(string query, out string sourceKey, out string remainder)
+    {
+        sourceKey = string.Empty;
+        remainder = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return false;
+        }
+
+        var slashIndex = query.IndexOf('/');
+        if (slashIndex <= 0)
+        {
+            return false;
+        }
+
+        sourceKey = query.Substring(0, slashIndex).Trim().ToLowerInvariant();
+        remainder = query.Substring(slashIndex + 1);
+
+        return !string.IsNullOrWhiteSpace(sourceKey);
     }
 
     [JSInvokable]
@@ -917,6 +1061,64 @@ else
             return null;
         }
     }
+
+    [JSInvokable]
+    public async Task OnExternalLinkClicked(string source, string id, string title)
+    {
+        if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(id)) return;
+
+        _externalPreviewOpen = true;
+        _externalPreviewLoading = true;
+        _externalPreviewError = null;
+        _externalPreviewSource = source;
+        _externalPreviewId = id;
+        _externalPreviewTitle = string.IsNullOrWhiteSpace(title) ? "External Link" : title;
+        _externalPreviewContent = null;
+        StateHasChanged();
+
+        var cacheKey = GetExternalCacheKey(source, id);
+        if (_externalLinkCache.TryGetValue(cacheKey, out var cached))
+        {
+            _externalPreviewContent = cached;
+            _externalPreviewLoading = false;
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            var content = await ExternalLinkApiService.GetContentAsync(source, id, CancellationToken.None);
+            if (content == null || string.IsNullOrWhiteSpace(content.Markdown))
+            {
+                _externalPreviewError = "No content available.";
+                _externalPreviewContent = null;
+            }
+            else
+            {
+                _externalPreviewContent = content;
+                _externalLinkCache[cacheKey] = content;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading external link preview for {Source} {Id}", source, id);
+            _externalPreviewError = "Failed to load external content.";
+            _externalPreviewContent = null;
+        }
+        finally
+        {
+            _externalPreviewLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseExternalPreview()
+    {
+        _externalPreviewOpen = false;
+        StateHasChanged();
+    }
+
+    private static string GetExternalCacheKey(string source, string id) => $"{source}:{id}".ToLowerInvariant();
 
     #endregion
 }

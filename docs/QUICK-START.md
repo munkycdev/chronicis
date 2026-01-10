@@ -68,6 +68,23 @@ Create connections between articles using wiki-style links:
 
 **Backlinks:** The right sidebar shows all articles that mention the current article.
 
+### Linking External Resources
+
+You can link to external reference content (like the D&D 5e SRD) using the same wiki-link flow.
+
+1. Type `[[srd/` to switch autocomplete to SRD mode
+2. Keep typing to filter results (spells, monsters, etc.)
+3. Press Enter to insert the selected entry
+
+External links render as a chip with an "external" indicator so you can tell they are not stored in your world.
+
+**Example:** `[[srd/acid arrow]]` inserts a chip for *Acid Arrow*.
+
+**Previewing External Content:**
+- Click the external chip to open an in-app preview drawer
+- The preview shows the SRD content returned by the source API
+- Use "Open on source site" to view it in a new tab
+
 ### Uploading Documents
 
 Share maps, character sheets, handouts, and other files:
@@ -296,6 +313,8 @@ Customization options (coming soon):
 3. **Add Descriptions:** Help players understand documents and articles
 4. **Tag Important NPCs:** Create character articles for recurring NPCs
 5. **Session Notes:** Record session summaries to build campaign history
+6. **Mix Internal and External Links:** Use internal articles for campaign-specific lore, and external links for reference rules and stat blocks.
+
 
 ### Document Management
 
