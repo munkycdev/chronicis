@@ -63,7 +63,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
             _logger.LogWarning("Authentication failed for {FunctionName}: {Error}",
                 context.FunctionDefinition.Name, error);
             await SetUnauthorizedResponse(context, httpRequestData, 
-                "Principal was null. Please provide a valid Auth0 token.");
+                $"Domain: {_auth0Config.Domain}, Audience: {_auth0Config.Audience}, Error: {error}");
             return;
         }
 
