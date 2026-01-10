@@ -75,9 +75,9 @@ public class ExternalLinksFunctions
 
             if (!responseDtos.Any())
             {
-                var response = req.CreateResponse(HttpStatusCode.OK);
-                await response.WriteAsJsonAsync(new { "responseCount", suggestions.Count()});
-                return response;
+                var response1 = req.CreateResponse(HttpStatusCode.OK);
+                await response1.WriteAsJsonAsync(new { "responseCount", suggestions.Count()});
+                return response1;
             }
 
             var response = req.CreateResponse(HttpStatusCode.OK);
