@@ -1,5 +1,6 @@
 using System.Net;
 using Chronicis.Api.Infrastructure;
+using Chronicis.Api.Services;
 using Chronicis.Api.Services.ExternalLinks;
 using Chronicis.Shared.DTOs;
 using Microsoft.Azure.Functions.Worker;
@@ -32,10 +33,7 @@ public class ExternalLinksFunctions
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "external-links/suggestions")] HttpRequestData req,
         FunctionContext context)
     {
-        if (context.GetUser() == null)
-        {
-            return await CreateUnauthorizedResponseAsync(req);
-        }
+        var user = context.GetRequiredUser();
 
         try
         {
@@ -61,6 +59,8 @@ public class ExternalLinksFunctions
                 query,
                 context.CancellationToken);
 
+                _logger.LogInformation("Suggestions returned by the service: " + suggestions.Count());
+
             var responseDtos = suggestions
                 .Select(s => new ExternalLinkSuggestionDto
                 {
@@ -72,6 +72,13 @@ public class ExternalLinksFunctions
                     Href = s.Href
                 })
                 .ToList();
+
+            if (!responseDtos.Any())
+            {
+                var response = req.CreateResponse(HttpStatusCode.OK);
+                await response.WriteAsJsonAsync(new { "responseCount", suggestions.Count()});
+                return response;
+            }
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(responseDtos);
