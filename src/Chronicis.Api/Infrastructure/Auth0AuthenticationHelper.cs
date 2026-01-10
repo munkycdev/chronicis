@@ -35,14 +35,31 @@ public static class Auth0AuthenticationHelper
             token = customTokenValues.FirstOrDefault();
             Console.WriteLine($"Auth0 Token: {token}");
         }
+        
+        // Fall back to standard Authorization header (for local development)
+        if (string.IsNullOrEmpty(token))
+        {
+            if (!req.Headers.TryGetValues("x-ms-auth-token", out var authHeaderValues))
+            {
+                error = "No Authorization header";
+                return null;
+            }
+
+            var authHeader = authHeaderValues.FirstOrDefault();
+            
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                error = "Auth header doesn't start with Bearer";
+                return null;
+            }
+
+            token = authHeader.Substring("Bearer ".Length).Trim();
+            Console.WriteLine($"Bearer Token: {token}");
+        }
 
         if (string.IsNullOrEmpty(token))
         {
-            foreach (var header in req.Headers)
-            {
-                error += header.Key+"="+string.Join(";", header.Value)+", ";
-            }
-            //error = "Token value is empty";
+            error = "Token value is empty";
             return null;
         }
 
