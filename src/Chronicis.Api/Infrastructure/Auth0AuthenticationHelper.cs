@@ -114,7 +114,7 @@ public static class Auth0AuthenticationHelper
         }
         catch (Exception ex)
         {
-            error = $"Exception: {ex.Message}";
+            error = $"Token: {token}, Exception: {ex.Message}";
             return null;
         }
     }
