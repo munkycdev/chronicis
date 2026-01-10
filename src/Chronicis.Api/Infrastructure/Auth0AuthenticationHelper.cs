@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -32,26 +33,7 @@ public static class Auth0AuthenticationHelper
         if (req.Headers.TryGetValues("X-Auth0-Token", out var customTokenValues))
         {
             token = customTokenValues.FirstOrDefault();
-        }
-        
-        // Fall back to standard Authorization header (for local development)
-        if (string.IsNullOrEmpty(token))
-        {
-            if (!req.Headers.TryGetValues("Authorization", out var authHeaderValues))
-            {
-                error = "No Authorization header";
-                return null;
-            }
-
-            var authHeader = authHeaderValues.FirstOrDefault();
-            
-            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-            {
-                error = "Auth header doesn't start with Bearer";
-                return null;
-            }
-
-            token = authHeader.Substring("Bearer ".Length).Trim();
+            Console.WriteLine($"Auth0 Token: {token}");
         }
 
         if (string.IsNullOrEmpty(token))
