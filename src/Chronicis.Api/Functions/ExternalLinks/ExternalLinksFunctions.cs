@@ -1,6 +1,5 @@
 using System.Net;
 using Chronicis.Api.Infrastructure;
-using Chronicis.Api.Services;
 using Chronicis.Api.Services.ExternalLinks;
 using Chronicis.Shared.DTOs;
 using Microsoft.Azure.Functions.Worker;
@@ -33,7 +32,7 @@ public class ExternalLinksFunctions
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "external-links/suggestions")] HttpRequestData req,
         FunctionContext context)
     {
-        var user = context.GetRequiredUser();
+        context.GetRequiredUser();
 
         try
         {
@@ -89,7 +88,7 @@ public class ExternalLinksFunctions
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "external-links/content")] HttpRequestData req,
         FunctionContext context)
     {
-        var user = context.GetRequiredUser();
+        context.GetRequiredUser();
 
         try
         {
@@ -147,12 +146,5 @@ public class ExternalLinksFunctions
             await errorResponse.WriteAsJsonAsync(new ExternalLinkContentDto());
             return errorResponse;
         }
-    }
-
-    private static async Task<HttpResponseData> CreateUnauthorizedResponseAsync(HttpRequestData req)
-    {
-        var response = req.CreateResponse(HttpStatusCode.Unauthorized);
-        await response.WriteAsJsonAsync(new { error = "Authentication required. Please provide a valid Auth0 token." });
-        return response;
     }
 }

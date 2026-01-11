@@ -1,6 +1,4 @@
-#if DEBUG
 @page "/dev/external-links"
-#endif
 @using Chronicis.Shared.DTOs
 @inject IExternalLinkApiService ExternalLinks
 
@@ -21,10 +19,6 @@
         @if (_isLoadingSuggestions)
         {
             <MudProgressLinear Indeterminate="true" Class="my-2" />
-        }
-        else if (_suggestionsRequireSignIn)
-        {
-            <MudText Typo="Typo.body2" Color="Color.Error">Sign in required.</MudText>
         }
         else if (_suggestions.Count == 0)
         {
@@ -78,14 +72,11 @@
     private bool _isLoadingContent;
     private List<ExternalLinkSuggestionDto> _suggestions = new();
     private ExternalLinkContentDto? _content;
-    private bool _suggestionsRequireSignIn;
 
     private async Task LoadSuggestionsAsync()
     {
         _isLoadingSuggestions = true;
-        var result = await ExternalLinks.GetSuggestionsAsync(_source, _query, CancellationToken.None);
-        _suggestionsRequireSignIn = result.RequiresSignIn;
-        _suggestions = result.Suggestions;
+        _suggestions = await ExternalLinks.GetSuggestionsAsync(_source, _query, CancellationToken.None);
         _isLoadingSuggestions = false;
     }
 

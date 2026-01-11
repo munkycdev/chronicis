@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -33,13 +32,12 @@ public static class Auth0AuthenticationHelper
         if (req.Headers.TryGetValues("X-Auth0-Token", out var customTokenValues))
         {
             token = customTokenValues.FirstOrDefault();
-            Console.WriteLine($"Auth0 Token: {token}");
         }
         
         // Fall back to standard Authorization header (for local development)
         if (string.IsNullOrEmpty(token))
         {
-            if (!req.Headers.TryGetValues("x-ms-auth-token", out var authHeaderValues))
+            if (!req.Headers.TryGetValues("Authorization", out var authHeaderValues))
             {
                 error = "No Authorization header";
                 return null;
@@ -54,7 +52,6 @@ public static class Auth0AuthenticationHelper
             }
 
             token = authHeader.Substring("Bearer ".Length).Trim();
-            Console.WriteLine($"Bearer Token: {token}");
         }
 
         if (string.IsNullOrEmpty(token))
@@ -164,7 +161,7 @@ public static class Auth0AuthenticationHelper
         }
         catch (SecurityTokenSignatureKeyNotFoundException ex)
         {
-            error = $"KeyNotFound: {ex.Message}, Token: {token}";
+            error = $"KeyNotFound: {ex.Message}";
             return null;
         }
         catch (SecurityTokenValidationException ex)
