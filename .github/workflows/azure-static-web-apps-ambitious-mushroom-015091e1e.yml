@@ -26,11 +26,12 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AMBITIOUS_MUSHROOM_015091E1E }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+          ###### Repository/Build Configurations ######
+          # API is now deployed separately to Azure App Service
+          # See deploy-api.yml workflow
           app_location: "/src/Chronicis.Client" # App source code path
-          api_location: "/src/Chronicis.Api" # Api source code path - optional
-          output_location: "wwwroot" # Built app content directory - optional
+          output_location: "wwwroot" # Built app content directory
+          skip_api_build: true # Skip API - deployed separately
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:

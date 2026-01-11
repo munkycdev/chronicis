@@ -60,12 +60,10 @@ builder.Services.AddSingleton(CreateChronicisTheme());
 // HTTP CLIENT CONFIGURATION (CENTRALIZED)
 // ============================================
 
-// For Azure Static Web Apps, the API is at /api (same origin)
-// For local dev, use the configured URL
-var isAzure = baseUrl.Contains("azurestaticapps.net");
-var apiBaseUrl = isAzure 
-    ? baseUrl  // Same origin - API is at /api
-    : (builder.Configuration["ApiBaseUrl"] ?? "http://localhost:7071");
+// API is now hosted on separate App Service at api.chronicis.app
+// Local dev uses localhost:5000 (configured in appsettings.json)
+// Production uses api.chronicis.app (configured in appsettings.Production.json)
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000";
 
 // Register the auth handler
 builder.Services.AddScoped<ChronicisAuthHandler>();

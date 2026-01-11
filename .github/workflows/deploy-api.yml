@@ -1,0 +1,45 @@
+name: Deploy Chronicis API
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/Chronicis.Api/**'
+      - 'src/Chronicis.Shared/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  API_PROJECT_PATH: 'src/Chronicis.Api/Chronicis.Api.csproj'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    name: Build and Deploy API
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.API_PROJECT_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.API_PROJECT_PATH }} --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish ${{ env.API_PROJECT_PATH }} --configuration Release --no-build --output ./publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'app-chronicis-api'
+          publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
+          package: ./publish

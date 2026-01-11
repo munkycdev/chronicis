@@ -2,75 +2,108 @@ using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Api.Services.ExternalLinks;
-using Microsoft.Azure.Functions.Worker;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 
-var host = new HostBuilder()
-    .ConfigureFunctionsWorkerDefaults(builder =>
+var builder = WebApplication.CreateBuilder(args);
+
+// Add controllers
+builder.Services.AddControllers();
+
+// Application Insights
+builder.Services.AddApplicationInsightsTelemetry();
+
+// Auth0 JWT Bearer Authentication
+var auth0Config = builder.Configuration.GetSection("Auth0").Get<Auth0Configuration>()
+    ?? throw new InvalidOperationException("Auth0 configuration is missing");
+
+builder.Services.Configure<Auth0Configuration>(builder.Configuration.GetSection("Auth0"));
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        // Register global authentication middleware
-        builder.UseMiddleware<AuthenticationMiddleware>();
-    })
-    .ConfigureAppConfiguration((context, config) =>
-    {
-        config.AddJsonFile("local.settings.json", optional: true, reloadOnChange: true);
-        config.AddEnvironmentVariables();
-    })
-    .ConfigureServices((context, services) =>
-    {
-        var configuration = context.Configuration;
-
-        // Register IConfiguration so it can be injected
-        services.AddSingleton<IConfiguration>(configuration);
-
-        // Application Insights
-        services.AddApplicationInsightsTelemetryWorkerService();
-        services.ConfigureFunctionsApplicationInsights();
-
-        // Auth0 Configuration
-        services.Configure<Auth0Configuration>(
-            configuration.GetSection("Auth0"));
-
-        // Database
-        services.AddDbContext<ChronicisDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("ChronicisDb")));
-
-        // External links
-        services.AddMemoryCache();
-        services.AddHttpClient("SrdExternalLinks", client =>
+        options.Authority = $"https://{auth0Config.Domain}/";
+        options.Audience = auth0Config.Audience;
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            var baseUrl = configuration.GetValue<string>("ExternalLinks:Srd:BaseUrl");
-            if (!string.IsNullOrWhiteSpace(baseUrl))
-            {
-                client.BaseAddress = new Uri(baseUrl);
-            }
-        });
-        services.AddScoped<IExternalLinkProviderRegistry, ExternalLinkProviderRegistry>();
-        services.AddScoped<ExternalLinkSuggestionService>();
-        services.AddScoped<ExternalLinkContentService>();
-        services.AddScoped<ExternalLinkValidationService>();
-        services.AddScoped<IExternalLinkProvider, SrdExternalLinkProvider>();
+            ValidateIssuer = true,
+            ValidIssuer = $"https://{auth0Config.Domain}/",
+            ValidateAudience = true,
+            ValidAudience = auth0Config.Audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(5)
+        };
+    });
 
-        // Services
-        services.AddScoped<IArticleService, ArticleService>();
-        services.AddScoped<IArticleValidationService, ArticleValidationService>();
-        services.AddScoped<ISummaryService, SummaryService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IWorldService, WorldService>();
-        services.AddScoped<ICampaignService, CampaignService>();
-        services.AddScoped<IArcService, ArcService>();
-        services.AddScoped<ILinkParser, LinkParser>();
-        services.AddScoped<ILinkSyncService, LinkSyncService>();
-        services.AddScoped<IAutoLinkService, AutoLinkService>();
-        services.AddScoped<IPromptService, PromptService>();
-        services.AddScoped<IPublicWorldService, PublicWorldService>();
-        services.AddScoped<IBlobStorageService, BlobStorageService>();
-        services.AddScoped<IWorldDocumentService, WorldDocumentService>();
-        services.AddScoped<IExportService, ExportService>();
-    })
-    .Build();
+builder.Services.AddAuthorization();
 
-host.Run();
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins(
+                "https://chronicis.app",
+                "https://www.chronicis.app",
+                "https://ambitious-mushroom-015091e1e.5.azurestaticapps.net",
+                "http://localhost:5001",
+                "https://localhost:5001",
+                "http://localhost:5173"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
+// Database
+builder.Services.AddDbContext<ChronicisDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("ChronicisDb")));
+
+// Current user service (replaces FunctionContext user resolution)
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+// External links
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient("SrdExternalLinks", client =>
+{
+    var baseUrl = builder.Configuration.GetValue<string>("ExternalLinks:Srd:BaseUrl");
+    if (!string.IsNullOrWhiteSpace(baseUrl))
+    {
+        client.BaseAddress = new Uri(baseUrl);
+    }
+});
+builder.Services.AddScoped<IExternalLinkProviderRegistry, ExternalLinkProviderRegistry>();
+builder.Services.AddScoped<ExternalLinkSuggestionService>();
+builder.Services.AddScoped<ExternalLinkContentService>();
+builder.Services.AddScoped<ExternalLinkValidationService>();
+builder.Services.AddScoped<IExternalLinkProvider, SrdExternalLinkProvider>();
+
+// Services
+builder.Services.AddScoped<IArticleService, ArticleService>();
+builder.Services.AddScoped<IArticleValidationService, ArticleValidationService>();
+builder.Services.AddScoped<ISummaryService, SummaryService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IWorldService, WorldService>();
+builder.Services.AddScoped<ICampaignService, CampaignService>();
+builder.Services.AddScoped<IArcService, ArcService>();
+builder.Services.AddScoped<ILinkParser, Chronicis.Api.Services.LinkParser>();
+builder.Services.AddScoped<ILinkSyncService, LinkSyncService>();
+builder.Services.AddScoped<IAutoLinkService, AutoLinkService>();
+builder.Services.AddScoped<IPromptService, PromptService>();
+builder.Services.AddScoped<IPublicWorldService, PublicWorldService>();
+builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+builder.Services.AddScoped<IWorldDocumentService, WorldDocumentService>();
+builder.Services.AddScoped<IExportService, ExportService>();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline
+app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
