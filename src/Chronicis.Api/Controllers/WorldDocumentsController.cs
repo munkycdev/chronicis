@@ -1,15 +1,17 @@
+using System.Net;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Protocols;
 
 namespace Chronicis.Api.Controllers;
 
 /// <summary>
 /// API endpoints for World Document management (file uploads to blob storage).
 /// </summary>
-[ApiController]
 [Route("worlds/{worldId:guid}/documents")]
 [Authorize]
 public class WorldDocumentsController : ControllerBase
@@ -46,6 +48,72 @@ public class WorldDocumentsController : ControllerBase
         {
             _logger.LogWarning(ex, "Unauthorized access to world documents");
             return StatusCode(403, new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Streams the content of a document to the HTTP response.
+    /// </summary>
+    [HttpGet("/documents/{documentId:guid}/content")]
+    public async Task<HttpResponse> GetDocumentContentAsync(Guid documentId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+        _logger.LogInformation("User {UserId} requesting document content {DocumentId}", user.Id, documentId);
+
+        try
+        {
+            var result = await _documentService.GetDocumentContentAsync(documentId, user.Id);
+            var safeFileName = result.FileName.Replace("\"", "'").Replace("\r", "").Replace("\n", "");
+
+            var response = HttpContext.Response;
+
+            response.StatusCode = (int)HttpStatusCode.OK;
+
+            response.Headers.Clear();
+            response.Headers.Append("Content-Type", result.ContentType);
+            response.Headers.Append("Content-Disposition", $"inline; filename=\"{safeFileName}\"");
+
+            if (result.ContentLength.HasValue)
+            {
+                response.Headers.Append("Content-Length", result.ContentLength.Value.ToString());
+            }
+
+            await using var contentStream = result.Content;
+            await contentStream.CopyToAsync(response.Body);
+
+            return response;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized document content request");
+            //var forbidden = req.CreateResponse(HttpStatusCode.Forbidden);
+            //await forbidden.WriteAsJsonAsync(new { error = ex.Message });
+            //return forbidden;
+            throw;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Document not found for content request");
+            //var notFound = req.CreateResponse(HttpStatusCode.NotFound);
+            //await notFound.WriteAsJsonAsync(new { error = ex.Message });
+            //return notFound;
+            throw;
+        }
+        catch (FileNotFoundException ex)
+        {
+            _logger.LogInformation(ex, "File not found in storage");
+            //var notFound = req.CreateResponse(HttpStatusCode.NotFound);
+            //await notFound.WriteAsJsonAsync(new { error = "File not found in storage" });
+            //return notFound;
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error streaming document content");
+            //var error = req.CreateResponse(HttpStatusCode.InternalServerError);
+            //await error.WriteAsJsonAsync(new { error = "Failed to stream document content" });
+            //return error;
+            throw;
         }
     }
 

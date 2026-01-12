@@ -20,9 +20,9 @@ Chronicis is a web-based knowledge management application for tabletop RPG campa
 - **Authentication:** Auth0 OIDC
 
 ### Backend
-- **API Framework:** Azure Functions (Isolated Worker, .NET 9)
-- **Hosting Model:** Serverless (Azure Static Web Apps managed functions)
-- **Authentication:** Auth0 JWT validation via middleware
+- **API Framework:** ASP.NET Core Web API (.NET 9)
+- **Hosting Model:** Azure App Service (`app-chronicis-api-dev`)
+- **Authentication:** Auth0 JWT Bearer authentication
 
 ### Data Layer
 - **ORM:** Entity Framework Core 9
@@ -30,13 +30,12 @@ Chronicis is a web-based knowledge management application for tabletop RPG campa
 - **Migration Strategy:** Code-first with EF migrations
 
 ### Infrastructure
-- **Hosting:** Azure Static Web Apps
+- **Frontend Hosting:** Azure Static Web Apps (client only)
+- **API Hosting:** Azure App Service (`app-chronicis-api-dev`, `api.chronicis.app`)
 - **Secrets:** Azure Key Vault (`kv-chronicis-dev`)
-- **CI/CD:** GitHub Actions
+- **CI/CD:** GitHub Actions (separate workflows for client and API)
 - **AI Services:** Azure OpenAI (GPT-4.1-mini)
 - **Monitoring:** Application Insights (`appi-chronicis-dev`)
-  - Telemetry from Azure Functions (Worker Service integration)
-  - Availability test for keep-alive (5-minute interval)
 
 ### Auth0 Configuration
 - **Custom Domain:** `auth.chronicis.app`
@@ -68,10 +67,10 @@ chronicis/
 │   │       ├── css/                # Stylesheets
 │   │       └── js/                 # JavaScript interop
 │   │
-│   ├── Chronicis.Api/              # Azure Functions
+│   ├── Chronicis.Api/              # ASP.NET Core Web API
+│   │   ├── Controllers/            # API controllers
 │   │   ├── Data/                   # DbContext
-│   │   ├── Functions/              # HTTP endpoints
-│   │   ├── Infrastructure/         # Auth, middleware
+│   │   ├── Infrastructure/         # Auth, services
 │   │   ├── Migrations/             # EF migrations
 │   │   └── Services/               # Business logic
 │   │
@@ -159,24 +158,24 @@ World (top-level container)
 
 ## Authentication Architecture
 
-### Backend (Azure Functions)
+### Backend (ASP.NET Core)
 
-Global authentication middleware handles JWT validation:
+Standard ASP.NET Core JWT Bearer authentication:
 
 ```
-Request → AuthenticationMiddleware → Function
+Request → JWT Bearer Middleware → Controller
               ↓
-         Validate JWT
+         Validate Auth0 JWT
               ↓
-         Store user in FunctionContext.Items["User"]
+         Populate HttpContext.User
               ↓
          [AllowAnonymous] endpoints skip validation
 ```
 
 **Key Components:**
-- `AuthenticationMiddleware` - Validates Auth0 JWT tokens
-- `AllowAnonymousAttribute` - Marks public endpoints
-- `FunctionContextExtensions` - `GetUser()`, `GetRequiredUser()` helpers
+- `JwtBearerDefaults.AuthenticationScheme` - Standard JWT validation
+- `ICurrentUserService` - Extracts user from HttpContext claims
+- `[Authorize]` / `[AllowAnonymous]` - Standard ASP.NET Core attributes
 
 ### Frontend (Blazor WASM)
 

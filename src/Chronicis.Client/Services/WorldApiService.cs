@@ -197,11 +197,11 @@ public class WorldApiService : IWorldApiService
             $"documents for world {worldId}");
     }
 
-    public async Task<DocumentDownloadResult?> DownloadDocumentAsync(Guid documentId)
+    public async Task<DocumentDownloadResult?> DownloadDocumentAsync(Guid worldId, Guid documentId)
     {
         try
         {
-            var response = await _http.GetAsync($"documents/{documentId}/content");
+            var response = await _http.GetAsync($"worlds/{worldId}/documents/{documentId}/content");
 
             if (!response.IsSuccessStatusCode)
             {

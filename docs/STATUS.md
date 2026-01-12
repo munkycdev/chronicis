@@ -74,10 +74,10 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 
 **Infrastructure:**
 - Auth0 authentication (Discord and Google OAuth)
-- Azure Functions backend with global authentication middleware
+- ASP.NET Core Web API backend hosted on Azure App Service (`api.chronicis.app`)
 - Azure SQL Database with Entity Framework Core
 - Centralized HttpClient with automatic token attachment
-- Application Insights telemetry with availability test keep-alive
+- Application Insights telemetry
 
 **External Knowledge Links:**
 - External wiki-style links using `[[sourceKey/` autocomplete triggers (example: `[[srd/`)

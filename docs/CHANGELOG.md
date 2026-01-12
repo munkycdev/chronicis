@@ -4,6 +4,38 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.8.0] - 2026-01-11
+
+### Infrastructure: API Migration to Azure App Service
+
+**Changed:**
+- Migrated API from Azure Static Web Apps managed functions to dedicated Azure App Service
+- API now hosted at `api.chronicis.app` (App Service: `app-chronicis-api-dev`)
+- Converted from Azure Functions Isolated Worker to standard ASP.NET Core Web API
+- Authentication now uses standard ASP.NET Core JWT Bearer middleware instead of custom middleware
+- Removed `X-Auth0-Token` header workaround (Azure SWA was intercepting standard `Authorization` header)
+- Client now uses standard `Authorization: Bearer` header for all API requests
+- Separate GitHub Actions workflow for API deployment
+
+**Technical:**
+- `LinksController` removed; endpoints moved to `ArticlesController` and `WorldsController`
+- API routes now follow RESTful conventions:
+  - `articles/{id}/backlinks` (was `links/backlinks/{id}`)
+  - `articles/{id}/outgoing-links` (was `links/outgoing/{id}`)
+  - `articles/resolve-links` (was `links/resolve`)
+  - `articles/{id}/auto-link` (was `links/auto-link/{id}`)
+  - `worlds/{id}/link-suggestions` (was `links/suggestions?worldId={id}`)
+- Response DTOs properly wrapped (`BacklinksResponseDto`, `LinkSuggestionsResponseDto`)
+
+**Benefits:**
+- Standard ASP.NET Core authentication patterns
+- No more token header workarounds
+- Better debugging and logging capabilities
+- Easier local development without Azure Functions runtime
+- More predictable cold start behavior
+
+---
+
 ## [2.7] - 2026-01-09
 
 ### Added
