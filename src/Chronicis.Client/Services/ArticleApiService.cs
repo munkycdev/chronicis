@@ -20,8 +20,8 @@ public class ArticleApiService : IArticleApiService
     public async Task<List<ArticleTreeDto>> GetRootArticlesAsync(Guid? worldId = null)
     {
         var url = worldId.HasValue
-            ? $"api/articles?worldId={worldId.Value}"
-            : "api/articles";
+            ? $"articles?worldId={worldId.Value}"
+            : "articles";
 
         return await _http.GetListAsync<ArticleTreeDto>(url, _logger, "root articles");
     }
@@ -29,8 +29,8 @@ public class ArticleApiService : IArticleApiService
     public async Task<List<ArticleTreeDto>> GetAllArticlesAsync(Guid? worldId = null)
     {
         var url = worldId.HasValue
-            ? $"api/articles/all?worldId={worldId.Value}"
-            : "api/articles/all";
+            ? $"articles/all?worldId={worldId.Value}"
+            : "articles/all";
 
         return await _http.GetListAsync<ArticleTreeDto>(url, _logger, "all articles");
     }
@@ -38,7 +38,7 @@ public class ArticleApiService : IArticleApiService
     public async Task<List<ArticleTreeDto>> GetChildrenAsync(Guid parentId)
     {
         return await _http.GetListAsync<ArticleTreeDto>(
-            $"api/articles/{parentId}/children",
+            $"articles/{parentId}/children",
             _logger,
             $"children for article {parentId}");
     }
@@ -46,7 +46,7 @@ public class ArticleApiService : IArticleApiService
     public async Task<ArticleDto?> GetArticleDetailAsync(Guid id)
     {
         return await _http.GetEntityAsync<ArticleDto>(
-            $"api/articles/{id}",
+            $"articles/{id}",
             _logger,
             $"article {id}");
     }
@@ -58,7 +58,7 @@ public class ArticleApiService : IArticleApiService
         var encodedPath = string.Join("/", path.Split('/').Select(Uri.EscapeDataString));
 
         return await _http.GetEntityAsync<ArticleDto>(
-            $"api/articles/by-path/{encodedPath}",
+            $"articles/by-path/{encodedPath}",
             _logger,
             $"article at path '{path}'");
     }
@@ -66,7 +66,7 @@ public class ArticleApiService : IArticleApiService
     public async Task<ArticleDto?> CreateArticleAsync(ArticleCreateDto dto)
     {
         return await _http.PostEntityAsync<ArticleDto>(
-            "api/articles",
+            "articles",
             dto,
             _logger,
             "article");
@@ -75,7 +75,7 @@ public class ArticleApiService : IArticleApiService
     public async Task<ArticleDto?> UpdateArticleAsync(Guid id, ArticleUpdateDto dto)
     {
         return await _http.PutEntityAsync<ArticleDto>(
-            $"api/articles/{id}",
+            $"articles/{id}",
             dto,
             _logger,
             $"article {id}");
@@ -84,7 +84,7 @@ public class ArticleApiService : IArticleApiService
     public async Task<bool> DeleteArticleAsync(Guid id)
     {
         return await _http.DeleteEntityAsync(
-            $"api/articles/{id}",
+            $"articles/{id}",
             _logger,
             $"article {id}");
     }
@@ -94,7 +94,7 @@ public class ArticleApiService : IArticleApiService
         var moveDto = new ArticleMoveDto { NewParentId = newParentId };
 
         return await _http.PatchEntityAsync(
-            $"api/articles/{articleId}/parent",
+            $"articles/{articleId}/parent",
             moveDto,
             _logger,
             $"move article {articleId}");
@@ -106,7 +106,7 @@ public class ArticleApiService : IArticleApiService
             return new List<ArticleSearchResultDto>();
 
         var results = await _http.GetEntityAsync<GlobalSearchResultsDto>(
-            $"api/articles/search?query={Uri.EscapeDataString(query)}",
+            $"articles/search?query={Uri.EscapeDataString(query)}",
             _logger,
             $"search results for '{query}'");
 
@@ -127,7 +127,7 @@ public class ArticleApiService : IArticleApiService
             return new List<ArticleSearchResultDto>();
 
         var results = await _http.GetEntityAsync<GlobalSearchResultsDto>(
-            $"api/articles/search?query={Uri.EscapeDataString(query)}",
+            $"articles/search?query={Uri.EscapeDataString(query)}",
             _logger,
             $"title search results for '{query}'");
 

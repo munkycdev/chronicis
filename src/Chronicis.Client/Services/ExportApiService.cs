@@ -27,7 +27,7 @@ public class ExportApiService : IExportApiService
         {
             _logger.LogInformation("Starting export for world {WorldId} ({WorldName})", worldId, worldName);
 
-            var response = await _httpClient.GetAsync($"api/worlds/{worldId}/export");
+            var response = await _httpClient.GetAsync($"worlds/{worldId}/export");
 
             if (!response.IsSuccessStatusCode)
             {

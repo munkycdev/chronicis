@@ -12,7 +12,7 @@ namespace Chronicis.Api.Controllers;
 /// API endpoints for Character claiming operations.
 /// </summary>
 [ApiController]
-[Route("api/characters")]
+[Route("characters")]
 [Authorize]
 public class CharactersController : ControllerBase
 {

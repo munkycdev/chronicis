@@ -23,7 +23,7 @@ public class WorldApiService : IWorldApiService
     public async Task<List<WorldDto>> GetWorldsAsync()
     {
         return await _http.GetListAsync<WorldDto>(
-            "api/worlds",
+            "worlds",
             _logger,
             "worlds");
     }
@@ -31,7 +31,7 @@ public class WorldApiService : IWorldApiService
     public async Task<WorldDetailDto?> GetWorldAsync(Guid worldId)
     {
         return await _http.GetEntityAsync<WorldDetailDto>(
-            $"api/worlds/{worldId}",
+            $"worlds/{worldId}",
             _logger,
             $"world {worldId}");
     }
@@ -39,7 +39,7 @@ public class WorldApiService : IWorldApiService
     public async Task<WorldDto?> CreateWorldAsync(WorldCreateDto dto)
     {
         return await _http.PostEntityAsync<WorldDto>(
-            "api/worlds",
+            "worlds",
             dto,
             _logger,
             "world");
@@ -48,7 +48,7 @@ public class WorldApiService : IWorldApiService
     public async Task<WorldDto?> UpdateWorldAsync(Guid worldId, WorldUpdateDto dto)
     {
         return await _http.PutEntityAsync<WorldDto>(
-            $"api/worlds/{worldId}",
+            $"worlds/{worldId}",
             dto,
             _logger,
             $"world {worldId}");
@@ -59,7 +59,7 @@ public class WorldApiService : IWorldApiService
     public async Task<List<WorldLinkDto>> GetWorldLinksAsync(Guid worldId)
     {
         return await _http.GetListAsync<WorldLinkDto>(
-            $"api/worlds/{worldId}/links",
+            $"worlds/{worldId}/links",
             _logger,
             $"links for world {worldId}");
     }
@@ -67,7 +67,7 @@ public class WorldApiService : IWorldApiService
     public async Task<WorldLinkDto?> CreateWorldLinkAsync(Guid worldId, WorldLinkCreateDto dto)
     {
         return await _http.PostEntityAsync<WorldLinkDto>(
-            $"api/worlds/{worldId}/links",
+            $"worlds/{worldId}/links",
             dto,
             _logger,
             $"link for world {worldId}");
@@ -76,7 +76,7 @@ public class WorldApiService : IWorldApiService
     public async Task<WorldLinkDto?> UpdateWorldLinkAsync(Guid worldId, Guid linkId, WorldLinkUpdateDto dto)
     {
         return await _http.PutEntityAsync<WorldLinkDto>(
-            $"api/worlds/{worldId}/links/{linkId}",
+            $"worlds/{worldId}/links/{linkId}",
             dto,
             _logger,
             $"link {linkId} for world {worldId}");
@@ -85,7 +85,7 @@ public class WorldApiService : IWorldApiService
     public async Task<bool> DeleteWorldLinkAsync(Guid worldId, Guid linkId)
     {
         return await _http.DeleteEntityAsync(
-            $"api/worlds/{worldId}/links/{linkId}",
+            $"worlds/{worldId}/links/{linkId}",
             _logger,
             $"link {linkId} from world {worldId}");
     }
@@ -96,7 +96,7 @@ public class WorldApiService : IWorldApiService
     {
         var dto = new PublicSlugCheckDto { Slug = slug };
         return await _http.PostEntityAsync<PublicSlugCheckResultDto>(
-            $"api/worlds/{worldId}/check-public-slug",
+            $"worlds/{worldId}/check-public-slug",
             dto,
             _logger,
             $"public slug check for world {worldId}");
@@ -107,7 +107,7 @@ public class WorldApiService : IWorldApiService
     public async Task<List<WorldMemberDto>> GetMembersAsync(Guid worldId)
     {
         return await _http.GetListAsync<WorldMemberDto>(
-            $"api/worlds/{worldId}/members",
+            $"worlds/{worldId}/members",
             _logger,
             $"members for world {worldId}");
     }
@@ -115,7 +115,7 @@ public class WorldApiService : IWorldApiService
     public async Task<WorldMemberDto?> UpdateMemberRoleAsync(Guid worldId, Guid memberId, WorldMemberUpdateDto dto)
     {
         return await _http.PutEntityAsync<WorldMemberDto>(
-            $"api/worlds/{worldId}/members/{memberId}",
+            $"worlds/{worldId}/members/{memberId}",
             dto,
             _logger,
             $"member {memberId} in world {worldId}");
@@ -124,7 +124,7 @@ public class WorldApiService : IWorldApiService
     public async Task<bool> RemoveMemberAsync(Guid worldId, Guid memberId)
     {
         return await _http.DeleteEntityAsync(
-            $"api/worlds/{worldId}/members/{memberId}",
+            $"worlds/{worldId}/members/{memberId}",
             _logger,
             $"member {memberId} from world {worldId}");
     }
@@ -134,7 +134,7 @@ public class WorldApiService : IWorldApiService
     public async Task<List<WorldInvitationDto>> GetInvitationsAsync(Guid worldId)
     {
         return await _http.GetListAsync<WorldInvitationDto>(
-            $"api/worlds/{worldId}/invitations",
+            $"worlds/{worldId}/invitations",
             _logger,
             $"invitations for world {worldId}");
     }
@@ -142,7 +142,7 @@ public class WorldApiService : IWorldApiService
     public async Task<WorldInvitationDto?> CreateInvitationAsync(Guid worldId, WorldInvitationCreateDto dto)
     {
         return await _http.PostEntityAsync<WorldInvitationDto>(
-            $"api/worlds/{worldId}/invitations",
+            $"worlds/{worldId}/invitations",
             dto,
             _logger,
             $"invitation for world {worldId}");
@@ -151,7 +151,7 @@ public class WorldApiService : IWorldApiService
     public async Task<bool> RevokeInvitationAsync(Guid worldId, Guid invitationId)
     {
         return await _http.DeleteEntityAsync(
-            $"api/worlds/{worldId}/invitations/{invitationId}",
+            $"worlds/{worldId}/invitations/{invitationId}",
             _logger,
             $"invitation {invitationId} from world {worldId}");
     }
@@ -160,7 +160,7 @@ public class WorldApiService : IWorldApiService
     {
         var dto = new WorldJoinDto { Code = code };
         return await _http.PostEntityAsync<WorldJoinResultDto>(
-            "api/worlds/join",
+            "worlds/join",
             dto,
             _logger,
             "join world");
@@ -173,7 +173,7 @@ public class WorldApiService : IWorldApiService
         WorldDocumentUploadRequestDto dto)
     {
         return await _http.PostEntityAsync<WorldDocumentUploadResponseDto>(
-            $"api/worlds/{worldId}/documents/request-upload",
+            $"worlds/{worldId}/documents/request-upload",
             dto,
             _logger,
             $"document upload request for world {worldId}");
@@ -183,7 +183,7 @@ public class WorldApiService : IWorldApiService
     {
         var dto = new WorldDocumentConfirmUploadDto { DocumentId = documentId };
         return await _http.PostEntityAsync<WorldDocumentDto>(
-            $"api/worlds/{worldId}/documents/{documentId}/confirm",
+            $"worlds/{worldId}/documents/{documentId}/confirm",
             dto,
             _logger,
             $"document upload confirmation for {documentId}");
@@ -192,7 +192,7 @@ public class WorldApiService : IWorldApiService
     public async Task<List<WorldDocumentDto>> GetWorldDocumentsAsync(Guid worldId)
     {
         return await _http.GetListAsync<WorldDocumentDto>(
-            $"api/worlds/{worldId}/documents",
+            $"worlds/{worldId}/documents",
             _logger,
             $"documents for world {worldId}");
     }
@@ -201,7 +201,7 @@ public class WorldApiService : IWorldApiService
     {
         try
         {
-            var response = await _http.GetAsync($"api/documents/{documentId}/content");
+            var response = await _http.GetAsync($"documents/{documentId}/content");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -229,7 +229,7 @@ public class WorldApiService : IWorldApiService
         WorldDocumentUpdateDto dto)
     {
         return await _http.PutEntityAsync<WorldDocumentDto>(
-            $"api/worlds/{worldId}/documents/{documentId}",
+            $"worlds/{worldId}/documents/{documentId}",
             dto,
             _logger,
             $"document {documentId} for world {worldId}");
@@ -238,7 +238,7 @@ public class WorldApiService : IWorldApiService
     public async Task<bool> DeleteDocumentAsync(Guid worldId, Guid documentId)
     {
         return await _http.DeleteEntityAsync(
-            $"api/worlds/{worldId}/documents/{documentId}",
+            $"worlds/{worldId}/documents/{documentId}",
             _logger,
             $"document {documentId} from world {worldId}");
     }

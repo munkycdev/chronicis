@@ -23,7 +23,7 @@ public class PublicApiService : IPublicApiService
     {
         try
         {
-            var response = await _http.GetAsync($"api/public/worlds/{publicSlug}");
+            var response = await _http.GetAsync($"public/worlds/{publicSlug}");
             
             if (response.IsSuccessStatusCode)
             {
@@ -51,7 +51,7 @@ public class PublicApiService : IPublicApiService
     {
         try
         {
-            var response = await _http.GetAsync($"api/public/worlds/{publicSlug}/articles");
+            var response = await _http.GetAsync($"public/worlds/{publicSlug}/articles");
             
             if (response.IsSuccessStatusCode)
             {
@@ -74,7 +74,7 @@ public class PublicApiService : IPublicApiService
     {
         try
         {
-            var response = await _http.GetAsync($"api/public/worlds/{publicSlug}/articles/{articlePath}");
+            var response = await _http.GetAsync($"public/worlds/{publicSlug}/articles/{articlePath}");
             
             if (response.IsSuccessStatusCode)
             {

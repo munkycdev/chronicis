@@ -10,7 +10,7 @@ namespace Chronicis.Api.Controllers;
 /// API endpoints for Arc management.
 /// </summary>
 [ApiController]
-[Route("api/arcs")]
+[Route("arcs")]
 [Authorize]
 public class ArcsController : ControllerBase
 {
@@ -146,7 +146,7 @@ public class ArcsController : ControllerBase
 /// Campaign-scoped arc endpoints.
 /// </summary>
 [ApiController]
-[Route("api/campaigns/{campaignId:guid}/arcs")]
+[Route("campaigns/{campaignId:guid}/arcs")]
 [Authorize]
 public class CampaignArcsController : ControllerBase
 {

@@ -13,7 +13,7 @@ namespace Chronicis.Api.Controllers;
 /// These are nested under /api/articles/{id}/summary/* as expected by the client.
 /// </summary>
 [ApiController]
-[Route("api/articles/{articleId:guid}/summary")]
+[Route("articles/{articleId:guid}/summary")]
 [Authorize]
 public class ArticleSummaryController : ControllerBase
 {
@@ -173,7 +173,7 @@ public class ArticleSummaryController : ControllerBase
 /// API endpoints for Campaign Summary operations.
 /// </summary>
 [ApiController]
-[Route("api/campaigns/{campaignId:guid}/summary")]
+[Route("campaigns/{campaignId:guid}/summary")]
 [Authorize]
 public class CampaignSummaryController : ControllerBase
 {
@@ -303,7 +303,7 @@ public class CampaignSummaryController : ControllerBase
 /// API endpoints for Arc Summary operations.
 /// </summary>
 [ApiController]
-[Route("api/arcs/{arcId:guid}/summary")]
+[Route("arcs/{arcId:guid}/summary")]
 [Authorize]
 public class ArcSummaryController : ControllerBase
 {

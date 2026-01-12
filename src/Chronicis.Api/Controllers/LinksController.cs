@@ -12,7 +12,7 @@ namespace Chronicis.Api.Controllers;
 /// API endpoints for Wiki Link operations.
 /// </summary>
 [ApiController]
-[Route("api/links")]
+[Route("links")]
 [Authorize]
 public class LinksController : ControllerBase
 {

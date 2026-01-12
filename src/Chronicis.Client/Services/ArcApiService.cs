@@ -22,7 +22,7 @@ public class ArcApiService : IArcApiService
     public async Task<List<ArcDto>> GetArcsByCampaignAsync(Guid campaignId)
     {
         return await _http.GetListAsync<ArcDto>(
-            $"api/campaigns/{campaignId}/arcs",
+            $"campaigns/{campaignId}/arcs",
             _logger,
             $"arcs for campaign {campaignId}");
     }
@@ -30,7 +30,7 @@ public class ArcApiService : IArcApiService
     public async Task<ArcDto?> GetArcAsync(Guid arcId)
     {
         return await _http.GetEntityAsync<ArcDto>(
-            $"api/arcs/{arcId}",
+            $"arcs/{arcId}",
             _logger,
             $"arc {arcId}");
     }
@@ -38,7 +38,7 @@ public class ArcApiService : IArcApiService
     public async Task<ArcDto?> CreateArcAsync(ArcCreateDto dto)
     {
         return await _http.PostEntityAsync<ArcDto>(
-            "api/arcs",
+            "arcs",
             dto,
             _logger,
             "arc");
@@ -47,7 +47,7 @@ public class ArcApiService : IArcApiService
     public async Task<ArcDto?> UpdateArcAsync(Guid arcId, ArcUpdateDto dto)
     {
         return await _http.PutEntityAsync<ArcDto>(
-            $"api/arcs/{arcId}",
+            $"arcs/{arcId}",
             dto,
             _logger,
             $"arc {arcId}");
@@ -56,7 +56,7 @@ public class ArcApiService : IArcApiService
     public async Task<bool> DeleteArcAsync(Guid arcId)
     {
         return await _http.DeleteEntityAsync(
-            $"api/arcs/{arcId}",
+            $"arcs/{arcId}",
             _logger,
             $"arc {arcId}");
     }
@@ -65,7 +65,7 @@ public class ArcApiService : IArcApiService
     {
         try
         {
-            var response = await _http.PostAsync($"api/arcs/{arcId}/activate", null);
+            var response = await _http.PostAsync($"arcs/{arcId}/activate", null);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)

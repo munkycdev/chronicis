@@ -22,7 +22,7 @@ public class CharacterApiService : ICharacterApiService
     {
         try
         {
-            var result = await _http.GetFromJsonAsync<List<ClaimedCharacterDto>>("api/characters/claimed");
+            var result = await _http.GetFromJsonAsync<List<ClaimedCharacterDto>>("characters/claimed");
             return result ?? new List<ClaimedCharacterDto>();
         }
         catch (Exception ex)
@@ -36,7 +36,7 @@ public class CharacterApiService : ICharacterApiService
     {
         try
         {
-            var response = await _http.PostAsync($"api/characters/{characterId}/claim", null);
+            var response = await _http.PostAsync($"characters/{characterId}/claim", null);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -50,7 +50,7 @@ public class CharacterApiService : ICharacterApiService
     {
         try
         {
-            var response = await _http.DeleteAsync($"api/characters/{characterId}/claim");
+            var response = await _http.DeleteAsync($"characters/{characterId}/claim");
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -64,7 +64,7 @@ public class CharacterApiService : ICharacterApiService
     {
         try
         {
-            return await _http.GetFromJsonAsync<CharacterClaimStatusDto>($"api/characters/{characterId}/claim");
+            return await _http.GetFromJsonAsync<CharacterClaimStatusDto>($"characters/{characterId}/claim");
         }
         catch (Exception ex)
         {

@@ -14,7 +14,7 @@ namespace Chronicis.Api.Controllers;
 /// API endpoints for Article operations.
 /// </summary>
 [ApiController]
-[Route("api/articles")]
+[Route("articles")]
 [Authorize]
 public class ArticlesController : ControllerBase
 {

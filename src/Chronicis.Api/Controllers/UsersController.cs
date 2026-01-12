@@ -10,7 +10,7 @@ namespace Chronicis.Api.Controllers;
 /// API endpoints for User profile management.
 /// </summary>
 [ApiController]
-[Route("api/users")]
+[Route("users")]
 [Authorize]
 public class UsersController : ControllerBase
 {

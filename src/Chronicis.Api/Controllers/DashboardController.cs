@@ -13,7 +13,7 @@ namespace Chronicis.Api.Controllers;
 /// API endpoints for Dashboard data.
 /// </summary>
 [ApiController]
-[Route("api/dashboard")]
+[Route("dashboard")]
 [Authorize]
 public class DashboardController : ControllerBase
 {

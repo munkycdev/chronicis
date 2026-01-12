@@ -10,7 +10,7 @@ namespace Chronicis.Api.Controllers;
 /// API endpoints for Summary Template operations.
 /// </summary>
 [ApiController]
-[Route("api/summary")]
+[Route("summary")]
 [Authorize]
 public class SummaryController : ControllerBase
 {

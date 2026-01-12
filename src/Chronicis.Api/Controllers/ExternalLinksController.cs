@@ -10,7 +10,7 @@ namespace Chronicis.Api.Controllers;
 /// API endpoints for External Link operations (SRD content, etc.)
 /// </summary>
 [ApiController]
-[Route("api/external-links")]
+[Route("external-links")]
 [Authorize]
 public class ExternalLinksController : ControllerBase
 {

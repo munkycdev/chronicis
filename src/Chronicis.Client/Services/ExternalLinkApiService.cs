@@ -26,7 +26,7 @@ public class ExternalLinkApiService : IExternalLinkApiService
         }
 
         var url =
-            $"api/external-links/suggestions?source={Uri.EscapeDataString(source)}&query={Uri.EscapeDataString(query ?? string.Empty)}";
+            $"external-links/suggestions?source={Uri.EscapeDataString(source)}&query={Uri.EscapeDataString(query ?? string.Empty)}";
 
         try
         {
@@ -55,7 +55,7 @@ public class ExternalLinkApiService : IExternalLinkApiService
         }
 
         var url =
-            $"api/external-links/content?source={Uri.EscapeDataString(source)}&id={Uri.EscapeDataString(id)}";
+            $"external-links/content?source={Uri.EscapeDataString(source)}&id={Uri.EscapeDataString(id)}";
 
         try
         {

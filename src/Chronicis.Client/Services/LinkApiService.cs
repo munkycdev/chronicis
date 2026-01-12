@@ -23,7 +23,7 @@ public class LinkApiService : ILinkApiService
     {
         // Response is wrapped in LinkSuggestionsResponseDto
         var response = await _http.GetEntityAsync<LinkSuggestionsResponseDto>(
-            $"api/worlds/{worldId}/link-suggestions?query={Uri.EscapeDataString(query)}",
+            $"worlds/{worldId}/link-suggestions?query={Uri.EscapeDataString(query)}",
             _logger,
             $"link suggestions for world {worldId}");
 
@@ -34,7 +34,7 @@ public class LinkApiService : ILinkApiService
     {
         // Response is wrapped in BacklinksResponseDto
         var response = await _http.GetEntityAsync<BacklinksResponseDto>(
-            $"api/articles/{articleId}/backlinks",
+            $"articles/{articleId}/backlinks",
             _logger,
             $"backlinks for article {articleId}");
 
@@ -45,7 +45,7 @@ public class LinkApiService : ILinkApiService
     {
         // Response is wrapped in BacklinksResponseDto
         var response = await _http.GetEntityAsync<BacklinksResponseDto>(
-            $"api/articles/{articleId}/outgoing-links",
+            $"articles/{articleId}/outgoing-links",
             _logger,
             $"outgoing links for article {articleId}");
 
@@ -63,7 +63,7 @@ public class LinkApiService : ILinkApiService
 
         // Response is wrapped in LinkResolutionResponseDto
         var response = await _http.PostEntityAsync<LinkResolutionResponseDto>(
-            "api/articles/resolve-links",
+            "articles/resolve-links",
             request,
             _logger,
             $"resolution for {articleIds.Count} links");
@@ -76,7 +76,7 @@ public class LinkApiService : ILinkApiService
         var request = new AutoLinkRequestDto { Body = body };
 
         return await _http.PostEntityAsync<AutoLinkResponseDto>(
-            $"api/articles/{articleId}/auto-link",
+            $"articles/{articleId}/auto-link",
             request,
             _logger,
             $"auto-link for article {articleId}");

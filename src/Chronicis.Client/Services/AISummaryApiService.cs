@@ -23,7 +23,7 @@ public class AISummaryApiService : IAISummaryApiService
     public async Task<List<SummaryTemplateDto>> GetTemplatesAsync()
     {
         var result = await _http.GetEntityAsync<List<SummaryTemplateDto>>(
-            "api/summary/templates",
+            "summary/templates",
             _logger,
             "summary templates");
         return result ?? new List<SummaryTemplateDto>();
@@ -36,7 +36,7 @@ public class AISummaryApiService : IAISummaryApiService
     public async Task<SummaryEstimateDto?> GetEstimateAsync(Guid articleId)
     {
         return await _http.GetEntityAsync<SummaryEstimateDto>(
-            $"api/articles/{articleId}/summary/estimate",
+            $"articles/{articleId}/summary/estimate",
             _logger,
             $"summary estimate for article {articleId}");
     }
@@ -46,7 +46,7 @@ public class AISummaryApiService : IAISummaryApiService
         request ??= new GenerateSummaryRequestDto();
 
         return await _http.PostEntityAsync<SummaryGenerationDto>(
-            $"api/articles/{articleId}/summary/generate",
+            $"articles/{articleId}/summary/generate",
             request,
             _logger,
             $"summary generation for article {articleId}");
@@ -55,7 +55,7 @@ public class AISummaryApiService : IAISummaryApiService
     public async Task<ArticleSummaryDto?> GetSummaryAsync(Guid articleId)
     {
         return await _http.GetEntityAsync<ArticleSummaryDto>(
-            $"api/articles/{articleId}/summary",
+            $"articles/{articleId}/summary",
             _logger,
             $"summary for article {articleId}");
     }
@@ -64,7 +64,7 @@ public class AISummaryApiService : IAISummaryApiService
     {
         try
         {
-            var response = await _http.GetAsync($"api/articles/{articleId}/summary/preview");
+            var response = await _http.GetAsync($"articles/{articleId}/summary/preview");
             
             if (response.StatusCode == System.Net.HttpStatusCode.NoContent ||
                 response.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -89,7 +89,7 @@ public class AISummaryApiService : IAISummaryApiService
     public async Task<bool> ClearSummaryAsync(Guid articleId)
     {
         return await _http.DeleteEntityAsync(
-            $"api/articles/{articleId}/summary",
+            $"articles/{articleId}/summary",
             _logger,
             $"summary for article {articleId}");
     }
@@ -102,7 +102,7 @@ public class AISummaryApiService : IAISummaryApiService
     {
         var route = GetEntityRoute(entityType);
         return await _http.GetEntityAsync<EntitySummaryDto>(
-            $"api/{route}/{entityId}/summary",
+            $"{route}/{entityId}/summary",
             _logger,
             $"summary for {entityType} {entityId}");
     }
@@ -111,7 +111,7 @@ public class AISummaryApiService : IAISummaryApiService
     {
         var route = GetEntityRoute(entityType);
         return await _http.GetEntityAsync<SummaryEstimateDto>(
-            $"api/{route}/{entityId}/summary/estimate",
+            $"{route}/{entityId}/summary/estimate",
             _logger,
             $"summary estimate for {entityType} {entityId}");
     }
@@ -122,7 +122,7 @@ public class AISummaryApiService : IAISummaryApiService
         var route = GetEntityRoute(entityType);
 
         return await _http.PostEntityAsync<SummaryGenerationDto>(
-            $"api/{route}/{entityId}/summary/generate",
+            $"{route}/{entityId}/summary/generate",
             request,
             _logger,
             $"summary generation for {entityType} {entityId}");
@@ -132,7 +132,7 @@ public class AISummaryApiService : IAISummaryApiService
     {
         var route = GetEntityRoute(entityType);
         return await _http.DeleteEntityAsync(
-            $"api/{route}/{entityId}/summary",
+            $"{route}/{entityId}/summary",
             _logger,
             $"summary for {entityType} {entityId}");
     }

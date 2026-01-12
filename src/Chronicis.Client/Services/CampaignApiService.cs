@@ -22,7 +22,7 @@ public class CampaignApiService : ICampaignApiService
     public async Task<CampaignDetailDto?> GetCampaignAsync(Guid campaignId)
     {
         return await _http.GetEntityAsync<CampaignDetailDto>(
-            $"api/campaigns/{campaignId}",
+            $"campaigns/{campaignId}",
             _logger,
             $"campaign {campaignId}");
     }
@@ -30,7 +30,7 @@ public class CampaignApiService : ICampaignApiService
     public async Task<CampaignDto?> CreateCampaignAsync(CampaignCreateDto dto)
     {
         return await _http.PostEntityAsync<CampaignDto>(
-            "api/campaigns",
+            "campaigns",
             dto,
             _logger,
             "campaign");
@@ -39,7 +39,7 @@ public class CampaignApiService : ICampaignApiService
     public async Task<CampaignDto?> UpdateCampaignAsync(Guid campaignId, CampaignUpdateDto dto)
     {
         return await _http.PutEntityAsync<CampaignDto>(
-            $"api/campaigns/{campaignId}",
+            $"campaigns/{campaignId}",
             dto,
             _logger,
             $"campaign {campaignId}");
@@ -49,7 +49,7 @@ public class CampaignApiService : ICampaignApiService
     {
         try
         {
-            var response = await _http.PostAsync($"api/campaigns/{campaignId}/activate", null);
+            var response = await _http.PostAsync($"campaigns/{campaignId}/activate", null);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -62,7 +62,7 @@ public class CampaignApiService : ICampaignApiService
     public async Task<ActiveContextDto?> GetActiveContextAsync(Guid worldId)
     {
         return await _http.GetEntityAsync<ActiveContextDto>(
-            $"api/worlds/{worldId}/active-context",
+            $"worlds/{worldId}/active-context",
             _logger,
             $"active context for world {worldId}");
     }

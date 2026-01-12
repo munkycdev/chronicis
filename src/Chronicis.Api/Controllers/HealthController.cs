@@ -9,7 +9,7 @@ namespace Chronicis.Api.Controllers;
 /// These endpoints do NOT require authentication.
 /// </summary>
 [ApiController]
-[Route("api/health")]
+[Route("health")]
 public class HealthController : ControllerBase
 {
     private readonly ChronicisDbContext _context;

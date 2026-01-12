@@ -10,7 +10,7 @@ namespace Chronicis.Api.Controllers;
 /// API endpoints for World management.
 /// </summary>
 [ApiController]
-[Route("api/worlds")]
+[Route("worlds")]
 [Authorize]
 public class WorldsController : ControllerBase
 {

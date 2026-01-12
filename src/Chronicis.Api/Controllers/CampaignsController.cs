@@ -10,7 +10,7 @@ namespace Chronicis.Api.Controllers;
 /// API endpoints for Campaign management.
 /// </summary>
 [ApiController]
-[Route("api/campaigns")]
+[Route("campaigns")]
 [Authorize]
 public class CampaignsController : ControllerBase
 {
@@ -133,7 +133,7 @@ public class CampaignsController : ControllerBase
 /// Active context endpoints - nested under worlds but related to campaigns.
 /// </summary>
 [ApiController]
-[Route("api/worlds/{worldId:guid}")]
+[Route("worlds/{worldId:guid}")]
 [Authorize]
 public class WorldActiveContextController : ControllerBase
 {

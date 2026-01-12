@@ -12,7 +12,7 @@ namespace Chronicis.Api.Controllers;
 /// API endpoints for Global Search operations.
 /// </summary>
 [ApiController]
-[Route("api/search")]
+[Route("search")]
 [Authorize]
 public class SearchController : ControllerBase
 {

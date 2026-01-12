@@ -22,7 +22,7 @@ public class DashboardApiService : IDashboardApiService
     {
         try
         {
-            return await _http.GetFromJsonAsync<DashboardDto>("api/dashboard");
+            return await _http.GetFromJsonAsync<DashboardDto>("dashboard");
         }
         catch (Exception ex)
         {

@@ -1,4 +1,4 @@
-﻿namespace Chronicis.Client.Services;
+namespace Chronicis.Client.Services;
 
 public interface IMarkdownService
 {

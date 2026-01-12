@@ -1,4 +1,4 @@
-﻿using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Services;
 

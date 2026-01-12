@@ -22,7 +22,7 @@ public class UserApiService : IUserApiService
     {
         try
         {
-            return await _http.GetFromJsonAsync<UserProfileDto>("api/users/me");
+            return await _http.GetFromJsonAsync<UserProfileDto>("users/me");
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
@@ -40,7 +40,7 @@ public class UserApiService : IUserApiService
     {
         try
         {
-            var response = await _http.PostAsync("api/users/me/complete-onboarding", null);
+            var response = await _http.PostAsync("users/me/complete-onboarding", null);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
