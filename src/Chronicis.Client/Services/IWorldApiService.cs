@@ -67,11 +67,6 @@ public interface IWorldApiService
     Task<List<WorldDocumentDto>> GetWorldDocumentsAsync(Guid worldId);
 
     /// <summary>
-    /// Download a document's content from the API.
-    /// </summary>
-    Task<DocumentDownloadResult?> DownloadDocumentAsync(Guid documentId);
-
-    /// <summary>
     /// Update document metadata (title, description)
     /// </summary>
     Task<WorldDocumentDto?> UpdateDocumentAsync(Guid worldId, Guid documentId, WorldDocumentUpdateDto dto);
