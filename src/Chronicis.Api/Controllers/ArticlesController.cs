@@ -21,6 +21,7 @@ public class ArticlesController : ControllerBase
     private readonly IArticleService _articleService;
     private readonly IArticleValidationService _validationService;
     private readonly ILinkSyncService _linkSyncService;
+    private readonly IAutoLinkService _autoLinkService;
     private readonly ChronicisDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ArticlesController> _logger;
@@ -29,6 +30,7 @@ public class ArticlesController : ControllerBase
         IArticleService articleService,
         IArticleValidationService validationService,
         ILinkSyncService linkSyncService,
+        IAutoLinkService autoLinkService,
         ChronicisDbContext context,
         ICurrentUserService currentUserService,
         ILogger<ArticlesController> logger)
@@ -36,6 +38,7 @@ public class ArticlesController : ControllerBase
         _articleService = articleService;
         _validationService = validationService;
         _linkSyncService = linkSyncService;
+        _autoLinkService = autoLinkService;
         _context = context;
         _currentUserService = currentUserService;
         _logger = logger;
@@ -400,6 +403,232 @@ public class ArticlesController : ControllerBase
         }
     }
 
+    #region Wiki Links
+
+    /// <summary>
+    /// GET /articles/{id}/backlinks - Gets all articles that link to this article.
+    /// </summary>
+    [HttpGet("{id:guid}/backlinks")]
+    public async Task<ActionResult<BacklinksResponseDto>> GetBacklinks(Guid id)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+        _logger.LogInformation("Getting backlinks for article {ArticleId}", id);
+
+        // Verify article exists and user has access
+        var article = await _context.Articles
+            .Where(a => a.Id == id)
+            .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == user.Id))
+            .FirstOrDefaultAsync();
+
+        if (article == null)
+        {
+            return NotFound(new { error = "Article not found or access denied" });
+        }
+
+        // Get all articles that link TO this article
+        var backlinks = await _context.ArticleLinks
+            .Where(l => l.TargetArticleId == id)
+            .Select(l => new BacklinkDto
+            {
+                ArticleId = l.SourceArticleId,
+                Title = l.SourceArticle.Title ?? "Untitled",
+                Slug = l.SourceArticle.Slug,
+                Snippet = l.DisplayText,
+                DisplayPath = ""
+            })
+            .Distinct()
+            .ToListAsync();
+
+        // Build display paths
+        foreach (var backlink in backlinks)
+        {
+            backlink.DisplayPath = await BuildDisplayPathAsync(backlink.ArticleId);
+        }
+
+        return Ok(new BacklinksResponseDto { Backlinks = backlinks });
+    }
+
+    /// <summary>
+    /// GET /articles/{id}/outgoing-links - Gets all articles that this article links to.
+    /// </summary>
+    [HttpGet("{id:guid}/outgoing-links")]
+    public async Task<ActionResult<BacklinksResponseDto>> GetOutgoingLinks(Guid id)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+        _logger.LogInformation("Getting outgoing links for article {ArticleId}", id);
+
+        // Verify article exists and user has access
+        var article = await _context.Articles
+            .Where(a => a.Id == id)
+            .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == user.Id))
+            .FirstOrDefaultAsync();
+
+        if (article == null)
+        {
+            return NotFound(new { error = "Article not found or access denied" });
+        }
+
+        // Get all articles that this article links TO
+        var outgoingLinks = await _context.ArticleLinks
+            .Where(l => l.SourceArticleId == id)
+            .Select(l => new BacklinkDto
+            {
+                ArticleId = l.TargetArticleId,
+                Title = l.TargetArticle.Title ?? "Untitled",
+                Slug = l.TargetArticle.Slug,
+                Snippet = l.DisplayText,
+                DisplayPath = ""
+            })
+            .Distinct()
+            .ToListAsync();
+
+        // Build display paths
+        foreach (var link in outgoingLinks)
+        {
+            link.DisplayPath = await BuildDisplayPathAsync(link.ArticleId);
+        }
+
+        return Ok(new BacklinksResponseDto { Backlinks = outgoingLinks });
+    }
+
+    /// <summary>
+    /// POST /articles/resolve-links - Resolves multiple article IDs to check if they exist.
+    /// </summary>
+    [HttpPost("resolve-links")]
+    public async Task<ActionResult<LinkResolutionResponseDto>> ResolveLinks([FromBody] LinkResolutionRequestDto request)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (request?.ArticleIds == null || !request.ArticleIds.Any())
+        {
+            return Ok(new LinkResolutionResponseDto { Articles = new Dictionary<Guid, ResolvedLinkDto>() });
+        }
+
+        _logger.LogInformation("Resolving {Count} article links", request.ArticleIds.Count);
+
+        // Get all requested articles that the user has access to
+        var articles = await _context.Articles
+            .Where(a => request.ArticleIds.Contains(a.Id))
+            .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == user.Id))
+            .Select(a => new ResolvedLinkDto
+            {
+                ArticleId = a.Id,
+                Exists = true,
+                Title = a.Title,
+                Slug = a.Slug
+            })
+            .ToListAsync();
+
+        // Build response dictionary
+        var result = new LinkResolutionResponseDto
+        {
+            Articles = new Dictionary<Guid, ResolvedLinkDto>()
+        };
+
+        // Add found articles
+        foreach (var article in articles)
+        {
+            result.Articles[article.ArticleId] = article;
+        }
+
+        // Add missing articles as non-existent
+        foreach (var requestedId in request.ArticleIds)
+        {
+            if (!result.Articles.ContainsKey(requestedId))
+            {
+                result.Articles[requestedId] = new ResolvedLinkDto
+                {
+                    ArticleId = requestedId,
+                    Exists = false,
+                    Title = null,
+                    Slug = null
+                };
+            }
+        }
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// POST /articles/{id}/auto-link - Scans article content and returns modified content with wiki links auto-inserted.
+    /// </summary>
+    [HttpPost("{id:guid}/auto-link")]
+    public async Task<ActionResult<AutoLinkResponseDto>> AutoLink(Guid id, [FromBody] AutoLinkRequestDto request)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (request == null || string.IsNullOrEmpty(request.Body))
+        {
+            return BadRequest(new { error = "Body content is required" });
+        }
+
+        _logger.LogInformation("Auto-linking article {ArticleId}", id);
+
+        // Get article and verify access
+        var article = await _context.Articles
+            .Where(a => a.Id == id)
+            .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == user.Id))
+            .Select(a => new { a.Id, a.WorldId })
+            .FirstOrDefaultAsync();
+
+        if (article == null)
+        {
+            return NotFound(new { error = "Article not found or access denied" });
+        }
+
+        if (!article.WorldId.HasValue)
+        {
+            return BadRequest(new { error = "Article must belong to a world" });
+        }
+
+        var result = await _autoLinkService.FindAndInsertLinksAsync(
+            id,
+            article.WorldId.Value,
+            request.Body,
+            user.Id);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Builds a display path for an article (stripping the first level).
+    /// </summary>
+    private async Task<string> BuildDisplayPathAsync(Guid articleId)
+    {
+        var pathParts = new List<string>();
+        var currentId = articleId;
+        var visited = new HashSet<Guid>();
+
+        // Walk up the tree
+        while (currentId != Guid.Empty && !visited.Contains(currentId))
+        {
+            visited.Add(currentId);
+
+            var pathArticle = await _context.Articles
+                .Where(a => a.Id == currentId)
+                .Select(a => new { a.Title, a.ParentId })
+                .FirstOrDefaultAsync();
+
+            if (pathArticle == null)
+                break;
+
+            pathParts.Insert(0, pathArticle.Title ?? "Untitled");
+            currentId = pathArticle.ParentId ?? Guid.Empty;
+        }
+
+        // Strip the first level (world root) if there are multiple levels
+        if (pathParts.Count > 1)
+        {
+            pathParts.RemoveAt(0);
+        }
+
+        return string.Join(" / ", pathParts);
+    }
+
+    #endregion
+
+    #region Private Helpers
+
     /// <summary>
     /// Recursively deletes an article and all its descendants.
     /// </summary>
@@ -432,4 +661,6 @@ public class ArticlesController : ControllerBase
 
         await _context.SaveChangesAsync();
     }
+
+    #endregion
 }

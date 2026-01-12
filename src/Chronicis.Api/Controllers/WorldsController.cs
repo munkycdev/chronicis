@@ -1,8 +1,10 @@
+using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Controllers;
 
@@ -16,17 +18,20 @@ public class WorldsController : ControllerBase
 {
     private readonly IWorldService _worldService;
     private readonly IExportService _exportService;
+    private readonly ChronicisDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<WorldsController> _logger;
 
     public WorldsController(
         IWorldService worldService,
         IExportService exportService,
+        ChronicisDbContext context,
         ICurrentUserService currentUserService,
         ILogger<WorldsController> logger)
     {
         _worldService = worldService;
         _exportService = exportService;
+        _context = context;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -305,5 +310,95 @@ public class WorldsController : ControllerBase
         var fileName = $"{safeWorldName}_export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.zip";
 
         return File(zipData, "application/zip", fileName);
+    }
+
+    // ===== Link Suggestions =====
+
+    /// <summary>
+    /// GET /worlds/{id}/link-suggestions - Get link suggestions for autocomplete based on a search query.
+    /// </summary>
+    [HttpGet("{id:guid}/link-suggestions")]
+    public async Task<ActionResult<LinkSuggestionsResponseDto>> GetLinkSuggestions(
+        Guid id,
+        [FromQuery] string query)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+        {
+            return Ok(new LinkSuggestionsResponseDto());
+        }
+
+        _logger.LogInformation("Getting link suggestions for query '{Query}' in world {WorldId}", query, id);
+
+        // Verify user has access to the world
+        var hasAccess = await _context.WorldMembers
+            .AnyAsync(wm => wm.WorldId == id && wm.UserId == user.Id);
+
+        if (!hasAccess)
+        {
+            return Forbid();
+        }
+
+        var normalizedQuery = query.ToLowerInvariant();
+
+        // Search articles by title match
+        var suggestions = await _context.Articles
+            .Where(a => a.WorldId == id)
+            .Where(a => a.Title != null && a.Title.ToLower().Contains(normalizedQuery))
+            .OrderBy(a => a.Title)
+            .Take(20)
+            .Select(a => new LinkSuggestionDto
+            {
+                ArticleId = a.Id,
+                Title = a.Title ?? "Untitled",
+                Slug = a.Slug,
+                ArticleType = a.Type,
+                DisplayPath = ""
+            })
+            .ToListAsync();
+
+        // Build display paths for each suggestion
+        foreach (var suggestion in suggestions)
+        {
+            suggestion.DisplayPath = await BuildDisplayPathAsync(suggestion.ArticleId);
+        }
+
+        return Ok(new LinkSuggestionsResponseDto { Suggestions = suggestions });
+    }
+
+    /// <summary>
+    /// Builds a display path for an article (stripping the first level).
+    /// </summary>
+    private async Task<string> BuildDisplayPathAsync(Guid articleId)
+    {
+        var pathParts = new List<string>();
+        var currentId = articleId;
+        var visited = new HashSet<Guid>();
+
+        // Walk up the tree
+        while (currentId != Guid.Empty && !visited.Contains(currentId))
+        {
+            visited.Add(currentId);
+
+            var article = await _context.Articles
+                .Where(a => a.Id == currentId)
+                .Select(a => new { a.Title, a.ParentId })
+                .FirstOrDefaultAsync();
+
+            if (article == null)
+                break;
+
+            pathParts.Insert(0, article.Title ?? "Untitled");
+            currentId = article.ParentId ?? Guid.Empty;
+        }
+
+        // Strip the first level (world root) if there are multiple levels
+        if (pathParts.Count > 1)
+        {
+            pathParts.RemoveAt(0);
+        }
+
+        return string.Join(" / ", pathParts);
     }
 }
