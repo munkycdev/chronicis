@@ -61,9 +61,9 @@ builder.Services.AddSingleton(CreateChronicisTheme());
 // ============================================
 
 // API is now hosted on separate App Service at api.chronicis.app
-// Local dev uses localhost:5000 (configured in appsettings.json)
+// Local dev uses localhost:7071 (configured in appsettings.json)
 // Production uses api.chronicis.app (configured in appsettings.Production.json)
-var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000";
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:7071";
 
 // Register the auth handler
 builder.Services.AddScoped<ChronicisAuthHandler>();

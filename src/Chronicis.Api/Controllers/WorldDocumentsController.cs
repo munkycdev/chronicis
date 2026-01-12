@@ -54,6 +54,7 @@ public class WorldDocumentsController : ControllerBase
     /// <summary>
     /// Streams the content of a document to the HTTP response.
     /// </summary>
+    [HttpGet("documents/{documentId:guid}/content")]
     [HttpGet("/documents/{documentId:guid}/content")]
     public async Task<HttpResponse> GetDocumentContentAsync(Guid documentId)
     {
