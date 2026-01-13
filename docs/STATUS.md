@@ -1,7 +1,7 @@
 # Chronicis - Project Status
 
-**Last Updated:** January 3, 2026  
-**Project Phase:** Export & Settings Complete
+**Last Updated:** January 13, 2026  
+**Project Phase:** External Links Complete
 
 ---
 
@@ -80,9 +80,12 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 - Application Insights telemetry
 
 **External Knowledge Links:**
-- External wiki-style links using `[[sourceKey/` autocomplete triggers (example: `[[srd/`)
+- External wiki-style links using `[[srd/` autocomplete trigger
+- Open5e API integration with 10 SRD categories (spells, monsters, magic items, conditions, backgrounds, feats, classes, races, weapons, armor)
+- Category selection with icons when typing `[[srd/`
+- Search within categories (e.g., `[[srd/spells/fire`)
 - External link tokens stored as `[[source|id|title]]`
-- In-app preview drawer for external links (content fetched live from provider API)
+- In-app preview drawer with styled markdown content (soft off-white background, dark blue headers)
 - Provider-based architecture for adding additional sources in the future
 
 
@@ -148,7 +151,7 @@ See `Feature Ideas.md` for the complete bug list and backlog.
 - Contextual prompt system for dashboard
 - Advanced collaboration features
 - Audio capture integration
-- Add additional external providers (example: Kobold Press) and expand SRD coverage beyond spells and monsters
+- Add additional external link providers (Kobold Press, homebrew APIs, etc.)
 
 ---
 

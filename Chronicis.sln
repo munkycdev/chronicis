@@ -13,14 +13,20 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.CaptureApp", "src
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{3E26473A-43AA-4F76-8A23-6F98B4605688}"
 	ProjectSection(SolutionItems) = preProject
+		docs\ARCHITECTURE.md = docs\ARCHITECTURE.md
+		docs\CHANGELOG.md = docs\CHANGELOG.md
 		docs\Chronicis Feature Specification.pdf = docs\Chronicis Feature Specification.pdf
 		docs\Chronicis Style Guide.pdf = docs\Chronicis Style Guide.pdf
 		docs\ChronicisPlatformSpec.md.pdf = docs\ChronicisPlatformSpec.md.pdf
 		docs\Chronicis_Implementation_Plan.md = docs\Chronicis_Implementation_Plan.md
+		docs\Feature Ideas.md = docs\Feature Ideas.md
 		docs\features-bugs.md = docs\features-bugs.md
+		docs\FEATURES.md = docs\FEATURES.md
 		global.json = global.json
 		docs\logo.png = docs\logo.png
+		docs\QUICK-START.md = docs\QUICK-START.md
 		docs\ScreenshotDemo.png = docs\ScreenshotDemo.png
+		docs\STATUS.md = docs\STATUS.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"

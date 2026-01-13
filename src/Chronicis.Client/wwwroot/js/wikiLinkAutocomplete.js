@@ -221,3 +221,51 @@ function insertExternalLinkToken(editorId, source, id, title) {
 window.initializeWikiLinkAutocomplete = initializeWikiLinkAutocomplete;
 window.insertWikiLink = insertWikiLink;
 window.insertExternalLinkToken = insertExternalLinkToken;
+
+/**
+ * Update the autocomplete text (for category selection)
+ * Replaces the current [[... text with the new text
+ * @param {string} editorId - The editor container ID
+ * @param {string} newText - The new text to insert (e.g., "srd/spells/")
+ */
+function updateAutocompleteText(editorId, newText) {
+    const editor = window.tipTapEditors[editorId];
+    if (!editor) {
+        console.error('Editor not found:', editorId);
+        return;
+    }
+
+    const { from } = editor.state.selection;
+    const doc = editor.state.doc;
+    let bracketPos = -1;
+
+    // Search backwards from cursor to find [[
+    for (let pos = from - 1; pos >= Math.max(0, from - 100); pos--) {
+        try {
+            const char1 = doc.textBetween(pos, pos + 1, '');
+            const char2 = pos > 0 ? doc.textBetween(pos - 1, pos, '') : '';
+
+            if (char2 === '[' && char1 === '[') {
+                bracketPos = pos - 1;
+                break;
+            }
+        } catch (e) {
+            continue;
+        }
+    }
+
+    if (bracketPos === -1) {
+        console.error('Could not find [[ before cursor');
+        return;
+    }
+
+    // Replace [[ to cursor with [[newText
+    editor
+        .chain()
+        .focus()
+        .deleteRange({ from: bracketPos, to: from })
+        .insertContent('[[' + newText)
+        .run();
+}
+
+window.updateAutocompleteText = updateAutocompleteText;

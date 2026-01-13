@@ -102,9 +102,26 @@ span[data-type="external-link"]:hover {
    EXTERNAL LINK PREVIEW
    ============================================ */
 
+.external-link-preview-drawer,
+.external-link-preview-drawer .mud-drawer-content,
+.external-link-preview-drawer .mud-paper {
+    background-color: #F4F0EA !important;
+    background: #F4F0EA !important;
+}
+
 .external-link-preview-drawer .mud-drawer-content {
     padding: 16px;
-    background-color: var(--chronicis-soft-off-white);
+    position: relative;
+}
+
+/* Position close button in top-right corner */
+.external-link-preview-drawer .mud-drawer-header {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    padding: 0;
+    min-height: unset;
+    z-index: 10;
 }
 
 .external-link-preview-header {
@@ -115,7 +132,7 @@ span[data-type="external-link"]:hover {
 }
 
 .external-link-preview-header .mud-typography-h6 {
-    color: var(--chronicis-secondary);
+    color: var(--chronicis-primary);
 }
 
 .external-link-preview-source {
@@ -134,13 +151,80 @@ span[data-type="external-link"]:hover {
     margin-top: 12px;
     max-height: calc(100vh - 220px);
     overflow-y: auto;
+    padding: 0 16px;
 }
 
-.external-link-preview-body h1,
-.external-link-preview-body h2,
-.external-link-preview-body h3,
+/* Title styling */
+.external-link-preview-body h1 {
+    color: var(--chronicis-primary);
+    font-family: var(--chronicis-font-display);
+    font-size: 1.75rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    border-bottom: none;
+}
+
+/* Section headers */
+.external-link-preview-body h2 {
+    color: var(--chronicis-primary);
+    font-family: var(--chronicis-font-display);
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+    border-bottom: none;
+}
+
+/* Sub-section headers (action names, etc.) */
+.external-link-preview-body h3 {
+    color: var(--chronicis-primary);
+    font-family: var(--chronicis-font-display);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-top: 1rem;
+    margin-bottom: 0.25rem;
+}
+
 .external-link-preview-body h4 {
-    color: var(--chronicis-secondary);
+    color: var(--chronicis-primary);
+    font-size: 1rem;
+    font-weight: 500;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Italic subtitle (creature type, spell level, etc.) */
+.external-link-preview-body em {
+    color: var(--mud-palette-text-secondary);
+    font-style: italic;
+}
+
+/* Body text */
+.external-link-preview-body p {
+    color: var(--mud-palette-text-primary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+}
+
+/* Stat lines with bold labels */
+.external-link-preview-body strong {
+    color: var(--chronicis-beige-gold);
+    font-weight: 600;
+}
+
+/* Lists */
+.external-link-preview-body ul,
+.external-link-preview-body ol {
+    margin: 0.5rem 0;
+    padding-left: 1.25rem;
+}
+
+.external-link-preview-body li {
+    color: var(--mud-palette-text-primary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-bottom: 0.25rem;
 }
 
 .external-link-preview-actions {

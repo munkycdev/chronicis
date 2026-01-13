@@ -59,6 +59,7 @@ public class ExternalLinksController : ControllerBase
             Id = s.Id,
             Title = s.Title,
             Subtitle = s.Subtitle,
+            Category = s.Category,
             Icon = s.Icon,
             Href = s.Href
         }).ToList();

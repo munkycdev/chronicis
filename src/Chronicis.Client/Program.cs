@@ -73,14 +73,15 @@ builder.Services.AddHttpClient("ChronicisApi", client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 })
-.AddHttpMessageHandler<ChronicisAuthHandler>();
+.AddHttpMessageHandler<ChronicisAuthHandler>()
+.RemoveAllLoggers();
 
 // Quote service (no auth needed - external API)
 builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
 {
     client.BaseAddress = new Uri("https://api.quotable.io/");
     client.Timeout = TimeSpan.FromSeconds(10);
-});
+}).RemoveAllLoggers();
 
 // ============================================
 // APPLICATION SERVICES
@@ -168,7 +169,7 @@ builder.Services.AddScoped<IDashboardApiService>(sp =>
 builder.Services.AddHttpClient("ChronicisPublicApi", client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-});
+}).RemoveAllLoggers();
 
 builder.Services.AddScoped<IPublicApiService>(sp =>
 {

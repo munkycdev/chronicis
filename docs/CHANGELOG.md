@@ -4,6 +4,38 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.9.0] - 2026-01-13
+
+### External Links: Open5e API Integration
+
+**Added:**
+- Full Open5e API integration with 10 SRD categories:
+  - Spells, Monsters, Magic Items, Conditions, Backgrounds
+  - Feats, Classes, Races, Weapons, Armor
+- Category selection UI with icons when typing `[[srd/`
+- Search within categories (e.g., `[[srd/spells/fire`)
+- Styled preview drawer matching metadata sidebar design
+- Category-specific markdown formatting for each content type
+
+**Changed:**
+- Migrated from Open5e v1 API to v2 API exclusively
+- External link preview drawer now uses soft off-white background (#F4F0EA)
+- Headers in preview content now use dark blue-grey color
+- Close button repositioned to top-right corner of preview drawer
+
+**Technical:**
+- Document filtering uses `document__gamesystem__key=a5e` for SRD content
+- Name-based search with `name__contains` parameter and client-side filtering
+- Simplified `CategoryConfig` record (removed unused `ApiVersion` field)
+- v2 API endpoints: creatures (monsters), items (magic items), etc.
+- Object property extraction for v2 API fields (size, type returned as objects)
+
+**Infrastructure:**
+- Added `RemoveAllLoggers()` to HttpClient registrations to reduce log noise
+- Suppressed EF Core SQL command logging in development
+
+---
+
 ## [2.8.0] - 2026-01-11
 
 ### Infrastructure: API Migration to Azure App Service

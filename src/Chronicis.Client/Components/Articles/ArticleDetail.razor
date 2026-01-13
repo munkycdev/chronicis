@@ -112,14 +112,17 @@ else
                Elevation="9999"
                Class="external-link-preview-drawer">
         <MudDrawerHeader>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseExternalPreview" />
+            
+        </MudDrawerHeader>
+        <MudDrawerContainer>
             <div class="external-link-preview-header">
                 @if (!string.IsNullOrWhiteSpace(_externalPreviewSource))
                 {
                     <span class="external-link-preview-source">@_externalPreviewSource.ToUpperInvariant()</span>
                 }
                 <MudText Typo="Typo.h6">@(_externalPreviewTitle ?? "External Link")</MudText>
-                <MudSpacer />
-                <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseExternalPreview" />
             </div>
             @if (!string.IsNullOrWhiteSpace(_externalPreviewContent?.Kind))
             {
@@ -127,8 +130,6 @@ else
                     @_externalPreviewContent.Kind
                 </MudText>
             }
-        </MudDrawerHeader>
-        <MudDrawerContainer>
             @if (_externalPreviewLoading)
             {
                 <div class="d-flex justify-center align-center" style="padding: 24px;">
@@ -805,7 +806,13 @@ else
         _autocompleteExternalSourceKey = _autocompleteIsExternalQuery ? sourceKey : null;
         _autocompleteQuery = _autocompleteIsExternalQuery ? remainder : query;
 
-        if (_autocompleteQuery.Length < 3)
+        // For external queries (like srd/...), we have different length requirements:
+        // - Empty or short remainder: show categories (handled by server)
+        // - Any length after category selected: search immediately
+        // For internal queries: require 3 characters minimum
+        var minLength = _autocompleteIsExternalQuery ? 0 : 3;
+        
+        if (_autocompleteQuery.Length < minLength)
         {
             _autocompleteSuggestions = new();
             StateHasChanged();
@@ -901,6 +908,19 @@ else
 
         try
         {
+            // Handle category selection - update the editor text instead of inserting a link
+            if (suggestion.IsCategory && !string.IsNullOrEmpty(suggestion.CategoryKey))
+            {
+                await JSRuntime.InvokeVoidAsync(
+                    "updateAutocompleteText",
+                    $"tiptap-editor-{_article.Id}",
+                    $"{suggestion.Source}/{suggestion.CategoryKey}/");
+                
+                // Trigger autocomplete again with the new text
+                // The user can now type a search term
+                return;
+            }
+
             if (suggestion.IsExternal)
             {
                 if (string.IsNullOrWhiteSpace(suggestion.Source) || string.IsNullOrWhiteSpace(suggestion.ExternalId))
@@ -1088,6 +1108,7 @@ else
         try
         {
             var content = await ExternalLinkApiService.GetContentAsync(source, id, CancellationToken.None);
+
             if (content == null || string.IsNullOrWhiteSpace(content.Markdown))
             {
                 _externalPreviewError = "No content available.";

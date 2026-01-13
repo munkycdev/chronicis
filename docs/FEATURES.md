@@ -1,6 +1,6 @@
 # Chronicis - Feature Documentation
 
-**Last Updated:** January 1, 2026
+**Last Updated:** January 13, 2026
 
 ---
 
@@ -66,24 +66,50 @@ The right sidebar shows all articles that link to the current article.
 
 ### External Knowledge Links
 
-Chronicis supports linking to external reference sources using the wiki-link workflow.
+Chronicis supports linking to external reference sources using the wiki-link workflow, powered by the Open5e API.
 
 **Syntax:**
-- Trigger autocomplete with: `[[sourceKey/`
+- Trigger autocomplete with: `[[srd/`
+- Category browsing: `[[srd/spells/` shows spell category
+- Search within category: `[[srd/spells/fire` searches for spells containing "fire"
 - External token format: `[[source|id|title]]`
 
-**Example:**
-- Typing `[[srd/acid` shows SRD suggestions
-- Selecting an entry inserts an external link chip
+**Supported Categories:**
+| Category | Description | API Endpoint |
+|----------|-------------|--------------|
+| `spells` | D&D 5e Spells | `/v2/spells` |
+| `monsters` | Creatures & Monsters | `/v2/creatures` |
+| `magicitems` | Magic Items | `/v2/items` |
+| `conditions` | Status Conditions | `/v2/conditions` |
+| `backgrounds` | Character Backgrounds | `/v2/backgrounds` |
+| `feats` | Feats | `/v2/feats` |
+| `classes` | Character Classes | `/v2/classes` |
+| `races` | Playable Races | `/v2/races` |
+| `weapons` | Weapons | `/v2/weapons` |
+| `armor` | Armor | `/v2/armor` |
 
-**Preview:**
-- Clicking an external chip opens an in-app preview drawer
-- Preview content is fetched live from the provider and rendered as Markdown
-- A link to the source site is available when provided by the provider
+**Workflow:**
+1. Type `[[srd/` to see category suggestions with icons
+2. Select a category (e.g., "✨ Spells") to browse that category
+3. Continue typing to search (e.g., `[[srd/spells/fire`)
+4. Select an entry to insert an external link chip
+
+**Preview Drawer:**
+- Click any external link chip to open a styled preview drawer
+- Content fetched live from Open5e API and rendered as markdown
+- Styling matches the app's metadata sidebar (soft off-white background, dark blue headers)
+- Attribution and source links included
+
+**Technical Details:**
+- Provider: Open5e API (https://api.open5e.com)
+- API Version: v2 exclusively
+- Document filter: `document__gamesystem__key=a5e` (SRD content)
+- Name-based search: Uses `name__contains` parameter with client-side filtering
 
 **Extensibility:**
-- Providers are keyed by a short prefix (example: `srd`, future: `kobold`)
-- Additional providers can be added without changing the editor token format
+- Providers are keyed by a short prefix (e.g., `srd`)
+- Additional providers can be added by implementing `IExternalLinkProvider`
+- Provider architecture supports future sources (Kobold Press, homebrew APIs, etc.)
 
 ---
 
