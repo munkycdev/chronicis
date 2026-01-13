@@ -80,7 +80,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         }
 
         // Search the specific category
-        var client = _httpClientFactory.CreateClient(HttpClientName);;
+        var client = _httpClientFactory.CreateClient(HttpClientName);
 
         var config = Categories[category];
         var results = await SearchCategoryAsync(client, category, config, searchTerm, ct);

@@ -58,9 +58,17 @@ builder.Services.AddCors(options =>
 });
 
 // Database with Azure SQL resiliency
+var connectionString = builder.Configuration.GetConnectionString("ChronicisDb");
+
+// Ensure MARS is enabled (required for EF Core with Azure SQL)
+if (!string.IsNullOrEmpty(connectionString) && !connectionString.Contains("MultipleActiveResultSets", StringComparison.OrdinalIgnoreCase))
+{
+    connectionString = connectionString.TrimEnd(';') + ";MultipleActiveResultSets=True;";
+}
+
 builder.Services.AddDbContext<ChronicisDbContext>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("ChronicisDb"),
+        connectionString,
         sqlOptions =>
         {
             // Enable retry on transient failures (Azure SQL best practice)
