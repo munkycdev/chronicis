@@ -1,7 +1,5 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services.ExternalLinks;
@@ -9,39 +7,33 @@ namespace Chronicis.Api.Services.ExternalLinks;
 public class Open5eExternalLinkProvider : IExternalLinkProvider
 {
     private const string SourceKey = "srd";
+    private const string HttpClientName = "Open5eApi";
+    
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<Open5eExternalLinkProvider> _logger;
-    private readonly Uri? _baseUri;
 
     // Category definitions - all using v2 API
-    // v2 API uses document__gamesystem__key filter with "a5e" for SRD content
+    // v2 API uses document__gamesystem__key filter for SRD content
     private static readonly Dictionary<string, CategoryConfig> Categories = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["spells"] = new("spells", "a5e", "Spell"),
-        ["monsters"] = new("creatures", "a5e", "Monster"),
-        ["magicitems"] = new("items", "a5e", "Magic Item"),
-        ["conditions"] = new("conditions", "a5e", "Condition"),
-        ["backgrounds"] = new("backgrounds", "a5e", "Background"),
-        ["feats"] = new("feats", "a5e", "Feat"),
-        ["classes"] = new("classes", "a5e", "Class"),
-        ["races"] = new("races", "a5e", "Race"),
-        ["weapons"] = new("weapons", "a5e", "Weapon"),
-        ["armor"] = new("armor", "a5e", "Armor")
+        ["spells"] = new("spells", "5e-2014", "Spell"),
+        ["monsters"] = new("creatures", "5e-2014", "Monster"),
+        ["magicitems"] = new("items", "5e-2014", "Magic Item"),
+        ["conditions"] = new("conditions", "5e-2014", "Condition"),
+        ["backgrounds"] = new("backgrounds", "5e-2014", "Background"),
+        ["feats"] = new("feats", "5e-2014", "Feat"),
+        ["classes"] = new("classes", "5e-2014", "Class"),
+        ["races"] = new("races", "5e-2014", "Race"),
+        ["weapons"] = new("weapons", "5e-2014", "Weapon"),
+        ["armor"] = new("armor", "5e-2014", "Armor")
     };
 
     public Open5eExternalLinkProvider(
-        IConfiguration configuration,
         IHttpClientFactory httpClientFactory,
         ILogger<Open5eExternalLinkProvider> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
-
-        var baseUrl = configuration.GetValue<string>("ExternalLinks:Open5e:BaseUrl");
-        if (!string.IsNullOrWhiteSpace(baseUrl) && Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri))
-        {
-            _baseUri = uri;
-        }
     }
 
     public string Key => SourceKey;
@@ -52,12 +44,6 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         {
             // Empty query - return all category suggestions
             return GetCategorySuggestions(string.Empty);
-        }
-
-        if (_baseUri == null)
-        {
-            _logger.LogWarning("Open5e base URL is not configured.");
-            return Array.Empty<ExternalLinkSuggestion>();
         }
 
         // Check if query contains a slash (indicating category/searchterm format)
@@ -93,12 +79,8 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
             return Array.Empty<ExternalLinkSuggestion>();
         }
 
-        // Search the specific category (no minimum length - let the API handle it)
-        var client = _httpClientFactory.CreateClient("Open5eExternalLinks");
-        if (client.BaseAddress == null)
-        {
-            client.BaseAddress = _baseUri;
-        }
+        // Search the specific category
+        var client = _httpClientFactory.CreateClient(HttpClientName);;
 
         var config = Categories[category];
         var results = await SearchCategoryAsync(client, category, config, searchTerm, ct);
@@ -164,12 +146,6 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
             return CreateEmptyContent(id ?? string.Empty);
         }
 
-        if (_baseUri == null)
-        {
-            _logger.LogWarning("Open5e base URL is not configured.");
-            return CreateEmptyContent(id);
-        }
-
         // Parse category and key from id (e.g., "spells/srd_fireball")
         var (category, itemKey) = ParseId(id);
         if (string.IsNullOrEmpty(category) || string.IsNullOrEmpty(itemKey))
@@ -184,11 +160,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
             return CreateEmptyContent(id);
         }
 
-        var client = _httpClientFactory.CreateClient("Open5eExternalLinks");
-        if (client.BaseAddress == null)
-        {
-            client.BaseAddress = _baseUri;
-        }
+        var client = _httpClientFactory.CreateClient(HttpClientName);
 
         try
         {

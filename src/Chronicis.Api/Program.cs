@@ -57,9 +57,21 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Database
+// Database with Azure SQL resiliency
 builder.Services.AddDbContext<ChronicisDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ChronicisDb")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("ChronicisDb"),
+        sqlOptions =>
+        {
+            // Enable retry on transient failures (Azure SQL best practice)
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(5),
+                errorNumbersToAdd: null);
+            
+            // Set command timeout for long-running queries
+            sqlOptions.CommandTimeout(30);
+        }));
 
 // Current user service (replaces FunctionContext user resolution)
 builder.Services.AddHttpContextAccessor();
@@ -67,7 +79,7 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 // External links
 builder.Services.AddMemoryCache();
-builder.Services.AddHttpClient("SrdExternalLinks", client =>
+builder.Services.AddHttpClient("Open5eApi", client =>
 {
     var baseUrl = builder.Configuration.GetValue<string>("ExternalLinks:Open5e:BaseUrl");
     if (!string.IsNullOrWhiteSpace(baseUrl))
