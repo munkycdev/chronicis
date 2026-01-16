@@ -1,0 +1,46 @@
+name: Deploy Chronicis Client
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/Chronicis.Client/**'
+      - 'src/Chronicis.Client.Host/**'
+      - 'src/Chronicis.Shared/**'
+      - '.github/workflows/deploy-client.yml'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  CLIENT_HOST_PROJECT_PATH: 'src/Chronicis.Client.Host/Chronicis.Client.Host.csproj'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    name: Build and Deploy Client
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.CLIENT_HOST_PROJECT_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.CLIENT_HOST_PROJECT_PATH }} --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish ${{ env.CLIENT_HOST_PROJECT_PATH }} --configuration Release --no-build --output ./publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'chronicis-client'
+          publish-profile: ${{ secrets.AZURE_CLIENT_PUBLISH_PROFILE }}
+          package: ./publish

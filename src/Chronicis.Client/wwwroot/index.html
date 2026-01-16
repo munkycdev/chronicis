@@ -45,6 +45,32 @@
     <!-- Chronicis Favicon -->
     <link rel="icon" href="/favicon.ico" />
 
+    <!-- DataDog RUM (Real User Monitoring) -->
+    <script>
+        (function(h,o,u,n,d) {
+            h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
+            d=o.createElement(u);d.async=1;d.src=n
+            n=o.getElementsByTagName(u)[0];n.parentNode.insertBefore(d,n)
+        })(window,document,'script','https://www.datadoghq-browser-agent.com/us1/v5/datadog-rum.js','DD_RUM')
+        
+        window.DD_RUM.onReady(function() {
+            window.DD_RUM.init({
+                clientToken: 'pubb03589c4fa34c0602e4968f6867aa522',
+                applicationId: 'a6697c45-806a-4bf9-bd5f-d4f7f3a1c824',
+                site: 'datadoghq.com',
+                service: 'chronicis-client',
+                env: 'production',
+                version: '1.0.0',
+                sessionSampleRate: 100,
+                sessionReplaySampleRate: 20,
+                trackUserInteractions: true,
+                trackResources: true,
+                trackLongTasks: true,
+                defaultPrivacyLevel: 'mask-user-input'
+            });
+        });
+    </script>
+
     <!-- TipTap Editor -->
     <script type="module">
         import { Editor, Node } from 'https://esm.sh/@tiptap/core@3.11.0';

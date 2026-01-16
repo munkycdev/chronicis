@@ -5,13 +5,47 @@ using Chronicis.Api.Services.ExternalLinks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using Serilog.Sinks.Datadog.Logs;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog for DataDog
+builder.Host.UseSerilog((context, services, configuration) =>
+{
+    var datadogApiKey = context.Configuration["DataDog:ApiKey"];
+    var datadogSite = context.Configuration["DataDog:Site"] ?? "datadoghq.com";
+    var serviceName = context.Configuration["DataDog:ServiceName"] ?? "chronicis-api";
+    var environment = context.HostingEnvironment.EnvironmentName;
+    
+    configuration
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("service", serviceName)
+        .Enrich.WithProperty("env", environment)
+        .MinimumLevel.Information()
+        .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+        .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+        .MinimumLevel.Override("Microsoft.Hosting.Lifetime", Serilog.Events.LogEventLevel.Information)
+        .WriteTo.Console();
+
+    // Only configure DataDog sink if API key is present
+    if (!string.IsNullOrWhiteSpace(datadogApiKey))
+    {
+        configuration.WriteTo.DatadogLogs(
+            datadogApiKey,
+            source: "csharp",
+            service: serviceName,
+            host: Environment.MachineName,
+            tags: new[] { $"env:{environment}" },
+            configuration: new DatadogConfiguration { Url = $"https://http-intake.logs.{datadogSite}" }
+        );
+    }
+});
 
 // Add controllers
 builder.Services.AddControllers();
 
-// Application Insights
+// Application Insights (TO BE REMOVED IN LATER PHASE)
 builder.Services.AddApplicationInsightsTelemetry();
 
 // Auth0 JWT Bearer Authentication
@@ -38,18 +72,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// CORS
+// CORS - Updated for separate client App Service
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
         policy.WithOrigins(
+                // Production origins
                 "https://chronicis.app",
                 "https://www.chronicis.app",
+                "https://chronicis-client.azurewebsites.net",  // New App Service
+                // Legacy Static Web App (will be removed in Phase 14)
                 "https://ambitious-mushroom-015091e1e.5.azurestaticapps.net",
+                // Local development
                 "http://localhost:5001",
                 "https://localhost:5001",
-                "http://localhost:5173"
+                "http://localhost:5173",
+                "http://localhost:5000",  // Default Kestrel port
+                "https://localhost:5002"  // Kestrel HTTPS port
             )
             .AllowAnyHeader()
             .AllowAnyMethod()

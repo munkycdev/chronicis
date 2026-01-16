@@ -3,6 +3,7 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<UserSecretsId>chronicis-api-secrets</UserSecretsId>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -25,8 +26,13 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 
-		<!-- Application Insights -->
+		<!-- Application Insights (TO BE REMOVED IN LATER PHASE) -->
 		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
+
+		<!-- DataDog Monitoring -->
+		<PackageReference Include="Datadog.Trace.Bundle" Version="3.9.0" />
+		<PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+		<PackageReference Include="Serilog.Sinks.Datadog.Logs" Version="0.5.2" />
 		
 		<!-- JWT Token Handling -->
 		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.15.0" />

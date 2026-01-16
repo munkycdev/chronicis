@@ -1,5 +1,6 @@
 using Chronicis.Api.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Controllers;
@@ -14,13 +15,16 @@ public class HealthController : ControllerBase
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<HealthController> _logger;
+    private readonly IConfiguration _configuration;
 
     public HealthController(
         ChronicisDbContext context,
-        ILogger<HealthController> logger)
+        ILogger<HealthController> logger,
+        IConfiguration configuration)
     {
         _context = context;
         _logger = logger;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -63,13 +67,18 @@ public class HealthController : ControllerBase
                 });
             }
 
+            // Get connection string info for diagnostics (mask password)
+            var connStr = _configuration.GetConnectionString("ChronicisDb") ?? "";
+            var maskedConnStr = MaskConnectionString(connStr);
+
             return Ok(new
             {
                 status = "healthy",
                 timestamp = DateTime.UtcNow,
                 checks = new
                 {
-                    database = "connected"
+                    database = "connected",
+                    connectionInfo = maskedConnStr
                 }
             });
         }
@@ -82,6 +91,27 @@ public class HealthController : ControllerBase
                 timestamp = DateTime.UtcNow,
                 error = ex.Message
             });
+        }
+    }
+
+    private static string MaskConnectionString(string connectionString)
+    {
+        if (string.IsNullOrEmpty(connectionString))
+            return "(empty)";
+
+        try
+        {
+            var builder = new SqlConnectionStringBuilder(connectionString);
+            var hasPassword = !string.IsNullOrEmpty(builder.Password);
+            var hasUserId = !string.IsNullOrEmpty(builder.UserID);
+            
+            return $"Server={builder.DataSource}; Database={builder.InitialCatalog}; " +
+                   $"User={(!hasUserId ? "(none)" : "****")}; Password={(!hasPassword ? "(none)" : "****")}; " +
+                   $"MARS={builder.MultipleActiveResultSets}; Encrypt={builder.Encrypt}";
+        }
+        catch
+        {
+            return "(invalid connection string format)";
         }
     }
 }
