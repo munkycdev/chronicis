@@ -13,48 +13,48 @@ var builder = WebApplication.CreateBuilder(args);
 // Configure Serilog for DataDog
 builder.Host.UseSerilog((context, services, configuration) =>
 {
-    // Try DD_API_KEY first (environment variable), then DataDog__ApiKey
-    var datadogApiKey = context.Configuration["DD_API_KEY"] ?? context.Configuration["DataDog:ApiKey"];
-    var datadogSite = context.Configuration["DD_SITE"] ?? context.Configuration["DataDog:Site"] ?? "datadoghq.com";
-    var serviceName = context.Configuration["DD_SERVICE"] ?? context.Configuration["DataDog:ServiceName"] ?? "chronicis-api";
-    var environment = context.HostingEnvironment.EnvironmentName;
-    
-    // Diagnostic logging (remove after debugging)
-    var keyPreview = string.IsNullOrWhiteSpace(datadogApiKey) 
-        ? "NOT SET" 
-        : $"...{datadogApiKey.Substring(Math.Max(0, datadogApiKey.Length - 4))}";
-    Console.WriteLine($"[DIAGNOSTIC] DataDog API Key: {keyPreview}");
-    Console.WriteLine($"[DIAGNOSTIC] DataDog Site: {datadogSite}");
-    Console.WriteLine($"[DIAGNOSTIC] Service Name: {serviceName}");
-    Console.WriteLine($"[DIAGNOSTIC] Environment: {environment}");
-    
-    configuration
-        .Enrich.FromLogContext()
-        .Enrich.WithProperty("service", serviceName)
-        .Enrich.WithProperty("env", environment)
-        .MinimumLevel.Information()
-        .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
-        .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
-        .MinimumLevel.Override("Microsoft.Hosting.Lifetime", Serilog.Events.LogEventLevel.Information)
-        .WriteTo.Console();
+    try
+    {
+        Console.WriteLine("[STARTUP] Configuring Serilog...");
 
-    // Only configure DataDog sink if API key is present
-    if (!string.IsNullOrWhiteSpace(datadogApiKey))
-    {
-        Console.WriteLine("[DIAGNOSTIC] Configuring DataDog sink...");
-        configuration.WriteTo.DatadogLogs(
-            datadogApiKey,
-            source: "csharp",
-            service: serviceName,
-            host: Environment.MachineName,
-            tags: new[] { $"env:{environment}" },
-            configuration: new DatadogConfiguration { Url = $"https://http-intake.logs.{datadogSite}" }
-        );
-        Console.WriteLine("[DIAGNOSTIC] DataDog sink configured successfully");
+        var datadogApiKey = Environment.GetEnvironmentVariable("DD_API_KEY");
+        var datadogSite = Environment.GetEnvironmentVariable("DD_SITE") ?? "datadoghq.com";
+
+        Console.WriteLine($"[STARTUP] DD_API_KEY present: {!string.IsNullOrWhiteSpace(datadogApiKey)}");
+        Console.WriteLine($"[STARTUP] DD_SITE: {datadogSite}");
+
+        configuration
+            .MinimumLevel.Information()
+            .WriteTo.Console();
+
+        Console.WriteLine("[STARTUP] Console sink configured");
+
+        if (!string.IsNullOrWhiteSpace(datadogApiKey))
+        {
+            Console.WriteLine("[STARTUP] Attempting DataDog sink configuration...");
+            var keyLast4 = datadogApiKey.Substring(Math.Max(0, datadogApiKey.Length - 4));
+            Console.WriteLine($"[STARTUP] Key ends with: {keyLast4}");
+
+            configuration.WriteTo.DatadogLogs(
+                datadogApiKey,
+                source: "csharp",
+                service: "chronicis-api",
+                host: Environment.MachineName,
+                tags: new[] { "env:production" },
+                configuration: new DatadogConfiguration { Url = $"https://http-intake.logs.{datadogSite}" }
+            );
+            Console.WriteLine("[STARTUP] DataDog sink configured!");
+        }
+        else
+        {
+            Console.WriteLine("[STARTUP] No DataDog API key - skipping DataDog sink");
+        }
     }
-    else
+    catch (Exception ex)
     {
-        Console.WriteLine("[DIAGNOSTIC] DataDog API key not found - skipping DataDog sink");
+        Console.WriteLine($"[STARTUP ERROR] Serilog configuration failed: {ex.Message}");
+        Console.WriteLine($"[STARTUP ERROR] Stack trace: {ex.StackTrace}");
+        throw;
     }
 });
 
