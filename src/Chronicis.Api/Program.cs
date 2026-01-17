@@ -13,10 +13,20 @@ var builder = WebApplication.CreateBuilder(args);
 // Configure Serilog for DataDog
 builder.Host.UseSerilog((context, services, configuration) =>
 {
-    var datadogApiKey = context.Configuration["DataDog:ApiKey"];
-    var datadogSite = context.Configuration["DataDog:Site"] ?? "datadoghq.com";
-    var serviceName = context.Configuration["DataDog:ServiceName"] ?? "chronicis-api";
+    // Try DD_API_KEY first (environment variable), then DataDog__ApiKey
+    var datadogApiKey = context.Configuration["DD_API_KEY"] ?? context.Configuration["DataDog:ApiKey"];
+    var datadogSite = context.Configuration["DD_SITE"] ?? context.Configuration["DataDog:Site"] ?? "datadoghq.com";
+    var serviceName = context.Configuration["DD_SERVICE"] ?? context.Configuration["DataDog:ServiceName"] ?? "chronicis-api";
     var environment = context.HostingEnvironment.EnvironmentName;
+    
+    // Diagnostic logging (remove after debugging)
+    var keyPreview = string.IsNullOrWhiteSpace(datadogApiKey) 
+        ? "NOT SET" 
+        : $"...{datadogApiKey.Substring(Math.Max(0, datadogApiKey.Length - 4))}";
+    Console.WriteLine($"[DIAGNOSTIC] DataDog API Key: {keyPreview}");
+    Console.WriteLine($"[DIAGNOSTIC] DataDog Site: {datadogSite}");
+    Console.WriteLine($"[DIAGNOSTIC] Service Name: {serviceName}");
+    Console.WriteLine($"[DIAGNOSTIC] Environment: {environment}");
     
     configuration
         .Enrich.FromLogContext()
@@ -31,6 +41,7 @@ builder.Host.UseSerilog((context, services, configuration) =>
     // Only configure DataDog sink if API key is present
     if (!string.IsNullOrWhiteSpace(datadogApiKey))
     {
+        Console.WriteLine("[DIAGNOSTIC] Configuring DataDog sink...");
         configuration.WriteTo.DatadogLogs(
             datadogApiKey,
             source: "csharp",
@@ -39,6 +50,11 @@ builder.Host.UseSerilog((context, services, configuration) =>
             tags: new[] { $"env:{environment}" },
             configuration: new DatadogConfiguration { Url = $"https://http-intake.logs.{datadogSite}" }
         );
+        Console.WriteLine("[DIAGNOSTIC] DataDog sink configured successfully");
+    }
+    else
+    {
+        Console.WriteLine("[DIAGNOSTIC] DataDog API key not found - skipping DataDog sink");
     }
 });
 

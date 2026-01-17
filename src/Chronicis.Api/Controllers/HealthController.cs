@@ -34,6 +34,7 @@ public class HealthController : ControllerBase
     [HttpGet]
     public IActionResult GetHealth()
     {
+        _logger.LogInformation("Health Endpoint Called");
         return Ok(new
         {
             status = "healthy",
@@ -70,6 +71,9 @@ public class HealthController : ControllerBase
             // Get connection string info for diagnostics (mask password)
             var connStr = _configuration.GetConnectionString("ChronicisDb") ?? "";
             var maskedConnStr = MaskConnectionString(connStr);
+
+
+            _logger.LogInformation("Readiness endpoint succeeded");
 
             return Ok(new
             {
