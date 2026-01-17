@@ -40,6 +40,8 @@ jobs:
       - name: Copy startup script and make executable
         run: |
           cp src/Chronicis.Api/startup.sh ./publish/
+          # Convert Windows CRLF to Unix LF line endings (critical for bash scripts)
+          sed -i 's/\r$//' ./publish/startup.sh
           chmod +x ./publish/startup.sh
 
       - name: Deploy to Azure Web App
