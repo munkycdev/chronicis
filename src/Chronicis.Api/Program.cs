@@ -5,8 +5,6 @@ using Chronicis.Api.Services.ExternalLinks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Serilog;
-using Serilog.Sinks.Datadog.Logs;
 
 var builder = WebApplication.CreateBuilder(args);
 
