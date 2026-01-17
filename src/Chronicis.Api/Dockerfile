@@ -18,7 +18,7 @@ COPY src/Chronicis.Shared/ Chronicis.Shared/
 
 # Build and publish
 WORKDIR /src/Chronicis.Api
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet publish -c Release -o /app/publish -p:PublishReadyToRun=true
 
 # Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
