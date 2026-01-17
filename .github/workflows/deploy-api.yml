@@ -11,42 +11,51 @@ on:
   workflow_dispatch:  # Allow manual trigger
 
 env:
-  DOTNET_VERSION: '9.0.x'
-  API_PROJECT_PATH: 'src/Chronicis.Api/Chronicis.Api.csproj'
+  REGISTRY: crchronicisdev.azurecr.io
+  IMAGE_NAME: chronicis-api
+  DOCKERFILE_PATH: src/Chronicis.Api/Dockerfile
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    name: Build and Deploy API
+    name: Build and Deploy API Container
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Restore dependencies
-        run: dotnet restore ${{ env.API_PROJECT_PATH }}
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
 
-      - name: Build
-        run: dotnet build ${{ env.API_PROJECT_PATH }} --configuration Release --no-restore
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ env.DOCKERFILE_PATH }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Publish
-        run: dotnet publish ${{ env.API_PROJECT_PATH }} --configuration Release --no-build --output ./publish
-
-      - name: Copy startup script and make executable
-        run: |
-          cp src/Chronicis.Api/startup.sh ./publish/
-          # Convert Windows CRLF to Unix LF line endings (critical for bash scripts)
-          sed -i 's/\r$//' ./publish/startup.sh
-          chmod +x ./publish/startup.sh
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'app-chronicis-api'
-          publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
-          package: ./publish
+          images: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest'
