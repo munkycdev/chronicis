@@ -37,6 +37,11 @@ jobs:
       - name: Publish
         run: dotnet publish ${{ env.API_PROJECT_PATH }} --configuration Release --no-build --output ./publish
 
+      - name: Copy startup script and make executable
+        run: |
+          cp src/Chronicis.Api/startup.sh ./publish/
+          chmod +x ./publish/startup.sh
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
