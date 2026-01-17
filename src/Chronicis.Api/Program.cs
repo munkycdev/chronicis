@@ -10,53 +10,16 @@ using Serilog.Sinks.Datadog.Logs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog for DataDog
-builder.Host.UseSerilog((context, services, configuration) =>
-{
-    try
-    {
-        Console.WriteLine("[STARTUP] Configuring Serilog...");
+Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
+Console.WriteLine($"ContentRootPath: {builder.Environment.ContentRootPath}");
 
-        var datadogApiKey = Environment.GetEnvironmentVariable("DD_API_KEY");
-        var datadogSite = Environment.GetEnvironmentVariable("DD_SITE") ?? "datadoghq.com";
+// Remove Serilog entirely for now - just use default logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 
-        Console.WriteLine($"[STARTUP] DD_API_KEY present: {!string.IsNullOrWhiteSpace(datadogApiKey)}");
-        Console.WriteLine($"[STARTUP] DD_SITE: {datadogSite}");
-
-        configuration
-            .MinimumLevel.Information()
-            .WriteTo.Console();
-
-        Console.WriteLine("[STARTUP] Console sink configured");
-
-        if (!string.IsNullOrWhiteSpace(datadogApiKey))
-        {
-            Console.WriteLine("[STARTUP] Attempting DataDog sink configuration...");
-            var keyLast4 = datadogApiKey.Substring(Math.Max(0, datadogApiKey.Length - 4));
-            Console.WriteLine($"[STARTUP] Key ends with: {keyLast4}");
-
-            configuration.WriteTo.DatadogLogs(
-                datadogApiKey,
-                source: "csharp",
-                service: "chronicis-api",
-                host: Environment.MachineName,
-                tags: new[] { "env:production" },
-                configuration: new DatadogConfiguration { Url = $"https://http-intake.logs.{datadogSite}" }
-            );
-            Console.WriteLine("[STARTUP] DataDog sink configured!");
-        }
-        else
-        {
-            Console.WriteLine("[STARTUP] No DataDog API key - skipping DataDog sink");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[STARTUP ERROR] Serilog configuration failed: {ex.Message}");
-        Console.WriteLine($"[STARTUP ERROR] Stack trace: {ex.StackTrace}");
-        throw;
-    }
-});
+Console.WriteLine("Adding services...");
 
 // Add controllers
 builder.Services.AddControllers();
