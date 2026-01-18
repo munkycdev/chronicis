@@ -31,10 +31,14 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates curl tar \
   && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /opt/datadog \
-  && curl -fsSL \
-     "https://github.com/DataDog/dd-trace-dotnet/releases/download/v${DD_TRACE_VERSION}/datadog-dotnet-apm-${DD_TRACE_VERSION}.linux-x64.tar.gz" \
-  | tar -xz -C /opt/datadog
+RUN set -eux; \
+  mkdir -p /opt/datadog; \
+  curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
+    -o /tmp/datadog-dotnet-apm.tar.gz \
+    "https://github.com/DataDog/dd-trace-dotnet/releases/download/v${DD_TRACE_VERSION}/datadog-dotnet-apm-${DD_TRACE_VERSION}.linux-x64.tar.gz"; \
+  tar -xzf /tmp/datadog-dotnet-apm.tar.gz -C /opt/datadog; \
+  rm /tmp/datadog-dotnet-apm.tar.gz; \
+  test -f /opt/datadog/Datadog.Trace.ClrProfiler.Native.so
 
 ENV CORECLR_ENABLE_PROFILING=1 \
     CORECLR_PROFILER="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" \
