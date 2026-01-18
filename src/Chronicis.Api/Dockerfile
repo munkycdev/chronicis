@@ -35,7 +35,7 @@ RUN set -eux; \
   mkdir -p /opt/datadog; \
   curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
     -o /tmp/datadog-dotnet-apm.tar.gz \
-    "https://github.com/DataDog/dd-trace-dotnet/releases/download/v${DD_TRACE_VERSION}/datadog-dotnet-apm-${DD_TRACE_VERSION}.linux-x64.tar.gz"; \
+    "https://github.com/DataDog/dd-trace-dotnet/releases/download/v3.31.0/dd-trace-linux-x64.tar.gz"; \
   tar -xzf /tmp/datadog-dotnet-apm.tar.gz -C /opt/datadog; \
   rm /tmp/datadog-dotnet-apm.tar.gz; \
   test -f /opt/datadog/Datadog.Trace.ClrProfiler.Native.so
