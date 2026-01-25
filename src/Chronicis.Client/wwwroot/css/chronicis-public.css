@@ -871,7 +871,7 @@ a:focus, button:focus, input:focus, textarea:focus, select:focus,
 }
 
 .public-world-sidebar-header {
-    padding: 0.5rem 0.5rem 0.25rem;
+    padding: 0.75rem 0.5rem 0.5rem;
 }
 
 .public-world-title-link {
@@ -883,9 +883,12 @@ a:focus, button:focus, input:focus, textarea:focus, select:focus,
     opacity: 0.85;
 }
 
-.public-world-title-link .mud-text {
-    color: var(--chronicis-secondary);
-    font-weight: 600;
+.public-world-title-link .mud-typography {
+    color: var(--chronicis-secondary) !important;
+    font-family: var(--chronicis-font-heading);
+    font-size: 1.1rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.3px;
 }
 
 .public-article-tree {
