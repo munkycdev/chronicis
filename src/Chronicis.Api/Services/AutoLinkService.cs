@@ -12,27 +12,44 @@ namespace Chronicis.Api.Services;
 public interface IAutoLinkService
 {
     /// <summary>
-    /// Scans article content and returns modified content with wiki links inserted
-    /// for any text matching existing article titles.
+    /// Scans article content and returns match positions for wiki links.
+    /// The client uses these positions to insert links via TipTap.
     /// </summary>
     /// <param name="articleId">The article being edited (to exclude from matches).</param>
     /// <param name="worldId">The world to search for matching articles.</param>
-    /// <param name="body">The article body content to scan.</param>
+    /// <param name="body">The article body content (HTML) to scan.</param>
     /// <param name="userId">The user ID for scoping.</param>
-    /// <returns>Response containing modified body and match details.</returns>
-    Task<AutoLinkResponseDto> FindAndInsertLinksAsync(Guid articleId, Guid worldId, string body, Guid userId);
+    /// <returns>Response containing match positions and details.</returns>
+    Task<AutoLinkResponseDto> FindLinksAsync(Guid articleId, Guid worldId, string body, Guid userId);
 }
 
 /// <summary>
 /// Implementation of auto-link service.
+/// Works on HTML content and returns match positions for client-side insertion.
 /// </summary>
 public class AutoLinkService : IAutoLinkService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<AutoLinkService> _logger;
 
-    // Regex to find existing wiki links - we'll skip text inside these
-    private static readonly Regex ExistingLinkPattern = new(
+    // Regex to find existing wiki-link spans in HTML
+    // Matches: <span data-type="wiki-link" ... >...</span>
+    private static readonly Regex ExistingWikiLinkPattern = new(
+        @"<span[^>]*data-type=""wiki-link""[^>]*>.*?</span>",
+        RegexOptions.Compiled | RegexOptions.Singleline);
+
+    // Regex to find existing external-link spans in HTML
+    private static readonly Regex ExistingExternalLinkPattern = new(
+        @"<span[^>]*data-type=""external-link""[^>]*>.*?</span>",
+        RegexOptions.Compiled | RegexOptions.Singleline);
+
+    // Regex to find HTML tags (to avoid matching inside them)
+    private static readonly Regex HtmlTagPattern = new(
+        @"<[^>]+>",
+        RegexOptions.Compiled);
+
+    // Legacy markdown wiki link pattern (for backwards compatibility)
+    private static readonly Regex LegacyWikiLinkPattern = new(
         @"\[\[([a-fA-F0-9\-]{36})(?:\|([^\]]+))?\]\]",
         RegexOptions.Compiled);
 
@@ -42,10 +59,10 @@ public class AutoLinkService : IAutoLinkService
         _logger = logger;
     }
 
-    public async Task<AutoLinkResponseDto> FindAndInsertLinksAsync(
-        Guid articleId, 
-        Guid worldId, 
-        string body, 
+    public async Task<AutoLinkResponseDto> FindLinksAsync(
+        Guid articleId,
+        Guid worldId,
+        string body,
         Guid userId)
     {
         if (string.IsNullOrWhiteSpace(body))
@@ -53,14 +70,11 @@ public class AutoLinkService : IAutoLinkService
             return new AutoLinkResponseDto
             {
                 LinksFound = 0,
-                ModifiedBody = body,
                 Matches = new List<AutoLinkMatchDto>()
             };
         }
 
         // Get all articles in this world that could be linked to
-        // User must have access to the world via WorldMembers
-        // Exclude the current article and get titles with their IDs
         var linkableArticles = await (
             from a in _context.Articles
             join wm in _context.WorldMembers on a.WorldId equals wm.WorldId
@@ -76,10 +90,12 @@ public class AutoLinkService : IAutoLinkService
             return new AutoLinkResponseDto
             {
                 LinksFound = 0,
-                ModifiedBody = body,
                 Matches = new List<AutoLinkMatchDto>()
             };
         }
+
+        // Build protected ranges (areas we should not match in)
+        var protectedRanges = GetProtectedRanges(body);
 
         // Sort by title length descending so we match longer titles first
         // This prevents "Water" from matching before "Waterdeep"
@@ -87,34 +103,46 @@ public class AutoLinkService : IAutoLinkService
             .OrderByDescending(a => a.Title.Length)
             .ToList();
 
-        var matches = new List<AutoLinkMatchDto>();
-        var modifiedBody = body;
+        var allMatches = new List<AutoLinkMatchDto>();
+        var usedRanges = new List<(int Start, int End)>(); // Track ranges we've already matched
 
         foreach (var article in sortedArticles)
         {
             // Build regex for whole-word, case-insensitive match
-            // Escape special regex characters in the title
             var escapedTitle = Regex.Escape(article.Title);
             var pattern = $@"\b{escapedTitle}\b";
-            
+
             try
             {
                 var regex = new Regex(pattern, RegexOptions.IgnoreCase);
-                
-                // Replace ALL unlinked occurrences in the current modified body
-                var (newBody, count, sampleMatch) = ReplaceAllUnlinkedOccurrences(modifiedBody, regex, article.Id);
-                
-                if (count > 0)
+                var regexMatches = regex.Matches(body);
+
+                foreach (Match match in regexMatches)
                 {
-                    // Record one match entry per article (with count)
-                    matches.Add(new AutoLinkMatchDto
+                    // Skip if this position is in a protected range (HTML tag, existing link, etc.)
+                    if (IsInProtectedRange(match.Index, match.Length, protectedRanges))
                     {
-                        MatchedText = count > 1 ? $"{sampleMatch} ({count}x)" : sampleMatch,
+                        continue;
+                    }
+
+                    // Skip if this position overlaps with an already-matched range
+                    if (IsInProtectedRange(match.Index, match.Length, usedRanges))
+                    {
+                        continue;
+                    }
+
+                    // Valid match - record it
+                    allMatches.Add(new AutoLinkMatchDto
+                    {
+                        MatchedText = match.Value,
                         ArticleTitle = article.Title,
-                        ArticleId = article.Id
+                        ArticleId = article.Id,
+                        StartIndex = match.Index,
+                        EndIndex = match.Index + match.Length
                     });
-                    
-                    modifiedBody = newBody;
+
+                    // Mark this range as used so shorter titles don't match within it
+                    usedRanges.Add((match.Index, match.Index + match.Length));
                 }
             }
             catch (Exception ex)
@@ -123,36 +151,52 @@ public class AutoLinkService : IAutoLinkService
             }
         }
 
-        // Total links = sum of all replacements
-        var totalLinks = matches.Sum(m => 
-        {
-            // Extract count from "text (Nx)" format if present
-            var match = Regex.Match(m.MatchedText, @"\((\d+)x\)$");
-            return match.Success ? int.Parse(match.Groups[1].Value) : 1;
-        });
+        // Sort matches by position for consistent display in confirmation dialog
+        allMatches = allMatches.OrderBy(m => m.StartIndex).ToList();
 
         _logger.LogInformation(
-            "Auto-link found {Count} matches ({TotalLinks} total links) for article {ArticleId}", 
-            matches.Count, 
-            totalLinks,
+            "Auto-link found {Count} matches for article {ArticleId}",
+            allMatches.Count,
             articleId);
 
         return new AutoLinkResponseDto
         {
-            LinksFound = totalLinks,
-            ModifiedBody = modifiedBody,
-            Matches = matches
+            LinksFound = allMatches.Count,
+            Matches = allMatches
         };
     }
 
     /// <summary>
-    /// Gets ranges in the text that are already inside wiki links.
+    /// Gets ranges in the content that should not be matched:
+    /// - HTML tags
+    /// - Existing wiki-link spans
+    /// - Existing external-link spans
+    /// - Legacy markdown wiki links
     /// </summary>
     private List<(int Start, int End)> GetProtectedRanges(string body)
     {
         var ranges = new List<(int Start, int End)>();
-        
-        foreach (Match match in ExistingLinkPattern.Matches(body))
+
+        // Protect HTML tags
+        foreach (Match match in HtmlTagPattern.Matches(body))
+        {
+            ranges.Add((match.Index, match.Index + match.Length));
+        }
+
+        // Protect existing wiki-link spans (entire span including content)
+        foreach (Match match in ExistingWikiLinkPattern.Matches(body))
+        {
+            ranges.Add((match.Index, match.Index + match.Length));
+        }
+
+        // Protect existing external-link spans
+        foreach (Match match in ExistingExternalLinkPattern.Matches(body))
+        {
+            ranges.Add((match.Index, match.Index + match.Length));
+        }
+
+        // Protect legacy markdown wiki links (for mixed content)
+        foreach (Match match in LegacyWikiLinkPattern.Matches(body))
         {
             ranges.Add((match.Index, match.Index + match.Length));
         }
@@ -161,7 +205,7 @@ public class AutoLinkService : IAutoLinkService
     }
 
     /// <summary>
-    /// Checks if a position falls within a protected range.
+    /// Checks if a position falls within any protected range.
     /// </summary>
     private bool IsInProtectedRange(int index, int length, List<(int Start, int End)> ranges)
     {
@@ -174,44 +218,5 @@ public class AutoLinkService : IAutoLinkService
             }
         }
         return false;
-    }
-
-    /// <summary>
-    /// Replaces ALL occurrences of a pattern that are not already inside wiki links.
-    /// Works backwards through the string to preserve match positions.
-    /// </summary>
-    private (string NewBody, int Count, string SampleMatch) ReplaceAllUnlinkedOccurrences(
-        string body, 
-        Regex pattern, 
-        Guid articleId)
-    {
-        var protectedRanges = GetProtectedRanges(body);
-        var allMatches = pattern.Matches(body);
-        
-        // Filter to only unlinked matches
-        var unlinkedMatches = allMatches
-            .Cast<Match>()
-            .Where(m => !IsInProtectedRange(m.Index, m.Length, protectedRanges))
-            .OrderByDescending(m => m.Index) // Process from end to start to preserve positions
-            .ToList();
-
-        if (unlinkedMatches.Count == 0)
-        {
-            return (body, 0, string.Empty);
-        }
-
-        var sampleMatch = unlinkedMatches.Last().Value; // First occurrence (last in our reversed list)
-        var result = body;
-
-        foreach (var match in unlinkedMatches)
-        {
-            // Replace this occurrence (working backwards preserves earlier positions)
-            var replacement = $"[[{articleId}|{match.Value}]]";
-            result = result.Substring(0, match.Index) 
-                + replacement 
-                + result.Substring(match.Index + match.Length);
-        }
-
-        return (result, unlinkedMatches.Count, sampleMatch);
     }
 }

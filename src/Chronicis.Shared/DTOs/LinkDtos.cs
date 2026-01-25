@@ -147,12 +147,7 @@ public class AutoLinkResponseDto
     public int LinksFound { get; set; }
 
     /// <summary>
-    /// The modified body content with wiki links inserted.
-    /// </summary>
-    public string ModifiedBody { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Details about each link that was found.
+    /// Details about each match that was found, with positions for client-side insertion.
     /// </summary>
     public List<AutoLinkMatchDto> Matches { get; set; } = new();
 }
@@ -176,4 +171,14 @@ public class AutoLinkMatchDto
     /// The article ID that will be linked to.
     /// </summary>
     public Guid ArticleId { get; set; }
+
+    /// <summary>
+    /// Start position of the match in the HTML content (character index).
+    /// </summary>
+    public int StartIndex { get; set; }
+
+    /// <summary>
+    /// End position of the match in the HTML content (character index, exclusive).
+    /// </summary>
+    public int EndIndex { get; set; }
 }

@@ -550,7 +550,7 @@ public class ArticlesController : ControllerBase
     }
 
     /// <summary>
-    /// POST /articles/{id}/auto-link - Scans article content and returns modified content with wiki links auto-inserted.
+    /// POST /articles/{id}/auto-link - Scans article content and returns match positions for wiki links.
     /// </summary>
     [HttpPost("{id:guid}/auto-link")]
     public async Task<ActionResult<AutoLinkResponseDto>> AutoLink(Guid id, [FromBody] AutoLinkRequestDto request)
@@ -581,7 +581,7 @@ public class ArticlesController : ControllerBase
             return BadRequest(new { error = "Article must belong to a world" });
         }
 
-        var result = await _autoLinkService.FindAndInsertLinksAsync(
+        var result = await _autoLinkService.FindLinksAsync(
             id,
             article.WorldId.Value,
             request.Body,

@@ -269,3 +269,94 @@ function updateAutocompleteText(editorId, newText) {
 }
 
 window.updateAutocompleteText = updateAutocompleteText;
+
+/**
+ * Insert multiple wiki links at specified HTML positions.
+ * Converts HTML character positions to TipTap document positions and inserts links.
+ * 
+ * @param {string} editorId - The editor container ID
+ * @param {Array} matches - Array of {articleId, displayText, startIndex, endIndex}
+ */
+function insertWikiLinksAtPositions(editorId, matches) {
+    const editor = window.tipTapEditors[editorId];
+    if (!editor) {
+        console.error('Editor not found:', editorId);
+        return;
+    }
+
+    if (!matches || matches.length === 0) {
+        console.log('No matches to insert');
+        return;
+    }
+
+    // Get the current HTML content
+    const currentHtml = editor.getHTML();
+    
+    // Sort matches by startIndex descending so we process from end to start
+    // This preserves earlier positions when we make replacements
+    const sortedMatches = [...matches].sort((a, b) => b.startIndex - a.startIndex);
+    
+    // Build new HTML with wiki link spans inserted
+    let newHtml = currentHtml;
+    
+    for (const match of sortedMatches) {
+        const { articleId, displayText, startIndex, endIndex } = match;
+        
+        // Verify the text at this position matches what we expect
+        const textAtPosition = newHtml.substring(startIndex, endIndex);
+        if (textAtPosition.toLowerCase() !== displayText.toLowerCase()) {
+            console.warn(`Text mismatch at position ${startIndex}-${endIndex}: expected "${displayText}", found "${textAtPosition}"`);
+            continue;
+        }
+        
+        // Create the wiki link span HTML
+        const wikiLinkHtml = `<span data-type="wiki-link" class="wiki-link-node" data-target-id="${articleId}" data-display="${escapeHtmlAttr(displayText)}">${escapeHtml(displayText)}</span>`;
+        
+        // Replace the text with the wiki link span
+        newHtml = newHtml.substring(0, startIndex) + wikiLinkHtml + newHtml.substring(endIndex);
+    }
+    
+    // Set the new content in the editor
+    editor.commands.setContent(newHtml);
+    
+    console.log(`Inserted ${matches.length} wiki links`);
+}
+
+/**
+ * Escape HTML special characters for use in HTML content
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * Escape text for use in HTML attributes
+ */
+function escapeHtmlAttr(text) {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+/**
+ * Get the current HTML content from the editor
+ * @param {string} editorId - The editor container ID
+ * @returns {string} The HTML content
+ */
+function getTipTapContent(editorId) {
+    const editor = window.tipTapEditors[editorId];
+    if (!editor) {
+        console.error('Editor not found:', editorId);
+        return '';
+    }
+    return editor.getHTML();
+}
+
+// Make functions globally available
+window.insertWikiLinksAtPositions = insertWikiLinksAtPositions;
+window.getTipTapContent = getTipTapContent;

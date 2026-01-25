@@ -620,8 +620,19 @@ else
             if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Found {result.LinksFound} potential link(s):\n\n{matchList}\n\nApply these links?"))
                 return;
 
-            _editBody = result.ModifiedBody;
-            await JSRuntime.InvokeVoidAsync("setTipTapContent", $"tiptap-editor-{_article.Id}", result.ModifiedBody);
+            // Convert matches to JS-friendly format and insert via TipTap
+            var jsMatches = result.Matches.Select(m => new
+            {
+                articleId = m.ArticleId.ToString(),
+                displayText = m.MatchedText,
+                startIndex = m.StartIndex,
+                endIndex = m.EndIndex
+            }).ToArray();
+
+            await JSRuntime.InvokeVoidAsync("insertWikiLinksAtPositions", $"tiptap-editor-{_article.Id}", jsMatches);
+            
+            // Get the updated content from the editor
+            _editBody = await JSRuntime.InvokeAsync<string>("getTipTapContent", $"tiptap-editor-{_article.Id}");
             _hasUnsavedChanges = true;
             await SaveArticle();
             Snackbar.Add($"Added {result.LinksFound} link(s)", Severity.Success);
