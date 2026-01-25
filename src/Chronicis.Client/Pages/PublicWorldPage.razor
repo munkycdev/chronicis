@@ -161,7 +161,7 @@ else
                     <!-- AI Summary (if available) -->
                     @if (!string.IsNullOrEmpty(_currentArticle.AISummary))
                     {
-                        <MudAlert Severity="Severity.Info" Class="mb-4" Dense="true">
+                        <MudAlert Severity="Severity.Info" Class="mb-4 summary-text" Dense="true">
                             <strong>AI Summary:</strong> @_currentArticle.AISummary
                         </MudAlert>
                     }
