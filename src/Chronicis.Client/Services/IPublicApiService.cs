@@ -22,4 +22,10 @@ public interface IPublicApiService
     /// Get a specific public article by path
     /// </summary>
     Task<ArticleDto?> GetPublicArticleAsync(string publicSlug, string articlePath);
+
+    /// <summary>
+    /// Resolve an article ID to its public URL path.
+    /// Returns null if the article doesn't exist or is not public.
+    /// </summary>
+    Task<string?> ResolvePublicArticlePathAsync(string publicSlug, Guid articleId);
 }

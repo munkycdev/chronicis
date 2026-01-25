@@ -103,4 +103,27 @@ public class PublicController : ControllerBase
 
         return Ok(article);
     }
+
+    /// <summary>
+    /// GET /api/public/worlds/{publicSlug}/articles/resolve/{articleId} - Resolve an article ID to its public URL path.
+    /// </summary>
+    [HttpGet("worlds/{publicSlug}/articles/resolve/{articleId:guid}")]
+    public async Task<ActionResult<string>> ResolveArticlePath(string publicSlug, Guid articleId)
+    {
+        if (string.IsNullOrWhiteSpace(publicSlug))
+        {
+            return BadRequest(new { error = "Public slug is required" });
+        }
+
+        _logger.LogDebug("Resolving article path for {ArticleId} in world '{PublicSlug}'", articleId, publicSlug);
+
+        var path = await _publicWorldService.GetPublicArticlePathAsync(publicSlug, articleId);
+
+        if (path == null)
+        {
+            return NotFound(new { error = "Article not found or not public" });
+        }
+
+        return Ok(path);
+    }
 }

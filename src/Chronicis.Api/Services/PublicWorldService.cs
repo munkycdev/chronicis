@@ -598,4 +598,70 @@ public class PublicWorldService : IPublicWorldService
 
         return breadcrumbs;
     }
+
+    /// <summary>
+    /// Resolve an article ID to its public URL path.
+    /// Returns null if the article doesn't exist, is not public, or doesn't belong to the specified world.
+    /// </summary>
+    public async Task<string?> GetPublicArticlePathAsync(string publicSlug, Guid articleId)
+    {
+        var normalizedSlug = publicSlug.Trim().ToLowerInvariant();
+
+        // Verify the world exists and is public
+        var world = await _context.Worlds
+            .AsNoTracking()
+            .Where(w => w.PublicSlug == normalizedSlug && w.IsPublic)
+            .Select(w => new { w.Id })
+            .FirstOrDefaultAsync();
+
+        if (world == null)
+        {
+            _logger.LogDebug("Public world not found for slug '{PublicSlug}'", normalizedSlug);
+            return null;
+        }
+
+        // Get the article and verify it's public and belongs to this world
+        var article = await _context.Articles
+            .AsNoTracking()
+            .Where(a => a.Id == articleId && 
+                        a.WorldId == world.Id && 
+                        a.Visibility == ArticleVisibility.Public)
+            .Select(a => new { a.Id, a.Slug, a.ParentId })
+            .FirstOrDefaultAsync();
+
+        if (article == null)
+        {
+            _logger.LogDebug("Public article {ArticleId} not found in world '{PublicSlug}'", articleId, normalizedSlug);
+            return null;
+        }
+
+        // Build the path by walking up the parent tree
+        var slugs = new List<string> { article.Slug };
+        var currentParentId = article.ParentId;
+
+        while (currentParentId.HasValue)
+        {
+            var parentArticle = await _context.Articles
+                .AsNoTracking()
+                .Where(a => a.Id == currentParentId.Value && a.Visibility == ArticleVisibility.Public)
+                .Select(a => new { a.Slug, a.ParentId })
+                .FirstOrDefaultAsync();
+
+            if (parentArticle == null)
+            {
+                // Parent is not public - this article's path is broken
+                _logger.LogDebug("Parent article not public in chain for article {ArticleId}", articleId);
+                return null;
+            }
+
+            slugs.Insert(0, parentArticle.Slug);
+            currentParentId = parentArticle.ParentId;
+        }
+
+        var path = string.Join("/", slugs);
+        _logger.LogDebug("Resolved article {ArticleId} to path '{Path}' in world '{PublicSlug}'", 
+            articleId, path, normalizedSlug);
+
+        return path;
+    }
 }

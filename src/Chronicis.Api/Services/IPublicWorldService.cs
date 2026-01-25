@@ -25,4 +25,10 @@ public interface IPublicWorldService
     /// Returns null if article doesn't exist, world is not public, or article is not Public visibility.
     /// </summary>
     Task<ArticleDto?> GetPublicArticleAsync(string publicSlug, string articlePath);
+
+    /// <summary>
+    /// Resolve an article ID to its public URL path.
+    /// Returns null if the article doesn't exist, is not public, or doesn't belong to the specified world.
+    /// </summary>
+    Task<string?> GetPublicArticlePathAsync(string publicSlug, Guid articleId);
 }

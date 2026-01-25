@@ -97,4 +97,32 @@ public class PublicApiService : IPublicApiService
             return null;
         }
     }
+
+    public async Task<string?> ResolvePublicArticlePathAsync(string publicSlug, Guid articleId)
+    {
+        try
+        {
+            var response = await _http.GetAsync($"public/worlds/{publicSlug}/articles/resolve/{articleId}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsStringAsync();
+            }
+            
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogDebug("Public article path not found: {PublicSlug}/{ArticleId}", publicSlug, articleId);
+                return null;
+            }
+            
+            _logger.LogWarning("Failed to resolve public article path {PublicSlug}/{ArticleId}: {StatusCode}", 
+                publicSlug, articleId, response.StatusCode);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resolving public article path {PublicSlug}/{ArticleId}", publicSlug, articleId);
+            return null;
+        }
+    }
 }

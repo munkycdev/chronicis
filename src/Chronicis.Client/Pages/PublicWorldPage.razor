@@ -4,9 +4,13 @@
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.Enums
 @using Chronicis.Client.Components.Shared
+@using Microsoft.JSInterop
 @inject IPublicApiService PublicApi
 @inject IMarkdownService MarkdownService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+@implements IDisposable
 
 <PageTitle>@(_world?.Name ?? "World") — Chronicis</PageTitle>
 
@@ -167,7 +171,7 @@ else
                     }
 
                     <!-- Article body -->
-                    <div class="public-article-body chronicis-editor-content">
+                    <div id="public-article-body" class="public-article-body chronicis-editor-content">
                         @if (!string.IsNullOrEmpty(_currentArticle.Body))
                         {
                             @((MarkupString)MarkdownService.EnsureHtml(_currentArticle.Body))
@@ -197,10 +201,56 @@ else
     private ArticleDto? _currentArticle;
     private bool _isLoading = true;
     private bool _isLoadingArticle = false;
+    private DotNetObjectReference<PublicWorldPage>? _dotNetHelper;
+    private bool _wikiLinksInitialized = false;
 
     protected override async Task OnParametersSetAsync()
     {
+        // Reset wiki links state when navigating between articles
+        _wikiLinksInitialized = false;
         await LoadWorldAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Initialize wiki link click handlers after the article body is rendered
+        if (_currentArticle != null && !string.IsNullOrEmpty(_currentArticle.Body) && !_wikiLinksInitialized)
+        {
+            _dotNetHelper ??= DotNetObjectReference.Create(this);
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("initializePublicWikiLinks", "public-article-body", _dotNetHelper);
+                _wikiLinksInitialized = true;
+            }
+            catch (Exception)
+            {
+                // JS interop may fail during prerendering or if component is disposed
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _dotNetHelper?.Dispose();
+    }
+
+    [JSInvokable]
+    public async Task OnPublicWikiLinkClicked(string targetArticleId)
+    {
+        if (!Guid.TryParse(targetArticleId, out var articleId)) return;
+
+        try
+        {
+            var path = await PublicApi.ResolvePublicArticlePathAsync(PublicSlug, articleId);
+            if (!string.IsNullOrEmpty(path))
+            {
+                Navigation.NavigateTo($"/w/{PublicSlug}/{path}");
+            }
+        }
+        catch (Exception)
+        {
+            // Silently fail - link may not be public or may not exist
+        }
     }
 
     private async Task LoadWorldAsync()
