@@ -174,4 +174,33 @@ public static class HttpClientExtensions
             return false;
         }
     }
+
+    /// <summary>
+    /// PUT request that returns success/failure (no response body expected).
+    /// Useful for operations like moving entities.
+    /// </summary>
+    public static async Task<bool> PutBoolAsync(
+        this HttpClient http,
+        string url,
+        object dto,
+        ILogger logger,
+        string? entityDescription = null)
+    {
+        try
+        {
+            var response = await http.PutAsJsonAsync(url, dto);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                logger.LogWarning("Failed to update {Entity}: {StatusCode} - {Error}", 
+                    entityDescription ?? "entity", response.StatusCode, errorContent);
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error updating {Entity} at {Url}", entityDescription ?? "entity", url);
+            return false;
+        }
+    }
 }

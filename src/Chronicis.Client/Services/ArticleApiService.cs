@@ -93,8 +93,8 @@ public class ArticleApiService : IArticleApiService
     {
         var moveDto = new ArticleMoveDto { NewParentId = newParentId };
 
-        return await _http.PatchEntityAsync(
-            $"articles/{articleId}/parent",
+        return await _http.PutBoolAsync(
+            $"articles/{articleId}/move",
             moveDto,
             _logger,
             $"move article {articleId}");
