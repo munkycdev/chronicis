@@ -182,6 +182,7 @@ builder.Services.AddScoped<IPublicApiService>(sp =>
 builder.Services.AddScoped<ITreeStateService, TreeStateService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAppContextService, AppContextService>();
+builder.Services.AddScoped<IMetadataDrawerService, MetadataDrawerService>();
 
 // Article cache service (for reducing API calls on tooltips/navigation)
 builder.Services.AddScoped<IArticleCacheService, ArticleCacheService>();

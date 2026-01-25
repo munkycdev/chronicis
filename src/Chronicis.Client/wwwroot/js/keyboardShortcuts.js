@@ -34,6 +34,15 @@ window.chronicisKeyboardShortcuts = {
             return;
         }
         
+        // Ctrl+M - Toggle metadata drawer
+        if (e.ctrlKey && e.key === 'm') {
+            e.preventDefault();
+            if (this.dotNetHelper) {
+                this.dotNetHelper.invokeMethodAsync('OnCtrlM');
+            }
+            return;
+        }
+        
         // Skip other shortcuts if in input
         if (isInInput) {
             return;

@@ -9,6 +9,7 @@
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject MudTheme ChronicisTheme
+@inject IMetadataDrawerService MetadataDrawerService
 @implements IAsyncDisposable
 
 <MudThemeProvider Theme="ChronicisTheme" />
@@ -157,6 +158,12 @@
             _dotNetRef = DotNetObjectReference.Create(this);
             await JSRuntime.InvokeVoidAsync("chronicisKeyboardShortcuts.initialize", _dotNetRef);
         }
+    }
+
+    [JSInvokable]
+    public void OnCtrlM()
+    {
+        MetadataDrawerService.Toggle();
     }
 
     [JSInvokable]
