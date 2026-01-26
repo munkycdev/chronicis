@@ -16,8 +16,8 @@ try
 {
     Log.Information("Starting Chronicis API");
     
-    // Configure Datadog APM tracing early in startup
-    DatadogConfiguration.ConfigureTracing(Log.Logger);
+    // Log Datadog APM configuration (tracer is auto-configured via DD_* env vars)
+    DatadogConfiguration.LogTracerConfiguration(Log.Logger);
 
     var builder = WebApplication.CreateBuilder(args);
 
