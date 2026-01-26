@@ -15,6 +15,9 @@ Log.Logger = new LoggerConfiguration()
 try
 {
     Log.Information("Starting Chronicis API");
+    
+    // Configure Datadog APM tracing early in startup
+    DatadogConfiguration.ConfigureTracing(Log.Logger);
 
     var builder = WebApplication.CreateBuilder(args);
 
@@ -116,6 +119,7 @@ try
 
     // External links
     builder.Services.AddMemoryCache();
+    builder.Services.AddHttpClient(); // General-purpose HttpClient for diagnostics
     builder.Services.AddHttpClient("Open5eApi", client =>
     {
         var baseUrl = builder.Configuration.GetValue<string>("ExternalLinks:Open5e:BaseUrl");
