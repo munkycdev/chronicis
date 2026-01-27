@@ -21,7 +21,7 @@ Chronicis is a web-based knowledge management application for tabletop RPG campa
 
 ### Backend
 - **API Framework:** ASP.NET Core Web API (.NET 9)
-- **Hosting Model:** Azure App Service (`app-chronicis-api-dev`)
+- **Hosting Model:** Azure Container Apps (`ca-chronicis-api`)
 - **Authentication:** Auth0 JWT Bearer authentication
 
 ### Data Layer
@@ -30,12 +30,13 @@ Chronicis is a web-based knowledge management application for tabletop RPG campa
 - **Migration Strategy:** Code-first with EF migrations
 
 ### Infrastructure
-- **Frontend Hosting:** Azure Static Web Apps (client only)
-- **API Hosting:** Azure App Service (`app-chronicis-api-dev`, `api.chronicis.app`)
-- **Secrets:** Azure Key Vault (`kv-chronicis-dev`)
-- **CI/CD:** GitHub Actions (separate workflows for client and API)
+- **Frontend Hosting:** Azure Container Apps (`ca-chronicis-client`, `chronicis.app`)
+- **API Hosting:** Azure Container Apps (`ca-chronicis-api`, `api.chronicis.app`)
+- **Container Registry:** Azure Container Registry
+- **Secrets:** Azure Key Vault (`kv-chronicis`)
+- **CI/CD:** GitHub Actions (containerized build and deployment workflows)
 - **AI Services:** Azure OpenAI (GPT-4.1-mini)
-- **Monitoring:** Application Insights (`appi-chronicis-dev`)
+- **Monitoring:** DataDog APM (in-image agent, direct-to-cloud)
 
 ### Auth0 Configuration
 - **Custom Domain:** `auth.chronicis.app`
@@ -43,6 +44,57 @@ Chronicis is a web-based knowledge management application for tabletop RPG campa
 - **Social Connections:** Discord, Google
 - **Key Vault Secrets:**
   - `Discord-ClientSecret` - Discord OAuth client secret (for Auth0 social connection)
+
+---
+
+## Deployment Architecture
+
+### Container Apps Architecture
+
+Both the frontend and backend are deployed as containerized applications on Azure Container Apps:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Azure Container Apps                                    │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ ca-chronicis-client (chronicis.app)             │   │
+│  │ - Blazor WASM served via nginx                  │   │
+│  │ - Static file hosting                           │   │
+│  │ - Custom domain with SSL                        │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ ca-chronicis-api (api.chronicis.app)            │   │
+│  │ - ASP.NET Core Web API                          │   │
+│  │ - DataDog agent (in-image)                      │   │
+│  │ - Direct-to-cloud APM traces                    │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+         │                              │
+         │                              └─────────────┐
+         │                                            │
+         ▼                                            ▼
+┌─────────────────────┐                    ┌─────────────────────┐
+│ Azure SQL Database  │                    │ DataDog Cloud       │
+│ - EF Core           │                    │ - APM Traces        │
+│ - Migrations        │                    │ - Logs              │
+└─────────────────────┘                    │ - Metrics           │
+                                           └─────────────────────┘
+```
+
+### DataDog Observability
+
+The API container includes the DataDog .NET APM tracer configured for direct-to-cloud reporting:
+
+- **In-Image Agent:** DataDog tracer embedded in the application container
+- **Transport:** Direct HTTPS to Datadog cloud (no local agent)
+- **Traces:** Automatic instrumentation for HTTP, EF Core, SQL
+- **Logs:** Structured logging with trace correlation via Serilog
+- **Metrics:** .NET runtime metrics enabled
+
+See [observability.md](observability.md) for detailed configuration.
 
 ---
 

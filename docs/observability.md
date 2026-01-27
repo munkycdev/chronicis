@@ -2,63 +2,66 @@
 
 This document describes how to configure and validate observability for the Chronicis API.
 
-## Datadog APM
+## DataDog APM
 
-Chronicis uses Datadog APM for distributed tracing. Traces are sent to a Datadog agent running as a sidecar container in Azure App Service.
+Chronicis uses DataDog APM for distributed tracing with an in-image agent configuration. The DataDog .NET tracer is embedded in the application container and sends traces directly to the Datadog cloud.
 
 ### Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ Azure App Service (Linux Container)                     │
+│ Azure Container App (ca-chronicis-api)                  │
 │                                                         │
-│  ┌─────────────────┐      ┌─────────────────────────┐  │
-│  │ chronicis-api   │─────▶│ datadog-agent (sidecar) │  │
-│  │ (.NET 9)        │:8126 │                         │  │
-│  └─────────────────┘      └───────────┬─────────────┘  │
-│                                       │                 │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ chronicis-api (.NET 9)                          │   │
+│  │ - ASP.NET Core Web API                          │   │
+│  │ - DataDog .NET Tracer (embedded)                │   │
+│  │ - Serilog with DataDog sink                     │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
 └───────────────────────────────────────┼─────────────────┘
                                         │
+                                        │ HTTPS (direct)
                                         ▼
                               ┌─────────────────┐
                               │ Datadog Cloud   │
-                              │ (APM, Logs)     │
+                              │ - APM Traces    │
+                              │ - Logs          │
+                              │ - Metrics       │
                               └─────────────────┘
 ```
 
 ### Required Environment Variables
 
-Configure these in Azure App Service → Configuration → Application Settings:
+Configure these in Azure Container Apps → Configuration → Environment Variables:
 
 | Variable | Value | Description |
 |----------|-------|-------------|
+| `DD_API_KEY` | `<api-key>` | DataDog API key (from Key Vault secret) |
+| `DD_SITE` | `datadoghq.com` | DataDog site (US datacenter) |
 | `DD_SERVICE` | `chronicis-api` | Service name in Datadog APM |
 | `DD_ENV` | `production` | Environment tag (production, staging, development) |
 | `DD_VERSION` | `<build-number>` | Version tag for deployments |
-| `DD_AGENT_HOST` | `datadog-agent` | Hostname of the sidecar container |
-| `DD_TRACE_AGENT_PORT` | `8126` | Trace agent port (default) |
 | `DD_LOGS_INJECTION` | `true` | Inject trace IDs into logs |
 | `DD_RUNTIME_METRICS_ENABLED` | `true` | Enable .NET runtime metrics |
+| `DD_TRACE_AGENT_URL` | (not set) | When empty, tracer sends directly to cloud |
 
-### Sidecar Configuration
+### Container Configuration
 
-The Datadog agent runs as a sidecar container. Configure in Azure App Service → Deployment Center or via ARM template:
+The DataDog .NET tracer is installed in the container image during build. No separate agent container is required.
 
-```json
-{
-  "name": "datadog-agent",
-  "image": "datadog/agent:latest",
-  "resources": {
-    "cpu": 0.5,
-    "memory": "256Mi"
-  },
-  "environmentVariables": [
-    { "name": "DD_API_KEY", "secretRef": "dd-api-key" },
-    { "name": "DD_SITE", "value": "datadoghq.com" },
-    { "name": "DD_APM_ENABLED", "value": "true" },
-    { "name": "DD_APM_NON_LOCAL_TRAFFIC", "value": "true" }
-  ]
-}
+**Dockerfile snippet:**
+```dockerfile
+# Install DataDog tracer
+RUN mkdir -p /opt/datadog
+RUN curl -LO https://github.com/DataDog/dd-trace-dotnet/releases/download/v2.x.x/datadog-dotnet-apm-2.x.x.tar.gz
+RUN tar -xzf datadog-dotnet-apm-2.x.x.tar.gz -C /opt/datadog
+
+# Set environment variables
+ENV CORECLR_ENABLE_PROFILING=1
+ENV CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+ENV CORECLR_PROFILER_PATH=/opt/datadog/Datadog.Trace.ClrProfiler.Native.so
+ENV DD_DOTNET_TRACER_HOME=/opt/datadog
 ```
 
 ### Validation
@@ -70,7 +73,7 @@ curl https://api.chronicis.app/health
 # Expected: {"status":"healthy","timestamp":"..."}
 ```
 
-#### 2. Datadog Diagnostic Endpoint
+#### 2. DataDog Diagnostic Endpoint
 
 ```bash
 curl https://api.chronicis.app/diag/datadog
@@ -79,29 +82,24 @@ curl https://api.chronicis.app/diag/datadog
 Expected response:
 ```json
 {
-  "timestamp": "2025-01-25T...",
+  "timestamp": "2026-01-27T...",
   "tracer": {
     "serviceName": "chronicis-api",
     "environment": "production",
     "serviceVersion": "1.0.0",
-    "agentUri": "http://datadog-agent:8126/",
+    "agentUri": null,
     "logsInjectionEnabled": true,
     "tracerEnabled": true,
     "runtimeMetricsEnabled": true
   },
   "agent": {
-    "status": "reachable",
-    "info": "{...agent info...}"
+    "status": "direct-to-cloud",
+    "info": "Traces sent directly to Datadog cloud"
   }
 }
 ```
 
-If `agent.status` is `"unreachable"`, check:
-- Sidecar container is running
-- `DD_AGENT_HOST` matches the sidecar container name
-- Network connectivity between containers
-
-#### 3. Datadog UI
+#### 3. DataDog UI
 
 1. Go to [Datadog APM → Services](https://app.datadoghq.com/apm/services)
 2. Filter by `env:production`
@@ -135,38 +133,72 @@ This allows correlating logs with traces in Datadog.
 
 ### Local Development
 
-When running locally without a Datadog agent:
-- Tracing is configured but traces are dropped (no agent to receive them)
-- The `/diag/datadog` endpoint will show `agent.status: "unreachable"`
+When running locally without DataDog configuration:
+- Tracing is configured but traces are dropped (no API key)
+- The `/diag/datadog` endpoint will show tracer configuration
 - This is expected and doesn't affect application functionality
 
-To test with a local agent:
+To test with DataDog locally:
 
 ```powershell
-# Run Datadog agent locally
-docker run -d --name datadog-agent `
-  -e DD_API_KEY=<your-api-key> `
-  -e DD_APM_ENABLED=true `
-  -e DD_APM_NON_LOCAL_TRAFFIC=true `
-  -p 8126:8126 `
-  datadog/agent:latest
-
 # Set environment variables for local dev
-$env:DD_AGENT_HOST = "localhost"
+$env:DD_API_KEY = "<your-api-key>"
+$env:DD_SITE = "datadoghq.com"
+$env:DD_SERVICE = "chronicis-api"
 $env:DD_ENV = "development"
+$env:DD_LOGS_INJECTION = "true"
+$env:DD_RUNTIME_METRICS_ENABLED = "true"
+
+# Run the API
+cd src\Chronicis.Api
+dotnet run
 ```
+
+**Note:** For local development, you may prefer to omit `DD_API_KEY` to avoid sending development traces to production Datadog.
 
 ### Troubleshooting
 
 | Symptom | Likely Cause | Solution |
 |---------|--------------|----------|
-| No traces in Datadog | Agent not running or unreachable | Check `/diag/datadog` endpoint |
-| `agent.status: "unreachable"` | Network/DNS issue | Verify `DD_AGENT_HOST` matches sidecar name |
-| Traces appear but no service name | `DD_SERVICE` not set | Add to App Service configuration |
+| No traces in Datadog | Missing `DD_API_KEY` | Verify API key in Container App environment variables |
+| Traces appear but no service name | `DD_SERVICE` not set | Add to Container App configuration |
 | Missing trace IDs in logs | `DD_LOGS_INJECTION` not enabled | Set to `true` |
+| High memory usage | Too many metrics enabled | Review `DD_RUNTIME_METRICS_ENABLED` setting |
+| Traces delayed | Network latency | Check connectivity to Datadog cloud endpoint |
+
+### Container App Configuration
+
+Ensure the following in your Container App configuration:
+
+**Environment Variables:**
+- All `DD_*` variables set as described above
+- `DD_API_KEY` sourced from Key Vault secret reference
+
+**Secrets:**
+```bash
+az containerapp secret set \
+  --name ca-chronicis-api \
+  --resource-group rg-chronicis \
+  --secrets dd-api-key=keyvaultref:<key-vault-secret-uri>,identityref:<managed-identity-id>
+```
+
+**Environment Variable Reference:**
+```bash
+az containerapp update \
+  --name ca-chronicis-api \
+  --resource-group rg-chronicis \
+  --set-env-vars "DD_API_KEY=secretref:dd-api-key"
+```
+
+### Performance Impact
+
+The DataDog tracer has minimal performance overhead:
+- **CPU:** < 1% in typical workloads
+- **Memory:** ~50-100 MB additional memory usage
+- **Network:** Batched trace uploads, minimal bandwidth
 
 ### References
 
-- [Datadog .NET Tracing](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/)
-- [Azure App Service Sidecars](https://learn.microsoft.com/en-us/azure/app-service/tutorial-custom-container-sidecar)
+- [DataDog .NET Tracing](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/)
+- [Azure Container Apps Environment Variables](https://learn.microsoft.com/en-us/azure/container-apps/environment-variables)
 - [Serilog + Datadog](https://docs.datadoghq.com/logs/log_collection/csharp/)

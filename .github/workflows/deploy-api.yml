@@ -1,61 +1,70 @@
-name: Deploy Chronicis API
+name: Deploy API (ACA)
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
     paths:
-      - 'src/Chronicis.Api/**'
-      - 'src/Chronicis.Shared/**'
-      - '.github/workflows/deploy-api.yml'
-  workflow_dispatch:  # Allow manual trigger
+      - "src/Chronicis.Api/**"
+      - "src/Chronicis.Shared/**"
+      - "Directory.Build.props"
+      - "Directory.Build.targets"
+      - "global.json"
+      - ".github/workflows/deploy-api.yml"
 
-env:
-  REGISTRY: crchronicisdev.azurecr.io
-  IMAGE_NAME: chronicis-api
-  DOCKERFILE_PATH: src/Chronicis.Api/Dockerfile
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: chronicis-api-main
+  cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    name: Build and Deploy API Container
-    
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Log in to Azure Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
-
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha,prefix=
-            type=raw,value=latest
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ${{ env.DOCKERFILE_PATH }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Azure Login
+      - name: Azure login (OIDC)
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'app-chronicis-api'
-          images: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest'
+      - name: Login to ACR
+        run: az acr login --name ${{ vars.ACR_NAME }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push API image
+        run: |
+          echo "IMAGE=${{ vars.ACR_LOGIN_SERVER }}/${{ vars.API_IMAGE_REPO }}:${{ github.sha }}" >> $GITHUB_ENV
+          echo "IMAGE_LATEST=${{ vars.ACR_LOGIN_SERVER }}/${{ vars.API_IMAGE_REPO }}:latest" >> $GITHUB_ENV
+
+          docker buildx build \
+            -f src/Chronicis.Api/Dockerfile \
+            -t "$IMAGE" \
+            -t "$IMAGE_LATEST" \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --push .
+
+      - name: Deploy API (update image)
+        run: |
+          az containerapp update \
+            --name ${{ vars.API_APP_NAME }} \
+            --resource-group ${{ vars.RESOURCE_GROUP }} \
+            --image "$IMAGE"
+
+      - name: Print active API revision
+        run: |
+          REVISION=$(az containerapp revision list \
+            --name ${{ vars.API_APP_NAME }} \
+            --resource-group ${{ vars.RESOURCE_GROUP }} \
+            --query "[?properties.active==\`true\`].name | [0]" \
+            --output tsv)
+
+          echo "✅ Active API revision: $REVISION"
