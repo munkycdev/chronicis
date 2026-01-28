@@ -45,7 +45,7 @@
                  @onclick="() => OnSuggestionClick(suggestion)"
                  @onmouseenter="() => OnSuggestionHover(index)">
                 <div class="wiki-link-suggestion-title">
-                    @suggestion.Title
+                    @suggestion.DisplayTitle
                     @if (suggestion.IsExternal && !string.IsNullOrWhiteSpace(suggestion.SourceBadge))
                     {
                         <span class="wiki-link-suggestion-badge">@suggestion.SourceBadge</span>

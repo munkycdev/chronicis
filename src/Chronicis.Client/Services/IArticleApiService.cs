@@ -67,4 +67,10 @@ public interface IArticleApiService
     /// Search articles by title only.
     /// </summary>
     Task<List<ArticleSearchResultDto>> SearchArticlesByTitleAsync(string query);
+
+    /// <summary>
+    /// Update aliases for an article. Accepts comma-delimited string.
+    /// Returns updated article on success, null on failure.
+    /// </summary>
+    Task<ArticleDto?> UpdateAliasesAsync(Guid articleId, string aliases);
 }

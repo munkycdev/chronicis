@@ -182,6 +182,29 @@
         
         <MudDivider Class="my-3" />
         
+        <!-- Aliases Section -->
+        <MudText Typo="Typo.subtitle2" Class="px-4 py-2" Style="color: var(--mud-palette-text-secondary);">
+            Aliases
+        </MudText>
+        
+        <div class="px-4 pb-3">
+            <MudTextField @bind-Value="_aliasesText"
+                          Placeholder="Enter aliases, separated by commas"
+                          Variant="Variant.Outlined"
+                          Lines="2"
+                          HelperText="Alternative names for linking (e.g., Icara, The Wanderer)"
+                          Disabled="_isSavingAliases"
+                          Immediate="false"
+                          DebounceInterval="500"
+                          OnBlur="HandleAliasesBlur" />
+            @if (_isSavingAliases)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-1" />
+            }
+        </div>
+        
+        <MudDivider Class="my-3" />
+        
         <!-- Article Info Section -->
         <MudText Typo="Typo.subtitle2" Class="px-4 py-2" Style="color: var(--mud-palette-text-secondary);">
             Article Info
@@ -283,6 +306,11 @@
     private ArticleVisibility _currentVisibility;
     private bool _isSavingVisibility;
     private Guid? _currentUserId;
+    
+    // Aliases
+    private string _aliasesText = string.Empty;
+    private string _originalAliasesText = string.Empty;
+    private bool _isSavingAliases;
 
     [Parameter]
     public ArticleDto Article { get; set; } = null!;
@@ -306,6 +334,18 @@
     {
         _isCreator = _currentUserId.HasValue && Article.CreatedBy == _currentUserId.Value;
         _currentVisibility = Article.Visibility;
+        
+        // Initialize aliases text from Article
+        var newAliasesText = Article.Aliases != null && Article.Aliases.Any()
+            ? string.Join(", ", Article.Aliases.Select(a => a.AliasText))
+            : string.Empty;
+        
+        // Only update if the article changed (not just user editing)
+        if (_originalAliasesText != newAliasesText || string.IsNullOrEmpty(_aliasesText))
+        {
+            _aliasesText = newAliasesText;
+            _originalAliasesText = newAliasesText;
+        }
     }
 
     private async Task HandleVisibilityChanged(ArticleVisibility newVisibility)
@@ -392,6 +432,68 @@
         ArticleType.Legacy => "Legacy Article",
         _ => "Article"
     };
+
+    private async Task HandleAliasesBlur()
+    {
+        // Normalize for comparison: trim, dedupe, sort
+        var normalizedNew = NormalizeAliasesText(_aliasesText);
+        var normalizedOriginal = NormalizeAliasesText(_originalAliasesText);
+        
+        if (normalizedNew == normalizedOriginal || _isSavingAliases)
+        {
+            return;
+        }
+
+        _isSavingAliases = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await ArticleApi.UpdateAliasesAsync(Article.Id, _aliasesText);
+            
+            if (result != null)
+            {
+                // Update the article's aliases from the response
+                Article.Aliases = result.Aliases;
+                
+                // Update our tracking
+                _originalAliasesText = _aliasesText;
+                
+                Snackbar.Add("Aliases updated", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to update aliases", Severity.Error);
+                // Revert to original
+                _aliasesText = _originalAliasesText;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to update aliases: {ex.Message}", Severity.Error);
+            _aliasesText = _originalAliasesText;
+        }
+        finally
+        {
+            _isSavingAliases = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string NormalizeAliasesText(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
+            
+        var aliases = text
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(a => a.Trim().ToLowerInvariant())
+            .Where(a => !string.IsNullOrWhiteSpace(a))
+            .Distinct()
+            .OrderBy(a => a);
+            
+        return string.Join(",", aliases);
+    }
 
     public async Task RefreshPanelsAsync()
     {

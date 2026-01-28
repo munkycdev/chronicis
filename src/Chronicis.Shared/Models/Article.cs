@@ -204,6 +204,11 @@ public class Article
     public ICollection<ArticleLink> IncomingLinks { get; set; } = new List<ArticleLink>();
 
     /// <summary>
+    /// Alternative names/aliases for this article (e.g., former names, nicknames, titles).
+    /// </summary>
+    public ICollection<ArticleAlias> Aliases { get; set; } = new List<ArticleAlias>();
+
+    /// <summary>
     /// Computed property for child count (not mapped to database).
     /// </summary>
     [NotMapped]

@@ -16,6 +16,7 @@ public class ChronicisDbContext : DbContext
     public DbSet<Campaign> Campaigns { get; set; } = null!;
     public DbSet<Arc> Arcs { get; set; } = null!;
     public DbSet<Article> Articles { get; set; } = null!;
+    public DbSet<ArticleAlias> ArticleAliases { get; set; } = null!;
     public DbSet<ArticleLink> ArticleLinks { get; set; } = null!;
     public DbSet<WorldLink> WorldLinks { get; set; } = null!;
     public DbSet<WorldDocument> WorldDocuments { get; set; } = null!;
@@ -36,6 +37,7 @@ public class ChronicisDbContext : DbContext
         ConfigureCampaign(modelBuilder);
         ConfigureArc(modelBuilder);
         ConfigureArticle(modelBuilder);
+        ConfigureArticleAlias(modelBuilder);
         ConfigureArticleLink(modelBuilder);
         ConfigureWorldLink(modelBuilder);
         ConfigureWorldDocument(modelBuilder);
@@ -320,6 +322,40 @@ public class ChronicisDbContext : DbContext
                 .IsUnique()
                 .HasFilter("[ParentId] IS NOT NULL")
                 .HasDatabaseName("IX_Articles_ParentId_Slug");
+        });
+    }
+
+    private static void ConfigureArticleAlias(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ArticleAlias>(entity =>
+        {
+            entity.HasKey(aa => aa.Id);
+
+            // AliasText is required, max 200 characters
+            entity.Property(aa => aa.AliasText)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            // AliasType is optional (for future use)
+            entity.Property(aa => aa.AliasType)
+                .HasMaxLength(50);
+
+            // ArticleAlias -> Article (CASCADE delete - when article is deleted, remove its aliases)
+            entity.HasOne(aa => aa.Article)
+                .WithMany(a => a.Aliases)
+                .HasForeignKey(aa => aa.ArticleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Index for looking up aliases by article
+            entity.HasIndex(aa => aa.ArticleId);
+
+            // Index for searching aliases (case-insensitive search will be handled in queries)
+            entity.HasIndex(aa => aa.AliasText);
+
+            // Unique constraint: No duplicate aliases on the same article
+            entity.HasIndex(aa => new { aa.ArticleId, aa.AliasText })
+                .IsUnique()
+                .HasDatabaseName("IX_ArticleAliases_ArticleId_AliasText");
         });
     }
 

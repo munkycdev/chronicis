@@ -624,10 +624,11 @@ else
                 return;
 
             // Convert matches to JS-friendly format and insert via TipTap
+            // For alias matches, format as "Alias → Title", otherwise just use matched text
             var jsMatches = result.Matches.Select(m => new
             {
                 articleId = m.ArticleId.ToString(),
-                displayText = m.MatchedText,
+                displayText = m.IsAliasMatch ? $"{m.MatchedText} → {m.ArticleTitle}" : m.MatchedText,
                 startIndex = m.StartIndex,
                 endIndex = m.EndIndex
             }).ToArray();
@@ -964,11 +965,16 @@ else
                     return;
                 }
 
+                // If matched via alias, display "Alias → Title", otherwise just title
+                var displayText = !string.IsNullOrWhiteSpace(suggestion.MatchedAlias)
+                    ? $"{suggestion.MatchedAlias} → {suggestion.Title}"
+                    : suggestion.Title;
+
                 await JSRuntime.InvokeVoidAsync(
                     "insertWikiLink",
                     $"tiptap-editor-{_article.Id}",
                     suggestion.ArticleId.Value.ToString(),
-                    suggestion.Title);
+                    displayText);
             }
             _showAutocomplete = false;
             _autocompleteSuggestions = new();

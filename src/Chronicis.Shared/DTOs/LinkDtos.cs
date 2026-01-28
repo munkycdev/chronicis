@@ -39,6 +39,12 @@ public class LinkSuggestionDto
     /// The article's slug for navigation.
     /// </summary>
     public string Slug { get; set; } = string.Empty;
+
+    /// <summary>
+    /// If the match was against an alias (not the title), this contains the matched alias text.
+    /// Null if the match was against the title directly.
+    /// </summary>
+    public string? MatchedAlias { get; set; }
 }
 
 /// <summary>
@@ -181,4 +187,9 @@ public class AutoLinkMatchDto
     /// End position of the match in the HTML content (character index, exclusive).
     /// </summary>
     public int EndIndex { get; set; }
+
+    /// <summary>
+    /// True if the match was against an alias rather than the article's canonical title.
+    /// </summary>
+    public bool IsAliasMatch { get; set; }
 }

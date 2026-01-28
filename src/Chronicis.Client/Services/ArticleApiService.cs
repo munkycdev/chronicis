@@ -133,4 +133,15 @@ public class ArticleApiService : IArticleApiService
 
         return results?.TitleMatches ?? new List<ArticleSearchResultDto>();
     }
+
+    public async Task<ArticleDto?> UpdateAliasesAsync(Guid articleId, string aliases)
+    {
+        var dto = new ArticleAliasesUpdateDto { Aliases = aliases ?? string.Empty };
+
+        return await _http.PutEntityAsync<ArticleDto>(
+            $"articles/{articleId}/aliases",
+            dto,
+            _logger,
+            $"aliases for article {articleId}");
+    }
 }

@@ -17,10 +17,23 @@ public sealed class WikiLinkAutocompleteItem
     public string? ExternalId { get; private init; }
     public string? CategoryKey { get; private init; }
     public string? Icon { get; private init; }
+    
+    /// <summary>
+    /// If the suggestion matched via an alias, this contains the matched alias.
+    /// Used for display: "MatchedAlias (Title)"
+    /// </summary>
+    public string? MatchedAlias { get; private init; }
 
     public string SourceBadge => string.IsNullOrWhiteSpace(Source)
         ? string.Empty
         : Source.ToUpperInvariant();
+
+    /// <summary>
+    /// Gets the display title. If matched via alias, shows "Alias (Title)".
+    /// </summary>
+    public string DisplayTitle => !string.IsNullOrWhiteSpace(MatchedAlias)
+        ? $"{MatchedAlias} ({Title})"
+        : Title;
 
     public static WikiLinkAutocompleteItem FromInternal(LinkSuggestionDto suggestion)
     {
@@ -30,7 +43,8 @@ public sealed class WikiLinkAutocompleteItem
             IsCategory = false,
             Title = suggestion.Title,
             SecondaryText = suggestion.DisplayPath,
-            ArticleId = suggestion.ArticleId
+            ArticleId = suggestion.ArticleId,
+            MatchedAlias = suggestion.MatchedAlias
         };
     }
 
@@ -47,7 +61,8 @@ public sealed class WikiLinkAutocompleteItem
             Source = suggestion.Source,
             ExternalId = isCategory ? null : suggestion.Id,
             CategoryKey = isCategory ? suggestion.Id?.Replace("_category/", "") : null,
-            Icon = suggestion.Icon
+            Icon = suggestion.Icon,
+            MatchedAlias = null // External links don't have aliases
         };
     }
 }

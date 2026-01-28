@@ -42,6 +42,9 @@ public class ArticleDto
     // AI features
     public string? AISummary { get; set; }
     public DateTime? AISummaryGeneratedAt { get; set; }
+    
+    // Aliases
+    public List<ArticleAliasDto> Aliases { get; set; } = new();
 }
 
 /// <summary>
@@ -79,6 +82,12 @@ public class ArticleTreeDto
     /// Virtual groups should only expand/collapse, not navigate.
     /// </summary>
     public bool IsVirtualGroup { get; set; } = false;
+    
+    /// <summary>
+    /// Alternative names/aliases for this article.
+    /// Used for autocomplete matching and display.
+    /// </summary>
+    public List<string> Aliases { get; set; } = new();
 }
 
 /// <summary>
@@ -166,4 +175,40 @@ public class ArticleMoveDto
     /// The new parent article ID. Set to null to move the article to root level.
     /// </summary>
     public Guid? NewParentId { get; set; }
+}
+
+/// <summary>
+/// DTO for article alias data.
+/// </summary>
+public class ArticleAliasDto
+{
+    public Guid Id { get; set; }
+    public string AliasText { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Optional type classification (e.g., "FormerName", "Nickname", "Title").
+    /// Reserved for future use.
+    /// </summary>
+    public string? AliasType { get; set; }
+    
+    /// <summary>
+    /// Optional date when this alias became effective.
+    /// Reserved for future use.
+    /// </summary>
+    public DateTime? EffectiveDate { get; set; }
+    
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
+/// Request DTO for updating all aliases on an article.
+/// Accepts a comma-delimited string that will be parsed into individual aliases.
+/// </summary>
+public class ArticleAliasesUpdateDto
+{
+    /// <summary>
+    /// Comma-delimited list of aliases (e.g., "Icara, The Wanderer, Former Name").
+    /// Spaces around commas will be trimmed. Empty entries will be ignored.
+    /// </summary>
+    public string Aliases { get; set; } = string.Empty;
 }

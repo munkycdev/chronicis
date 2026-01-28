@@ -75,7 +75,8 @@ _buildtmp/*
 /scripts/codex.ps1
 /CODEX_INSTRUCTIONS.md
 /src/Chronicis.Api/appsettings.Local.json
+/src/Chronicis.Api/local.settings.json
 /src/Chronicis.Api/appsettings.Development.json
-
+/ql/*
 sitecontainers-spec.json
 appsettings.json

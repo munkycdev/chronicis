@@ -403,6 +403,112 @@ public class ArticlesController : ControllerBase
         }
     }
 
+    #region Aliases
+
+    /// <summary>
+    /// PUT /api/articles/{id}/aliases - Updates all aliases for an article.
+    /// Accepts a comma-delimited string that replaces all existing aliases.
+    /// </summary>
+    [HttpPut("{id:guid}/aliases")]
+    public async Task<ActionResult<ArticleDto>> UpdateAliases(Guid id, [FromBody] ArticleAliasesUpdateDto dto)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        try
+        {
+            if (dto == null)
+            {
+                return BadRequest("Invalid request body");
+            }
+
+            // Get article with existing aliases - check user has access via world membership
+            var article = await _context.Articles
+                .Include(a => a.Aliases)
+                .Where(a => a.Id == id)
+                .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == user.Id))
+                .FirstOrDefaultAsync();
+
+            if (article == null)
+            {
+                return NotFound($"Article {id} not found");
+            }
+
+            // Parse the comma-delimited aliases
+            var newAliases = ParseAliases(dto.Aliases);
+
+            // Validate: aliases cannot match the article's own title
+            var titleLower = article.Title?.ToLowerInvariant() ?? string.Empty;
+            var invalidAliases = newAliases.Where(a => a.ToLowerInvariant() == titleLower).ToList();
+            if (invalidAliases.Any())
+            {
+                return BadRequest($"Alias cannot match the article's title: {string.Join(", ", invalidAliases)}");
+            }
+
+            // Remove aliases that are no longer in the list
+            var aliasesToRemove = article.Aliases
+                .Where(existing => !newAliases.Contains(existing.AliasText, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+            foreach (var alias in aliasesToRemove)
+            {
+                _context.ArticleAliases.Remove(alias);
+            }
+
+            // Add new aliases that don't already exist
+            var existingAliasTexts = article.Aliases
+                .Select(a => a.AliasText.ToLowerInvariant())
+                .ToHashSet();
+
+            foreach (var aliasText in newAliases)
+            {
+                if (!existingAliasTexts.Contains(aliasText.ToLowerInvariant()))
+                {
+                    var newAlias = new ArticleAlias
+                    {
+                        Id = Guid.NewGuid(),
+                        ArticleId = id,
+                        AliasText = aliasText,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.ArticleAliases.Add(newAlias);
+                }
+            }
+
+            article.ModifiedAt = DateTime.UtcNow;
+            article.LastModifiedBy = user.Id;
+
+            await _context.SaveChangesAsync();
+
+            // Return updated article with aliases
+            var updatedArticle = await _articleService.GetArticleDetailAsync(id, user.Id);
+            return Ok(updatedArticle);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating aliases for article {ArticleId}", id);
+            return StatusCode(500, $"Error updating aliases: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Parses a comma-delimited string into a list of trimmed, non-empty, unique aliases.
+    /// </summary>
+    private static List<string> ParseAliases(string? aliasesString)
+    {
+        if (string.IsNullOrWhiteSpace(aliasesString))
+        {
+            return new List<string>();
+        }
+
+        return aliasesString
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(a => a.Trim())
+            .Where(a => !string.IsNullOrWhiteSpace(a) && a.Length <= 200)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    #endregion
+
     #region Wiki Links
 
     /// <summary>

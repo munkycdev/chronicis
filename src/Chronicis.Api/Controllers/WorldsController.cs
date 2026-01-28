@@ -343,7 +343,7 @@ public class WorldsController : ControllerBase
         var normalizedQuery = query.ToLowerInvariant();
 
         // Search articles by title match
-        var suggestions = await _context.Articles
+        var titleMatches = await _context.Articles
             .Where(a => a.WorldId == id)
             .Where(a => a.Title != null && a.Title.ToLower().Contains(normalizedQuery))
             .OrderBy(a => a.Title)
@@ -354,9 +354,37 @@ public class WorldsController : ControllerBase
                 Title = a.Title ?? "Untitled",
                 Slug = a.Slug,
                 ArticleType = a.Type,
-                DisplayPath = ""
+                DisplayPath = "",
+                MatchedAlias = null // Title match, no alias
             })
             .ToListAsync();
+
+        // Search articles by alias match (excluding those already found by title)
+        var titleMatchIds = titleMatches.Select(t => t.ArticleId).ToHashSet();
+        
+        var aliasMatches = await _context.ArticleAliases
+            .Include(aa => aa.Article)
+            .Where(aa => aa.Article.WorldId == id)
+            .Where(aa => aa.AliasText.ToLower().Contains(normalizedQuery))
+            .Where(aa => !titleMatchIds.Contains(aa.ArticleId))
+            .OrderBy(aa => aa.AliasText)
+            .Take(20)
+            .Select(aa => new LinkSuggestionDto
+            {
+                ArticleId = aa.ArticleId,
+                Title = aa.Article.Title ?? "Untitled",
+                Slug = aa.Article.Slug,
+                ArticleType = aa.Article.Type,
+                DisplayPath = "",
+                MatchedAlias = aa.AliasText // This matched via alias
+            })
+            .ToListAsync();
+
+        // Combine results: title matches first, then alias matches
+        var suggestions = titleMatches
+            .Concat(aliasMatches)
+            .Take(20)
+            .ToList();
 
         // Build display paths for each suggestion
         foreach (var suggestion in suggestions)

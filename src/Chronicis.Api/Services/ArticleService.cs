@@ -110,6 +110,7 @@ namespace Chronicis.Api.Services
                     IconEmoji = a.IconEmoji,
                     CreatedBy = a.CreatedBy,
                     HasAISummary = a.AISummary != null
+                    // Note: Aliases intentionally not loaded here - loaded separately via GetLinkSuggestions
                 })
                 .OrderBy(a => a.Title)
                 .ToListAsync();
@@ -184,7 +185,15 @@ namespace Chronicis.Api.Services
                     PlayerId = a.PlayerId,
                     AISummary = a.AISummary,
                     AISummaryGeneratedAt = a.AISummaryGeneratedAt,
-                    Breadcrumbs = new List<BreadcrumbDto>()  // Will populate separately
+                    Breadcrumbs = new List<BreadcrumbDto>(),  // Will populate separately
+                    Aliases = a.Aliases.Select(al => new ArticleAliasDto
+                    {
+                        Id = al.Id,
+                        AliasText = al.AliasText,
+                        AliasType = al.AliasType,
+                        EffectiveDate = al.EffectiveDate,
+                        CreatedAt = al.CreatedAt
+                    }).ToList()
                 })
                 .FirstOrDefaultAsync();
 

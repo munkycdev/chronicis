@@ -74,7 +74,7 @@ public class AutoLinkService : IAutoLinkService
             };
         }
 
-        // Get all articles in this world that could be linked to
+        // Get all articles in this world that could be linked to (with their aliases)
         var linkableArticles = await (
             from a in _context.Articles
             join wm in _context.WorldMembers on a.WorldId equals wm.WorldId
@@ -82,7 +82,12 @@ public class AutoLinkService : IAutoLinkService
             where a.WorldId == worldId
             where a.Id != articleId
             where !string.IsNullOrEmpty(a.Title)
-            select new { a.Id, a.Title }
+            select new 
+            { 
+                a.Id, 
+                a.Title,
+                Aliases = a.Aliases.Select(al => al.AliasText).ToList()
+            }
         ).ToListAsync();
 
         if (!linkableArticles.Any())
@@ -97,20 +102,39 @@ public class AutoLinkService : IAutoLinkService
         // Build protected ranges (areas we should not match in)
         var protectedRanges = GetProtectedRanges(body);
 
-        // Sort by title length descending so we match longer titles first
+        // Build a list of all searchable terms (titles + aliases) with their article info
+        // Each term knows whether it's an alias or the canonical title
+        var searchTerms = new List<(string Term, Guid ArticleId, string ArticleTitle, bool IsAlias)>();
+        
+        foreach (var article in linkableArticles)
+        {
+            // Add the title
+            searchTerms.Add((article.Title, article.Id, article.Title, false));
+            
+            // Add all aliases
+            foreach (var alias in article.Aliases)
+            {
+                if (!string.IsNullOrWhiteSpace(alias))
+                {
+                    searchTerms.Add((alias, article.Id, article.Title, true));
+                }
+            }
+        }
+
+        // Sort by term length descending so we match longer terms first
         // This prevents "Water" from matching before "Waterdeep"
-        var sortedArticles = linkableArticles
-            .OrderByDescending(a => a.Title.Length)
+        var sortedTerms = searchTerms
+            .OrderByDescending(t => t.Term.Length)
             .ToList();
 
         var allMatches = new List<AutoLinkMatchDto>();
         var usedRanges = new List<(int Start, int End)>(); // Track ranges we've already matched
 
-        foreach (var article in sortedArticles)
+        foreach (var term in sortedTerms)
         {
             // Build regex for whole-word, case-insensitive match
-            var escapedTitle = Regex.Escape(article.Title);
-            var pattern = $@"\b{escapedTitle}\b";
+            var escapedTerm = Regex.Escape(term.Term);
+            var pattern = $@"\b{escapedTerm}\b";
 
             try
             {
@@ -135,19 +159,20 @@ public class AutoLinkService : IAutoLinkService
                     allMatches.Add(new AutoLinkMatchDto
                     {
                         MatchedText = match.Value,
-                        ArticleTitle = article.Title,
-                        ArticleId = article.Id,
+                        ArticleTitle = term.ArticleTitle,
+                        ArticleId = term.ArticleId,
                         StartIndex = match.Index,
-                        EndIndex = match.Index + match.Length
+                        EndIndex = match.Index + match.Length,
+                        IsAliasMatch = term.IsAlias
                     });
 
-                    // Mark this range as used so shorter titles don't match within it
+                    // Mark this range as used so shorter terms don't match within it
                     usedRanges.Add((match.Index, match.Index + match.Length));
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to create regex for title: {Title}", article.Title);
+                _logger.LogWarning(ex, "Failed to create regex for term: {Term}", term.Term);
             }
         }
 
