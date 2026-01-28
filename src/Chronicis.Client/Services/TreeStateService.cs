@@ -217,12 +217,12 @@ public class TreeStateService : ITreeStateService
         // Fetch all arcs, world links, and world documents in parallel
         var arcTasks = allCampaigns.Select(c => _arcApi.GetArcsByCampaignAsync(c.Id)).ToList();
         var linkTasks = worlds.Select(w => _worldApi.GetWorldLinksAsync(w.Id)).ToList();
-        var documentTasks = worlds.Select(w => _worldApi.GetWorldDocumentsAsync(w.Id)).ToList();
+        //var documentTasks = worlds.Select(w => _worldApi.GetWorldDocumentsAsync(w.Id)).ToList();
 
         await Task.WhenAll(
             Task.WhenAll(arcTasks),
-            Task.WhenAll(linkTasks),
-            Task.WhenAll(documentTasks)
+            Task.WhenAll(linkTasks)
+            //Task.WhenAll(documentTasks)
         );
 
         var arcResults = arcTasks.Select(t => t.Result).ToArray();
@@ -236,10 +236,10 @@ public class TreeStateService : ITreeStateService
 
         // Create lookup: WorldId -> List<WorldDocumentDto>
         var documentsByWorld = new Dictionary<Guid, List<WorldDocumentDto>>();
-        for (int i = 0; i < worlds.Count; i++)
-        {
-            documentsByWorld[worlds[i].Id] = documentTasks[i].Result;
-        }
+        //for (int i = 0; i < worlds.Count; i++)
+        //{
+        //    documentsByWorld[worlds[i].Id] = documentTasks[i].Result;
+        //}
         
         // Create lookup: CampaignId -> List<ArcDto>
         var arcsByCampaign = new Dictionary<Guid, List<ArcDto>>();
