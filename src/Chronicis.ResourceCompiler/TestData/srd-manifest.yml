@@ -1,0 +1,552 @@
+# SRD/srd-manifest.yml
+version: 1
+
+paths:
+  root: .
+  raw: raw
+  compiled: compiled
+
+dataset:
+  name: srd-2024
+  providerKey: srd
+  source:
+    name: open5e-json
+    licenseKeys:
+      - CC-BY-4.0
+      - OGL-1.0a
+
+# Compiler behaviors that apply globally
+compiler:
+  pkIndex: true
+  fkIndex: true
+  strictMode: false            # when true: fail on missing FK targets
+  maxNestingDepth: 3
+  ordering:
+    missingOrderBehavior: stable-insertion # stable-insertion | pk-sort
+  warnings:
+    logOrphanFks: true
+    logDuplicatePks: true
+    logPolymorphicConflicts: true
+    logSelfRefCycles: true
+  numericCoercion:
+    decimalStringsToNumber: true
+  output:
+    json:
+      indent: false
+      ignoreNulls: true
+
+# Lookup/reference tables that provide slug -> display mappings
+lookups:
+  AbilityDescription:
+    file: AbilityDescription.json
+    pk: describes
+  SkillDescription:
+    file: SkillDescription.json
+    pk: describes
+  DamageTypeDescription:
+    file: DamageTypeDescription.json
+    pk: describes
+  ConditionDescription:
+    file: ConditionDescription.json
+    pk: describes
+  AlignmentDescription:
+    file: AlignmentDescription.json
+    pk: describes
+  CreatureTypeDescription:
+    file: CreatureTypeDescription.json
+    pk: describes
+
+entities:
+  # -------------------------
+  # CREATURES
+  # -------------------------
+  Creature:
+    file: Creature.json
+    pk: id
+    root: true
+    identity:
+      slugField: slug
+      idTemplate: "srd:creature:{slug}"
+    output:
+      blobTemplate: "creatures/{slug}.json"
+      index:
+        blob: "indexes/creatures.index.json"
+        fields:
+          - id
+          - slug
+          - name
+          - challenge_rating
+          - size
+          - type
+          - alignment
+    excludeFields:
+      # Computed/derived/display convenience fields that should not be treated as canonical
+      - passive_perception
+      - initiative_bonus
+      - normal_sight_range
+      - damage_immunities_display
+      - languages_desc
+    children:
+      - entity: CreatureAction
+        as: actions
+        fk:
+          field: creature
+          references: Creature.id
+        orderBy:
+          field: order
+          direction: asc
+
+      - entity: CreatureTrait
+        as: traits
+        fk:
+          field: creature
+          references: Creature.id
+
+    arrayFields:
+      # These are embedded values or simple strings, not FK references
+      - condition_immunities
+      - damage_immunities
+      - languages
+
+  CreatureAction:
+    file: CreatureAction.json
+    pk: id
+    fks:
+      creature:
+        references: Creature.id
+        nullable: false
+      form_condition:
+        references: ConditionDescription.describes
+        nullable: true
+    children:
+      - entity: CreatureActionAttack
+        as: attacks
+        fk:
+          field: parent
+          references: CreatureAction.id
+
+  CreatureActionAttack:
+    file: CreatureActionAttack.json
+    pk: id
+    fks:
+      parent:
+        references: CreatureAction.id
+        nullable: false
+
+  CreatureTrait:
+    file: CreatureTrait.json
+    pk: id
+    fks:
+      creature:
+        references: Creature.id
+        nullable: false
+
+  # -------------------------
+  # CLASSES
+  # -------------------------
+  CharacterClass:
+    file: CharacterClass.json
+    pk: id
+    root: true
+    identity:
+      slugField: slug
+      idTemplate: "srd:class:{slug}"
+    output:
+      blobTemplate: "classes/{slug}.json"
+      index:
+        blob: "indexes/classes.index.json"
+        fields:
+          - id
+          - slug
+          - name
+          - hit_die
+    selfRef:
+      field: subclass_of
+      references: CharacterClass.id
+      nullable: true
+      cyclePolicy: detect-and-warn
+      emit:
+        # emit subclass references rather than embedding full docs
+        childrenAs: subclasses
+        mode: refs-only
+
+    children:
+      - entity: ClassFeature
+        as: features
+        fk:
+          field: parent
+          references: CharacterClass.id
+        orderBy:
+          field: level
+          direction: asc
+
+  ClassFeature:
+    file: ClassFeature.json
+    pk: id
+    fks:
+      parent:
+        references: CharacterClass.id
+        nullable: false
+    children:
+      - entity: ClassFeatureItem
+        as: items
+        fk:
+          field: parent
+          references: ClassFeature.id
+        orderBy:
+          field: level
+          direction: asc
+
+  ClassFeatureItem:
+    file: ClassFeatureItem.json
+    pk: id
+    fks:
+      parent:
+        references: ClassFeature.id
+        nullable: false
+
+  # -------------------------
+  # SPELLS
+  # -------------------------
+  Spell:
+    file: Spell.json
+    pk: id
+    root: true
+    identity:
+      slugField: slug
+      idTemplate: "srd:spell:{slug}"
+    output:
+      blobTemplate: "spells/{slug}.json"
+      index:
+        blob: "indexes/spells.index.json"
+        fields:
+          - id
+          - slug
+          - name
+          - level
+          - school
+          - concentration
+          - ritual
+    arrayRefs:
+      classes:
+        entity: CharacterClass
+        references: CharacterClass.id
+        mode: refs-only
+
+    arrayFields:
+      - damage_types
+
+    children:
+      - entity: SpellCastingOption
+        as: casting_options
+        fk:
+          field: parent
+          references: Spell.id
+
+  SpellCastingOption:
+    file: SpellCastingOption.json
+    pk: id
+    pkType: int
+    fks:
+      parent:
+        references: Spell.id
+        nullable: false
+
+  # -------------------------
+  # ITEMS / WEAPONS / ARMOR
+  # -------------------------
+  Item:
+    file: Item.json
+    pk: id
+    root: true
+    identity:
+      slugField: slug
+      idTemplate: "srd:item:{slug}"
+    output:
+      blobTemplate: "items/{slug}.json"
+      index:
+        blob: "indexes/items.index.json"
+        fields:
+          - id
+          - slug
+          - name
+          - rarity
+          - category
+          - requires_attunement
+
+    polymorphicRefs:
+      armor:
+        entity: Armor
+        references: Armor.id
+        nullable: true
+        emit: refs-only
+      weapon:
+        entity: Weapon
+        references: Weapon.id
+        nullable: true
+        emit: refs-only
+    warnings:
+      ifBothPopulated: warn
+
+    excludeFields:
+      - armor_class # likely derived from armor FK in some cases
+
+  Weapon:
+    file: Weapon.json
+    pk: id
+    root: true
+    identity:
+      slugField: slug
+      idTemplate: "srd:weapon:{slug}"
+    output:
+      blobTemplate: "weapons/{slug}.json"
+      index:
+        blob: "indexes/weapons.index.json"
+        fields:
+          - id
+          - slug
+          - name
+          - weapon_category
+          - weapon_range
+          - damage_dice
+          - damage_type
+
+    children:
+      - entity: WeaponPropertyAssignment
+        as: properties
+        fk:
+          field: weapon
+          references: Weapon.id
+
+  Armor:
+    file: Armor.json
+    pk: id
+    root: true
+    identity:
+      slugField: slug
+      idTemplate: "srd:armor:{slug}"
+    output:
+      blobTemplate: "armors/{slug}.json"
+      index:
+        blob: "indexes/armors.index.json"
+        fields:
+          - id
+          - slug
+          - name
+          - armor_category
+          - armor_class
+          - stealth_disadvantage
+          - strength_requirement
+
+  WeaponProperty:
+    file: WeaponProperty.json
+    pk: id
+    root: false
+    identity:
+      slugField: slug
+      idTemplate: "srd:weapon-property:{slug}"
+
+  WeaponPropertyAssignment:
+    file: WeaponPropertyAssignment.json
+    pk: id
+    fks:
+      weapon:
+        references: Weapon.id
+        nullable: false
+      property:
+        references: WeaponProperty.id
+        nullable: false
+      document:
+        references: Document.id
+        nullable: true
+    emit:
+      # include property ref + keep detail payload
+      includeFields:
+        - detail
+      includeRefs:
+        property:
+          entity: WeaponProperty
+          mode: embed-lite # embed name/slug if available; otherwise refs-only
+
+  # -------------------------
+  # SPECIES
+  # -------------------------
+  Species:
+    file: Species.json
+    pk: id
+    root: true
+    identity:
+      slugField: slug
+      idTemplate: "srd:species:{slug}"
+    output:
+      blobTemplate: "species/{slug}.json"
+      index:
+        blob: "indexes/species.index.json"
+        fields:
+          - id
+          - slug
+          - name
+
+    selfRef:
+      field: subspecies_of
+      references: Species.id
+      nullable: true
+      cyclePolicy: detect-and-warn
+      emit:
+        childrenAs: subspecies
+        mode: refs-only
+
+    children:
+      - entity: SpeciesTrait
+        as: traits
+        fk:
+          field: parent
+          references: Species.id
+        orderBy:
+          field: order
+          direction: asc
+
+  SpeciesTrait:
+    file: SpeciesTrait.json
+    pk: id
+    fks:
+      parent:
+        references: Species.id
+        nullable: false
+
+  # -------------------------
+  # BACKGROUNDS
+  # -------------------------
+  Background:
+    file: Background.json
+    pk: id
+    root: true
+    identity:
+      slugField: slug
+      idTemplate: "srd:background:{slug}"
+    output:
+      blobTemplate: "backgrounds/{slug}.json"
+      index:
+        blob: "indexes/backgrounds.index.json"
+        fields:
+          - id
+          - slug
+          - name
+
+    children:
+      - entity: BackgroundBenefit
+        as: benefits
+        fk:
+          field: parent
+          references: Background.id
+
+  BackgroundBenefit:
+    file: BackgroundBenefit.json
+    pk: id
+    fks:
+      parent:
+        references: Background.id
+        nullable: false
+
+  # -------------------------
+  # FEATS
+  # -------------------------
+  Feat:
+    file: Feat.json
+    pk: id
+    root: true
+    identity:
+      slugField: slug
+      idTemplate: "srd:feat:{slug}"
+    output:
+      blobTemplate: "feats/{slug}.json"
+      index:
+        blob: "indexes/feats.index.json"
+        fields:
+          - id
+          - slug
+          - name
+
+    children:
+      - entity: FeatBenefit
+        as: benefits
+        fk:
+          field: parent
+          references: Feat.id
+
+  FeatBenefit:
+    file: FeatBenefit.json
+    pk: id
+    fks:
+      parent:
+        references: Feat.id
+        nullable: false
+
+  # -------------------------
+  # RULESETS
+  # -------------------------
+  RuleSet:
+    file: RuleSet.json
+    pk: id
+    root: true
+    identity:
+      slugField: slug
+      idTemplate: "srd:ruleset:{slug}"
+    output:
+      blobTemplate: "rulesets/{slug}.json"
+      index:
+        blob: "indexes/rulesets.index.json"
+        fields:
+          - id
+          - slug
+          - name
+
+    children:
+      - entity: Rule
+        as: rules
+        fk:
+          field: ruleset
+          references: RuleSet.id
+        orderBy:
+          field: index
+          direction: asc
+
+  Rule:
+    file: Rule.json
+    pk: id
+    fks:
+      ruleset:
+        references: RuleSet.id
+        nullable: false
+
+  # -------------------------
+  # MISC / TAXONOMY
+  # -------------------------
+  Service:
+    file: Service.json
+    pk: id
+    root: true
+    identity:
+      slugField: slug
+      idTemplate: "srd:service:{slug}"
+    output:
+      blobTemplate: "services/{slug}.json"
+      index:
+        blob: "indexes/services.index.json"
+        fields:
+          - id
+          - slug
+          - name
+          - price
+
+  ItemCategory:
+    file: ItemCategory.json
+    pk: id
+    root: false
+    notes:
+      - "No observed FK from Item to ItemCategory; may be string-based category match."
+
+# Optional: explicitly list any entities you know exist but are not yet modeled.
+# This helps future iterations without breaking the compiler.
+unmodeledEntities:
+  - Document
