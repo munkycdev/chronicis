@@ -1,0 +1,11 @@
+entities:
+  BadEntity:
+    file: ""
+    pk: ""
+    children:
+      - entity: MissingEntity
+        fk:
+          field: ""
+        orderBy:
+          field: ""
+          direction: sideways
