@@ -88,6 +88,16 @@ public sealed class ManifestValidator
                         entityName));
                 }
 
+                var resolvedName = string.IsNullOrWhiteSpace(child.As) ? child.Entity : child.As;
+                if (string.IsNullOrWhiteSpace(resolvedName))
+                {
+                    warnings.Add(new Warning(
+                        WarningCode.InvalidManifest,
+                        WarningSeverity.Error,
+                        $"Entity '{entityName}' defines a child relationship with no resolved name.",
+                        entityName));
+                }
+
                 ValidateOrderBy(entityName, child.OrderBy, warnings);
             }
         }

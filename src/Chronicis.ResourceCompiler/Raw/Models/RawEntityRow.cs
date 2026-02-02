@@ -4,14 +4,16 @@ namespace Chronicis.ResourceCompiler.Raw.Models;
 
 public sealed class RawEntityRow
 {
-    public RawEntityRow(string entityName, JsonElement data, int sourceIndex)
+    public RawEntityRow(string entityName, int rowIndex, JsonElement data, JsonElement? extractedPkElement)
     {
         EntityName = entityName;
+        RowIndex = rowIndex;
         Data = data;
-        SourceIndex = sourceIndex;
+        ExtractedPkElement = extractedPkElement;
     }
 
     public string EntityName { get; }
+    public int RowIndex { get; }
     public JsonElement Data { get; }
-    public int SourceIndex { get; }
+    public JsonElement? ExtractedPkElement { get; }
 }

@@ -115,6 +115,7 @@ public sealed class ManifestLoader
             var mapped = new ManifestChild
             {
                 Entity = child.Entity ?? string.Empty,
+                As = child.As ?? string.Empty,
                 ForeignKeyField = child.Fk?.Field ?? string.Empty,
                 OrderBy = MapOrderBy(child.OrderBy),
                 MaxDepth = child.MaxDepth
@@ -176,6 +177,8 @@ public sealed class ManifestLoader
     private sealed class ManifestChildDto
     {
         public string? Entity { get; set; }
+        [YamlMember(Alias = "as")]
+        public string? As { get; set; }
         public ManifestForeignKeyDto? Fk { get; set; }
         public ManifestOrderByDto? OrderBy { get; set; }
         public int? MaxDepth { get; set; }

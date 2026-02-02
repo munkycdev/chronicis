@@ -1,4 +1,5 @@
 using Chronicis.ResourceCompiler.Warnings;
+using System.Linq;
 
 namespace Chronicis.ResourceCompiler.Compilation.Models;
 
@@ -12,4 +13,6 @@ public sealed class CompilationResult
 
     public IReadOnlyList<CompiledDocument> Documents { get; }
     public IReadOnlyList<Warning> Warnings { get; }
+
+    public bool HasErrors => Warnings.Any(warning => warning.Severity == WarningSeverity.Error);
 }

@@ -4,13 +4,19 @@ namespace Chronicis.ResourceCompiler.Indexing.Models;
 
 public sealed class FkIndex
 {
-    public FkIndex(string entityName, string fieldName, IReadOnlyDictionary<KeyValue, IReadOnlyList<RawEntityRow>> rowsByKey)
+    public FkIndex(
+        string parentEntityName,
+        string entityName,
+        string fieldName,
+        IReadOnlyDictionary<KeyValue, IReadOnlyList<RawEntityRow>> rowsByKey)
     {
+        ParentEntityName = parentEntityName;
         EntityName = entityName;
         FieldName = fieldName;
         RowsByKey = rowsByKey;
     }
 
+    public string ParentEntityName { get; }
     public string EntityName { get; }
     public string FieldName { get; }
     public IReadOnlyDictionary<KeyValue, IReadOnlyList<RawEntityRow>> RowsByKey { get; }
