@@ -183,6 +183,7 @@ builder.Services.AddScoped<ITreeStateService, TreeStateService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAppContextService, AppContextService>();
 builder.Services.AddScoped<IMetadataDrawerService, MetadataDrawerService>();
+builder.Services.AddScoped<IKeyboardShortcutService, KeyboardShortcutService>();
 
 // Article cache service (for reducing API calls on tooltips/navigation)
 builder.Services.AddScoped<IArticleCacheService, ArticleCacheService>();
@@ -206,7 +207,6 @@ builder.Services.AddScoped<IExportApiService>(sp =>
 });
 
 await builder.Build().RunAsync();
-
 // ============================================
 // THEME DEFINITION
 // ============================================

@@ -22,6 +22,7 @@
 @inject ILogger<ArticleDetail> Logger
 @inject IArticleCacheService ArticleCache
 @inject IMetadataDrawerService MetadataDrawerService
+@inject IKeyboardShortcutService KeyboardShortcutService
 
 @implements IDisposable
 
@@ -226,6 +227,7 @@ else
     {
         TreeState.OnStateChanged += OnTreeStateChanged;
         MetadataDrawerService.OnToggle += OnMetadataDrawerToggle;
+        KeyboardShortcutService.OnSaveRequested += HandleSaveShortcut;
         _dotNetHelper = DotNetObjectReference.Create(this);
         await Task.CompletedTask;
     }
@@ -252,6 +254,7 @@ else
         _disposed = true;
         TreeState.OnStateChanged -= OnTreeStateChanged;
         MetadataDrawerService.OnToggle -= OnMetadataDrawerToggle;
+        KeyboardShortcutService.OnSaveRequested -= HandleSaveShortcut;
         OnCtrlNPressed -= HandleCtrlNInstance;
         _autoSaveTimer?.Dispose();
         
@@ -800,6 +803,11 @@ else
     {
         _openMetadata = !_openMetadata;
         InvokeAsync(StateHasChanged);
+    }
+
+    private async void HandleSaveShortcut()
+    {
+        await InvokeAsync(SaveArticle);
     }
 
     [JSInvokable("HandleCtrlN")]

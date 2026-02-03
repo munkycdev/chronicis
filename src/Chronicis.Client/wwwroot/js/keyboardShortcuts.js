@@ -24,9 +24,17 @@ window.chronicisKeyboardShortcuts = {
             activeElement.closest('.ProseMirror') // TipTap editor
         );
         
-        // Ctrl+N - Create new sibling article
+        // Ctrl+S - Save current article (works everywhere including editor)
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            if (this.dotNetHelper) {
+                this.dotNetHelper.invokeMethodAsync('OnCtrlS');
+            }
+            return;
+        }
+        
+        // Ctrl+N - Create new sibling article (works everywhere)
         if (e.ctrlKey && e.key === 'n') {
-            // Allow in inputs too for this shortcut - user explicitly wants new article
             e.preventDefault();
             if (this.dotNetHelper) {
                 this.dotNetHelper.invokeMethodAsync('OnCtrlN');
@@ -34,7 +42,7 @@ window.chronicisKeyboardShortcuts = {
             return;
         }
         
-        // Ctrl+M - Toggle metadata drawer
+        // Ctrl+M - Toggle metadata drawer (works everywhere)
         if (e.ctrlKey && e.key === 'm') {
             e.preventDefault();
             if (this.dotNetHelper) {
