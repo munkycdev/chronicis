@@ -173,7 +173,7 @@ public class ArticleCacheService : IArticleCacheService
         {
             var count = _cache.Count;
             _cache.Clear();
-            _logger.LogInformation("Invalidated entire article cache ({Count} entries)", count);
+            _logger.LogDebug("Invalidated entire article cache ({Count} entries)", count);
         }
     }
 

@@ -42,8 +42,44 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
             // Get cursor position for autocomplete placement
             const coords = editor.view.coordsAtPos(from);
             
+            // IMPORTANT: coordsAtPos returns coordinates relative to the VIEWPORT, not the document
+            // This means they automatically account for scroll position
+            let x = coords.left;
+            let y = coords.bottom;
+            
+            // Add some padding below the cursor
+            y += 4;
+            
+            // Get viewport dimensions
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // Estimated autocomplete dimensions (will be adjusted by CSS if needed)
+            const autocompleteWidth = 300;
+            const autocompleteHeight = 300; // max-height from CSS
+            
+            // Adjust X if popup would overflow right edge
+            if (x + autocompleteWidth > viewportWidth) {
+                x = viewportWidth - autocompleteWidth - 16; // 16px padding from edge
+            }
+            
+            // Adjust Y if popup would overflow bottom edge - position above cursor instead
+            if (y + autocompleteHeight > viewportHeight) {
+                y = coords.top - autocompleteHeight - 4; // Position above cursor with padding
+                
+                // If that would overflow the top, just position at top with padding
+                if (y < 0) {
+                    y = 16;
+                }
+            }
+            
+            // Ensure minimum padding from left edge
+            if (x < 16) {
+                x = 16;
+            }
+            
             // Notify Blazor to show autocomplete (only search on the part before pipe)
-            dotNetHelper.invokeMethodAsync('OnAutocompleteTriggered', searchQuery, coords.left, coords.bottom);
+            dotNetHelper.invokeMethodAsync('OnAutocompleteTriggered', searchQuery, x, y);
         } else {
             // No [[ found, hide autocomplete
             window._wikiLinkCustomDisplayText = null;
@@ -81,6 +117,27 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
             dotNetHelper.invokeMethodAsync('OnAutocompleteHidden');
         }
     });
+
+    // Listen for scroll events to hide autocomplete
+    // The editor content is scrollable, so we need to hide autocomplete on scroll
+    const editorElement = container.querySelector('.ProseMirror');
+    if (editorElement) {
+        editorElement.addEventListener('scroll', () => {
+            // Check if autocomplete is visible
+            const autocomplete = document.querySelector('.wiki-link-autocomplete');
+            if (autocomplete) {
+                dotNetHelper.invokeMethodAsync('OnAutocompleteHidden');
+            }
+        }, { passive: true });
+    }
+
+    // Also listen for window scroll (in case the whole page scrolls)
+    window.addEventListener('scroll', () => {
+        const autocomplete = document.querySelector('.wiki-link-autocomplete');
+        if (autocomplete) {
+            dotNetHelper.invokeMethodAsync('OnAutocompleteHidden');
+        }
+    }, { passive: true });
 
 }
 

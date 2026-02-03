@@ -263,7 +263,7 @@ span[data-type="external-link"]:hover {
 
 /* Autocomplete container */
 .wiki-link-autocomplete {
-    position: absolute;
+    position: fixed;
     background: var(--chronicis-surface);
     border: 1px solid var(--chronicis-secondary);
     border-radius: var(--chronicis-radius-sm);
