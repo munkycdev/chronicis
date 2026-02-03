@@ -115,6 +115,51 @@ public sealed class IndexBuilderTests
         Assert.Equal(2, fkIndex.RowsByKey.Values.First().Count);
     }
 
+    [Fact]
+    public async Task BuildsFkIndexWithNestedField()
+    {
+        var manifest = new Manifest.Models.Manifest
+        {
+            Entities = new Dictionary<string, ManifestEntity>
+            {
+                ["Parent"] = new ManifestEntity
+                {
+                    Name = "Parent",
+                    File = "fk-nested-parent.json",
+                    PrimaryKey = "id",
+                    Children = new[]
+                    {
+                        new ManifestChild
+                        {
+                            Entity = "Child",
+                            ForeignKeyField = "fields.parentId"
+                        }
+                    }
+                },
+                ["Child"] = new ManifestEntity
+                {
+                    Name = "Child",
+                    File = "fk-nested-child.json",
+                    PrimaryKey = "id"
+                }
+            }
+        };
+
+        var baseDir = GetTestDataPath("raw", "phase3");
+        var loader = new RawDataLoader();
+        var raw = await loader.LoadAsync(manifest, baseDir, CancellationToken.None);
+        var builder = new IndexBuilder();
+
+        var result = builder.BuildIndexes(manifest, raw);
+
+        Assert.False(result.HasErrors);
+        Assert.Single(result.FkIndexes);
+        var fkIndex = result.FkIndexes[0];
+        Assert.True(fkIndex.RowsByKey.TryGetValue(new Indexing.Models.KeyValue(Indexing.Models.KeyKind.Number, "1"), out var rows));
+        Assert.Equal(2, rows.Count);
+        Assert.DoesNotContain(result.Warnings, warning => warning.Code == WarningCode.MissingFk);
+    }
+
     private static async Task<RawLoadResult> LoadRaw(params string[] fileNames)
     {
         var manifest = new Manifest.Models.Manifest

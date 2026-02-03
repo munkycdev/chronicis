@@ -3,13 +3,14 @@ using Chronicis.ResourceCompiler.Indexing;
 using Chronicis.ResourceCompiler.Indexing.Models;
 using Chronicis.ResourceCompiler.Manifest.Models;
 using Chronicis.ResourceCompiler.Raw.Models;
+using Chronicis.ResourceCompiler.Serialization;
 using Chronicis.ResourceCompiler.Warnings;
 
 namespace Chronicis.ResourceCompiler.Compilation;
 
 public sealed class OrderingService
 {
-    private readonly KeyCanonicalizer _canonicalizer = new();
+    private readonly Indexing.KeyCanonicalizer _canonicalizer = new();
 
     public IReadOnlyList<RawEntityRow> ApplyOrder(
         IReadOnlyList<RawEntityRow> rows,
@@ -24,14 +25,14 @@ public sealed class OrderingService
 
         var entries = rows.Select(row =>
         {
-            if (!row.Data.TryGetProperty(orderBy.Field, out var element))
+            if (!JsonPathAccessor.TryGetByPath(row.Data, orderBy.Field, out var element))
             {
                 warningSink.Add(new Warning(
                     WarningCode.OrderByFieldMissing,
                     WarningSeverity.Warning,
                     $"Missing orderBy field '{orderBy.Field}' at row {row.RowIndex} for entity '{entityName}'.",
                     entityName,
-                    $"$[{row.RowIndex}].{orderBy.Field}"));
+                    JsonPathAccessor.ToJsonPath(row.RowIndex, orderBy.Field)));
                 return new OrderEntry(row, false, default);
             }
 
@@ -42,7 +43,7 @@ public sealed class OrderingService
                     WarningSeverity.Warning,
                     $"Invalid orderBy field '{orderBy.Field}' at row {row.RowIndex} for entity '{entityName}'.",
                     entityName,
-                    $"$[{row.RowIndex}].{orderBy.Field}"));
+                    JsonPathAccessor.ToJsonPath(row.RowIndex, orderBy.Field)));
                 return new OrderEntry(row, false, default);
             }
 

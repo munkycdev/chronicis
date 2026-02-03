@@ -6,6 +6,7 @@ public sealed class CompilerOptions
     public string RawPath { get; init; } = string.Empty;
     public string OutputRoot { get; init; } = string.Empty;
     public int MaxDepth { get; init; } = 3;
+    public bool Verbose { get; init; }
 
     public static bool TryParse(string[] args, out CompilerOptions options, out string? error, out bool showHelp)
     {
@@ -42,7 +43,8 @@ public sealed class CompilerOptions
             ManifestPath = manifest,
             RawPath = raw,
             OutputRoot = output,
-            MaxDepth = maxDepth
+            MaxDepth = maxDepth,
+            Verbose = args.Contains("--verbose", StringComparer.OrdinalIgnoreCase)
         };
 
         return true;

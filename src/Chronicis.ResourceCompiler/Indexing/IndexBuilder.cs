@@ -2,6 +2,7 @@ using System.Text.Json;
 using Chronicis.ResourceCompiler.Indexing.Models;
 using Chronicis.ResourceCompiler.Manifest.Models;
 using Chronicis.ResourceCompiler.Raw.Models;
+using Chronicis.ResourceCompiler.Serialization;
 using Chronicis.ResourceCompiler.Warnings;
 
 namespace Chronicis.ResourceCompiler.Indexing;
@@ -118,7 +119,7 @@ public sealed class IndexBuilder
                     WarningSeverity.Error,
                     $"Entity '{entityName}' is missing PK '{entity.PrimaryKey}' at row {row.RowIndex}.",
                     entityName,
-                    $"$[{row.RowIndex}].{entity.PrimaryKey}"));
+                    JsonPathAccessor.ToJsonPath(row.RowIndex, entity.PrimaryKey)));
                 continue;
             }
 
@@ -130,7 +131,7 @@ public sealed class IndexBuilder
                     WarningSeverity.Error,
                     $"Entity '{entityName}' has an invalid PK type at row {row.RowIndex}.",
                     entityName,
-                    $"$[{row.RowIndex}].{entity.PrimaryKey}"));
+                    JsonPathAccessor.ToJsonPath(row.RowIndex, entity.PrimaryKey)));
                 continue;
             }
 
@@ -141,7 +142,7 @@ public sealed class IndexBuilder
                     WarningSeverity.Error,
                     $"Entity '{entityName}' has an invalid PK type at row {row.RowIndex}.",
                     entityName,
-                    $"$[{row.RowIndex}].{entity.PrimaryKey}"));
+                    JsonPathAccessor.ToJsonPath(row.RowIndex, entity.PrimaryKey)));
                 continue;
             }
 
@@ -183,14 +184,14 @@ public sealed class IndexBuilder
 
         foreach (var row in rawEntitySet.Rows.OrderBy(row => row.RowIndex))
         {
-            if (!row.Data.TryGetProperty(fieldName, out var fkElement))
+            if (!JsonPathAccessor.TryGetByPath(row.Data, fieldName, out var fkElement))
             {
                 warnings.Add(new Warning(
                     WarningCode.MissingFk,
                     WarningSeverity.Warning,
                     $"Missing FK '{fieldName}' at row {row.RowIndex} for entity '{rawEntitySet.EntityName}'.",
                     rawEntitySet.EntityName,
-                    $"$[{row.RowIndex}].{fieldName}"));
+                    JsonPathAccessor.ToJsonPath(row.RowIndex, fieldName)));
                 continue;
             }
 
@@ -201,7 +202,7 @@ public sealed class IndexBuilder
                     WarningSeverity.Warning,
                     $"Invalid FK type for '{fieldName}' at row {row.RowIndex} for entity '{rawEntitySet.EntityName}'.",
                     rawEntitySet.EntityName,
-                    $"$[{row.RowIndex}].{fieldName}"));
+                    JsonPathAccessor.ToJsonPath(row.RowIndex, fieldName)));
                 continue;
             }
 
@@ -212,7 +213,7 @@ public sealed class IndexBuilder
                     WarningSeverity.Warning,
                     $"Invalid FK type for '{fieldName}' at row {row.RowIndex} for entity '{rawEntitySet.EntityName}'.",
                     rawEntitySet.EntityName,
-                    $"$[{row.RowIndex}].{fieldName}"));
+                    JsonPathAccessor.ToJsonPath(row.RowIndex, fieldName)));
                 continue;
             }
 

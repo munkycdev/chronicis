@@ -24,6 +24,19 @@ public sealed class RawDataLoaderTests
     }
 
     [Fact]
+    public async Task LoadsNestedPkPath()
+    {
+        var result = await Load("nested-pk.json", "fields.pk");
+
+        Assert.False(result.HasErrors);
+        Assert.Single(result.EntitySets);
+        Assert.Single(result.EntitySets[0].Rows);
+        Assert.True(result.EntitySets[0].Rows[0].ExtractedPkElement.HasValue);
+        Assert.Equal(JsonValueKind.String, result.EntitySets[0].Rows[0].ExtractedPkElement!.Value.ValueKind);
+        Assert.Equal("nested-1", result.EntitySets[0].Rows[0].ExtractedPkElement!.Value.GetString());
+    }
+
+    [Fact]
     public async Task EmitsErrorWhenRootNotArray()
     {
         var result = await Load("root-not-array.json");
@@ -69,7 +82,7 @@ public sealed class RawDataLoaderTests
         Assert.All(result.EntitySets[0].Rows, row => Assert.True(row.ExtractedPkElement.HasValue));
     }
 
-    private static async Task<Raw.Models.RawLoadResult> Load(string fileName)
+    private static async Task<Raw.Models.RawLoadResult> Load(string fileName, string pkField = "id")
     {
         var loader = new RawDataLoader();
         var manifest = new Manifest.Models.Manifest
@@ -80,7 +93,7 @@ public sealed class RawDataLoaderTests
                 {
                     Name = "TestEntity",
                     File = fileName,
-                    PrimaryKey = "id"
+                    PrimaryKey = pkField
                 }
             }
         };

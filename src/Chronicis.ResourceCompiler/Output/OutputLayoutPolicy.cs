@@ -7,7 +7,8 @@ public sealed class OutputLayoutPolicy
 {
     public string GetEntityFolderName(string entityName)
     {
-        return $"{Slugify(entityName)}-{ShortHash(entityName)}";
+        //return $"{Slugify(entityName)}-{ShortHash(entityName)}";
+        return $"{Slugify(entityName)}";
     }
 
     public string GetCompiledDocumentsPath(string outputRoot, string entityFolder)

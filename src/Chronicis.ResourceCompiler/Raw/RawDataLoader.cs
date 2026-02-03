@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Chronicis.ResourceCompiler.Raw.Models;
+using Chronicis.ResourceCompiler.Serialization;
 using Chronicis.ResourceCompiler.Warnings;
 
 namespace Chronicis.ResourceCompiler.Raw;
@@ -96,7 +97,7 @@ public sealed class RawDataLoader
                         entityName,
                         $"$[{index}]"));
                 }
-                else if (element.TryGetProperty(pkField, out var pkValue))
+                else if (JsonPathAccessor.TryGetByPath(element, pkField, out var pkValue))
                 {
                     pkElement = pkValue;
                     if (pkValue.ValueKind is JsonValueKind.Null or JsonValueKind.Object or JsonValueKind.Array)
@@ -106,7 +107,7 @@ public sealed class RawDataLoader
                             WarningSeverity.Error,
                             $"Entity '{entityName}' has an invalid PK type at row {index}.",
                             entityName,
-                            $"$[{index}].{pkField}"));
+                            JsonPathAccessor.ToJsonPath(index, pkField)));
                     }
                 }
                 else
@@ -116,7 +117,7 @@ public sealed class RawDataLoader
                         WarningSeverity.Error,
                         $"Entity '{entityName}' is missing PK '{pkField}' at row {index}.",
                         entityName,
-                        $"$[{index}].{pkField}"));
+                        JsonPathAccessor.ToJsonPath(index, pkField)));
                 }
 
                 rows.Add(new RawEntityRow(entityName, index, element, pkElement));
