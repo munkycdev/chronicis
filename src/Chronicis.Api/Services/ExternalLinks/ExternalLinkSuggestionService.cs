@@ -24,10 +24,14 @@ public class ExternalLinkSuggestionService
         string query,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(query))
+        // Allow empty query - Phase 2 returns all categories for empty query
+        if (string.IsNullOrWhiteSpace(source))
         {
             return Array.Empty<ExternalLinkSuggestion>();
         }
+
+        // Normalize empty query to empty string (not null)
+        query = query ?? string.Empty;
 
         var cacheKey = $"external-links:suggestions:{source}:{query}".ToLowerInvariant();
         if (_cache.TryGetValue<IReadOnlyList<ExternalLinkSuggestion>>(cacheKey, out var cached) && cached != null)
@@ -44,7 +48,7 @@ public class ExternalLinkSuggestionService
         IReadOnlyList<ExternalLinkSuggestion> suggestions;
         try
         {
-            suggestions = await provider.SearchAsync(query, ct);
+           suggestions = await provider.SearchAsync(query, ct);
         }
         catch (Exception ex)
         {

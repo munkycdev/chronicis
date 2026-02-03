@@ -1,10 +1,8 @@
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using Chronicis.ResourceCompiler.Compilation.Models;
-using Chronicis.ResourceCompiler.Indexing;
 using Chronicis.ResourceCompiler.Indexing.Models;
+using Chronicis.ResourceCompiler.Manifest.Models;
 using Chronicis.ResourceCompiler.Output;
-using Chronicis.ResourceCompiler.Raw.Models;
 using Chronicis.ResourceCompiler.Warnings;
 using Xunit;
 
@@ -13,92 +11,81 @@ namespace Chronicis.ResourceCompiler.Tests;
 public sealed class OutputWriterTests
 {
     [Fact]
-    public async Task WritesDocumentsAndIndexesToExpectedPaths()
+    public async Task WritesManifestDefinedOutputs()
     {
         var tempDir = CreateTempDir();
         try
         {
             var outputRoot = Path.Combine(tempDir, "out");
-            var layout = new OutputLayoutPolicy();
+            var manifest = new Manifest.Models.Manifest
+            {
+                Entities = new Dictionary<string, ManifestEntity>
+                {
+                    ["Parent"] = new ManifestEntity
+                    {
+                        Name = "Parent",
+                        IsRoot = true,
+                        Output = new ManifestOutput
+                        {
+                            BlobTemplate = "parents/{slug}.json",
+                            Index = new ManifestOutputIndex
+                            {
+                                Blob = "indexes/parents.json",
+                                Fields = new[] { "id", "slug", "name", "missing" }
+                            }
+                        },
+                        Identity = new ManifestIdentity
+                        {
+                            SlugField = "slug"
+                        }
+                    }
+                }
+            };
 
             var documents = new List<CompiledDocument>
             {
                 new("Parent", new KeyValue(KeyKind.Number, "1"), new JsonObject
                 {
                     ["id"] = 1,
+                    ["slug"] = "parent-one",
                     ["name"] = "First"
                 }),
                 new("Parent", new KeyValue(KeyKind.Number, "2"), new JsonObject
                 {
                     ["id"] = 2,
+                    ["slug"] = "parent-two",
                     ["name"] = "Second"
                 })
             };
 
             var compilation = new CompilationResult(documents, Array.Empty<Warning>());
-
-            var pkIndexes = new Dictionary<string, PkIndex>
-            {
-                ["Parent"] = new PkIndex("Parent", new Dictionary<KeyValue, RawEntityRow>())
-            };
-
-            var childRow1 = CreateRawRow("Child", 0, "{ \"id\": 10, \"parentId\": 1 }");
-            var childRow2 = CreateRawRow("Child", 1, "{ \"id\": 11, \"parentId\": 1 }");
-
-            var fkRows = new Dictionary<KeyValue, IReadOnlyList<RawEntityRow>>
-            {
-                [new KeyValue(KeyKind.Number, "1")] = new List<RawEntityRow>
-                {
-                    childRow1,
-                    childRow2
-                }
-            };
-
-            var fkIndexes = new List<FkIndex>
-            {
-                new("Parent", "Child", "parentId", fkRows)
-            };
-
-            var childPkIndex = new PkIndex("Child", new Dictionary<KeyValue, RawEntityRow>
-            {
-                [new KeyValue(KeyKind.Number, "10")] = childRow1,
-                [new KeyValue(KeyKind.Number, "11")] = childRow2
-            });
-
-            var indexResult = new IndexBuildResult(
-                new Dictionary<string, PkIndex>
-                {
-                    ["Parent"] = pkIndexes["Parent"],
-                    ["Child"] = childPkIndex
-                },
-                fkIndexes,
-                Array.Empty<Warning>());
             var writer = new OutputWriter();
 
-            await writer.WriteAsync(outputRoot, compilation, indexResult, layout, CancellationToken.None);
+            var result = await writer.WriteAsync(outputRoot, manifest, compilation, CancellationToken.None);
 
-            var entityFolder = layout.GetEntityFolderName("Parent");
-            var documentsPath = layout.GetCompiledDocumentsPath(outputRoot, entityFolder);
-            Assert.True(File.Exists(documentsPath));
+            Assert.False(result.HasErrors);
+            Assert.Contains(result.Warnings, warning => warning.Code == WarningCode.OutputIndexFieldMissing);
 
-            var documentsJson = JsonNode.Parse(File.ReadAllText(documentsPath)) as JsonArray;
-            Assert.NotNull(documentsJson);
-            Assert.Equal(2, documentsJson!.Count);
+            var firstPath = Path.Combine(outputRoot, "parents", "parent-one.json");
+            var secondPath = Path.Combine(outputRoot, "parents", "parent-two.json");
+            Assert.True(File.Exists(firstPath));
+            Assert.True(File.Exists(secondPath));
 
-            var pkPath = layout.GetPkIndexPath(outputRoot, entityFolder);
-            var pkJson = JsonNode.Parse(File.ReadAllText(pkPath)) as JsonObject;
-            Assert.NotNull(pkJson);
-            Assert.Equal(0, pkJson!["1"]!.GetValue<int>());
-            Assert.Equal(1, pkJson!["2"]!.GetValue<int>());
+            var indexPath = Path.Combine(outputRoot, "indexes", "parents.json");
+            Assert.True(File.Exists(indexPath));
+            var indexArray = JsonNode.Parse(File.ReadAllText(indexPath)) as JsonArray;
+            Assert.NotNull(indexArray);
+            Assert.Equal(2, indexArray!.Count);
 
-            var fkPath = layout.GetFkIndexPath(outputRoot, entityFolder, "Child", "parentId");
-            var fkJson = JsonNode.Parse(File.ReadAllText(fkPath)) as JsonObject;
-            Assert.NotNull(fkJson);
-            var fkArray = fkJson!["1"] as JsonArray;
-            Assert.NotNull(fkArray);
-            Assert.Equal(2, fkArray!.Count);
-            Assert.Equal("10", fkArray[0]!.GetValue<string>());
-            Assert.Equal("11", fkArray[1]!.GetValue<string>());
+            var indexFirst = Assert.IsType<JsonObject>(indexArray[0]);
+            Assert.Equal(1, indexFirst["id"]!.GetValue<int>());
+            Assert.Equal("parent-one", indexFirst["slug"]!.GetValue<string>());
+            Assert.Equal("First", indexFirst["name"]!.GetValue<string>());
+            Assert.True(indexFirst.ContainsKey("missing"));
+            Assert.Null(indexFirst["missing"]);
+
+            Assert.Empty(Directory.GetFiles(outputRoot, "documents.json", SearchOption.AllDirectories));
+            Assert.Empty(Directory.GetFiles(outputRoot, "by-pk.json", SearchOption.AllDirectories));
         }
         finally
         {
@@ -106,11 +93,108 @@ public sealed class OutputWriterTests
         }
     }
 
-    private static RawEntityRow CreateRawRow(string entityName, int rowIndex, string json)
+    [Fact]
+    public async Task MissingSlugTokenEmitsError()
     {
-        using var document = JsonDocument.Parse(json);
-        var element = document.RootElement.Clone();
-        return new RawEntityRow(entityName, rowIndex, element, element);
+        var tempDir = CreateTempDir();
+        try
+        {
+            var outputRoot = Path.Combine(tempDir, "out");
+            var manifest = new Manifest.Models.Manifest
+            {
+                Entities = new Dictionary<string, ManifestEntity>
+                {
+                    ["Parent"] = new ManifestEntity
+                    {
+                        Name = "Parent",
+                        IsRoot = true,
+                        Output = new ManifestOutput
+                        {
+                            BlobTemplate = "parents/{slug}.json"
+                        },
+                        Identity = new ManifestIdentity
+                        {
+                            SlugField = "slug"
+                        }
+                    }
+                }
+            };
+
+            var documents = new List<CompiledDocument>
+            {
+                new("Parent", new KeyValue(KeyKind.Number, "1"), new JsonObject
+                {
+                    ["id"] = 1
+                })
+            };
+
+            var compilation = new CompilationResult(documents, Array.Empty<Warning>());
+            var writer = new OutputWriter();
+
+            var result = await writer.WriteAsync(outputRoot, manifest, compilation, CancellationToken.None);
+
+            Assert.True(result.HasErrors);
+            Assert.Contains(result.Warnings, warning => warning.Code == WarningCode.OutputTemplateMissingToken && warning.Severity == WarningSeverity.Error);
+            Assert.Empty(Directory.GetFiles(outputRoot, "*.json", SearchOption.AllDirectories));
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task RendersIdTemplateForBlobPath()
+    {
+        var tempDir = CreateTempDir();
+        try
+        {
+            var outputRoot = Path.Combine(tempDir, "out");
+            var manifest = new Manifest.Models.Manifest
+            {
+                Entities = new Dictionary<string, ManifestEntity>
+                {
+                    ["Parent"] = new ManifestEntity
+                    {
+                        Name = "Parent",
+                        IsRoot = true,
+                        Output = new ManifestOutput
+                        {
+                            BlobTemplate = "parents/{id}.json"
+                        },
+                        Identity = new ManifestIdentity
+                        {
+                            SlugField = "slug",
+                            IdTemplate = "srd:parent:{slug}"
+                        }
+                    }
+                }
+            };
+
+            var documents = new List<CompiledDocument>
+            {
+                new("Parent", new KeyValue(KeyKind.Number, "1"), new JsonObject
+                {
+                    ["fields"] = new JsonObject
+                    {
+                        ["slug"] = "alpha"
+                    }
+                })
+            };
+
+            var compilation = new CompilationResult(documents, Array.Empty<Warning>());
+            var writer = new OutputWriter();
+
+            var result = await writer.WriteAsync(outputRoot, manifest, compilation, CancellationToken.None);
+
+            Assert.False(result.HasErrors);
+            var filePath = Path.Combine(outputRoot, "parents", "srd:parent:alpha.json");
+            Assert.True(File.Exists(filePath));
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
     }
 
     private static string CreateTempDir()

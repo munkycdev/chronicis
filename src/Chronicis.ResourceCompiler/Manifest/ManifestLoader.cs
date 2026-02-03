@@ -1,3 +1,4 @@
+using System.Linq;
 using Chronicis.ResourceCompiler.Manifest.Models;
 using Chronicis.ResourceCompiler.Warnings;
 using YamlDotNet.Core;
@@ -93,7 +94,9 @@ public sealed class ManifestLoader
                 PrimaryKey = entityDto.Pk ?? string.Empty,
                 IsRoot = entityDto.Root ?? false,
                 OrderBy = MapOrderBy(entityDto.OrderBy),
-                Children = MapChildren(entityDto.Children)
+                Children = MapChildren(entityDto.Children),
+                Identity = MapIdentity(entityDto.Identity),
+                Output = MapOutput(entityDto.Output)
             };
 
             entities[entityName] = entity;
@@ -140,6 +143,48 @@ public sealed class ManifestLoader
         };
     }
 
+    private static ManifestIdentity? MapIdentity(ManifestIdentityDto? identity)
+    {
+        if (identity is null)
+        {
+            return null;
+        }
+
+        return new ManifestIdentity
+        {
+            SlugField = identity.SlugField ?? string.Empty,
+            IdTemplate = identity.IdTemplate ?? string.Empty
+        };
+    }
+
+    private static ManifestOutput? MapOutput(ManifestOutputDto? output)
+    {
+        if (output is null)
+        {
+            return null;
+        }
+
+        return new ManifestOutput
+        {
+            BlobTemplate = output.BlobTemplate ?? string.Empty,
+            Index = MapOutputIndex(output.Index)
+        };
+    }
+
+    private static ManifestOutputIndex? MapOutputIndex(ManifestOutputIndexDto? index)
+    {
+        if (index is null)
+        {
+            return null;
+        }
+
+        return new ManifestOutputIndex
+        {
+            Blob = index.Blob ?? string.Empty,
+            Fields = index.Fields?.ToArray() ?? Array.Empty<string>()
+        };
+    }
+
     private static ManifestOrderByDirection? ParseDirection(string? direction)
     {
         if (string.IsNullOrWhiteSpace(direction))
@@ -172,6 +217,8 @@ public sealed class ManifestLoader
         public bool? Root { get; set; }
         public List<ManifestChildDto>? Children { get; set; }
         public ManifestOrderByDto? OrderBy { get; set; }
+        public ManifestIdentityDto? Identity { get; set; }
+        public ManifestOutputDto? Output { get; set; }
     }
 
     private sealed class ManifestChildDto
@@ -193,5 +240,23 @@ public sealed class ManifestLoader
     {
         public string? Field { get; set; }
         public string? Direction { get; set; }
+    }
+
+    private sealed class ManifestIdentityDto
+    {
+        public string? SlugField { get; set; }
+        public string? IdTemplate { get; set; }
+    }
+
+    private sealed class ManifestOutputDto
+    {
+        public string? BlobTemplate { get; set; }
+        public ManifestOutputIndexDto? Index { get; set; }
+    }
+
+    private sealed class ManifestOutputIndexDto
+    {
+        public string? Blob { get; set; }
+        public List<string>? Fields { get; set; }
     }
 }

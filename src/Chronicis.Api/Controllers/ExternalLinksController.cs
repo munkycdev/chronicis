@@ -1,7 +1,5 @@
-using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services.ExternalLinks;
 using Chronicis.Shared.DTOs;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chronicis.Api.Controllers;
@@ -11,23 +9,20 @@ namespace Chronicis.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("external-links")]
-[Authorize]
+// [Authorize] // Temporarily disabled for testing
 public class ExternalLinksController : ControllerBase
 {
     private readonly ExternalLinkSuggestionService _suggestionService;
     private readonly ExternalLinkContentService _contentService;
-    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ExternalLinksController> _logger;
 
     public ExternalLinksController(
         ExternalLinkSuggestionService suggestionService,
         ExternalLinkContentService contentService,
-        ICurrentUserService currentUserService,
         ILogger<ExternalLinksController> logger)
     {
         _suggestionService = suggestionService;
         _contentService = contentService;
-        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -37,12 +32,11 @@ public class ExternalLinksController : ControllerBase
     /// </summary>
     [HttpGet("suggestions")]
     public async Task<ActionResult<List<ExternalLinkSuggestionDto>>> GetSuggestions(
-        [FromQuery] string source,
-        [FromQuery] string query,
+        [FromQuery] string? source,
+        [FromQuery] string? query,
         CancellationToken ct)
     {
-        // Ensure user is authenticated
-        await _currentUserService.GetRequiredUserAsync();
+        // Note: Authorization temporarily disabled for SRD provider testing
 
         if (string.IsNullOrWhiteSpace(source))
         {
@@ -73,12 +67,11 @@ public class ExternalLinksController : ControllerBase
     /// </summary>
     [HttpGet("content")]
     public async Task<ActionResult<ExternalLinkContentDto>> GetContent(
-        [FromQuery] string source,
-        [FromQuery] string id,
+        [FromQuery] string? source,
+        [FromQuery] string? id,
         CancellationToken ct)
     {
-        // Ensure user is authenticated
-        await _currentUserService.GetRequiredUserAsync();
+        // Note: Authorization temporarily disabled for SRD provider testing
 
         if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(id))
         {

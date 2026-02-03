@@ -1,20 +1,22 @@
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Chronicis.ResourceCompiler.Compilation.Models;
-using Chronicis.ResourceCompiler.Indexing;
-using Chronicis.ResourceCompiler.Indexing.Models;
-using Chronicis.ResourceCompiler.Raw.Models;
+using Chronicis.ResourceCompiler.Manifest.Models;
+using Chronicis.ResourceCompiler.Warnings;
 
 namespace Chronicis.ResourceCompiler.Output;
 
 public sealed class OutputWriter
 {
-    public Task WriteAsync(
+    private readonly TemplateRenderer _renderer = new();
+    private readonly JsonFieldAccessor _fieldAccessor = new();
+
+    public Task<OutputWriteResult> WriteAsync(
         string outputRoot,
+        Manifest.Models.Manifest manifest,
         CompilationResult compilationResult,
-        IndexBuildResult indexBuildResult,
-        OutputLayoutPolicy layoutPolicy,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(outputRoot))
@@ -22,71 +24,136 @@ public sealed class OutputWriter
             throw new ArgumentException("Output root must be provided.", nameof(outputRoot));
         }
 
+        var warnings = new List<Warning>();
+        var writtenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var documentsByEntity = GroupDocuments(compilationResult.Documents);
-        foreach (var entityName in documentsByEntity.Keys.OrderBy(name => name, StringComparer.Ordinal))
+
+        foreach (var entity in manifest.Entities.Values.Where(entity => entity.IsRoot))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var folder = layoutPolicy.GetEntityFolderName(entityName);
-            var documentsPath = layoutPolicy.GetCompiledDocumentsPath(outputRoot, folder);
-            var payloadArray = new JsonArray();
-            foreach (var document in documentsByEntity[entityName])
+
+            if (entity.Output is null || string.IsNullOrWhiteSpace(entity.Output.BlobTemplate))
             {
-                payloadArray.Add(document.Payload);
+                warnings.Add(new Warning(
+                    WarningCode.OutputTemplateMissingToken,
+                    WarningSeverity.Error,
+                    $"Entity '{entity.Name}' does not define output.blobTemplate.",
+                    entity.Name));
+                continue;
             }
 
-            WriteJsonAtomic(documentsPath, payloadArray, cancellationToken);
-        }
+            documentsByEntity.TryGetValue(entity.Name, out var documents);
+            documents ??= new List<CompiledDocument>();
 
-        foreach (var pair in indexBuildResult.PkIndexes.OrderBy(pair => pair.Key, StringComparer.Ordinal))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var entityName = pair.Key;
-            var folder = layoutPolicy.GetEntityFolderName(entityName);
-            var indexPath = layoutPolicy.GetPkIndexPath(outputRoot, folder);
-
-            var pkMap = new JsonObject();
-            if (documentsByEntity.TryGetValue(entityName, out var docs))
+            foreach (var document in documents)
             {
-                for (var i = 0; i < docs.Count; i++)
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (document.Payload is not JsonObject payload)
                 {
-                    var key = docs[i].PrimaryKey.CanonicalValue;
-                    pkMap[key] = i;
+                    warnings.Add(new Warning(
+                        WarningCode.OutputTemplateTokenNotScalar,
+                        WarningSeverity.Error,
+                        $"Compiled payload for '{entity.Name}' is not a JSON object.",
+                        entity.Name));
+                    continue;
                 }
+
+                if (!TryCreateRenderPayload(entity, payload, entity.Output.BlobTemplate, out var renderPayload, out var renderWarning))
+                {
+                    warnings.Add(WithEntity(renderWarning!, entity.Name));
+                    continue;
+                }
+
+                if (!_renderer.TryRender(entity.Output.BlobTemplate, renderPayload, out var relativePath, out var templateWarning))
+                {
+                    warnings.Add(WithEntity(templateWarning!, entity.Name));
+                    continue;
+                }
+
+                if (!writtenPaths.Add(relativePath))
+                {
+                    warnings.Add(new Warning(
+                        WarningCode.OutputBlobPathCollision,
+                        WarningSeverity.Error,
+                        $"Output path collision for '{relativePath}'.",
+                        entity.Name,
+                        relativePath));
+                    continue;
+                }
+
+                var fullPath = Path.Combine(outputRoot, relativePath);
+                WriteJsonAtomic(fullPath, payload, cancellationToken);
             }
 
-            WriteJsonAtomic(indexPath, pkMap, cancellationToken);
-        }
-
-        var childPkLookup = BuildPkLookup(indexBuildResult.PkIndexes);
-
-        foreach (var fkIndex in indexBuildResult.FkIndexes)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var folder = layoutPolicy.GetEntityFolderName(fkIndex.ParentEntityName);
-            var indexPath = layoutPolicy.GetFkIndexPath(outputRoot, folder, fkIndex.EntityName, fkIndex.FieldName);
-
-            var fkMap = new JsonObject();
-            foreach (var pair in fkIndex.RowsByKey)
+            if (entity.Output.Index is not null)
             {
-                var array = new JsonArray();
-                if (childPkLookup.TryGetValue(fkIndex.EntityName, out var pkByRow))
+                var indexTemplate = entity.Output.Index.Blob;
+                var indexPayload = documents.FirstOrDefault()?.Payload as JsonObject ?? new JsonObject();
+                if (!TryCreateRenderPayload(entity, indexPayload, indexTemplate, out var renderPayload, out var renderWarning))
                 {
-                    foreach (var row in pair.Value)
+                    warnings.Add(WithEntity(renderWarning!, entity.Name));
+                    continue;
+                }
+
+                if (!_renderer.TryRender(indexTemplate, renderPayload, out var indexRelativePath, out var templateWarning))
+                {
+                    warnings.Add(WithEntity(templateWarning!, entity.Name));
+                    continue;
+                }
+
+                if (!writtenPaths.Add(indexRelativePath))
+                {
+                    warnings.Add(new Warning(
+                        WarningCode.OutputBlobPathCollision,
+                        WarningSeverity.Error,
+                        $"Output path collision for '{indexRelativePath}'.",
+                        entity.Name,
+                        indexRelativePath));
+                    continue;
+                }
+
+                var indexArray = new JsonArray();
+                foreach (var document in documents)
+                {
+                    if (document.Payload is not JsonObject docPayload)
                     {
-                        if (pkByRow.TryGetValue(row, out var childKey))
+                        warnings.Add(new Warning(
+                            WarningCode.OutputTemplateTokenNotScalar,
+                            WarningSeverity.Error,
+                            $"Compiled payload for '{entity.Name}' is not a JSON object.",
+                            entity.Name));
+                        continue;
+                    }
+
+                    var projection = new JsonObject();
+                    foreach (var field in entity.Output.Index.Fields)
+                    {
+                        if (_fieldAccessor.TryGetField(docPayload, field, out var value))
                         {
-                            array.Add(childKey.CanonicalValue);
+                            projection[field] = value?.DeepClone();
+                        }
+                        else
+                        {
+                            warnings.Add(new Warning(
+                                WarningCode.OutputIndexFieldMissing,
+                                WarningSeverity.Warning,
+                                $"Index field '{field}' is missing for entity '{entity.Name}'.",
+                                entity.Name,
+                                $"$.{field}"));
+                            projection[field] = null;
                         }
                     }
+
+                    indexArray.Add(projection);
                 }
 
-                fkMap[pair.Key.CanonicalValue] = array;
+                var indexFullPath = Path.Combine(outputRoot, indexRelativePath);
+                WriteJsonAtomic(indexFullPath, indexArray, cancellationToken);
             }
-
-            WriteJsonAtomic(indexPath, fkMap, cancellationToken);
         }
 
-        return Task.CompletedTask;
+        return Task.FromResult(new OutputWriteResult(warnings));
     }
 
     private static Dictionary<string, List<CompiledDocument>> GroupDocuments(IReadOnlyList<CompiledDocument> documents)
@@ -106,22 +173,19 @@ public sealed class OutputWriter
         return result;
     }
 
-    private static IReadOnlyDictionary<string, Dictionary<RawEntityRow, KeyValue>> BuildPkLookup(
-        IReadOnlyDictionary<string, PkIndex> pkIndexes)
+    private static Warning WithEntity(Warning warning, string entityName)
     {
-        var result = new Dictionary<string, Dictionary<RawEntityRow, KeyValue>>(StringComparer.Ordinal);
-        foreach (var pair in pkIndexes)
+        if (!string.IsNullOrWhiteSpace(warning.EntityName))
         {
-            var map = new Dictionary<RawEntityRow, KeyValue>();
-            foreach (var entry in pair.Value.RowsByKey)
-            {
-                map[entry.Value] = entry.Key;
-            }
-
-            result[pair.Key] = map;
+            return warning;
         }
 
-        return result;
+        return new Warning(
+            warning.Code,
+            warning.Severity,
+            warning.Message,
+            entityName,
+            warning.JsonPath);
     }
 
     private static void WriteJsonAtomic(string path, JsonNode node, CancellationToken cancellationToken)
@@ -140,5 +204,161 @@ public sealed class OutputWriter
         cancellationToken.ThrowIfCancellationRequested();
 
         File.Move(tempPath, path, true);
+    }
+
+    private bool TryCreateRenderPayload(
+        ManifestEntity entity,
+        JsonObject payload,
+        string template,
+        out JsonObject renderPayload,
+        out Warning? warning)
+    {
+        renderPayload = payload;
+        warning = null;
+
+        if (string.IsNullOrWhiteSpace(template))
+        {
+            return true;
+        }
+
+        var needsSlug = RequiresToken(template, "slug");
+        var needsId = RequiresToken(template, "id");
+        var idTemplate = entity.Identity?.IdTemplate;
+        var needsSlugForId = needsId && RequiresToken(idTemplate, "slug");
+        var requiresSlugOverride = (needsSlug || needsSlugForId) && !HasToken(payload, "slug");
+        var requiresIdOverride = needsId && !HasToken(payload, "id") && !string.IsNullOrWhiteSpace(idTemplate);
+
+        if (!requiresSlugOverride && !requiresIdOverride)
+        {
+            return true;
+        }
+
+        renderPayload = payload.DeepClone() as JsonObject ?? new JsonObject();
+
+        if (requiresSlugOverride)
+        {
+            if (!TryResolveSlug(entity, payload, out var slugValue, out warning))
+            {
+                return false;
+            }
+
+            renderPayload["slug"] = slugValue;
+        }
+
+        if (requiresIdOverride && !string.IsNullOrWhiteSpace(idTemplate))
+        {
+            if (!_renderer.TryRenderValue(idTemplate, renderPayload, out var idValue, out var idWarning))
+            {
+                warning = idWarning;
+                return false;
+            }
+
+            renderPayload["id"] = idValue;
+        }
+
+        return true;
+    }
+
+    private bool TryResolveSlug(ManifestEntity entity, JsonObject payload, out string value, out Warning? warning)
+    {
+        value = string.Empty;
+        warning = null;
+
+        var slugField = entity.Identity?.SlugField;
+        if (string.IsNullOrWhiteSpace(slugField))
+        {
+            warning = new Warning(
+                WarningCode.OutputTemplateMissingToken,
+                WarningSeverity.Error,
+                "Template token 'slug' requires identity.slugField.");
+            return false;
+        }
+
+        if (!_fieldAccessor.TryGetField(payload, slugField, out var node) || node is null)
+        {
+            warning = new Warning(
+                WarningCode.OutputTemplateMissingToken,
+                WarningSeverity.Error,
+                $"Template token 'slug' could not be resolved from field '{slugField}'.");
+            return false;
+        }
+
+        return TryGetScalarString(node, "slug", out value, out warning);
+    }
+
+    private static bool TryGetScalarString(JsonNode node, string token, out string value, out Warning? warning)
+    {
+        warning = null;
+        value = string.Empty;
+
+        if (node is JsonValue jsonValue)
+        {
+            if (jsonValue.TryGetValue<string>(out var stringValue))
+            {
+                value = stringValue ?? string.Empty;
+                return true;
+            }
+
+            if (jsonValue.TryGetValue<bool>(out var boolValue))
+            {
+                value = boolValue ? "true" : "false";
+                return true;
+            }
+
+            if (jsonValue.TryGetValue<long>(out var longValue))
+            {
+                value = longValue.ToString(CultureInfo.InvariantCulture);
+                return true;
+            }
+
+            if (jsonValue.TryGetValue<double>(out var doubleValue))
+            {
+                value = doubleValue.ToString(CultureInfo.InvariantCulture);
+                return true;
+            }
+
+            if (jsonValue.TryGetValue<JsonElement>(out var element))
+            {
+                if (element.ValueKind == JsonValueKind.String)
+                {
+                    value = element.GetString() ?? string.Empty;
+                    return true;
+                }
+
+                if (element.ValueKind == JsonValueKind.Number)
+                {
+                    value = element.GetRawText();
+                    return true;
+                }
+
+                if (element.ValueKind == JsonValueKind.True || element.ValueKind == JsonValueKind.False)
+                {
+                    value = element.GetBoolean() ? "true" : "false";
+                    return true;
+                }
+            }
+        }
+
+        warning = new Warning(
+            WarningCode.OutputTemplateTokenNotScalar,
+            WarningSeverity.Error,
+            $"Template token '{token}' resolved to a non-scalar value.");
+        return false;
+    }
+
+    private static bool RequiresToken(string? template, string token)
+    {
+        if (string.IsNullOrWhiteSpace(template))
+        {
+            return false;
+        }
+
+        var marker = $"{{{token}}}";
+        return template.Contains(marker, StringComparison.Ordinal);
+    }
+
+    private static bool HasToken(JsonObject payload, string token)
+    {
+        return payload.TryGetPropertyValue(token, out var node) && node is not null;
     }
 }

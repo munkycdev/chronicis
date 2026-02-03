@@ -4,6 +4,8 @@ using Chronicis.Api.Services;
 using Chronicis.Api.Services.ExternalLinks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
@@ -133,6 +135,39 @@ try
     builder.Services.AddScoped<ExternalLinkContentService>();
     builder.Services.AddScoped<ExternalLinkValidationService>();
     builder.Services.AddScoped<IExternalLinkProvider, Open5eExternalLinkProvider>();
+
+    var srd14Config = builder.Configuration.GetSection("ExternalLinks:BlobProviders:Srd14");
+    builder.Services.Configure<BlobExternalLinkProviderOptions>(
+        "srd14",
+        srd14Config
+        );
+
+    var srd24Config = builder.Configuration.GetSection("ExternalLinks:BlobProviders:Srd24");
+    builder.Services.Configure<BlobExternalLinkProviderOptions>(
+        "srd24",
+        srd24Config);
+
+    // Register srd14 provider (each provider gets its own connection string and blob client)
+    builder.Services.AddScoped<IExternalLinkProvider>(sp =>
+    {
+        var optionsSnapshot = sp.GetRequiredService<IOptionsSnapshot<BlobExternalLinkProviderOptions>>();
+        var options = optionsSnapshot.Get("srd14");
+        var cache = sp.GetRequiredService<IMemoryCache>();
+        var logger = sp.GetRequiredService<ILogger<BlobExternalLinkProvider>>();
+        
+        return new BlobExternalLinkProvider(options, cache, logger);
+    });
+
+    // Register srd24 provider (decoupled from srd14, uses its own connection string)
+    builder.Services.AddScoped<IExternalLinkProvider>(sp =>
+    {
+        var optionsSnapshot = sp.GetRequiredService<IOptionsSnapshot<BlobExternalLinkProviderOptions>>();
+        var options = optionsSnapshot.Get("srd24");
+        var cache = sp.GetRequiredService<IMemoryCache>();
+        var logger = sp.GetRequiredService<ILogger<BlobExternalLinkProvider>>();
+        
+        return new BlobExternalLinkProvider(options, cache, logger);
+    });
 
     // Services
     builder.Services.AddScoped<IArticleService, ArticleService>();

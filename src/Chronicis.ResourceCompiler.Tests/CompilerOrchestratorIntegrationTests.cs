@@ -3,7 +3,6 @@ using System.Text.Json.Nodes;
 using Chronicis.ResourceCompiler.Compiler;
 using Chronicis.ResourceCompiler.Manifest;
 using Chronicis.ResourceCompiler.Options;
-using Chronicis.ResourceCompiler.Output;
 using Chronicis.ResourceCompiler.Warnings;
 using Xunit;
 
@@ -20,8 +19,8 @@ public sealed class CompilerOrchestratorIntegrationTests
             var outputRoot = Path.Combine(tempDir, "out");
             var options = new CompilerOptions
             {
-                ManifestPath = GetTestDataPath("manifests", "phase4", "assembly-basic.yml"),
-                RawPath = GetTestDataPath("raw", "phase4"),
+                ManifestPath = GetTestDataPath("manifests", "phase7", "happy.yml"),
+                RawPath = GetTestDataPath("raw", "phase7"),
                 OutputRoot = outputRoot,
                 MaxDepth = 3
             };
@@ -32,35 +31,25 @@ public sealed class CompilerOrchestratorIntegrationTests
             Assert.False(result.HasErrors);
 
             var childName = await ResolveChildName(options.ManifestPath, "Parent");
-            var layout = new OutputLayoutPolicy();
-            var parentFolder = layout.GetEntityFolderName("Parent");
-            var childFolder = layout.GetEntityFolderName("Child");
+            var firstPath = Path.Combine(outputRoot, "parents", "parent-one.json");
+            var secondPath = Path.Combine(outputRoot, "parents", "parent-two.json");
+            Assert.True(File.Exists(firstPath));
+            Assert.True(File.Exists(secondPath));
 
-            var documentsPath = layout.GetCompiledDocumentsPath(outputRoot, parentFolder);
-            Assert.True(File.Exists(documentsPath));
-
-            var documentsJson = JsonNode.Parse(File.ReadAllText(documentsPath)) as JsonArray;
-            Assert.NotNull(documentsJson);
-            var first = Assert.IsType<JsonObject>(documentsJson![0]);
-            var children = Assert.IsType<JsonArray>(first[childName]);
+            var firstJson = JsonNode.Parse(File.ReadAllText(firstPath)) as JsonObject;
+            Assert.NotNull(firstJson);
+            var children = Assert.IsType<JsonArray>(firstJson![childName]);
             Assert.Equal(2, children.Count);
 
-            var pkPath = layout.GetPkIndexPath(outputRoot, parentFolder);
-            var pkJson = JsonNode.Parse(File.ReadAllText(pkPath)) as JsonObject;
-            Assert.NotNull(pkJson);
-            Assert.Equal(0, pkJson!["1"]!.GetValue<int>());
-            Assert.Single(pkJson);
+            var indexPath = Path.Combine(outputRoot, "indexes", "parents.json");
+            Assert.True(File.Exists(indexPath));
+            var indexArray = JsonNode.Parse(File.ReadAllText(indexPath)) as JsonArray;
+            Assert.NotNull(indexArray);
+            Assert.Equal(2, indexArray!.Count);
 
-            var fkPath = layout.GetFkIndexPath(outputRoot, parentFolder, "Child", "parentId");
-            Assert.True(File.Exists(fkPath));
-            var fkJson = JsonNode.Parse(File.ReadAllText(fkPath)) as JsonObject;
-            Assert.NotNull(fkJson);
-            var fkArray = fkJson!["1"] as JsonArray;
-            Assert.NotNull(fkArray);
-            Assert.Equal(2, fkArray!.Count);
-
-            var childPkPath = layout.GetPkIndexPath(outputRoot, childFolder);
-            Assert.True(File.Exists(childPkPath));
+            Assert.Empty(Directory.GetFiles(outputRoot, "documents.json", SearchOption.AllDirectories));
+            Assert.Empty(Directory.GetFiles(outputRoot, "by-pk.json", SearchOption.AllDirectories));
+            Assert.Empty(Directory.GetDirectories(outputRoot, "fk", SearchOption.AllDirectories));
         }
         finally
         {
@@ -69,7 +58,7 @@ public sealed class CompilerOrchestratorIntegrationTests
     }
 
     [Fact]
-    public async Task OrchestratorStopsOnMissingRawFile()
+    public async Task OrchestratorStopsOnOutputCollision()
     {
         var tempDir = CreateTempDir();
         try
@@ -77,8 +66,8 @@ public sealed class CompilerOrchestratorIntegrationTests
             var outputRoot = Path.Combine(tempDir, "out");
             var options = new CompilerOptions
             {
-                ManifestPath = GetTestDataPath("manifests", "phase6", "missing-raw.yml"),
-                RawPath = GetTestDataPath("raw", "phase4"),
+                ManifestPath = GetTestDataPath("manifests", "phase7", "collision.yml"),
+                RawPath = GetTestDataPath("raw", "phase7"),
                 OutputRoot = outputRoot,
                 MaxDepth = 3
             };
@@ -87,7 +76,7 @@ public sealed class CompilerOrchestratorIntegrationTests
             var result = await orchestrator.RunAsync(options, CancellationToken.None);
 
             Assert.True(result.HasErrors);
-            Assert.Contains(result.Warnings, warning => warning.Code == WarningCode.RawFileNotFound && warning.Severity == WarningSeverity.Error);
+            Assert.Contains(result.Warnings, warning => warning.Code == WarningCode.OutputBlobPathCollision && warning.Severity == WarningSeverity.Error);
             Assert.False(Directory.Exists(outputRoot));
         }
         finally

@@ -61,11 +61,21 @@ public sealed class CompilerOrchestrator
             return new CompilerRunResult(warnings);
         }
 
+        if (warnings.Any(warning => warning.Severity == WarningSeverity.Error))
+        {
+            return new CompilerRunResult(warnings);
+        }
+
         try
         {
             var outputWriter = new OutputWriter();
-            var layoutPolicy = new OutputLayoutPolicy();
-            await WriteOutputsAsync(outputWriter, layoutPolicy, options.OutputRoot, compilationResult, indexResult, cancellationToken);
+            var outputWarnings = await WriteOutputsAsync(
+                outputWriter,
+                options.OutputRoot,
+                manifestResult.Manifest,
+                compilationResult,
+                cancellationToken);
+            warnings.AddRange(outputWarnings);
         }
         catch (Exception ex)
         {
@@ -78,12 +88,11 @@ public sealed class CompilerOrchestrator
         return new CompilerRunResult(warnings);
     }
 
-    private static async Task WriteOutputsAsync(
+    private static async Task<IReadOnlyList<Warning>> WriteOutputsAsync(
         OutputWriter writer,
-        OutputLayoutPolicy layoutPolicy,
         string outputRoot,
+        Manifest.Models.Manifest manifest,
         Compilation.Models.CompilationResult compilationResult,
-        IndexBuildResult indexResult,
         CancellationToken cancellationToken)
     {
         var tempRoot = $"{outputRoot}.tmp";
@@ -92,13 +101,36 @@ public sealed class CompilerOrchestrator
             Directory.Delete(tempRoot, true);
         }
 
-        await writer.WriteAsync(tempRoot, compilationResult, indexResult, layoutPolicy, cancellationToken);
-
-        if (Directory.Exists(outputRoot))
+        try
         {
-            Directory.Delete(outputRoot, true);
-        }
+            var result = await writer.WriteAsync(tempRoot, manifest, compilationResult, cancellationToken);
 
-        Directory.Move(tempRoot, outputRoot);
+            if (result.HasErrors)
+            {
+                if (Directory.Exists(tempRoot))
+                {
+                    Directory.Delete(tempRoot, true);
+                }
+
+                return result.Warnings;
+            }
+
+            if (Directory.Exists(outputRoot))
+            {
+                Directory.Delete(outputRoot, true);
+            }
+
+            Directory.Move(tempRoot, outputRoot);
+            return result.Warnings;
+        }
+        catch
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, true);
+            }
+
+            throw;
+        }
     }
 }

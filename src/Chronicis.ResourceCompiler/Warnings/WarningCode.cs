@@ -20,5 +20,9 @@ public enum WarningCode
     InvalidPkType,
     MissingFk,
     InvalidFkType,
-    OutputWriteFailed
+    OutputWriteFailed,
+    OutputTemplateMissingToken,
+    OutputTemplateTokenNotScalar,
+    OutputBlobPathCollision,
+    OutputIndexFieldMissing
 }

@@ -60,6 +60,51 @@ public sealed class ManifestValidator
 
             ValidateOrderBy(entityName, entity.OrderBy, warnings);
 
+            if (entity.IsRoot)
+            {
+                if (entity.Output is null || string.IsNullOrWhiteSpace(entity.Output.BlobTemplate))
+                {
+                    warnings.Add(new Warning(
+                        WarningCode.InvalidManifest,
+                        WarningSeverity.Error,
+                        $"Root entity '{entityName}' must define output.blobTemplate.",
+                        entityName));
+                }
+
+                if (entity.Output?.Index is not null)
+                {
+                    if (string.IsNullOrWhiteSpace(entity.Output.Index.Blob))
+                    {
+                        warnings.Add(new Warning(
+                            WarningCode.InvalidManifest,
+                            WarningSeverity.Error,
+                            $"Entity '{entityName}' output.index.blob is required when index is defined.",
+                            entityName));
+                    }
+
+                    if (entity.Output.Index.Fields is null || entity.Output.Index.Fields.Count == 0)
+                    {
+                        warnings.Add(new Warning(
+                            WarningCode.InvalidManifest,
+                            WarningSeverity.Error,
+                            $"Entity '{entityName}' output.index.fields must define at least one field.",
+                            entityName));
+                    }
+                }
+
+                if (RequiresSlug(entity.Output?.BlobTemplate, entity.Output?.Index?.Blob))
+                {
+                    if (entity.Identity is null || string.IsNullOrWhiteSpace(entity.Identity.SlugField))
+                    {
+                        warnings.Add(new Warning(
+                            WarningCode.InvalidManifest,
+                            WarningSeverity.Error,
+                            $"Entity '{entityName}' requires identity.slugField for template token resolution.",
+                            entityName));
+                    }
+                }
+            }
+
             foreach (var child in entity.Children)
             {
                 if (string.IsNullOrWhiteSpace(child.Entity))
@@ -103,6 +148,12 @@ public sealed class ManifestValidator
         }
 
         return warnings;
+    }
+
+    private static bool RequiresSlug(string? blobTemplate, string? indexBlob)
+    {
+        return (blobTemplate?.Contains("{slug}", StringComparison.OrdinalIgnoreCase) ?? false)
+               || (indexBlob?.Contains("{slug}", StringComparison.OrdinalIgnoreCase) ?? false);
     }
 
     private static void ValidateOrderBy(string entityName, Models.ManifestOrderBy? orderBy, List<Warning> warnings)

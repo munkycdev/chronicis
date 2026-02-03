@@ -8,4 +8,6 @@ public sealed class ManifestEntity
     public bool IsRoot { get; init; }
     public IReadOnlyList<ManifestChild> Children { get; init; } = Array.Empty<ManifestChild>();
     public ManifestOrderBy? OrderBy { get; init; }
+    public ManifestIdentity? Identity { get; init; }
+    public ManifestOutput? Output { get; init; }
 }
