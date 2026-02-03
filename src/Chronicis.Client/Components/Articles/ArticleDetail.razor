@@ -556,7 +556,8 @@ else
         {
             _isSaving = false;
             StateHasChanged();
-            if (_metadataDrawer != null)
+            // Only refresh panels if the metadata drawer is open
+            if (_metadataDrawer != null && _openMetadata)
                 await _metadataDrawer.RefreshPanelsAsync();
         }
     }

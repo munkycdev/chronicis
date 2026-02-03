@@ -37,18 +37,34 @@
     [Parameter]
     public Guid ArticleId { get; set; }
 
+    [Parameter]
+    public bool IsOpen { get; set; }
+
     private List<BacklinkDto> _outgoingLinks = new();
     private bool _loading = false;
     private Guid _lastArticleId = Guid.Empty;
+    private bool _wasOpen = false;
+    private bool _hasLoaded = false;
 
     protected override async Task OnParametersSetAsync()
     {
-        // Only reload if article ID changed
-        if (ArticleId != _lastArticleId)
+        var articleChanged = ArticleId != _lastArticleId;
+        var drawerOpened = IsOpen && !_wasOpen;
+        
+        if (articleChanged)
         {
             _lastArticleId = ArticleId;
+            _hasLoaded = false;
+            _outgoingLinks = new();
+        }
+        
+        // Load when drawer opens for the first time, or when article changes and drawer is already open
+        if ((drawerOpened || (articleChanged && IsOpen)) && !_hasLoaded)
+        {
             await LoadAsync();
         }
+        
+        _wasOpen = IsOpen;
     }
 
     /// <summary>
@@ -62,6 +78,7 @@
     private async Task LoadAsync()
     {
         _loading = true;
+        _hasLoaded = true;
         StateHasChanged();
 
         try

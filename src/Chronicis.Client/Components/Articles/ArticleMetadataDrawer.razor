@@ -116,12 +116,12 @@
     </MudDrawerHeader>
     <MudDrawerContainer Class="metadata-drawer-scrollable chronicis-scrollbar-light">
         <!-- Outgoing Links Panel -->
-        <OutgoingLinksPanel @ref="_outgoingLinksPanel" ArticleId="@Article.Id" />
+        <OutgoingLinksPanel @ref="_outgoingLinksPanel" ArticleId="@Article.Id" IsOpen="@IsOpen" />
         
         <MudDivider Class="my-3" />
         
         <!-- Backlinks Panel -->
-        <BacklinksPanel @ref="_backlinksPanel" ArticleId="@Article.Id" />
+        <BacklinksPanel @ref="_backlinksPanel" ArticleId="@Article.Id" IsOpen="@IsOpen" />
         
         <MudDivider Class="my-3" />
         

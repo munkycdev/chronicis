@@ -178,6 +178,10 @@
     [Parameter]
     public EventCallback<bool> IsExpandedChanged { get; set; }
 
+    // Track previous parameter values to detect actual changes
+    private Guid _previousEntityId;
+    private string _previousEntityType = string.Empty;
+
     private ArticleSummaryDto? _articleSummaryData;
     private EntitySummaryDto? _entitySummaryData;
     private SummaryEstimateDto? _estimate;
@@ -230,7 +234,20 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        await LoadSummaryData();
+        // Only reload if EntityId or EntityType actually changed
+        var entityChanged = _previousEntityId != EntityId || _previousEntityType != EntityType;
+        
+        if (entityChanged)
+        {
+            _previousEntityId = EntityId;
+            _previousEntityType = EntityType;
+            
+            // Clear state when entity changes
+            _estimate = null;
+            _errorMessage = "";
+            
+            await LoadSummaryData();
+        }
     }
 
     private async Task LoadSummaryData()
@@ -241,12 +258,7 @@
         {
             _articleSummaryData = await SummaryApi.GetSummaryAsync(EntityId);
             
-            if (_articleSummaryData?.HasSummary != true)
-            {
-                _estimate = await SummaryApi.GetEstimateAsync(EntityId);
-                LoadSettingsFromEstimate();
-            }
-            else
+            if (_articleSummaryData?.HasSummary == true)
             {
                 _selectedTemplateId = _articleSummaryData.TemplateId;
                 _customPrompt = _articleSummaryData.CustomPrompt;
@@ -256,16 +268,47 @@
         {
             _entitySummaryData = await SummaryApi.GetEntitySummaryAsync(EntityType, EntityId);
             
-            if (_entitySummaryData?.HasSummary != true)
-            {
-                _estimate = await SummaryApi.GetEntityEstimateAsync(EntityType, EntityId);
-                LoadSettingsFromEstimate();
-            }
-            else
+            if (_entitySummaryData?.HasSummary == true)
             {
                 _selectedTemplateId = _entitySummaryData.TemplateId;
                 _customPrompt = _entitySummaryData.CustomPrompt;
             }
+        }
+    }
+    
+    private async Task LoadEstimateData()
+    {
+        if (_summaryData?.HasSummary == true)
+        {
+            // Already has summary, no need for estimate
+            return;
+        }
+        
+        _isLoading = true;
+        _errorMessage = "";
+        StateHasChanged();
+        
+        try
+        {
+            if (EntityType == "Article")
+            {
+                _estimate = await SummaryApi.GetEstimateAsync(EntityId);
+            }
+            else
+            {
+                _estimate = await SummaryApi.GetEntityEstimateAsync(EntityType, EntityId);
+            }
+            
+            LoadSettingsFromEstimate();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Failed to load estimate: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
         }
     }
 
@@ -401,6 +444,18 @@
     {
         IsExpanded = !IsExpanded;
         await IsExpandedChanged.InvokeAsync(IsExpanded);
+        
+        if (IsExpanded)
+        {
+            // Panel is opening - load estimate if needed
+            await LoadEstimateData();
+        }
+        else
+        {
+            // Panel is closing - clear estimate to force fresh fetch on next open
+            _estimate = null;
+            _errorMessage = "";
+        }
     }
 
     private string GetRelativeTime(DateTime date)
