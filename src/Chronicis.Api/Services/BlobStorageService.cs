@@ -16,6 +16,7 @@ public class BlobStorageService : IBlobStorageService
     private readonly IConfiguration _configuration;
     private readonly ILogger<BlobStorageService> _logger;
     private readonly string _containerName;
+    private readonly string? _customDomain;
 
     public BlobStorageService(
         IConfiguration configuration,
@@ -36,6 +37,15 @@ public class BlobStorageService : IBlobStorageService
         _containerName = configuration["BlobStorage:ContainerName"] 
             ?? configuration["BlobStorage__ContainerName"]
             ?? "chronicis-documents";
+
+        // Optional custom domain (e.g., "http://docs.chronicis.app" or "https://docs.chronicis.app")
+        _customDomain = configuration["BlobStorage:CustomDomain"]
+            ?? configuration["BlobStorage__CustomDomain"];
+
+        if (!string.IsNullOrEmpty(_customDomain))
+        {
+            _logger.LogInformation("Using custom domain for blob URLs: {CustomDomain}", _customDomain);
+        }
 
         try
         {
@@ -85,11 +95,11 @@ public class BlobStorageService : IBlobStorageService
 
         sasBuilder.SetPermissions(BlobSasPermissions.Create | BlobSasPermissions.Write);
 
-        var sasToken = blobClient.GenerateSasUri(sasBuilder);
+        var sasUrl = BuildSasUrl(blobClient, sasBuilder);
 
         _logger.LogInformation("Generated upload SAS URL for blob: {BlobPath}", blobPath);
 
-        return Task.FromResult(sasToken.ToString());
+        return Task.FromResult(sasUrl);
     }
 
     /// <inheritdoc/>
@@ -154,6 +164,31 @@ public class BlobStorageService : IBlobStorageService
         }
     }
 
+    /// <inheritdoc/>
+    public Task<string> GenerateDownloadSasUrlAsync(string blobPath)
+    {
+        var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+        var blobClient = containerClient.GetBlobClient(blobPath);
+
+        // Generate SAS token with read permissions, 15-minute expiry
+        var sasBuilder = new BlobSasBuilder
+        {
+            BlobContainerName = _containerName,
+            BlobName = blobPath,
+            Resource = "b", // blob
+            StartsOn = DateTimeOffset.UtcNow.AddMinutes(-5), // Allow for clock skew
+            ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(15),
+        };
+
+        sasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+        var sasUrl = BuildSasUrl(blobClient, sasBuilder);
+
+        _logger.LogInformation("Generated download SAS URL for blob: {BlobPath}", blobPath);
+
+        return Task.FromResult(sasUrl);
+    }
+
     private static string SanitizeFileName(string fileName)
     {
         // Remove path separators and keep only safe characters
@@ -169,5 +204,27 @@ public class BlobStorageService : IBlobStorageService
         }
 
         return sanitized;
+    }
+
+    /// <summary>
+    /// Build a SAS URL using either the custom domain or the default blob endpoint.
+    /// </summary>
+    private string BuildSasUrl(BlobClient blobClient, BlobSasBuilder sasBuilder)
+    {
+        if (!string.IsNullOrEmpty(_customDomain))
+        {
+            // Generate SAS token only (query string)
+            var sasToken = blobClient.GenerateSasUri(sasBuilder).Query;
+            
+            // Build custom URL: {customDomain}/{container}/{blobPath}?{sasToken}
+            var customUrl = $"{_customDomain.TrimEnd('/')}/{_containerName}/{blobClient.Name}{sasToken}";
+            
+            return customUrl;
+        }
+        else
+        {
+            // Use default blob endpoint with SAS
+            return blobClient.GenerateSasUri(sasBuilder).ToString();
+        }
     }
 }

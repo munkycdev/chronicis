@@ -38,6 +38,13 @@ public interface IBlobStorageService
     Task DeleteBlobAsync(string blobPath);
 
     /// <summary>
+    /// Generate a SAS URL for downloading a file directly from the client.
+    /// </summary>
+    /// <param name="blobPath">The blob path to generate download URL for.</param>
+    /// <returns>SAS URL valid for 15 minutes with read-only permissions.</returns>
+    Task<string> GenerateDownloadSasUrlAsync(string blobPath);
+
+    /// <summary>
     /// Build the blob path for a document.
     /// </summary>
     /// <param name="worldId">The world ID.</param>

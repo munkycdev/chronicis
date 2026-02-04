@@ -190,7 +190,7 @@ public class WorldDocumentService : IWorldDocumentService
 
     public async Task<DocumentContentResult> GetDocumentContentAsync(Guid documentId, Guid userId)
     {
-        _logger.LogInformation("User {UserId} requesting document content for {DocumentId}",
+        _logger.LogInformation("User {UserId} requesting document download URL for {DocumentId}",
             userId, documentId);
 
         var document = await GetAuthorizedDocumentAsync(documentId, userId);
@@ -198,10 +198,11 @@ public class WorldDocumentService : IWorldDocumentService
             ? "application/octet-stream"
             : document.ContentType;
 
-        var contentStream = await _blobStorage.OpenReadAsync(document.BlobPath);
+        // Generate read-only SAS URL for direct download from blob storage
+        var downloadUrl = await _blobStorage.GenerateDownloadSasUrlAsync(document.BlobPath);
 
         return new DocumentContentResult(
-            contentStream,
+            downloadUrl,
             document.FileName,
             contentType,
             document.FileSizeBytes);

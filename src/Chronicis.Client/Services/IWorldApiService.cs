@@ -67,7 +67,7 @@ public interface IWorldApiService
     Task<List<WorldDocumentDto>> GetWorldDocumentsAsync(Guid worldId);
 
     /// <summary>
-    /// Download a document's content from the API.
+    /// Get a download URL for a document (generates SAS URL).
     /// </summary>
     Task<DocumentDownloadResult?> DownloadDocumentAsync(Guid documentId);
 

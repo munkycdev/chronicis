@@ -201,24 +201,23 @@ public class WorldApiService : IWorldApiService
     {
         try
         {
-            var response = await _http.GetAsync($"/documents/{documentId}/content");
+            var downloadInfo = await _http.GetEntityAsync<WorldDocumentDownloadDto>(
+                $"/documents/{documentId}/content",
+                _logger,
+                $"download URL for document {documentId}");
 
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Failed to download document {DocumentId}. Status: {StatusCode}",
-                    documentId, response.StatusCode);
+            if (downloadInfo == null)
                 return null;
-            }
 
-            var content = await response.Content.ReadAsByteArrayAsync();
-            var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
-            var fileName = GetFileName(response.Content.Headers, documentId);
-
-            return new DocumentDownloadResult(content, fileName, contentType);
+            return new DocumentDownloadResult(
+                downloadInfo.DownloadUrl,
+                downloadInfo.FileName,
+                downloadInfo.ContentType,
+                downloadInfo.FileSizeBytes);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error downloading document {DocumentId}", documentId);
+            _logger.LogError(ex, "Error getting download URL for document {DocumentId}", documentId);
             return null;
         }
     }
@@ -241,17 +240,5 @@ public class WorldApiService : IWorldApiService
             $"worlds/{worldId}/documents/{documentId}",
             _logger,
             $"document {documentId} from world {worldId}");
-    }
-
-    private static string GetFileName(HttpContentHeaders headers, Guid documentId)
-    {
-        var fileName = headers.ContentDisposition?.FileNameStar ?? headers.ContentDisposition?.FileName;
-
-        if (string.IsNullOrWhiteSpace(fileName))
-        {
-            return documentId.ToString();
-        }
-
-        return fileName.Trim('"');
     }
 }

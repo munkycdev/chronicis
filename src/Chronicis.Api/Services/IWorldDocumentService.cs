@@ -40,11 +40,11 @@ public interface IWorldDocumentService
     Task<List<WorldDocumentDto>> GetWorldDocumentsAsync(Guid worldId, Guid userId);
 
     /// <summary>
-    /// Get the document content stream for an authorized user.
+    /// Get a download URL for the document content (generates SAS URL).
     /// </summary>
     /// <param name="documentId">The document ID.</param>
     /// <param name="userId">The requesting user ID.</param>
-    /// <returns>Document content and metadata.</returns>
+    /// <returns>Document download URL and metadata.</returns>
     Task<DocumentContentResult> GetDocumentContentAsync(Guid documentId, Guid userId);
 
     /// <summary>

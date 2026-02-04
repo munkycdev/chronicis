@@ -92,3 +92,29 @@ public class WorldDocumentUpdateDto
     public string? Description { get; set; }
 }
 
+/// <summary>
+/// Response DTO containing download URL for document.
+/// </summary>
+public class WorldDocumentDownloadDto
+{
+    /// <summary>
+    /// Temporary SAS URL for downloading the document (valid for 15 minutes).
+    /// </summary>
+    public string DownloadUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Original filename of the document.
+    /// </summary>
+    public string FileName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// MIME type of the document.
+    /// </summary>
+    public string ContentType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// File size in bytes.
+    /// </summary>
+    public long FileSizeBytes { get; set; }
+}
+

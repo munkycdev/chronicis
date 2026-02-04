@@ -374,22 +374,18 @@
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("chronicisOpenDocumentTab");
             var download = await WorldApi.DownloadDocumentAsync(Node.Id);
 
             if (download == null)
             {
-                Snackbar.Add("Failed to download document", Severity.Error);
+                Snackbar.Add("Failed to get download URL", Severity.Error);
                 return;
             }
 
-            await JSRuntime.InvokeVoidAsync(
-                "chronicisLoadDocumentInTab",
-                download.FileName,
-                download.ContentType,
-                download.Content);
+            // Open the SAS URL in a new tab for download
+            await JSRuntime.InvokeVoidAsync("open", download.DownloadUrl, "_blank");
 
-            Snackbar.Add($"Downloading {download.FileName}", Severity.Success);
+            Snackbar.Add($"Opening {download.FileName}", Severity.Success);
         }
         catch (Exception ex)
         {

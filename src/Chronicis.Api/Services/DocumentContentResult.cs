@@ -1,19 +1,35 @@
-using System.IO;
-
 namespace Chronicis.Api.Services;
 
+/// <summary>
+/// Result containing a SAS URL for downloading a document directly from blob storage.
+/// </summary>
 public sealed class DocumentContentResult
 {
-    public DocumentContentResult(Stream content, string fileName, string contentType, long? contentLength)
+    public DocumentContentResult(string downloadUrl, string fileName, string contentType, long fileSizeBytes)
     {
-        Content = content;
+        DownloadUrl = downloadUrl;
         FileName = fileName;
         ContentType = contentType;
-        ContentLength = contentLength;
+        FileSizeBytes = fileSizeBytes;
     }
 
-    public Stream Content { get; }
+    /// <summary>
+    /// Temporary SAS URL for downloading the document (valid for 15 minutes).
+    /// </summary>
+    public string DownloadUrl { get; }
+    
+    /// <summary>
+    /// Original filename of the document.
+    /// </summary>
     public string FileName { get; }
+    
+    /// <summary>
+    /// MIME type of the document.
+    /// </summary>
     public string ContentType { get; }
-    public long? ContentLength { get; }
+    
+    /// <summary>
+    /// File size in bytes.
+    /// </summary>
+    public long FileSizeBytes { get; }
 }
