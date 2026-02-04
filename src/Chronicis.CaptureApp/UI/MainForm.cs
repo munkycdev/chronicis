@@ -3,6 +3,7 @@ using Chronicis.CaptureApp.Models;
 using Chronicis.CaptureApp.Services;
 using MaterialSkin;
 using MaterialSkin.Controls;
+using Microsoft.Extensions.Logging;
 using Whisper.net.Ggml;
 
 namespace Chronicis.CaptureApp.UI;
@@ -16,6 +17,7 @@ public class MainForm : MaterialForm
     private readonly ISettingsService _settingsService;
     private readonly ISystemTrayService _systemTrayService;
     private readonly ISpeakerDetectionService _speakerDetectionService;
+    private readonly ILogger<MainForm> _logger;
 
     // UI Controls
     private readonly MaterialSkinManager _materialSkinManager;
@@ -51,7 +53,8 @@ public class MainForm : MaterialForm
         ITranscriptionService transcriptionService,
         ISettingsService settingsService,
         ISystemTrayService systemTrayService,
-        ISpeakerDetectionService speakerDetectionService)
+        ISpeakerDetectionService speakerDetectionService,
+        ILogger<MainForm> logger)
     {
         _audioSourceProvider = audioSourceProvider;
         _audioCaptureService = audioCaptureService;
@@ -59,6 +62,7 @@ public class MainForm : MaterialForm
         _settingsService = settingsService;
         _systemTrayService = systemTrayService;
         _speakerDetectionService = speakerDetectionService;
+        _logger = logger;
         _materialSkinManager = MaterialSkinManager.Instance;
 
         InitializeComponent();
@@ -90,7 +94,7 @@ public class MainForm : MaterialForm
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Could not load icon: {ex.Message}");
+            _logger.LogError(ex, "Could not load icon: {Message}", ex.Message);
         }
 
         CreateMaterialUI();
@@ -599,8 +603,7 @@ public class MainForm : MaterialForm
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error transcribing chunk: {ex.Message}");
-        }
+            _logger.LogError(ex, "Error transcribing chunk: {Message}", ex.Message);        }
     }
 
     private void OnQueueStatsUpdated(object? sender, QueueStatistics stats)
@@ -870,5 +873,31 @@ public class MainForm : MaterialForm
         }
 
         base.OnFormClosing(e);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _cmbAudioSources?.Dispose();
+            _btnStart?.Dispose();
+            _btnStop?.Dispose();
+            _btnRefresh?.Dispose();
+            _lblStatus?.Dispose();
+            _txtTranscript?.Dispose();
+            _lblTranscriptTitle?.Dispose();
+            _lblSourceLabel?.Dispose();
+            _cmbChunkSize?.Dispose();
+            _lblChunkSize?.Dispose();
+            _cmbModel?.Dispose();
+            _lblModel?.Dispose();
+            _lblQueueStatus?.Dispose();
+            _chkEnableSpeakerDetection?.Dispose();
+            _btnEditSpeakers?.Dispose();
+            _mainPanel?.Dispose();
+            _controlCard?.Dispose();
+            _transcriptCard?.Dispose();
+        }
+        base.Dispose(disposing);
     }
 }

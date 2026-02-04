@@ -172,8 +172,6 @@ public class TreeStateService : ITreeStateService
         
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         
-        // Phase 1: Fetch worlds list and all articles in parallel
-        _logger.LogInformation("Phase 1: Fetching worlds and articles...");
         var worldsTask = _worldApi.GetWorldsAsync();
         var articlesTask = _articleApi.GetAllArticlesAsync();
         
@@ -185,8 +183,6 @@ public class TreeStateService : ITreeStateService
         // Cache articles for sharing with Dashboard, etc.
         _cachedArticles = allArticles;
         
-        _logger.LogInformation("Phase 1 complete: {WorldCount} worlds, {ArticleCount} articles in {Ms}ms",
-            worlds.Count, allArticles.Count, stopwatch.ElapsedMilliseconds);
         
         if (!worlds.Any())
         {
@@ -194,7 +190,7 @@ public class TreeStateService : ITreeStateService
         }
         
         // Phase 2: Fetch all world details in parallel
-        _logger.LogInformation("Phase 2: Fetching world details in parallel...");
+        _logger.LogDebug("Phase 2: Fetching world details in parallel...");
         var worldDetailTasks = worlds.Select(w => _worldApi.GetWorldAsync(w.Id)).ToList();
         var worldDetails = await Task.WhenAll(worldDetailTasks);
         
@@ -203,7 +199,7 @@ public class TreeStateService : ITreeStateService
             .Where(wd => wd != null)
             .ToDictionary(wd => wd!.Id, wd => wd!);
         
-        _logger.LogInformation("Phase 2 complete: {Count} world details in {Ms}ms",
+        _logger.LogDebug("Phase 2 complete: {Count} world details in {Ms}ms",
             worldDetailLookup.Count, stopwatch.ElapsedMilliseconds);
         
         // Phase 3: Collect all campaigns and fetch all arcs in parallel
@@ -212,7 +208,7 @@ public class TreeStateService : ITreeStateService
             .SelectMany(wd => wd!.Campaigns ?? new List<CampaignDto>())
             .ToList();
         
-        _logger.LogInformation("Phase 3: Fetching arcs for {Count} campaigns, world links, and documents in parallel...", allCampaigns.Count);
+        _logger.LogDebug("Phase 3: Fetching arcs for {Count} campaigns, world links, and documents in parallel...", allCampaigns.Count);
 
         // Fetch all arcs, world links, and world documents in parallel
         var arcTasks = allCampaigns.Select(c => _arcApi.GetArcsByCampaignAsync(c.Id)).ToList();
@@ -248,11 +244,11 @@ public class TreeStateService : ITreeStateService
             arcsByCampaign[allCampaigns[i].Id] = arcResults[i];
         }
         
-        _logger.LogInformation("Phase 3 complete: {Count} total arcs in {Ms}ms",
+        _logger.LogDebug("Phase 3 complete: {Count} total arcs in {Ms}ms",
             arcResults.Sum(r => r.Count), stopwatch.ElapsedMilliseconds);
         
         // Phase 4: Build the tree structure (now synchronous with all data in memory)
-        _logger.LogInformation("Phase 4: Building tree structure...");
+        _logger.LogDebug("Phase 4: Building tree structure...");
         
         // Build article index for quick lookup
         var articleIndex = allArticles.ToDictionary(a => a.Id);
@@ -309,7 +305,7 @@ public class TreeStateService : ITreeStateService
         }
         
         stopwatch.Stop();
-        _logger.LogInformation("Tree build complete in {Ms}ms total", stopwatch.ElapsedMilliseconds);
+        _logger.LogDebug("Tree build complete in {Ms}ms total", stopwatch.ElapsedMilliseconds);
     }
     
     /// <summary>

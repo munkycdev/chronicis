@@ -57,7 +57,7 @@ public class WorldDocumentService : IWorldDocumentService
         Guid userId,
         WorldDocumentUploadRequestDto request)
     {
-        _logger.LogInformation("User {UserId} requesting upload for world {WorldId}: {FileName}",
+        _logger.LogDebug("User {UserId} requesting upload for world {WorldId}: {FileName}",
             userId, worldId, request.FileName);
 
         // Verify user owns the world
@@ -105,7 +105,7 @@ public class WorldDocumentService : IWorldDocumentService
         _db.WorldDocuments.Add(document);
         await _db.SaveChangesAsync();
 
-        _logger.LogInformation("Created pending document {DocumentId} for world {WorldId}",
+        _logger.LogDebug("Created pending document {DocumentId} for world {WorldId}",
             document.Id, worldId);
 
         return new WorldDocumentUploadResponseDto
@@ -121,7 +121,7 @@ public class WorldDocumentService : IWorldDocumentService
         Guid documentId,
         Guid userId)
     {
-        _logger.LogInformation("User {UserId} confirming upload for document {DocumentId}",
+        _logger.LogDebug("User {UserId} confirming upload for document {DocumentId}",
             userId, documentId);
 
         // Get the pending document
@@ -157,7 +157,7 @@ public class WorldDocumentService : IWorldDocumentService
 
         await _db.SaveChangesAsync();
 
-        _logger.LogInformation("Confirmed upload for document {DocumentId}, size: {SizeBytes} bytes",
+        _logger.LogDebug("Confirmed upload for document {DocumentId}, size: {SizeBytes} bytes",
             documentId, metadata.SizeBytes);
 
         return MapToDto(document);
@@ -165,7 +165,7 @@ public class WorldDocumentService : IWorldDocumentService
 
     public async Task<List<WorldDocumentDto>> GetWorldDocumentsAsync(Guid worldId, Guid userId)
     {
-        _logger.LogInformation("User {UserId} getting documents for world {WorldId}",
+        _logger.LogDebug("User {UserId} getting documents for world {WorldId}",
             userId, worldId);
 
         // Verify user has access to the world (owner or member)
@@ -190,7 +190,7 @@ public class WorldDocumentService : IWorldDocumentService
 
     public async Task<DocumentContentResult> GetDocumentContentAsync(Guid documentId, Guid userId)
     {
-        _logger.LogInformation("User {UserId} requesting document download URL for {DocumentId}",
+        _logger.LogDebug("User {UserId} requesting document download URL for {DocumentId}",
             userId, documentId);
 
         var document = await GetAuthorizedDocumentAsync(documentId, userId);
@@ -214,7 +214,7 @@ public class WorldDocumentService : IWorldDocumentService
         Guid userId,
         WorldDocumentUpdateDto update)
     {
-        _logger.LogInformation("User {UserId} updating document {DocumentId}",
+        _logger.LogDebug("User {UserId} updating document {DocumentId}",
             userId, documentId);
 
         var document = await _db.WorldDocuments
@@ -244,14 +244,14 @@ public class WorldDocumentService : IWorldDocumentService
 
         await _db.SaveChangesAsync();
 
-        _logger.LogInformation("Updated document {DocumentId}", documentId);
+        _logger.LogDebug("Updated document {DocumentId}", documentId);
 
         return MapToDto(document);
     }
 
     public async Task DeleteDocumentAsync(Guid worldId, Guid documentId, Guid userId)
     {
-        _logger.LogInformation("User {UserId} deleting document {DocumentId}",
+        _logger.LogDebug("User {UserId} deleting document {DocumentId}",
             userId, documentId);
 
         var document = await _db.WorldDocuments
@@ -285,7 +285,7 @@ public class WorldDocumentService : IWorldDocumentService
         _db.WorldDocuments.Remove(document);
         await _db.SaveChangesAsync();
 
-        _logger.LogInformation("Deleted document {DocumentId}", documentId);
+        _logger.LogDebug("Deleted document {DocumentId}", documentId);
     }
 
     // ===== Private Helper Methods =====
@@ -363,7 +363,7 @@ public class WorldDocumentService : IWorldDocumentService
             }
         }
 
-        _logger.LogInformation("Generated unique title for {FileName}: {Title}", fileName, title);
+        _logger.LogDebug("Generated unique title for {FileName}: {Title}", fileName, title);
         return title;
     }
 

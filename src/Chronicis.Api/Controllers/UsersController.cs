@@ -35,7 +35,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<UserProfileDto>> GetCurrentUserProfile()
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting profile for user {UserId}", user.Id);
+        _logger.LogDebug("Getting profile for user {UserId}", user.Id);
 
         var profile = await _userService.GetUserProfileAsync(user.Id);
 
@@ -54,7 +54,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> CompleteOnboarding()
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Completing onboarding for user {UserId}", user.Id);
+        _logger.LogDebug("Completing onboarding for user {UserId}", user.Id);
 
         var success = await _userService.CompleteOnboardingAsync(user.Id);
 

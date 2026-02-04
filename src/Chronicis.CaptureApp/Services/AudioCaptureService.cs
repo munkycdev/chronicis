@@ -1,4 +1,5 @@
 using Chronicis.CaptureApp.Models;
+using Microsoft.Extensions.Logging;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
@@ -6,6 +7,7 @@ namespace Chronicis.CaptureApp.Services;
 
 public class AudioCaptureService : IAudioCaptureService, IDisposable
 {
+    private readonly ILogger<AudioCaptureService> _logger;
     private WasapiLoopbackCapture? _captureDevice;
     private MemoryStream? _currentChunkStream;
     private WaveFileWriter? _currentChunkWriter;
@@ -32,6 +34,11 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
     public bool IsRecording { get; private set; }
     public QueueStatistics QueueStats { get; private set; } = new();
 
+    public AudioCaptureService(ILogger<AudioCaptureService> logger)
+    {
+        _logger = logger;
+    }
+
     public void StartRecording(TranscriptionSettings settings)
     {
         if (IsRecording)
@@ -42,7 +49,7 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
         _currentChunkStartTime = _recordingStartTime;
         QueueStats.Reset();
 
-        var enumerator = new MMDeviceEnumerator();
+        using var enumerator = new MMDeviceEnumerator();
         var device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
 
         _captureDevice = new WasapiLoopbackCapture(device);
@@ -157,7 +164,7 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error compressing audio: {ex.Message}");
+            _logger.LogError(ex, "Error compressing audio: {Message}", ex.Message);
             // If compression fails, return original WAV
             return wavPath;
         }
@@ -200,7 +207,7 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
         }
     }
 
-    private async Task ProcessQueueAsync()
+    private Task ProcessQueueAsync()
     {
         _isProcessing = true;
 
@@ -225,6 +232,7 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
         }
 
         _isProcessing = false;
+        return Task.CompletedTask;
     }
 
     private string ConvertToWhisperFormat(string inputWavPath)
@@ -262,5 +270,6 @@ public class AudioCaptureService : IAudioCaptureService, IDisposable
         _currentChunkWriter?.Dispose();
         _currentChunkStream?.Dispose();
         _sessionAudioWriter?.Dispose(); // NEW
+        GC.SuppressFinalize(this);
     }
 }

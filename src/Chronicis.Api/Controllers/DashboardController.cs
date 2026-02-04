@@ -41,7 +41,7 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<DashboardDto>> GetDashboard()
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting dashboard for user {UserId}", user.Id);
+        _logger.LogDebug("Getting dashboard for user {UserId}", user.Id);
 
         // Get all worlds the user has access to (via membership)
         var worldIds = await _context.WorldMembers

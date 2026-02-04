@@ -35,7 +35,7 @@ public class SummaryController : ControllerBase
     public async Task<ActionResult<List<SummaryTemplateDto>>> GetTemplates()
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting summary templates for user {UserId}", user.Id);
+        _logger.LogDebug("Getting summary templates for user {UserId}", user.Id);
 
         var templates = await _summaryService.GetTemplatesAsync();
         return Ok(templates);

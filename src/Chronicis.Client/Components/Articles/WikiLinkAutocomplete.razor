@@ -90,9 +90,9 @@
 
     private async Task OnSuggestionClick(WikiLinkAutocompleteItem suggestion)
     {
-        Logger.LogInformation("WikiLinkAutocomplete: OnSuggestionClick called for {Title}", suggestion.Title);
+        Logger.LogDebug("WikiLinkAutocomplete: OnSuggestionClick called for {Title}", suggestion.Title);
         await OnSelect.InvokeAsync(suggestion);
-        Logger.LogInformation("WikiLinkAutocomplete: OnSelect.InvokeAsync completed");
+        Logger.LogDebug("WikiLinkAutocomplete: OnSelect.InvokeAsync completed");
     }
 
     private async Task OnSuggestionHover(int index)
@@ -106,7 +106,7 @@
     private async Task OnCreateClick()
     {
         var articleName = GetArticleName();
-        Logger.LogInformation("WikiLinkAutocomplete: OnCreateClick called for {Name}", articleName);
+        Logger.LogDebug("WikiLinkAutocomplete: OnCreateClick called for {Name}", articleName);
         await OnCreate.InvokeAsync(articleName);
     }
 

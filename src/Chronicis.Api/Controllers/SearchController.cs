@@ -56,7 +56,7 @@ public class SearchController : ControllerBase
             });
         }
 
-        _logger.LogInformation("Searching for '{Query}' for user {UserId}", query, user.Id);
+        _logger.LogDebug("Searching for '{Query}' for user {UserId}", query, user.Id);
 
         // Get all world IDs the user has access to
         var accessibleWorldIds = await _context.WorldMembers

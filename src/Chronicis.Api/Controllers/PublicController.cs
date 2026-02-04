@@ -34,7 +34,7 @@ public class PublicController : ControllerBase
             return BadRequest(new { error = "Public slug is required" });
         }
 
-        _logger.LogInformation("Getting public world with slug '{PublicSlug}'", publicSlug);
+        _logger.LogDebug("Getting public world with slug '{PublicSlug}'", publicSlug);
 
         var world = await _publicWorldService.GetPublicWorldAsync(publicSlug);
 
@@ -59,7 +59,7 @@ public class PublicController : ControllerBase
             return BadRequest(new { error = "Public slug is required" });
         }
 
-        _logger.LogInformation("Getting public article tree for world '{PublicSlug}'", publicSlug);
+        _logger.LogDebug("Getting public article tree for world '{PublicSlug}'", publicSlug);
 
         var tree = await _publicWorldService.GetPublicArticleTreeAsync(publicSlug);
 
@@ -92,7 +92,7 @@ public class PublicController : ControllerBase
             return BadRequest(new { error = "Article path is required" });
         }
 
-        _logger.LogInformation("Getting public article '{ArticlePath}' in world '{PublicSlug}'", articlePath, publicSlug);
+        _logger.LogDebug("Getting public article '{ArticlePath}' in world '{PublicSlug}'", articlePath, publicSlug);
 
         var article = await _publicWorldService.GetPublicArticleAsync(publicSlug, articlePath);
 

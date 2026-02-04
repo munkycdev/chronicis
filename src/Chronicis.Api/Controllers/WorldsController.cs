@@ -43,7 +43,7 @@ public class WorldsController : ControllerBase
     public async Task<ActionResult<IEnumerable<WorldDto>>> GetWorlds()
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting worlds for user {UserId}", user.Id);
+        _logger.LogDebug("Getting worlds for user {UserId}", user.Id);
 
         var worlds = await _worldService.GetUserWorldsAsync(user.Id);
         return Ok(worlds);
@@ -56,7 +56,7 @@ public class WorldsController : ControllerBase
     public async Task<ActionResult<WorldDto>> GetWorld(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting world {WorldId} for user {UserId}", id, user.Id);
+        _logger.LogDebug("Getting world {WorldId} for user {UserId}", id, user.Id);
 
         var world = await _worldService.GetWorldAsync(id, user.Id);
 
@@ -81,7 +81,7 @@ public class WorldsController : ControllerBase
             return BadRequest(new { error = "Name is required" });
         }
 
-        _logger.LogInformation("Creating world '{Name}' for user {UserId}", dto.Name, user.Id);
+        _logger.LogDebug("Creating world '{Name}' for user {UserId}", dto.Name, user.Id);
 
         var world = await _worldService.CreateWorldAsync(dto, user.Id);
 
@@ -101,7 +101,7 @@ public class WorldsController : ControllerBase
             return BadRequest(new { error = "Name is required" });
         }
 
-        _logger.LogInformation("Updating world {WorldId} for user {UserId}", id, user.Id);
+        _logger.LogDebug("Updating world {WorldId} for user {UserId}", id, user.Id);
 
         var world = await _worldService.UpdateWorldAsync(id, dto, user.Id);
 
@@ -133,7 +133,7 @@ public class WorldsController : ControllerBase
             return BadRequest(new { error = "Slug is required" });
         }
 
-        _logger.LogInformation("Checking public slug '{Slug}' for world {WorldId}", dto.Slug, id);
+        _logger.LogDebug("Checking public slug '{Slug}' for world {WorldId}", dto.Slug, id);
 
         var result = await _worldService.CheckPublicSlugAsync(dto.Slug, id);
         return Ok(result);
@@ -148,7 +148,7 @@ public class WorldsController : ControllerBase
     public async Task<ActionResult<IEnumerable<WorldMemberDto>>> GetWorldMembers(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting members for world {WorldId}", id);
+        _logger.LogDebug("Getting members for world {WorldId}", id);
 
         var members = await _worldService.GetMembersAsync(id, user.Id);
         return Ok(members);
@@ -170,7 +170,7 @@ public class WorldsController : ControllerBase
             return BadRequest(new { error = "Invalid request body" });
         }
 
-        _logger.LogInformation("Updating member {MemberId} in world {WorldId}", memberId, worldId);
+        _logger.LogDebug("Updating member {MemberId} in world {WorldId}", memberId, worldId);
 
         var member = await _worldService.UpdateMemberRoleAsync(worldId, memberId, dto, user.Id);
 
@@ -189,7 +189,7 @@ public class WorldsController : ControllerBase
     public async Task<IActionResult> RemoveWorldMember(Guid worldId, Guid memberId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Removing member {MemberId} from world {WorldId}", memberId, worldId);
+        _logger.LogDebug("Removing member {MemberId} from world {WorldId}", memberId, worldId);
 
         var success = await _worldService.RemoveMemberAsync(worldId, memberId, user.Id);
 
@@ -210,7 +210,7 @@ public class WorldsController : ControllerBase
     public async Task<ActionResult<IEnumerable<WorldInvitationDto>>> GetWorldInvitations(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting invitations for world {WorldId}", id);
+        _logger.LogDebug("Getting invitations for world {WorldId}", id);
 
         var invitations = await _worldService.GetInvitationsAsync(id, user.Id);
         return Ok(invitations);
@@ -228,7 +228,7 @@ public class WorldsController : ControllerBase
 
         dto ??= new WorldInvitationCreateDto(); // Use defaults if body is empty
 
-        _logger.LogInformation("Creating invitation for world {WorldId}", id);
+        _logger.LogDebug("Creating invitation for world {WorldId}", id);
 
         var invitation = await _worldService.CreateInvitationAsync(id, dto, user.Id);
 
@@ -247,7 +247,7 @@ public class WorldsController : ControllerBase
     public async Task<IActionResult> RevokeWorldInvitation(Guid worldId, Guid invitationId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Revoking invitation {InvitationId} for world {WorldId}", invitationId, worldId);
+        _logger.LogDebug("Revoking invitation {InvitationId} for world {WorldId}", invitationId, worldId);
 
         var success = await _worldService.RevokeInvitationAsync(worldId, invitationId, user.Id);
 
@@ -272,7 +272,7 @@ public class WorldsController : ControllerBase
             return BadRequest(new { error = "Invitation code is required" });
         }
 
-        _logger.LogInformation("User {UserId} attempting to join world with code {Code}", user.Id, dto.Code);
+        _logger.LogDebug("User {UserId} attempting to join world with code {Code}", user.Id, dto.Code);
 
         var result = await _worldService.JoinWorldAsync(dto.Code, user.Id);
 
@@ -293,7 +293,7 @@ public class WorldsController : ControllerBase
     public async Task<IActionResult> ExportWorld(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Exporting world {WorldId} for user {UserId}", id, user.Id);
+        _logger.LogDebug("Exporting world {WorldId} for user {UserId}", id, user.Id);
 
         var zipData = await _exportService.ExportWorldToMarkdownAsync(id, user.Id);
 
@@ -329,7 +329,7 @@ public class WorldsController : ControllerBase
             return Ok(new LinkSuggestionsResponseDto());
         }
 
-        _logger.LogInformation("Getting link suggestions for query '{Query}' in world {WorldId}", query, id);
+        _logger.LogDebug("Getting link suggestions for query '{Query}' in world {WorldId}", query, id);
 
         // Verify user has access to the world
         var hasAccess = await _context.WorldMembers

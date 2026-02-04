@@ -72,5 +72,6 @@ public class WhisperTranscriptionService : ITranscriptionService, IDisposable
     public void Dispose()
     {
         _processor?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

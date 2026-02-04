@@ -1,6 +1,6 @@
 # Chronicis - Feature Documentation
 
-**Last Updated:** January 13, 2026
+**Last Updated:** February 3, 2026
 
 ---
 
@@ -66,15 +66,28 @@ The right sidebar shows all articles that link to the current article.
 
 ### External Knowledge Links
 
-Chronicis supports linking to external reference sources using the wiki-link workflow, powered by the Open5e API.
+Chronicis supports linking to external reference sources using the wiki-link workflow. Multiple providers are available, including live API integration and blob-backed local SRD data.
+
+**Available Providers:**
+
+| Provider | Trigger | Source | Description |
+|----------|---------|--------|-------------|
+| Open5e | `[[srd/` | Live API | D&D 5e SRD via Open5e API (10 categories) |
+| SRD 2014 | `[[srd14/` | Blob Storage | D&D 5e 2014 SRD (JSON in Azure Blob) |
+| SRD 2024 | `[[srd24/` | Blob Storage | D&D 5e 2024 SRD (JSON in Azure Blob) |
 
 **Syntax:**
-- Trigger autocomplete with: `[[srd/`
-- Category browsing: `[[srd/spells/` shows spell category
-- Search within category: `[[srd/spells/fire` searches for spells containing "fire"
+- Trigger autocomplete with provider key: `[[srd/`, `[[srd14/`, or `[[srd24/`
+- Category browsing: `[[srd14/spells/` shows spell category
+- Search within category: `[[srd14/spells/fire` searches for spells containing "fire"
+- Cross-category search: `[[srd14/fire` searches across all categories
+- Hierarchical navigation: `[[srd14/items/armor/lea` finds armor starting with "lea"
 - External token format: `[[source|id|title]]`
 
-**Supported Categories:**
+**Open5e Provider (Live API):**
+
+The Open5e provider queries the Open5e API in real-time for D&D 5e content.
+
 | Category | Description | API Endpoint |
 |----------|-------------|--------------|
 | `spells` | D&D 5e Spells | `/v2/spells` |
@@ -88,28 +101,56 @@ Chronicis supports linking to external reference sources using the wiki-link wor
 | `weapons` | Weapons | `/v2/weapons` |
 | `armor` | Armor | `/v2/armor` |
 
+**Blob-Backed SRD Providers:**
+
+The `srd14` and `srd24` providers use normalized JSON data stored in Azure Blob Storage, providing:
+- Instant category browsing (no API latency)
+- Hierarchical category structure (items/armor/heavy, items/weapons/martial/melee)
+- Cross-category search when no category specified
+- ~300x faster index building (uses filenames instead of downloading content)
+- Offline-capable architecture (no external API dependency)
+
 **Workflow:**
-1. Type `[[srd/` to see category suggestions with icons
+1. Type `[[srd/` (or `[[srd14/`, `[[srd24/`) to see category suggestions with icons
 2. Select a category (e.g., "✨ Spells") to browse that category
-3. Continue typing to search (e.g., `[[srd/spells/fire`)
-4. Select an entry to insert an external link chip
+3. Continue typing to search (e.g., `[[srd14/spells/fire`)
+4. Or search across all categories (e.g., `[[srd14/fire`)
+5. Select an entry to insert an external link chip
 
 **Preview Drawer:**
 - Click any external link chip to open a styled preview drawer
-- Content fetched live from Open5e API and rendered as markdown
+- Content rendered as markdown with Chronicis styling
 - Styling matches the app's metadata sidebar (soft off-white background, dark blue headers)
+- Provider badge shows source (Open5e, SRD 2014, SRD 2024)
+
+**External Link Metadata:**
+- Articles display "External Resources" panel showing all external links used
+- Grouped by provider with chip styling
+- Deep blue-grey chips with beige-gold provider badges
+- Click to open preview drawer from metadata panel
 - Attribution and source links included
 
 **Technical Details:**
+
+*Open5e Provider:*
 - Provider: Open5e API (https://api.open5e.com)
 - API Version: v2 exclusively
 - Document filter: `document__gamesystem__key=a5e` (SRD content)
 - Name-based search: Uses `name__contains` parameter with client-side filtering
 
+*Blob-Backed Providers (SRD 2014/2024):*
+- Storage: Azure Blob Storage with normalized JSON files
+- Structure: One JSON file per entity with hierarchical folder organization
+- Indexing: Filename-based for ~300x faster startup (no file downloads required)
+- Categories: Hierarchical structure (e.g., items/armor/heavy, items/weapons/martial/melee)
+- Search: Cross-category search and category-specific search supported
+- Performance: <100ms for autocomplete, instant category browsing
+
 **Extensibility:**
-- Providers are keyed by a short prefix (e.g., `srd`)
+- Providers are keyed by a short prefix (e.g., `srd`, `srd14`, `srd24`)
 - Additional providers can be added by implementing `IExternalLinkProvider`
 - Provider architecture supports future sources (Kobold Press, homebrew APIs, etc.)
+- Blob-backed pattern enables offline-capable reference data
 
 ---
 
@@ -192,6 +233,12 @@ All content editing follows an Obsidian-like paradigm.
 - Custom styling for headers, lists, code blocks
 - Wiki link support with autocomplete
 
+**Keyboard Shortcuts:**
+- **Ctrl+S**: Save current article from anywhere in the app
+- **Ctrl+N**: Create sibling article (inherits WorldId, CampaignId, Type from current article)
+- Shortcuts work while typing in the editor
+- Service-based communication between layout and article components for cross-component coordination
+
 ---
 
 ### Tree Navigation
@@ -268,6 +315,43 @@ Articles have three visibility levels:
 - MembersOnly and Private articles are completely hidden (no placeholder)
 - No authentication required to view public content
 - World owner maintains full control over what's shared
+
+---
+
+### Document Storage
+
+Upload and manage documents within your worlds for easy reference and sharing.
+
+**How It Works:**
+1. Navigate to your World detail page
+2. Click the "Documents" tab
+3. Upload files using drag-and-drop or file picker
+4. Documents are stored in Azure Blob Storage with world-level isolation
+
+**Supported Features:**
+- **Upload**: PDFs, images, and other file types
+- **Download**: Direct browser downloads via SAS URLs (no API streaming)
+- **Delete**: Remove documents from storage
+- **Visibility**: Documents respect world membership (only world members can access)
+- **Metadata**: Tracks filename, size, content type, and upload timestamp
+
+**Storage Architecture:**
+- Azure Blob Storage with container per world (`world-{worldId}-documents`)
+- SAS URL generation for secure, time-limited direct downloads
+- No API streaming - browsers download directly from blob storage
+- Automatic cleanup when worlds are deleted
+
+**Technical Details:**
+- Storage Account: `stchronicis` in `rg-chronicis` resource group
+- SAS Token Duration: 1 hour read-only access
+- Maximum File Size: Configured at blob storage level
+- Blob Naming: `{timestamp}_{filename}` for uniqueness
+
+**API Endpoints:**
+- `POST /api/worlds/{worldId}/documents` - Upload document
+- `GET /api/worlds/{worldId}/documents` - List documents
+- `GET /api/worlds/{worldId}/documents/{documentId}` - Get document metadata with download URL
+- `DELETE /api/worlds/{worldId}/documents/{documentId}` - Delete document
 
 ---
 
@@ -367,6 +451,10 @@ icon: "🏰"
 | GET | `/api/worlds/{id}/link-suggestions` | Autocomplete suggestions |
 | POST | `/api/worlds/{id}/check-public-slug` | Check slug availability |
 | GET | `/api/worlds/{id}/export` | Export world to markdown zip |
+| POST | `/api/worlds/{id}/documents` | Upload document to world |
+| GET | `/api/worlds/{id}/documents` | List world documents |
+| GET | `/api/worlds/{id}/documents/{documentId}` | Get document with download URL |
+| DELETE | `/api/worlds/{id}/documents/{documentId}` | Delete document |
 
 ### Public World Endpoints (Anonymous)
 
@@ -443,6 +531,31 @@ icon: "🏰"
 | `ArticleCacheService` | Article caching |
 | `BreadcrumbService` | Navigation path |
 | `WikiLinkService` | Link text parsing |
+
+### Performance Optimizations
+
+**Lazy Loading for Metadata Panels:**
+- Backlinks, outgoing links, and AI summary panels use lazy loading
+- Data only fetched when panels are opened by the user
+- Prevents unnecessary API calls during auto-save and typing
+- Panel data cleared when closed to ensure freshness on reopen
+
+**Auto-Save Optimization:**
+- Auto-save only triggers panel refresh when metadata drawer is open
+- Eliminates excessive API calls during typing when drawer is closed
+- Maintains data freshness for users actively viewing metadata
+
+**Autocomplete Positioning:**
+- Wiki-link and external-link autocomplete use `position: fixed` with viewport-relative coordinates
+- Viewport boundary detection prevents overflow (flips above cursor when near bottom)
+- Scroll event handlers automatically hide popups during scrolling
+- Padding from viewport edges ensures full visibility
+
+**Blob-Backed Provider Performance:**
+- SRD providers use filename-based indexing (no file downloads during startup)
+- ~300x faster index building compared to content-based indexing
+- Category structure cached for instant browsing
+- Cross-category search optimized with pre-built indexes
 
 ---
 

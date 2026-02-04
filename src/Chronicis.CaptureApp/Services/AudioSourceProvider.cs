@@ -1,10 +1,18 @@
 ﻿using Chronicis.CaptureApp.Models;
+using Microsoft.Extensions.Logging;
 using NAudio.CoreAudioApi;
 
 namespace Chronicis.CaptureApp.Services;
 
 public class AudioSourceProvider : IAudioSourceProvider
 {
+    private readonly ILogger<AudioSourceProvider> _logger;
+
+    public AudioSourceProvider(ILogger<AudioSourceProvider> logger)
+    {
+        _logger = logger;
+    }
+
     public List<AudioSource> GetAvailableAudioSources()
     {
         var sources = new List<AudioSource>
@@ -14,7 +22,7 @@ public class AudioSourceProvider : IAudioSourceProvider
 
         try
         {
-            var enumerator = new MMDeviceEnumerator();
+            using var enumerator = new MMDeviceEnumerator();
             var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
 
             foreach (var device in devices)
@@ -50,7 +58,7 @@ public class AudioSourceProvider : IAudioSourceProvider
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading audio sources: {ex.Message}");
+            _logger.LogError(ex, "Error loading audio sources: {Message}", ex.Message);
         }
 
         return sources;

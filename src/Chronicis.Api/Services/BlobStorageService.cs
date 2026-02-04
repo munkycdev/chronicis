@@ -44,7 +44,7 @@ public class BlobStorageService : IBlobStorageService
 
         if (!string.IsNullOrEmpty(_customDomain))
         {
-            _logger.LogInformation("Using custom domain for blob URLs: {CustomDomain}", _customDomain);
+            _logger.LogDebug("Using custom domain for blob URLs: {CustomDomain}", _customDomain);
         }
 
         try
@@ -55,7 +55,7 @@ public class BlobStorageService : IBlobStorageService
             var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
             containerClient.CreateIfNotExists(PublicAccessType.None);
 
-            _logger.LogInformation("BlobStorageService initialized with container: {ContainerName}", _containerName);
+            _logger.LogDebug("BlobStorageService initialized with container: {ContainerName}", _containerName);
         }
         catch (Exception ex)
         {
@@ -97,7 +97,7 @@ public class BlobStorageService : IBlobStorageService
 
         var sasUrl = BuildSasUrl(blobClient, sasBuilder);
 
-        _logger.LogInformation("Generated upload SAS URL for blob: {BlobPath}", blobPath);
+        _logger.LogDebug("Generated upload SAS URL for blob: {BlobPath}", blobPath);
 
         return Task.FromResult(sasUrl);
     }
@@ -155,7 +155,7 @@ public class BlobStorageService : IBlobStorageService
 
             await blobClient.DeleteIfExistsAsync();
 
-            _logger.LogInformation("Deleted blob: {BlobPath}", blobPath);
+            _logger.LogDebug("Deleted blob: {BlobPath}", blobPath);
         }
         catch (RequestFailedException ex)
         {
@@ -184,7 +184,7 @@ public class BlobStorageService : IBlobStorageService
 
         var sasUrl = BuildSasUrl(blobClient, sasBuilder);
 
-        _logger.LogInformation("Generated download SAS URL for blob: {BlobPath}", blobPath);
+        _logger.LogDebug("Generated download SAS URL for blob: {BlobPath}", blobPath);
 
         return Task.FromResult(sasUrl);
     }

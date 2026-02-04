@@ -37,7 +37,7 @@ public class CharactersController : ControllerBase
     public async Task<ActionResult<List<ClaimedCharacterDto>>> GetClaimedCharacters()
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting claimed characters for user {UserId}", user.Id);
+        _logger.LogDebug("Getting claimed characters for user {UserId}", user.Id);
 
         var claimedCharacters = await _context.Articles
             .Where(a => a.PlayerId == user.Id && a.Type == ArticleType.Character)
@@ -64,7 +64,7 @@ public class CharactersController : ControllerBase
     public async Task<ActionResult<CharacterClaimStatusDto>> GetClaimStatus(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting claim status for character {CharacterId}", id);
+        _logger.LogDebug("Getting claim status for character {CharacterId}", id);
 
         var article = await _context.Articles
             .Where(a => a.Id == id && a.Type == ArticleType.Character)
@@ -99,7 +99,7 @@ public class CharactersController : ControllerBase
     public async Task<IActionResult> ClaimCharacter(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("User {UserId} claiming character {CharacterId}", user.Id, id);
+        _logger.LogDebug("User {UserId} claiming character {CharacterId}", user.Id, id);
 
         // Get the character article and verify user has access to its world
         var article = await _context.Articles
@@ -123,7 +123,7 @@ public class CharactersController : ControllerBase
         article.ModifiedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Character {CharacterId} claimed by user {UserId}", id, user.Id);
+        _logger.LogDebug("Character {CharacterId} claimed by user {UserId}", id, user.Id);
         return NoContent();
     }
 
@@ -134,7 +134,7 @@ public class CharactersController : ControllerBase
     public async Task<IActionResult> UnclaimCharacter(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("User {UserId} unclaiming character {CharacterId}", user.Id, id);
+        _logger.LogDebug("User {UserId} unclaiming character {CharacterId}", user.Id, id);
 
         // Get the character article
         var article = await _context.Articles
@@ -152,7 +152,7 @@ public class CharactersController : ControllerBase
         article.ModifiedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Character {CharacterId} unclaimed by user {UserId}", id, user.Id);
+        _logger.LogDebug("Character {CharacterId} unclaimed by user {UserId}", id, user.Id);
         return NoContent();
     }
 }

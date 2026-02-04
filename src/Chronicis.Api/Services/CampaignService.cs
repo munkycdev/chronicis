@@ -55,7 +55,7 @@ public class CampaignService : ICampaignService
         if (user == null)
             throw new InvalidOperationException("User not found");
 
-        _logger.LogInformation("Creating campaign '{Name}' in world {WorldId} for user {UserId}", 
+        _logger.LogDebug("Creating campaign '{Name}' in world {WorldId} for user {UserId}", 
             dto.Name, dto.WorldId, userId);
 
         // Create the Campaign entity
@@ -85,7 +85,7 @@ public class CampaignService : ICampaignService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Created campaign {CampaignId} with default Arc for user {UserId}", 
+        _logger.LogDebug("Created campaign {CampaignId} with default Arc for user {UserId}", 
             campaign.Id, userId);
 
         // Return DTO
@@ -113,7 +113,7 @@ public class CampaignService : ICampaignService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Updated campaign {CampaignId}", campaignId);
+        _logger.LogDebug("Updated campaign {CampaignId}", campaignId);
 
         return MapToDto(campaign);
     }
@@ -182,7 +182,7 @@ public class CampaignService : ICampaignService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Activated campaign {CampaignId} in world {WorldId}", campaignId, campaign.WorldId);
+        _logger.LogDebug("Activated campaign {CampaignId} in world {WorldId}", campaignId, campaign.WorldId);
 
         return true;
     }

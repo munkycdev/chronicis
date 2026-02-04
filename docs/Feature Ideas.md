@@ -3,8 +3,8 @@
 ## Bugs
 
 ### Article
-- Sometimes, when I load a long article, scroll down a ways, and type [[, it doesn't load the link autocomplete popup. Sometimes it does. Seems inconsistent.
 - The DM can choose to define article templates for various article types
+- Keyboard shortcuts: Ctrl+N context should be smarter for session notes (currently creates siblings, should consider parent context)
 
 ### General
 - Make it work on an iPad
@@ -34,12 +34,15 @@
 
 - Add Azure AI Search as a replacement for the global search (deferred feature until we need it - it's expensive!)
 - External link providers:
+  - ✅ Blob-backed D&D SRD providers (2014 and 2024 editions) - COMPLETE
+  - ✅ Cross-category search - COMPLETE
+  - ✅ Hierarchical category navigation - COMPLETE
   - Add `kobold/` provider
   - Allow provider-specific categories (spells, monsters, items)
 - Export behavior:
   - Decide how external tokens should export to Markdown (keep token vs convert to normal link)
-- Backlinks for external links:
-  - Show "external references used in this article" panel
+- ✅ Backlinks for external links - COMPLETE
+  - ✅ Show "external references used in this article" panel - COMPLETE
 
 ---
 

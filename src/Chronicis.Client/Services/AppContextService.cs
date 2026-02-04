@@ -40,7 +40,7 @@ public class AppContextService : IAppContextService
         if (IsInitialized)
             return;
 
-        _logger.LogInformation("Initializing app context");
+        _logger.LogDebug("Initializing app context");
 
         // Load all worlds
         Worlds = await _worldApi.GetWorldsAsync();
@@ -84,13 +84,13 @@ public class AppContextService : IAppContextService
         }
 
         IsInitialized = true;
-        _logger.LogInformation("App context initialized. World: {WorldId}, Campaign: {CampaignId}", 
+        _logger.LogDebug("App context initialized. World: {WorldId}, Campaign: {CampaignId}", 
             CurrentWorldId, CurrentCampaignId);
     }
 
     public async Task SelectWorldAsync(Guid worldId, Guid? campaignId = null)
     {
-        _logger.LogInformation("Selecting world {WorldId}", worldId);
+        _logger.LogDebug("Selecting world {WorldId}", worldId);
 
         // Load world details
         var world = await _worldApi.GetWorldAsync(worldId);
@@ -126,7 +126,7 @@ public class AppContextService : IAppContextService
 
     public async Task SelectCampaignAsync(Guid? campaignId)
     {
-        _logger.LogInformation("Selecting campaign {CampaignId}", campaignId);
+        _logger.LogDebug("Selecting campaign {CampaignId}", campaignId);
 
         CurrentCampaignId = campaignId;
 

@@ -13,7 +13,7 @@
 function initializePublicWikiLinks(containerId, dotNetHelper) {
     const container = document.getElementById(containerId);
     if (!container) {
-        console.warn(`Public wiki links container not found: ${containerId}`);
+        _logger.LogError(`Public wiki links container not found: ${containerId}`);
         return;
     }
 

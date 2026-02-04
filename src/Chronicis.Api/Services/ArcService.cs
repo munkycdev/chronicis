@@ -110,7 +110,7 @@ public class ArcService : IArcService
         _context.Arcs.Add(arc);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Created arc {ArcId} '{ArcName}' in campaign {CampaignId}", 
+        _logger.LogDebug("Created arc {ArcId} '{ArcName}' in campaign {CampaignId}", 
             arc.Id, arc.Name, arc.CampaignId);
 
         return new ArcDto
@@ -149,7 +149,7 @@ public class ArcService : IArcService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Updated arc {ArcId} '{ArcName}'", arc.Id, arc.Name);
+        _logger.LogDebug("Updated arc {ArcId} '{ArcName}'", arc.Id, arc.Name);
 
         var sessionCount = await _context.Articles.CountAsync(a => a.ArcId == arcId);
 
@@ -190,7 +190,7 @@ public class ArcService : IArcService
         _context.Arcs.Remove(arc);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Deleted arc {ArcId}", arcId);
+        _logger.LogDebug("Deleted arc {ArcId}", arcId);
         return true;
     }
 
@@ -224,7 +224,7 @@ public class ArcService : IArcService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Activated arc {ArcId} in campaign {CampaignId}", arcId, arc.CampaignId);
+        _logger.LogDebug("Activated arc {ArcId} in campaign {CampaignId}", arcId, arc.CampaignId);
 
         return true;
     }

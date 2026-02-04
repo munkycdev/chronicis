@@ -53,7 +53,7 @@ public class UserService : IUserService
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Created new user {UserId} for Auth0 ID {Auth0UserId}", user.Id, auth0UserId);
+            _logger.LogDebug("Created new user {UserId} for Auth0 ID {Auth0UserId}", user.Id, auth0UserId);
 
             // Note: We no longer auto-create a default world for new users.
             // Users can create their own world or join an existing one via invitation code.
@@ -142,7 +142,7 @@ public class UserService : IUserService
         {
             user.HasCompletedOnboarding = true;
             await _context.SaveChangesAsync();
-            _logger.LogInformation("User {UserId} completed onboarding", userId);
+            _logger.LogDebug("User {UserId} completed onboarding", userId);
         }
 
         return true;
@@ -153,7 +153,7 @@ public class UserService : IUserService
     /// </summary>
     private async Task CreateDefaultWorldAsync(Guid userId)
     {
-        _logger.LogInformation("Creating default world for user {UserId}", userId);
+        _logger.LogDebug("Creating default world for user {UserId}", userId);
 
         var createDto = new WorldCreateDto
         {

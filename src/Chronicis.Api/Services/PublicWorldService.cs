@@ -42,7 +42,7 @@ public class PublicWorldService : IPublicWorldService
             return null;
         }
 
-        _logger.LogInformation("Public world '{WorldName}' accessed via slug '{PublicSlug}'", 
+        _logger.LogDebug("Public world '{WorldName}' accessed via slug '{PublicSlug}'", 
             world.Name, normalizedSlug);
 
         return new WorldDetailDto
@@ -286,7 +286,7 @@ public class PublicWorldService : IPublicWorldService
             result.Add(uncategorizedGroup);
         }
 
-        _logger.LogInformation("Retrieved {Count} public articles for world '{PublicSlug}' in {GroupCount} groups", 
+        _logger.LogDebug("Retrieved {Count} public articles for world '{PublicSlug}' in {GroupCount} groups", 
             allPublicArticles.Count, normalizedSlug, result.Count);
 
         return result;
@@ -438,7 +438,7 @@ public class PublicWorldService : IPublicWorldService
         // Build breadcrumbs (only including public articles)
         article.Breadcrumbs = await BuildPublicBreadcrumbsAsync(articleId.Value, world.Id, world.Name, world.Slug);
 
-        _logger.LogInformation("Public article '{Title}' accessed in world '{PublicSlug}'", 
+        _logger.LogDebug("Public article '{Title}' accessed in world '{PublicSlug}'", 
             article.Title, normalizedSlug);
 
         return article;

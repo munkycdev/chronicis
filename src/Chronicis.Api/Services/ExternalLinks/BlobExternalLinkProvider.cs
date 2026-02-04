@@ -31,7 +31,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         var blobServiceClient = new BlobServiceClient(_options.ConnectionString);
         _containerClient = blobServiceClient.GetBlobContainerClient(_options.ContainerName);
 
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Initialized BlobExternalLinkProvider: Key={Key}, DisplayName={DisplayName}, RootPrefix={RootPrefix}",
             _options.Key, _options.DisplayName, _options.RootPrefix);
     }
@@ -270,7 +270,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
             };
             _cache.Set(cacheKey, result, cacheOptions);
 
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Content retrieved and rendered - Provider={Key}, Id={Id}, BlobName={BlobName}",
                 _options.Key, id, item.BlobName);
 
@@ -339,7 +339,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
             return cached;
         }
 
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Discovering categories - Provider={Key}, RootPrefix={RootPrefix}",
             _options.Key, _options.RootPrefix);
 
@@ -391,7 +391,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         categories.Sort(StringComparer.OrdinalIgnoreCase);
 
         sw.Stop();
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Categories discovered - Provider={Key}, Count={Count}, Elapsed={Elapsed}ms",
             _options.Key, categories.Count, sw.ElapsedMilliseconds);
 
@@ -633,7 +633,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
             return cached;
         }
 
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Building category index - Provider={Key}, Category={Category}",
             _options.Key, category);
 
@@ -697,7 +697,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
             .ToList();
 
         sw.Stop();
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Category index built - Provider={Key}, Category={Category}, Count={Count}, Elapsed={Elapsed}ms",
             _options.Key, category, sortedItems.Count, sw.ElapsedMilliseconds);
 

@@ -37,7 +37,7 @@ public class WorldLinksController : ControllerBase
     public async Task<ActionResult<IEnumerable<WorldLinkDto>>> GetWorldLinks(Guid worldId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting links for world {WorldId} by user {UserId}", worldId, user.Id);
+        _logger.LogDebug("Getting links for world {WorldId} by user {UserId}", worldId, user.Id);
 
         // Verify user has access to the world
         var world = await _db.Worlds
@@ -96,7 +96,7 @@ public class WorldLinksController : ControllerBase
             return BadRequest(new { error = "Invalid URL format. Must be a valid http or https URL." });
         }
 
-        _logger.LogInformation("Creating link '{Title}' for world {WorldId} by user {UserId}",
+        _logger.LogDebug("Creating link '{Title}' for world {WorldId} by user {UserId}",
             dto.Title, worldId, user.Id);
 
         var link = new WorldLink
@@ -166,7 +166,7 @@ public class WorldLinksController : ControllerBase
             return BadRequest(new { error = "Invalid URL format. Must be a valid http or https URL." });
         }
 
-        _logger.LogInformation("Updating link {LinkId} for world {WorldId} by user {UserId}",
+        _logger.LogDebug("Updating link {LinkId} for world {WorldId} by user {UserId}",
             linkId, worldId, user.Id);
 
         link.Url = dto.Url.Trim();
@@ -214,7 +214,7 @@ public class WorldLinksController : ControllerBase
             return NotFound(new { error = "Link not found" });
         }
 
-        _logger.LogInformation("Deleting link {LinkId} for world {WorldId} by user {UserId}",
+        _logger.LogDebug("Deleting link {LinkId} for world {WorldId} by user {UserId}",
             linkId, worldId, user.Id);
 
         _db.WorldLinks.Remove(link);

@@ -1,6 +1,6 @@
 # Chronicis - Technical Architecture
 
-**Last Updated:** December 30, 2025
+**Last Updated:** February 3, 2026
 
 ---
 
@@ -33,6 +33,8 @@ Chronicis is a web-based knowledge management application for tabletop RPG campa
 - **Frontend Hosting:** Azure Container Apps (`ca-chronicis-client`, `chronicis.app`)
 - **API Hosting:** Azure Container Apps (`ca-chronicis-api`, `api.chronicis.app`)
 - **Container Registry:** Azure Container Registry
+- **Database:** Azure SQL Database
+- **Blob Storage:** Azure Blob Storage (documents, SRD data)
 - **Secrets:** Azure Key Vault (`kv-chronicis`)
 - **CI/CD:** GitHub Actions (containerized build and deployment workflows)
 - **AI Services:** Azure OpenAI (GPT-4.1-mini)
@@ -81,7 +83,15 @@ Both the frontend and backend are deployed as containerized applications on Azur
 │ - EF Core           │                    │ - APM Traces        │
 │ - Migrations        │                    │ - Logs              │
 └─────────────────────┘                    │ - Metrics           │
-                                           └─────────────────────┘
+         │                                 └─────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│ Azure Blob Storage  │
+│ - World documents   │
+│ - SRD JSON data     │
+│ - SAS URLs          │
+└─────────────────────┘
 ```
 
 ### DataDog Observability
@@ -95,6 +105,31 @@ The API container includes the DataDog .NET APM tracer configured for direct-to-
 - **Metrics:** .NET runtime metrics enabled
 
 See [observability.md](observability.md) for detailed configuration.
+
+### Blob Storage Architecture
+
+Azure Blob Storage provides file storage for documents and external reference data:
+
+**Document Storage:**
+- **Container Pattern:** One container per world (`world-{worldId}-documents`)
+- **Access Control:** World membership enforced at API layer
+- **Download Strategy:** SAS URLs for direct browser downloads (no API streaming)
+- **SAS Token Duration:** 1-hour read-only access
+- **Blob Naming:** `{timestamp}_{filename}` for uniqueness
+- **Storage Account:** `stchronicis` in `rg-chronicis` resource group
+
+**SRD Reference Data:**
+- **Container:** Single container with hierarchical folder structure
+- **Format:** Normalized JSON (one file per entity)
+- **Organization:** Folders represent categories (e.g., `items/armor/heavy/`)
+- **Indexing:** Filename-based for instant startup (~300x faster than content-based)
+- **Providers:** SRD 2014 and SRD 2024 editions
+- **Access Pattern:** Read-only, cached at provider level
+
+**Connection Management:**
+- Connection string stored in Azure Key Vault
+- Retrieved via `BlobStorageConnectionString` secret name
+- Injected into Container Apps as environment variable
 
 ---
 
@@ -287,10 +322,37 @@ GET    /api/external-links/content       - External content preview by provider 
 
 External link providers are resolved by key via `IExternalLinkProviderRegistry`.
 
-To add a new provider:
-- Create a provider in `src/Chronicis.Api/Services/ExternalLinks/` that implements `IExternalLinkProvider`.
-- Register the provider in `src/Chronicis.Api/Program.cs`.
-- Add configuration under `ExternalLinks:<ProviderKey>:BaseUrl` in `src/Chronicis.Api/local.settings.json` for local runs.
+**Provider Types:**
+
+*API-Based Providers (e.g., Open5e):*
+- Query external REST APIs in real-time
+- Configuration requires `BaseUrl` in app settings
+- Example: `ExternalLinks:srd:BaseUrl` for Open5e provider
+
+*Blob-Based Providers (e.g., SRD 2014/2024):*
+- Read normalized JSON data from Azure Blob Storage
+- Hierarchical folder structure represents categories
+- Filename-based indexing for instant startup
+- Configuration requires blob storage connection string
+- Example providers: `srd14` (2014 SRD), `srd24` (2024 SRD)
+
+**Adding a New Provider:**
+1. Create provider class implementing `IExternalLinkProvider` in `src/Chronicis.Api/Services/ExternalLinks/`
+2. Implement required methods:
+   - `GetSuggestionsAsync(query)` - Returns autocomplete suggestions
+   - `GetContentAsync(id)` - Returns preview content as Markdown
+   - `Key` property - Provider identifier (e.g., "srd", "srd14")
+3. Register provider in `src/Chronicis.Api/Program.cs`
+4. Add configuration:
+   - API providers: `ExternalLinks:<ProviderKey>:BaseUrl` in local.settings.json
+   - Blob providers: Blob storage connection string (already configured)
+
+**Blob Provider Pattern:**
+- Storage structure: `/category/subcategory/entity-name.json`
+- Index building: Parse filenames (no content downloads)
+- Category detection: Longest-match algorithm for hierarchical paths
+- Search modes: Category-specific or cross-category
+- Performance: <100ms for autocomplete, ~300x faster indexing
 
 ---
 

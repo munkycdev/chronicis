@@ -179,7 +179,7 @@ public class AutoLinkService : IAutoLinkService
         // Sort matches by position for consistent display in confirmation dialog
         allMatches = allMatches.OrderBy(m => m.StartIndex).ToList();
 
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Auto-link found {Count} matches for article {ArticleId}",
             allMatches.Count,
             articleId);

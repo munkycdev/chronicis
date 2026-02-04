@@ -181,5 +181,6 @@ public class SystemTrayService : ISystemTrayService, IDisposable
     {
         _trayIcon?.Dispose();
         _contextMenu?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

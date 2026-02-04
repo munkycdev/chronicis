@@ -37,7 +37,7 @@ public class WorldDocumentsController : ControllerBase
     public async Task<ActionResult<IEnumerable<WorldDocumentDto>>> GetWorldDocuments(Guid worldId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("User {UserId} getting documents for world {WorldId}", user.Id, worldId);
+        _logger.LogDebug("User {UserId} getting documents for world {WorldId}", user.Id, worldId);
 
         try
         {
@@ -59,7 +59,7 @@ public class WorldDocumentsController : ControllerBase
     public async Task<ActionResult<WorldDocumentDownloadDto>> GetDocumentContentAsync(Guid documentId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("User {UserId} requesting download URL for document {DocumentId}", user.Id, documentId);
+        _logger.LogDebug("User {UserId} requesting download URL for document {DocumentId}", user.Id, documentId);
 
         try
         {
@@ -85,7 +85,7 @@ public class WorldDocumentsController : ControllerBase
         }
         catch (FileNotFoundException ex)
         {
-            _logger.LogInformation(ex, "File not found in storage");
+            _logger.LogDebug(ex, "File not found in storage");
             return NotFound(new { error = "File not found in storage" });
         }
         catch (Exception ex)
@@ -104,7 +104,7 @@ public class WorldDocumentsController : ControllerBase
         [FromBody] WorldDocumentUploadRequestDto request)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("User {UserId} requesting document upload for world {WorldId}", user.Id, worldId);
+        _logger.LogDebug("User {UserId} requesting document upload for world {WorldId}", user.Id, worldId);
 
         if (request == null)
         {
@@ -135,7 +135,7 @@ public class WorldDocumentsController : ControllerBase
     public async Task<ActionResult<WorldDocumentDto>> ConfirmDocumentUpload(Guid worldId, Guid documentId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("User {UserId} confirming document upload {DocumentId}", user.Id, documentId);
+        _logger.LogDebug("User {UserId} confirming document upload {DocumentId}", user.Id, documentId);
 
         try
         {
@@ -164,7 +164,7 @@ public class WorldDocumentsController : ControllerBase
         [FromBody] WorldDocumentUpdateDto update)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("User {UserId} updating document {DocumentId}", user.Id, documentId);
+        _logger.LogDebug("User {UserId} updating document {DocumentId}", user.Id, documentId);
 
         if (update == null)
         {
@@ -195,7 +195,7 @@ public class WorldDocumentsController : ControllerBase
     public async Task<IActionResult> DeleteWorldDocument(Guid worldId, Guid documentId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("User {UserId} deleting document {DocumentId}", user.Id, documentId);
+        _logger.LogDebug("User {UserId} deleting document {DocumentId}", user.Id, documentId);
 
         try
         {

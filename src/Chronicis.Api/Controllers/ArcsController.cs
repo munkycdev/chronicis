@@ -35,7 +35,7 @@ public class ArcsController : ControllerBase
     public async Task<ActionResult<ArcDto>> GetArc(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting arc {ArcId} for user {UserId}", id, user.Id);
+        _logger.LogDebug("Getting arc {ArcId} for user {UserId}", id, user.Id);
 
         var arc = await _arcService.GetArcAsync(id, user.Id);
 
@@ -65,7 +65,7 @@ public class ArcsController : ControllerBase
             return BadRequest(new { error = "CampaignId is required" });
         }
 
-        _logger.LogInformation("Creating arc '{Name}' in campaign {CampaignId} for user {UserId}",
+        _logger.LogDebug("Creating arc '{Name}' in campaign {CampaignId} for user {UserId}",
             dto.Name, dto.CampaignId, user.Id);
 
         var arc = await _arcService.CreateArcAsync(dto, user.Id);
@@ -91,7 +91,7 @@ public class ArcsController : ControllerBase
             return BadRequest(new { error = "Name is required" });
         }
 
-        _logger.LogInformation("Updating arc {ArcId} for user {UserId}", id, user.Id);
+        _logger.LogDebug("Updating arc {ArcId} for user {UserId}", id, user.Id);
 
         var arc = await _arcService.UpdateArcAsync(id, dto, user.Id);
 
@@ -110,7 +110,7 @@ public class ArcsController : ControllerBase
     public async Task<IActionResult> DeleteArc(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Deleting arc {ArcId} for user {UserId}", id, user.Id);
+        _logger.LogDebug("Deleting arc {ArcId} for user {UserId}", id, user.Id);
 
         var success = await _arcService.DeleteArcAsync(id, user.Id);
 
@@ -129,7 +129,7 @@ public class ArcsController : ControllerBase
     public async Task<IActionResult> ActivateArc(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Activating arc {ArcId} for user {UserId}", id, user.Id);
+        _logger.LogDebug("Activating arc {ArcId} for user {UserId}", id, user.Id);
 
         var success = await _arcService.ActivateArcAsync(id, user.Id);
 
@@ -171,7 +171,7 @@ public class CampaignArcsController : ControllerBase
     public async Task<ActionResult<List<ArcDto>>> GetArcsByCampaign(Guid campaignId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting arcs for campaign {CampaignId} for user {UserId}", campaignId, user.Id);
+        _logger.LogDebug("Getting arcs for campaign {CampaignId} for user {UserId}", campaignId, user.Id);
 
         var arcs = await _arcService.GetArcsByCampaignAsync(campaignId, user.Id);
         return Ok(arcs);

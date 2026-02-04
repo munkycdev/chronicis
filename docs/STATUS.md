@@ -1,6 +1,6 @@
 # Chronicis - Project Status
 
-**Last Updated:** January 13, 2026  
+**Last Updated:** February 3, 2026  
 **Project Phase:** External Links Complete
 
 ---
@@ -77,17 +77,43 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 - ASP.NET Core Web API backend hosted on Azure Container Apps (`ca-chronicis-api`, `api.chronicis.app`)
 - Blazor WebAssembly client hosted on Azure Container Apps (`ca-chronicis-client`, `chronicis.app`)
 - Azure SQL Database with Entity Framework Core
+- Azure Blob Storage for document attachments
 - Centralized HttpClient with automatic token attachment
 - DataDog APM with in-image agent (direct-to-cloud traces and logs)
 
 **External Knowledge Links:**
-- External wiki-style links using `[[srd/` autocomplete trigger
+- External wiki-style links using `[[srd/` or `[[srd14/` autocomplete triggers
 - Open5e API integration with 10 SRD categories (spells, monsters, magic items, conditions, backgrounds, feats, classes, races, weapons, armor)
-- Category selection with icons when typing `[[srd/`
-- Search within categories (e.g., `[[srd/spells/fire`)
+- Blob-backed D&D SRD providers (2014 and 2024 editions) with JSON data stored in Azure Blob Storage
+- Category selection with icons when typing `[[srd/` or `[[srd14/`
+- Cross-category search when no slash is present (e.g., `[[srd/fire` searches all categories)
+- Hierarchical category navigation (e.g., `[[srd14/items/armor/lea` for armor starting with "lea")
+- Search within categories (e.g., `[[srd/spells/fire` for fire spells)
 - External link tokens stored as `[[source|id|title]]`
 - In-app preview drawer with styled markdown content (soft off-white background, dark blue headers)
+- External link chips with provider badges showing source (deep blue-grey with beige-gold accent)
+- Metadata panel showing external resources used in each article
 - Provider-based architecture for adding additional sources in the future
+
+**Document Storage:**
+- Upload documents to worlds (PDFs, images, etc.)
+- Azure Blob Storage integration with world-level containers
+- Document management UI with upload/download/delete
+- SAS URL-based downloads (direct browser access, no API streaming)
+- Document visibility controls (Public, MembersOnly, Private)
+- Document metadata tracking (filename, size, content type, upload date)
+
+**Keyboard Shortcuts:**
+- Ctrl+S: Save current article from anywhere in the app
+- Ctrl+N: Create sibling article (inherits context from current article)
+- Works while typing in TipTap editor
+- Service-based communication between layout and article components
+
+**Performance Optimizations:**
+- Lazy loading for metadata panels (backlinks, outgoing links, AI summary estimates)
+- Panels only fetch data when opened, reducing unnecessary API calls
+- Auto-save only refreshes panels when metadata drawer is open
+- Fixed positioning for autocomplete popups with viewport boundary detection
 
 
 ### Known Issues

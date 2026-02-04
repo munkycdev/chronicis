@@ -1,14 +1,17 @@
 using System.Text.Json;
 using Chronicis.CaptureApp.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Chronicis.CaptureApp.Services;
 
 public class SettingsService : ISettingsService
 {
     private readonly string _settingsPath;
+    private readonly ILogger<SettingsService> _logger;
 
-    public SettingsService()
+    public SettingsService(ILogger<SettingsService> logger)
     {
+        _logger = logger;
         var appDataPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Chronicis",
@@ -53,7 +56,7 @@ public class SettingsService : ISettingsService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving settings: {ex.Message}");
+            _logger.LogError(ex, "Error saving settings: {Message}", ex.Message);
         }
     }
 }

@@ -43,7 +43,7 @@ public class ExternalLinksController : ControllerBase
             return Ok(new List<ExternalLinkSuggestionDto>());
         }
 
-        _logger.LogInformation("Getting external link suggestions for source '{Source}' with query '{Query}'", source, query);
+        _logger.LogDebug("Getting external link suggestions for source '{Source}' with query '{Query}'", source, query);
 
         var suggestions = await _suggestionService.GetSuggestionsAsync(source, query ?? "", ct);
 
@@ -78,7 +78,7 @@ public class ExternalLinksController : ControllerBase
             return BadRequest(new ExternalLinkErrorDto { Message = "Source and id are required" });
         }
 
-        _logger.LogInformation("Getting external link content for source '{Source}' with id '{Id}'", source, id);
+        _logger.LogDebug("Getting external link content for source '{Source}' with id '{Id}'", source, id);
 
         var content = await _contentService.GetContentAsync(source, id, ct);
 

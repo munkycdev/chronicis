@@ -525,7 +525,7 @@ public class ArticlesController : ControllerBase
     public async Task<ActionResult<BacklinksResponseDto>> GetBacklinks(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting backlinks for article {ArticleId}", id);
+        _logger.LogDebug("Getting backlinks for article {ArticleId}", id);
 
         // Verify article exists and user has access
         var article = await _context.Articles
@@ -568,7 +568,7 @@ public class ArticlesController : ControllerBase
     public async Task<ActionResult<BacklinksResponseDto>> GetOutgoingLinks(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogInformation("Getting outgoing links for article {ArticleId}", id);
+        _logger.LogDebug("Getting outgoing links for article {ArticleId}", id);
 
         // Verify article exists and user has access
         var article = await _context.Articles
@@ -617,7 +617,7 @@ public class ArticlesController : ControllerBase
             return Ok(new LinkResolutionResponseDto { Articles = new Dictionary<Guid, ResolvedLinkDto>() });
         }
 
-        _logger.LogInformation("Resolving {Count} article links", request.ArticleIds.Count);
+        _logger.LogDebug("Resolving {Count} article links", request.ArticleIds.Count);
 
         // Get all requested articles that the user has access to
         var articles = await _context.Articles
@@ -675,7 +675,7 @@ public class ArticlesController : ControllerBase
             return BadRequest(new { error = "Body content is required" });
         }
 
-        _logger.LogInformation("Auto-linking article {ArticleId}", id);
+        _logger.LogDebug("Auto-linking article {ArticleId}", id);
 
         // Get article and verify access
         var article = await _context.Articles

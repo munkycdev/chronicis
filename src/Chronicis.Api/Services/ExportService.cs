@@ -47,7 +47,7 @@ public class ExportService : IExportService
             return null;
         }
 
-        _logger.LogInformation("Starting export of world {WorldId} ({WorldName}) for user {UserId}", 
+        _logger.LogDebug("Starting export of world {WorldId} ({WorldName}) for user {UserId}", 
             worldId, world.Name, userId);
 
         // Get all articles for this world with their hierarchy info
@@ -129,7 +129,7 @@ public class ExportService : IExportService
         memoryStream.Position = 0;
         var result = memoryStream.ToArray();
         
-        _logger.LogInformation("Export completed for world {WorldId}. Archive size: {Size} bytes", 
+        _logger.LogDebug("Export completed for world {WorldId}. Archive size: {Size} bytes", 
             worldId, result.Length);
 
         return result;

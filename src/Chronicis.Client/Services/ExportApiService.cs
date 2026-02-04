@@ -25,7 +25,7 @@ public class ExportApiService : IExportApiService
     {
         try
         {
-            _logger.LogInformation("Starting export for world {WorldId} ({WorldName})", worldId, worldName);
+            _logger.LogDebug("Starting export for world {WorldId} ({WorldName})", worldId, worldName);
 
             var response = await _httpClient.GetAsync($"worlds/{worldId}/export");
 
@@ -47,7 +47,7 @@ public class ExportApiService : IExportApiService
             // Trigger browser download via JavaScript
             await _jsRuntime.InvokeVoidAsync("chronicisDownloadFile", fileName, "application/zip", content);
 
-            _logger.LogInformation("Export download triggered for world {WorldId}. File: {FileName}, Size: {Size} bytes",
+            _logger.LogDebug("Export download triggered for world {WorldId}. File: {FileName}, Size: {Size} bytes",
                 worldId, fileName, content.Length);
 
             return true;

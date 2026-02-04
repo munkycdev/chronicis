@@ -65,7 +65,7 @@ public class WorldService : IWorldService
         if (user == null)
             throw new InvalidOperationException("User not found");
 
-        _logger.LogInformation("Creating world '{Name}' for user {UserId}", dto.Name, userId);
+        _logger.LogDebug("Creating world '{Name}' for user {UserId}", dto.Name, userId);
 
         var now = DateTime.UtcNow;
 
@@ -193,7 +193,7 @@ public class WorldService : IWorldService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Created world {WorldId} with default content for user {UserId}", world.Id, userId);
+        _logger.LogDebug("Created world {WorldId} with default content for user {UserId}", world.Id, userId);
 
         world.Owner = user;
         return MapToDto(world);
@@ -255,7 +255,7 @@ public class WorldService : IWorldService
                 world.IsPublic = true;
                 world.PublicSlug = normalizedSlug;
                 
-                _logger.LogInformation("World {WorldId} is now public with slug '{PublicSlug}'", worldId, normalizedSlug);
+                _logger.LogDebug("World {WorldId} is now public with slug '{PublicSlug}'", worldId, normalizedSlug);
             }
             else
             {
@@ -263,13 +263,13 @@ public class WorldService : IWorldService
                 world.IsPublic = false;
                 world.PublicSlug = null;
                 
-                _logger.LogInformation("World {WorldId} is now private", worldId);
+                _logger.LogDebug("World {WorldId} is now private", worldId);
             }
         }
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Updated world {WorldId}", worldId);
+        _logger.LogDebug("Updated world {WorldId}", worldId);
 
         return MapToDto(world);
     }
@@ -585,7 +585,7 @@ public class WorldService : IWorldService
         member.Role = dto.Role;
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Updated member {MemberId} role to {Role} in world {WorldId}", 
+        _logger.LogDebug("Updated member {MemberId} role to {Role} in world {WorldId}", 
             memberId, dto.Role, worldId);
 
         return new WorldMemberDto
@@ -632,7 +632,7 @@ public class WorldService : IWorldService
         _context.WorldMembers.Remove(member);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Removed member {MemberId} from world {WorldId}", memberId, worldId);
+        _logger.LogDebug("Removed member {MemberId} from world {WorldId}", memberId, worldId);
 
         return true;
     }
@@ -711,7 +711,7 @@ public class WorldService : IWorldService
         _context.WorldInvitations.Add(invitation);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Created invitation {Code} for world {WorldId} by user {UserId}", 
+        _logger.LogDebug("Created invitation {Code} for world {WorldId} by user {UserId}", 
             code, worldId, userId);
 
         var creator = await _context.Users.FindAsync(userId);
@@ -750,7 +750,7 @@ public class WorldService : IWorldService
         invitation.IsActive = false;
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Revoked invitation {InvitationId} for world {WorldId}", invitationId, worldId);
+        _logger.LogDebug("Revoked invitation {InvitationId} for world {WorldId}", invitationId, worldId);
 
         return true;
     }
@@ -832,7 +832,7 @@ public class WorldService : IWorldService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("User {UserId} joined world {WorldId} via invitation {Code}", 
+        _logger.LogDebug("User {UserId} joined world {WorldId} via invitation {Code}", 
             userId, invitation.WorldId, normalizedCode);
 
         return new WorldJoinResultDto
