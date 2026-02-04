@@ -229,8 +229,8 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         if (item == null)
         {
             _logger.LogWarning(
-                "Content ID not found in category index - Provider={Key}, Id={Id}, Category={Category}",
-                _options.Key, id, category);
+                "Content ID not found in category index - Provider={Key}, Id={Id}, Category={Category}, IndexCount={IndexCount}, SampleIds={SampleIds}",
+                _options.Key, id, category, index.Count, string.Join(", ", index.Take(5).Select(i => i.Id)));
             
             return CreateEmptyContent(id);
         }
@@ -242,8 +242,17 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
             var response = await blobClient.DownloadContentAsync(ct);
             var content = response.Value.Content;
 
-            // Step 7: Parse JSON
-            using var json = JsonDocument.Parse(content);
+            // Step 7: Parse JSON (handle UTF-8 BOM if present)
+            var jsonBytes = content.ToMemory();
+            
+            // Check for and skip UTF-8 BOM (EF BB BF)
+            var span = jsonBytes.Span;
+            if (span.Length >= 3 && span[0] == 0xEF && span[1] == 0xBB && span[2] == 0xBF)
+            {
+                jsonBytes = jsonBytes.Slice(3);
+            }
+            
+            using var json = JsonDocument.Parse(jsonBytes);
 
             // Step 8: Render markdown
             var markdown = GenericJsonMarkdownRenderer.RenderMarkdown(

@@ -148,6 +148,11 @@ try
         "srd24",
         srd24Config);
 
+    var rosConfig = builder.Configuration.GetSection("ExternalLinks:BlobProviders:Ros");
+    builder.Services.Configure<BlobExternalLinkProviderOptions>(
+        "ros",
+        rosConfig);
+
     // Register srd14 provider (each provider gets its own connection string and blob client)
     builder.Services.AddScoped<IExternalLinkProvider>(sp =>
     {
@@ -164,6 +169,17 @@ try
     {
         var optionsSnapshot = sp.GetRequiredService<IOptionsSnapshot<BlobExternalLinkProviderOptions>>();
         var options = optionsSnapshot.Get("srd24");
+        var cache = sp.GetRequiredService<IMemoryCache>();
+        var logger = sp.GetRequiredService<ILogger<BlobExternalLinkProvider>>();
+        
+        return new BlobExternalLinkProvider(options, cache, logger);
+    });
+
+    // Register ros provider (Ruins of Symbaroum)
+    builder.Services.AddScoped<IExternalLinkProvider>(sp =>
+    {
+        var optionsSnapshot = sp.GetRequiredService<IOptionsSnapshot<BlobExternalLinkProviderOptions>>();
+        var options = optionsSnapshot.Get("ros");
         var cache = sp.GetRequiredService<IMemoryCache>();
         var logger = sp.GetRequiredService<ILogger<BlobExternalLinkProvider>>();
         
