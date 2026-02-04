@@ -33,6 +33,30 @@
         padding-bottom: 24px;
     }
     
+    /* Section styling */
+    .metadata-section {
+        margin-bottom: 8px;
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px 8px 16px;
+    }
+    
+    .section-icon {
+        color: var(--chronicis-beige-gold);
+    }
+    
+    .section-title {
+        color: var(--mud-palette-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.75px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
     /* Metadata row styling */
     .metadata-row {
         display: flex;
@@ -52,11 +76,12 @@
     }
     
     .metadata-label {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         color: var(--mud-palette-text-secondary);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 2px;
+        font-weight: 500;
     }
     
     .metadata-value {
@@ -66,34 +91,6 @@
     }
     
     .metadata-value-secondary {
-        font-size: 0.75rem;
-        color: var(--mud-palette-text-secondary);
-    }
-    
-    /* Visibility selector styling */
-    .visibility-section {
-        padding: 12px 16px;
-    }
-    
-    .visibility-option {
-        display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 8px;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.15s;
-    }
-    
-    .visibility-option:hover {
-        background-color: var(--mud-palette-action-default-hover);
-    }
-    
-    .visibility-option.selected {
-        background-color: var(--mud-palette-primary-lighten);
-    }
-    
-    .visibility-description {
         font-size: 0.75rem;
         color: var(--mud-palette-text-secondary);
         margin-top: 2px;
@@ -115,105 +112,114 @@
         </MudText>
     </MudDrawerHeader>
     <MudDrawerContainer Class="metadata-drawer-scrollable chronicis-scrollbar-light">
+        
+        <!-- ========================================= -->
+        <!-- SECTION 1: LINKS & CONNECTIONS           -->
+        <!-- ========================================= -->
+        <div class="metadata-section">
+            <div class="section-header">
+                <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Small" Class="section-icon" />
+                <MudText Typo="Typo.subtitle2" Class="section-title">Links & Connections</MudText>
+            </div>
+        </div>
+        
         <!-- Outgoing Links Panel -->
         <OutgoingLinksPanel @ref="_outgoingLinksPanel" ArticleId="@Article.Id" IsOpen="@IsOpen" />
         
-        <MudDivider Class="my-3" />
+        <MudDivider Class="my-2" Style="opacity: 0.2;" />
         
         <!-- Backlinks Panel -->
         <BacklinksPanel @ref="_backlinksPanel" ArticleId="@Article.Id" IsOpen="@IsOpen" />
         
-        <MudDivider Class="my-3" />
+        <MudDivider Class="my-2" Style="opacity: 0.2;" />
         
         <!-- External Links Panel -->
         <ExternalLinksPanel @ref="_externalLinksPanel" ArticleId="@Article.Id" IsOpen="@IsOpen" />
         
-        <MudDivider Class="my-3" />
+        <MudDivider Class="my-4" Style="opacity: 0.3;" />
         
-        <!-- Visibility Section -->
-        <MudText Typo="Typo.subtitle2" Class="px-4 py-2" Style="color: var(--mud-palette-text-secondary);">
-            Visibility
-        </MudText>
-        
-        <div class="visibility-section">
-            @if (_isCreator)
-            {
-                <MudSelect T="ArticleVisibility" 
-                           Value="@_currentVisibility"
-                           ValueChanged="@HandleVisibilityChanged"
-                           Label="Who can see this article"
-                           Variant="Variant.Outlined"
-                           Dense="true"
-                           Disabled="_isSavingVisibility"
-                           AnchorOrigin="Origin.BottomCenter"
-                           TransformOrigin="Origin.TopCenter">
-                    <MudSelectItem Value="ArticleVisibility.Public">
-                        <div class="d-flex align-center gap-2">
-                            <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Small" />
-                            <span>Public</span>
-                        </div>
-                    </MudSelectItem>
-                    <MudSelectItem Value="ArticleVisibility.MembersOnly">
-                        <div class="d-flex align-center gap-2">
-                            <MudIcon Icon="@Icons.Material.Filled.Group" Size="Size.Small" />
-                            <span>Members Only</span>
-                        </div>
-                    </MudSelectItem>
-                    <MudSelectItem Value="ArticleVisibility.Private">
-                        <div class="d-flex align-center gap-2">
-                            <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" />
-                            <span>Private</span>
-                        </div>
-                    </MudSelectItem>
-                </MudSelect>
-                <MudText Typo="Typo.caption" Class="mt-2" Style="color: var(--mud-palette-text-secondary);">
-                    @GetVisibilityDescription(_currentVisibility)
-                </MudText>
-            }
-            else
-            {
-                <div class="d-flex align-center gap-2">
-                    <MudIcon Icon="@GetVisibilityIcon(Article.Visibility)" Size="Size.Small" 
-                             Style="color: var(--mud-palette-text-secondary);" />
-                    <div>
-                        <MudText Typo="Typo.body2">@GetVisibilityLabel(Article.Visibility)</MudText>
-                        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
-                            @GetVisibilityDescription(Article.Visibility)
-                        </MudText>
-                    </div>
+        <!-- ========================================= -->
+        <!-- SECTION 2: QUICK ACTIONS (Creator Only)  -->
+        <!-- ========================================= -->
+        @if (_isCreator)
+        {
+            <!-- Visibility Section -->
+            <div class="metadata-section">
+                <div class="section-header">
+                    <MudIcon Icon="@GetVisibilityIcon(_currentVisibility)" Size="Size.Small" Class="section-icon" />
+                    <MudText Typo="Typo.subtitle2" Class="section-title">Visibility</MudText>
                 </div>
-            }
+                
+                <div class="px-4 pb-3">
+                    <MudSelect T="ArticleVisibility" 
+                               Value="@_currentVisibility"
+                               ValueChanged="@HandleVisibilityChanged"
+                               Variant="Variant.Outlined"
+                               Dense="true"
+                               Disabled="_isSavingVisibility"
+                               AnchorOrigin="Origin.BottomCenter"
+                               TransformOrigin="Origin.TopCenter">
+                        <MudSelectItem Value="ArticleVisibility.Public">
+                            <div class="d-flex align-center gap-2">
+                                <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Small" />
+                                <span>Public</span>
+                            </div>
+                        </MudSelectItem>
+                        <MudSelectItem Value="ArticleVisibility.MembersOnly">
+                            <div class="d-flex align-center gap-2">
+                                <MudIcon Icon="@Icons.Material.Filled.Group" Size="Size.Small" />
+                                <span>Members Only</span>
+                            </div>
+                        </MudSelectItem>
+                        <MudSelectItem Value="ArticleVisibility.Private">
+                            <div class="d-flex align-center gap-2">
+                                <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" />
+                                <span>Private</span>
+                            </div>
+                        </MudSelectItem>
+                    </MudSelect>
+                    <MudText Typo="Typo.caption" Class="mt-1" Style="color: var(--mud-palette-text-secondary); font-size: 0.7rem;">
+                        @GetVisibilityDescription(_currentVisibility)
+                    </MudText>
+                </div>
+            </div>
+            
+            <!-- Aliases Section -->
+            <div class="metadata-section">
+                <div class="section-header">
+                    <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" Class="section-icon" />
+                    <MudText Typo="Typo.subtitle2" Class="section-title">Aliases</MudText>
+                </div>
+                
+                <div class="px-4 pb-3">
+                    <MudTextField @bind-Value="_aliasesText"
+                                  Placeholder="Enter aliases, separated by commas"
+                                  Variant="Variant.Outlined"
+                                  Lines="2"
+                                  HelperText="Alternative names for linking"
+                                  Disabled="_isSavingAliases"
+                                  Immediate="false"
+                                  DebounceInterval="500"
+                                  OnBlur="HandleAliasesBlur" />
+                    @if (_isSavingAliases)
+                    {
+                        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-1" />
+                    }
+                </div>
+            </div>
+            
+            <MudDivider Class="my-4" Style="opacity: 0.3;" />
+        }
+        
+        <!-- ========================================= -->
+        <!-- SECTION 3: ARTICLE INFORMATION           -->
+        <!-- ========================================= -->
+        <div class="metadata-section">
+            <div class="section-header">
+                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="section-icon" />
+                <MudText Typo="Typo.subtitle2" Class="section-title">Article Information</MudText>
+            </div>
         </div>
-        
-        <MudDivider Class="my-3" />
-        
-        <!-- Aliases Section -->
-        <MudText Typo="Typo.subtitle2" Class="px-4 py-2" Style="color: var(--mud-palette-text-secondary);">
-            Aliases
-        </MudText>
-        
-        <div class="px-4 pb-3">
-            <MudTextField @bind-Value="_aliasesText"
-                          Placeholder="Enter aliases, separated by commas"
-                          Variant="Variant.Outlined"
-                          Lines="2"
-                          HelperText="Alternative names for linking (e.g., Icara, The Wanderer)"
-                          Disabled="_isSavingAliases"
-                          Immediate="false"
-                          DebounceInterval="500"
-                          OnBlur="HandleAliasesBlur" />
-            @if (_isSavingAliases)
-            {
-                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-1" />
-            }
-        </div>
-        
-        <MudDivider Class="my-3" />
-        
-        <!-- Article Info Section -->
-        <MudText Typo="Typo.subtitle2" Class="px-4 py-2" Style="color: var(--mud-palette-text-secondary);">
-            Article Info
-        </MudText>
         
         <!-- Article Type -->
         <div class="metadata-row">
@@ -224,25 +230,14 @@
             </div>
         </div>
         
-        <!-- Created By -->
-        <div class="metadata-row">
-            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" />
-            <div class="metadata-content">
-                <div class="metadata-label">Created</div>
-                <div class="metadata-value">@(Article.CreatedByName ?? "Unknown")</div>
-                <div class="metadata-value-secondary">@Article.CreatedAt.ToString("MMM d, yyyy 'at' h:mm tt")</div>
-            </div>
-        </div>
-        
-        <!-- Last Modified By (only show if different from created or has been modified) -->
-        @if (Article.ModifiedAt.HasValue)
+        <!-- Visibility (for non-creators, read-only) -->
+        @if (!_isCreator)
         {
             <div class="metadata-row">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                <MudIcon Icon="@GetVisibilityIcon(Article.Visibility)" Size="Size.Small" />
                 <div class="metadata-content">
-                    <div class="metadata-label">Last Modified</div>
-                    <div class="metadata-value">@(Article.LastModifiedByName ?? Article.CreatedByName ?? "Unknown")</div>
-                    <div class="metadata-value-secondary">@Article.ModifiedAt.Value.ToString("MMM d, yyyy 'at' h:mm tt")</div>
+                    <div class="metadata-label">Visibility</div>
+                    <div class="metadata-value">@GetVisibilityLabel(Article.Visibility)</div>
                 </div>
             </div>
         }
@@ -257,50 +252,74 @@
             </div>
         </div>
         
-        <MudDivider Class="my-3" />
+        <!-- Created By -->
+        <div class="metadata-row">
+            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" />
+            <div class="metadata-content">
+                <div class="metadata-label">Created By</div>
+                <div class="metadata-value">@(Article.CreatedByName ?? "Unknown")</div>
+                <div class="metadata-value-secondary">@Article.CreatedAt.ToString("MMM d, yyyy 'at' h:mm tt")</div>
+            </div>
+        </div>
         
-        <!-- Technical IDs (collapsed by default) -->
-        <MudExpansionPanels Elevation="0" Dense="true">
-            <MudExpansionPanel Text="Technical Details" Style="background: transparent;">
-                <div class="metadata-row">
-                    <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Size="Size.Small" />
-                    <div class="metadata-content">
-                        <div class="metadata-label">Article ID</div>
-                        <div class="metadata-value" style="font-family: monospace; font-size: 0.7rem;">@Article.Id</div>
-                    </div>
+        <!-- Last Modified By (only show if modified) -->
+        @if (Article.ModifiedAt.HasValue)
+        {
+            <div class="metadata-row">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                <div class="metadata-content">
+                    <div class="metadata-label">Last Modified By</div>
+                    <div class="metadata-value">@(Article.LastModifiedByName ?? Article.CreatedByName ?? "Unknown")</div>
+                    <div class="metadata-value-secondary">@Article.ModifiedAt.Value.ToString("MMM d, yyyy 'at' h:mm tt")</div>
                 </div>
-                @if (Article.WorldId.HasValue)
-                {
-                    <div class="metadata-row">
-                        <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Small" />
-                        <div class="metadata-content">
-                            <div class="metadata-label">World ID</div>
-                            <div class="metadata-value" style="font-family: monospace; font-size: 0.7rem;">@Article.WorldId</div>
-                        </div>
-                    </div>
-                }
-                @if (Article.CampaignId.HasValue)
-                {
-                    <div class="metadata-row">
-                        <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" />
-                        <div class="metadata-content">
-                            <div class="metadata-label">Campaign ID</div>
-                            <div class="metadata-value" style="font-family: monospace; font-size: 0.7rem;">@Article.CampaignId</div>
-                        </div>
-                    </div>
-                }
-                @if (Article.ArcId.HasValue)
-                {
-                    <div class="metadata-row">
-                        <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Small" />
-                        <div class="metadata-content">
-                            <div class="metadata-label">Arc ID</div>
-                            <div class="metadata-value" style="font-family: monospace; font-size: 0.7rem;">@Article.ArcId</div>
-                        </div>
-                    </div>
-                }
-            </MudExpansionPanel>
-        </MudExpansionPanels>
+            </div>
+        }
+        
+        <!-- Article ID -->
+        <div class="metadata-row">
+            <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Size="Size.Small" />
+            <div class="metadata-content">
+                <div class="metadata-label">Article ID</div>
+                <div class="metadata-value" style="font-family: monospace; font-size: 0.7rem;">@Article.Id</div>
+            </div>
+        </div>
+        
+        <!-- World ID -->
+        @if (Article.WorldId.HasValue)
+        {
+            <div class="metadata-row">
+                <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Small" />
+                <div class="metadata-content">
+                    <div class="metadata-label">World ID</div>
+                    <div class="metadata-value" style="font-family: monospace; font-size: 0.7rem;">@Article.WorldId</div>
+                </div>
+            </div>
+        }
+        
+        <!-- Campaign ID -->
+        @if (Article.CampaignId.HasValue)
+        {
+            <div class="metadata-row">
+                <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" />
+                <div class="metadata-content">
+                    <div class="metadata-label">Campaign ID</div>
+                    <div class="metadata-value" style="font-family: monospace; font-size: 0.7rem;">@Article.CampaignId</div>
+                </div>
+            </div>
+        }
+        
+        <!-- Arc ID -->
+        @if (Article.ArcId.HasValue)
+        {
+            <div class="metadata-row">
+                <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Small" />
+                <div class="metadata-content">
+                    <div class="metadata-label">Arc ID</div>
+                    <div class="metadata-value" style="font-family: monospace; font-size: 0.7rem;">@Article.ArcId</div>
+                </div>
+            </div>
+        }
+        
     </MudDrawerContainer>
 </MudDrawer>
 
