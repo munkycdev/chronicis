@@ -125,6 +125,11 @@
         
         <MudDivider Class="my-3" />
         
+        <!-- External Links Panel -->
+        <ExternalLinksPanel @ref="_externalLinksPanel" ArticleId="@Article.Id" IsOpen="@IsOpen" />
+        
+        <MudDivider Class="my-3" />
+        
         <!-- Visibility Section -->
         <MudText Typo="Typo.subtitle2" Class="px-4 py-2" Style="color: var(--mud-palette-text-secondary);">
             Visibility
@@ -302,6 +307,7 @@
 @code {
     private OutgoingLinksPanel? _outgoingLinksPanel;
     private BacklinksPanel? _backlinksPanel;
+    private ExternalLinksPanel? _externalLinksPanel;
     private bool _isCreator;
     private ArticleVisibility _currentVisibility;
     private bool _isSavingVisibility;
@@ -505,6 +511,11 @@
         if (_backlinksPanel != null)
         {
             await _backlinksPanel.RefreshAsync();
+        }
+        
+        if (_externalLinksPanel != null)
+        {
+            await _externalLinksPanel.RefreshAsync();
         }
     }
 

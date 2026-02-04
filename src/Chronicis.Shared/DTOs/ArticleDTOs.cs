@@ -45,6 +45,9 @@ public class ArticleDto
     
     // Aliases
     public List<ArticleAliasDto> Aliases { get; set; } = new();
+    
+    // External Links
+    public List<ArticleExternalLinkDto> ExternalLinks { get; set; } = new();
 }
 
 /// <summary>

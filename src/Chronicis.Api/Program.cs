@@ -1,6 +1,7 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
+using Chronicis.Api.Services.Articles;
 using Chronicis.Api.Services.ExternalLinks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -172,6 +173,7 @@ try
     // Services
     builder.Services.AddScoped<IArticleService, ArticleService>();
     builder.Services.AddScoped<IArticleValidationService, ArticleValidationService>();
+    builder.Services.AddScoped<IArticleExternalLinkService, ArticleExternalLinkService>();
     builder.Services.AddScoped<ISummaryService, SummaryService>();
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<IWorldService, WorldService>();

@@ -1,6 +1,7 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
+using Chronicis.Api.Services.Articles;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
@@ -22,6 +23,7 @@ public class ArticlesController : ControllerBase
     private readonly IArticleValidationService _validationService;
     private readonly ILinkSyncService _linkSyncService;
     private readonly IAutoLinkService _autoLinkService;
+    private readonly IArticleExternalLinkService _externalLinkService;
     private readonly ChronicisDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ArticlesController> _logger;
@@ -31,6 +33,7 @@ public class ArticlesController : ControllerBase
         IArticleValidationService validationService,
         ILinkSyncService linkSyncService,
         IAutoLinkService autoLinkService,
+        IArticleExternalLinkService externalLinkService,
         ChronicisDbContext context,
         ICurrentUserService currentUserService,
         ILogger<ArticlesController> logger)
@@ -39,6 +42,7 @@ public class ArticlesController : ControllerBase
         _validationService = validationService;
         _linkSyncService = linkSyncService;
         _autoLinkService = autoLinkService;
+        _externalLinkService = externalLinkService;
         _context = context;
         _currentUserService = currentUserService;
         _logger = logger;
@@ -325,6 +329,9 @@ public class ArticlesController : ControllerBase
             {
                 await _linkSyncService.SyncLinksAsync(id, dto.Body);
             }
+
+            // Sync external links after update
+            await _externalLinkService.SyncExternalLinksAsync(id, dto.Body);
 
             // Return updated article
             var updatedArticle = await _articleService.GetArticleDetailAsync(id, user.Id);

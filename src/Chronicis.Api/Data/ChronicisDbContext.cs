@@ -18,6 +18,7 @@ public class ChronicisDbContext : DbContext
     public DbSet<Article> Articles { get; set; } = null!;
     public DbSet<ArticleAlias> ArticleAliases { get; set; } = null!;
     public DbSet<ArticleLink> ArticleLinks { get; set; } = null!;
+    public DbSet<ArticleExternalLink> ArticleExternalLinks { get; set; } = null!;
     public DbSet<WorldLink> WorldLinks { get; set; } = null!;
     public DbSet<WorldDocument> WorldDocuments { get; set; } = null!;
     public DbSet<SummaryTemplate> SummaryTemplates { get; set; } = null!;
@@ -39,6 +40,7 @@ public class ChronicisDbContext : DbContext
         ConfigureArticle(modelBuilder);
         ConfigureArticleAlias(modelBuilder);
         ConfigureArticleLink(modelBuilder);
+        ConfigureArticleExternalLink(modelBuilder);
         ConfigureWorldLink(modelBuilder);
         ConfigureWorldDocument(modelBuilder);
         ConfigureSummaryTemplate(modelBuilder);
@@ -389,6 +391,42 @@ public class ChronicisDbContext : DbContext
             // Unique constraint: Prevent duplicate links at same position
             entity.HasIndex(al => new { al.SourceArticleId, al.TargetArticleId, al.Position })
                 .IsUnique();
+        });
+    }
+
+    private static void ConfigureArticleExternalLink(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ArticleExternalLink>(entity =>
+        {
+            entity.HasKey(ael => ael.Id);
+
+            // String field max lengths
+            entity.Property(ael => ael.Source)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(ael => ael.ExternalId)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(ael => ael.DisplayTitle)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            // ArticleExternalLink -> Article (CASCADE delete - when article is deleted, remove its external links)
+            entity.HasOne(ael => ael.Article)
+                .WithMany(a => a.ExternalLinks)
+                .HasForeignKey(ael => ael.ArticleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Index for query performance (lookup all external links for an article)
+            entity.HasIndex(ael => ael.ArticleId);
+
+            // Composite index for uniqueness and query performance
+            // An article should not have duplicate references to the same external resource
+            entity.HasIndex(ael => new { ael.ArticleId, ael.Source, ael.ExternalId })
+                .IsUnique()
+                .HasDatabaseName("IX_ArticleExternalLinks_ArticleId_Source_ExternalId");
         });
     }
 

@@ -209,6 +209,11 @@ public class Article
     public ICollection<ArticleAlias> Aliases { get; set; } = new List<ArticleAlias>();
 
     /// <summary>
+    /// External resource links embedded in this article's content.
+    /// </summary>
+    public ICollection<ArticleExternalLink> ExternalLinks { get; set; } = new List<ArticleExternalLink>();
+
+    /// <summary>
     /// Computed property for child count (not mapped to database).
     /// </summary>
     [NotMapped]
