@@ -91,4 +91,9 @@ public class World
     /// All invitation codes for this world.
     /// </summary>
     public ICollection<WorldInvitation> Invitations { get; set; } = new List<WorldInvitation>();
+
+    /// <summary>
+    /// Resource providers enabled for this world (SRD, Open5e API, etc.).
+    /// </summary>
+    public ICollection<WorldResourceProvider> WorldResourceProviders { get; set; } = new List<WorldResourceProvider>();
 }

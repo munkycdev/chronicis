@@ -27,11 +27,13 @@ public class ExternalLinksController : ControllerBase
     }
 
     /// <summary>
-    /// GET /api/external-links/suggestions?source={source}&query={query}
+    /// GET /api/external-links/suggestions?worldId={worldId}&source={source}&query={query}
     /// Get external link suggestions for autocomplete.
+    /// Filters to only include providers enabled for the specified world.
     /// </summary>
     [HttpGet("suggestions")]
     public async Task<ActionResult<List<ExternalLinkSuggestionDto>>> GetSuggestions(
+        [FromQuery] Guid? worldId,
         [FromQuery] string? source,
         [FromQuery] string? query,
         CancellationToken ct)
@@ -43,9 +45,9 @@ public class ExternalLinksController : ControllerBase
             return Ok(new List<ExternalLinkSuggestionDto>());
         }
 
-        _logger.LogDebug("Getting external link suggestions for source '{Source}' with query '{Query}'", source, query);
+        _logger.LogDebug("Getting external link suggestions for world {WorldId}, source '{Source}' with query '{Query}'", worldId, source, query);
 
-        var suggestions = await _suggestionService.GetSuggestionsAsync(source, query ?? "", ct);
+        var suggestions = await _suggestionService.GetSuggestionsAsync(worldId, source, query ?? "", ct);
 
         var dtos = suggestions.Select(s => new ExternalLinkSuggestionDto
         {

@@ -76,7 +76,7 @@
     private async Task LoadSuggestionsAsync()
     {
         _isLoadingSuggestions = true;
-        _suggestions = await ExternalLinks.GetSuggestionsAsync(_source, _query, CancellationToken.None);
+        _suggestions = await ExternalLinks.GetSuggestionsAsync(null, _source, _query, CancellationToken.None);
         _isLoadingSuggestions = false;
     }
 

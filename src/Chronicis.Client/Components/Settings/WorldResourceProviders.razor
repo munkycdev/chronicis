@@ -1,0 +1,64 @@
+@using Chronicis.Shared.DTOs
+@using Chronicis.Client.Services
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudText Typo="Typo.h6" Class="mb-3">External Resource Providers</MudText>
+    <MudText Typo="Typo.body2" Class="mb-4">
+        Enable external resource providers to link reference content in your articles.
+    </MudText>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (_providers != null && _providers.Any())
+    {
+        <MudStack Spacing="3">
+            @foreach (var provider in _providers)
+            {
+                <MudPaper Outlined="true" Class="pa-3">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <div style="flex: 1;">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.subtitle1">
+                                    <strong>@provider.Provider.Name</strong>
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Default">
+                                    @provider.Provider.Description
+                                </MudText>
+                                <MudStack Row="true" Spacing="2" Class="mt-1">
+                                    <MudLink Href="@provider.Provider.DocumentationLink" Target="_blank" Typo="Typo.caption">
+                                        Documentation
+                                    </MudLink>
+                                    <MudLink Href="@provider.Provider.License" Target="_blank" Typo="Typo.caption">
+                                        License
+                                    </MudLink>
+                                </MudStack>
+                            </MudStack>
+                        </div>
+                        <MudSwitch 
+                            T="bool"
+                            Color="Color.Primary" 
+                            Value="@provider.IsEnabled"
+                            ValueChanged="@(async (bool enabled) => await OnToggleProvider(provider.Provider.Code, enabled))"
+                            Disabled="@_updating" />
+                    </MudStack>
+                </MudPaper>
+            }
+        </MudStack>
+
+        <MudAlert Severity="Severity.Info" Class="mt-4" Dense="true">
+            <MudText Typo="Typo.caption">
+                <strong>License Agreement:</strong> By enabling a resource provider, you agree to abide by its license terms 
+                and confirm that you have the right to reference this content in your world. Please review each provider's 
+                license before enabling.
+            </MudText>
+        </MudAlert>
+    }
+    else if (_error)
+    {
+        <MudAlert Severity="Severity.Error">
+            Failed to load resource providers. Please try refreshing the page.
+        </MudAlert>
+    }
+</MudPaper>

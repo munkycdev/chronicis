@@ -1,5 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
+using Chronicis.Api.Repositories;
 using Chronicis.Api.Services;
 using Chronicis.Api.Services.Articles;
 using Chronicis.Api.Services.ExternalLinks;
@@ -203,6 +204,10 @@ try
     builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
     builder.Services.AddScoped<IWorldDocumentService, WorldDocumentService>();
     builder.Services.AddScoped<IExportService, ExportService>();
+    builder.Services.AddScoped<IResourceProviderService, ResourceProviderService>();
+
+    // Repositories
+    builder.Services.AddScoped<IResourceProviderRepository, ResourceProviderRepository>();
 
     var app = builder.Build();
 

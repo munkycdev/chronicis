@@ -172,6 +172,13 @@ builder.Services.AddScoped<IDashboardApiService>(sp =>
     return new DashboardApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
+builder.Services.AddScoped<ResourceProviderApiService>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var logger = sp.GetRequiredService<ILogger<ResourceProviderApiService>>();
+    return new ResourceProviderApiService(factory.CreateClient("ChronicisApi"), logger);
+});
+
 // Public API service - uses base client WITHOUT auth handler (for anonymous access)
 builder.Services.AddHttpClient("ChronicisPublicApi", client =>
 {

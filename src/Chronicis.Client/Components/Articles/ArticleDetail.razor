@@ -854,9 +854,12 @@ else
 
         try
         {
+            var worldId = AppContext.CurrentWorldId ?? _article?.WorldId ?? Guid.Empty;
+            
             if (_autocompleteIsExternalQuery)
             {
                 var externalSuggestions = await ExternalLinkApiService.GetSuggestionsAsync(
+                    worldId,
                     _autocompleteExternalSourceKey ?? string.Empty,
                     _autocompleteQuery,
                     CancellationToken.None);
@@ -866,7 +869,6 @@ else
             }
             else
             {
-                var worldId = AppContext.CurrentWorldId ?? _article?.WorldId ?? Guid.Empty;
                 var internalSuggestions = await LinkApiService.GetSuggestionsAsync(worldId, _autocompleteQuery);
                 _autocompleteSuggestions = internalSuggestions
                     .Select(WikiLinkAutocompleteItem.FromInternal)

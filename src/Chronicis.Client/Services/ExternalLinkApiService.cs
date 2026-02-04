@@ -16,6 +16,7 @@ public class ExternalLinkApiService : IExternalLinkApiService
     }
 
     public async Task<List<ExternalLinkSuggestionDto>> GetSuggestionsAsync(
+        Guid? worldId,
         string source,
         string query,
         CancellationToken ct)
@@ -25,8 +26,12 @@ public class ExternalLinkApiService : IExternalLinkApiService
             return new List<ExternalLinkSuggestionDto>();
         }
 
-        var url =
-            $"external-links/suggestions?source={Uri.EscapeDataString(source)}&query={Uri.EscapeDataString(query ?? string.Empty)}";
+        var url = $"external-links/suggestions?source={Uri.EscapeDataString(source)}&query={Uri.EscapeDataString(query ?? string.Empty)}";
+        
+        if (worldId.HasValue)
+        {
+            url += $"&worldId={worldId.Value}";
+        }
 
         try
         {

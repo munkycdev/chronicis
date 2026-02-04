@@ -5,6 +5,7 @@
 @using Chronicis.Client.Components.Dialogs
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Client.Components.World
+@using Chronicis.Client.Components.Settings
 @using Chronicis.Client.Utilities
 @inject IWorldApiService WorldApi
 @inject ICampaignApiService CampaignApi
@@ -413,6 +414,20 @@ else if (_world != null)
                         }
                     </div>
                 </div>
+            </MudTabPanel>
+
+            <!-- Settings Tab -->
+            <MudTabPanel Text="Settings" Icon="@Icons.Material.Filled.Settings">
+                @if (_isCurrentUserGM)
+                {
+                    <WorldResourceProviders WorldId="WorldId" />
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info">
+                        Only the world owner can manage settings.
+                    </MudAlert>
+                }
             </MudTabPanel>
         </MudTabs>
 

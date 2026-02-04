@@ -5,6 +5,7 @@ namespace Chronicis.Client.Services;
 public interface IExternalLinkApiService
 {
     Task<List<ExternalLinkSuggestionDto>> GetSuggestionsAsync(
+        Guid? worldId,
         string source,
         string query,
         CancellationToken ct);

@@ -22,6 +22,8 @@ public class ChronicisDbContext : DbContext
     public DbSet<WorldLink> WorldLinks { get; set; } = null!;
     public DbSet<WorldDocument> WorldDocuments { get; set; } = null!;
     public DbSet<SummaryTemplate> SummaryTemplates { get; set; } = null!;
+    public DbSet<ResourceProvider> ResourceProviders { get; set; } = null!;
+    public DbSet<WorldResourceProvider> WorldResourceProviders { get; set; } = null!;
 
 
     public ChronicisDbContext(DbContextOptions<ChronicisDbContext> options)
@@ -44,6 +46,8 @@ public class ChronicisDbContext : DbContext
         ConfigureWorldLink(modelBuilder);
         ConfigureWorldDocument(modelBuilder);
         ConfigureSummaryTemplate(modelBuilder);
+        ConfigureResourceProvider(modelBuilder);
+        ConfigureWorldResourceProvider(modelBuilder);
     }
 
     private static void ConfigureUser(ModelBuilder modelBuilder)
@@ -559,6 +563,121 @@ public class ChronicisDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(a => a.SummaryTemplateId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    private static void ConfigureResourceProvider(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ResourceProvider>(entity =>
+        {
+            // Primary key is Code (string)
+            entity.HasKey(rp => rp.Code);
+
+            entity.Property(rp => rp.Code)
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(rp => rp.Name)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(rp => rp.Description)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            entity.Property(rp => rp.DocumentationLink)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            entity.Property(rp => rp.License)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            entity.Property(rp => rp.IsActive)
+                .HasDefaultValue(true);
+
+            entity.Property(rp => rp.CreatedAt)
+                .IsRequired();
+
+            // Seed initial providers
+            entity.HasData(
+                new ResourceProvider
+                {
+                    Code = "srd",
+                    Name = "Open 5e API",
+                    Description = "System Reference Document for D&D 5th Edition",
+                    DocumentationLink = "https://open5e.com/api-docs",
+                    License = "https://open5e.com/legal",
+                    IsActive = true,
+                    CreatedAt = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero)
+                },
+                new ResourceProvider
+                {
+                    Code = "srd14",
+                    Name = "SRD 2014",
+                    Description = "System Reference Document 5.1",
+                    DocumentationLink = "https://www.dndbeyond.com/srd?srsltid=AfmBOooZgD0uD_hbmyYkHEvFJtDJzktTdIa_J_N2GRnkPQvGIZ4ZSeBO#SystemReferenceDocumentv51",
+                    License = "https://opengamingfoundation.org/ogl.html",
+                    IsActive = true,
+                    CreatedAt = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero)
+                },
+                new ResourceProvider
+                {
+                    Code = "srd24",
+                    Name = "SRD 2024",
+                    Description = "System Reference Document 5.2.1",
+                    DocumentationLink = "https://www.dndbeyond.com/srd?srsltid=AfmBOooZgD0uD_hbmyYkHEvFJtDJzktTdIa_J_N2GRnkPQvGIZ4ZSeBO#SystemReferenceDocumentv52",
+                    License = "https://creativecommons.org/licenses/by/4.0/",
+                    IsActive = true,
+                    CreatedAt = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero)
+                },
+                new ResourceProvider
+                {
+                    Code = "ros",
+                    Name = "Ruins of Symbaroum",
+                    Description = "Ruins of Symbaroum source material",
+                    DocumentationLink = "https://freeleaguepublishing.com/games/ruins-of-symbaroum/",
+                    License = "https://opengamingfoundation.org/ogl.html",
+                    IsActive = true,
+                    CreatedAt = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero)
+                }
+            );
+        });
+    }
+
+    private static void ConfigureWorldResourceProvider(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<WorldResourceProvider>(entity =>
+        {
+            // Composite primary key
+            entity.HasKey(wrp => new { wrp.WorldId, wrp.ResourceProviderCode });
+
+            entity.Property(wrp => wrp.IsEnabled)
+                .IsRequired();
+
+            entity.Property(wrp => wrp.ModifiedAt)
+                .IsRequired();
+
+            entity.Property(wrp => wrp.ModifiedByUserId)
+                .IsRequired();
+
+            // WorldResourceProvider -> World (CASCADE delete - when world is deleted, remove provider associations)
+            entity.HasOne(wrp => wrp.World)
+                .WithMany(w => w.WorldResourceProviders)
+                .HasForeignKey(wrp => wrp.WorldId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // WorldResourceProvider -> ResourceProvider (RESTRICT - don't allow provider deletion if in use)
+            entity.HasOne(wrp => wrp.ResourceProvider)
+                .WithMany(rp => rp.WorldResourceProviders)
+                .HasForeignKey(wrp => wrp.ResourceProviderCode)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Index for querying providers by world
+            entity.HasIndex(wrp => wrp.WorldId);
+
+            // Index for querying worlds by provider
+            entity.HasIndex(wrp => wrp.ResourceProviderCode);
         });
     }
 }
