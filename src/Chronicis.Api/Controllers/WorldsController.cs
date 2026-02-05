@@ -1,4 +1,5 @@
 using Chronicis.Api.Data;
+using Chronicis.Shared.Extensions;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
@@ -81,7 +82,7 @@ public class WorldsController : ControllerBase
             return BadRequest(new { error = "Name is required" });
         }
 
-        _logger.LogDebug("Creating world '{Name}' for user {UserId}", dto.Name, user.Id);
+        _logger.LogDebugSanitized("Creating world '{Name}' for user {UserId}", dto.Name, user.Id);
 
         var world = await _worldService.CreateWorldAsync(dto, user.Id);
 
@@ -133,7 +134,7 @@ public class WorldsController : ControllerBase
             return BadRequest(new { error = "Slug is required" });
         }
 
-        _logger.LogDebug("Checking public slug '{Slug}' for world {WorldId}", dto.Slug, id);
+        _logger.LogDebugSanitized("Checking public slug '{Slug}' for world {WorldId}", dto.Slug, id);
 
         var result = await _worldService.CheckPublicSlugAsync(dto.Slug, id);
         return Ok(result);
@@ -272,7 +273,7 @@ public class WorldsController : ControllerBase
             return BadRequest(new { error = "Invitation code is required" });
         }
 
-        _logger.LogDebug("User {UserId} attempting to join world with code {Code}", user.Id, dto.Code);
+        _logger.LogDebugSanitized("User {UserId} attempting to join world with code {Code}", user.Id, dto.Code);
 
         var result = await _worldService.JoinWorldAsync(dto.Code, user.Id);
 
@@ -329,7 +330,7 @@ public class WorldsController : ControllerBase
             return Ok(new LinkSuggestionsResponseDto());
         }
 
-        _logger.LogDebug("Getting link suggestions for query '{Query}' in world {WorldId}", query, id);
+        _logger.LogDebugSanitized("Getting link suggestions for query '{Query}' in world {WorldId}", query, id);
 
         // Verify user has access to the world
         var hasAccess = await _context.WorldMembers

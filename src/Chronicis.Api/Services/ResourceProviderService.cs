@@ -1,4 +1,5 @@
 using Chronicis.Api.Data;
+using Chronicis.Shared.Extensions;
 using Chronicis.Api.Repositories;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -88,7 +89,7 @@ public class ResourceProviderService : IResourceProviderService
             throw new KeyNotFoundException($"Resource provider '{providerCode}' not found or inactive");
         }
 
-        _logger.LogInformation(
+        _logger.LogDebugSanitized(
             "User {UserId} {Action} provider {ProviderCode} for world {WorldId}",
             userId,
             enabled ? "enabled" : "disabled",

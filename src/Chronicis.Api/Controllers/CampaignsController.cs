@@ -1,3 +1,4 @@
+using Chronicis.Shared.Extensions;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
@@ -65,7 +66,7 @@ public class CampaignsController : ControllerBase
             return BadRequest(new { error = "WorldId is required" });
         }
 
-        _logger.LogDebug("Creating campaign '{Name}' in world {WorldId} for user {UserId}",
+        _logger.LogDebugSanitized("Creating campaign '{Name}' in world {WorldId} for user {UserId}",
             dto.Name, dto.WorldId, user.Id);
 
         try

@@ -1,3 +1,4 @@
+using Chronicis.Shared.Extensions;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
@@ -99,7 +100,7 @@ public class ResourceProvidersController : ControllerBase
         }
         catch (KeyNotFoundException ex)
         {
-            _logger.LogWarning(ex, "World {WorldId} or provider {ProviderCode} not found", worldId, providerCode);
+            _logger.LogErrorSanitized(ex, "World {WorldId} or provider {ProviderCode} not found", worldId, providerCode);
             return NotFound(new { message = ex.Message });
         }
         catch (UnauthorizedAccessException ex)

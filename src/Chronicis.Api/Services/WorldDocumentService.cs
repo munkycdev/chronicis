@@ -1,4 +1,5 @@
 using Chronicis.Api.Data;
+using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -57,7 +58,7 @@ public class WorldDocumentService : IWorldDocumentService
         Guid userId,
         WorldDocumentUploadRequestDto request)
     {
-        _logger.LogDebug("User {UserId} requesting upload for world {WorldId}: {FileName}",
+        _logger.LogDebugSanitized("User {UserId} requesting upload for world {WorldId}: {FileName}",
             userId, worldId, request.FileName);
 
         // Verify user owns the world
@@ -146,7 +147,7 @@ public class WorldDocumentService : IWorldDocumentService
         if (metadata == null)
         {
             // Blob upload failed or didn't complete
-            _logger.LogWarning("Blob not found for document {DocumentId}: {BlobPath}",
+            _logger.LogWarningSanitized("Blob not found for document {DocumentId}: {BlobPath}",
                 documentId, document.BlobPath);
             throw new InvalidOperationException("File upload did not complete. Please try again.");
         }
@@ -276,7 +277,7 @@ public class WorldDocumentService : IWorldDocumentService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to delete blob for document {DocumentId}: {BlobPath}",
+            _logger.LogErrorSanitized(ex, "Failed to delete blob for document {DocumentId}: {BlobPath}",
                 documentId, document.BlobPath);
             // Continue with database deletion even if blob deletion fails
         }
@@ -323,7 +324,7 @@ public class WorldDocumentService : IWorldDocumentService
             {
                 if (!request.ContentType.Equals(expectedMimeType, StringComparison.OrdinalIgnoreCase))
                 {
-                    _logger.LogWarning("Content type mismatch for {FileName}: expected {Expected}, got {Actual}",
+                    _logger.LogWarningSanitized("Content type mismatch for {FileName}: expected {Expected}, got {Actual}",
                         request.FileName, expectedMimeType, request.ContentType);
                 }
             }
@@ -363,7 +364,7 @@ public class WorldDocumentService : IWorldDocumentService
             }
         }
 
-        _logger.LogDebug("Generated unique title for {FileName}: {Title}", fileName, title);
+        _logger.LogDebugSanitized("Generated unique title for {FileName}: {Title}", fileName, title);
         return title;
     }
 

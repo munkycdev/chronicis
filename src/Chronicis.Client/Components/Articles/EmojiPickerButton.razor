@@ -1,5 +1,14 @@
 @inject IJSRuntime JSRuntime
 @implements IAsyncDisposable
+@code {
+    private readonly ILogger<EmojiPickerButton> _logger;
+
+    // Direct constructor injection
+    public EmojiPickerButton(ILogger<EmojiPickerButton> logger)
+    {
+        _logger = logger;
+    }
+}
 
 <div class="chronicis-emoji-picker-container" @onclick:stopPropagation="true">
     <!-- Emoji Button -->
@@ -106,7 +115,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to initialize emoji picker: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Failed to initialize emoji picker");
         }
     }
 
@@ -120,7 +129,7 @@
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to destroy emoji picker: {ex.Message}");
+                _logger.LogErrorSanitized(ex, "Failed to destroy emoji picker");
             }
             _pickerInitialized = false;
         }

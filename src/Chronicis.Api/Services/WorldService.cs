@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
+using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
@@ -65,7 +66,7 @@ public class WorldService : IWorldService
         if (user == null)
             throw new InvalidOperationException("User not found");
 
-        _logger.LogDebug("Creating world '{Name}' for user {UserId}", dto.Name, userId);
+        _logger.LogDebugSanitized("Creating world '{Name}' for user {UserId}", dto.Name, userId);
 
         var now = DateTime.UtcNow;
 
@@ -240,7 +241,7 @@ public class WorldService : IWorldService
                 var validationError = ValidatePublicSlug(normalizedSlug);
                 if (validationError != null)
                 {
-                    _logger.LogWarning("Invalid public slug '{Slug}' for world {WorldId}: {Error}", 
+                    _logger.LogWarningSanitized("Invalid public slug '{Slug}' for world {WorldId}: {Error}", 
                         normalizedSlug, worldId, validationError);
                     return null;
                 }
@@ -248,14 +249,14 @@ public class WorldService : IWorldService
                 // Check availability
                 if (!await IsPublicSlugAvailableAsync(normalizedSlug, worldId))
                 {
-                    _logger.LogWarning("Public slug '{Slug}' is already taken", normalizedSlug);
+                    _logger.LogWarningSanitized("Public slug '{Slug}' is already taken", normalizedSlug);
                     return null;
                 }
 
                 world.IsPublic = true;
                 world.PublicSlug = normalizedSlug;
                 
-                _logger.LogDebug("World {WorldId} is now public with slug '{PublicSlug}'", worldId, normalizedSlug);
+                _logger.LogDebugSanitized("World {WorldId} is now public with slug '{PublicSlug}'", worldId, normalizedSlug);
             }
             else
             {
@@ -711,7 +712,7 @@ public class WorldService : IWorldService
         _context.WorldInvitations.Add(invitation);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Created invitation {Code} for world {WorldId} by user {UserId}", 
+        _logger.LogDebugSanitized("Created invitation {Code} for world {WorldId} by user {UserId}", 
             code, worldId, userId);
 
         var creator = await _context.Users.FindAsync(userId);
@@ -832,7 +833,7 @@ public class WorldService : IWorldService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("User {UserId} joined world {WorldId} via invitation {Code}", 
+        _logger.LogDebugSanitized("User {UserId} joined world {WorldId} via invitation {Code}", 
             userId, invitation.WorldId, normalizedCode);
 
         return new WorldJoinResultDto

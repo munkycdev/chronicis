@@ -1,3 +1,4 @@
+using Chronicis.Shared.Extensions;
 using Chronicis.Api.Services.ExternalLinks;
 using Chronicis.Shared.DTOs;
 using Microsoft.AspNetCore.Mvc;
@@ -45,7 +46,7 @@ public class ExternalLinksController : ControllerBase
             return Ok(new List<ExternalLinkSuggestionDto>());
         }
 
-        _logger.LogDebug("Getting external link suggestions for world {WorldId}, source '{Source}' with query '{Query}'", worldId, source, query);
+        _logger.LogDebugSanitized("Getting external link suggestions for world {WorldId}, source '{Source}' with query '{Query}'", worldId, source, query);
 
         var suggestions = await _suggestionService.GetSuggestionsAsync(worldId, source, query ?? "", ct);
 
@@ -80,7 +81,7 @@ public class ExternalLinksController : ControllerBase
             return BadRequest(new ExternalLinkErrorDto { Message = "Source and id are required" });
         }
 
-        _logger.LogDebug("Getting external link content for source '{Source}' with id '{Id}'", source, id);
+        _logger.LogDebugSanitized("Getting external link content for source '{Source}' with id '{Id}'", source, id);
 
         var content = await _contentService.GetContentAsync(source, id, ct);
 

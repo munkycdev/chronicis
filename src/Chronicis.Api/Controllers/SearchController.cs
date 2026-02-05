@@ -1,4 +1,5 @@
 using Chronicis.Api.Data;
+using Chronicis.Shared.Extensions;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Shared.DTOs;
 using Microsoft.AspNetCore.Authorization;
@@ -56,7 +57,7 @@ public class SearchController : ControllerBase
             });
         }
 
-        _logger.LogDebug("Searching for '{Query}' for user {UserId}", query, user.Id);
+        _logger.LogDebugSanitized("Searching for '{Query}' for user {UserId}", query, user.Id);
 
         // Get all world IDs the user has access to
         var accessibleWorldIds = await _context.WorldMembers

@@ -66,7 +66,7 @@ public class ResourceProviderApiService
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation(
+                _logger.LogDebug(
                     "Successfully {Action} provider {ProviderCode} for world {WorldId}",
                     enabled ? "enabled" : "disabled",
                     providerCode,

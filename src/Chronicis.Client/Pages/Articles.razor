@@ -6,6 +6,16 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
+@code {
+    private readonly ILogger<Articles> _logger;
+
+    // Direct constructor injection
+    public Articles(ILogger<Articles> logger)
+    {
+        _logger = logger;
+    }
+}
+
 @if (TreeStateService.SelectedArticleId.HasValue && TreeStateService.SelectedArticleId.Value != Guid.Empty)
 {
     <ArticleDetail />
@@ -58,13 +68,13 @@ else
             else
             {
                 // Article not found - redirect to dashboard
-                Console.Error.WriteLine($"Article not found for path: {path}");
+                _logger.LogWarningSanitized("Article not found for path: {Path}", path);
                 Navigation.NavigateTo("/dashboard", replace: true);
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading article by path: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Error loading article by path: {Path}", path);
             Navigation.NavigateTo("/dashboard", replace: true);
         }
     }

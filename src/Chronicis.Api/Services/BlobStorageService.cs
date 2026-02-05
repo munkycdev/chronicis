@@ -2,6 +2,7 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
+using Chronicis.Shared.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -97,7 +98,7 @@ public class BlobStorageService : IBlobStorageService
 
         var sasUrl = BuildSasUrl(blobClient, sasBuilder);
 
-        _logger.LogDebug("Generated upload SAS URL for blob: {BlobPath}", blobPath);
+        _logger.LogDebugSanitized("Generated upload SAS URL for blob: {BlobPath}", blobPath);
 
         return Task.FromResult(sasUrl);
     }
@@ -112,7 +113,7 @@ public class BlobStorageService : IBlobStorageService
 
             if (!await blobClient.ExistsAsync())
             {
-                _logger.LogWarning("Blob not found: {BlobPath}", blobPath);
+                _logger.LogWarningSanitized("Blob not found: {BlobPath}", blobPath);
                 return null;
             }
 
@@ -126,7 +127,7 @@ public class BlobStorageService : IBlobStorageService
         }
         catch (RequestFailedException ex)
         {
-            _logger.LogError(ex, "Error getting blob metadata for: {BlobPath}", blobPath);
+            _logger.LogErrorSanitized(ex, "Error getting blob metadata for: {BlobPath}", blobPath);
             return null;
         }
     }
@@ -155,11 +156,11 @@ public class BlobStorageService : IBlobStorageService
 
             await blobClient.DeleteIfExistsAsync();
 
-            _logger.LogDebug("Deleted blob: {BlobPath}", blobPath);
+            _logger.LogDebugSanitized("Deleted blob: {BlobPath}", blobPath);
         }
         catch (RequestFailedException ex)
         {
-            _logger.LogError(ex, "Error deleting blob: {BlobPath}", blobPath);
+            _logger.LogErrorSanitized(ex, "Error deleting blob: {BlobPath}", blobPath);
             throw;
         }
     }
@@ -184,7 +185,7 @@ public class BlobStorageService : IBlobStorageService
 
         var sasUrl = BuildSasUrl(blobClient, sasBuilder);
 
-        _logger.LogDebug("Generated download SAS URL for blob: {BlobPath}", blobPath);
+        _logger.LogDebugSanitized("Generated download SAS URL for blob: {BlobPath}", blobPath);
 
         return Task.FromResult(sasUrl);
     }

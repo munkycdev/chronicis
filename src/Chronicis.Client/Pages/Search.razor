@@ -5,6 +5,16 @@
 @inject NavigationManager Navigation
 @inject ITreeStateService TreeState
 
+@code {
+    private readonly ILogger<Search> _logger;
+
+    // Direct constructor injection
+    public Search(ILogger<Search> logger)
+    {
+        _logger = logger;
+    }
+}
+
 <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
     @if (_isLoading)
     {
@@ -118,7 +128,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Search error: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Search error for query: {Query}", SearchQuery);
             _results = null;
         }
         finally

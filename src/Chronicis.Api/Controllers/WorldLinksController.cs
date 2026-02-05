@@ -1,4 +1,5 @@
 using Chronicis.Api.Data;
+using Chronicis.Shared.Extensions;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
@@ -96,7 +97,7 @@ public class WorldLinksController : ControllerBase
             return BadRequest(new { error = "Invalid URL format. Must be a valid http or https URL." });
         }
 
-        _logger.LogDebug("Creating link '{Title}' for world {WorldId} by user {UserId}",
+        _logger.LogDebugSanitized("Creating link '{Title}' for world {WorldId} by user {UserId}",
             dto.Title, worldId, user.Id);
 
         var link = new WorldLink

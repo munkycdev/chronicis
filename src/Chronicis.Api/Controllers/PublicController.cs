@@ -1,3 +1,4 @@
+using Chronicis.Shared.Extensions;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.AspNetCore.Mvc;
@@ -34,7 +35,7 @@ public class PublicController : ControllerBase
             return BadRequest(new { error = "Public slug is required" });
         }
 
-        _logger.LogDebug("Getting public world with slug '{PublicSlug}'", publicSlug);
+        _logger.LogDebugSanitized("Getting public world with slug '{PublicSlug}'", publicSlug);
 
         var world = await _publicWorldService.GetPublicWorldAsync(publicSlug);
 
@@ -59,7 +60,7 @@ public class PublicController : ControllerBase
             return BadRequest(new { error = "Public slug is required" });
         }
 
-        _logger.LogDebug("Getting public article tree for world '{PublicSlug}'", publicSlug);
+        _logger.LogDebugSanitized("Getting public article tree for world '{PublicSlug}'", publicSlug);
 
         var tree = await _publicWorldService.GetPublicArticleTreeAsync(publicSlug);
 
@@ -92,7 +93,7 @@ public class PublicController : ControllerBase
             return BadRequest(new { error = "Article path is required" });
         }
 
-        _logger.LogDebug("Getting public article '{ArticlePath}' in world '{PublicSlug}'", articlePath, publicSlug);
+        _logger.LogDebugSanitized("Getting public article '{ArticlePath}' in world '{PublicSlug}'", articlePath, publicSlug);
 
         var article = await _publicWorldService.GetPublicArticleAsync(publicSlug, articlePath);
 
@@ -115,7 +116,7 @@ public class PublicController : ControllerBase
             return BadRequest(new { error = "Public slug is required" });
         }
 
-        _logger.LogDebug("Resolving article path for {ArticleId} in world '{PublicSlug}'", articleId, publicSlug);
+        _logger.LogDebugSanitized("Resolving article path for {ArticleId} in world '{PublicSlug}'", articleId, publicSlug);
 
         var path = await _publicWorldService.GetPublicArticlePathAsync(publicSlug, articleId);
 

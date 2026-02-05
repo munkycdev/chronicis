@@ -1,4 +1,5 @@
 using Chronicis.Api.Data;
+using Chronicis.Shared.Extensions;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Api.Services.Articles;
@@ -155,7 +156,7 @@ public class ArticlesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching article by path: {Path}", path);
+            _logger.LogErrorSanitized(ex, "Error fetching article by path: {Path}", path);
             return StatusCode(500, "Internal server error");
         }
     }

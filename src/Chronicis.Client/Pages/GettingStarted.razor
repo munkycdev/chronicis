@@ -5,6 +5,16 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
+@code {
+    private readonly ILogger<GettingStarted> _logger;
+
+    // Direct constructor injection
+    public GettingStarted(ILogger<GettingStarted> logger)
+    {
+        _logger = logger;
+    }
+}
+
 <PageTitle>Quick Start Guide - Chronicis</PageTitle>
 
 <div class="getting-started-page">
@@ -402,7 +412,7 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error completing onboarding: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Error completing onboarding");
             Snackbar.Add("An error occurred. Please try again.", Severity.Error);
         }
         finally

@@ -1,4 +1,5 @@
 using Chronicis.Api.Data;
+using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
@@ -397,14 +398,14 @@ namespace Chronicis.Api.Services
 
             if (world == null)
             {
-                _logger.LogWarning("World not found for slug '{WorldSlug}' or user {UserId} doesn't have access", worldSlug, userId);
+                _logger.LogWarningSanitized("World not found for slug '{WorldSlug}' or user {UserId} doesn't have access", worldSlug, userId);
                 return null;
             }
 
             // If only world slug provided, no article to return
             if (slugs.Length == 1)
             {
-                _logger.LogWarning("Path '{Path}' contains only world slug, no article path", path);
+                _logger.LogWarningSanitized("Path '{Path}' contains only world slug, no article path", path);
                 return null;
             }
 
@@ -441,7 +442,7 @@ namespace Chronicis.Api.Services
 
                 if (article == null)
                 {
-                    _logger.LogWarning("Article not found for slug '{Slug}' under parent {ParentId} in world {WorldId} for user {UserId}",
+                    _logger.LogWarningSanitized("Article not found for slug '{Slug}' under parent {ParentId} in world {WorldId} for user {UserId}",
                         slug, currentParentId, world.Id, userId);
                     return null;
                 }

@@ -78,7 +78,7 @@ public partial class WorldResourceProviders : ComponentBase
                     $"{providerCode} {(enabled ? "enabled" : "disabled")} successfully",
                     Severity.Success);
 
-                Logger.LogInformation(
+                Logger.LogDebug(
                     "Provider {ProviderCode} {Action} for world {WorldId}",
                     providerCode,
                     enabled ? "enabled" : "disabled",

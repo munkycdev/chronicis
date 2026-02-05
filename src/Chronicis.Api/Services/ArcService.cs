@@ -1,4 +1,5 @@
 using Chronicis.Api.Data;
+using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;

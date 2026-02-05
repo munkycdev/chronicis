@@ -1,6 +1,16 @@
 @inject ICharacterApiService CharacterApi
 @inject ISnackbar Snackbar
 
+@code {
+    private readonly ILogger<CharacterClaimButton> _logger;
+
+    // Direct constructor injection
+    public CharacterClaimButton(ILogger<CharacterClaimButton> logger)
+    {
+        _logger = logger;
+    }
+}
+
 @if (_isLoading)
 {
     <MudProgressCircular Size="Size.Small" Indeterminate="true" />
@@ -77,7 +87,7 @@ else if (_claimStatus != null)
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading claim status: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Error loading claim status for character {CharacterId}", CharacterId);
         }
         finally
         {
@@ -107,7 +117,7 @@ else if (_claimStatus != null)
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error claiming character: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Error claiming character {CharacterId}", CharacterId);
             Snackbar.Add("An error occurred", Severity.Error);
         }
         finally
@@ -138,7 +148,7 @@ else if (_claimStatus != null)
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error unclaiming character: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Error unclaiming character {CharacterId}", CharacterId);
             Snackbar.Add("An error occurred", Severity.Error);
         }
         finally

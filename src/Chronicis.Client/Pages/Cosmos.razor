@@ -7,6 +7,16 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
+@code {
+    private readonly ILogger<Cosmos> _logger;
+
+    // Direct constructor injection
+    public Cosmos(ILogger<Cosmos> logger)
+    {
+        _logger = logger;
+    }
+}
+
 @if (TreeStateService.SelectedArticleId.HasValue && TreeStateService.SelectedArticleId.Value != Guid.Empty)
 {
     <ArticleDetail />
@@ -288,14 +298,14 @@ else
                 // Article not found
                 if (!TreeStateService.SelectedArticleId.HasValue)
                 {
-                    Console.Error.WriteLine($"Article not found for path: {path}");
+                    _logger.LogWarningSanitized("Article not found for path: {Path}", path);
                     Navigation.NavigateTo("/", replace: true);
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading article by path: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Error loading article by path: {Path}", path);
             if (!TreeStateService.SelectedArticleId.HasValue)
             {
                 Navigation.NavigateTo("/", replace: true);
@@ -314,7 +324,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading quote: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Error loading quote");
             // Fallback quote already handled in service
         }
         finally
@@ -354,7 +364,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading dashboard: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Error loading dashboard data");
         }
         finally
         {
@@ -432,7 +442,7 @@ else
         var created = await ArticleApi.CreateArticleAsync(createDto);
         if (created == null)
         {
-            Console.Error.WriteLine("Failed to create article");
+            _logger.LogErrorSanitized("Failed to create article");
             return;
         }
 

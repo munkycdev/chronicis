@@ -1,6 +1,8 @@
+using Chronicis.Shared.Extensions;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -65,7 +67,7 @@ public class ArcsController : ControllerBase
             return BadRequest(new { error = "CampaignId is required" });
         }
 
-        _logger.LogDebug("Creating arc '{Name}' in campaign {CampaignId} for user {UserId}",
+        _logger.LogDebugSanitized("Creating arc '{Name}' in campaign {CampaignId} for user {UserId}",
             dto.Name, dto.CampaignId, user.Id);
 
         var arc = await _arcService.CreateArcAsync(dto, user.Id);
