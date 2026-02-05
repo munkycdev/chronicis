@@ -1,5 +1,6 @@
 @using Chronicis.Client.Components.Shared
 @inject NavigationManager Navigation
+@inject IArticleApiService ArticleApi
 
 <MudPaper Elevation="2" Class="@($"world-panel {(IsExpanded ? "expanded" : "collapsed")} {Class}")">
     <!-- World Header -->
@@ -94,7 +95,7 @@
                     <div class="characters-list">
                         @foreach (var character in World.MyCharacters)
                         {
-                            <div class="character-chip" @onclick="() => NavigateToCharacter(character.Id)" @onclick:stopPropagation="true">
+                            <div class="character-chip" @onclick="async () => await NavigateToCharacter(character.Id)" @onclick:stopPropagation="true">
                                 <IconDisplay Icon="@character.IconEmoji" DefaultIcon="👤" CssClass="character-chip-icon" />
                                 <span>@character.Title</span>
                             </div>
@@ -102,27 +103,6 @@
                     </div>
                 </div>
             }
-
-            <!-- Quick Actions -->
-            <div class="section actions-section">
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Primary"
-                           Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.Visibility"
-                           OnClick="ViewWorld">
-                    View World
-                </MudButton>
-                @if (World.Campaigns.Any(c => c.IsActive))
-                {
-                    <MudButton Variant="Variant.Outlined"
-                               Color="Color.Primary"
-                               Size="Size.Small"
-                               StartIcon="@Icons.Material.Filled.Add"
-                               OnClick="AddSessionNote">
-                        + Session Note
-                    </MudButton>
-                }
-            </div>
         </div>
     }
 </MudPaper>
@@ -302,9 +282,14 @@
         }
     }
 
-    private void NavigateToCharacter(Guid characterId)
+    private async Task NavigateToCharacter(Guid characterId)
     {
-        Navigation.NavigateTo($"/article/{characterId}", forceLoad: true);
+        var article = await ArticleApi.GetArticleDetailAsync(characterId);
+        if (article != null && article.Breadcrumbs.Any())
+        {
+            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
+            Navigation.NavigateTo($"/article/{path}");
+        }
     }
 
     private string FormatRelativeTime(DateTime dateTime)
