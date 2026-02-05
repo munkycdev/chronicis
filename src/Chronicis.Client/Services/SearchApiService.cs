@@ -26,7 +26,7 @@ public class SearchApiService : ISearchApiService
         var encodedQuery = HttpUtility.UrlEncode(query);
 
         return await _http.GetEntityAsync<GlobalSearchResultsDto>(
-            $"articles/search?query={encodedQuery}",
+            $"search?query={encodedQuery}",
             _logger,
             $"search results for '{query}'");
     }
