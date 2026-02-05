@@ -32,27 +32,6 @@ public static class DatadogDiagnostics
         {
             var envVars = ReadEnvironmentVariables();
             var tracerSettings = Tracer.Instance.Settings;
-            
-            logger.Information(
-                "Datadog environment variables: " +
-                "DD_SERVICE={Service}, DD_ENV={Env}, DD_AGENT_HOST={AgentHost}, " +
-                "DD_TRACE_AGENT_PORT={AgentPort}, DD_LOGS_INJECTION={LogsInjection}, DD_TRACE_ENABLED={TraceEnabled}",
-                envVars.DD_SERVICE ?? "(not set)",
-                envVars.DD_ENV ?? "(not set)",
-                envVars.DD_AGENT_HOST ?? "(not set)",
-                envVars.DD_TRACE_AGENT_PORT ?? "(not set)",
-                envVars.DD_LOGS_INJECTION ?? "(not set)",
-                envVars.DD_TRACE_ENABLED ?? "(not set)");
-            
-            logger.Information(
-                "Datadog tracer state: " +
-                "ServiceName={Service}, Environment={Env}, AgentUri={AgentUri}, " +
-                "LogsInjectionEnabled={LogsInjection}, TraceEnabled={TraceEnabled}",
-                tracerSettings.ServiceName ?? "(null)",
-                tracerSettings.Environment ?? "(null)",
-                tracerSettings.AgentUri?.ToString() ?? "(null)",
-                tracerSettings.LogsInjectionEnabled,
-                tracerSettings.TraceEnabled);
         }
         catch (Exception ex)
         {
