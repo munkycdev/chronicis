@@ -1,3 +1,4 @@
+using Chronicis.Shared.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -48,7 +49,7 @@ public class ExternalLinkContentService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "External link provider {Source} failed to get content for {Id}", source, id);
+            _logger.LogErrorSanitized(ex, "External link provider {Source} failed to get content for {Id}", source, id);
             return null;
         }
 

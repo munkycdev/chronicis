@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using Chronicis.Shared.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services.ExternalLinks;
@@ -150,13 +151,13 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         var (category, itemKey) = ParseId(id);
         if (string.IsNullOrEmpty(category) || string.IsNullOrEmpty(itemKey))
         {
-            _logger.LogWarning("Invalid id format: {Id}", id);
+            _logger.LogWarningSanitized("Invalid id format: {Id}", id);
             return CreateEmptyContent(id);
         }
 
         if (!Categories.TryGetValue(category, out var config))
         {
-            _logger.LogWarning("Unknown category in id: {Category}", category);
+            _logger.LogWarningSanitized("Unknown category in id: {Category}", category);
             return CreateEmptyContent(id);
         }
 
@@ -165,12 +166,12 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         try
         {
             var url = $"/v2/{config.Endpoint}/{itemKey}/";
-            _logger.LogDebug("Fetching Open5e content: {Url}", url);
+            _logger.LogDebugSanitized("Fetching Open5e content: {Url}", url);
 
             using var response = await client.GetAsync(url, ct);
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Open5e content fetch failed for {Id} with status {StatusCode}",
+                _logger.LogWarningSanitized("Open5e content fetch failed for {Id} with status {StatusCode}",
                     id, response.StatusCode);
                 return CreateEmptyContent(id);
             }
@@ -196,7 +197,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Open5e content fetch failed for {Id}", id);
+            _logger.LogErrorSanitized(ex, "Open5e content fetch failed for {Id}", id);
             return CreateEmptyContent(id);
         }
     }
@@ -219,7 +220,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
             using var response = await client.GetAsync(url, ct);
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Open5e search failed for {Category} with status {StatusCode}",
+                _logger.LogWarningSanitized("Open5e search failed for {Category} with status {StatusCode}",
                     category, response.StatusCode);
                 return new List<ExternalLinkSuggestion>();
             }
@@ -252,7 +253,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Open5e search failed for category {Category} query {Query}", category, query);
+            _logger.LogErrorSanitized(ex, "Open5e search failed for category {Category} query {Query}", category, query);
             return new List<ExternalLinkSuggestion>();
         }
     }

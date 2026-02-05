@@ -501,7 +501,14 @@ function htmlToMarkdown(html) {
     markdown = markdown.replace(/<p[^>]*>/gi, '');
     markdown = markdown.replace(/<\/p>/gi, '\n\n');
     markdown = markdown.replace(/<br\s*\/?>/gi, '\n');
-    markdown = markdown.replace(/<[^>]+>/g, '');
+    
+    // Iteratively remove HTML tags to handle malformed/nested tags
+    // This prevents bypass via constructs like <script<script>>
+    let previousLength;
+    do {
+        previousLength = markdown.length;
+        markdown = markdown.replace(/<[^>]+>/g, '');
+    } while (markdown.length !== previousLength && markdown.includes('<'));
 
     // Clean up extra whitespace
     markdown = markdown.replace(/\n{3,}/g, '\n\n');

@@ -1,3 +1,4 @@
+using Chronicis.Shared.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Chronicis.Api.Repositories;
@@ -43,7 +44,7 @@ public class ExternalLinkSuggestionService
             
             if (enabledProvider == default)
             {
-                _logger.LogDebug("Provider {Source} is not enabled for world {WorldId}", source, worldId);
+                _logger.LogDebugSanitized("Provider {Source} is not enabled for world {WorldId}", source, worldId);
                 return Array.Empty<ExternalLinkSuggestion>();
             }
         }
@@ -70,7 +71,7 @@ public class ExternalLinkSuggestionService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "External link provider {Source} failed to search for query {Query}", source, query);
+            _logger.LogErrorSanitized(ex, "External link provider {Source} failed to search for query {Query}", source, query);
             suggestions = Array.Empty<ExternalLinkSuggestion>();
         }
 

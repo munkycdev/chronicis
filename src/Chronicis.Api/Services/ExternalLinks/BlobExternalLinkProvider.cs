@@ -1,5 +1,6 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Chronicis.Shared.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 using System.Diagnostics;
 using System.Text.Json;
@@ -129,7 +130,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
                 // Search within category
                 var filtered = FilterCategoryItems(index, matchedCategory, searchTerm);
 
-                _logger.LogDebug(
+                _logger.LogDebugSanitized(
                     "Search completed - Provider={Key}, Category={Category}, SearchTerm={SearchTerm}, Results={Count}",
                     _options.Key, matchedCategory, searchTerm, filtered.Count);
 
@@ -168,7 +169,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         }
 
         // No matches - return empty
-        _logger.LogDebug(
+        _logger.LogDebugSanitized(
             "No matching categories - Provider={Key}, Query={Query}",
             _options.Key, query);
         return Array.Empty<ExternalLinkSuggestion>();
@@ -181,7 +182,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         // Step 1: Validate ID format
         if (!BlobIdValidator.IsValid(id, out var validationError))
         {
-            _logger.LogWarning(
+            _logger.LogWarningSanitized(
                 "Invalid content ID - Provider={Key}, Id={Id}, Error={Error}",
                 _options.Key, id, validationError);
             
@@ -194,7 +195,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         // Ensure parsing succeeded (should not fail if validation passed, but be defensive)
         if (string.IsNullOrWhiteSpace(category) || string.IsNullOrWhiteSpace(slug))
         {
-            _logger.LogWarning(
+            _logger.LogWarningSanitized(
                 "Failed to parse content ID after validation - Provider={Key}, Id={Id}",
                 _options.Key, id);
             
@@ -205,7 +206,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         var categories = await GetCategoriesAsync(ct);
         if (!categories.Contains(category, StringComparer.OrdinalIgnoreCase))
         {
-            _logger.LogWarning(
+            _logger.LogWarningSanitized(
                 "Content requested for invalid category - Provider={Key}, Category={Category}, Id={Id}",
                 _options.Key, category, id);
             
@@ -216,7 +217,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         var cacheKey = BuildCacheKey("Content", id);
         if (_cache.TryGetValue<ExternalLinkContent>(cacheKey, out var cached) && cached != null)
         {
-            _logger.LogDebug(
+            _logger.LogDebugSanitized(
                 "Content cache hit - Provider={Key}, Id={Id}",
                 _options.Key, id);
             return cached;
@@ -228,7 +229,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
 
         if (item == null)
         {
-            _logger.LogWarning(
+            _logger.LogWarningSanitized(
                 "Content ID not found in category index - Provider={Key}, Id={Id}, Category={Category}, IndexCount={IndexCount}, SampleIds={SampleIds}",
                 _options.Key, id, category, index.Count, string.Join(", ", index.Take(5).Select(i => i.Id)));
             
@@ -279,7 +280,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
             };
             _cache.Set(cacheKey, result, cacheOptions);
 
-            _logger.LogDebug(
+            _logger.LogDebugSanitized(
                 "Content retrieved and rendered - Provider={Key}, Id={Id}, BlobName={BlobName}",
                 _options.Key, id, item.BlobName);
 
@@ -287,7 +288,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            _logger.LogErrorSanitized(ex,
                 "Failed to retrieve or render content - Provider={Key}, Id={Id}, BlobName={BlobName}",
                 _options.Key, id, item.BlobName);
             
@@ -455,7 +456,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         // If we found files directly under the category, it's flat (no subcategories)
         if (hasFiles && subcategories.Count > 0)
         {
-            _logger.LogWarning(
+            _logger.LogWarningSanitized(
                 "Category has BOTH files and subfolders - treating as flat - Category={Category}",
                 category);
             return new List<string>();
@@ -605,7 +606,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         // Add item results after categories, limit total
         results.AddRange(itemResults.Take(_options.MaxSuggestions - results.Count));
         
-        _logger.LogDebug(
+        _logger.LogDebugSanitized(
             "Cross-category search - Provider={Key}, Query={Query}, Categories={CatCount}, Items={ItemCount}",
             _options.Key, query, matchingCategories.Count, itemResults.Count);
         
@@ -625,7 +626,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         var categories = await GetCategoriesAsync(ct);
         if (!categories.Contains(category, StringComparer.OrdinalIgnoreCase))
         {
-            _logger.LogWarning(
+            _logger.LogWarningSanitized(
                 "Category not found - Provider={Key}, Category={Category}",
                 _options.Key, category);
             return new List<CategoryItem>();
@@ -636,13 +637,13 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         // Check cache first
         if (_cache.TryGetValue<List<CategoryItem>>(cacheKey, out var cached) && cached != null)
         {
-            _logger.LogDebug(
+            _logger.LogDebugSanitized(
                 "Category index cache hit - Provider={Key}, Category={Category}, Count={Count}",
                 _options.Key, category, cached.Count);
             return cached;
         }
 
-        _logger.LogDebug(
+        _logger.LogDebugSanitized(
             "Building category index - Provider={Key}, Category={Category}",
             _options.Key, category);
 
@@ -667,7 +668,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
             if (blobItem.Properties.ContentLength.HasValue &&
                 blobItem.Properties.ContentLength.Value > 5_000_000) // 5 MB
             {
-                _logger.LogWarning(
+                _logger.LogWarningSanitized(
                     "Skipping large blob - Provider={Key}, Blob={Blob}, Size={Size}",
                     _options.Key, blobName, blobItem.Properties.ContentLength.Value);
                 continue;
@@ -683,7 +684,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
             // CRITICAL: Skip if slug is empty (per contract)
             if (string.IsNullOrWhiteSpace(slug))
             {
-                _logger.LogWarning(
+                _logger.LogWarningSanitized(
                     "Skipping blob due to empty slug - Provider={Key}, Blob={Blob}",
                     _options.Key, blobName);
                 continue;
@@ -706,7 +707,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
             .ToList();
 
         sw.Stop();
-        _logger.LogDebug(
+        _logger.LogDebugSanitized(
             "Category index built - Provider={Key}, Category={Category}, Count={Count}, Elapsed={Elapsed}ms",
             _options.Key, category, sortedItems.Count, sw.ElapsedMilliseconds);
 
