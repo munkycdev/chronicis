@@ -1,0 +1,103 @@
+@using Chronicis.Shared.DTOs.Quests
+@using Chronicis.Shared.Enums
+
+<div class="arc-quest-list">
+    <div class="d-flex align-center justify-space-between mb-3">
+        <MudText Typo="Typo.h6" Style="color: var(--chronicis-beige-gold);">
+            <MudIcon Icon="@Icons.Material.Filled.Flag" Size="Size.Small" Class="mr-2" />
+            Quests
+        </MudText>
+        @if (_isGm)
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="CreateQuest"
+                       Disabled="_isLoading || _isCreating">
+                @if (_isCreating)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" />
+                }
+                <span>New Quest</span>
+            </MudButton>
+        }
+    </div>
+
+    @if (_loadingError != null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            <div class="d-flex align-center justify-space-between">
+                <div>
+                    <strong>Failed to load quests</strong><br />
+                    <span style="font-size: 0.875rem;">@_loadingError</span>
+                </div>
+                <MudButton Variant="Variant.Text" 
+                           Color="Color.Error" 
+                           OnClick="LoadQuestsAsync">
+                    Retry
+                </MudButton>
+            </div>
+        </MudAlert>
+    }
+    else if (_isLoading)
+    {
+        <div class="d-flex align-center gap-2 mb-4">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+            <MudText Typo="Typo.body2" Style="opacity: 0.7;">Loading quests...</MudText>
+        </div>
+    }
+    else if (_quests.Any())
+    {
+        <MudList T="QuestDto" Dense="true" Class="mb-4">
+            @foreach (var quest in _quests.OrderByDescending(q => q.UpdatedAt))
+            {
+                <MudListItem T="QuestDto" Class="quest-list-item">
+                    <div class="d-flex align-center justify-space-between">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-center gap-2">
+                                <MudText Typo="Typo.body1" Class="quest-title">@quest.Title</MudText>
+                                <QuestStatusChip Status="@quest.Status" />
+                                @if (quest.IsGmOnly)
+                                {
+                                    <MudChip Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">
+                                        GM Only
+                                    </MudChip>
+                                }
+                            </div>
+                            <MudText Typo="Typo.caption" Class="text-muted">
+                                Updated @quest.UpdatedAt.ToString("MMM d, yyyy")
+                                @if (quest.UpdateCount > 0)
+                                {
+                                    <span> · @quest.UpdateCount update@(quest.UpdateCount == 1 ? "" : "s")</span>
+                                }
+                            </MudText>
+                        </div>
+                        @if (_isGm)
+                        {
+                            <div class="d-flex gap-2">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Size="Size.Small"
+                                               Color="Color.Primary"
+                                               OnClick="@(() => EditQuest(quest))"
+                                               title="Edit quest" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               OnClick="@(() => DeleteQuest(quest))"
+                                               Disabled="_isDeleting"
+                                               title="Delete quest" />
+                            </div>
+                        }
+                    </div>
+                </MudListItem>
+            }
+        </MudList>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4">
+            No quests yet. @(_isGm ? "Create your first quest to track objectives and goals!" : "The GM hasn't created any quests yet.")
+        </MudAlert>
+    }
+</div>

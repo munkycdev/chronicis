@@ -99,4 +99,14 @@ public class User
     /// All documents uploaded by this user.
     /// </summary>
     public ICollection<WorldDocument> UploadedDocuments { get; set; } = new List<WorldDocument>();
+
+    /// <summary>
+    /// All quests created by this user.
+    /// </summary>
+    public ICollection<Quest> CreatedQuests { get; set; } = new List<Quest>();
+
+    /// <summary>
+    /// All quest updates created by this user.
+    /// </summary>
+    public ICollection<QuestUpdate> CreatedQuestUpdates { get; set; } = new List<QuestUpdate>();
 }

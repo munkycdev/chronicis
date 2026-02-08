@@ -1,0 +1,59 @@
+@using Chronicis.Shared.DTOs.Quests
+@using Chronicis.Shared.Enums
+@using Microsoft.JSInterop
+
+<div class="arc-quest-editor">
+    @if (_quest != null)
+    {
+        <!-- Quest Title -->
+        <MudTextField @bind-Value="_editTitle"
+                      Label="Quest Title"
+                      Variant="Variant.Outlined"
+                      Class="mb-3"
+                      Immediate="true"
+                      OnBlur="SaveTitleAsync"
+                      @onkeydown="OnTitleKeyDown" />
+
+        <!-- Status and Toggles -->
+        <div class="d-flex gap-3 mb-3">
+            <MudSelect T="QuestStatus"
+                       Value="_editStatus"
+                       Label="Status"
+                       Variant="Variant.Outlined"
+                       ValueChanged="OnStatusChanged">
+                <MudSelectItem T="QuestStatus" Value="QuestStatus.Active">Active</MudSelectItem>
+                <MudSelectItem T="QuestStatus" Value="QuestStatus.Completed">Completed</MudSelectItem>
+                <MudSelectItem T="QuestStatus" Value="QuestStatus.Failed">Failed</MudSelectItem>
+                <MudSelectItem T="QuestStatus" Value="QuestStatus.Abandoned">Abandoned</MudSelectItem>
+            </MudSelect>
+
+            <MudSwitch T="bool"
+                       Value="_editIsGmOnly"
+                       Label="GM Only"
+                       Color="Color.Warning"
+                       ValueChanged="OnGmOnlyChanged" />
+
+            <MudNumericField T="int"
+                             Value="_editSortOrder"
+                             Label="Sort Order"
+                             Variant="Variant.Outlined"
+                             Min="0"
+                             ValueChanged="OnSortOrderChanged" />
+        </div>
+
+        <!-- Description (TipTap Editor) -->
+        <MudText Typo="Typo.subtitle2" Class="mb-2">Description</MudText>
+        <div id="@EditorId" class="chronicis-editor-content quest-description-editor"></div>
+
+        <!-- Save Status -->
+        <div class="mt-3">
+            <SaveStatusIndicator IsSaving="_isSaving" HasUnsavedChanges="_hasUnsavedChanges" />
+        </div>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">
+            Select a quest to edit
+        </MudAlert>
+    }
+</div>

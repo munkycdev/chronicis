@@ -2,16 +2,36 @@
 
 window.chronicisKeyboardShortcuts = {
     dotNetHelper: null,
+    keyDownHandler: null,
     
     initialize: function(dotNetHelper) {
+        // Prevent duplicate initialization
+        if (this.dotNetHelper) {
+            console.warn('Keyboard shortcuts already initialized');
+            return;
+        }
+        
         this.dotNetHelper = dotNetHelper;
         
-        document.addEventListener('keydown', this.handleKeyDown.bind(this));
+        // Store bound handler for proper cleanup
+        this.keyDownHandler = this.handleKeyDown.bind(this);
+        document.addEventListener('keydown', this.keyDownHandler);
+        
+        // Register global quest drawer close function for TipTap editor
+        window.chronicisCloseQuestDrawer = () => {
+            if (this.dotNetHelper) {
+                this.dotNetHelper.invokeMethodAsync('OnCtrlQ');
+            }
+        };
     },
     
     dispose: function() {
-        document.removeEventListener('keydown', this.handleKeyDown.bind(this));
+        if (this.keyDownHandler) {
+            document.removeEventListener('keydown', this.keyDownHandler);
+            this.keyDownHandler = null;
+        }
         this.dotNetHelper = null;
+        window.chronicisCloseQuestDrawer = null;
     },
     
     handleKeyDown: function(e) {
@@ -47,6 +67,15 @@ window.chronicisKeyboardShortcuts = {
             e.preventDefault();
             if (this.dotNetHelper) {
                 this.dotNetHelper.invokeMethodAsync('OnCtrlM');
+            }
+            return;
+        }
+        
+        // Ctrl+Q - Toggle quest drawer (works everywhere)
+        if (e.ctrlKey && e.key === 'q') {
+            e.preventDefault();
+            if (this.dotNetHelper) {
+                this.dotNetHelper.invokeMethodAsync('OnCtrlQ');
             }
             return;
         }

@@ -1,0 +1,474 @@
+@* QuestDrawer.razor - Right-side quest drawer for Session/SessionNote pages *@
+@* Provides quick reference and update capabilities for Arc quests *@
+
+@using Chronicis.Shared.Enums
+@using Chronicis.Shared.DTOs
+@using Chronicis.Shared.DTOs.Quests
+@inject IQuestDrawerService QuestDrawerService
+@inject IQuestApiService QuestApi
+@inject ITreeStateService TreeState
+@inject ISnackbar Snackbar
+@inject ILogger<QuestDrawer> Logger
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<style>
+    .quest-drawer,
+    .quest-drawer .mud-drawer-content {
+        background-color: transparent !important;
+        border-right-color: transparent;
+    }
+    .quest-drawer .mud-drawer-content {
+        padding: 8px;
+        background-color: var(--chronicis-soft-off-white) !important;
+    }
+    .quest-drawer.mud-drawer-persistent {
+        height: auto !important;
+    }
+
+    /* Scrollable quest drawer */
+    .quest-drawer-scrollable {
+        height: calc(100vh - 180px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-bottom: 24px;
+    }
+    
+    /* Section styling */
+    .quest-section {
+        margin-bottom: 8px;
+    }
+    
+    .quest-section-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px 8px 16px;
+    }
+    
+    .quest-section-icon {
+        color: var(--chronicis-beige-gold);
+    }
+    
+    .quest-section-title {
+        color: var(--mud-palette-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.75px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    /* Quest item styling */
+    .quest-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border-left: 3px solid transparent;
+    }
+    
+    .quest-item:hover {
+        background-color: rgba(196, 175, 142, 0.1);
+    }
+    
+    .quest-item-selected {
+        background-color: rgba(196, 175, 142, 0.15);
+        border-left-color: var(--chronicis-beige-gold);
+    }
+    
+    .quest-item-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    
+    .quest-item-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--mud-palette-text-primary);
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .quest-item-description {
+        font-size: 0.813rem;
+        color: var(--mud-palette-text-secondary);
+        line-height: 1.4;
+    }
+    
+    /* Empty/Loading states */
+    .quest-drawer-empty-state,
+    .quest-drawer-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 24px;
+        text-align: center;
+    }
+    
+    /* Quest update editor */
+    .quest-update-section {
+        padding: 0 0 16px 0;
+    }
+    
+    .quest-editor-container {
+        margin-bottom: 12px;
+    }
+    
+    .quest-tiptap-editor {
+        min-height: 100px;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid rgba(0, 0, 0, 0.23);
+        border-radius: 4px;
+        padding: 12px;
+        background-color: white;
+    }
+    
+    .quest-tiptap-editor:focus-within {
+        border-color: var(--chronicis-beige-gold);
+        outline: none;
+    }
+    
+    /* Override TipTap content styling for compact quest updates */
+    .quest-tiptap-editor .chronicis-editor-content {
+        padding: 0;
+        min-height: unset;
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+    
+    .quest-tiptap-editor .chronicis-editor-content h1 {
+        font-size: 1.25rem;
+        margin-top: 8px;
+        margin-bottom: 4px;
+        border-bottom: none;
+    }
+    
+    .quest-tiptap-editor .chronicis-editor-content h2 {
+        font-size: 1.1rem;
+        margin-top: 8px;
+        margin-bottom: 4px;
+        border-bottom: none;
+    }
+    
+    .quest-tiptap-editor .chronicis-editor-content h3 {
+        font-size: 1rem;
+        margin-top: 6px;
+        margin-bottom: 4px;
+    }
+    
+    .quest-tiptap-editor .chronicis-editor-content p {
+        margin-bottom: 8px;
+        color: var(--mud-palette-text-primary);
+    }
+    
+    .quest-tiptap-editor .chronicis-editor-content p:last-child {
+        margin-bottom: 0;
+    }
+    
+    .quest-tiptap-editor:focus-within {
+        border-color: var(--chronicis-beige-gold);
+        outline: 1px solid var(--chronicis-beige-gold);
+    }
+    
+    /* Session association checkbox - ensure label is visible */
+    .quest-update-section .mud-checkbox .mud-typography,
+    .quest-update-section .mud-checkbox-label,
+    .quest-update-section .mud-input-label {
+        color: var(--mud-palette-text-primary) !important;
+        font-size: 0.875rem !important;
+    }
+    
+    .quest-update-section .mud-checkbox {
+        color: var(--mud-palette-text-primary) !important;
+    }
+    
+    /* Quest drawer header - larger, centered */
+    .quest-drawer-header {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+    }
+    
+    .quest-drawer-header .mud-typography {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.25rem !important;
+        font-weight: 600;
+    }
+    
+    .quest-drawer-header .mud-icon-root {
+        font-size: 1.5rem !important;
+    }
+        background-color: white;
+    }
+    
+    .quest-tiptap-editor:focus-within {
+        border-color: var(--chronicis-beige-gold);
+        outline: 1px solid var(--chronicis-beige-gold);
+    }
+    
+    /* Quest updates list */
+    .quest-updates-section {
+        padding: 0 16px 16px 16px;
+    }
+    
+    .quest-updates-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .quest-update-entry {
+        padding: 12px;
+        background-color: rgba(255, 255, 255, 0.6);
+        border-radius: 4px;
+        border-left: 3px solid rgba(196, 175, 142, 0.3);
+    }
+    
+    .quest-update-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        font-size: 0.75rem;
+    }
+    
+    .quest-update-body {
+        font-size: 0.813rem;
+        color: var(--mud-palette-text-primary);
+        line-height: 1.4;
+    }
+</style>
+
+<MudDrawer @bind-Open="IsOpen"
+           Fixed="true"
+           Anchor="Anchor.End"
+           Elevation="9999"
+           Variant="@DrawerVariant.Persistent"
+           ClipMode="@DrawerClipMode.Always"
+           Class="quest-drawer">
+    <MudDrawerHeader Class="quest-drawer-header">
+        <MudText Typo="Typo.h5">
+            <MudIcon Icon="@Icons.Material.Filled.Assignment" />
+            Quests
+        </MudText>
+    </MudDrawerHeader>
+    <MudDrawerContainer Class="quest-drawer-scrollable chronicis-scrollbar-light">
+        
+        @if (_emptyStateMessage != null)
+        {
+            <!-- Empty State -->
+            <div class="quest-drawer-empty-state">
+                <MudIcon Icon="@Icons.Material.Filled.Assignment" 
+                         Size="Size.Large" 
+                         Style="font-size: 4rem; opacity: 0.3; color: var(--chronicis-beige-gold);" />
+                <MudText Typo="Typo.body1" Align="Align.Center" Class="mt-3">
+                    @_emptyStateMessage
+                </MudText>
+            </div>
+        }
+        else if (_loadingError != null)
+        {
+            <!-- Error State -->
+            <div class="quest-drawer-empty-state">
+                <MudIcon Icon="@Icons.Material.Filled.Error" 
+                         Size="Size.Large" 
+                         Color="Color.Error"
+                         Style="font-size: 4rem; opacity: 0.5;" />
+                <MudText Typo="Typo.body1" Align="Align.Center" Class="mt-3" Color="Color.Error">
+                    Failed to load quests
+                </MudText>
+                <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-2" Style="opacity: 0.7;">
+                    @_loadingError
+                </MudText>
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Primary" 
+                           Class="mt-3"
+                           OnClick="LoadQuestsAsync">
+                    Retry
+                </MudButton>
+            </div>
+        }
+        else if (_isLoading)
+        {
+            <!-- Loading State -->
+            <div class="quest-drawer-loading">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                <MudText Typo="Typo.body2" Class="mt-3" Style="opacity: 0.7;">
+                    Loading quests...
+                </MudText>
+            </div>
+        }
+        else if (_quests != null && _quests.Any())
+        {
+            <!-- ========================================= -->
+            <!-- SECTION 1: ACTIVE QUESTS                 -->
+            <!-- ========================================= -->
+            <div class="quest-section">
+                <div class="quest-section-header">
+                    <MudIcon Icon="@Icons.Material.Filled.Assignment" Size="Size.Small" Class="quest-section-icon" />
+                    <MudText Typo="Typo.subtitle2" Class="quest-section-title">Active Quests</MudText>
+                    <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary); font-size: 0.7rem;">
+                        @_quests.Count
+                    </MudText>
+                </div>
+            </div>
+            
+            <!-- Quest List -->
+            @foreach (var quest in _quests)
+            {
+                <div class="quest-item @(_selectedQuestId == quest.Id ? "quest-item-selected" : "")"
+                     @onclick="@(() => SelectQuest(quest.Id))"
+                     role="button"
+                     tabindex="0"
+                     @onkeydown="@(e => HandleQuestItemKeyDown(e, quest.Id))">
+                    <div class="quest-item-header">
+                        <MudText Typo="Typo.subtitle2" Class="quest-item-title">
+                            @quest.Title
+                        </MudText>
+                        <QuestStatusChip Status="@quest.Status" />
+                    </div>
+                    @if (_selectedQuestId == quest.Id && !string.IsNullOrEmpty(quest.Description))
+                    {
+                        <div class="quest-item-description mt-2">
+                            @((MarkupString)quest.Description)
+                        </div>
+                    }
+                </div>
+            }
+            
+            @if (_selectedQuest != null)
+            {
+                <MudDivider Class="my-4" Style="opacity: 0.3;" />
+                
+                <!-- ========================================= -->
+                <!-- SECTION 2: ADD UPDATE                    -->
+                <!-- ========================================= -->
+                <div class="quest-section">
+                    <div class="quest-section-header">
+                        <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="quest-section-icon" />
+                        <MudText Typo="Typo.subtitle2" Class="quest-section-title">Add Update</MudText>
+                    </div>
+                </div>
+                
+                <div class="quest-update-section">
+                    <!-- TipTap Editor Container -->
+                    <div class="quest-editor-container px-3">
+                        <div id="quest-update-editor" class="quest-tiptap-editor"></div>
+                    </div>
+                    
+                    @if (_validationError != null)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Error" Class="px-3 mt-1">
+                            @_validationError
+                        </MudText>
+                    }
+                    
+                    <!-- Session Association Checkbox -->
+                    @if (_canAssociateSession)
+                    {
+                        <div class="px-3 mt-2">
+                            <MudCheckBox T="bool" @bind-Value="_associateWithSession"
+                                         Label="Associate with this session"
+                                         Dense="true"
+                                         Color="Color.Primary" />
+                        </div>
+                    }
+                    
+                    <!-- Submit Button -->
+                    <div class="px-3 mt-3">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   FullWidth="true"
+                                   Disabled="@_isSubmitting"
+                                   OnClick="SubmitUpdate">
+                            @if (_isSubmitting)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                <span>Submitting...</span>
+                            }
+                            else
+                            {
+                                <span>Add Update</span>
+                            }
+                        </MudButton>
+                    </div>
+                </div>
+                
+                <MudDivider Class="my-4" Style="opacity: 0.3;" />
+                
+                <!-- ========================================= -->
+                <!-- SECTION 3: RECENT UPDATES                -->
+                <!-- ========================================= -->
+                <div class="quest-section">
+                    <div class="quest-section-header">
+                        <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Small" Class="quest-section-icon" />
+                        <MudText Typo="Typo.subtitle2" Class="quest-section-title">Recent Updates</MudText>
+                    </div>
+                </div>
+                
+                <div class="quest-updates-section">
+                    @if (_loadingUpdates)
+                    {
+                        <div class="d-flex align-center gap-2">
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                            <MudText Typo="Typo.body2" Style="opacity: 0.6;">Loading updates...</MudText>
+                        </div>
+                    }
+                    else if (_recentUpdates == null || !_recentUpdates.Any())
+                    {
+                        <MudText Typo="Typo.body2" Style="opacity: 0.6;">
+                            No updates yet. Be the first to add one!
+                        </MudText>
+                    }
+                    else
+                    {
+                        <div class="quest-updates-list">
+                            @foreach (var update in _recentUpdates)
+                            {
+                                <div class="quest-update-entry">
+                                    <div class="quest-update-meta">
+                                        <MudText Typo="Typo.caption">
+                                            <strong>@update.CreatedByName</strong>
+                                            @if (update.SessionId.HasValue && !string.IsNullOrEmpty(update.SessionTitle))
+                                            {
+                                                <span> in @update.SessionTitle</span>
+                                            }
+                                        </MudText>
+                                        <MudText Typo="Typo.caption" Style="opacity: 0.7;">
+                                            @update.CreatedAt.ToString("MMM d 'at' h:mm tt")
+                                        </MudText>
+                                    </div>
+                                    <div class="quest-update-body">
+                                        @((MarkupString)update.Body)
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <!-- No Quests State -->
+            <div class="quest-drawer-empty-state">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" 
+                         Size="Size.Large" 
+                         Style="font-size: 4rem; opacity: 0.3; color: var(--chronicis-beige-gold);" />
+                <MudText Typo="Typo.body1" Align="Align.Center" Class="mt-3">
+                    No quests in this arc yet
+                </MudText>
+                <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-2" Style="opacity: 0.7;">
+                    The GM can create quests from the Arc detail page
+                </MudText>
+            </div>
+        }
+        
+    </MudDrawerContainer>
+</MudDrawer>

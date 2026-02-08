@@ -1,6 +1,7 @@
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using Chronicis.Client.Models
 @using Chronicis.Shared.DTOs
+@using Chronicis.Client.Components.Quests
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
 @inject ITreeStateService TreeState
@@ -11,6 +12,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject MudTheme ChronicisTheme
 @inject IMetadataDrawerService MetadataDrawerService
+@inject IQuestDrawerService QuestDrawerService
 @inject IKeyboardShortcutService KeyboardShortcutService
 @inject ILogger<AuthenticatedLayout> Logger
 @implements IAsyncDisposable
@@ -139,6 +141,9 @@
             <PublicFooter />
         </div>
     </MudMainContent>
+    
+    <!-- Quest Drawer (right side, Session/SessionNote pages only) -->
+    <QuestDrawer />
 </MudLayout>
 
 @code {
@@ -167,6 +172,12 @@
     public void OnCtrlM()
     {
         MetadataDrawerService.Toggle();
+    }
+
+    [JSInvokable]
+    public void OnCtrlQ()
+    {
+        QuestDrawerService.Toggle();
     }
 
     [JSInvokable]

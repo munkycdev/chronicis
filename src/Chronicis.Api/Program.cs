@@ -205,6 +205,8 @@ try
     builder.Services.AddScoped<IWorldDocumentService, WorldDocumentService>();
     builder.Services.AddScoped<IExportService, ExportService>();
     builder.Services.AddScoped<IResourceProviderService, ResourceProviderService>();
+    builder.Services.AddScoped<IQuestService, QuestService>();
+    builder.Services.AddScoped<IQuestUpdateService, QuestUpdateService>();
 
     // Repositories
     builder.Services.AddScoped<IResourceProviderRepository, ResourceProviderRepository>();

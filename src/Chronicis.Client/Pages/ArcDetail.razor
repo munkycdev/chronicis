@@ -1,14 +1,18 @@
 @page "/arc/{ArcId:guid}"
 @attribute [Authorize]
 @using Chronicis.Shared.DTOs
+@using Chronicis.Shared.DTOs.Quests
 @using Chronicis.Shared.Enums
 @using Chronicis.Client.Components.Dialogs
 @using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Components.Quests
 @using Chronicis.Client.Utilities
 @inject IArcApiService ArcApi
 @inject ICampaignApiService CampaignApi
 @inject IWorldApiService WorldApi
 @inject IArticleApiService ArticleApi
+@inject IQuestApiService QuestApi
+@inject IAuthService AuthService
 @inject ITreeStateService TreeState
 @inject IBreadcrumbService BreadcrumbService
 @inject ISnackbar Snackbar
@@ -81,6 +85,23 @@ else if (_arc != null)
             <MudAlert Severity="Severity.Info" Class="mb-4">
                 No sessions yet. Create your first session to start documenting your adventures!
             </MudAlert>
+        }
+
+        <!-- Quests Section -->
+        <ArcQuestList ArcId="@ArcId" IsGm="_isCurrentUserGM" />
+
+        @if (_selectedQuest != null)
+        {
+            <MudDivider Class="my-4" />
+            
+            <!-- Quest Editor -->
+            <ArcQuestEditor Quest="_selectedQuest" 
+                            OnQuestUpdated="OnQuestUpdated" />
+
+            <!-- Quest Timeline -->
+            <ArcQuestTimeline Quest="_selectedQuest" 
+                              IsGm="_isCurrentUserGM" 
+                              CurrentUserId="_currentUserId" />
         }
 
         <!-- Arc Info -->
@@ -171,6 +192,11 @@ else if (_arc != null)
     private bool _summaryExpanded = false;
     private List<BreadcrumbItem> _breadcrumbs = new();
 
+    // Quest state
+    private QuestDto? _selectedQuest;
+    private Guid _currentUserId;
+    private bool _isCurrentUserGM = false;
+
     protected override async Task OnParametersSetAsync()
     {
         await LoadArcAsync();
@@ -233,6 +259,24 @@ else if (_arc != null)
                 
                 // Highlight in tree
                 TreeState.ExpandPathToAndSelect(ArcId);
+
+                // Get current user info for quest permissions
+                var user = await AuthService.GetCurrentUserAsync();
+                if (user != null && _world != null)
+                {
+                    var worldDetail = await WorldApi.GetWorldAsync(_world.Id);
+                    if (worldDetail?.Members != null)
+                    {
+                        var currentMember = worldDetail.Members.FirstOrDefault(m => 
+                            m.Email.Equals(user.Email, StringComparison.OrdinalIgnoreCase));
+                        
+                        if (currentMember != null)
+                        {
+                            _currentUserId = currentMember.UserId;
+                            _isCurrentUserGM = currentMember.Role == WorldRole.GM;
+                        }
+                    }
+                }
             }
         }
         catch (Exception ex)
@@ -404,5 +448,11 @@ else if (_arc != null)
             // Fallback
             Navigation.NavigateTo($"/article/{session.Slug}");
         }
+    }
+
+    private void OnQuestUpdated(QuestDto updatedQuest)
+    {
+        _selectedQuest = updatedQuest;
+        StateHasChanged();
     }
 }

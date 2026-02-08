@@ -1,0 +1,124 @@
+@using Chronicis.Shared.DTOs.Quests
+@using Chronicis.Shared.Enums
+@using MudBlazor
+@inject IQuestApiService QuestApi
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Flag" Class="mr-2" />
+            New Quest
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_title"
+                      Label="Quest Title"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      RequiredError="Title is required"
+                      Placeholder="e.g., Find the Lost Artifact"
+                      Class="mb-3"
+                      @ref="_titleField"
+                      Immediate="true"
+                      OnKeyDown="@OnTitleKeyDown" />
+        
+        <MudTextField @bind-Value="_description"
+                      Label="Description (optional)"
+                      Variant="Variant.Outlined"
+                      Lines="3"
+                      Placeholder="Brief summary of the quest..."
+                      Class="mb-3" />
+        
+        <MudSelect T="QuestStatus"
+                   @bind-Value="_status"
+                   Label="Status"
+                   Variant="Variant.Outlined"
+                   Class="mb-3">
+            <MudSelectItem T="QuestStatus" Value="QuestStatus.Active">Active</MudSelectItem>
+            <MudSelectItem T="QuestStatus" Value="QuestStatus.Completed">Completed</MudSelectItem>
+            <MudSelectItem T="QuestStatus" Value="QuestStatus.Failed">Failed</MudSelectItem>
+            <MudSelectItem T="QuestStatus" Value="QuestStatus.Abandoned">Abandoned</MudSelectItem>
+        </MudSelect>
+        
+        <MudSwitch @bind-Value="_isGmOnly"
+                   Label="GM Only"
+                   Color="Color.Warning"
+                   Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled"
+                   OnClick="Submit"
+                   Disabled="@(string.IsNullOrWhiteSpace(_title) || _isSubmitting)">
+            @if (_isSubmitting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Create
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? MudDialog { get; set; }
+
+    [Parameter]
+    public Guid ArcId { get; set; }
+
+    private string _title = string.Empty;
+    private string _description = string.Empty;
+    private QuestStatus _status = QuestStatus.Active;
+    private bool _isGmOnly = false;
+    private bool _isSubmitting;
+    private MudTextField<string>? _titleField;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _titleField != null)
+        {
+            await _titleField.FocusAsync();
+        }
+    }
+
+    private async Task OnTitleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_title))
+        {
+            await Submit();
+        }
+    }
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_title) || _isSubmitting)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+
+        var createDto = new QuestCreateDto
+        {
+            Title = _title.Trim(),
+            Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(),
+            Status = _status,
+            IsGmOnly = _isGmOnly
+        };
+
+        var result = await QuestApi.CreateQuestAsync(ArcId, createDto);
+
+        _isSubmitting = false;
+
+        if (result != null)
+        {
+            MudDialog?.Close(DialogResult.Ok(result));
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+}

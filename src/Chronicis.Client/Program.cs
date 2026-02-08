@@ -130,6 +130,14 @@ builder.Services.AddScoped<IArcApiService>(sp =>
     return new ArcApiService(factory.CreateClient("ChronicisApi"), logger);
 });
 
+builder.Services.AddScoped<IQuestApiService>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var logger = sp.GetRequiredService<ILogger<QuestApiService>>();
+    var snackbar = sp.GetRequiredService<ISnackbar>();
+    return new QuestApiService(factory.CreateClient("ChronicisApi"), logger, snackbar);
+});
+
 builder.Services.AddScoped<ILinkApiService>(sp =>
 {
     var factory = sp.GetRequiredService<IHttpClientFactory>();
@@ -197,6 +205,7 @@ builder.Services.AddScoped<ITreeStateService, TreeStateService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAppContextService, AppContextService>();
 builder.Services.AddScoped<IMetadataDrawerService, MetadataDrawerService>();
+builder.Services.AddScoped<IQuestDrawerService, QuestDrawerService>();
 builder.Services.AddScoped<IKeyboardShortcutService, KeyboardShortcutService>();
 
 // Article cache service (for reducing API calls on tooltips/navigation)
@@ -204,6 +213,9 @@ builder.Services.AddScoped<IArticleCacheService, ArticleCacheService>();
 
 // Wiki link service (for creating articles from autocomplete)
 builder.Services.AddScoped<IWikiLinkService, WikiLinkService>();
+
+// Wiki link autocomplete service (shared by ArticleDetail and QuestDrawer)
+builder.Services.AddScoped<IWikiLinkAutocompleteService, WikiLinkAutocompleteService>();
 
 // Breadcrumb service (for consistent navigation breadcrumbs)
 builder.Services.AddScoped<IBreadcrumbService, BreadcrumbService>();

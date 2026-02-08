@@ -24,6 +24,8 @@ public class ChronicisDbContext : DbContext
     public DbSet<SummaryTemplate> SummaryTemplates { get; set; } = null!;
     public DbSet<ResourceProvider> ResourceProviders { get; set; } = null!;
     public DbSet<WorldResourceProvider> WorldResourceProviders { get; set; } = null!;
+    public DbSet<Quest> Quests { get; set; } = null!;
+    public DbSet<QuestUpdate> QuestUpdates { get; set; } = null!;
 
 
     public ChronicisDbContext(DbContextOptions<ChronicisDbContext> options)
@@ -48,6 +50,8 @@ public class ChronicisDbContext : DbContext
         ConfigureSummaryTemplate(modelBuilder);
         ConfigureResourceProvider(modelBuilder);
         ConfigureWorldResourceProvider(modelBuilder);
+        ConfigureQuest(modelBuilder);
+        ConfigureQuestUpdate(modelBuilder);
     }
 
     private static void ConfigureUser(ModelBuilder modelBuilder)
@@ -678,6 +682,108 @@ public class ChronicisDbContext : DbContext
 
             // Index for querying worlds by provider
             entity.HasIndex(wrp => wrp.ResourceProviderCode);
+        });
+    }
+
+    private static void ConfigureQuest(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Quest>(entity =>
+        {
+            entity.HasKey(q => q.Id);
+
+            // Title is required, max 300 characters
+            entity.Property(q => q.Title)
+                .HasMaxLength(300)
+                .IsRequired();
+
+            // Description is HTML from TipTap (nullable)
+            entity.Property(q => q.Description);
+
+            // Status enum
+            entity.Property(q => q.Status)
+                .IsRequired();
+
+            // IsGmOnly flag
+            entity.Property(q => q.IsGmOnly)
+                .HasDefaultValue(false);
+
+            // SortOrder for display ordering
+            entity.Property(q => q.SortOrder)
+                .HasDefaultValue(0);
+
+            // Timestamps
+            entity.Property(q => q.CreatedAt)
+                .IsRequired();
+
+            entity.Property(q => q.UpdatedAt)
+                .IsRequired();
+
+            // RowVersion for optimistic concurrency
+            entity.Property(q => q.RowVersion)
+                .IsRowVersion();
+
+            // Quest -> Arc (CASCADE delete - when arc is deleted, remove its quests)
+            entity.HasOne(q => q.Arc)
+                .WithMany()
+                .HasForeignKey(q => q.ArcId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Quest -> Creator (User) (RESTRICT - don't allow user deletion if they created quests)
+            entity.HasOne(q => q.Creator)
+                .WithMany(u => u.CreatedQuests)
+                .HasForeignKey(q => q.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes per architecture spec
+            entity.HasIndex(q => q.ArcId)
+                .HasDatabaseName("IX_Quest_ArcId");
+
+            entity.HasIndex(q => new { q.ArcId, q.Status })
+                .HasDatabaseName("IX_Quest_ArcId_Status");
+
+            entity.HasIndex(q => new { q.ArcId, q.UpdatedAt })
+                .HasDatabaseName("IX_Quest_ArcId_UpdatedAt");
+        });
+    }
+
+    private static void ConfigureQuestUpdate(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<QuestUpdate>(entity =>
+        {
+            entity.HasKey(qu => qu.Id);
+
+            // Body is HTML from TipTap (required, non-empty)
+            entity.Property(qu => qu.Body)
+                .IsRequired();
+
+            // Timestamp
+            entity.Property(qu => qu.CreatedAt)
+                .IsRequired();
+
+            // QuestUpdate -> Quest (CASCADE delete - when quest is deleted, remove its updates)
+            entity.HasOne(qu => qu.Quest)
+                .WithMany(q => q.Updates)
+                .HasForeignKey(qu => qu.QuestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // QuestUpdate -> Session (Article) (SET NULL - when session is deleted, preserve the update but clear the reference)
+            entity.HasOne(qu => qu.Session)
+                .WithMany()
+                .HasForeignKey(qu => qu.SessionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // QuestUpdate -> Creator (User) (RESTRICT - don't allow user deletion if they created updates)
+            entity.HasOne(qu => qu.Creator)
+                .WithMany(u => u.CreatedQuestUpdates)
+                .HasForeignKey(qu => qu.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes per architecture spec
+            entity.HasIndex(qu => new { qu.QuestId, qu.CreatedAt })
+                .HasDatabaseName("IX_QuestUpdate_QuestId_CreatedAt");
+
+            entity.HasIndex(qu => qu.SessionId)
+                .HasDatabaseName("IX_QuestUpdate_SessionId");
         });
     }
 }
