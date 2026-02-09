@@ -324,8 +324,12 @@
     background-color: rgba(196, 175, 142, 0.3);
 }
 
+.ProseMirror,
 .ProseMirror-focused {
-    outline: none;
+    outline: none !important;
+    outline-color:transparent !important;
+    border-color:transparent !important;
+    border-width:0;
 }
 
 .ProseMirror .ProseMirror-gapcursor {
