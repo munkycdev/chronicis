@@ -1,3 +1,18 @@
+@* 
+    ArticleDetailWikiLinkAutocomplete Component
+    
+    This is a legacy autocomplete implementation specifically for ArticleDetail.razor.
+    It differs from the newer WikiLinkAutocomplete component (in Shared) which uses
+    WikiLinkAutocompleteService for centralized state management.
+    
+    Key differences:
+    - Direct parameter-based control (no service dependency)
+    - Custom positioning logic for inline editing
+    - Create-new-article option in the autocomplete dropdown
+    
+    TODO: Consider migrating ArticleDetail to use the service-based approach
+*@
+
 @inject ILogger<WikiLinkAutocomplete> Logger
 
 <div class="wiki-link-autocomplete" 
