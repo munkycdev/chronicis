@@ -1,0 +1,68 @@
+@using Chronicis.Client.Services
+
+<div class="wiki-link-autocomplete" 
+     style="@GetPositionStyle()"
+     @ref="_autocompleteElement">
+    
+    @if (_autocompleteService.IsLoading)
+    {
+        <div class="wiki-link-loading">
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+            <div style="margin-top: 8px;">Searching...</div>
+        </div>
+    }
+    else if (!_autocompleteService.Suggestions.Any())
+    {
+        <div class="wiki-link-no-results">
+            @if (string.IsNullOrWhiteSpace(_autocompleteService.Query))
+            {
+                <text>Type to search...</text>
+            }
+            else
+            {
+                <text>No results found</text>
+            }
+        </div>
+    }
+    else
+    {
+        @for (int i = 0; i < _autocompleteService.Suggestions.Count; i++)
+        {
+            var index = i; // Capture for closure
+            var suggestion = _autocompleteService.Suggestions[i];
+            var isSelected = index == _autocompleteService.SelectedIndex;
+            
+            <div class="wiki-link-suggestion @(isSelected ? "selected" : "")"
+                 @onclick="() => HandleSuggestionClick(suggestion)"
+                 @onmouseenter="() => HandleMouseEnter(index)">
+                
+                <div class="wiki-link-suggestion-title">
+                    @if (suggestion.IsExternal)
+                    {
+                        @if (suggestion.IsCategory)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" />
+                        }
+                        <span class="wiki-link-suggestion-badge">@suggestion.Tooltip</span>
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" />
+                    }
+                    @suggestion.DisplayText
+                </div>
+                
+                @if (!string.IsNullOrEmpty(suggestion.Tooltip) && !suggestion.IsExternal)
+                {
+                    <div class="wiki-link-suggestion-path">
+                        @suggestion.Tooltip
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>

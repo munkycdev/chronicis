@@ -28,6 +28,7 @@ public partial class QuestDrawer : IAsyncDisposable
     
     private Guid? _currentArcId;
     private Guid? _currentSessionId;
+    private Guid? _currentWorldId;
     private bool _canAssociateSession;
     private bool _associateWithSession = true;
     
@@ -110,6 +111,9 @@ public partial class QuestDrawer : IAsyncDisposable
                 _emptyStateMessage = "No article selected. Navigate to a session to use quest tracking.";
                 return;
             }
+            
+            // Store the world ID for autocomplete
+            _currentWorldId = selectedArticle.WorldId;
             
             // Check if we're on a Session or SessionNote page
             if (selectedArticle.Type != ArticleType.Session && selectedArticle.Type != ArticleType.SessionNote)
@@ -427,6 +431,75 @@ public partial class QuestDrawer : IAsyncDisposable
             // Ignore focus errors
         }
     }
+
+    #region Wiki Link Autocomplete
+    
+    [JSInvokable]
+    public async Task OnAutocompleteTriggered(string query, double x, double y)
+    {
+        await AutocompleteService.ShowAsync(query, x, y, _currentWorldId);
+    }
+    
+    [JSInvokable]
+    public Task OnAutocompleteHidden()
+    {
+        AutocompleteService.Hide();
+        return Task.CompletedTask;
+    }
+    
+    [JSInvokable]
+    public Task OnAutocompleteArrowDown()
+    {
+        AutocompleteService.SelectNext();
+        return Task.CompletedTask;
+    }
+    
+    [JSInvokable]
+    public Task OnAutocompleteArrowUp()
+    {
+        AutocompleteService.SelectPrevious();
+        return Task.CompletedTask;
+    }
+    
+    [JSInvokable]
+    public async Task OnAutocompleteEnter()
+    {
+        var selected = AutocompleteService.GetSelectedSuggestion();
+        if (selected != null)
+        {
+            await HandleAutocompleteSuggestionSelected(selected);
+        }
+    }
+    
+    private async Task HandleAutocompleteSuggestionSelected(WikiLinkAutocompleteItem suggestion)
+    {
+        if (_editorModule == null)
+            return;
+            
+        try
+        {
+            if (suggestion.IsExternal)
+            {
+                // Insert external link: [[srd/spell-name]]
+                var linkText = $"{AutocompleteService.ExternalSourceKey}/{suggestion.ExternalKey}";
+                await _editorModule.InvokeVoidAsync("insertWikiLink", linkText, suggestion.DisplayText);
+            }
+            else
+            {
+                // Insert internal article link: [[article-title]]
+                await _editorModule.InvokeVoidAsync("insertWikiLink", suggestion.DisplayText, null);
+            }
+            
+            // Hide autocomplete
+            AutocompleteService.Hide();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to insert wiki link suggestion");
+        }
+    }
+    
+    #endregion
 
     public async ValueTask DisposeAsync()
     {

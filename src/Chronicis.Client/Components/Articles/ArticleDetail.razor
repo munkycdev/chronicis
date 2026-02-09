@@ -162,15 +162,15 @@ else
     <!-- Wiki Link Autocomplete -->
     @if (_showAutocomplete && _article != null)
     {
-        <WikiLinkAutocomplete Suggestions="@_autocompleteSuggestions"
-                              Loading="@_autocompleteLoading"
-                              SelectedIndex="@_autocompleteSelectedIndex"
-                              SelectedIndexChanged="OnAutocompleteIndexChanged"
-                              OnSelect="OnAutocompleteSelect"
-                              OnCreate="OnAutocompleteCreate"
-                              Position="@_autocompletePosition"
-                              Query="@_autocompleteQuery"
-                              IsExternalQuery="@_autocompleteIsExternalQuery" />
+        <WikiLinkAutocomplete_Old Suggestions="@_autocompleteSuggestions"
+                                   Loading="@_autocompleteLoading"
+                                   SelectedIndex="@_autocompleteSelectedIndex"
+                                   SelectedIndexChanged="OnAutocompleteIndexChanged"
+                                   OnSelect="OnAutocompleteSelect"
+                                   OnCreate="OnAutocompleteCreate"
+                                   Position="@_autocompletePosition"
+                                   Query="@_autocompleteQuery"
+                                   IsExternalQuery="@_autocompleteIsExternalQuery" />
     }
 }
 

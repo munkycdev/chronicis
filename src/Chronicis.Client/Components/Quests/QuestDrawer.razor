@@ -7,6 +7,8 @@
 @inject IQuestDrawerService QuestDrawerService
 @inject IQuestApiService QuestApi
 @inject ITreeStateService TreeState
+@inject IWikiLinkAutocompleteService AutocompleteService
+@inject IAppContextService AppContext
 @inject ISnackbar Snackbar
 @inject ILogger<QuestDrawer> Logger
 @inject IJSRuntime JSRuntime
@@ -472,3 +474,8 @@
         
     </MudDrawerContainer>
 </MudDrawer>
+
+@* Wiki Link Autocomplete Component *@
+<WikiLinkAutocomplete EditorId="quest-update-editor" 
+                      WorldId="@_currentWorldId"
+                      OnSuggestionSelected="HandleAutocompleteSuggestionSelected" />

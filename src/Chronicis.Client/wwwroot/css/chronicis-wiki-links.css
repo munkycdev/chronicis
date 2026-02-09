@@ -263,14 +263,14 @@ span[data-type="external-link"]:hover {
 
 /* Autocomplete container */
 .wiki-link-autocomplete {
-    position: fixed;
+    position: fixed !important;
     background: var(--chronicis-surface);
     border: 1px solid var(--chronicis-secondary);
     border-radius: var(--chronicis-radius-sm);
     box-shadow: var(--chronicis-shadow-md);
     max-height: 300px;
     overflow-y: auto;
-    z-index: 1000;
+    z-index: 9999 !important; /* Very high z-index to ensure it appears above MudDrawer and all other elements */
     min-width: 300px;
     padding: 4px 0;
 }

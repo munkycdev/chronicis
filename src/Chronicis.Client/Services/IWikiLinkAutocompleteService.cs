@@ -83,6 +83,11 @@ public interface IWikiLinkAutocompleteService
     void SelectPrevious();
     
     /// <summary>
+    /// Set the selected index directly
+    /// </summary>
+    void SetSelectedIndex(int index);
+    
+    /// <summary>
     /// Get the currently selected suggestion
     /// </summary>
     WikiLinkAutocompleteItem? GetSelectedSuggestion();
@@ -100,13 +105,13 @@ public class WikiLinkAutocompleteItem
     public bool IsExternal { get; set; }
     public bool IsCategory { get; set; }
     
-    public static WikiLinkAutocompleteItem FromInternal(ArticleSearchResult article)
+    public static WikiLinkAutocompleteItem FromInternal(LinkSuggestionDto suggestion)
     {
         return new WikiLinkAutocompleteItem
         {
-            DisplayText = article.Title,
-            ArticleId = article.Id.ToString(),
-            Tooltip = article.BreadcrumbPath,
+            DisplayText = suggestion.Title,
+            ArticleId = suggestion.ArticleId.ToString(),
+            Tooltip = suggestion.DisplayPath,
             IsExternal = false,
             IsCategory = false
         };
@@ -116,11 +121,11 @@ public class WikiLinkAutocompleteItem
     {
         return new WikiLinkAutocompleteItem
         {
-            DisplayText = suggestion.DisplayTitle,
-            ExternalKey = suggestion.Key,
+            DisplayText = suggestion.Title,
+            ExternalKey = suggestion.Id,
             Tooltip = suggestion.Source,
             IsExternal = true,
-            IsCategory = suggestion.IsCategory
+            IsCategory = !string.IsNullOrEmpty(suggestion.Category)
         };
     }
 }

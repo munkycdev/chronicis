@@ -174,3 +174,47 @@ export function focusEditor() {
         editor.commands.focus();
     }
 }
+
+export function insertWikiLink(linkText, customDisplayText) {
+    if (!editor) {
+        console.error('Cannot insert wiki link: editor not initialized');
+        return;
+    }
+    
+    try {
+        // Get current selection position
+        const { from } = editor.state.selection;
+        
+        // Find the [[ that triggered the autocomplete
+        const textBefore = editor.state.doc.textBetween(Math.max(0, from - 100), from, '\n');
+        const match = textBefore.match(/\[\[([^\]]*)$/);
+        
+        if (match) {
+            const matchLength = match[0].length; // Length of "[[query"
+            const deleteFrom = from - matchLength;
+            
+            // Delete the [[ and query text
+            editor.chain()
+                .focus()
+                .deleteRange({ from: deleteFrom, to: from })
+                .run();
+                
+            // Insert the wiki link
+            const displayText = customDisplayText || linkText;
+            const fullLinkText = customDisplayText ? `${linkText}|${customDisplayText}` : linkText;
+            
+            editor.chain()
+                .focus()
+                .insertContent([
+                    { type: 'text', text: '[[' },
+                    { type: 'text', text: fullLinkText },
+                    { type: 'text', text: ']]' },
+                    { type: 'text', text: ' ' } // Add space after
+                ])
+                .run();
+        }
+    } catch (err) {
+        console.error('Error inserting wiki link:', err);
+    }
+}
+

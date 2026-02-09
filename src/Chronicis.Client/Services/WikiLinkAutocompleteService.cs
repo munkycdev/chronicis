@@ -1,3 +1,4 @@
+using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.Extensions.Logging;
 
@@ -5,7 +6,7 @@ namespace Chronicis.Client.Services;
 
 public class WikiLinkAutocompleteService : IWikiLinkAutocompleteService
 {
-    private readonly IArticleLinkApiService _linkApiService;
+    private readonly ILinkApiService _linkApiService;
     private readonly IExternalLinkApiService _externalLinkApiService;
     private readonly ILogger<WikiLinkAutocompleteService> _logger;
     
@@ -23,7 +24,7 @@ public class WikiLinkAutocompleteService : IWikiLinkAutocompleteService
     public bool IsLoading { get; private set; }
     
     public WikiLinkAutocompleteService(
-        IArticleLinkApiService linkApiService,
+        ILinkApiService linkApiService,
         IExternalLinkApiService externalLinkApiService,
         ILogger<WikiLinkAutocompleteService> logger)
     {
@@ -121,6 +122,15 @@ public class WikiLinkAutocompleteService : IWikiLinkAutocompleteService
         if (Suggestions.Any())
         {
             SelectedIndex = (SelectedIndex - 1 + Suggestions.Count) % Suggestions.Count;
+            OnSuggestionsUpdated?.Invoke();
+        }
+    }
+    
+    public void SetSelectedIndex(int index)
+    {
+        if (index >= 0 && index < Suggestions.Count)
+        {
+            SelectedIndex = index;
             OnSuggestionsUpdated?.Invoke();
         }
     }
