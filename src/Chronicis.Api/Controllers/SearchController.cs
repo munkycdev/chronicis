@@ -1,4 +1,5 @@
 using Chronicis.Api.Data;
+using Chronicis.Api.Services;
 using Chronicis.Shared.Extensions;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Shared.DTOs;
@@ -20,6 +21,7 @@ public class SearchController : ControllerBase
     private readonly ChronicisDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<SearchController> _logger;
+    private readonly IArticleHierarchyService _hierarchyService;
 
     // Regex to extract hashtags from content
     private static readonly Regex HashtagPattern = new(
@@ -29,10 +31,12 @@ public class SearchController : ControllerBase
     public SearchController(
         ChronicisDbContext context,
         ICurrentUserService currentUserService,
-        ILogger<SearchController> logger)
+        ILogger<SearchController> logger,
+        IArticleHierarchyService hierarchyService)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _hierarchyService = hierarchyService;
         _logger = logger;
     }
 
@@ -144,9 +148,14 @@ public class SearchController : ControllerBase
 
         // Build ancestor paths for all results
         var allResults = titleMatches.Concat(bodyMatches).Concat(hashtagMatches).ToList();
+        var ancestorOptions = new HierarchyWalkOptions
+        {
+            IncludeWorldBreadcrumb = false,
+            IncludeCurrentArticle = false
+        };
         foreach (var result in allResults)
         {
-            result.AncestorPath = await BuildAncestorPathAsync(result.Id);
+            result.AncestorPath = await _hierarchyService.BuildBreadcrumbsAsync(result.Id, ancestorOptions);
         }
 
         // Remove duplicates (same article appearing in multiple categories)
@@ -213,59 +222,4 @@ public class SearchController : ControllerBase
         return text.Trim();
     }
 
-    /// <summary>
-    /// Builds the ancestor path (breadcrumbs) for an article.
-    /// </summary>
-    private async Task<List<BreadcrumbDto>> BuildAncestorPathAsync(Guid articleId)
-    {
-        var breadcrumbs = new List<BreadcrumbDto>();
-        var currentId = articleId;
-        var visited = new HashSet<Guid>();
-
-        // First, get the article itself to find its parent
-        var article = await _context.Articles
-            .Where(a => a.Id == currentId)
-            .Select(a => new { a.ParentId })
-            .FirstOrDefaultAsync();
-
-        if (article?.ParentId == null)
-            return breadcrumbs;
-
-        currentId = article.ParentId.Value;
-
-        // Walk up the tree from parent
-        while (!visited.Contains(currentId))
-        {
-            visited.Add(currentId);
-
-            var ancestor = await _context.Articles
-                .Where(a => a.Id == currentId)
-                .Select(a => new BreadcrumbDto
-                {
-                    Id = a.Id,
-                    Title = a.Title ?? "Untitled",
-                    Slug = a.Slug,
-                    Type = a.Type,
-                    IsWorld = false
-                })
-                .FirstOrDefaultAsync();
-
-            if (ancestor == null)
-                break;
-
-            breadcrumbs.Insert(0, ancestor);
-
-            var parent = await _context.Articles
-                .Where(a => a.Id == currentId)
-                .Select(a => a.ParentId)
-                .FirstOrDefaultAsync();
-
-            if (parent == null)
-                break;
-
-            currentId = parent.Value;
-        }
-
-        return breadcrumbs;
-    }
 }

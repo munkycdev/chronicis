@@ -19,6 +19,7 @@ public class WorldsController : ControllerBase
 {
     private readonly IWorldService _worldService;
     private readonly IExportService _exportService;
+    private readonly IArticleHierarchyService _hierarchyService;
     private readonly ChronicisDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<WorldsController> _logger;
@@ -26,12 +27,14 @@ public class WorldsController : ControllerBase
     public WorldsController(
         IWorldService worldService,
         IExportService exportService,
+        IArticleHierarchyService hierarchyService,
         ChronicisDbContext context,
         ICurrentUserService currentUserService,
         ILogger<WorldsController> logger)
     {
         _worldService = worldService;
         _exportService = exportService;
+        _hierarchyService = hierarchyService;
         _context = context;
         _currentUserService = currentUserService;
         _logger = logger;
@@ -387,47 +390,13 @@ public class WorldsController : ControllerBase
             .Take(20)
             .ToList();
 
-        // Build display paths for each suggestion
+        // Build display paths using centralised hierarchy service
         foreach (var suggestion in suggestions)
         {
-            suggestion.DisplayPath = await BuildDisplayPathAsync(suggestion.ArticleId);
+            suggestion.DisplayPath = await _hierarchyService.BuildDisplayPathAsync(suggestion.ArticleId);
         }
 
         return Ok(new LinkSuggestionsResponseDto { Suggestions = suggestions });
     }
 
-    /// <summary>
-    /// Builds a display path for an article (stripping the first level).
-    /// </summary>
-    private async Task<string> BuildDisplayPathAsync(Guid articleId)
-    {
-        var pathParts = new List<string>();
-        var currentId = articleId;
-        var visited = new HashSet<Guid>();
-
-        // Walk up the tree
-        while (currentId != Guid.Empty && !visited.Contains(currentId))
-        {
-            visited.Add(currentId);
-
-            var article = await _context.Articles
-                .Where(a => a.Id == currentId)
-                .Select(a => new { a.Title, a.ParentId })
-                .FirstOrDefaultAsync();
-
-            if (article == null)
-                break;
-
-            pathParts.Insert(0, article.Title ?? "Untitled");
-            currentId = article.ParentId ?? Guid.Empty;
-        }
-
-        // Strip the first level (world root) if there are multiple levels
-        if (pathParts.Count > 1)
-        {
-            pathParts.RemoveAt(0);
-        }
-
-        return string.Join(" / ", pathParts);
-    }
 }

@@ -25,6 +25,7 @@ public class ArticlesController : ControllerBase
     private readonly ILinkSyncService _linkSyncService;
     private readonly IAutoLinkService _autoLinkService;
     private readonly IArticleExternalLinkService _externalLinkService;
+    private readonly IArticleHierarchyService _hierarchyService;
     private readonly ChronicisDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ArticlesController> _logger;
@@ -35,6 +36,7 @@ public class ArticlesController : ControllerBase
         ILinkSyncService linkSyncService,
         IAutoLinkService autoLinkService,
         IArticleExternalLinkService externalLinkService,
+        IArticleHierarchyService hierarchyService,
         ChronicisDbContext context,
         ICurrentUserService currentUserService,
         ILogger<ArticlesController> logger)
@@ -44,6 +46,7 @@ public class ArticlesController : ControllerBase
         _linkSyncService = linkSyncService;
         _autoLinkService = autoLinkService;
         _externalLinkService = externalLinkService;
+        _hierarchyService = hierarchyService;
         _context = context;
         _currentUserService = currentUserService;
         _logger = logger;
@@ -553,10 +556,10 @@ public class ArticlesController : ControllerBase
             .Distinct()
             .ToListAsync();
 
-        // Build display paths
+        // Build display paths using centralised hierarchy service
         foreach (var backlink in backlinks)
         {
-            backlink.DisplayPath = await BuildDisplayPathAsync(backlink.ArticleId);
+            backlink.DisplayPath = await _hierarchyService.BuildDisplayPathAsync(backlink.ArticleId);
         }
 
         return Ok(new BacklinksResponseDto { Backlinks = backlinks });
@@ -596,10 +599,10 @@ public class ArticlesController : ControllerBase
             .Distinct()
             .ToListAsync();
 
-        // Build display paths
+        // Build display paths using centralised hierarchy service
         foreach (var link in outgoingLinks)
         {
-            link.DisplayPath = await BuildDisplayPathAsync(link.ArticleId);
+            link.DisplayPath = await _hierarchyService.BuildDisplayPathAsync(link.ArticleId);
         }
 
         return Ok(new BacklinksResponseDto { Backlinks = outgoingLinks });
@@ -702,41 +705,6 @@ public class ArticlesController : ControllerBase
             user.Id);
 
         return Ok(result);
-    }
-
-    /// <summary>
-    /// Builds a display path for an article (stripping the first level).
-    /// </summary>
-    private async Task<string> BuildDisplayPathAsync(Guid articleId)
-    {
-        var pathParts = new List<string>();
-        var currentId = articleId;
-        var visited = new HashSet<Guid>();
-
-        // Walk up the tree
-        while (currentId != Guid.Empty && !visited.Contains(currentId))
-        {
-            visited.Add(currentId);
-
-            var pathArticle = await _context.Articles
-                .Where(a => a.Id == currentId)
-                .Select(a => new { a.Title, a.ParentId })
-                .FirstOrDefaultAsync();
-
-            if (pathArticle == null)
-                break;
-
-            pathParts.Insert(0, pathArticle.Title ?? "Untitled");
-            currentId = pathArticle.ParentId ?? Guid.Empty;
-        }
-
-        // Strip the first level (world root) if there are multiple levels
-        if (pathParts.Count > 1)
-        {
-            pathParts.RemoveAt(0);
-        }
-
-        return string.Join(" / ", pathParts);
     }
 
     #endregion

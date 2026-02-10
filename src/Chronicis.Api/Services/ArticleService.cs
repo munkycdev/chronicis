@@ -13,11 +13,13 @@ namespace Chronicis.Api.Services
     {
         private readonly ChronicisDbContext _context;
         private readonly ILogger<ArticleService> _logger;
+        private readonly IArticleHierarchyService _hierarchyService;
 
-        public ArticleService(ChronicisDbContext context, ILogger<ArticleService> logger)
+        public ArticleService(ChronicisDbContext context, ILogger<ArticleService> logger, IArticleHierarchyService hierarchyService)
         {
             _context = context;
             _logger = logger;
+            _hierarchyService = hierarchyService;
         }
 
         /// <summary>
@@ -204,8 +206,8 @@ namespace Chronicis.Api.Services
                 return null;
             }
 
-            // Build breadcrumb path by walking up the hierarchy
-            article.Breadcrumbs = await BuildBreadcrumbsAsync(id, userId);
+            // Build breadcrumb path using centralised hierarchy service
+            article.Breadcrumbs = await _hierarchyService.BuildBreadcrumbsAsync(id);
 
             return article;
         }
@@ -307,70 +309,7 @@ namespace Chronicis.Api.Services
             return false;
         }
 
-        /// <summary>
-        /// Recursively build breadcrumb trail from world to current article.
-        /// The first breadcrumb is always the world, followed by the article hierarchy.
-        /// </summary>
-        private async Task<List<BreadcrumbDto>> BuildBreadcrumbsAsync(Guid articleId, Guid userId)
-        {
-            var breadcrumbs = new List<BreadcrumbDto>();
-            var currentId = (Guid?)articleId;
-            Guid? worldId = null;
 
-            // Walk up the tree to build article path
-            while (currentId.HasValue)
-            {
-                var article = await GetAccessibleArticles(userId)
-                    .AsNoTracking()
-                    .Where(a => a.Id == currentId)
-                    .Select(a => new { a.Id, a.Title, a.Slug, a.ParentId, a.Type, a.WorldId })
-                    .FirstOrDefaultAsync();
-
-                if (article == null)
-                    break;
-
-                breadcrumbs.Insert(0, new BreadcrumbDto
-                {
-                    Id = article.Id,
-                    Title = article.Title ?? "(Untitled)",
-                    Slug = article.Slug,
-                    Type = article.Type,
-                    IsWorld = false
-                });
-
-                // Capture the world ID from the first article we find it on
-                if (worldId == null && article.WorldId.HasValue)
-                {
-                    worldId = article.WorldId;
-                }
-
-                currentId = article.ParentId;
-            }
-
-            // Prepend world breadcrumb if we found a world
-            if (worldId.HasValue)
-            {
-                var world = await _context.Worlds
-                    .AsNoTracking()
-                    .Where(w => w.Id == worldId.Value)
-                    .Select(w => new { w.Id, w.Name, w.Slug })
-                    .FirstOrDefaultAsync();
-
-                if (world != null)
-                {
-                    breadcrumbs.Insert(0, new BreadcrumbDto
-                    {
-                        Id = world.Id,
-                        Title = world.Name,
-                        Slug = world.Slug,
-                        Type = default, // Not applicable for worlds
-                        IsWorld = true
-                    });
-                }
-            }
-
-            return breadcrumbs;
-        }
 
         /// <summary>
         /// Get article by hierarchical path.
@@ -532,11 +471,7 @@ namespace Chronicis.Api.Services
         /// </summary>
         public async Task<string> BuildArticlePathAsync(Guid articleId, Guid userId)
         {
-            var breadcrumbs = await BuildBreadcrumbsAsync(articleId, userId);
-            
-            // Breadcrumbs now include world as first element
-            // Just join all slugs together
-            return string.Join("/", breadcrumbs.Select(b => b.Slug));
+            return await _hierarchyService.BuildPathAsync(articleId);
         }
     }
 }

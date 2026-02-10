@@ -188,6 +188,7 @@ try
     });
 
     // Services
+    builder.Services.AddScoped<IArticleHierarchyService, ArticleHierarchyService>();
     builder.Services.AddScoped<IArticleService, ArticleService>();
     builder.Services.AddScoped<IArticleValidationService, ArticleValidationService>();
     builder.Services.AddScoped<IArticleExternalLinkService, ArticleExternalLinkService>();

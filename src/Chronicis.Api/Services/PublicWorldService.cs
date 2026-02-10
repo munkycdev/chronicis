@@ -15,11 +15,13 @@ public class PublicWorldService : IPublicWorldService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<PublicWorldService> _logger;
+    private readonly IArticleHierarchyService _hierarchyService;
 
-    public PublicWorldService(ChronicisDbContext context, ILogger<PublicWorldService> logger)
+    public PublicWorldService(ChronicisDbContext context, ILogger<PublicWorldService> logger, IArticleHierarchyService hierarchyService)
     {
         _context = context;
         _logger = logger;
+        _hierarchyService = hierarchyService;
     }
 
     /// <summary>
@@ -436,168 +438,19 @@ public class PublicWorldService : IPublicWorldService
         if (article == null)
             return null;
 
-        // Build breadcrumbs (only including public articles)
-        article.Breadcrumbs = await BuildPublicBreadcrumbsAsync(articleId.Value, world.Id, world.Name, world.Slug);
+        // Build breadcrumbs (only including public articles) using centralised hierarchy service
+        article.Breadcrumbs = await _hierarchyService.BuildBreadcrumbsAsync(articleId.Value, new HierarchyWalkOptions
+        {
+            PublicOnly = true,
+            IncludeWorldBreadcrumb = true,
+            IncludeVirtualGroups = true,
+            World = new WorldContext { Id = world.Id, Name = world.Name, Slug = world.Slug }
+        });
 
         _logger.LogDebugSanitized("Public article '{Title}' accessed in world '{PublicSlug}'", 
             article.Title, normalizedSlug);
 
         return article;
-    }
-
-    /// <summary>
-    /// Build breadcrumb trail for public article viewing.
-    /// Includes virtual groups (Campaigns/Arc, Player Characters, Wiki) based on article type.
-    /// Only includes articles that are publicly visible.
-    /// </summary>
-    private async Task<List<BreadcrumbDto>> BuildPublicBreadcrumbsAsync(
-        Guid articleId, 
-        Guid worldId, 
-        string worldName, 
-        string worldSlug)
-    {
-        var breadcrumbs = new List<BreadcrumbDto>();
-        
-        // Get the article to check for Campaign/Arc and Type
-        var targetArticle = await _context.Articles
-            .AsNoTracking()
-            .Where(a => a.Id == articleId)
-            .Select(a => new { a.CampaignId, a.ArcId, a.ParentId, a.Type })
-            .FirstOrDefaultAsync();
-
-        // Start with World breadcrumb
-        breadcrumbs.Add(new BreadcrumbDto
-        {
-            Id = worldId,
-            Title = worldName,
-            Slug = worldSlug,
-            Type = default,
-            IsWorld = true
-        });
-
-        // Add virtual group breadcrumb based on article type and context
-        if (targetArticle?.CampaignId.HasValue == true)
-        {
-            // Session articles: Add Campaign breadcrumb
-            var campaign = await _context.Campaigns
-                .AsNoTracking()
-                .Where(c => c.Id == targetArticle.CampaignId.Value)
-                .Select(c => new { c.Id, c.Name })
-                .FirstOrDefaultAsync();
-
-            if (campaign != null)
-            {
-                breadcrumbs.Add(new BreadcrumbDto
-                {
-                    Id = campaign.Id,
-                    Title = campaign.Name,
-                    Slug = campaign.Name.ToLowerInvariant().Replace(" ", "-"),
-                    Type = default,
-                    IsWorld = false
-                });
-            }
-
-            // Add Arc breadcrumb if article belongs to an arc
-            if (targetArticle.ArcId.HasValue)
-            {
-                var arc = await _context.Arcs
-                    .AsNoTracking()
-                    .Where(a => a.Id == targetArticle.ArcId.Value)
-                    .Select(a => new { a.Id, a.Name })
-                    .FirstOrDefaultAsync();
-
-                if (arc != null)
-                {
-                    breadcrumbs.Add(new BreadcrumbDto
-                    {
-                        Id = arc.Id,
-                        Title = arc.Name,
-                        Slug = arc.Name.ToLowerInvariant().Replace(" ", "-"),
-                        Type = default,
-                        IsWorld = false
-                    });
-                }
-            }
-        }
-        else if (targetArticle != null)
-        {
-            // Non-session articles: Add virtual group based on type
-            // We need to check the root article's type (walk up to find it)
-            var rootArticleType = targetArticle.Type;
-            var currentParentId = targetArticle.ParentId;
-            
-            // Walk up to find the root article's type
-            while (currentParentId.HasValue)
-            {
-                var parentArticle = await _context.Articles
-                    .AsNoTracking()
-                    .Where(a => a.Id == currentParentId.Value)
-                    .Select(a => new { a.Type, a.ParentId })
-                    .FirstOrDefaultAsync();
-                    
-                if (parentArticle == null)
-                    break;
-                    
-                rootArticleType = parentArticle.Type;
-                currentParentId = parentArticle.ParentId;
-            }
-            
-            // Add virtual group breadcrumb based on root article type
-            if (rootArticleType == ArticleType.Character)
-            {
-                breadcrumbs.Add(new BreadcrumbDto
-                {
-                    Id = Guid.Empty, // Virtual group marker
-                    Title = "Player Characters",
-                    Slug = "characters",
-                    Type = default,
-                    IsWorld = false
-                });
-            }
-            else if (rootArticleType == ArticleType.WikiArticle)
-            {
-                breadcrumbs.Add(new BreadcrumbDto
-                {
-                    Id = Guid.Empty, // Virtual group marker
-                    Title = "Wiki",
-                    Slug = "wiki",
-                    Type = default,
-                    IsWorld = false
-                });
-            }
-        }
-
-        // Walk up the article parent tree
-        var currentId = (Guid?)articleId;
-        var articleBreadcrumbs = new List<BreadcrumbDto>();
-
-        while (currentId.HasValue)
-        {
-            var article = await _context.Articles
-                .AsNoTracking()
-                .Where(a => a.Id == currentId && a.Visibility == ArticleVisibility.Public)
-                .Select(a => new { a.Id, a.Title, a.Slug, a.ParentId, a.Type })
-                .FirstOrDefaultAsync();
-
-            if (article == null)
-                break;
-
-            articleBreadcrumbs.Insert(0, new BreadcrumbDto
-            {
-                Id = article.Id,
-                Title = article.Title ?? "(Untitled)",
-                Slug = article.Slug,
-                Type = article.Type,
-                IsWorld = false
-            });
-
-            currentId = article.ParentId;
-        }
-
-        // Add article breadcrumbs after world/virtual group
-        breadcrumbs.AddRange(articleBreadcrumbs);
-
-        return breadcrumbs;
     }
 
     /// <summary>
