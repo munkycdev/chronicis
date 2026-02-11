@@ -45,4 +45,9 @@
 	  </Content>
 	</ItemGroup>
 
+	<!-- Allow test project to access internal types -->
+	<ItemGroup>
+		<InternalsVisibleTo Include="Chronicis.Client.Tests" />
+	</ItemGroup>
+
 </Project>
