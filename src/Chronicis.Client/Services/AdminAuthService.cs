@@ -31,10 +31,6 @@ public class AdminAuthService : IAdminAuthService
         var user = await _authService.GetCurrentUserAsync();
         if (user == null) return false;
 
-        _logger.LogInformation(
-            "SysAdmin check — Email: {Email}, Auth0Id: {Auth0Id}",
-            user.Email, user.Auth0UserId);
-
         return SysAdminEmails.Contains(user.Email)
             || SysAdminAuth0Ids.Contains(user.Auth0UserId);
     }
