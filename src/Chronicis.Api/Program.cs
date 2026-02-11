@@ -133,9 +133,7 @@ try
         }
     }).RemoveAllLoggers();
     builder.Services.AddScoped<IExternalLinkProviderRegistry, ExternalLinkProviderRegistry>();
-    builder.Services.AddScoped<ExternalLinkSuggestionService>();
-    builder.Services.AddScoped<ExternalLinkContentService>();
-    builder.Services.AddScoped<ExternalLinkValidationService>();
+    builder.Services.AddScoped<IExternalLinkService, ExternalLinkService>();
     builder.Services.AddScoped<IExternalLinkProvider, Open5eExternalLinkProvider>();
 
     var srd14Config = builder.Configuration.GetSection("ExternalLinks:BlobProviders:Srd14");

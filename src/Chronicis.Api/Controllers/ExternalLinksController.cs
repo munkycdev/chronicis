@@ -13,22 +13,19 @@ namespace Chronicis.Api.Controllers;
 // [Authorize] // Temporarily disabled for testing
 public class ExternalLinksController : ControllerBase
 {
-    private readonly ExternalLinkSuggestionService _suggestionService;
-    private readonly ExternalLinkContentService _contentService;
+    private readonly IExternalLinkService _externalLinkService;
     private readonly ILogger<ExternalLinksController> _logger;
 
     public ExternalLinksController(
-        ExternalLinkSuggestionService suggestionService,
-        ExternalLinkContentService contentService,
+        IExternalLinkService externalLinkService,
         ILogger<ExternalLinksController> logger)
     {
-        _suggestionService = suggestionService;
-        _contentService = contentService;
+        _externalLinkService = externalLinkService;
         _logger = logger;
     }
 
     /// <summary>
-    /// GET /api/external-links/suggestions?worldId={worldId}&source={source}&query={query}
+    /// GET /api/external-links/suggestions?worldId={worldId}&amp;source={source}&amp;query={query}
     /// Get external link suggestions for autocomplete.
     /// Filters to only include providers enabled for the specified world.
     /// </summary>
@@ -39,16 +36,16 @@ public class ExternalLinksController : ControllerBase
         [FromQuery] string? query,
         CancellationToken ct)
     {
-        // Note: Authorization temporarily disabled for SRD provider testing
-
         if (string.IsNullOrWhiteSpace(source))
         {
             return Ok(new List<ExternalLinkSuggestionDto>());
         }
 
-        _logger.LogDebugSanitized("Getting external link suggestions for world {WorldId}, source '{Source}' with query '{Query}'", worldId, source, query);
+        _logger.LogDebugSanitized(
+            "Getting external link suggestions for world {WorldId}, source '{Source}' with query '{Query}'",
+            worldId, source, query);
 
-        var suggestions = await _suggestionService.GetSuggestionsAsync(worldId, source, query ?? "", ct);
+        var suggestions = await _externalLinkService.GetSuggestionsAsync(worldId, source, query ?? "", ct);
 
         var dtos = suggestions.Select(s => new ExternalLinkSuggestionDto
         {
@@ -65,7 +62,7 @@ public class ExternalLinksController : ControllerBase
     }
 
     /// <summary>
-    /// GET /api/external-links/content?source={source}&id={id}
+    /// GET /api/external-links/content?source={source}&amp;id={id}
     /// Get external link content for display.
     /// </summary>
     [HttpGet("content")]
@@ -74,16 +71,16 @@ public class ExternalLinksController : ControllerBase
         [FromQuery] string? id,
         CancellationToken ct)
     {
-        // Note: Authorization temporarily disabled for SRD provider testing
-
         if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(id))
         {
             return BadRequest(new ExternalLinkErrorDto { Message = "Source and id are required" });
         }
 
-        _logger.LogDebugSanitized("Getting external link content for source '{Source}' with id '{Id}'", source, id);
+        _logger.LogDebugSanitized(
+            "Getting external link content for source '{Source}' with id '{Id}'",
+            source, id);
 
-        var content = await _contentService.GetContentAsync(source, id, ct);
+        var content = await _externalLinkService.GetContentAsync(source, id, ct);
 
         if (content == null)
         {
