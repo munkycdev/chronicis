@@ -4,6 +4,76 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.10.0] - 2026-02-08
+
+### Quest Tracking System
+
+**Added:**
+- Complete quest tracking system integrated into session workflow
+- Quest entities with status lifecycle (Active, Completed, Failed)
+- Quest update journal with markdown editor and wiki links
+- Quest drawer accessible via Ctrl+Q keyboard shortcut from session pages
+- Real-time quest status management (activate, complete, fail)
+- Quest-to-session associations for tracking progress across gameplay
+- Quest update entries with timestamps and markdown content
+- Recent updates timeline showing last 10 quest journal entries
+- TipTap markdown editor integration in quest drawer
+- Wiki link autocomplete in quest updates (`[[article]]` and `[[srd/resource]]`)
+- External resource linking in quest descriptions (D&D SRD integration)
+
+**Components:**
+- QuestDrawer - Slide-out panel for quest management during sessions
+- QuestSelector - Dropdown for choosing which quest to update
+- QuestEditor - Inline editing for quest title and description
+- QuestUpdateEntry - Journal entry display with formatted markdown
+- WikiLinkAutocomplete - Shared autocomplete component for all editors
+
+**API Endpoints:**
+- `GET /api/arcs/{arcId}/quests` - List quests for an arc
+- `POST /api/arcs/{arcId}/quests` - Create new quest
+- `GET /api/quests/{questId}` - Get quest details
+- `PUT /api/quests/{questId}` - Update quest metadata
+- `DELETE /api/quests/{questId}` - Delete quest
+- `PUT /api/quests/{questId}/status` - Change quest status
+- `POST /api/quests/{questId}/updates` - Add quest update entry
+- `GET /api/quests/{questId}/updates/recent` - Get recent updates for timeline
+
+**Features:**
+- Context-aware quest drawer (only available from session/session note pages)
+- Auto-association toggle for linking updates to current session
+- Quest status badges with color coding (green=active, blue=completed, red=failed)
+- Empty state guidance when no quests exist for arc
+- Validation preventing quest creation without title
+- Keyboard shortcuts for improved workflow efficiency
+
+**Architecture:**
+- Event-driven service layer (WikiLinkAutocompleteService)
+- Shared component pattern for wiki link autocomplete
+- Scoped services for state management
+- TipTap editor with custom Chronicis extensions
+- JavaScript interop for advanced editor features
+
+**Technical:**
+- Quest entity with ArcId, SessionId (optional), Status, Title, Description
+- QuestUpdate entity with QuestId, SessionId (optional), Body, CreatedAt
+- Database migrations: `20260207223643_FixQuestModelChanges`
+- Z-index optimization for drawer overlay components (9999 for autocomplete)
+- WorldId context resolution from session article hierarchy
+- Event-driven UI updates via OnShow, OnHide, OnSuggestionsUpdated events
+
+**UI/UX:**
+- Consistent styling with Chronicis design language (beige-gold accents)
+- Responsive drawer with metadata panels and editor sections
+- Loading states and empty states throughout
+- Toast notifications for successful operations
+- Validation feedback for user actions
+
+**Documentation:**
+- QUEST_AUTOCOMPLETE_FINAL_SUMMARY.md - Implementation details
+- WIKILINK_AUTOCOMPLETE_IMPLEMENTATION_COMPLETE.md - Architecture guide
+
+---
+
 ## [2.9.0] - 2026-01-13
 
 ### External Links: Open5e API Integration
