@@ -93,22 +93,6 @@ public partial class ExternalLinkDetailPanel : ComponentBase
         var fields = GetFieldsElement(root);
         var dataSource = fields ?? root;
 
-        // DEBUG: Log what fields are available
-        if (dataSource.ValueKind == JsonValueKind.Object)
-        {
-            var fieldNames = new List<string>();
-            foreach (var prop in dataSource.EnumerateObject())
-            {
-                fieldNames.Add($"{prop.Name}({prop.Value.ValueKind})");
-            }
-            Logger.LogInformation("ExternalLinkDetailPanel: DataSource has {Count} fields: {Fields}",
-                fieldNames.Count, string.Join(", ", fieldNames));
-        }
-        else
-        {
-            Logger.LogWarning("ExternalLinkDetailPanel: DataSource is {Kind}, not Object", dataSource.ValueKind);
-        }
-
         var renderedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         // Always mark hidden fields as rendered so they don't appear in catch-all
         foreach (var hidden in definition.Hidden)
@@ -171,7 +155,13 @@ public partial class ExternalLinkDetailPanel : ComponentBase
         builder.OpenElement(seq++, "div");
         builder.AddAttribute(seq++, "class", "elp-section-body");
 
-        if (section.Render == "list" && sectionData.ValueKind == JsonValueKind.Array)
+        if (section.Render == "stat-row" && section.Fields != null)
+        {
+            RenderStatRow(builder, ref seq, sectionData, section.Fields);
+            foreach (var field in section.Fields)
+                renderedPaths.Add(field.Path);
+        }
+        else if (section.Render == "list" && sectionData.ValueKind == JsonValueKind.Array)
         {
             RenderArrayAsList(builder, ref seq, sectionData, section.ItemFields);
         }
@@ -243,6 +233,8 @@ public partial class ExternalLinkDetailPanel : ComponentBase
 
             foreach (var (name, value) in scalarFields)
             {
+                // Skip null/empty values in catch-all to reduce noise
+                if (IsNullOrEmpty(value)) continue;
                 RenderKeyValue(builder, ref seq, FormatFieldName(name), FormatScalarValue(value));
             }
 
@@ -289,6 +281,10 @@ public partial class ExternalLinkDetailPanel : ComponentBase
             return;
 
         if (field.Render == "hidden")
+            return;
+
+        // OmitNull: skip fields with null/empty/dash values
+        if (field.OmitNull && IsNullOrEmpty(value))
             return;
 
         var label = field.Label ?? FormatFieldName(field.Path);
@@ -676,5 +672,72 @@ public partial class ExternalLinkDetailPanel : ComponentBase
             JsonValueKind.Null => "—",
             _ => value.GetRawText()
         };
+    }
+
+    /// <summary>
+    /// Returns true if the JSON value is null, empty string, or the em-dash placeholder.
+    /// </summary>
+    private static bool IsNullOrEmpty(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.Null || value.ValueKind == JsonValueKind.Undefined)
+            return true;
+
+        if (value.ValueKind == JsonValueKind.String)
+        {
+            var str = value.GetString();
+            return string.IsNullOrWhiteSpace(str) || str == "—" || str == "-";
+        }
+
+        if (value.ValueKind == JsonValueKind.Array && value.GetArrayLength() == 0)
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Renders fields as a compact horizontal stat row (labels on top, values below).
+    /// Used for D&amp;D ability scores and similar compact stat groups.
+    /// </summary>
+    private static void RenderStatRow(
+        Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder,
+        ref int seq,
+        JsonElement dataSource,
+        List<RenderField> fields)
+    {
+        builder.OpenElement(seq++, "table");
+        builder.AddAttribute(seq++, "class", "elp-stat-row");
+
+        // Header row: labels
+        builder.OpenElement(seq++, "thead");
+        builder.OpenElement(seq++, "tr");
+        foreach (var field in fields)
+        {
+            builder.OpenElement(seq++, "th");
+            builder.AddContent(seq++, field.Label ?? FormatFieldName(field.Path));
+            builder.CloseElement();
+        }
+        builder.CloseElement(); // tr
+        builder.CloseElement(); // thead
+
+        // Value row
+        builder.OpenElement(seq++, "tbody");
+        builder.OpenElement(seq++, "tr");
+        foreach (var field in fields)
+        {
+            builder.OpenElement(seq++, "td");
+            if (dataSource.TryGetProperty(field.Path, out var value))
+            {
+                builder.AddContent(seq++, FormatScalarValue(value));
+            }
+            else
+            {
+                builder.AddContent(seq++, "—");
+            }
+            builder.CloseElement();
+        }
+        builder.CloseElement(); // tr
+        builder.CloseElement(); // tbody
+
+        builder.CloseElement(); // table
     }
 }

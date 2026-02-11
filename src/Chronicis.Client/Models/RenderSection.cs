@@ -23,6 +23,8 @@ public class RenderSection
     /// "fields" (default) = key-value pairs.
     /// "list" = array of items, each rendered with itemFields.
     /// "table" = tabular display of array items.
+    /// "stat-row" = compact horizontal table (labels on top, values below).
+    ///              Ideal for D&amp;D ability scores and similar compact stat groups.
     /// </summary>
     [JsonPropertyName("render")]
     public string Render { get; set; } = "fields";

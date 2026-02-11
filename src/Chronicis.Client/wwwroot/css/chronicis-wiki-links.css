@@ -776,3 +776,55 @@ span[data-type="wiki-link"]:focus {
 .elp-table tr:last-child td {
     border-bottom: none;
 }
+
+/* --- Stat Row (compact horizontal table for ability scores etc.) --- */
+
+.elp-stat-row {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    table-layout: fixed;
+}
+
+.elp-stat-row th {
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #3A4750;
+    padding: 4px 2px 2px;
+    border-bottom: 2px solid rgba(196, 175, 142, 0.5);
+}
+
+.elp-stat-row td {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1F2A33;
+    padding: 6px 2px 4px;
+}
+
+/* --- Stat Row (compact horizontal table for ability scores, etc.) --- */
+
+.elp-stat-row {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    table-layout: fixed;
+}
+
+.elp-stat-row th {
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #3A4750;
+    padding: 6px 4px 4px;
+    border-bottom: 2px solid rgba(196, 175, 142, 0.5);
+}
+
+.elp-stat-row td {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1F2A33;
+    padding: 8px 4px;
+}

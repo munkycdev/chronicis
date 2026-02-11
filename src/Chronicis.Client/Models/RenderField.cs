@@ -27,4 +27,11 @@ public class RenderField
     /// </summary>
     [JsonPropertyName("render")]
     public string Render { get; set; } = "text";
+
+    /// <summary>
+    /// If true (default), fields with null/empty values are omitted from rendering.
+    /// Set to false to always show the field even when empty.
+    /// </summary>
+    [JsonPropertyName("omitNull")]
+    public bool OmitNull { get; set; } = true;
 }

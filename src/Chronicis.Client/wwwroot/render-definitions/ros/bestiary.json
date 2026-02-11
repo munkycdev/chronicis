@@ -1,0 +1,115 @@
+{
+  "$schema": "chronicis://schemas/render-definition-v1.json",
+  "version": 1,
+  "displayName": "Bestiary Entry",
+  "titleField": "name",
+  "hidden": ["pk", "model", "document", "illustration", "hover"],
+  "catchAll": true,
+  "sections": [
+    {
+      "label": "Overview",
+      "fields": [
+        { "path": "size", "label": "Size" },
+        { "path": "type", "label": "Type" },
+        { "path": "subtype", "label": "Subtype" },
+        { "path": "alignment", "label": "Alignment" },
+        { "path": "category", "label": "Category" },
+        { "path": "challenge_rating_decimal", "label": "Challenge Rating" },
+        { "path": "experience_points_integer", "label": "XP" },
+        { "path": "proficiency_bonus", "label": "Proficiency Bonus" },
+        { "path": "description", "label": "Description", "render": "richtext" }
+      ]
+    },
+    {
+      "label": "Ability Scores",
+      "render": "stat-row",
+      "fields": [
+        { "path": "ability_score_strength", "label": "STR" },
+        { "path": "ability_score_dexterity", "label": "DEX" },
+        { "path": "ability_score_constitution", "label": "CON" },
+        { "path": "ability_score_intelligence", "label": "INT" },
+        { "path": "ability_score_wisdom", "label": "WIS" },
+        { "path": "ability_score_charisma", "label": "CHA" }
+      ]
+    },
+    {
+      "label": "Combat",
+      "fields": [
+        { "path": "armor_class", "label": "Armor Class" },
+        { "path": "armor_detail", "label": "Armor Detail" },
+        { "path": "hit_points", "label": "Hit Points" },
+        { "path": "hit_dice", "label": "Hit Dice" },
+        { "path": "initiative_bonus", "label": "Initiative Bonus" },
+        { "path": "speed", "label": "Speed" },
+        { "path": "swim", "label": "Swim" },
+        { "path": "fly", "label": "Fly" },
+        { "path": "climb", "label": "Climb" },
+        { "path": "burrow", "label": "Burrow" }
+      ]
+    },
+    {
+      "label": "Saving Throws",
+      "collapsed": true,
+      "fields": [
+        { "path": "saving_throw_strength", "label": "Strength" },
+        { "path": "saving_throw_dexterity", "label": "Dexterity" },
+        { "path": "saving_throw_constitution", "label": "Constitution" },
+        { "path": "saving_throw_intelligence", "label": "Intelligence" },
+        { "path": "saving_throw_wisdom", "label": "Wisdom" },
+        { "path": "saving_throw_charisma", "label": "Charisma" }
+      ]
+    },
+    {
+      "label": "Skills",
+      "collapsed": true,
+      "fields": [
+        { "path": "skill_bonus_acrobatics", "label": "Acrobatics" },
+        { "path": "skill_bonus_animal_handling", "label": "Animal Handling" },
+        { "path": "skill_bonus_arcana", "label": "Arcana" },
+        { "path": "skill_bonus_athletics", "label": "Athletics" },
+        { "path": "skill_bonus_deception", "label": "Deception" },
+        { "path": "skill_bonus_history", "label": "History" },
+        { "path": "skill_bonus_insight", "label": "Insight" },
+        { "path": "skill_bonus_intimidation", "label": "Intimidation" },
+        { "path": "skill_bonus_investigation", "label": "Investigation" },
+        { "path": "skill_bonus_medicine", "label": "Medicine" },
+        { "path": "skill_bonus_nature", "label": "Nature" },
+        { "path": "skill_bonus_perception", "label": "Perception" },
+        { "path": "skill_bonus_performance", "label": "Performance" },
+        { "path": "skill_bonus_persuasion", "label": "Persuasion" },
+        { "path": "skill_bonus_religion", "label": "Religion" },
+        { "path": "skill_bonus_sleight_of_hand", "label": "Sleight of Hand" },
+        { "path": "skill_bonus_stealth", "label": "Stealth" },
+        { "path": "skill_bonus_survival", "label": "Survival" }
+      ]
+    },
+    {
+      "label": "Defenses",
+      "fields": [
+        { "path": "damage_resistances_display", "label": "Damage Resistances" },
+        { "path": "damage_immunities_display", "label": "Damage Immunities" },
+        { "path": "damage_vulnerabilities_display", "label": "Damage Vulnerabilities" },
+        { "path": "condition_immunities_display", "label": "Condition Immunities" },
+        { "path": "nonmagical_attack_immunity", "label": "Nonmagical Attack Immunity" },
+        { "path": "nonmagical_attack_resistance", "label": "Nonmagical Attack Resistance" }
+      ]
+    },
+    {
+      "label": "Senses",
+      "fields": [
+        { "path": "darkvision_range", "label": "Darkvision" },
+        { "path": "blindsight_range", "label": "Blindsight" },
+        { "path": "tremorsense_range", "label": "Tremorsense" },
+        { "path": "truesight_range", "label": "Truesight" },
+        { "path": "normal_sight_range", "label": "Normal Sight" },
+        { "path": "passive_perception", "label": "Passive Perception", "omitNull": false }
+      ]
+    },
+    {
+      "label": "Languages",
+      "fields": [
+        { "path": "languages_desc", "label": "Languages" }
+      ]
+    }
+  ]
+}
