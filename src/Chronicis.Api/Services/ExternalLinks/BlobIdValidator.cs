@@ -9,10 +9,10 @@ namespace Chronicis.Api.Services.ExternalLinks;
 /// </summary>
 public static partial class BlobIdValidator
 {
-    // ID must be: lowercase alphanumeric + hyphens, one or more slashes
+    // ID must be: alphanumeric + hyphens (case-insensitive), one or more slashes
     // Format: "category/slug" OR "category/subcategory/slug"
-    // Examples: "spells/fireball", "items/armor/breastplate"
-    [GeneratedRegex(@"^[a-z0-9-]+(/[a-z0-9-]+)+$", RegexOptions.Compiled)]
+    // Examples: "spells/fireball", "items/armor/breastplate", "bestiary/Beast/aboar"
+    [GeneratedRegex(@"^[a-zA-Z0-9-]+(/[a-zA-Z0-9-]+)+$", RegexOptions.Compiled)]
     private static partial Regex ValidIdPattern();
 
     // Characters that are prohibited in IDs (security)
@@ -52,7 +52,7 @@ public static partial class BlobIdValidator
         // Validate format: lowercase alphanumeric + hyphens with at least one slash
         if (!ValidIdPattern().IsMatch(id))
         {
-            error = "ID must have format 'category/slug' or 'category/subcategory/slug' with lowercase alphanumeric and hyphens only";
+            error = "ID must have format 'category/slug' or 'category/subcategory/slug' with alphanumeric and hyphens only";
             return false;
         }
 

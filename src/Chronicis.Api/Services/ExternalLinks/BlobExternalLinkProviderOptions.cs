@@ -55,4 +55,10 @@ public record BlobExternalLinkProviderOptions
     /// Cache TTL for rendered content (in minutes).
     /// </summary>
     public int ContentCacheTtl { get; init; } = 15;
+
+    /// <summary>
+    /// Maximum depth for recursive category discovery.
+    /// Safety limit to prevent runaway recursion in deeply nested hierarchies.
+    /// </summary>
+    public int MaxDrillDownDepth { get; init; } = 10;
 }

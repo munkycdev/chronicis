@@ -9,7 +9,9 @@ namespace Chronicis.Api.Services.ExternalLinks;
 
 /// <summary>
 /// External link provider backed by Azure Blob Storage.
-/// Each provider instance has its own connection string and blob client.
+/// Supports progressive category drill-down: typing "[[ros" shows top-level categories,
+/// "[[ros/bestiary" shows bestiary's children, and so on at any depth.
+/// Cross-category text search is supported at the top level (no slash).
 /// </summary>
 public class BlobExternalLinkProvider : IExternalLinkProvider
 {
@@ -27,8 +29,6 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        // Create provider-specific blob client from its own connection string
-        // This ensures srd14 and srd24 are fully decoupled
         var blobServiceClient = new BlobServiceClient(_options.ConnectionString);
         _containerClient = blobServiceClient.GetBlobContainerClient(_options.ContainerName);
 
@@ -39,229 +39,152 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
 
     public string Key => _options.Key;
 
+    // ==================================================================================
+    // PUBLIC API
+    // ==================================================================================
+
     public async Task<IReadOnlyList<ExternalLinkSuggestion>> SearchAsync(string query, CancellationToken ct)
     {
-        // Normalize query
         query = query?.Trim() ?? string.Empty;
 
         var slashIndex = query.IndexOf('/');
-        
-        // Case A: No slash -> search across all categories + show matching categories
+
+        // Case A: No slash — top-level behavior
+        // Empty query → show top-level categories only
+        // Has text  → cross-category search (categories + items)
         if (slashIndex < 0)
         {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return await GetTopLevelCategorySuggestionsAsync(ct);
+            }
+
             return await SearchAcrossAllCategoriesAsync(query, ct);
         }
 
-        // Has slash - need to determine if it's a partial category path or complete category + search
-        // Get all categories (includes hierarchical like "items/armor")
-        var categories = await GetCategoriesAsync(ct);
-        
-        // Strategy: Try to find the longest matching category prefix
-        // Examples:
-        //   Query: "items/armor/lea"
-        //   Try: "items/armor/lea" (no match)
-        //   Try: "items/armor" (match!) → category="items/armor", search="lea"
-        //   
-        //   Query: "items/ar"
-        //   Try: "items/ar" (no match)
-        //   Try: "items" (no match)
-        //   → Partial hierarchical path, filter categories
-        
-        string? matchedCategory = null;
-        string searchTerm = string.Empty;
-        
-        // Try all possible slash positions from right to left
-        var remainingQuery = query;
-        while (true)
+        // Case B: Has slash — progressive drill-down
+        // Split into path prefix and trailing text after last slash
+        // Example: "bestiary/beast/abo" → pathPrefix="bestiary/beast", trailingText="abo"
+        // Example: "bestiary/"          → pathPrefix="bestiary",       trailingText=""
+        // Example: "bestiary/beast/"    → pathPrefix="bestiary/beast", trailingText=""
+        var lastSlashIdx = query.LastIndexOf('/');
+        var pathPrefix = query[..lastSlashIdx];
+        var trailingText = query[(lastSlashIdx + 1)..];
+
+        // Get the children at the path prefix
+        var children = await GetChildrenAtPathAsync(pathPrefix, ct);
+
+        if (children == null)
         {
-            var lastSlash = remainingQuery.LastIndexOf('/');
-            if (lastSlash < 0)
-            {
-                // No more slashes - check if entire query is a category
-                if (categories.Contains(remainingQuery, StringComparer.OrdinalIgnoreCase))
-                {
-                    matchedCategory = remainingQuery;
-                    searchTerm = string.Empty;
-                }
-                break;
-            }
-            
-            var potentialCategory = remainingQuery[..lastSlash];
-            var potentialSearch = remainingQuery[(lastSlash + 1)..];
-            
-            if (categories.Contains(potentialCategory, StringComparer.OrdinalIgnoreCase))
-            {
-                // Found a matching category!
-                matchedCategory = potentialCategory;
-                searchTerm = potentialSearch;
-                break;
-            }
-            
-            // Try shorter prefix (remove last segment)
-            remainingQuery = potentialCategory;
+            // Path doesn't exist — try partial matching against parent's children
+            // Example: "bestiary/bea" → parent is "", trailing is "bestiary/bea"
+            //   We need to find if "bestiary" partially matches a top-level folder
+            return await SearchPartialPathAsync(query, ct);
         }
-        
-        if (matchedCategory != null)
-        {
-            // Found exact category - browse or search within it
-            var index = await GetCategoryIndexAsync(matchedCategory, ct);
 
-            if (string.IsNullOrWhiteSpace(searchTerm))
+        var results = new List<ExternalLinkSuggestion>();
+
+        // Build child folder suggestions (always shown first)
+        var folderSuggestions = children.ChildFolders
+            .Where(f => string.IsNullOrWhiteSpace(trailingText)
+                || f.Slug.Contains(trailingText, StringComparison.OrdinalIgnoreCase))
+            .Select(folder =>
             {
-                // Browse category - return first N items
-                var firstN = index
-                    .Take(_options.FirstNCategoryItems)
-                    .Select(item => new ExternalLinkSuggestion
-                    {
-                        Source = _options.Key,
-                        Id = item.Id,
-                        Title = item.Title,
-                        Subtitle = matchedCategory,
-                        Category = matchedCategory,
-                        Icon = null,
-                        Href = null
-                    })
-                    .ToList();
-
-                return firstN;
-            }
-            else
-            {
-                // Search within category
-                var filtered = FilterCategoryItems(index, matchedCategory, searchTerm);
-
-                _logger.LogDebugSanitized(
-                    "Search completed - Provider={Key}, Category={Category}, SearchTerm={SearchTerm}, Results={Count}",
-                    _options.Key, matchedCategory, searchTerm, filtered.Count);
-
-                return filtered;
-            }
-        }
-        
-        // No exact category match - check if it's a partial hierarchical path
-        // Example: "items/ar" should match "items/armor"
-        var fullQuery = query.ToLowerInvariant();
-        var matchingCategories = categories
-            .Where(c => c.StartsWith(fullQuery, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-        
-        if (matchingCategories.Count > 0)
-        {
-            // Partial hierarchical path - return matching subcategories
-            var suggestions = new List<ExternalLinkSuggestion>();
-            foreach (var category in matchingCategories)
-            {
-                var title = BlobFilenameParser.PrettifySlug(category);
-                
-                suggestions.Add(new ExternalLinkSuggestion
+                var fullPath = string.IsNullOrEmpty(pathPrefix) ? folder.Slug : $"{pathPrefix}/{folder.Slug}";
+                var title = BlobFilenameParser.PrettifySlug(folder.Slug);
+                return new ExternalLinkSuggestion
                 {
                     Source = _options.Key,
-                    Id = $"_category/{category}",
+                    Id = $"_category/{fullPath}",
                     Title = title,
                     Subtitle = $"Browse {title}",
                     Category = "_category",
                     Icon = null,
                     Href = null
-                });
-            }
-            
-            return suggestions;
-        }
+                };
+            })
+            .ToList();
 
-        // No matches - return empty
+        results.AddRange(folderSuggestions);
+
+        // Build child file suggestions (shown after folders)
+        // Use multi-token AND search if trailing text contains spaces
+        var fileSuggestions = FilterChildFiles(children.ChildFiles, trailingText, pathPrefix)
+            .Take(_options.MaxSuggestions - results.Count)
+            .ToList();
+
+        results.AddRange(fileSuggestions);
+
         _logger.LogDebugSanitized(
-            "No matching categories - Provider={Key}, Query={Query}",
-            _options.Key, query);
-        return Array.Empty<ExternalLinkSuggestion>();
+            "Drill-down search - Provider={Key}, Path={Path}, Trailing={Trailing}, Folders={FolderCount}, Files={FileCount}",
+            _options.Key, pathPrefix, trailingText, folderSuggestions.Count, fileSuggestions.Count);
+
+        return results;
     }
 
     public async Task<ExternalLinkContent> GetContentAsync(string id, CancellationToken ct)
     {
-        // Phase 4: Content retrieval and rendering
-
         // Step 1: Validate ID format
         if (!BlobIdValidator.IsValid(id, out var validationError))
         {
             _logger.LogWarningSanitized(
                 "Invalid content ID - Provider={Key}, Id={Id}, Error={Error}",
                 _options.Key, id, validationError);
-            
             return CreateEmptyContent(id);
         }
 
         // Step 2: Parse category and slug
         var (category, slug) = BlobIdValidator.ParseId(id);
-
-        // Ensure parsing succeeded (should not fail if validation passed, but be defensive)
         if (string.IsNullOrWhiteSpace(category) || string.IsNullOrWhiteSpace(slug))
         {
             _logger.LogWarningSanitized(
                 "Failed to parse content ID after validation - Provider={Key}, Id={Id}",
                 _options.Key, id);
-            
             return CreateEmptyContent(id);
         }
 
-        // Step 3: Validate category exists
-        var categories = await GetCategoriesAsync(ct);
-        if (!categories.Contains(category, StringComparer.OrdinalIgnoreCase))
-        {
-            _logger.LogWarningSanitized(
-                "Content requested for invalid category - Provider={Key}, Category={Category}, Id={Id}",
-                _options.Key, category, id);
-            
-            return CreateEmptyContent(id);
-        }
-
-        // Step 4: Check cache first
+        // Step 3: Check content cache
         var cacheKey = BuildCacheKey("Content", id);
         if (_cache.TryGetValue<ExternalLinkContent>(cacheKey, out var cached) && cached != null)
         {
-            _logger.LogDebugSanitized(
-                "Content cache hit - Provider={Key}, Id={Id}",
-                _options.Key, id);
+            _logger.LogDebugSanitized("Content cache hit - Provider={Key}, Id={Id}", _options.Key, id);
             return cached;
         }
 
-        // Step 5: Load category index to get blob name mapping
+        // Step 4: Load category index to find the blob name
+        // GetCategoryIndexAsync no longer validates against a flat category list —
+        // it directly queries blob storage at the given path.
         var index = await GetCategoryIndexAsync(category, ct);
         var item = index.FirstOrDefault(i => i.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
 
         if (item == null)
         {
             _logger.LogWarningSanitized(
-                "Content ID not found in category index - Provider={Key}, Id={Id}, Category={Category}, IndexCount={IndexCount}, SampleIds={SampleIds}",
-                _options.Key, id, category, index.Count, string.Join(", ", index.Take(5).Select(i => i.Id)));
-            
+                "Content ID not found in category index - Provider={Key}, Id={Id}, Category={Category}, IndexCount={IndexCount}",
+                _options.Key, id, category, index.Count);
             return CreateEmptyContent(id);
         }
 
-        // Step 6: Fetch blob content
+        // Step 5: Fetch blob content and render
         try
         {
             var blobClient = _containerClient.GetBlobClient(item.BlobName);
             var response = await blobClient.DownloadContentAsync(ct);
             var content = response.Value.Content;
 
-            // Step 7: Parse JSON (handle UTF-8 BOM if present)
+            // Handle UTF-8 BOM
             var jsonBytes = content.ToMemory();
-            
-            // Check for and skip UTF-8 BOM (EF BB BF)
             var span = jsonBytes.Span;
             if (span.Length >= 3 && span[0] == 0xEF && span[1] == 0xBB && span[2] == 0xBF)
             {
                 jsonBytes = jsonBytes.Slice(3);
             }
-            
+
             using var json = JsonDocument.Parse(jsonBytes);
 
-            // Step 8: Render markdown
             var markdown = GenericJsonMarkdownRenderer.RenderMarkdown(
-                json, 
-                _options.DisplayName, 
-                item.Title);
+                json, _options.DisplayName, item.Title);
 
-            // Step 9: Create result
             var result = new ExternalLinkContent
             {
                 Source = _options.Key,
@@ -273,12 +196,10 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
                 ExternalUrl = null
             };
 
-            // Cache result
-            var cacheOptions = new MemoryCacheEntryOptions
+            _cache.Set(cacheKey, result, new MemoryCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_options.ContentCacheTtl)
-            };
-            _cache.Set(cacheKey, result, cacheOptions);
+            });
 
             _logger.LogDebugSanitized(
                 "Content retrieved and rendered - Provider={Key}, Id={Id}, BlobName={BlobName}",
@@ -291,7 +212,6 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
             _logger.LogErrorSanitized(ex,
                 "Failed to retrieve or render content - Provider={Key}, Id={Id}, BlobName={BlobName}",
                 _options.Key, id, item.BlobName);
-            
             return CreateEmptyContent(id);
         }
     }
@@ -311,17 +231,463 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
     }
 
     // ==================================================================================
-    // PRIVATE METHODS - Phase 2: Category Discovery & Index Building
+    // PRIVATE METHODS - Progressive Discovery
     // ==================================================================================
 
-    // Helper method for creating cache keys
+    /// <summary>
+    /// Result of discovering direct children at a given path.
+    /// ChildFolders carry both the original blob name and the lowercase slug for display/IDs.
+    /// ChildFiles are CategoryItem records for JSON files at this level.
+    /// </summary>
+    private record PathChildren(List<ChildFolder> ChildFolders, List<CategoryItem> ChildFiles);
+
+    /// <summary>
+    /// A subfolder discovered at a given path level.
+    /// BlobName is the original casing as stored in blob (needed for subsequent queries).
+    /// Slug is the lowercase-normalized name used in IDs and display.
+    /// </summary>
+    private record ChildFolder(string BlobName, string Slug);
+
+    /// <summary>
+    /// Discovers the direct children (subfolders and files) at a given relative path
+    /// within the provider's root prefix. Uses GetBlobsByHierarchy with "/" delimiter
+    /// to get exactly one level of the hierarchy.
+    /// 
+    /// Returns null if the path has no children (doesn't exist or is empty).
+    /// Results are cached per path.
+    /// </summary>
+    /// <param name="relativePath">
+    /// Path relative to RootPrefix. Empty string for root level.
+    /// Can be in original blob casing OR lowercase — the method resolves via cached mappings.
+    /// Example: "bestiary" or "Bestiary" or "bestiary/beast" or "items/armor/light"
+    /// </param>
+    private async Task<PathChildren?> GetChildrenAtPathAsync(string relativePath, CancellationToken ct)
+    {
+        var normalizedPath = relativePath.Trim('/');
+        
+        // Resolve the path to its original blob casing
+        var blobPath = await ResolveBlobPathAsync(normalizedPath, ct);
+        
+        var cacheKey = BuildCacheKey("Children", normalizedPath.ToLowerInvariant());
+
+        if (_cache.TryGetValue<PathChildren>(cacheKey, out var cached) && cached != null)
+        {
+            return cached;
+        }
+
+        // Build the blob prefix using the ORIGINAL casing from blob storage
+        var prefix = string.IsNullOrEmpty(blobPath)
+            ? _options.RootPrefix
+            : $"{_options.RootPrefix}{blobPath}/";
+
+        var childFolders = new List<ChildFolder>();
+        var childFiles = new List<CategoryItem>();
+
+        await foreach (var item in _containerClient.GetBlobsByHierarchyAsync(
+            prefix: prefix,
+            delimiter: "/",
+            cancellationToken: ct))
+        {
+            if (item.IsPrefix && item.Prefix != null)
+            {
+                // Subfolder — extract the folder name in its ORIGINAL casing
+                var originalFolderName = item.Prefix[prefix.Length..].TrimEnd('/');
+                if (!string.IsNullOrWhiteSpace(originalFolderName))
+                {
+                    var slug = originalFolderName.ToLowerInvariant();
+                    childFolders.Add(new ChildFolder(originalFolderName, slug));
+                    
+                    // Cache the slug → blob path mapping for this child
+                    var childSlugPath = string.IsNullOrEmpty(normalizedPath)
+                        ? slug
+                        : $"{normalizedPath.ToLowerInvariant()}/{slug}";
+                    var childBlobPath = string.IsNullOrEmpty(blobPath)
+                        ? originalFolderName
+                        : $"{blobPath}/{originalFolderName}";
+                    CacheBlobPathMapping(childSlugPath, childBlobPath);
+                }
+            }
+            else if (item.IsBlob && item.Blob != null)
+            {
+                var blobName = item.Blob.Name;
+                if (!blobName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (item.Blob.Properties.ContentLength.HasValue &&
+                    item.Blob.Properties.ContentLength.Value > 5_000_000)
+                    continue;
+
+                var lastSlash = blobName.LastIndexOf('/');
+                var filename = lastSlash >= 0 ? blobName[(lastSlash + 1)..] : blobName;
+                var slug = BlobFilenameParser.DeriveSlug(filename);
+
+                if (string.IsNullOrWhiteSpace(slug))
+                    continue;
+
+                // IDs are always lowercase
+                var id = string.IsNullOrEmpty(normalizedPath)
+                    ? slug.ToLowerInvariant()
+                    : $"{normalizedPath.ToLowerInvariant()}/{slug.ToLowerInvariant()}";
+                var title = BlobFilenameParser.PrettifySlug(slug);
+
+                childFiles.Add(new CategoryItem(id, title, blobName, Pk: null));
+            }
+        }
+
+        if (childFolders.Count == 0 && childFiles.Count == 0)
+        {
+            return null;
+        }
+
+        childFolders.Sort((a, b) => string.Compare(a.Slug, b.Slug, StringComparison.OrdinalIgnoreCase));
+        childFiles = childFiles
+            .OrderBy(f => f.Title, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(f => f.Id)
+            .ToList();
+
+        var result = new PathChildren(childFolders, childFiles);
+
+        _cache.Set(cacheKey, result, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_options.CategoriesCacheTtl)
+        });
+
+        _logger.LogDebugSanitized(
+            "Children discovered - Provider={Key}, Path={Path}, BlobPath={BlobPath}, Folders={FolderCount}, Files={FileCount}",
+            _options.Key, normalizedPath, blobPath, childFolders.Count, childFiles.Count);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Resolves a lowercase slug path back to its original blob casing.
+    /// Uses cached mappings built during discovery.
+    /// Falls back to the input path if no mapping exists (first-time root discovery).
+    /// </summary>
+    private async Task<string> ResolveBlobPathAsync(string slugPath, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(slugPath))
+            return string.Empty;
+
+        var mappingKey = BuildCacheKey("BlobPathMap", slugPath.ToLowerInvariant());
+        if (_cache.TryGetValue<string>(mappingKey, out var blobPath) && blobPath != null)
+        {
+            return blobPath;
+        }
+
+        // No cached mapping — this can happen if the cache expired or on first access
+        // to a deep path. Walk from root to rebuild mappings.
+        var segments = slugPath.Split('/');
+        var currentSlugPath = "";
+        var currentBlobPath = "";
+
+        for (var i = 0; i < segments.Length; i++)
+        {
+            // Ensure parent is discovered (this populates child mappings)
+            var parentChildren = await GetChildrenAtPathAsync(currentBlobPath, ct);
+            if (parentChildren == null)
+            {
+                // Parent doesn't exist — return input as-is
+                return slugPath;
+            }
+
+            var targetSlug = segments[i].ToLowerInvariant();
+            var matchedFolder = parentChildren.ChildFolders
+                .FirstOrDefault(f => f.Slug.Equals(targetSlug, StringComparison.OrdinalIgnoreCase));
+
+            if (matchedFolder == null)
+            {
+                // Segment not found — return input as-is
+                return slugPath;
+            }
+
+            currentSlugPath = string.IsNullOrEmpty(currentSlugPath)
+                ? matchedFolder.Slug
+                : $"{currentSlugPath}/{matchedFolder.Slug}";
+            currentBlobPath = string.IsNullOrEmpty(currentBlobPath)
+                ? matchedFolder.BlobName
+                : $"{currentBlobPath}/{matchedFolder.BlobName}";
+        }
+
+        return currentBlobPath;
+    }
+
+    /// <summary>
+    /// Caches a mapping from lowercase slug path to original blob path.
+    /// </summary>
+    private void CacheBlobPathMapping(string slugPath, string blobPath)
+    {
+        var mappingKey = BuildCacheKey("BlobPathMap", slugPath.ToLowerInvariant());
+        _cache.Set(mappingKey, blobPath, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_options.CategoriesCacheTtl)
+        });
+    }
+
+    /// <summary>
+    /// Returns suggestions for top-level categories only (no children expanded).
+    /// Used when the user types "[[ros" with no slash and no text.
+    /// </summary>
+    private async Task<List<ExternalLinkSuggestion>> GetTopLevelCategorySuggestionsAsync(CancellationToken ct)
+    {
+        var children = await GetChildrenAtPathAsync("", ct);
+        if (children == null)
+        {
+            return new List<ExternalLinkSuggestion>();
+        }
+
+        var suggestions = new List<ExternalLinkSuggestion>();
+
+        foreach (var folder in children.ChildFolders)
+        {
+            var title = BlobFilenameParser.PrettifySlug(folder.Slug);
+            suggestions.Add(new ExternalLinkSuggestion
+            {
+                Source = _options.Key,
+                Id = $"_category/{folder.Slug}",
+                Title = title,
+                Subtitle = $"Browse {title}",
+                Category = "_category",
+                Icon = null,
+                Href = null
+            });
+        }
+
+        // Also include any files at the root level (unlikely but possible)
+        foreach (var file in children.ChildFiles.Take(_options.MaxSuggestions - suggestions.Count))
+        {
+            suggestions.Add(new ExternalLinkSuggestion
+            {
+                Source = _options.Key,
+                Id = file.Id,
+                Title = file.Title,
+                Subtitle = _options.DisplayName,
+                Category = "",
+                Icon = null,
+                Href = null
+            });
+        }
+
+        return suggestions;
+    }
+
+    /// <summary>
+    /// Handles partial path matching when the typed path doesn't match a real folder.
+    /// Example: "besti" → finds "bestiary" in parent's children.
+    /// Example: "bestiary/bea" → finds "beast" under "bestiary".
+    /// </summary>
+    private async Task<List<ExternalLinkSuggestion>> SearchPartialPathAsync(string query, CancellationToken ct)
+    {
+        return await SearchPartialPathInternalAsync(query, 0, ct);
+    }
+
+    private async Task<List<ExternalLinkSuggestion>> SearchPartialPathInternalAsync(
+        string query, int depth, CancellationToken ct)
+    {
+        if (depth > _options.MaxDrillDownDepth)
+            return new List<ExternalLinkSuggestion>();
+
+        // Split into parent path and partial segment
+        var lastSlashIdx = query.LastIndexOf('/');
+        var parentPath = lastSlashIdx >= 0 ? query[..lastSlashIdx] : "";
+        var partialSegment = lastSlashIdx >= 0 ? query[(lastSlashIdx + 1)..] : query;
+
+        var children = await GetChildrenAtPathAsync(parentPath, ct);
+        if (children == null)
+        {
+            // Parent path doesn't exist either — recurse up if there's still a slash
+            if (lastSlashIdx > 0)
+            {
+                return await SearchPartialPathInternalAsync(parentPath, depth + 1, ct);
+            }
+
+            return new List<ExternalLinkSuggestion>();
+        }
+
+        var results = new List<ExternalLinkSuggestion>();
+
+        // Match folders that contain the partial segment
+        var matchingFolders = children.ChildFolders
+            .Where(f => f.Slug.Contains(partialSegment, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        foreach (var folder in matchingFolders)
+        {
+            var fullPath = string.IsNullOrEmpty(parentPath) ? folder.Slug : $"{parentPath}/{folder.Slug}";
+            var title = BlobFilenameParser.PrettifySlug(folder.Slug);
+            results.Add(new ExternalLinkSuggestion
+            {
+                Source = _options.Key,
+                Id = $"_category/{fullPath}",
+                Title = title,
+                Subtitle = $"Browse {title}",
+                Category = "_category",
+                Icon = null,
+                Href = null
+            });
+        }
+
+        // Also match files at this level
+        var matchingFiles = children.ChildFiles
+            .Where(f => f.Title.Contains(partialSegment, StringComparison.OrdinalIgnoreCase))
+            .Take(_options.MaxSuggestions - results.Count);
+
+        foreach (var file in matchingFiles)
+        {
+            results.Add(new ExternalLinkSuggestion
+            {
+                Source = _options.Key,
+                Id = file.Id,
+                Title = file.Title,
+                Subtitle = BlobFilenameParser.PrettifySlug(parentPath),
+                Category = parentPath,
+                Icon = null,
+                Href = null
+            });
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// Searches across ALL leaf categories for items matching the query.
+    /// Also returns matching category names at the top.
+    /// Used only for top-level text search (no slash in query).
+    /// </summary>
+    private async Task<List<ExternalLinkSuggestion>> SearchAcrossAllCategoriesAsync(string query, CancellationToken ct)
+    {
+        var results = new List<ExternalLinkSuggestion>();
+
+        // Part 1: Check top-level categories that match the query text
+        var topChildren = await GetChildrenAtPathAsync("", ct);
+        if (topChildren != null)
+        {
+            var matchingFolders = topChildren.ChildFolders
+                .Where(f => f.Slug.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            foreach (var folder in matchingFolders)
+            {
+                var title = BlobFilenameParser.PrettifySlug(folder.Slug);
+                results.Add(new ExternalLinkSuggestion
+                {
+                    Source = _options.Key,
+                    Id = $"_category/{folder.Slug}",
+                    Title = title,
+                    Subtitle = $"Browse {title}",
+                    Category = "_category",
+                    Icon = null,
+                    Href = null
+                });
+            }
+        }
+
+        // Part 2: Search items across all leaf categories
+        var leafCategories = await GetAllLeafCategoriesAsync(ct);
+
+        var itemResults = new List<ExternalLinkSuggestion>();
+        foreach (var leafPath in leafCategories)
+        {
+            var index = await GetCategoryIndexAsync(leafPath, ct);
+
+            var matchingItems = index
+                .Where(item => item.Title.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .Take(5)
+                .Select(item => new ExternalLinkSuggestion
+                {
+                    Source = _options.Key,
+                    Id = item.Id,
+                    Title = item.Title,
+                    Subtitle = BlobFilenameParser.PrettifySlug(leafPath),
+                    Category = leafPath,
+                    Icon = null,
+                    Href = null
+                });
+
+            itemResults.AddRange(matchingItems);
+        }
+
+        results.AddRange(itemResults.Take(_options.MaxSuggestions - results.Count));
+
+        _logger.LogDebugSanitized(
+            "Cross-category search - Provider={Key}, Query={Query}, LeafCategories={LeafCount}, ItemMatches={ItemCount}",
+            _options.Key, query, leafCategories.Count, itemResults.Count);
+
+        return results;
+    }
+
+    /// <summary>
+    /// Recursively discovers all leaf category paths (folders that contain files).
+    /// A leaf category is a path where GetChildrenAtPathAsync returns files.
+    /// Cached for CategoriesCacheTtl minutes.
+    /// </summary>
+    private async Task<List<string>> GetAllLeafCategoriesAsync(CancellationToken ct)
+    {
+        var cacheKey = BuildCacheKey("AllLeafCategories");
+
+        if (_cache.TryGetValue<List<string>>(cacheKey, out var cached) && cached != null)
+        {
+            return cached;
+        }
+
+        var sw = Stopwatch.StartNew();
+        var leaves = new List<string>();
+
+        await CollectLeafCategoriesAsync("", leaves, 0, ct);
+
+        leaves.Sort(StringComparer.OrdinalIgnoreCase);
+
+        sw.Stop();
+        _logger.LogDebug(
+            "Leaf categories discovered - Provider={Key}, Count={Count}, Elapsed={Elapsed}ms",
+            _options.Key, leaves.Count, sw.ElapsedMilliseconds);
+
+        _cache.Set(cacheKey, leaves, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_options.CategoriesCacheTtl)
+        });
+
+        return leaves;
+    }
+
+    /// <summary>
+    /// Recursive helper to walk the folder tree and collect all paths that contain files.
+    /// </summary>
+    private async Task CollectLeafCategoriesAsync(
+        string path, List<string> leaves, int depth, CancellationToken ct)
+    {
+        if (depth > _options.MaxDrillDownDepth)
+        {
+            _logger.LogWarningSanitized(
+                "Max drill-down depth reached - Provider={Key}, Path={Path}, Depth={Depth}",
+                _options.Key, path, depth);
+            return;
+        }
+
+        var children = await GetChildrenAtPathAsync(path, ct);
+        if (children == null) return;
+
+        // If this path has files and is not root, it's a leaf (or mixed) category
+        // Skip root-level files since they'd produce IDs without a category prefix
+        if (children.ChildFiles.Count > 0 && !string.IsNullOrEmpty(path))
+        {
+            leaves.Add(path);
+        }
+
+        // Recurse into subfolders
+        foreach (var folder in children.ChildFolders)
+        {
+            var childPath = string.IsNullOrEmpty(path) ? folder.Slug : $"{path}/{folder.Slug}";
+            await CollectLeafCategoriesAsync(childPath, leaves, depth + 1, ct);
+        }
+    }
+
+    // ==================================================================================
+    // PRIVATE METHODS - Index Building & Filtering
+    // ==================================================================================
+
     private string BuildCacheKey(string type, string? key = null)
     {
-        // Format: ExternalLinks:{source}:{type}:{key}
-        // Examples:
-        //   ExternalLinks:srd14:Categories
-        //   ExternalLinks:srd14:CategoryIndex:spells
-        //   ExternalLinks:srd14:Content:spells/fireball
         var cacheKey = $"ExternalLinks:{_options.Key}:{type}";
         if (!string.IsNullOrEmpty(key))
         {
@@ -331,438 +697,89 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
     }
 
     /// <summary>
-    /// Discovers all categories (and subcategories) under the provider's root prefix.
-    /// Returns hierarchical categories like "items/armor" if subcategories exist.
-    /// Returns flat categories like "spells" if no subcategories.
-    /// Results are cached for CategoriesCacheTtl minutes.
-    /// </summary>
-    private async Task<List<string>> GetCategoriesAsync(CancellationToken ct)
-    {
-        var cacheKey = BuildCacheKey("Categories");
-
-        // Check cache first
-        if (_cache.TryGetValue<List<string>>(cacheKey, out var cached) && cached != null)
-        {
-            _logger.LogDebug(
-                "Categories cache hit - Provider={Key}, Count={Count}",
-                _options.Key, cached.Count);
-            return cached;
-        }
-
-        _logger.LogDebug(
-            "Discovering categories - Provider={Key}, RootPrefix={RootPrefix}",
-            _options.Key, _options.RootPrefix);
-
-        var sw = Stopwatch.StartNew();
-        var categories = new List<string>();
-
-        // Step 1: Get first-level folders (e.g., backgrounds, items, spells)
-        var firstLevelBlobs = _containerClient.GetBlobsByHierarchy(
-            prefix: _options.RootPrefix,
-            delimiter: "/",
-            cancellationToken: ct);
-        
-        foreach (var item in firstLevelBlobs)
-        {
-            if (item.IsPrefix && item.Prefix != null)
-            {
-                // Extract top-level category name
-                var prefix = item.Prefix;
-                
-                if (prefix.StartsWith(_options.RootPrefix, StringComparison.Ordinal))
-                {
-                    var categoryWithSlash = prefix[_options.RootPrefix.Length..];
-                    var topLevelCategory = categoryWithSlash.TrimEnd('/');
-                    
-                    if (string.IsNullOrWhiteSpace(topLevelCategory))
-                        continue;
-
-                    // Step 2: Check if this category has subcategories
-                    var subcategories = await GetSubcategoriesAsync(topLevelCategory, ct);
-                    
-                    if (subcategories.Count > 0)
-                    {
-                        // Has subcategories - add hierarchical paths
-                        foreach (var sub in subcategories)
-                        {
-                            categories.Add($"{topLevelCategory}/{sub}");
-                        }
-                    }
-                    else
-                    {
-                        // No subcategories - add as flat category
-                        categories.Add(topLevelCategory);
-                    }
-                }
-            }
-        }
-
-        // Sort alphabetically (case-insensitive)
-        categories.Sort(StringComparer.OrdinalIgnoreCase);
-
-        sw.Stop();
-        _logger.LogDebug(
-            "Categories discovered - Provider={Key}, Count={Count}, Elapsed={Elapsed}ms",
-            _options.Key, categories.Count, sw.ElapsedMilliseconds);
-
-        // Cache result
-        var cacheOptions = new MemoryCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_options.CategoriesCacheTtl)
-        };
-        _cache.Set(cacheKey, categories, cacheOptions);
-
-        return categories;
-    }
-
-    /// <summary>
-    /// Checks if a category has subcategories by looking for second-level folders.
-    /// Returns empty list if category has only files (no subfolders).
-    /// </summary>
-    private async Task<List<string>> GetSubcategoriesAsync(string category, CancellationToken ct)
-    {
-        var subcategories = new List<string>();
-        var categoryPrefix = $"{_options.RootPrefix}{category}/";
-
-        var secondLevelBlobs = _containerClient.GetBlobsByHierarchyAsync(
-            prefix: categoryPrefix,
-            delimiter: "/",
-            cancellationToken: ct);
-
-        var hasFiles = false;
-        
-        await foreach (var item in secondLevelBlobs)
-        {
-            if (item.IsPrefix && item.Prefix != null)
-            {
-                // This is a subfolder - extract subcategory name
-                var fullPrefix = item.Prefix;
-                if (fullPrefix.StartsWith(categoryPrefix, StringComparison.Ordinal))
-                {
-                    var subcategory = fullPrefix[categoryPrefix.Length..].TrimEnd('/');
-                    if (!string.IsNullOrWhiteSpace(subcategory))
-                    {
-                        subcategories.Add(subcategory);
-                    }
-                }
-            }
-            else if (item.IsBlob)
-            {
-                // This is a file at the category level
-                hasFiles = true;
-            }
-        }
-
-        // If we found files directly under the category, it's flat (no subcategories)
-        if (hasFiles && subcategories.Count > 0)
-        {
-            _logger.LogWarningSanitized(
-                "Category has BOTH files and subfolders - treating as flat - Category={Category}",
-                category);
-            return new List<string>();
-        }
-
-        if (hasFiles)
-        {
-            return new List<string>();
-        }
-
-        // Return subcategories sorted
-        subcategories.Sort(StringComparer.OrdinalIgnoreCase);
-        return subcategories;
-    }
-
-    /// <summary>
-    /// Generates category suggestions from the categories list.
-    /// Returns all categories - no filtering.
-    /// </summary>
-    private async Task<List<ExternalLinkSuggestion>> GetCategorySuggestionsAsync(CancellationToken ct)
-    {
-        var categories = await GetCategoriesAsync(ct);
-        var suggestions = new List<ExternalLinkSuggestion>();
-
-        foreach (var category in categories)
-        {
-            var title = BlobFilenameParser.PrettifySlug(category);
-            
-            suggestions.Add(new ExternalLinkSuggestion
-            {
-                Source = _options.Key,
-                Id = $"_category/{category}",
-                Title = title,
-                Subtitle = $"Browse {title}",
-                Category = "_category",
-                Icon = null,
-                Href = null
-            });
-        }
-
-        return suggestions;
-    }
-
-    /// <summary>
-    /// Generates filtered category suggestions based on query prefix.
-    /// Empty query returns all categories. Non-empty query filters by prefix (case-insensitive).
-    /// </summary>
-    private async Task<List<ExternalLinkSuggestion>> GetFilteredCategorySuggestionsAsync(string query, CancellationToken ct)
-    {
-        var categories = await GetCategoriesAsync(ct);
-        
-        // If query is empty, return all categories
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            return await GetCategorySuggestionsAsync(ct);
-        }
-
-        // Filter categories by prefix (case-insensitive)
-        var queryLower = query.ToLowerInvariant();
-        var filtered = categories
-            .Where(c => c.StartsWith(queryLower, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        var suggestions = new List<ExternalLinkSuggestion>();
-        foreach (var category in filtered)
-        {
-            var title = BlobFilenameParser.PrettifySlug(category);
-            
-            suggestions.Add(new ExternalLinkSuggestion
-            {
-                Source = _options.Key,
-                Id = $"_category/{category}",
-                Title = title,
-                Subtitle = $"Browse {title}",
-                Category = "_category",
-                Icon = null,
-                Href = null
-            });
-        }
-
-        return suggestions;
-    }
-
-    /// <summary>
-    /// Searches across all categories for matching items.
-    /// Returns category suggestions first, then matching items from all categories.
-    /// </summary>
-    private async Task<List<ExternalLinkSuggestion>> SearchAcrossAllCategoriesAsync(string query, CancellationToken ct)
-    {
-        var results = new List<ExternalLinkSuggestion>();
-        
-        // If query is empty, return all categories only
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            return await GetCategorySuggestionsAsync(ct);
-        }
-
-        var categories = await GetCategoriesAsync(ct);
-        
-        // Part 1: Add matching categories at the top
-        var matchingCategories = categories
-            .Where(c => c.Contains(query, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-        
-        foreach (var category in matchingCategories)
-        {
-            var title = BlobFilenameParser.PrettifySlug(category);
-            
-            results.Add(new ExternalLinkSuggestion
-            {
-                Source = _options.Key,
-                Id = $"_category/{category}",
-                Title = title,
-                Subtitle = $"Browse {title}",
-                Category = "_category",
-                Icon = null,
-                Href = null
-            });
-        }
-
-        // Part 2: Search for matching items across all categories
-        var itemResults = new List<ExternalLinkSuggestion>();
-        
-        foreach (var category in categories)
-        {
-            // Get index for this category
-            var index = await GetCategoryIndexAsync(category, ct);
-            
-            // Filter items that match the query
-            var matchingItems = index
-                .Where(item => item.Title.Contains(query, StringComparison.OrdinalIgnoreCase))
-                .Take(5) // Limit per category to avoid overwhelming results
-                .Select(item => new ExternalLinkSuggestion
-                {
-                    Source = _options.Key,
-                    Id = item.Id,
-                    Title = item.Title,
-                    Subtitle = $"{BlobFilenameParser.PrettifySlug(category)}",
-                    Category = category,
-                    Icon = null,
-                    Href = null
-                });
-            
-            itemResults.AddRange(matchingItems);
-        }
-        
-        // Add item results after categories, limit total
-        results.AddRange(itemResults.Take(_options.MaxSuggestions - results.Count));
-        
-        _logger.LogDebugSanitized(
-            "Cross-category search - Provider={Key}, Query={Query}, Categories={CatCount}, Items={ItemCount}",
-            _options.Key, query, matchingCategories.Count, itemResults.Count);
-        
-        return results;
-    }
-
-    /// <summary>
-    /// Builds and caches the index for a specific category.
-    /// Uses blob filenames as titles (no download needed - FAST).
+    /// Builds and caches the index of files for a specific category path.
+    /// Delegates to GetChildrenAtPathAsync to ensure consistent blob path resolution
+    /// (handling mixed-case folder names in blob storage).
+    /// Returns only the files (not subfolders) at the given path.
     /// </summary>
     private async Task<List<CategoryItem>> GetCategoryIndexAsync(string category, CancellationToken ct)
     {
-        // Normalize category to lowercase
-        category = category.ToLowerInvariant();
+        var cacheKey = BuildCacheKey("CategoryIndex", category.ToLowerInvariant());
 
-        // Validate category exists
-        var categories = await GetCategoriesAsync(ct);
-        if (!categories.Contains(category, StringComparer.OrdinalIgnoreCase))
+        if (_cache.TryGetValue<List<CategoryItem>>(cacheKey, out var cached) && cached != null)
         {
-            _logger.LogWarningSanitized(
-                "Category not found - Provider={Key}, Category={Category}",
+            return cached;
+        }
+
+        // Delegate to GetChildrenAtPathAsync which handles blob path resolution
+        var children = await GetChildrenAtPathAsync(category, ct);
+        if (children == null)
+        {
+            _logger.LogDebugSanitized(
+                "Category index empty (path not found) - Provider={Key}, Category={Category}",
                 _options.Key, category);
             return new List<CategoryItem>();
         }
 
-        var cacheKey = BuildCacheKey("CategoryIndex", category);
-
-        // Check cache first
-        if (_cache.TryGetValue<List<CategoryItem>>(cacheKey, out var cached) && cached != null)
-        {
-            _logger.LogDebugSanitized(
-                "Category index cache hit - Provider={Key}, Category={Category}, Count={Count}",
-                _options.Key, category, cached.Count);
-            return cached;
-        }
+        // The ChildFiles are already sorted and have correct lowercase IDs
+        var items = children.ChildFiles;
 
         _logger.LogDebugSanitized(
-            "Building category index - Provider={Key}, Category={Category}",
-            _options.Key, category);
+            "Category index built (via children) - Provider={Key}, Category={Category}, Count={Count}",
+            _options.Key, category, items.Count);
 
-        var sw = Stopwatch.StartNew();
-        var items = new List<CategoryItem>();
-        var prefix = $"{_options.RootPrefix}{category}/";
-
-        // List all blobs in category folder
-        await foreach (var blobItem in _containerClient.GetBlobsAsync(
-            prefix: prefix,
-            cancellationToken: ct))
-        {
-            var blobName = blobItem.Name;
-
-            // Only process .json files
-            if (!blobName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            // Optional: Skip very large blobs (safety measure)
-            if (blobItem.Properties.ContentLength.HasValue &&
-                blobItem.Properties.ContentLength.Value > 5_000_000) // 5 MB
-            {
-                _logger.LogWarningSanitized(
-                    "Skipping large blob - Provider={Key}, Blob={Blob}, Size={Size}",
-                    _options.Key, blobName, blobItem.Properties.ContentLength.Value);
-                continue;
-            }
-
-            // Extract filename from full path
-            var lastSlash = blobName.LastIndexOf('/');
-            var filename = lastSlash >= 0 ? blobName[(lastSlash + 1)..] : blobName;
-
-            // Derive slug
-            var slug = BlobFilenameParser.DeriveSlug(filename);
-
-            // CRITICAL: Skip if slug is empty (per contract)
-            if (string.IsNullOrWhiteSpace(slug))
-            {
-                _logger.LogWarningSanitized(
-                    "Skipping blob due to empty slug - Provider={Key}, Blob={Blob}",
-                    _options.Key, blobName);
-                continue;
-            }
-
-            // Compute ID
-            var id = $"{category}/{slug}";
-
-            // Use filename as title (no download needed - FAST!)
-            // The JSON filename IS the entity title
-            var title = BlobFilenameParser.PrettifySlug(slug);
-
-            items.Add(new CategoryItem(id, title, blobName, Pk: null));
-        }
-
-        // Sort by title (case-insensitive), then by ID for determinism
-        var sortedItems = items
-            .OrderBy(i => i.Title, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(i => i.Id)
-            .ToList();
-
-        sw.Stop();
-        _logger.LogDebugSanitized(
-            "Category index built - Provider={Key}, Category={Category}, Count={Count}, Elapsed={Elapsed}ms",
-            _options.Key, category, sortedItems.Count, sw.ElapsedMilliseconds);
-
-        // Cache result
-        var cacheOptions = new MemoryCacheEntryOptions
+        _cache.Set(cacheKey, items, new MemoryCacheEntryOptions
         {
             AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_options.CategoryIndexCacheTtl)
-        };
-        _cache.Set(cacheKey, sortedItems, cacheOptions);
+        });
 
-        return sortedItems;
+        return items;
     }
 
     /// <summary>
-    /// Filters category items by search term using AND semantics.
-    /// Phase 3: Multi-token matching with case-insensitive contains.
+    /// Filters child files by search term and converts to suggestions.
+    /// Supports multi-token AND search (space-separated tokens all must match).
+    /// Empty search term returns all files.
     /// </summary>
-    /// <param name="items">Category index items (pre-sorted alphabetically).</param>
-    /// <param name="category">The category being searched (for Subtitle/Category fields).</param>
-    /// <param name="searchTerm">Search term with one or more space-separated tokens.</param>
-    /// <returns>Filtered suggestions, ordered alphabetically, limited to MaxSuggestions.</returns>
-    private List<ExternalLinkSuggestion> FilterCategoryItems(
-        List<CategoryItem> items, 
-        string category,
-        string searchTerm)
+    private IEnumerable<ExternalLinkSuggestion> FilterChildFiles(
+        List<CategoryItem> files,
+        string searchTerm,
+        string categoryPath)
     {
-        // Tokenize search term: split on whitespace, trim, ignore empty
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            return files.Select(item => new ExternalLinkSuggestion
+            {
+                Source = _options.Key,
+                Id = item.Id,
+                Title = item.Title,
+                Subtitle = BlobFilenameParser.PrettifySlug(categoryPath),
+                Category = categoryPath,
+                Icon = null,
+                Href = null
+            });
+        }
+
         var tokens = searchTerm
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(t => !string.IsNullOrWhiteSpace(t))
             .ToList();
 
         if (tokens.Count == 0)
-        {
-            // No valid tokens - return empty
-            return new List<ExternalLinkSuggestion>();
-        }
+            return Enumerable.Empty<ExternalLinkSuggestion>();
 
-        // Filter: ALL tokens must match item.Title (case-insensitive)
-        var matches = items
-            .Where(item => tokens.All(token => 
+        return files
+            .Where(item => tokens.All(token =>
                 item.Title.Contains(token, StringComparison.OrdinalIgnoreCase)))
-            .Take(_options.MaxSuggestions)
             .Select(item => new ExternalLinkSuggestion
             {
                 Source = _options.Key,
                 Id = item.Id,
                 Title = item.Title,
-                Subtitle = category,  // Use explicit category parameter
-                Category = category,  // Use explicit category parameter
+                Subtitle = BlobFilenameParser.PrettifySlug(categoryPath),
+                Category = categoryPath,
                 Icon = null,
                 Href = null
-            })
-            .ToList();
-
-        return matches;
+            });
     }
 }
