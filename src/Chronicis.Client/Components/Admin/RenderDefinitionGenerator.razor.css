@@ -1,0 +1,17 @@
+.rdg-container {
+    max-width: 100%;
+}
+
+.rdg-section-title {
+    font-family: 'Spellweaver Display', serif;
+    color: var(--mud-palette-primary);
+}
+
+.rdg-preview-panel {
+    max-height: 600px;
+    overflow-y: auto;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 4px;
+    padding: 8px;
+    background: var(--mud-palette-background);
+}

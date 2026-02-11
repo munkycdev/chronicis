@@ -10,17 +10,27 @@ public partial class ExternalLinkDetailPanel : ComponentBase
 {
     [Parameter] public ExternalLinkContentDto? Content { get; set; }
 
+    /// <summary>
+    /// When provided, bypasses the render definition service and uses this definition directly.
+    /// Used by the admin render definition generator for live preview.
+    /// </summary>
+    [Parameter] public RenderDefinition? DefinitionOverride { get; set; }
+
     private bool _useStructuredRendering;
     private bool _isLoading;
     private JsonElement? _parsedJson;
     private RenderDefinition? _definition;
     private string? _lastContentId;
+    private RenderDefinition? _lastDefinitionOverride;
 
     protected override async Task OnParametersSetAsync()
     {
         var contentId = Content?.Id;
-        if (contentId == _lastContentId) return;
+        var overrideChanged = DefinitionOverride != _lastDefinitionOverride;
+
+        if (contentId == _lastContentId && !overrideChanged) return;
         _lastContentId = contentId;
+        _lastDefinitionOverride = DefinitionOverride;
 
         if (Content == null || string.IsNullOrWhiteSpace(Content.JsonData))
         {
@@ -45,7 +55,8 @@ public partial class ExternalLinkDetailPanel : ComponentBase
                 "ExternalLinkDetailPanel: Parsed JSON for {Id}. Category={Category}, RootKind={Kind}",
                 Content.Id, categoryPath, parsedJson.ValueKind);
 
-            var definition = await RenderDefinitionService.ResolveAsync(Content.Source, categoryPath);
+            var definition = DefinitionOverride
+                ?? await RenderDefinitionService.ResolveAsync(Content.Source, categoryPath);
 
             _parsedJson = parsedJson;
             _definition = definition;
@@ -626,6 +637,43 @@ public partial class ExternalLinkDetailPanel : ComponentBase
     // ==================================================================================
     // Formatting Utilities
     // ==================================================================================
+
+    /// <summary>
+    /// Resolves the display value for a field, handling both single-path and multi-path fields.
+    /// For multi-path, concatenates non-null values with a space separator.
+    /// Returns (resolvedValue, found). When not found, resolvedValue is default.
+    /// </summary>
+    private static (JsonElement value, bool found) ResolveFieldValue(JsonElement dataSource, RenderField field)
+    {
+        if (field.Paths.Count <= 1)
+        {
+            // Single path — standard lookup
+            if (dataSource.TryGetProperty(field.Path, out var val))
+                return (val, true);
+            return (default, false);
+        }
+
+        // Multi-path: concatenate non-null text values
+        var parts = new List<string>();
+        foreach (var path in field.Paths)
+        {
+            if (dataSource.TryGetProperty(path, out var val) && !IsNullOrEmpty(val))
+                parts.Add(FormatScalarValue(val));
+        }
+
+        if (parts.Count == 0)
+            return (default, false);
+
+        // Return as a synthetic string JsonElement via round-trip
+        var combined = string.Join(" ", parts);
+        using var doc = JsonDocument.Parse($"\"{combined.Replace("\"", "\\\"")}\"");
+        return (doc.RootElement.Clone(), true);
+    }
+
+    /// <summary>
+    /// Returns all JSON field paths referenced by a RenderField (for rendered-path tracking).
+    /// </summary>
+    private static IEnumerable<string> GetAllPaths(RenderField field) => field.Paths;
 
     /// <summary>
     /// Formats a JSON field name for display: snake_case/camelCase → Title Case.

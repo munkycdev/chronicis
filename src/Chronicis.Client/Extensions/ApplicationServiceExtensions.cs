@@ -46,6 +46,7 @@ public static class ApplicationServiceExtensions
         // State & coordination services
         services.AddScoped<ITreeStateService, TreeStateService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAdminAuthService, AdminAuthService>();
         services.AddScoped<IAppContextService, AppContextService>();
         services.AddScoped<IMetadataDrawerService, MetadataDrawerService>();
         services.AddScoped<IQuestDrawerService, QuestDrawerService>();

@@ -1,0 +1,159 @@
+{
+    "version": 1,
+    "titleField": "name",
+    "sections": [
+        {
+            "label": "Overview",
+            "render": "fields",
+            "fields": [
+                {
+                    "path": "favored_allowed",
+                    "label": "Favored Allowed",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": "level",
+                    "label": "Level",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": "casting_time",
+                    "label": "Casting Time",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": ["range_text","range_unit"],
+                    "label": "Range",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": "description",
+                    "label": "Description",
+                    "render": "richtext",
+                    "omitNull": true
+                },
+                {
+                    "path": "attack_roll",
+                    "label": "Attack Roll",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": "concentration",
+                    "label": "Concentration",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": "duration",
+                    "label": "Duration",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": "range",
+                    "label": "Range",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": "saving_throw_ability",
+                    "label": "Saving Throw Ability",
+                    "render": "text",
+                    "omitNull": true
+                }
+            ],
+            "collapsed": false
+        },
+        {
+            "label": "Classes",
+            "render": "fields",
+            "fields": [
+                {
+                    "path": "classes",
+                    "label": "Classes",
+                    "render": "text",
+                    "omitNull": true
+                }
+            ],
+            "collapsed": true
+        },
+        {
+            "label": "Components",
+            "render": "fields",
+            "fields": [
+                {
+                    "path": "verbal",
+                    "label": "Verbal",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": "somatic",
+                    "label": "Somatic",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": "material",
+                    "label": "Material",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": "material_consumed",
+                    "label": "Material Consumed",
+                    "render": "text",
+                    "omitNull": true
+                }
+            ],
+            "collapsed": true
+        },
+        {
+            "label": "Higher Level",
+            "render": "fields",
+            "fields": [
+                {
+                    "path": "higher_level",
+                    "label": "Higher Level",
+                    "render": "richtext",
+                    "omitNull": true
+                }
+            ],
+            "collapsed": true
+        },
+		{
+            "label": "Additional Data",
+            "render": "fields",
+            "fields": [
+                {
+                    "path": "school",
+                    "label": "School",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": "target_count",
+                    "label": "Target Count",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
+                    "path": "target_type",
+                    "label": "Target Type",
+                    "render": "text",
+                    "omitNull": true
+                }
+            ],
+            "collapsed": true
+        }
+    ],
+    "hidden": [
+        "document"
+    ],
+    "catchAll": true
+}
