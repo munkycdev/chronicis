@@ -1,5 +1,6 @@
 using Blazored.LocalStorage;
 using Chronicis.Client;
+using Chronicis.Client.Extensions;
 using Chronicis.Client.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
@@ -88,104 +89,28 @@ builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
 // ============================================
 
 // API Services - all use the "ChronicisApi" named client
-builder.Services.AddScoped<IArticleApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<ArticleApiService>>();
-    return new ArticleApiService(factory.CreateClient("ChronicisApi"), logger);
-});
+// Standard services (HttpClient + ILogger)
+builder.Services.AddChronicisApiService<IArticleApiService, ArticleApiService>();
+builder.Services.AddChronicisApiService<ISearchApiService, SearchApiService>();
+builder.Services.AddChronicisApiService<IAISummaryApiService, AISummaryApiService>();
+builder.Services.AddChronicisApiService<IWorldApiService, WorldApiService>();
+builder.Services.AddChronicisApiService<ICampaignApiService, CampaignApiService>();
+builder.Services.AddChronicisApiService<IArcApiService, ArcApiService>();
+builder.Services.AddChronicisApiService<ILinkApiService, LinkApiService>();
+builder.Services.AddChronicisApiService<IArticleExternalLinkApiService, ArticleExternalLinkApiService>();
+builder.Services.AddChronicisApiService<IExternalLinkApiService, ExternalLinkApiService>();
+builder.Services.AddChronicisApiService<IUserApiService, UserApiService>();
+builder.Services.AddChronicisApiService<ICharacterApiService, CharacterApiService>();
+builder.Services.AddChronicisApiService<IDashboardApiService, DashboardApiService>();
 
-builder.Services.AddScoped<ISearchApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<SearchApiService>>();
-    return new SearchApiService(factory.CreateClient("ChronicisApi"), logger);
-});
+// Concrete service (no interface)
+builder.Services.AddChronicisApiServiceConcrete<ResourceProviderApiService>();
 
-builder.Services.AddScoped<IAISummaryApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<AISummaryApiService>>();
-    return new AISummaryApiService(factory.CreateClient("ChronicisApi"), logger);
-});
+// Special case: QuestApiService requires ISnackbar
+builder.Services.AddChronicisApiServiceWithSnackbar<IQuestApiService, QuestApiService>();
 
-builder.Services.AddScoped<IWorldApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<WorldApiService>>();
-    return new WorldApiService(factory.CreateClient("ChronicisApi"), logger);
-});
-
-builder.Services.AddScoped<ICampaignApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<CampaignApiService>>();
-    return new CampaignApiService(factory.CreateClient("ChronicisApi"), logger);
-});
-
-builder.Services.AddScoped<IArcApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<ArcApiService>>();
-    return new ArcApiService(factory.CreateClient("ChronicisApi"), logger);
-});
-
-builder.Services.AddScoped<IQuestApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<QuestApiService>>();
-    var snackbar = sp.GetRequiredService<ISnackbar>();
-    return new QuestApiService(factory.CreateClient("ChronicisApi"), logger, snackbar);
-});
-
-builder.Services.AddScoped<ILinkApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<LinkApiService>>();
-    return new LinkApiService(factory.CreateClient("ChronicisApi"), logger);
-});
-
-builder.Services.AddScoped<IArticleExternalLinkApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<ArticleExternalLinkApiService>>();
-    return new ArticleExternalLinkApiService(factory.CreateClient("ChronicisApi"), logger);
-});
-
-builder.Services.AddScoped<IExternalLinkApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<ExternalLinkApiService>>();
-    return new ExternalLinkApiService(factory.CreateClient("ChronicisApi"), logger);
-});
-
-builder.Services.AddScoped<IUserApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<UserApiService>>();
-    return new UserApiService(factory.CreateClient("ChronicisApi"), logger);
-});
-
-builder.Services.AddScoped<ICharacterApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<CharacterApiService>>();
-    return new CharacterApiService(factory.CreateClient("ChronicisApi"), logger);
-});
-
-builder.Services.AddScoped<IDashboardApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<DashboardApiService>>();
-    return new DashboardApiService(factory.CreateClient("ChronicisApi"), logger);
-});
-
-builder.Services.AddScoped<ResourceProviderApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var logger = sp.GetRequiredService<ILogger<ResourceProviderApiService>>();
-    return new ResourceProviderApiService(factory.CreateClient("ChronicisApi"), logger);
-});
+// Special case: ExportApiService requires IJSRuntime
+builder.Services.AddChronicisApiServiceWithJSRuntime<IExportApiService, ExportApiService>();
 
 // Public API service - uses base client WITHOUT auth handler (for anonymous access)
 builder.Services.AddHttpClient("ChronicisPublicApi", client =>
@@ -222,15 +147,6 @@ builder.Services.AddScoped<IBreadcrumbService, BreadcrumbService>();
 
 // Markdown service (for rendering markdown to HTML)
 builder.Services.AddScoped<IMarkdownService, MarkdownService>();
-
-// Export service (for downloading world data as zip archives)
-builder.Services.AddScoped<IExportApiService>(sp =>
-{
-    var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var jsRuntime = sp.GetRequiredService<Microsoft.JSInterop.IJSRuntime>();
-    var logger = sp.GetRequiredService<ILogger<ExportApiService>>();
-    return new ExportApiService(factory.CreateClient("ChronicisApi"), jsRuntime, logger);
-});
 
 await builder.Build().RunAsync();
 // ============================================
