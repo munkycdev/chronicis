@@ -30,7 +30,8 @@
         { "path": "ability_score_intelligence", "label": "INT" },
         { "path": "ability_score_wisdom", "label": "WIS" },
         { "path": "ability_score_charisma", "label": "CHA" }
-      ]
+      ],
+            "collapsed": true
     },
     {
       "label": "Combat",
@@ -45,7 +46,8 @@
         { "path": "fly", "label": "Fly" },
         { "path": "climb", "label": "Climb" },
         { "path": "burrow", "label": "Burrow" }
-      ]
+      ],
+            "collapsed": true
     },
     {
       "label": "Saving Throws",
@@ -57,7 +59,8 @@
         { "path": "saving_throw_intelligence", "label": "Intelligence" },
         { "path": "saving_throw_wisdom", "label": "Wisdom" },
         { "path": "saving_throw_charisma", "label": "Charisma" }
-      ]
+      ],
+            "collapsed": true
     },
     {
       "label": "Skills",
@@ -81,7 +84,8 @@
         { "path": "skill_bonus_sleight_of_hand", "label": "Sleight of Hand" },
         { "path": "skill_bonus_stealth", "label": "Stealth" },
         { "path": "skill_bonus_survival", "label": "Survival" }
-      ]
+      ],
+            "collapsed": true
     },
     {
       "label": "Defenses",
@@ -92,7 +96,8 @@
         { "path": "condition_immunities_display", "label": "Condition Immunities" },
         { "path": "nonmagical_attack_immunity", "label": "Nonmagical Attack Immunity" },
         { "path": "nonmagical_attack_resistance", "label": "Nonmagical Attack Resistance" }
-      ]
+      ],
+            "collapsed": true
     },
     {
       "label": "Senses",
@@ -103,13 +108,15 @@
         { "path": "truesight_range", "label": "Truesight" },
         { "path": "normal_sight_range", "label": "Normal Sight" },
         { "path": "passive_perception", "label": "Passive Perception", "omitNull": false }
-      ]
+      ],
+            "collapsed": true
     },
     {
       "label": "Languages",
       "fields": [
         { "path": "languages_desc", "label": "Languages" }
-      ]
+      ],
+            "collapsed": true
     }
   ]
 }

@@ -1,6 +1,16 @@
 {
     "version": 1,
     "titleField": "name",
+    "hidden": [
+        "pk", 
+        "model", 
+        "document", 
+        "illustration", 
+        "hover",
+        "range_unit",
+        "school"
+    ],
+    "catchAll": true,
     "sections": [
         {
             "label": "Overview",
@@ -172,15 +182,5 @@
             ],
             "collapsed": true
         }
-    ],
-    "hidden": [
-        "pk", 
-        "model", 
-        "document", 
-        "illustration", 
-        "hover",
-        "range_unit",
-        "school"
-    ],
-    "catchAll": true
+    ]
 }
