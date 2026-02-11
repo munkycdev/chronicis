@@ -193,6 +193,9 @@ try
     builder.Services.AddScoped<ISummaryService, SummaryService>();
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<IWorldService, WorldService>();
+    builder.Services.AddScoped<IWorldMembershipService, WorldMembershipService>();
+    builder.Services.AddScoped<IWorldInvitationService, WorldInvitationService>();
+    builder.Services.AddScoped<IWorldPublicSharingService, WorldPublicSharingService>();
     builder.Services.AddScoped<ICampaignService, CampaignService>();
     builder.Services.AddScoped<IArcService, ArcService>();
     builder.Services.AddScoped<ILinkParser, Chronicis.Api.Services.LinkParser>();

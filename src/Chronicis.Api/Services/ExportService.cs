@@ -15,23 +15,23 @@ namespace Chronicis.Api.Services;
 public class ExportService : IExportService
 {
     private readonly ChronicisDbContext _db;
-    private readonly IWorldService _worldService;
+    private readonly IWorldMembershipService _membershipService;
     private readonly ILogger<ExportService> _logger;
 
     public ExportService(
         ChronicisDbContext db,
-        IWorldService worldService,
+        IWorldMembershipService membershipService,
         ILogger<ExportService> logger)
     {
         _db = db;
-        _worldService = worldService;
+        _membershipService = membershipService;
         _logger = logger;
     }
 
     public async Task<byte[]?> ExportWorldToMarkdownAsync(Guid worldId, Guid userId)
     {
         // Verify user has access to the world
-        if (!await _worldService.UserHasAccessAsync(worldId, userId))
+        if (!await _membershipService.UserHasAccessAsync(worldId, userId))
         {
             _logger.LogWarning("User {UserId} attempted to export world {WorldId} without access", userId, worldId);
             return null;

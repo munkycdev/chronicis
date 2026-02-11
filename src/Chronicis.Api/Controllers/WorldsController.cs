@@ -18,6 +18,9 @@ namespace Chronicis.Api.Controllers;
 public class WorldsController : ControllerBase
 {
     private readonly IWorldService _worldService;
+    private readonly IWorldMembershipService _membershipService;
+    private readonly IWorldInvitationService _invitationService;
+    private readonly IWorldPublicSharingService _publicSharingService;
     private readonly IExportService _exportService;
     private readonly IArticleHierarchyService _hierarchyService;
     private readonly ChronicisDbContext _context;
@@ -26,6 +29,9 @@ public class WorldsController : ControllerBase
 
     public WorldsController(
         IWorldService worldService,
+        IWorldMembershipService membershipService,
+        IWorldInvitationService invitationService,
+        IWorldPublicSharingService publicSharingService,
         IExportService exportService,
         IArticleHierarchyService hierarchyService,
         ChronicisDbContext context,
@@ -33,6 +39,9 @@ public class WorldsController : ControllerBase
         ILogger<WorldsController> logger)
     {
         _worldService = worldService;
+        _membershipService = membershipService;
+        _invitationService = invitationService;
+        _publicSharingService = publicSharingService;
         _exportService = exportService;
         _hierarchyService = hierarchyService;
         _context = context;
@@ -139,7 +148,7 @@ public class WorldsController : ControllerBase
 
         _logger.LogDebugSanitized("Checking public slug '{Slug}' for world {WorldId}", dto.Slug, id);
 
-        var result = await _worldService.CheckPublicSlugAsync(dto.Slug, id);
+        var result = await _publicSharingService.CheckPublicSlugAsync(dto.Slug, id);
         return Ok(result);
     }
 
@@ -154,7 +163,7 @@ public class WorldsController : ControllerBase
         var user = await _currentUserService.GetRequiredUserAsync();
         _logger.LogDebug("Getting members for world {WorldId}", id);
 
-        var members = await _worldService.GetMembersAsync(id, user.Id);
+        var members = await _membershipService.GetMembersAsync(id, user.Id);
         return Ok(members);
     }
 
@@ -176,7 +185,7 @@ public class WorldsController : ControllerBase
 
         _logger.LogDebug("Updating member {MemberId} in world {WorldId}", memberId, worldId);
 
-        var member = await _worldService.UpdateMemberRoleAsync(worldId, memberId, dto, user.Id);
+        var member = await _membershipService.UpdateMemberRoleAsync(worldId, memberId, dto, user.Id);
 
         if (member == null)
         {
@@ -195,7 +204,7 @@ public class WorldsController : ControllerBase
         var user = await _currentUserService.GetRequiredUserAsync();
         _logger.LogDebug("Removing member {MemberId} from world {WorldId}", memberId, worldId);
 
-        var success = await _worldService.RemoveMemberAsync(worldId, memberId, user.Id);
+        var success = await _membershipService.RemoveMemberAsync(worldId, memberId, user.Id);
 
         if (!success)
         {
@@ -216,7 +225,7 @@ public class WorldsController : ControllerBase
         var user = await _currentUserService.GetRequiredUserAsync();
         _logger.LogDebug("Getting invitations for world {WorldId}", id);
 
-        var invitations = await _worldService.GetInvitationsAsync(id, user.Id);
+        var invitations = await _invitationService.GetInvitationsAsync(id, user.Id);
         return Ok(invitations);
     }
 
@@ -234,7 +243,7 @@ public class WorldsController : ControllerBase
 
         _logger.LogDebug("Creating invitation for world {WorldId}", id);
 
-        var invitation = await _worldService.CreateInvitationAsync(id, dto, user.Id);
+        var invitation = await _invitationService.CreateInvitationAsync(id, dto, user.Id);
 
         if (invitation == null)
         {
@@ -253,7 +262,7 @@ public class WorldsController : ControllerBase
         var user = await _currentUserService.GetRequiredUserAsync();
         _logger.LogDebug("Revoking invitation {InvitationId} for world {WorldId}", invitationId, worldId);
 
-        var success = await _worldService.RevokeInvitationAsync(worldId, invitationId, user.Id);
+        var success = await _invitationService.RevokeInvitationAsync(worldId, invitationId, user.Id);
 
         if (!success)
         {
@@ -278,7 +287,7 @@ public class WorldsController : ControllerBase
 
         _logger.LogDebugSanitized("User {UserId} attempting to join world with code {Code}", user.Id, dto.Code);
 
-        var result = await _worldService.JoinWorldAsync(dto.Code, user.Id);
+        var result = await _invitationService.JoinWorldAsync(dto.Code, user.Id);
 
         if (result.Success)
         {

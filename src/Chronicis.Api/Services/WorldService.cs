@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
 using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
@@ -11,25 +10,29 @@ using Microsoft.Extensions.Logging;
 namespace Chronicis.Api.Services;
 
 /// <summary>
-/// Service for world management
+/// Service for core world management (CRUD, lookup, creation)
 /// </summary>
 public class WorldService : IWorldService
 {
     private readonly ChronicisDbContext _context;
+    private readonly IWorldMembershipService _membershipService;
+    private readonly IWorldPublicSharingService _publicSharingService;
     private readonly ILogger<WorldService> _logger;
 
-    // Regex for valid public slug: lowercase alphanumeric with hyphens, no leading/trailing hyphens
-    private static readonly Regex PublicSlugRegex = new(@"^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.Compiled);
-
-    public WorldService(ChronicisDbContext context, ILogger<WorldService> logger)
+    public WorldService(
+        ChronicisDbContext context,
+        IWorldMembershipService membershipService,
+        IWorldPublicSharingService publicSharingService,
+        ILogger<WorldService> logger)
     {
         _context = context;
+        _membershipService = membershipService;
+        _publicSharingService = publicSharingService;
         _logger = logger;
     }
 
     public async Task<List<WorldDto>> GetUserWorldsAsync(Guid userId)
     {
-        // Get all worlds user is a member of (via WorldMembers)
         var worlds = await _context.Worlds
             .Where(w => w.Members.Any(m => m.UserId == userId))
             .Include(w => w.Owner)
@@ -53,8 +56,8 @@ public class WorldService : IWorldService
         if (world == null)
             return null;
 
-        // Check access
-        if (!await UserHasAccessAsync(worldId, userId))
+        // Check access via membership service
+        if (!await _membershipService.UserHasAccessAsync(worldId, userId))
             return null;
 
         return MapToDetailDto(world);
@@ -232,13 +235,13 @@ public class WorldService : IWorldService
                 if (string.IsNullOrWhiteSpace(dto.PublicSlug))
                 {
                     _logger.LogWarning("Attempted to make world {WorldId} public without a public slug", worldId);
-                    return null; // Or throw a validation exception
+                    return null;
                 }
 
                 var normalizedSlug = dto.PublicSlug.Trim().ToLowerInvariant();
                 
-                // Validate slug format
-                var validationError = ValidatePublicSlug(normalizedSlug);
+                // Validate slug format via public sharing service
+                var validationError = _publicSharingService.ValidatePublicSlug(normalizedSlug);
                 if (validationError != null)
                 {
                     _logger.LogWarningSanitized("Invalid public slug '{Slug}' for world {WorldId}: {Error}", 
@@ -246,8 +249,8 @@ public class WorldService : IWorldService
                     return null;
                 }
 
-                // Check availability
-                if (!await IsPublicSlugAvailableAsync(normalizedSlug, worldId))
+                // Check availability via public sharing service
+                if (!await _publicSharingService.IsPublicSlugAvailableAsync(normalizedSlug, worldId))
                 {
                     _logger.LogWarningSanitized("Public slug '{Slug}' is already taken", normalizedSlug);
                     return null;
@@ -275,154 +278,19 @@ public class WorldService : IWorldService
         return MapToDto(world);
     }
 
-    public async Task<bool> UserHasAccessAsync(Guid worldId, Guid userId)
+    public async Task<WorldDto?> GetWorldBySlugAsync(string slug, Guid userId)
     {
-        // User is a member of this world
-        return await _context.WorldMembers
-            .AnyAsync(wm => wm.WorldId == worldId && wm.UserId == userId);
-    }
-
-    public async Task<bool> UserOwnsWorldAsync(Guid worldId, Guid userId)
-    {
-        return await _context.Worlds
-            .AnyAsync(w => w.Id == worldId && w.OwnerId == userId);
-    }
-
-    /// <summary>
-    /// Check if a public slug is available (not already in use by another world).
-    /// </summary>
-    public async Task<bool> IsPublicSlugAvailableAsync(string publicSlug, Guid? excludeWorldId = null)
-    {
-        var normalizedSlug = publicSlug.Trim().ToLowerInvariant();
-
-        var query = _context.Worlds
-            .AsNoTracking()
-            .Where(w => w.PublicSlug == normalizedSlug);
-
-        if (excludeWorldId.HasValue)
-        {
-            query = query.Where(w => w.Id != excludeWorldId.Value);
-        }
-
-        return !await query.AnyAsync();
-    }
-
-    /// <summary>
-    /// Check public slug availability and return detailed result.
-    /// </summary>
-    public async Task<PublicSlugCheckResultDto> CheckPublicSlugAsync(string slug, Guid? excludeWorldId = null)
-    {
-        var normalizedSlug = slug.Trim().ToLowerInvariant();
-
-        // Validate format first
-        var validationError = ValidatePublicSlug(normalizedSlug);
-        if (validationError != null)
-        {
-            return new PublicSlugCheckResultDto
-            {
-                IsAvailable = false,
-                ValidationError = validationError,
-                SuggestedSlug = GenerateSuggestedSlug(slug)
-            };
-        }
-
-        // Check availability
-        var isAvailable = await IsPublicSlugAvailableAsync(normalizedSlug, excludeWorldId);
-        
-        return new PublicSlugCheckResultDto
-        {
-            IsAvailable = isAvailable,
-            ValidationError = null,
-            SuggestedSlug = isAvailable ? null : await GenerateAvailableSlugAsync(normalizedSlug)
-        };
-    }
-
-    /// <summary>
-    /// Get a world by its public slug (for anonymous access).
-    /// </summary>
-    public async Task<WorldDto?> GetWorldByPublicSlugAsync(string publicSlug)
-    {
-        var normalizedSlug = publicSlug.Trim().ToLowerInvariant();
-
         var world = await _context.Worlds
             .AsNoTracking()
             .Include(w => w.Owner)
             .Include(w => w.Campaigns)
-            .FirstOrDefaultAsync(w => w.PublicSlug == normalizedSlug && w.IsPublic);
+            .Include(w => w.Members)
+            .FirstOrDefaultAsync(w => w.Slug == slug && w.Members.Any(m => m.UserId == userId));
 
         if (world == null)
             return null;
 
         return MapToDto(world);
-    }
-
-    /// <summary>
-    /// Validate a public slug format.
-    /// Returns null if valid, or an error message if invalid.
-    /// </summary>
-    private static string? ValidatePublicSlug(string slug)
-    {
-        if (string.IsNullOrWhiteSpace(slug))
-            return "Public slug is required";
-
-        if (slug.Length < 3)
-            return "Public slug must be at least 3 characters";
-
-        if (slug.Length > 100)
-            return "Public slug must be 100 characters or less";
-
-        if (!PublicSlugRegex.IsMatch(slug))
-            return "Public slug must contain only lowercase letters, numbers, and hyphens (no leading/trailing hyphens)";
-
-        // Reserved slugs that shouldn't be used
-        var reserved = new[] { "api", "admin", "public", "private", "new", "edit", "delete", "search", "login", "logout", "settings" };
-        if (reserved.Contains(slug))
-            return "This slug is reserved and cannot be used";
-
-        return null;
-    }
-
-    /// <summary>
-    /// Generate a suggested slug from user input.
-    /// </summary>
-    private static string GenerateSuggestedSlug(string input)
-    {
-        // Convert to lowercase, replace spaces and underscores with hyphens
-        var slug = input.Trim().ToLowerInvariant();
-        slug = Regex.Replace(slug, @"[\s_]+", "-");
-        // Remove invalid characters
-        slug = Regex.Replace(slug, @"[^a-z0-9-]", "");
-        // Remove consecutive hyphens
-        slug = Regex.Replace(slug, @"-+", "-");
-        // Remove leading/trailing hyphens
-        slug = slug.Trim('-');
-
-        // Ensure minimum length
-        if (slug.Length < 3)
-            slug = slug.PadRight(3, '0');
-
-        return slug;
-    }
-
-    /// <summary>
-    /// Generate an available slug by appending numbers.
-    /// </summary>
-    private async Task<string> GenerateAvailableSlugAsync(string baseSlug)
-    {
-        var suffix = 1;
-        var candidate = $"{baseSlug}-{suffix}";
-
-        while (!await IsPublicSlugAvailableAsync(candidate))
-        {
-            suffix++;
-            candidate = $"{baseSlug}-{suffix}";
-
-            // Safety limit
-            if (suffix > 100)
-                return $"{baseSlug}-{Guid.NewGuid().ToString()[..8]}";
-        }
-
-        return candidate;
     }
 
     /// <summary>
@@ -446,25 +314,6 @@ public class WorldService : IWorldService
             .ToHashSetAsync();
 
         return SlugGenerator.GenerateUniqueSlug(baseSlug, existingSlugs);
-    }
-
-    /// <summary>
-    /// <summary>
-    /// Get a world by its slug - user must be a member of the world.
-    /// </summary>
-    public async Task<WorldDto?> GetWorldBySlugAsync(string slug, Guid userId)
-    {
-        var world = await _context.Worlds
-            .AsNoTracking()
-            .Include(w => w.Owner)
-            .Include(w => w.Campaigns)
-            .Include(w => w.Members)
-            .FirstOrDefaultAsync(w => w.Slug == slug && w.Members.Any(m => m.UserId == userId));
-
-        if (world == null)
-            return null;
-
-        return MapToDto(world);
     }
 
     private static WorldDto MapToDto(World world)
@@ -523,325 +372,6 @@ public class WorldService : IWorldService
                 JoinedAt = m.JoinedAt,
                 InvitedBy = m.InvitedBy
             }).ToList() ?? new List<WorldMemberDto>()
-        };
-    }
-
-    // ===== Member Management =====
-
-    public async Task<List<WorldMemberDto>> GetMembersAsync(Guid worldId, Guid userId)
-    {
-        // Check access
-        if (!await UserHasAccessAsync(worldId, userId))
-            return new List<WorldMemberDto>();
-
-        var members = await _context.WorldMembers
-            .Include(m => m.User)
-            .Include(m => m.Inviter)
-            .Where(m => m.WorldId == worldId)
-            .ToListAsync();
-
-        return members.Select(m => new WorldMemberDto
-        {
-            Id = m.Id,
-            UserId = m.UserId,
-            DisplayName = m.User?.DisplayName ?? "Unknown",
-            Email = m.User?.Email ?? "",
-            AvatarUrl = m.User?.AvatarUrl,
-            Role = m.Role,
-            JoinedAt = m.JoinedAt,
-            InvitedBy = m.InvitedBy,
-            InviterName = m.Inviter?.DisplayName
-        }).ToList();
-    }
-
-    public async Task<WorldMemberDto?> UpdateMemberRoleAsync(Guid worldId, Guid memberId, WorldMemberUpdateDto dto, Guid userId)
-    {
-        // Only GMs can update roles
-        var isGM = await _context.WorldMembers
-            .AnyAsync(m => m.WorldId == worldId && m.UserId == userId && m.Role == WorldRole.GM);
-
-        if (!isGM)
-            return null;
-
-        var member = await _context.WorldMembers
-            .Include(m => m.User)
-            .FirstOrDefaultAsync(m => m.Id == memberId && m.WorldId == worldId);
-
-        if (member == null)
-            return null;
-
-        // Prevent demoting the last GM
-        if (member.Role == WorldRole.GM && dto.Role != WorldRole.GM)
-        {
-            var gmCount = await _context.WorldMembers
-                .CountAsync(m => m.WorldId == worldId && m.Role == WorldRole.GM);
-
-            if (gmCount <= 1)
-            {
-                _logger.LogWarning("Cannot demote the last GM of world {WorldId}", worldId);
-                return null;
-            }
-        }
-
-        member.Role = dto.Role;
-        await _context.SaveChangesAsync();
-
-        _logger.LogDebug("Updated member {MemberId} role to {Role} in world {WorldId}", 
-            memberId, dto.Role, worldId);
-
-        return new WorldMemberDto
-        {
-            Id = member.Id,
-            UserId = member.UserId,
-            DisplayName = member.User?.DisplayName ?? "Unknown",
-            Email = member.User?.Email ?? "",
-            AvatarUrl = member.User?.AvatarUrl,
-            Role = member.Role,
-            JoinedAt = member.JoinedAt,
-            InvitedBy = member.InvitedBy
-        };
-    }
-
-    public async Task<bool> RemoveMemberAsync(Guid worldId, Guid memberId, Guid userId)
-    {
-        // Only GMs can remove members
-        var isGM = await _context.WorldMembers
-            .AnyAsync(m => m.WorldId == worldId && m.UserId == userId && m.Role == WorldRole.GM);
-
-        if (!isGM)
-            return false;
-
-        var member = await _context.WorldMembers
-            .FirstOrDefaultAsync(m => m.Id == memberId && m.WorldId == worldId);
-
-        if (member == null)
-            return false;
-
-        // Prevent removing the last GM
-        if (member.Role == WorldRole.GM)
-        {
-            var gmCount = await _context.WorldMembers
-                .CountAsync(m => m.WorldId == worldId && m.Role == WorldRole.GM);
-
-            if (gmCount <= 1)
-            {
-                _logger.LogWarning("Cannot remove the last GM of world {WorldId}", worldId);
-                return false;
-            }
-        }
-
-        _context.WorldMembers.Remove(member);
-        await _context.SaveChangesAsync();
-
-        _logger.LogDebug("Removed member {MemberId} from world {WorldId}", memberId, worldId);
-
-        return true;
-    }
-
-    // ===== Invitation Management =====
-
-    public async Task<List<WorldInvitationDto>> GetInvitationsAsync(Guid worldId, Guid userId)
-    {
-        // Only GMs can view invitations
-        var isGM = await _context.WorldMembers
-            .AnyAsync(m => m.WorldId == worldId && m.UserId == userId && m.Role == WorldRole.GM);
-
-        if (!isGM)
-            return new List<WorldInvitationDto>();
-
-        var invitations = await _context.WorldInvitations
-            .Include(i => i.Creator)
-            .Where(i => i.WorldId == worldId)
-            .OrderByDescending(i => i.CreatedAt)
-            .ToListAsync();
-
-        return invitations.Select(i => new WorldInvitationDto
-        {
-            Id = i.Id,
-            WorldId = i.WorldId,
-            Code = i.Code,
-            Role = i.Role,
-            CreatedBy = i.CreatedBy,
-            CreatorName = i.Creator?.DisplayName ?? "Unknown",
-            CreatedAt = i.CreatedAt,
-            ExpiresAt = i.ExpiresAt,
-            MaxUses = i.MaxUses,
-            UsedCount = i.UsedCount,
-            IsActive = i.IsActive
-        }).ToList();
-    }
-
-    public async Task<WorldInvitationDto?> CreateInvitationAsync(Guid worldId, WorldInvitationCreateDto dto, Guid userId)
-    {
-        // Only GMs can create invitations
-        var isGM = await _context.WorldMembers
-            .AnyAsync(m => m.WorldId == worldId && m.UserId == userId && m.Role == WorldRole.GM);
-
-        if (!isGM)
-            return null;
-
-        // Generate unique code
-        string code;
-        int attempts = 0;
-        do
-        {
-            code = Utilities.InvitationCodeGenerator.GenerateCode();
-            attempts++;
-        } while (await _context.WorldInvitations.AnyAsync(i => i.Code == code) && attempts < 10);
-
-        if (attempts >= 10)
-        {
-            _logger.LogError("Failed to generate unique invitation code after 10 attempts");
-            return null;
-        }
-
-        var invitation = new WorldInvitation
-        {
-            Id = Guid.NewGuid(),
-            WorldId = worldId,
-            Code = code,
-            Role = dto.Role,
-            CreatedBy = userId,
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = dto.ExpiresAt,
-            MaxUses = dto.MaxUses,
-            UsedCount = 0,
-            IsActive = true
-        };
-
-        _context.WorldInvitations.Add(invitation);
-        await _context.SaveChangesAsync();
-
-        _logger.LogDebugSanitized("Created invitation {Code} for world {WorldId} by user {UserId}", 
-            code, worldId, userId);
-
-        var creator = await _context.Users.FindAsync(userId);
-
-        return new WorldInvitationDto
-        {
-            Id = invitation.Id,
-            WorldId = invitation.WorldId,
-            Code = invitation.Code,
-            Role = invitation.Role,
-            CreatedBy = invitation.CreatedBy,
-            CreatorName = creator?.DisplayName ?? "Unknown",
-            CreatedAt = invitation.CreatedAt,
-            ExpiresAt = invitation.ExpiresAt,
-            MaxUses = invitation.MaxUses,
-            UsedCount = invitation.UsedCount,
-            IsActive = invitation.IsActive
-        };
-    }
-
-    public async Task<bool> RevokeInvitationAsync(Guid worldId, Guid invitationId, Guid userId)
-    {
-        // Only GMs can revoke invitations
-        var isGM = await _context.WorldMembers
-            .AnyAsync(m => m.WorldId == worldId && m.UserId == userId && m.Role == WorldRole.GM);
-
-        if (!isGM)
-            return false;
-
-        var invitation = await _context.WorldInvitations
-            .FirstOrDefaultAsync(i => i.Id == invitationId && i.WorldId == worldId);
-
-        if (invitation == null)
-            return false;
-
-        invitation.IsActive = false;
-        await _context.SaveChangesAsync();
-
-        _logger.LogDebug("Revoked invitation {InvitationId} for world {WorldId}", invitationId, worldId);
-
-        return true;
-    }
-
-    public async Task<WorldJoinResultDto> JoinWorldAsync(string code, Guid userId)
-    {
-        var normalizedCode = Utilities.InvitationCodeGenerator.NormalizeCode(code);
-
-        if (!Utilities.InvitationCodeGenerator.IsValidFormat(normalizedCode))
-        {
-            return new WorldJoinResultDto
-            {
-                Success = false,
-                ErrorMessage = "Invalid invitation code format"
-            };
-        }
-
-        var invitation = await _context.WorldInvitations
-            .Include(i => i.World)
-            .FirstOrDefaultAsync(i => i.Code == normalizedCode && i.IsActive);
-
-        if (invitation == null)
-        {
-            return new WorldJoinResultDto
-            {
-                Success = false,
-                ErrorMessage = "Invitation not found or has been revoked"
-            };
-        }
-
-        // Check expiration
-        if (invitation.ExpiresAt.HasValue && invitation.ExpiresAt.Value < DateTime.UtcNow)
-        {
-            return new WorldJoinResultDto
-            {
-                Success = false,
-                ErrorMessage = "This invitation has expired"
-            };
-        }
-
-        // Check max uses
-        if (invitation.MaxUses.HasValue && invitation.UsedCount >= invitation.MaxUses.Value)
-        {
-            return new WorldJoinResultDto
-            {
-                Success = false,
-                ErrorMessage = "This invitation has reached its maximum number of uses"
-            };
-        }
-
-        // Check if user is already a member
-        var existingMember = await _context.WorldMembers
-            .FirstOrDefaultAsync(m => m.WorldId == invitation.WorldId && m.UserId == userId);
-
-        if (existingMember != null)
-        {
-            return new WorldJoinResultDto
-            {
-                Success = false,
-                ErrorMessage = "You are already a member of this world"
-            };
-        }
-
-        // Create membership
-        var member = new WorldMember
-        {
-            Id = Guid.NewGuid(),
-            WorldId = invitation.WorldId,
-            UserId = userId,
-            Role = invitation.Role,
-            JoinedAt = DateTime.UtcNow,
-            InvitedBy = invitation.CreatedBy
-        };
-
-        _context.WorldMembers.Add(member);
-
-        // Increment usage count
-        invitation.UsedCount++;
-
-        await _context.SaveChangesAsync();
-
-        _logger.LogDebugSanitized("User {UserId} joined world {WorldId} via invitation {Code}", 
-            userId, invitation.WorldId, normalizedCode);
-
-        return new WorldJoinResultDto
-        {
-            Success = true,
-            WorldId = invitation.WorldId,
-            WorldName = invitation.World?.Name,
-            AssignedRole = invitation.Role
         };
     }
 }
