@@ -130,6 +130,7 @@ public partial class ExternalLinkDetailPanel : ComponentBase
 
     /// <summary>
     /// Renders a single defined section as an expansion panel.
+    /// Skips sections where no fields would be visible (all null/empty with omitNull).
     /// </summary>
     private void RenderSection(
         Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder,
@@ -147,6 +148,39 @@ public partial class ExternalLinkDetailPanel : ComponentBase
 
             sectionData = pathElement;
             renderedPaths.Add(section.Path);
+        }
+
+        // Pre-check: would any fields actually render?
+        // If all fields are null/empty and omitNull, skip the entire section.
+        if (section.Fields != null && section.Fields.Count > 0 && section.Render != "stat-row")
+        {
+            var hasVisibleField = false;
+            foreach (var field in section.Fields)
+            {
+                // Multi-path: check if any path has a value
+                if (field.Paths.Count > 1)
+                {
+                    if (field.Paths.Any(p => sectionData.TryGetProperty(p, out var v) && !IsNullOrEmpty(v)))
+                    {
+                        hasVisibleField = true;
+                        break;
+                    }
+                    continue;
+                }
+
+                if (!sectionData.TryGetProperty(field.Path, out var val)) continue;
+                if (field.OmitNull && IsNullOrEmpty(val)) continue;
+                hasVisibleField = true;
+                break;
+            }
+            if (!hasVisibleField)
+            {
+                // Still track paths as rendered so they don't leak into catch-all
+                foreach (var field in section.Fields)
+                    foreach (var p in field.Paths)
+                        renderedPaths.Add(p);
+                return;
+            }
         }
 
         builder.OpenElement(seq++, "details");
@@ -185,7 +219,8 @@ public partial class ExternalLinkDetailPanel : ComponentBase
             foreach (var field in section.Fields)
             {
                 RenderDefinedField(builder, ref seq, sectionData, field);
-                renderedPaths.Add(field.Path);
+                foreach (var p in field.Paths)
+                    renderedPaths.Add(p);
             }
         }
 
@@ -288,17 +323,36 @@ public partial class ExternalLinkDetailPanel : ComponentBase
         JsonElement dataSource,
         RenderField field)
     {
-        if (!dataSource.TryGetProperty(field.Path, out var value))
+        if (field.Render == "hidden")
             return;
 
-        if (field.Render == "hidden")
+        // Multi-path support: resolve all paths and concatenate values
+        if (field.Paths.Count > 1)
+        {
+            var parts = new List<string>();
+            foreach (var path in field.Paths)
+            {
+                if (dataSource.TryGetProperty(path, out var partValue) && !IsNullOrEmpty(partValue))
+                    parts.Add(FormatScalarValue(partValue));
+            }
+
+            if (parts.Count == 0 && field.OmitNull) return;
+
+            var label = field.Label ?? FormatFieldName(field.Paths[0]);
+            var combined = parts.Count > 0 ? string.Join(" ", parts) : "—";
+            RenderKeyValue(builder, ref seq, label, combined);
+            return;
+        }
+
+        // Single-path rendering (original behavior)
+        if (!dataSource.TryGetProperty(field.Path, out var value))
             return;
 
         // OmitNull: skip fields with null/empty/dash values
         if (field.OmitNull && IsNullOrEmpty(value))
             return;
 
-        var label = field.Label ?? FormatFieldName(field.Path);
+        var fieldLabel = field.Label ?? FormatFieldName(field.Path);
 
         switch (field.Render)
         {
@@ -326,7 +380,7 @@ public partial class ExternalLinkDetailPanel : ComponentBase
 
                 builder.OpenElement(seq++, "span");
                 builder.AddAttribute(seq++, "class", "elp-field-label");
-                builder.AddContent(seq++, label);
+                builder.AddContent(seq++, fieldLabel);
                 builder.CloseElement();
 
                 builder.OpenElement(seq++, "div");
@@ -350,7 +404,7 @@ public partial class ExternalLinkDetailPanel : ComponentBase
                 }
                 else
                 {
-                    RenderKeyValue(builder, ref seq, label, FormatScalarValue(value));
+                    RenderKeyValue(builder, ref seq, fieldLabel, FormatScalarValue(value));
                 }
                 break;
         }

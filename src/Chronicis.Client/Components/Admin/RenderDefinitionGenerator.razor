@@ -18,10 +18,19 @@
                 <MudSelectItem Value="@("srd")">SRD</MudSelectItem>
             </MudSelect>
 
-            <MudTextField @bind-Value="_recordId" Label="Record ID (e.g., bestiary/beast/garoug)"
-                          Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 350px;"
-                          Immediate="true"
-                          OnKeyUp="@OnSearchKeyUp" />
+            <MudAutocomplete T="string"
+                             Value="_recordId"
+                             Label="Record ID (e.g., bestiary/beast/garoug)"
+                             SearchFunc="SearchRecords"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Style="min-width: 400px;"
+                             DebounceInterval="300"
+                             MinCharacters="2"
+                             MaxItems="15"
+                             ResetValueOnEmptyText="false"
+                             CoerceText="true"
+                             ValueChanged="OnRecordSelected" />
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        OnClick="LoadSampleRecord" Disabled="_isLoading"
@@ -33,6 +42,10 @@
         @if (!string.IsNullOrEmpty(_loadError))
         {
             <MudAlert Severity="Severity.Error" Class="mt-3" Dense="true">@_loadError</MudAlert>
+        }
+        @if (!string.IsNullOrEmpty(_existingDefStatus))
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-3" Dense="true">@_existingDefStatus</MudAlert>
         }
     </MudPaper>
 
@@ -48,7 +61,7 @@
                                StartIcon="@Icons.Material.Filled.AutoAwesome">
                         Auto-Generate
                     </MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                                OnClick="ApplyDefinition" Size="Size.Small"
                                Disabled="@(!_definitionDirty)"
                                StartIcon="@Icons.Material.Filled.Refresh">

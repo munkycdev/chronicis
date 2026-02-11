@@ -7,15 +7,21 @@
             "render": "fields",
             "fields": [
                 {
+                    "path": "name",
+                    "label": "Name",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
                     "path": "favored_allowed",
                     "label": "Favored Allowed",
                     "render": "text",
                     "omitNull": true
                 },
                 {
-                    "path": "level",
+                    "path": ["level","school"],
                     "label": "Level",
-                    "render": "text",
+                    "render": "richtext",
                     "omitNull": true
                 },
                 {
@@ -24,9 +30,16 @@
                     "render": "text",
                     "omitNull": true
                 },
+				{
+                    "path": "damage_roll",
+                    "label": "Damage",
+                    "render": "text",
+                    "omitNull": true
+					
+				},
                 {
-                    "path": ["range_text","range_unit"],
-                    "label": "Range",
+                    "path": "range_text",
+                    "label": "Range Text",
                     "render": "text",
                     "omitNull": true
                 },
@@ -61,6 +74,12 @@
                     "omitNull": true
                 },
                 {
+                    "path": "ritual",
+                    "label": "Ritual",
+                    "render": "text",
+                    "omitNull": true
+                },
+                {
                     "path": "saving_throw_ability",
                     "label": "Saving Throw Ability",
                     "render": "text",
@@ -83,6 +102,20 @@
             "collapsed": true
         },
         {
+            "label": "Shape",
+            "render": "fields",
+            "fields": [
+                {
+                    "path": ["shape_size", "shape_size_unit", "shape_type"],
+                    "label": "Shape",
+                    "render": "richtext",
+                    "omitNull": true
+                    
+                }
+            ],
+            "collapsed": true
+        },
+        {
             "label": "Components",
             "render": "fields",
             "fields": [
@@ -99,14 +132,8 @@
                     "omitNull": true
                 },
                 {
-                    "path": "material",
-                    "label": "Material",
-                    "render": "text",
-                    "omitNull": true
-                },
-                {
                     "path": "material_consumed",
-                    "label": "Material Consumed",
+                    "label": "Materials",
                     "render": "text",
                     "omitNull": true
                 }
@@ -131,12 +158,6 @@
             "render": "fields",
             "fields": [
                 {
-                    "path": "school",
-                    "label": "School",
-                    "render": "text",
-                    "omitNull": true
-                },
-                {
                     "path": "target_count",
                     "label": "Target Count",
                     "render": "text",
@@ -153,7 +174,13 @@
         }
     ],
     "hidden": [
-        "document"
+        "pk", 
+        "model", 
+        "document", 
+        "illustration", 
+        "hover",
+        "range_unit",
+        "school"
     ],
     "catchAll": true
 }

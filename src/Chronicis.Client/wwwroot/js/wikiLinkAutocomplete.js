@@ -362,7 +362,7 @@ function insertWikiLinksAtPositions(editorId, matches) {
         // Verify the text at this position matches what we expect
         const textAtPosition = newHtml.substring(startIndex, endIndex);
         if (textAtPosition.toLowerCase() !== displayText.toLowerCase()) {
-            _logger.LogError(`Text mismatch at position ${startIndex}-${endIndex}: expected "${displayText}", found "${textAtPosition}"`);
+            console.error(`Text mismatch at position ${startIndex}-${endIndex}: expected "${displayText}", found "${textAtPosition}"`);
             continue;
         }
         
