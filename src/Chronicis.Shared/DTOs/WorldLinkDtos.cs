@@ -1,7 +1,13 @@
 namespace Chronicis.Shared.DTOs;
 
+// ====================================================================================
+// WorldBookmark DTOs
+// These DTOs represent WorldBookmarks (user-saved external URLs for campaigns).
+// Vocabulary: See docs/Vocabulary.md for terminology definitions.
+// ====================================================================================
+
 /// <summary>
-/// DTO for reading a world link
+/// DTO for reading a WorldBookmark.
 /// </summary>
 public class WorldLinkDto
 {
@@ -14,7 +20,7 @@ public class WorldLinkDto
 }
 
 /// <summary>
-/// DTO for creating a new world link
+/// DTO for creating a new WorldBookmark.
 /// </summary>
 public class WorldLinkCreateDto
 {
@@ -24,7 +30,7 @@ public class WorldLinkCreateDto
 }
 
 /// <summary>
-/// DTO for updating an existing world link
+/// DTO for updating an existing WorldBookmark.
 /// </summary>
 public class WorldLinkUpdateDto
 {

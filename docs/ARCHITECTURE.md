@@ -8,6 +8,8 @@
 
 Chronicis is a web-based knowledge management application for tabletop RPG campaigns. Built with a modern .NET stack, it provides hierarchical content organization, wiki-style linking, and AI-powered summaries.
 
+> **Note on Terminology:** This document uses vocabulary terms defined in [Vocabulary.md](Vocabulary.md). Key concepts include **WikiLinks** (internal article-to-article references), **ExternalReferences** (embedded third-party D&D content), and **WorldBookmarks** (user-saved external URLs). See Vocabulary.md for complete definitions and implementation mappings.
+
 ---
 
 ## Technology Stack
@@ -198,7 +200,7 @@ World (top-level container)
 - Top-level isolation boundary for content
 - Owned by a single user (DM)
 - Contains Campaigns, Characters, and Wiki content
-- Has external links collection (Roll20, D&D Beyond, etc.)
+- Has **WorldBookmarks** collection for external tools (Roll20, D&D Beyond, etc.)
 
 **Campaign**
 - Gaming group's collaborative space within a World
@@ -320,7 +322,9 @@ GET    /api/external-links/content       - External content preview by provider 
 
 ### External Link Providers
 
-External link providers are resolved by key via `IExternalLinkProviderRegistry`.
+External link providers enable **ExternalReferences** (embedded third-party D&D content) in articles. See [Vocabulary.md](Vocabulary.md) for the distinction between ExternalReferences, WikiLinks, and WorldBookmarks.
+
+Providers are resolved by key via `IExternalLinkProviderRegistry`.
 
 **Provider Types:**
 

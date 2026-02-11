@@ -1,8 +1,11 @@
 namespace Chronicis.Shared.Models;
 
 /// <summary>
-/// Represents an external resource link embedded in an article.
+/// Represents an ExternalReference - embedded references to third-party D&D content.
 /// Extracted from HTML spans with data-type="external-link".
+/// <para>
+/// <strong>Vocabulary:</strong> This is an "ExternalReference" - see docs/Vocabulary.md for terminology definitions.
+/// </para>
 /// </summary>
 public class ArticleExternalLink
 {

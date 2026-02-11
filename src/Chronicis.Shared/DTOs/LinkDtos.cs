@@ -2,8 +2,14 @@ using Chronicis.Shared.Enums;
 
 namespace Chronicis.Shared.DTOs;
 
+// ====================================================================================
+// WikiLink DTOs
+// These DTOs support WikiLink functionality (internal article-to-article references).
+// Vocabulary: See docs/Vocabulary.md for terminology definitions.
+// ====================================================================================
+
 /// <summary>
-/// Response containing link suggestions for autocomplete.
+/// Response containing WikiLink suggestions for autocomplete.
 /// </summary>
 public class LinkSuggestionsResponseDto
 {
@@ -11,7 +17,7 @@ public class LinkSuggestionsResponseDto
 }
 
 /// <summary>
-/// A single article suggestion for wiki link autocomplete.
+/// A single article suggestion for WikiLink autocomplete.
 /// </summary>
 public class LinkSuggestionDto
 {
@@ -48,7 +54,7 @@ public class LinkSuggestionDto
 }
 
 /// <summary>
-/// Response containing backlinks to an article.
+/// Response containing WikiLink backlinks to an article.
 /// </summary>
 public class BacklinksResponseDto
 {
@@ -56,7 +62,7 @@ public class BacklinksResponseDto
 }
 
 /// <summary>
-/// An article that links to the current article.
+/// An article that contains a WikiLink to the current article.
 /// </summary>
 public class BacklinkDto
 {

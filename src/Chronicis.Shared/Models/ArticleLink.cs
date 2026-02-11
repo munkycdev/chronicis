@@ -1,8 +1,11 @@
 namespace Chronicis.Shared.Models;
 
 /// <summary>
-/// Represents a wiki-style link from one article to another.
+/// Represents a WikiLink - internal article-to-article references within a campaign.
 /// Links use [[ArticleName]] or [[ArticleName|Display Text]] syntax.
+/// <para>
+/// <strong>Vocabulary:</strong> This is a "WikiLink" - see docs/Vocabulary.md for terminology definitions.
+/// </para>
 /// </summary>
 public class ArticleLink
 {

@@ -2,6 +2,8 @@
 
 **Last Updated:** February 3, 2026
 
+> **Note on Terminology:** This document uses vocabulary terms defined in [Vocabulary.md](Vocabulary.md). Key concepts include **WikiLinks** (internal article-to-article references), **ExternalReferences** (embedded third-party D&D content), and **WorldBookmarks** (user-saved external URLs). See Vocabulary.md for complete definitions.
+
 ---
 
 ## Core Features
@@ -26,9 +28,9 @@ Articles can be nested infinitely deep to mirror campaign structure. Each articl
 
 ---
 
-### Wiki-Style Links
+### WikiLinks (Internal Article References)
 
-Link articles using `[[Article Name]]` syntax, similar to Obsidian.
+**WikiLinks** enable internal article-to-article references using `[[Article Name]]` syntax, similar to Obsidian.
 
 **Syntax:**
 - `[[Article Path]]` - Displays article title, links to article
@@ -43,7 +45,7 @@ Link articles using `[[Article Name]]` syntax, similar to Obsidian.
 **Storage:**
 - Links stored as `[[guid|Display Text]]` or `[[guid]]` in markdown
 - Survives renames since GUID-based
-- ArticleLink table tracks all links for backlink queries
+- ArticleLink table tracks all WikiLinks for backlink queries
 
 **Broken Links:**
 - Visual indicator when target article deleted
@@ -64,9 +66,9 @@ The right sidebar shows all articles that link to the current article.
 
 ---
 
-### External Knowledge Links
+### ExternalReferences (Third-Party D&D Content)
 
-Chronicis supports linking to external reference sources using the wiki-link workflow. Multiple providers are available, including live API integration and blob-backed local SRD data.
+**ExternalReferences** enable embedded references to third-party D&D content (SRD, Open5e) using the wiki-link workflow. Multiple providers are available, including live API integration and blob-backed local SRD data.
 
 **Available Providers:**
 
@@ -201,7 +203,7 @@ Global search across all article content.
 Top-level container for all campaign content. Each user can have multiple Worlds for different settings.
 
 **Fields:** Name, Slug, Description, OwnerId
-**Features:** External links (Roll20, D&D Beyond, etc.)
+**Features:** WorldBookmarks (quick links to Roll20, D&D Beyond, Discord, etc.)
 
 #### Campaigns
 Gaming group's collaborative space within a World.

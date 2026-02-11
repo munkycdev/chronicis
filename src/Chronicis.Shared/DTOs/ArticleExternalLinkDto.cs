@@ -1,7 +1,14 @@
 namespace Chronicis.Shared.DTOs;
 
+// ====================================================================================
+// ExternalReference DTO
+// This DTO represents an ExternalReference (embedded third-party D&D content reference).
+// Vocabulary: See docs/Vocabulary.md for terminology definitions.
+// ====================================================================================
+
 /// <summary>
-/// DTO representing an external resource link for API responses.
+/// DTO representing an ExternalReference for API responses.
+/// Used for embedded references to third-party D&D content (SRD, Open5e, etc.).
 /// </summary>
 public class ArticleExternalLinkDto
 {

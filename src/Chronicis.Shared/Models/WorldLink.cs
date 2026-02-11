@@ -1,8 +1,11 @@
 namespace Chronicis.Shared.Models;
 
 /// <summary>
-/// Represents an external link associated with a World.
-/// Examples: Roll20 campaign, D&D Beyond, SRD, homebrew wikis, etc.
+/// Represents a WorldBookmark - user-saved external URLs associated with a campaign.
+/// Examples: Roll20 campaign, D&D Beyond, Discord servers, homebrew wikis, etc.
+/// <para>
+/// <strong>Vocabulary:</strong> This is a "WorldBookmark" - see docs/Vocabulary.md for terminology definitions.
+/// </para>
 /// </summary>
 public class WorldLink
 {
