@@ -86,44 +86,30 @@ public class RenderDefinitionService : IRenderDefinitionService
 
     private async Task<RenderDefinition?> TryLoadAsync(string path)
     {
-        // Check cache (including negative cache for 404s)
         if (_cache.TryGetValue(path, out var cached))
-        {
-            _logger.LogDebug("RenderDef cache hit for {Path}: {Result}", path, cached != null ? "found" : "negative");
             return cached;
-        }
 
         try
         {
-            var fullUri = new Uri(_http.BaseAddress!, path);
-            _logger.LogInformation("RenderDef fetching: {Uri}", fullUri);
-
             var response = await _http.GetAsync(path);
-            _logger.LogInformation("RenderDef response for {Path}: {Status} {ContentType}",
-                path, (int)response.StatusCode, response.Content.Headers.ContentType?.MediaType);
-
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("RenderDef fetch failed for {Path}: HTTP {Status}", path, (int)response.StatusCode);
                 _cache[path] = null;
                 return null;
             }
 
             var definition = await response.Content.ReadFromJsonAsync<RenderDefinition>();
             _cache[path] = definition;
-            _logger.LogInformation("RenderDef loaded {Path}: {Sections} sections",
-                path, definition?.Sections.Count ?? 0);
             return definition;
         }
-        catch (HttpRequestException ex)
+        catch (HttpRequestException)
         {
-            _logger.LogWarning(ex, "RenderDef HTTP error for {Path}", path);
             _cache[path] = null;
             return null;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "RenderDef parse error for {Path}", path);
+            _logger.LogWarning(ex, "Failed to parse render definition at {Path}", path);
             _cache[path] = null;
             return null;
         }
