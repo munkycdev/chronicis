@@ -1,0 +1,6 @@
+/* 
+   ExternalLinkDetailPanel styles live in chronicis-wiki-links.css (global)
+   because this component uses RenderTreeBuilder for programmatic rendering.
+   Blazor scoped CSS attributes are NOT applied to RenderTreeBuilder output,
+   so scoped styles here would have no effect on the rendered content.
+*/

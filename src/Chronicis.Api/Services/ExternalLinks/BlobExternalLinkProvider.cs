@@ -182,6 +182,9 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
 
             using var json = JsonDocument.Parse(jsonBytes);
 
+            // Capture raw JSON for client-side structured rendering
+            var rawJson = System.Text.Encoding.UTF8.GetString(jsonBytes.Span);
+
             var markdown = GenericJsonMarkdownRenderer.RenderMarkdown(
                 json, _options.DisplayName, item.Title);
 
@@ -193,7 +196,8 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
                 Kind = BlobFilenameParser.PrettifySlug(category),
                 Markdown = markdown,
                 Attribution = $"Source: {_options.DisplayName}",
-                ExternalUrl = null
+                ExternalUrl = null,
+                JsonData = rawJson
             };
 
             _cache.Set(cacheKey, result, new MemoryCacheEntryOptions

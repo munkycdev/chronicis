@@ -144,17 +144,7 @@ else
             }
             else if (_externalPreviewContent != null)
             {
-                <div class="external-link-preview-body chronicis-scrollbar-light">
-                    @((MarkupString)MarkdownService.ToHtml(_externalPreviewContent.Markdown))
-                </div>
-
-                @if (!string.IsNullOrWhiteSpace(_externalPreviewContent.Attribution))
-                {
-                    <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary); margin-top: 8px;">
-                        @_externalPreviewContent.Attribution
-                    </MudText>
-                }
-
+                <ExternalLinkDetailPanel Content="_externalPreviewContent" />
             }
         </MudDrawerContainer>
     </MudDrawer>

@@ -58,6 +58,15 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IBreadcrumbService, BreadcrumbService>();
         services.AddScoped<IMarkdownService, MarkdownService>();
 
+        // Render definition service (loads from wwwroot static assets via base URI)
+        services.AddScoped<IRenderDefinitionService>(sp =>
+        {
+            var navigationManager = sp.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>();
+            var http = new HttpClient { BaseAddress = new Uri(navigationManager.BaseUri) };
+            var logger = sp.GetRequiredService<ILogger<RenderDefinitionService>>();
+            return new RenderDefinitionService(http, logger);
+        });
+
         return services;
     }
 }

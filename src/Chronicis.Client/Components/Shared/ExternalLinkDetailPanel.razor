@@ -1,0 +1,31 @@
+@using System.Text.Json
+@using Chronicis.Client.Models
+@using Chronicis.Shared.DTOs
+@inject IRenderDefinitionService RenderDefinitionService
+@inject IMarkdownService MarkdownService
+@inject ILogger<ExternalLinkDetailPanel> Logger
+
+@if (Content == null)
+{
+    return;
+}
+
+@if (_isLoading)
+{
+    <div class="d-flex justify-center pa-4">
+        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+    </div>
+}
+else if (_useStructuredRendering && _parsedJson.HasValue)
+{
+    <div class="elp-structured">
+        @RenderStructured(_parsedJson.Value, _definition!)
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(Content.Markdown))
+{
+    <!-- Fallback: render markdown as before -->
+    <div class="external-link-preview-body chronicis-scrollbar-light">
+        @((MarkupString)MarkdownService.ToHtml(Content.Markdown))
+    </div>
+}

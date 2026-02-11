@@ -95,7 +95,8 @@ public class ExternalLinksController : ControllerBase
             Kind = content.Kind,
             Markdown = content.Markdown,
             Attribution = content.Attribution,
-            ExternalUrl = content.ExternalUrl
+            ExternalUrl = content.ExternalUrl,
+            JsonData = content.JsonData
         };
 
         return Ok(dto);

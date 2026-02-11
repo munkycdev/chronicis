@@ -107,6 +107,8 @@ span[data-type="external-link"]:hover {
 .external-link-preview-drawer .mud-paper {
     background-color: #F4F0EA !important;
     background: #F4F0EA !important;
+    --mud-palette-drawer-text: #1A1A1A;
+    color: #1A1A1A !important;
 }
 
 .external-link-preview-drawer .mud-drawer-content {
@@ -543,4 +545,234 @@ span[data-type="wiki-link"]:focus {
     .wiki-link-create-option {
         transition: none;
     }
+}
+
+/* ============================================
+   EXTERNAL LINK DETAIL PANEL - Structured Rendering
+   
+   These styles live here (not in scoped .razor.css) because
+   the component uses RenderTreeBuilder to emit elements
+   programmatically, and Blazor does not apply scoped CSS
+   attributes to RenderTreeBuilder output.
+   ============================================ */
+
+.elp-structured {
+    padding: 0 4px 16px;
+}
+
+/* --- Sections (collapsible) --- */
+
+.elp-section {
+    margin-bottom: 16px;
+    border: 1px solid rgba(196, 175, 142, 0.35);
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.elp-section > summary {
+    cursor: pointer;
+    padding: 10px 12px;
+    font-family: var(--chronicis-font-display, Georgia, serif);
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: #1F2A33;
+    background: rgba(196, 175, 142, 0.18);
+    border-bottom: 1px solid rgba(196, 175, 142, 0.25);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+}
+
+.elp-section > summary:hover {
+    background: rgba(196, 175, 142, 0.28);
+}
+
+.elp-section > summary::before {
+    content: "▶";
+    font-size: 0.65em;
+    transition: transform 0.2s ease;
+    color: #C4AF8E;
+}
+
+.elp-section[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.elp-section > summary::-webkit-details-marker {
+    display: none;
+}
+
+.elp-section-body {
+    padding: 8px 10px;
+}
+
+/* --- Subsections (nested collapsibles) --- */
+
+.elp-subsection {
+    margin: 8px 0;
+    margin-left: 8px;
+    border-left: 2px solid rgba(196, 175, 142, 0.4);
+    padding-left: 12px;
+}
+
+.elp-subsection > summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #1F2A33;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+.elp-subsection > summary:hover {
+    color: #3A4750;
+}
+
+.elp-subsection > summary::before {
+    content: "▶";
+    font-size: 0.55em;
+    transition: transform 0.2s ease;
+    color: #C4AF8E;
+}
+
+.elp-subsection[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.elp-subsection > summary::-webkit-details-marker {
+    display: none;
+}
+
+.elp-subsection-body {
+    padding: 4px 0;
+}
+
+/* --- Key-Value Fields --- */
+
+.elp-field {
+    display: flex;
+    gap: 12px;
+    padding: 5px 0;
+    line-height: 1.5;
+    border-bottom: 1px solid rgba(196, 175, 142, 0.12);
+}
+
+.elp-field:last-child {
+    border-bottom: none;
+}
+
+.elp-field-label {
+    font-weight: 600;
+    color: #3A4750;
+    min-width: 140px;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+.elp-field-label::after {
+    content: ":";
+}
+
+.elp-field-value {
+    color: #1A1A1A;
+    word-break: break-word;
+    flex: 1;
+}
+
+/* Long values stack below the label for better readability */
+.elp-field--block {
+    flex-direction: column;
+    gap: 2px;
+}
+
+.elp-field--block .elp-field-value {
+    padding-left: 4px;
+}
+
+/* --- Subheadings (for "heading" render hint) --- */
+
+.elp-subheading {
+    font-family: var(--chronicis-font-display, Georgia, serif);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1F2A33;
+    margin: 10px 0 6px;
+    padding: 0;
+}
+
+/* --- Rich Text blocks --- */
+
+.elp-richtext {
+    padding: 4px 0;
+    line-height: 1.6;
+    color: #333;
+}
+
+.elp-richtext p {
+    margin: 0 0 0.5em;
+}
+
+/* --- Chips / Tags --- */
+
+.elp-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+.elp-chip {
+    display: inline-block;
+    font-size: 0.85rem;
+    padding: 3px 12px;
+    border-radius: 12px;
+    background: rgba(196, 175, 142, 0.2);
+    color: #1F2A33;
+    border: 1px solid rgba(196, 175, 142, 0.4);
+}
+
+/* --- List Items (array entries) --- */
+
+.elp-list-item {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(196, 175, 142, 0.15);
+}
+
+.elp-list-item:last-child {
+    border-bottom: none;
+}
+
+/* --- Table --- */
+
+.elp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin: 4px 0;
+}
+
+.elp-table th {
+    text-align: left;
+    font-weight: 600;
+    color: #1F2A33;
+    padding: 6px 8px;
+    border-bottom: 2px solid rgba(196, 175, 142, 0.4);
+    font-size: 0.85rem;
+}
+
+.elp-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid rgba(196, 175, 142, 0.15);
+    color: #333;
+}
+
+.elp-table tr:last-child td {
+    border-bottom: none;
 }

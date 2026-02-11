@@ -20,6 +20,14 @@ public class ExternalLinkContentDto
     public string Markdown { get; set; } = string.Empty;
     public string? Attribution { get; set; }
     public string? ExternalUrl { get; set; }
+
+    /// <summary>
+    /// Raw JSON data for client-side structured rendering.
+    /// Null for providers that don't support it (e.g., SRD API).
+    /// When present, the client can render this using render definitions
+    /// instead of the markdown fallback.
+    /// </summary>
+    public string? JsonData { get; set; }
 }
 
 public class ExternalLinkErrorDto

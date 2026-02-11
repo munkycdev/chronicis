@@ -9,4 +9,10 @@ public class ExternalLinkContent
     public string Markdown { get; set; } = string.Empty;
     public string? Attribution { get; set; }
     public string? ExternalUrl { get; set; }
+
+    /// <summary>
+    /// Raw JSON data for client-side structured rendering.
+    /// Populated by blob-backed providers. Null for API-backed providers.
+    /// </summary>
+    public string? JsonData { get; set; }
 }
