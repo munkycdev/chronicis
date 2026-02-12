@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## 2026 Q1 Internal Architecture Consolidation
+
+- Centralized article hierarchy logic
+- Consolidated external link services
+- Decomposed TreeStateService
+- Split WorldService responsibilities
+- Canonicalized EF migrations directory
+- Extracted Program.cs configuration into extensions
+
+No breaking API changes.
+
 ## [2.10.0] - 2026-02-08
 
 ### Quest Tracking System
@@ -138,7 +149,7 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [2.7] - 2026-01-09
+## [2.7.0] - 2026-01-09
 
 ### Added
 - External knowledge links in the article editor using wiki-style autocomplete

@@ -214,6 +214,11 @@ public class Article
     public ICollection<ArticleExternalLink> ExternalLinks { get; set; } = new List<ArticleExternalLink>();
 
     /// <summary>
+    /// Inline images/documents embedded in this article's content.
+    /// </summary>
+    public ICollection<WorldDocument> Images { get; set; } = new List<WorldDocument>();
+
+    /// <summary>
     /// Computed property for child count (not mapped to database).
     /// </summary>
     [NotMapped]

@@ -7,7 +7,30 @@
 
 ## Current State
 
-Chronicis is a fully functional knowledge management application for tabletop RPG campaigns. The core application is deployed and operational with all foundational features implemented, including multi-user collaboration, private articles, document storage, and data export.
+Chronicis is feature-complete for core world management functionality and has undergone a major internal consolidation effort to improve maintainability and clarity.
+
+---
+
+## Architecture & Maintainability Improvements (2026 Q1)
+
+Completed:
+
+- Centralized hierarchy logic into IArticleHierarchyService
+- Decomposed TreeStateService into focused internal components
+- Split WorldService into core CRUD + specialized membership and sharing services
+- Consolidated external link wrappers into IExternalLinkService
+- Canonicalized EF migrations directory
+- Reduced client Program.cs from 323 lines to 31 lines
+- Established canonical vocabulary for linking concepts
+
+Net impact:
+
+- 340+ lines of duplicated logic removed
+- 118+ new unit tests added
+- Significant reduction in architectural ambiguity
+- Zero breaking API changes
+
+---
 
 ### What's Working
 
@@ -115,70 +138,14 @@ Chronicis is a fully functional knowledge management application for tabletop RP
 - Auto-save only refreshes panels when metadata drawer is open
 - Fixed positioning for autocomplete popups with viewport boundary detection
 
-
-### Known Issues
-
-See `Feature Ideas.md` for the complete bug list and backlog.
-
----
-
-## Progress Summary
-
-| Phase | Name | Status |
-|-------|------|--------|
-| 0 | Infrastructure & Setup | ✅ Complete |
-| 1 | Data Model & Tree Nav | ✅ Complete |
-| 2 | CRUD Operations | ✅ Complete |
-| 3 | Search & Discovery | ✅ Complete |
-| 4 | Markdown & Rich Content | ✅ Complete |
-| 5 | Visual Design & Polish | ✅ Complete |
-| 6 | Hashtag System | ✅ Complete → Replaced by Wiki Links |
-| 7 | Backlinks & Graph | ✅ Complete |
-| 8 | AI Summaries | ✅ Complete |
-| 9 | Advanced Search | ✅ Complete |
-| 9.5 | Auth Architecture | ✅ Complete |
-| 10 | Drag & Drop | ✅ Complete |
-| 10.5 | Public World Sharing | ✅ Complete |
-| 10.6 | Multi-User Collaboration | ✅ Complete |
-| 10.7 | Private Articles | ✅ Complete |
-| 10.8 | Document Storage | ✅ Complete |
-| 10.9 | Export & Settings | ✅ Complete |
-| 11 | Icons & Polish | ⏳ Pending |
-| 12 | Testing & Deploy | ⏳ Pending |
-
-**Additional Work Completed:**
-- Taxonomy & Entity System (Worlds, Campaigns, Arcs)
-- Dashboard Redesign with World Panels
-- Character Claiming System
-- First-time User Onboarding
-- Public World Sharing with Anonymous Access
-- Multi-User Collaboration with Invitation Codes
-- Document Storage with Azure Blob Storage
-- World Export to Markdown with Settings Page
-
-**Overall Progress:** ~95% of core features complete
-
 ---
 
 ## Next Steps
 
-### Phase 11: Icons & Polish
-- EmojiPicker component improvements
-- Icon display in breadcrumbs and headers
-- Animation polish
-- Enhanced tooltips
-
-### Phase 12: Testing & Deployment
-- Unit tests for all services
-- Integration tests for API endpoints
-- Performance optimization
-- Production deployment validation
-
 ### Optional Enhancements
-- Contextual prompt system for dashboard
+
 - Advanced collaboration features
 - Audio capture integration
-- Add additional external link providers (Kobold Press, homebrew APIs, etc.)
 
 ---
 
@@ -209,24 +176,6 @@ cd src\Chronicis.Api
 dotnet ef migrations add MigrationName
 dotnet ef database update
 ```
-
----
-
-## Key Routes
-
-| Route | Page | Description |
-|-------|------|-------------|
-| `/` | Landing | Public landing page |
-| `/dashboard` | Dashboard | World panels and quick actions |
-| `/getting-started` | Onboarding | First-time user wizard |
-| `/world/{slug}` | WorldDetail | Edit world, create content, public sharing settings |
-| `/campaign/{id}` | CampaignDetail | Edit campaign, manage arcs |
-| `/arc/{id}` | ArcDetail | Edit arc, manage sessions |
-| `/article/{path}` | Articles | Article detail with editing |
-| `/search` | Search | Global search results |
-| `/settings` | Settings | User profile, data export, preferences |
-| `/w/{publicSlug}` | PublicWorld | Anonymous world view |
-| `/w/{publicSlug}/{path}` | PublicArticle | Anonymous article view |
 
 ---
 

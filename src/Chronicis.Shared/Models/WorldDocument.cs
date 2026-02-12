@@ -17,6 +17,12 @@ public class WorldDocument
     public Guid WorldId { get; set; }
 
     /// <summary>
+    /// Optional article this document is embedded in (for inline images).
+    /// Null for standalone world documents.
+    /// </summary>
+    public Guid? ArticleId { get; set; }
+
+    /// <summary>
     /// Original filename as uploaded by user.
     /// Max 255 characters.
     /// </summary>
@@ -68,6 +74,11 @@ public class WorldDocument
     /// The world this document belongs to.
     /// </summary>
     public World World { get; set; } = null!;
+
+    /// <summary>
+    /// The article this document is embedded in (for inline images). Null for standalone documents.
+    /// </summary>
+    public Article? Article { get; set; }
 
     /// <summary>
     /// The user who uploaded this document.

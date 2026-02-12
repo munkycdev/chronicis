@@ -82,6 +82,7 @@ public class WorldDocumentService : IWorldDocumentService
         {
             Id = Guid.NewGuid(),
             WorldId = worldId,
+            ArticleId = request.ArticleId,
             FileName = request.FileName,
             Title = title,
             ContentType = request.ContentType,
@@ -289,6 +290,36 @@ public class WorldDocumentService : IWorldDocumentService
         _logger.LogDebug("Deleted document {DocumentId}", documentId);
     }
 
+    /// <inheritdoc />
+    public async Task DeleteArticleImagesAsync(Guid articleId)
+    {
+        var documents = await _db.WorldDocuments
+            .Where(d => d.ArticleId == articleId)
+            .ToListAsync();
+
+        if (documents.Count == 0) return;
+
+        _logger.LogDebug("Deleting {Count} images for article {ArticleId}", documents.Count, articleId);
+
+        foreach (var document in documents)
+        {
+            try
+            {
+                await _blobStorage.DeleteBlobAsync(document.BlobPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete blob {BlobPath} for document {DocumentId}",
+                    document.BlobPath, document.Id);
+            }
+        }
+
+        _db.WorldDocuments.RemoveRange(documents);
+        await _db.SaveChangesAsync();
+
+        _logger.LogDebug("Deleted {Count} images for article {ArticleId}", documents.Count, articleId);
+    }
+
     // ===== Private Helper Methods =====
 
     private void ValidateFileUpload(WorldDocumentUploadRequestDto request)
@@ -374,6 +405,7 @@ public class WorldDocumentService : IWorldDocumentService
         {
             Id = document.Id,
             WorldId = document.WorldId,
+            ArticleId = document.ArticleId,
             FileName = document.FileName,
             Title = document.Title,
             ContentType = document.ContentType,

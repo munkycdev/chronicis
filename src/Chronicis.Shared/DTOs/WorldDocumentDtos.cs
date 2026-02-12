@@ -7,6 +7,7 @@ public class WorldDocumentDto
 {
     public Guid Id { get; set; }
     public Guid WorldId { get; set; }
+    public Guid? ArticleId { get; set; }
     public string FileName { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string ContentType { get; set; } = string.Empty;
@@ -41,6 +42,11 @@ public class WorldDocumentUploadRequestDto
     /// Optional description.
     /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    /// Optional article ID for inline image uploads.
+    /// </summary>
+    public Guid? ArticleId { get; set; }
 }
 
 /// <summary>

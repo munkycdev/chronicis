@@ -260,7 +260,7 @@ csharp_style_conditional_delegate_call = true:suggestion
 ###############################
 
 # IDE0011: Add braces
-csharp_prefer_braces = when_multiline:suggestion
+csharp_prefer_braces = true:warningini
 
 # IDE0063: Simple using statement
 csharp_prefer_simple_using_statement = true:suggestion
@@ -519,7 +519,7 @@ dotnet_diagnostic.CA2000.severity = warning
 dotnet_diagnostic.CA2007.severity = none
 
 # CA2016: Forward CancellationToken to methods that accept one
-dotnet_diagnostic.CA2016.severity = suggestion
+dotnet_diagnostic.CA2016.severity = warning
 
 # CA2200: Rethrow to preserve stack details
 dotnet_diagnostic.CA2200.severity = warning
@@ -546,7 +546,7 @@ dotnet_diagnostic.CA2241.severity = warning
 dotnet_diagnostic.CA2245.severity = warning
 
 # CA2254: Template should be a static expression
-dotnet_diagnostic.CA2254.severity = suggestion
+dotnet_diagnostic.CA2254.severity = warning
 
 ###############################
 # Reliability Rules           #

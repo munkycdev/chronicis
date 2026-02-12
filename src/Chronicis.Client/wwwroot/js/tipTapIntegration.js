@@ -107,6 +107,23 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
         }
     }
 
+    // Add Image extension for inline image support
+    if (window.TipTap.Image) {
+        extensions.push(window.TipTap.Image.configure({
+            inline: false,
+            allowBase64: false,
+            HTMLAttributes: {
+                class: 'chronicis-inline-image',
+            },
+        }).extend({
+            // Override addProseMirrorPlugins to remove default drop/paste handling
+            // We handle image drops and pastes in imageUpload.js instead
+            addProseMirrorPlugins() {
+                return [];
+            },
+        }));
+    }
+
     // Create editor
     // Auto-detect if content is HTML or markdown and convert if needed
     // This provides backwards compatibility for existing markdown content

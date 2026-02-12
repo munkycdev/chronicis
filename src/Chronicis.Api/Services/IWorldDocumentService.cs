@@ -68,4 +68,11 @@ public interface IWorldDocumentService
     /// <param name="documentId">The document ID.</param>
     /// <param name="userId">The requesting user ID.</param>
     Task DeleteDocumentAsync(Guid worldId, Guid documentId, Guid userId);
+
+    /// <summary>
+    /// Delete all images/documents associated with an article.
+    /// Used during article deletion to clean up orphaned blobs.
+    /// </summary>
+    /// <param name="articleId">The article being deleted.</param>
+    Task DeleteArticleImagesAsync(Guid articleId);
 }

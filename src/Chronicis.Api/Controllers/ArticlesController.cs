@@ -28,6 +28,7 @@ public class ArticlesController : ControllerBase
     private readonly IArticleHierarchyService _hierarchyService;
     private readonly ChronicisDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IWorldDocumentService _worldDocumentService;
     private readonly ILogger<ArticlesController> _logger;
 
     public ArticlesController(
@@ -39,6 +40,7 @@ public class ArticlesController : ControllerBase
         IArticleHierarchyService hierarchyService,
         ChronicisDbContext context,
         ICurrentUserService currentUserService,
+        IWorldDocumentService worldDocumentService,
         ILogger<ArticlesController> logger)
     {
         _articleService = articleService;
@@ -49,6 +51,7 @@ public class ArticlesController : ControllerBase
         _hierarchyService = hierarchyService;
         _context = context;
         _currentUserService = currentUserService;
+        _worldDocumentService = worldDocumentService;
         _logger = logger;
     }
 
@@ -733,6 +736,9 @@ public class ArticlesController : ControllerBase
             .Where(l => l.SourceArticleId == articleId || l.TargetArticleId == articleId)
             .ToListAsync();
         _context.ArticleLinks.RemoveRange(linksToDelete);
+
+        // Delete inline images associated with this article
+        await _worldDocumentService.DeleteArticleImagesAsync(articleId);
 
         // Delete the article itself
         var article = await _context.Articles.FindAsync(articleId);

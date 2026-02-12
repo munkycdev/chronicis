@@ -497,6 +497,12 @@ public class ChronicisDbContext : DbContext
                 .HasForeignKey(wd => wd.WorldId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // WorldDocument -> Article (SET NULL - when article is deleted, preserve document but clear reference)
+            entity.HasOne(wd => wd.Article)
+                .WithMany(a => a.Images)
+                .HasForeignKey(wd => wd.ArticleId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // WorldDocument -> UploadedBy (User)
             entity.HasOne(wd => wd.UploadedBy)
                 .WithMany(u => u.UploadedDocuments)
@@ -506,6 +512,9 @@ public class ChronicisDbContext : DbContext
             // Index for query performance
             entity.HasIndex(wd => wd.WorldId);
             entity.HasIndex(wd => wd.UploadedById);
+            entity.HasIndex(wd => wd.ArticleId)
+                .HasFilter("[ArticleId] IS NOT NULL")
+                .HasDatabaseName("IX_WorldDocuments_ArticleId");
         });
     }
 

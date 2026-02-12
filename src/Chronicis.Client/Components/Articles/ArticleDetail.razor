@@ -23,6 +23,8 @@
 @inject IArticleCacheService ArticleCache
 @inject IMetadataDrawerService MetadataDrawerService
 @inject IKeyboardShortcutService KeyboardShortcutService
+@inject IWorldApiService WorldApi
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 
 @implements IDisposable
 
@@ -80,6 +82,17 @@ else
                 <CharacterClaimButton CharacterId="@_article.Id" />
             </div>
         }
+
+        <!-- Editor Toolbar -->
+        <div class="chronicis-editor-toolbar mb-2">
+            <MudTooltip Text="Insert Image" Placement="Placement.Top">
+                <MudIconButton Icon="@Icons.Material.Filled.Image"
+                               Size="Size.Small"
+                               Color="Color.Default"
+                               OnClick="InsertImageFromToolbar"
+                               Disabled="!_editorInitialized" />
+            </MudTooltip>
+        </div>
 
         <!-- TipTap Editor Container -->
         <div id="tiptap-editor-@_article.Id" class="chronicis-editor-container mb-4"></div>
@@ -442,6 +455,10 @@ else
                 if (_disposed) return;
                 
                 await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", $"tiptap-editor-{_article.Id}", _dotNetHelper);
+
+                // Initialize image upload (drag-drop, paste)
+                await JSRuntime.InvokeVoidAsync("initializeImageUpload", $"tiptap-editor-{_article.Id}", _dotNetHelper);
+
                 _editorInitialized = true;
             }
             catch (ObjectDisposedException)
@@ -1167,6 +1184,86 @@ else
     }
 
     private static string GetExternalCacheKey(string source, string id) => $"{source}:{id}".ToLowerInvariant();
+
+    #endregion
+
+    #region Image Upload
+
+    [JSInvokable]
+    public async Task<object?> OnImageUploadRequested(string fileName, string contentType, long fileSize)
+    {
+        if (_article == null) return null;
+
+        var worldId = AppContext.CurrentWorldId ?? _article.WorldId ?? Guid.Empty;
+        if (worldId == Guid.Empty) return null;
+
+        try
+        {
+            var request = new WorldDocumentUploadRequestDto
+            {
+                FileName = fileName,
+                ContentType = contentType,
+                FileSizeBytes = fileSize,
+                ArticleId = _article.Id,
+                Description = $"Inline image for article: {_article.Title}"
+            };
+
+            var response = await WorldApi.RequestDocumentUploadAsync(worldId, request);
+            if (response == null) return null;
+
+            return new
+            {
+                uploadUrl = response.UploadUrl,
+                documentId = response.DocumentId.ToString()
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error requesting image upload for article {ArticleId}", _article.Id);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnImageUploadConfirmed(string documentIdStr)
+    {
+        if (_article == null || !Guid.TryParse(documentIdStr, out var documentId)) return;
+
+        var worldId = AppContext.CurrentWorldId ?? _article.WorldId ?? Guid.Empty;
+        if (worldId == Guid.Empty) return;
+
+        try
+        {
+            await WorldApi.ConfirmDocumentUploadAsync(worldId, documentId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error confirming image upload {DocumentId}", documentId);
+        }
+    }
+
+    [JSInvokable]
+    public string GetImageProxyUrl(string documentIdStr)
+    {
+        var apiBaseUrl = Configuration["ApiBaseUrl"]?.TrimEnd('/') ?? "http://localhost:7071";
+        return $"{apiBaseUrl}/api/images/{documentIdStr}";
+    }
+
+    [JSInvokable]
+    public void OnImageUploadError(string message)
+    {
+        InvokeAsync(() =>
+        {
+            Snackbar.Add(message, Severity.Error);
+            StateHasChanged();
+        });
+    }
+
+    private async Task InsertImageFromToolbar()
+    {
+        if (_article == null || !_editorInitialized) return;
+        await JSRuntime.InvokeVoidAsync("triggerImageUpload", $"tiptap-editor-{_article.Id}", _dotNetHelper);
+    }
 
     #endregion
 }

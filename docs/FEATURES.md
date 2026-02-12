@@ -156,6 +156,21 @@ The `srd14` and `srd24` providers use normalized JSON data stored in Azure Blob 
 
 ---
 
+### Shared Quests Log
+
+**How It Works**
+1. GM creates quests on the Arc Detail page
+2. Users hit Ctrl+Q on a session notes page to view the quests sidebar
+3. Users can add notes specifically relating to displayed Quests
+
+**Features**
+- Quest notes can optionally be associated with session Notes
+- Quest note entry uses the same rich markdown editor as elsewhere
+- Quests may be marked complete by the GM
+- Quest notes append to the list, old notes are never deleted
+
+---
+
 ### AI Summary Generation
 
 Generate comprehensive summaries of entities by analyzing all backlinks.
