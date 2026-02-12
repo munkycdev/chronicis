@@ -1,9 +1,5 @@
-# Auto detect text files and perform LF normalization
-* text=auto
-
-# Shell scripts must always have Unix line endings
+* text=auto eol=crlf
 *.sh text eol=lf
-
-# Batch files should have Windows line endings
+*.yml text eol=lf
 *.bat text eol=crlf
 *.cmd text eol=crlf
