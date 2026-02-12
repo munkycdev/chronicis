@@ -19,7 +19,7 @@ internal static class SrdJsonHelper
         try
         {
             var root = json.RootElement;
-            
+
             // Try to get fields.name
             if (root.TryGetProperty("fields", out var fields) &&
                 fields.TryGetProperty("name", out var nameElement) &&

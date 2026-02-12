@@ -52,27 +52,27 @@ public class Arc
     public bool IsActive { get; set; }
 
     // ===== AI Features =====
-    
+
     /// <summary>
     /// Template to use for AI summary generation. Null uses default behavior.
     /// </summary>
     public Guid? SummaryTemplateId { get; set; }
-    
+
     /// <summary>
     /// Custom prompt that overrides the template when generating summaries.
     /// </summary>
     public string? SummaryCustomPrompt { get; set; }
-    
+
     /// <summary>
     /// Whether to include web search results when generating summaries.
     /// </summary>
     public bool SummaryIncludeWebSources { get; set; }
-    
+
     /// <summary>
     /// AI-generated summary of the arc.
     /// </summary>
     public string? AISummary { get; set; }
-    
+
     /// <summary>
     /// When the AI summary was last generated.
     /// </summary>
@@ -84,7 +84,7 @@ public class Arc
     /// The campaign this arc belongs to.
     /// </summary>
     public Campaign Campaign { get; set; } = null!;
-    
+
     /// <summary>
     /// Template used for AI summary generation.
     /// </summary>

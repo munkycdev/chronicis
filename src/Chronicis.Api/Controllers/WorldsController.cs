@@ -1,8 +1,8 @@
 using Chronicis.Api.Data;
-using Chronicis.Shared.Extensions;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -319,7 +319,8 @@ public class WorldsController : ControllerBase
         var world = await _worldService.GetWorldAsync(id, user.Id);
         var worldName = world?.Name ?? "world";
         var safeWorldName = string.Join("_", worldName.Split(Path.GetInvalidFileNameChars()));
-        if (safeWorldName.Length > 50) safeWorldName = safeWorldName[..50];
+        if (safeWorldName.Length > 50)
+            safeWorldName = safeWorldName[..50];
         var fileName = $"{safeWorldName}_export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.zip";
 
         return File(zipData, "application/zip", fileName);
@@ -374,7 +375,7 @@ public class WorldsController : ControllerBase
 
         // Search articles by alias match (excluding those already found by title)
         var titleMatchIds = titleMatches.Select(t => t.ArticleId).ToHashSet();
-        
+
         var aliasMatches = await _context.ArticleAliases
             .Include(aa => aa.Article)
             .Where(aa => aa.Article.WorldId == id)

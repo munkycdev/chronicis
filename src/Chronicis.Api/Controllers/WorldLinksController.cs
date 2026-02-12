@@ -1,7 +1,7 @@
 using Chronicis.Api.Data;
-using Chronicis.Shared.Extensions;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

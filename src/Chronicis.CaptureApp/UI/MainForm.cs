@@ -603,7 +603,8 @@ public class MainForm : MaterialForm
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error transcribing chunk: {Message}", ex.Message);        }
+            _logger.LogError(ex, "Error transcribing chunk: {Message}", ex.Message);
+        }
     }
 
     private void OnQueueStatsUpdated(object? sender, QueueStatistics stats)

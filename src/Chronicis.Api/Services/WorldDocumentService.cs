@@ -1,10 +1,8 @@
 using Chronicis.Api.Data;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -173,7 +171,7 @@ public class WorldDocumentService : IWorldDocumentService
         // Verify user has access to the world (owner or member)
         var hasAccess = await _db.Worlds
             .AsNoTracking()
-            .AnyAsync(w => w.Id == worldId && 
+            .AnyAsync(w => w.Id == worldId &&
                 (w.OwnerId == userId || w.Members.Any(m => m.UserId == userId)));
 
         if (!hasAccess)
@@ -297,7 +295,8 @@ public class WorldDocumentService : IWorldDocumentService
             .Where(d => d.ArticleId == articleId)
             .ToListAsync();
 
-        if (documents.Count == 0) return;
+        if (documents.Count == 0)
+            return;
 
         _logger.LogDebug("Deleting {Count} images for article {ArticleId}", documents.Count, articleId);
 

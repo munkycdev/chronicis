@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Chronicis.Shared.Utilities;
@@ -11,10 +10,10 @@ public static class LogSanitizer
     private const int MaxLogLength = 1000;
     private const string TruncationMarker = "...[TRUNCATED]";
     private const string SanitizedMarker = "[SANITIZED]";
-    
+
     // Matches all control characters including newlines, carriage returns, tabs, etc.
     private static readonly Regex ControlCharPattern = new(@"[\x00-\x1F\x7F-\x9F]", RegexOptions.Compiled);
-    
+
     // Matches potentially dangerous sequences
     private static readonly Regex DangerousPattern = new(@"(\r\n|\r|\n|\t|%0[aAdD]|%0[aA]|%0[dD])", RegexOptions.Compiled);
 
@@ -32,32 +31,32 @@ public static class LogSanitizer
 
         // First pass: Remove control characters
         var sanitized = ControlCharPattern.Replace(value, "");
-        
+
         // Second pass: Remove URL-encoded dangerous characters
         sanitized = DangerousPattern.Replace(sanitized, "");
-        
+
         // Remove any remaining whitespace sequences longer than 1 space
         sanitized = Regex.Replace(sanitized, @"\s{2,}", " ");
-        
+
         // Trim the result
         sanitized = sanitized.Trim();
-        
+
         // Check if we sanitized anything
         var wasSanitized = sanitized != value;
-        
+
         // Truncate if too long
         if (sanitized.Length > MaxLogLength)
         {
             sanitized = sanitized.Substring(0, MaxLogLength) + TruncationMarker;
             wasSanitized = true;
         }
-        
+
         // Add marker if content was modified
         if (wasSanitized && !string.IsNullOrWhiteSpace(sanitized))
         {
             sanitized = $"{sanitized} {SanitizedMarker}";
         }
-        
+
         return sanitized;
     }
 

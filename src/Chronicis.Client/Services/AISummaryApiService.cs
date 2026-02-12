@@ -1,5 +1,5 @@
-using Chronicis.Shared.DTOs;
 using System.Net.Http.Json;
+using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Services;
 
@@ -65,7 +65,7 @@ public class AISummaryApiService : IAISummaryApiService
         try
         {
             var response = await _http.GetAsync($"articles/{articleId}/summary/preview");
-            
+
             if (response.StatusCode == System.Net.HttpStatusCode.NoContent ||
                 response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {

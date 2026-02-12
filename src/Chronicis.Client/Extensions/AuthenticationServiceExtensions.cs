@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
-using Microsoft.Extensions.DependencyInjection;
-
 namespace Chronicis.Client.Extensions;
 
 /// <summary>
@@ -14,7 +11,7 @@ public static class AuthenticationServiceExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="baseUrl">The base URL of the application for redirect URIs.</param>
     public static IServiceCollection AddChronicisAuthentication(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         string baseUrl)
     {
         services.AddOidcAuthentication(options =>
@@ -24,7 +21,7 @@ public static class AuthenticationServiceExtensions
             options.ProviderOptions.ResponseType = "code";
             options.ProviderOptions.RedirectUri = $"{baseUrl}/authentication/login-callback";
             options.ProviderOptions.PostLogoutRedirectUri = baseUrl;
-            
+
             // Auth0 requires the audience parameter to issue a proper JWT access token
             options.ProviderOptions.AdditionalProviderParameters.Add("audience", "https://api.chronicis.app");
 

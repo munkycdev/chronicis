@@ -108,7 +108,7 @@ public class HealthController : ControllerBase
             var builder = new SqlConnectionStringBuilder(connectionString);
             var hasPassword = !string.IsNullOrEmpty(builder.Password);
             var hasUserId = !string.IsNullOrEmpty(builder.UserID);
-            
+
             return $"Server={builder.DataSource}; Database={builder.InitialCatalog}; " +
                    $"User={(!hasUserId ? "(none)" : "****")}; Password={(!hasPassword ? "(none)" : "****")}; " +
                    $"MARS={builder.MultipleActiveResultSets}; Encrypt={builder.Encrypt}";

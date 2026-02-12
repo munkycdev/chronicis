@@ -1,9 +1,8 @@
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-using Chronicis.Shared.Extensions;
-using Microsoft.Extensions.Caching.Memory;
 using System.Diagnostics;
 using System.Text.Json;
+using Azure.Storage.Blobs;
+using Chronicis.Shared.Extensions;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Chronicis.Api.Services.ExternalLinks;
 
@@ -268,10 +267,10 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
     private async Task<PathChildren?> GetChildrenAtPathAsync(string relativePath, CancellationToken ct)
     {
         var normalizedPath = relativePath.Trim('/');
-        
+
         // Resolve the path to its original blob casing
         var blobPath = await ResolveBlobPathAsync(normalizedPath, ct);
-        
+
         var cacheKey = BuildCacheKey("Children", normalizedPath.ToLowerInvariant());
 
         if (_cache.TryGetValue<PathChildren>(cacheKey, out var cached) && cached != null)
@@ -300,7 +299,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
                 {
                     var slug = originalFolderName.ToLowerInvariant();
                     childFolders.Add(new ChildFolder(originalFolderName, slug));
-                    
+
                     // Cache the slug → blob path mapping for this child
                     var childSlugPath = string.IsNullOrEmpty(normalizedPath)
                         ? slug
@@ -669,7 +668,8 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         }
 
         var children = await GetChildrenAtPathAsync(path, ct);
-        if (children == null) return;
+        if (children == null)
+            return;
 
         // If this path has files and is not root, it's a leaf (or mixed) category
         // Skip root-level files since they'd produce IDs without a category prefix

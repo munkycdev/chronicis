@@ -31,7 +31,7 @@ public class ExportApiService : IExportApiService
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Export failed for world {WorldId}. Status: {StatusCode}", 
+                _logger.LogWarning("Export failed for world {WorldId}. Status: {StatusCode}",
                     worldId, response.StatusCode);
                 return false;
             }
@@ -41,7 +41,8 @@ public class ExportApiService : IExportApiService
 
             // Build filename
             var safeWorldName = string.Join("_", worldName.Split(Path.GetInvalidFileNameChars()));
-            if (safeWorldName.Length > 50) safeWorldName = safeWorldName.Substring(0, 50);
+            if (safeWorldName.Length > 50)
+                safeWorldName = safeWorldName.Substring(0, 50);
             var fileName = $"{safeWorldName}_export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.zip";
 
             // Trigger browser download via JavaScript

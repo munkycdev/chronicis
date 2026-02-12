@@ -1,13 +1,13 @@
-﻿using Chronicis.CaptureApp.Services;
+using Chronicis.CaptureApp.Services;
 using Chronicis.CaptureApp.UI;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Chronicis.CaptureApp;
 
-static class Program
+internal static class Program
 {
     [STAThread]
-    static void Main()
+    private static void Main()
     {
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);

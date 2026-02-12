@@ -1,6 +1,4 @@
 using Chronicis.Shared.DTOs;
-using Microsoft.Extensions.Logging;
-using System.Net.Http.Json;
 
 namespace Chronicis.Client.Services;
 

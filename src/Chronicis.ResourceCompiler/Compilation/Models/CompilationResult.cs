@@ -1,5 +1,4 @@
 using Chronicis.ResourceCompiler.Warnings;
-using System.Linq;
 
 namespace Chronicis.ResourceCompiler.Compilation.Models;
 

@@ -10,7 +10,7 @@ public interface IKeyboardShortcutService
     /// Fired when Ctrl+S is pressed and the current article should be saved.
     /// </summary>
     event Action? OnSaveRequested;
-    
+
     /// <summary>
     /// Triggers the save request event.
     /// </summary>

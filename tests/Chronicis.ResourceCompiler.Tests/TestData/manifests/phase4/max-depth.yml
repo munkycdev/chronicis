@@ -1,0 +1,23 @@
+entities:
+  Parent:
+    file: depth-parent.json
+    pk: id
+    root: true
+    output:
+      blobTemplate: "parents/{id}.json"
+    children:
+      - entity: Child
+        as: children
+        fk:
+          field: parentId
+  Child:
+    file: depth-child.json
+    pk: id
+    children:
+      - entity: GrandChild
+        as: grandchildren
+        fk:
+          field: childId
+  GrandChild:
+    file: depth-grandchild.json
+    pk: id

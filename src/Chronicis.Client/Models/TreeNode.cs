@@ -13,62 +13,62 @@ public class TreeNode
     /// For virtual groups, this is a generated GUID.
     /// </summary>
     public Guid Id { get; set; }
-    
+
     /// <summary>
     /// The type of node (World, Campaign, Arc, Article, VirtualGroup).
     /// </summary>
     public TreeNodeType NodeType { get; set; } = TreeNodeType.Article;
-    
+
     /// <summary>
     /// For virtual group nodes, identifies which group this is.
     /// </summary>
     public VirtualGroupType VirtualGroupType { get; set; } = VirtualGroupType.None;
-    
+
     /// <summary>
     /// For article nodes, the article type.
     /// </summary>
     public ArticleType? ArticleType { get; set; }
-    
+
     /// <summary>
     /// Display title for the node.
     /// </summary>
     public string Title { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// URL slug (for articles).
     /// </summary>
     public string Slug { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Icon emoji or FontAwesome class.
     /// </summary>
     public string? IconEmoji { get; set; }
-    
+
     /// <summary>
     /// Parent node ID (for tree structure).
     /// </summary>
     public Guid? ParentId { get; set; }
-    
+
     /// <summary>
     /// For World nodes, the World ID.
     /// </summary>
     public Guid? WorldId { get; set; }
-    
+
     /// <summary>
     /// For Campaign/Arc/Article nodes, the Campaign ID.
     /// </summary>
     public Guid? CampaignId { get; set; }
-    
+
     /// <summary>
     /// For Arc/Session nodes, the Arc ID.
     /// </summary>
     public Guid? ArcId { get; set; }
-    
+
     /// <summary>
     /// For ExternalLink nodes, the URL to navigate to.
     /// </summary>
     public string? Url { get; set; }
-    
+
     /// <summary>
     /// For article nodes, the visibility setting.
     /// </summary>
@@ -88,43 +88,43 @@ public class TreeNode
     /// Additional data for specialized node types (e.g., documents).
     /// </summary>
     public Dictionary<string, object>? AdditionalData { get; set; }
-    
+
     // ===== UI State =====
-    
+
     /// <summary>
     /// Whether this node is expanded in the tree.
     /// </summary>
     public bool IsExpanded { get; set; }
-    
+
     /// <summary>
     /// Whether this node is currently selected.
     /// </summary>
     public bool IsSelected { get; set; }
-    
+
     /// <summary>
     /// Whether this node is visible (for search filtering).
     /// </summary>
     public bool IsVisible { get; set; } = true;
-    
+
     /// <summary>
     /// Child nodes.
     /// </summary>
     public List<TreeNode> Children { get; set; } = new();
-    
+
     // ===== Computed Properties =====
-    
+
     /// <summary>
     /// Display title - shows "(Untitled)" for empty titles, or group names for virtual groups.
     /// </summary>
     public string DisplayTitle => NodeType == TreeNodeType.VirtualGroup
         ? GetVirtualGroupDisplayName()
         : (string.IsNullOrWhiteSpace(Title) ? "(Untitled)" : Title);
-    
+
     /// <summary>
     /// Whether this node has any children.
     /// </summary>
     public bool HasChildren => ChildCount > 0 || Children.Count > 0;
-    
+
     /// <summary>
     /// Whether this node can be selected/navigated to.
     /// Virtual groups cannot be selected. External links open in new tab.
@@ -138,7 +138,7 @@ public class TreeNode
         TreeNodeType.ExternalLink => true, // Opens in new tab
         _ => false
     };
-    
+
     /// <summary>
     /// Whether this node can have children added to it.
     /// </summary>
@@ -159,12 +159,12 @@ public class TreeNode
         TreeNodeType.ExternalLink => false, // Links don't have children
         _ => false
     };
-    
+
     /// <summary>
     /// Whether this node can be dragged for reordering.
     /// </summary>
     public bool IsDraggable => NodeType == TreeNodeType.Article;
-    
+
     /// <summary>
     /// Whether this node can accept dropped items.
     /// </summary>
@@ -182,7 +182,7 @@ public class TreeNode
         },
         _ => false
     };
-    
+
     private string GetVirtualGroupDisplayName() => VirtualGroupType switch
     {
         VirtualGroupType.Campaigns => "Campaigns",
@@ -192,7 +192,7 @@ public class TreeNode
         VirtualGroupType.Uncategorized => "Uncategorized",
         _ => Title
     };
-    
+
     /// <summary>
     /// Gets the appropriate icon for this node type.
     /// </summary>

@@ -14,17 +14,17 @@ public class WorldDto
     public DateTime CreatedAt { get; set; }
     public int CampaignCount { get; set; }
     public int MemberCount { get; set; }
-    
+
     /// <summary>
     /// The ID of the WorldRoot article (top-level article for this world)
     /// </summary>
     public Guid? WorldRootArticleId { get; set; }
-    
+
     /// <summary>
     /// Whether this world is publicly accessible to anonymous users.
     /// </summary>
     public bool IsPublic { get; set; }
-    
+
     /// <summary>
     /// Globally unique slug for public access. Null if world is not public.
     /// </summary>
@@ -57,13 +57,13 @@ public class WorldUpdateDto
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    
+
     /// <summary>
     /// Whether to make the world publicly accessible.
     /// Null means no change to current value.
     /// </summary>
     public bool? IsPublic { get; set; }
-    
+
     /// <summary>
     /// Globally unique slug for public access.
     /// Required when IsPublic is true. Ignored when IsPublic is false.

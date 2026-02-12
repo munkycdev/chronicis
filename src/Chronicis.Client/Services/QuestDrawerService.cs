@@ -20,7 +20,7 @@ public class QuestDrawerService : IQuestDrawerService, IDisposable
     public QuestDrawerService(IMetadataDrawerService metadataDrawerService)
     {
         _metadataDrawerService = metadataDrawerService;
-        
+
         // Subscribe to metadata drawer toggle to ensure mutual exclusivity
         _metadataDrawerService.OnToggle += OnMetadataDrawerToggled;
     }
@@ -29,7 +29,7 @@ public class QuestDrawerService : IQuestDrawerService, IDisposable
     {
         if (_disposed || _isOpen || _isProcessingMutualExclusivity)
             return;
-        
+
         _isProcessingMutualExclusivity = true;
         try
         {
@@ -46,7 +46,7 @@ public class QuestDrawerService : IQuestDrawerService, IDisposable
     {
         if (_disposed || !_isOpen)
             return;
-        
+
         _isOpen = false;
         OnClose?.Invoke();
     }
@@ -55,7 +55,7 @@ public class QuestDrawerService : IQuestDrawerService, IDisposable
     {
         if (_disposed)
             return;
-            
+
         if (_isOpen)
             Close();
         else
@@ -77,16 +77,16 @@ public class QuestDrawerService : IQuestDrawerService, IDisposable
     {
         if (_disposed)
             return;
-            
+
         _disposed = true;
-        
+
         // Unsubscribe from metadata drawer events to prevent memory leaks
         _metadataDrawerService.OnToggle -= OnMetadataDrawerToggled;
-        
+
         // Clear event handlers
         OnOpen = null;
         OnClose = null;
-        
+
         GC.SuppressFinalize(this);
     }
 }

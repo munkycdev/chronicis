@@ -28,7 +28,8 @@ public partial class ExternalLinkDetailPanel : ComponentBase
         var contentId = Content?.Id;
         var overrideChanged = DefinitionOverride != _lastDefinitionOverride;
 
-        if (contentId == _lastContentId && !overrideChanged) return;
+        if (contentId == _lastContentId && !overrideChanged)
+            return;
         _lastContentId = contentId;
         _lastDefinitionOverride = DefinitionOverride;
 
@@ -168,8 +169,10 @@ public partial class ExternalLinkDetailPanel : ComponentBase
                     continue;
                 }
 
-                if (!sectionData.TryGetProperty(field.Path, out var val)) continue;
-                if (field.OmitNull && IsNullOrEmpty(val)) continue;
+                if (!sectionData.TryGetProperty(field.Path, out var val))
+                    continue;
+                if (field.OmitNull && IsNullOrEmpty(val))
+                    continue;
                 hasVisibleField = true;
                 break;
             }
@@ -244,11 +247,13 @@ public partial class ExternalLinkDetailPanel : ComponentBase
         var unrenderedFields = new List<(string Name, JsonElement Value)>();
         foreach (var prop in dataSource.EnumerateObject())
         {
-            if (renderedPaths.Contains(prop.Name)) continue;
+            if (renderedPaths.Contains(prop.Name))
+                continue;
             unrenderedFields.Add((prop.Name, prop.Value));
         }
 
-        if (unrenderedFields.Count == 0) return;
+        if (unrenderedFields.Count == 0)
+            return;
 
         // Separate scalar fields from complex ones (objects/arrays)
         var scalarFields = new List<(string Name, JsonElement Value)>();
@@ -280,7 +285,8 @@ public partial class ExternalLinkDetailPanel : ComponentBase
             foreach (var (name, value) in scalarFields)
             {
                 // Skip null/empty values in catch-all to reduce noise
-                if (IsNullOrEmpty(value)) continue;
+                if (IsNullOrEmpty(value))
+                    continue;
                 RenderKeyValue(builder, ref seq, FormatFieldName(name), FormatScalarValue(value));
             }
 
@@ -336,7 +342,8 @@ public partial class ExternalLinkDetailPanel : ComponentBase
                     parts.Add(FormatScalarValue(partValue));
             }
 
-            if (parts.Count == 0 && field.OmitNull) return;
+            if (parts.Count == 0 && field.OmitNull)
+                return;
 
             var label = field.Label ?? FormatFieldName(field.Paths[0]);
             var combined = parts.Count > 0 ? string.Join(" ", parts) : "—";
@@ -491,7 +498,8 @@ public partial class ExternalLinkDetailPanel : ComponentBase
             }
         }
 
-        if (columns.Count == 0) return;
+        if (columns.Count == 0)
+            return;
 
         builder.OpenElement(seq++, "table");
         builder.AddAttribute(seq++, "class", "elp-table");
@@ -512,7 +520,8 @@ public partial class ExternalLinkDetailPanel : ComponentBase
         builder.OpenElement(seq++, "tbody");
         foreach (var item in array.EnumerateArray())
         {
-            if (item.ValueKind != JsonValueKind.Object) continue;
+            if (item.ValueKind != JsonValueKind.Object)
+                continue;
             var source = GetFieldsElement(item) ?? item;
 
             builder.OpenElement(seq++, "tr");
@@ -544,7 +553,8 @@ public partial class ExternalLinkDetailPanel : ComponentBase
         JsonElement value,
         int depth)
     {
-        if (depth > 10) return; // Safety limit
+        if (depth > 10)
+            return; // Safety limit
 
         switch (value.ValueKind)
         {

@@ -1,11 +1,10 @@
 using Chronicis.Api.Data;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
+using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services
 {
@@ -327,7 +326,7 @@ namespace Chronicis.Api.Services
 
             // First segment is the world slug
             var worldSlug = slugs[0];
-            
+
             // Look up the world by slug - user must be a member of the world
             var world = await _context.Worlds
                 .AsNoTracking()

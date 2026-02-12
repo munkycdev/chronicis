@@ -1,5 +1,4 @@
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Enums;
 
 namespace Chronicis.Api.Services;
 

@@ -6,6 +6,6 @@ namespace Chronicis.Client.Services;
 public class KeyboardShortcutService : IKeyboardShortcutService
 {
     public event Action? OnSaveRequested;
-    
+
     public void RequestSave() => OnSaveRequested?.Invoke();
 }

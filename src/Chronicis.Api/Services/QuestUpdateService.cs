@@ -2,7 +2,6 @@ using Chronicis.Api.Data;
 using Chronicis.Api.Models;
 using Chronicis.Shared.DTOs.Quests;
 using Chronicis.Shared.Enums;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,9 +22,9 @@ public class QuestUpdateService : IQuestUpdateService
     }
 
     public async Task<ServiceResult<PagedResult<QuestUpdateEntryDto>>> GetQuestUpdatesAsync(
-        Guid questId, 
-        Guid userId, 
-        int skip = 0, 
+        Guid questId,
+        Guid userId,
+        int skip = 0,
         int take = 20)
     {
         // Validate pagination parameters
@@ -106,8 +105,8 @@ public class QuestUpdateService : IQuestUpdateService
     }
 
     public async Task<ServiceResult<QuestUpdateEntryDto>> CreateQuestUpdateAsync(
-        Guid questId, 
-        QuestUpdateCreateDto dto, 
+        Guid questId,
+        QuestUpdateCreateDto dto,
         Guid userId)
     {
         // Validate input
@@ -216,8 +215,8 @@ public class QuestUpdateService : IQuestUpdateService
     }
 
     public async Task<ServiceResult<bool>> DeleteQuestUpdateAsync(
-        Guid questId, 
-        Guid updateId, 
+        Guid questId,
+        Guid updateId,
         Guid userId)
     {
         // Find the quest update
@@ -255,7 +254,7 @@ public class QuestUpdateService : IQuestUpdateService
         _context.QuestUpdates.Remove(questUpdate);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Deleted quest update {UpdateId} from quest {QuestId} by user {UserId}", 
+        _logger.LogDebug("Deleted quest update {UpdateId} from quest {QuestId} by user {UserId}",
             updateId, questId, userId);
 
         return ServiceResult<bool>.Success(true);

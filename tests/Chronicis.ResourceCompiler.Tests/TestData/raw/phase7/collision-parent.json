@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "slug": "dup",
+    "name": "One"
+  },
+  {
+    "id": 2,
+    "slug": "dup",
+    "name": "Two"
+  }
+]

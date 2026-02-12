@@ -1,4 +1,3 @@
-using System.Linq;
 using Chronicis.ResourceCompiler.Manifest.Models;
 using Chronicis.ResourceCompiler.Warnings;
 using YamlDotNet.Core;

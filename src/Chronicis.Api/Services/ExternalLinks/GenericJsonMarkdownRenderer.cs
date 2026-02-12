@@ -200,7 +200,7 @@ public static class GenericJsonMarkdownRenderer
         for (int i = 0; i < withSpaces.Length; i++)
         {
             var ch = withSpaces[i];
-            
+
             // Insert space before uppercase if not at start and previous char is lowercase
             if (i > 0 && char.IsUpper(ch) && char.IsLower(withSpaces[i - 1]))
             {
@@ -212,7 +212,7 @@ public static class GenericJsonMarkdownRenderer
 
         // Convert to title case
         var words = sb.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var titleCased = words.Select(w => 
+        var titleCased = words.Select(w =>
             w.Length > 0 ? char.ToUpper(w[0]) + w.Substring(1).ToLower() : w);
 
         return string.Join(" ", titleCased);

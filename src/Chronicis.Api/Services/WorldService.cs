@@ -1,11 +1,10 @@
 using Chronicis.Api.Data;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
+using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -239,12 +238,12 @@ public class WorldService : IWorldService
                 }
 
                 var normalizedSlug = dto.PublicSlug.Trim().ToLowerInvariant();
-                
+
                 // Validate slug format via public sharing service
                 var validationError = _publicSharingService.ValidatePublicSlug(normalizedSlug);
                 if (validationError != null)
                 {
-                    _logger.LogWarningSanitized("Invalid public slug '{Slug}' for world {WorldId}: {Error}", 
+                    _logger.LogWarningSanitized("Invalid public slug '{Slug}' for world {WorldId}: {Error}",
                         normalizedSlug, worldId, validationError);
                     return null;
                 }
@@ -258,7 +257,7 @@ public class WorldService : IWorldService
 
                 world.IsPublic = true;
                 world.PublicSlug = normalizedSlug;
-                
+
                 _logger.LogDebugSanitized("World {WorldId} is now public with slug '{PublicSlug}'", worldId, normalizedSlug);
             }
             else
@@ -266,7 +265,7 @@ public class WorldService : IWorldService
                 // Making world private - clear public slug
                 world.IsPublic = false;
                 world.PublicSlug = null;
-                
+
                 _logger.LogDebug("World {WorldId} is now private", worldId);
             }
         }

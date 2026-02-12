@@ -10,7 +10,7 @@ public interface IMetadataDrawerService
     /// Fired when the metadata drawer should be toggled.
     /// </summary>
     event Action? OnToggle;
-    
+
     /// <summary>
     /// Triggers the toggle event.
     /// </summary>

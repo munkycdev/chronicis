@@ -1,5 +1,4 @@
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Models;
 
 namespace Chronicis.Api.Services;
 
@@ -17,8 +16,8 @@ public interface IWorldDocumentService
     /// <param name="request">Upload request details.</param>
     /// <returns>Upload response with SAS URL and document ID.</returns>
     Task<WorldDocumentUploadResponseDto> RequestUploadAsync(
-        Guid worldId, 
-        Guid userId, 
+        Guid worldId,
+        Guid userId,
         WorldDocumentUploadRequestDto request);
 
     /// <summary>
@@ -56,9 +55,9 @@ public interface IWorldDocumentService
     /// <param name="update">Updated metadata.</param>
     /// <returns>Updated document DTO.</returns>
     Task<WorldDocumentDto> UpdateDocumentAsync(
-        Guid worldId, 
-        Guid documentId, 
-        Guid userId, 
+        Guid worldId,
+        Guid documentId,
+        Guid userId,
         WorldDocumentUpdateDto update);
 
     /// <summary>

@@ -30,22 +30,22 @@ public class ArticleDto
     public ICollection<ArticleDto>? Children { get; set; }
     public List<BreadcrumbDto> Breadcrumbs { get; set; } = new();
     public string? IconEmoji { get; set; }
-    
+
     // Session-specific
     public DateTime? SessionDate { get; set; }
     public string? InGameDate { get; set; }
-    
+
     // Character-specific
     public Guid? PlayerId { get; set; }
     public string? PlayerName { get; set; }
-    
+
     // AI features
     public string? AISummary { get; set; }
     public DateTime? AISummaryGeneratedAt { get; set; }
-    
+
     // Aliases
     public List<ArticleAliasDto> Aliases { get; set; } = new();
-    
+
     // External Links
     public List<ArticleExternalLinkDto> ExternalLinks { get; set; } = new();
 }
@@ -72,20 +72,20 @@ public class ArticleTreeDto
     public DateTime EffectiveDate { get; set; }
     public string? IconEmoji { get; set; }
     public Guid CreatedBy { get; set; }
-    
+
     /// <summary>
     /// Indicates whether this article has an AI-generated summary.
     /// Used to display a visual indicator in the navigation tree.
     /// </summary>
     public bool HasAISummary { get; set; }
-    
+
     /// <summary>
     /// True if this is a virtual group (Campaigns, Player Characters, Wiki, etc.)
     /// that doesn't correspond to a real article in the database.
     /// Virtual groups should only expand/collapse, not navigate.
     /// </summary>
     public bool IsVirtualGroup { get; set; } = false;
-    
+
     /// <summary>
     /// Alternative names/aliases for this article.
     /// Used for autocomplete matching and display.
@@ -112,16 +112,16 @@ public class ArticleCreateDto
     /// Optional effective date. If null, defaults to CreatedAt.
     /// </summary>
     public DateTime? EffectiveDate { get; set; }
-    
+
     /// <summary>
     /// Optional emoji icon for the article.
     /// </summary>
     public string? IconEmoji { get; set; }
-    
+
     // Session-specific
     public DateTime? SessionDate { get; set; }
     public string? InGameDate { get; set; }
-    
+
     // Character-specific
     public Guid? PlayerId { get; set; }
 }
@@ -137,12 +137,12 @@ public class ArticleUpdateDto
     public DateTime? EffectiveDate { get; set; }
     public string? IconEmoji { get; set; }
     public ArticleVisibility? Visibility { get; set; }
-    
+
     /// <summary>
     /// Optional type change. Allows users to recategorize articles.
     /// </summary>
     public ArticleType? Type { get; set; }
-    
+
     // Session-specific
     public DateTime? SessionDate { get; set; }
     public string? InGameDate { get; set; }
@@ -157,12 +157,12 @@ public class BreadcrumbDto
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Article type. Only relevant when IsWorld is false.
     /// </summary>
     public ArticleType Type { get; set; }
-    
+
     /// <summary>
     /// True if this breadcrumb represents a World, false for Articles.
     /// </summary>
@@ -187,19 +187,19 @@ public class ArticleAliasDto
 {
     public Guid Id { get; set; }
     public string AliasText { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Optional type classification (e.g., "FormerName", "Nickname", "Title").
     /// Reserved for future use.
     /// </summary>
     public string? AliasType { get; set; }
-    
+
     /// <summary>
     /// Optional date when this alias became effective.
     /// Reserved for future use.
     /// </summary>
     public DateTime? EffectiveDate { get; set; }
-    
+
     public DateTime CreatedAt { get; set; }
 }
 

@@ -1,7 +1,6 @@
 using Chronicis.Client.Components.Dialogs;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs.Quests;
-using Chronicis.Shared.Enums;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -36,7 +35,7 @@ public partial class ArcQuestList : ComponentBase
     protected override async Task OnParametersSetAsync()
     {
         _isGm = IsGm;
-        
+
         // Reload if ArcId changes
         if (ArcId != Guid.Empty)
         {
@@ -69,7 +68,7 @@ public partial class ArcQuestList : ComponentBase
 
     private async Task CreateQuest()
     {
-        if (!_isGm || _isCreating) 
+        if (!_isGm || _isCreating)
             return;
 
         _isCreating = true;
@@ -105,8 +104,9 @@ public partial class ArcQuestList : ComponentBase
 
     private void EditQuest(QuestDto quest)
     {
-        if (!_isGm) return;
-        
+        if (!_isGm)
+            return;
+
         // This will be handled by the parent ArcDetail page
         // which will show the quest editor inline
         // For now, just show a placeholder
@@ -115,7 +115,7 @@ public partial class ArcQuestList : ComponentBase
 
     private async Task DeleteQuest(QuestDto quest)
     {
-        if (!_isGm || _isDeleting) 
+        if (!_isGm || _isDeleting)
             return;
 
         var confirmed = await DialogService.ShowMessageBox(

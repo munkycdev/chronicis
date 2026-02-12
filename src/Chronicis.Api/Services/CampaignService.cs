@@ -1,10 +1,8 @@
 using Chronicis.Api.Data;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -56,7 +54,7 @@ public class CampaignService : ICampaignService
         if (user == null)
             throw new InvalidOperationException("User not found");
 
-        _logger.LogDebug("Creating campaign '{Name}' in world {WorldId} for user {UserId}", 
+        _logger.LogDebug("Creating campaign '{Name}' in world {WorldId} for user {UserId}",
             dto.Name, dto.WorldId, userId);
 
         // Create the Campaign entity
@@ -86,7 +84,7 @@ public class CampaignService : ICampaignService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Created campaign {CampaignId} with default Arc for user {UserId}", 
+        _logger.LogDebug("Created campaign {CampaignId} with default Arc for user {UserId}",
             campaign.Id, userId);
 
         // Return DTO
@@ -151,8 +149,8 @@ public class CampaignService : ICampaignService
             return false;
 
         return await _context.WorldMembers
-            .AnyAsync(wm => wm.WorldId == campaign.WorldId 
-                        && wm.UserId == userId 
+            .AnyAsync(wm => wm.WorldId == campaign.WorldId
+                        && wm.UserId == userId
                         && wm.Role == WorldRole.GM);
     }
 

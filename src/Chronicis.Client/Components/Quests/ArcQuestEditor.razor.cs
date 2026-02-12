@@ -42,9 +42,9 @@ public partial class ArcQuestEditor : ComponentBase, IAsyncDisposable
         if (_quest?.Id != Quest?.Id)
         {
             await DisposeEditorAsync();
-            
+
             _quest = Quest;
-            
+
             if (_quest != null)
             {
                 _editTitle = _quest.Title;
@@ -73,14 +73,16 @@ public partial class ArcQuestEditor : ComponentBase, IAsyncDisposable
 
     private async Task InitializeEditorAsync()
     {
-        if (_editorInitialized || _disposed || _dotNetHelper == null) return;
+        if (_editorInitialized || _disposed || _dotNetHelper == null)
+            return;
 
         try
         {
             await JSRuntime.InvokeVoidAsync("initializeTipTapEditor", EditorId, _editDescription, _dotNetHelper);
-            
-            if (_disposed) return;
-            
+
+            if (_disposed)
+                return;
+
             await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", EditorId, _dotNetHelper);
             _editorInitialized = true;
         }
@@ -125,7 +127,7 @@ public partial class ArcQuestEditor : ComponentBase, IAsyncDisposable
     {
         _editDescription = html;
         _hasUnsavedChanges = true;
-        
+
         // Debounce auto-save (0.5s delay)
         _autoSaveTimer?.Dispose();
         _autoSaveTimer = new Timer(async _ => await AutoSaveAsync(), null, 500, Timeout.Infinite);
@@ -179,7 +181,8 @@ public partial class ArcQuestEditor : ComponentBase, IAsyncDisposable
 
     private async Task SaveQuestAsync()
     {
-        if (_quest == null || _isSaving) return;
+        if (_quest == null || _isSaving)
+            return;
 
         _isSaving = true;
         StateHasChanged();
@@ -246,15 +249,15 @@ public partial class ArcQuestEditor : ComponentBase, IAsyncDisposable
     {
         if (_disposed)
             return;
-            
+
         _disposed = true;
         _autoSaveTimer?.Dispose();
-        
+
         // Properly dispose TipTap editor
         await DisposeEditorAsync();
-        
+
         _dotNetHelper?.Dispose();
-        
+
         GC.SuppressFinalize(this);
     }
 }

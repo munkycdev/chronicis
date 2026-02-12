@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using Chronicis.Shared.Extensions;
 using Ganss.Xss;
 using Markdig;
 
@@ -6,11 +8,14 @@ namespace Chronicis.Client.Services;
 /// <summary>
 /// Service for converting markdown to sanitized HTML
 /// </summary>
-public class MarkdownService : IMarkdownService
+public partial class MarkdownService : IMarkdownService
 {
     private readonly MarkdownPipeline _pipeline;
     private readonly HtmlSanitizer _sanitizer;
     private readonly ILogger<MarkdownService> _logger;
+
+    [GeneratedRegex(@"<(p|h[1-6]|ul|ol|li|strong|em|a|pre|code|blockquote|div|span|br)[^>]*>", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex HtmlRegex();
 
     public MarkdownService(ILogger<MarkdownService> logger)
     {
@@ -79,7 +84,7 @@ public class MarkdownService : IMarkdownService
         catch (Exception ex)
         {
             // Log error and return escaped text as fallback
-            _logger.LogError($"Markdown conversion error: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Error converting markdown to HTML");
             return $"<p>{System.Net.WebUtility.HtmlEncode(markdown)}</p>";
         }
     }
@@ -113,9 +118,9 @@ public class MarkdownService : IMarkdownService
         if (plainText.Length <= maxLength)
             return plainText;
 
-        return plainText.Substring(0, maxLength) + "...";
+        return string.Concat(plainText.AsSpan(0, maxLength), "...");
     }
-    
+
     /// <summary>
     /// Detects if content is HTML (vs markdown).
     /// HTML from TipTap will have tags like p, h1, ul, etc.
@@ -125,14 +130,11 @@ public class MarkdownService : IMarkdownService
     {
         if (string.IsNullOrWhiteSpace(content))
             return false;
-        
+
         // Check for common HTML tags that TipTap produces
-        return System.Text.RegularExpressions.Regex.IsMatch(
-            content, 
-            @"<(p|h[1-6]|ul|ol|li|strong|em|a|pre|code|blockquote|div|span|br)[^>]*>",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return HtmlRegex().IsMatch(content);
     }
-    
+
     /// <summary>
     /// Ensures content is HTML. If content appears to be markdown, converts it to HTML.
     /// If content is already HTML, returns it as-is (after sanitization).
@@ -141,13 +143,13 @@ public class MarkdownService : IMarkdownService
     {
         if (string.IsNullOrWhiteSpace(content))
             return string.Empty;
-        
+
         if (IsHtml(content))
         {
             // Already HTML - just sanitize and return
             return _sanitizer.Sanitize(content);
         }
-        
+
         // Content appears to be markdown - convert to HTML
         return ToHtml(content);
     }

@@ -2,7 +2,6 @@ using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -16,7 +15,7 @@ public class UserService : IUserService
     private readonly ILogger<UserService> _logger;
 
     public UserService(
-        ChronicisDbContext context, 
+        ChronicisDbContext context,
         IWorldService worldService,
         ILogger<UserService> logger)
     {

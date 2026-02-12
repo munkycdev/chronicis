@@ -1,6 +1,4 @@
 using Chronicis.Client.Services;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Chronicis.Client.Extensions;
 
@@ -14,7 +12,7 @@ public static class HttpClientServiceExtensions
     /// public API client, and external service clients.
     /// </summary>
     public static IServiceCollection AddChronicisHttpClients(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration configuration)
     {
         var apiBaseUrl = configuration["ApiBaseUrl"] ?? "http://localhost:7071";

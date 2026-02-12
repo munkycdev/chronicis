@@ -1,10 +1,7 @@
 using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -20,7 +17,7 @@ public class WorldPublicSharingService : IWorldPublicSharingService
     private static readonly Regex PublicSlugRegex = new(@"^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.Compiled);
 
     // Reserved slugs that shouldn't be used
-    private static readonly string[] ReservedSlugs = 
+    private static readonly string[] ReservedSlugs =
         { "api", "admin", "public", "private", "new", "edit", "delete", "search", "login", "logout", "settings" };
 
     public WorldPublicSharingService(ChronicisDbContext context, ILogger<WorldPublicSharingService> logger)
@@ -63,7 +60,7 @@ public class WorldPublicSharingService : IWorldPublicSharingService
 
         // Check availability
         var isAvailable = await IsPublicSlugAvailableAsync(normalizedSlug, excludeWorldId);
-        
+
         return new PublicSlugCheckResultDto
         {
             IsAvailable = isAvailable,

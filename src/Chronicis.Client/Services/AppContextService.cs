@@ -1,6 +1,5 @@
 using Blazored.LocalStorage;
 using Chronicis.Shared.DTOs;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Client.Services;
 
@@ -84,7 +83,7 @@ public class AppContextService : IAppContextService
         }
 
         IsInitialized = true;
-        _logger.LogDebug("App context initialized. World: {WorldId}, Campaign: {CampaignId}", 
+        _logger.LogDebug("App context initialized. World: {WorldId}, Campaign: {CampaignId}",
             CurrentWorldId, CurrentCampaignId);
     }
 

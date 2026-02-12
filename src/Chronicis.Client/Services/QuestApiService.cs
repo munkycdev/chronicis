@@ -1,6 +1,6 @@
+using System.Net.Http.Json;
 using Chronicis.Shared.DTOs.Quests;
 using MudBlazor;
-using System.Net.Http.Json;
 
 namespace Chronicis.Client.Services;
 
@@ -16,7 +16,7 @@ public class QuestApiService : IQuestApiService
     private readonly ISnackbar _snackbar;
 
     public QuestApiService(
-        HttpClient http, 
+        HttpClient http,
         ILogger<QuestApiService> logger,
         ISnackbar snackbar)
     {
@@ -60,7 +60,7 @@ public class QuestApiService : IQuestApiService
             {
                 // 409 Conflict - rowversion mismatch
                 _logger.LogWarning("Quest {QuestId} update conflict (stale RowVersion)", questId);
-                
+
                 // Read the current server state from response body
                 var currentQuest = await response.Content.ReadFromJsonAsync<QuestDto>();
                 if (currentQuest != null)
@@ -68,7 +68,7 @@ public class QuestApiService : IQuestApiService
                     _snackbar.Add("Quest was modified by another user. Changes reloaded.", Severity.Warning);
                     return currentQuest;
                 }
-                
+
                 _snackbar.Add("Quest update conflict. Please reload.", Severity.Error);
                 return null;
             }
@@ -97,7 +97,7 @@ public class QuestApiService : IQuestApiService
         return await _http.GetEntityAsync<PagedResult<QuestUpdateEntryDto>>(
             $"quests/{questId}/updates?skip={skip}&take={take}",
             _logger,
-            $"updates for quest {questId}") 
+            $"updates for quest {questId}")
             ?? new PagedResult<QuestUpdateEntryDto>();
     }
 

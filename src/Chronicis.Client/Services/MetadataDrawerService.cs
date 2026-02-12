@@ -6,6 +6,6 @@ namespace Chronicis.Client.Services;
 public class MetadataDrawerService : IMetadataDrawerService
 {
     public event Action? OnToggle;
-    
+
     public void Toggle() => OnToggle?.Invoke();
 }

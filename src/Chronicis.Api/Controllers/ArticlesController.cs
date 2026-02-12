@@ -1,9 +1,9 @@
 using Chronicis.Api.Data;
-using Chronicis.Shared.Extensions;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Api.Services.Articles;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
 using Microsoft.AspNetCore.Authorization;
@@ -317,14 +317,22 @@ public class ArticlesController : ControllerBase
             }
 
             // Update fields
-            if (dto.Title != null) article.Title = dto.Title;
-            if (dto.Body != null) article.Body = dto.Body;
-            if (dto.EffectiveDate.HasValue) article.EffectiveDate = dto.EffectiveDate.Value;
-            if (dto.IconEmoji != null) article.IconEmoji = dto.IconEmoji;
-            if (dto.SessionDate.HasValue) article.SessionDate = dto.SessionDate;
-            if (dto.InGameDate != null) article.InGameDate = dto.InGameDate;
-            if (dto.Visibility.HasValue) article.Visibility = dto.Visibility.Value;
-            if (dto.Type.HasValue) article.Type = dto.Type.Value;
+            if (dto.Title != null)
+                article.Title = dto.Title;
+            if (dto.Body != null)
+                article.Body = dto.Body;
+            if (dto.EffectiveDate.HasValue)
+                article.EffectiveDate = dto.EffectiveDate.Value;
+            if (dto.IconEmoji != null)
+                article.IconEmoji = dto.IconEmoji;
+            if (dto.SessionDate.HasValue)
+                article.SessionDate = dto.SessionDate;
+            if (dto.InGameDate != null)
+                article.InGameDate = dto.InGameDate;
+            if (dto.Visibility.HasValue)
+                article.Visibility = dto.Visibility.Value;
+            if (dto.Type.HasValue)
+                article.Type = dto.Type.Value;
 
             article.ModifiedAt = DateTime.UtcNow;
             article.LastModifiedBy = user.Id;

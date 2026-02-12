@@ -51,9 +51,9 @@ public class CurrentUserService : ICurrentUserService
 
         // Extract additional claims for user creation/update
         var claimsPrincipal = _httpContextAccessor.HttpContext?.User;
-        
+
         const string customNamespace = "https://chronicis.app";
-        
+
         var email = claimsPrincipal?.FindFirst($"{customNamespace}/email")?.Value
                    ?? claimsPrincipal?.FindFirst(ClaimTypes.Email)?.Value
                    ?? claimsPrincipal?.FindFirst("email")?.Value
@@ -98,7 +98,7 @@ public class CurrentUserService : ICurrentUserService
             return null;
 
         var localPart = email.Split('@')[0];
-        
+
         // Replace common separators with spaces
         var name = localPart
             .Replace('.', ' ')
@@ -107,11 +107,11 @@ public class CurrentUserService : ICurrentUserService
 
         // Title case each word
         var words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var titleCased = words.Select(w => 
+        var titleCased = words.Select(w =>
             char.ToUpper(w[0]) + (w.Length > 1 ? w.Substring(1).ToLower() : ""));
 
         var result = string.Join(" ", titleCased);
-        
+
         // Don't return if it looks like gibberish (all numbers, too short, etc.)
         if (result.Length < 2 || result.All(c => char.IsDigit(c)))
             return null;

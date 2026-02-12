@@ -35,7 +35,7 @@ public class ArticleExternalLink
     public string DisplayTitle { get; set; } = string.Empty;
 
     // Navigation properties
-    
+
     /// <summary>
     /// The article that contains this external link.
     /// </summary>

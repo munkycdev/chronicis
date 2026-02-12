@@ -70,8 +70,8 @@ public class QuestsController : ControllerBase
         return result.Status switch
         {
             ServiceStatus.Success => CreatedAtAction(
-                nameof(GetQuest), 
-                new { questId = result.Value!.Id }, 
+                nameof(GetQuest),
+                new { questId = result.Value!.Id },
                 result.Value),
             ServiceStatus.NotFound => NotFound(new { error = result.ErrorMessage }),
             ServiceStatus.Forbidden => StatusCode(403, new { error = result.ErrorMessage }),
@@ -122,8 +122,8 @@ public class QuestsController : ControllerBase
             ServiceStatus.Success => Ok(result.Value),
             ServiceStatus.NotFound => NotFound(new { error = result.ErrorMessage }),
             ServiceStatus.Forbidden => StatusCode(403, new { error = result.ErrorMessage }),
-            ServiceStatus.Conflict => Conflict(new 
-            { 
+            ServiceStatus.Conflict => Conflict(new
+            {
                 error = result.ErrorMessage,
                 currentState = result.Value // Include current QuestDto with latest RowVersion
             }),

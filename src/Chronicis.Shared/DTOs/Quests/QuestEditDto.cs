@@ -13,7 +13,7 @@ public class QuestEditDto
     public QuestStatus? Status { get; set; }
     public bool? IsGmOnly { get; set; }
     public int? SortOrder { get; set; }
-    
+
     /// <summary>
     /// Base64-encoded rowversion from the last read.
     /// Required for concurrency checking.

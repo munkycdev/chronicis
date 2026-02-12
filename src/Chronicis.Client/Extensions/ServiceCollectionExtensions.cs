@@ -1,6 +1,3 @@
-using Chronicis.Client.Services;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor;
 

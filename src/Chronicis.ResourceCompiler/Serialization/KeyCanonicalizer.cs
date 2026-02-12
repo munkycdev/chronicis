@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Chronicis.ResourceCompiler.Indexing;
 using Chronicis.ResourceCompiler.Indexing.Models;
 using Chronicis.ResourceCompiler.Warnings;
 

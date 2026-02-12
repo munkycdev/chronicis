@@ -32,7 +32,7 @@ public partial class WorldResourceProviders : ComponentBase
         try
         {
             _providers = await ResourceProviderService.GetWorldProvidersAsync(WorldId);
-            
+
             if (_providers == null)
             {
                 _error = true;

@@ -12,7 +12,7 @@ namespace Chronicis.Client.Components.Quests;
 public partial class QuestDrawer : IAsyncDisposable
 {
     [Inject] private IArticleApiService ArticleApi { get; set; } = null!;
-    
+
     private bool IsOpen { get; set; }
     private bool _isLoading;
     private bool _isSubmitting;
@@ -20,18 +20,18 @@ public partial class QuestDrawer : IAsyncDisposable
     private string? _emptyStateMessage;
     private string? _loadingError;
     private string? _validationError;
-    
+
     private List<QuestDto>? _quests;
     private Guid? _selectedQuestId;
     private QuestDto? _selectedQuest;
     private List<QuestUpdateEntryDto>? _recentUpdates;
-    
+
     private Guid? _currentArcId;
     private Guid? _currentSessionId;
     private Guid? _currentWorldId;
     private bool _canAssociateSession;
     private bool _associateWithSession = true;
-    
+
     private IJSObjectReference? _editorModule;
     private bool _editorInitialized;
     private DotNetObjectReference<QuestDrawer>? _dotNetRef;
@@ -62,7 +62,7 @@ public partial class QuestDrawer : IAsyncDisposable
         {
             await LoadQuestsAsync();
             StateHasChanged();
-            
+
             // Focus the first quest selector after render
             if (_quests?.Any() == true)
             {
@@ -89,7 +89,7 @@ public partial class QuestDrawer : IAsyncDisposable
     private async Task CloseDrawer()
     {
         QuestDrawerService.Close();
-        
+
         // Give drawer time to close, then return focus to main content
         await Task.Delay(200);
         await RestoreFocusAsync();
@@ -100,36 +100,36 @@ public partial class QuestDrawer : IAsyncDisposable
         _isLoading = true;
         _emptyStateMessage = null;
         _loadingError = null;
-        
+
         try
         {
             // Resolve Arc and Session from current article
             var selectedArticle = await GetCurrentArticleAsync();
-            
+
             if (selectedArticle == null)
             {
                 _emptyStateMessage = "No article selected. Navigate to a session to use quest tracking.";
                 return;
             }
-            
+
             // Store the world ID for autocomplete
             _currentWorldId = selectedArticle.WorldId;
-            
+
             // Check if we're on a Session or SessionNote page
             if (selectedArticle.Type != ArticleType.Session && selectedArticle.Type != ArticleType.SessionNote)
             {
                 _emptyStateMessage = "Navigate to a session or session note to use quest tracking.";
                 return;
             }
-            
+
             _currentArcId = selectedArticle.ArcId;
-            
+
             if (!_currentArcId.HasValue)
             {
                 _emptyStateMessage = "This session is not associated with an arc.";
                 return;
             }
-            
+
             // Resolve SessionId
             if (selectedArticle.Type == ArticleType.Session)
             {
@@ -141,14 +141,14 @@ public partial class QuestDrawer : IAsyncDisposable
                 _currentSessionId = await ResolveSessionIdFromParentAsync(selectedArticle.Id);
                 _canAssociateSession = _currentSessionId.HasValue;
             }
-            
+
             // Only load quests if we haven't already loaded for this arc (prevent duplicate fetches)
             if (!_questsLoadedForArc)
             {
                 _quests = await QuestApi.GetArcQuestsAsync(_currentArcId.Value);
                 _questsLoadedForArc = true;
             }
-            
+
             // Auto-select first quest if available and none selected
             if (_quests?.Any() == true && !_selectedQuestId.HasValue)
             {
@@ -170,10 +170,10 @@ public partial class QuestDrawer : IAsyncDisposable
     private async Task<ArticleDto?> GetCurrentArticleAsync()
     {
         var selectedNodeId = TreeState.SelectedNodeId;
-        
+
         if (!selectedNodeId.HasValue)
             return null;
-        
+
         try
         {
             return await ArticleApi.GetArticleDetailAsync(selectedNodeId.Value);
@@ -189,15 +189,15 @@ public partial class QuestDrawer : IAsyncDisposable
         try
         {
             var article = await ArticleApi.GetArticleDetailAsync(articleId);
-            
+
             while (article != null)
             {
                 if (article.Type == ArticleType.Session)
                     return article.Id;
-                
+
                 if (!article.ParentId.HasValue)
                     break;
-                
+
                 article = await ArticleApi.GetArticleDetailAsync(article.ParentId.Value);
             }
         }
@@ -205,7 +205,7 @@ public partial class QuestDrawer : IAsyncDisposable
         {
             Logger.LogError(ex, "Failed to resolve session ID");
         }
-        
+
         return null;
     }
 
@@ -213,26 +213,26 @@ public partial class QuestDrawer : IAsyncDisposable
     {
         if (_selectedQuestId == questId)
             return;
-        
+
         // Dispose old editor if switching quests
         if (_editorInitialized)
         {
             await DisposeEditorAsync();
         }
-        
+
         _selectedQuestId = questId;
         _selectedQuest = _quests?.FirstOrDefault(q => q.Id == questId);
         _validationError = null;
-        
+
         if (_selectedQuest != null)
         {
             // Load recent updates
             await LoadRecentUpdatesAsync(questId);
-            
+
             // Set flag to initialize editor after next render
             _needsEditorInit = true;
         }
-        
+
         // Trigger render - OnAfterRenderAsync will handle editor init
         StateHasChanged();
     }
@@ -249,7 +249,7 @@ public partial class QuestDrawer : IAsyncDisposable
     {
         _loadingUpdates = true;
         StateHasChanged();
-        
+
         try
         {
             var result = await QuestApi.GetQuestUpdatesAsync(questId, skip: 0, take: 5);
@@ -271,16 +271,16 @@ public partial class QuestDrawer : IAsyncDisposable
     {
         if (_editorInitialized || _disposed)
             return;
-        
+
         try
         {
             _dotNetRef = DotNetObjectReference.Create(this);
             _editorModule = await JSRuntime.InvokeAsync<IJSObjectReference>(
                 "import", "./js/questEditor.js");
-            
+
             await _editorModule.InvokeVoidAsync("initializeEditor", "quest-update-editor", _dotNetRef);
             _editorInitialized = true;
-            
+
             // Focus the editor after initialization
             await Task.Delay(50);
             await FocusEditorAsync();
@@ -296,7 +296,7 @@ public partial class QuestDrawer : IAsyncDisposable
     {
         if (!_editorInitialized || _disposed)
             return;
-        
+
         try
         {
             if (_editorModule != null)
@@ -318,10 +318,10 @@ public partial class QuestDrawer : IAsyncDisposable
     {
         if (_selectedQuest == null || _isSubmitting)
             return;
-        
+
         _isSubmitting = true;
         _validationError = null;
-        
+
         try
         {
             // Get editor content
@@ -330,34 +330,34 @@ public partial class QuestDrawer : IAsyncDisposable
                 _validationError = "Editor not initialized";
                 return;
             }
-            
+
             var content = await _editorModule.InvokeAsync<string>("getEditorContent");
-            
+
             // Validate content is not empty or whitespace
             if (string.IsNullOrWhiteSpace(content) || content == "<p></p>" || content == "<p><br></p>")
             {
                 _validationError = "Update content cannot be empty";
                 return;
             }
-            
+
             // Create update DTO
             var createDto = new QuestUpdateCreateDto
             {
                 Body = content,
                 SessionId = _associateWithSession && _canAssociateSession ? _currentSessionId : null
             };
-            
+
             // Submit via API
             var result = await QuestApi.AddQuestUpdateAsync(_selectedQuest.Id, createDto);
-            
+
             if (result != null)
             {
                 // Clear editor
                 await _editorModule.InvokeVoidAsync("clearEditor");
-                
+
                 // Refresh updates list
                 await LoadRecentUpdatesAsync(_selectedQuest.Id);
-                
+
                 // Update the quest's UpdatedAt (refresh from server if needed)
                 var refreshedQuest = await QuestApi.GetQuestAsync(_selectedQuest.Id);
                 if (refreshedQuest != null)
@@ -368,10 +368,10 @@ public partial class QuestDrawer : IAsyncDisposable
                         questInList.UpdatedAt = refreshedQuest.UpdatedAt;
                         questInList.UpdateCount = refreshedQuest.UpdateCount;
                     }
-                    
+
                     _selectedQuest = refreshedQuest;
                 }
-                
+
                 Snackbar.Add("Quest update added", Severity.Success);
             }
             else
@@ -395,7 +395,7 @@ public partial class QuestDrawer : IAsyncDisposable
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("eval", 
+            await JSRuntime.InvokeVoidAsync("eval",
                 "document.querySelector('.quest-item')?.focus()");
         }
         catch
@@ -433,34 +433,34 @@ public partial class QuestDrawer : IAsyncDisposable
     }
 
     #region Wiki Link Autocomplete
-    
+
     [JSInvokable]
     public async Task OnAutocompleteTriggered(string query, double x, double y)
     {
         await AutocompleteService.ShowAsync(query, x, y, _currentWorldId);
     }
-    
+
     [JSInvokable]
     public Task OnAutocompleteHidden()
     {
         AutocompleteService.Hide();
         return Task.CompletedTask;
     }
-    
+
     [JSInvokable]
     public Task OnAutocompleteArrowDown()
     {
         AutocompleteService.SelectNext();
         return Task.CompletedTask;
     }
-    
+
     [JSInvokable]
     public Task OnAutocompleteArrowUp()
     {
         AutocompleteService.SelectPrevious();
         return Task.CompletedTask;
     }
-    
+
     [JSInvokable]
     public async Task OnAutocompleteEnter()
     {
@@ -470,12 +470,12 @@ public partial class QuestDrawer : IAsyncDisposable
             await HandleAutocompleteSuggestionSelected(selected);
         }
     }
-    
+
     private async Task HandleAutocompleteSuggestionSelected(WikiLinkAutocompleteItem suggestion)
     {
         if (_editorModule == null)
             return;
-            
+
         try
         {
             if (suggestion.IsExternal)
@@ -489,7 +489,7 @@ public partial class QuestDrawer : IAsyncDisposable
                 // Insert internal article link: [[article-title]]
                 await _editorModule.InvokeVoidAsync("insertWikiLink", suggestion.DisplayText, null);
             }
-            
+
             // Hide autocomplete
             AutocompleteService.Hide();
         }
@@ -498,29 +498,29 @@ public partial class QuestDrawer : IAsyncDisposable
             Logger.LogError(ex, "Failed to insert wiki link suggestion");
         }
     }
-    
+
     #endregion
 
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
             return;
-            
+
         _disposed = true;
-        
+
         QuestDrawerService.OnOpen -= HandleOpen;
         QuestDrawerService.OnClose -= HandleClose;
-        
+
         // Properly dispose TipTap editor
         await DisposeEditorAsync();
-        
+
         _dotNetRef?.Dispose();
-        
+
         if (_editorModule != null)
         {
             await _editorModule.DisposeAsync();
         }
-        
+
         GC.SuppressFinalize(this);
     }
 }

@@ -62,7 +62,7 @@ public class LinkParser : ILinkParser
         foreach (Match match in matches)
         {
             var guidString = match.Groups[1].Value;
-            
+
             if (!Guid.TryParse(guidString, out var targetArticleId))
             {
                 continue;
@@ -75,8 +75,8 @@ public class LinkParser : ILinkParser
             }
 
             // Get display text and trim whitespace
-            var displayText = match.Groups[2].Success 
-                ? match.Groups[2].Value.Trim() 
+            var displayText = match.Groups[2].Success
+                ? match.Groups[2].Value.Trim()
                 : null;
 
             var position = match.Index;
@@ -92,7 +92,7 @@ public class LinkParser : ILinkParser
         foreach (Match match in matches)
         {
             var guidString = match.Groups[1].Value;
-            
+
             if (!Guid.TryParse(guidString, out var targetArticleId))
             {
                 continue;
@@ -104,8 +104,8 @@ public class LinkParser : ILinkParser
                 continue;
             }
 
-            var displayText = match.Groups[2].Success 
-                ? match.Groups[2].Value.Trim() 
+            var displayText = match.Groups[2].Success
+                ? match.Groups[2].Value.Trim()
                 : null;
 
             var position = match.Index;

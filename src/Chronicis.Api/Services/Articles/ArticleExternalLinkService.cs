@@ -70,7 +70,7 @@ public partial class ArticleExternalLinkService : IArticleExternalLinkService
                 }).ToList();
 
                 await _context.ArticleExternalLinks.AddRangeAsync(newLinks);
-                
+
                 _logger.LogDebug(
                     "Added {Count} new external links for article {ArticleId}",
                     newLinks.Count,

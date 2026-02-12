@@ -1,12 +1,12 @@
+using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
-using Chronicis.Api.Services;
-using Chronicis.Shared.Extensions;
 using Chronicis.Api.Infrastructure;
+using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
 
 namespace Chronicis.Api.Controllers;
 
@@ -212,13 +212,13 @@ public class SearchController : ControllerBase
     {
         // Remove HTML tags
         text = Regex.Replace(text, @"<[^>]+>", " ");
-        
+
         // Remove wiki link syntax [[guid|text]] or [[guid]]
         text = Regex.Replace(text, @"\[\[[a-fA-F0-9\-]{36}(?:\|([^\]]+))?\]\]", "$1");
-        
+
         // Normalize whitespace
         text = Regex.Replace(text, @"\s+", " ");
-        
+
         return text.Trim();
     }
 

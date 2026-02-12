@@ -1,7 +1,5 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 using Chronicis.Shared.Extensions;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services.ExternalLinks;
 
@@ -9,7 +7,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
 {
     private const string SourceKey = "srd";
     private const string HttpClientName = "Open5eApi";
-    
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<Open5eExternalLinkProvider> _logger;
 
@@ -49,7 +47,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
 
         // Check if query contains a slash (indicating category/searchterm format)
         var slashIndex = query.IndexOf('/');
-        
+
         if (slashIndex < 0)
         {
             // No slash - user is still typing a category name
@@ -62,9 +60,9 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         var searchTerm = slashIndex < query.Length - 1 ? query[(slashIndex + 1)..].Trim() : string.Empty;
 
         // Find the matching category (exact or prefix match)
-        var category = Categories.Keys.FirstOrDefault(k => 
-            k.Equals(categoryPart, StringComparison.OrdinalIgnoreCase)) 
-            ?? Categories.Keys.FirstOrDefault(k => 
+        var category = Categories.Keys.FirstOrDefault(k =>
+            k.Equals(categoryPart, StringComparison.OrdinalIgnoreCase))
+            ?? Categories.Keys.FirstOrDefault(k =>
                 k.StartsWith(categoryPart, StringComparison.OrdinalIgnoreCase));
 
         if (category == null)
@@ -95,14 +93,14 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
     private List<ExternalLinkSuggestion> GetCategorySuggestions(string filter)
     {
         var suggestions = new List<ExternalLinkSuggestion>();
-        
+
         foreach (var kvp in Categories)
         {
             var categoryName = kvp.Key;
             var config = kvp.Value;
-            
+
             // Filter by prefix if filter is provided
-            if (!string.IsNullOrEmpty(filter) && 
+            if (!string.IsNullOrEmpty(filter) &&
                 !categoryName.StartsWith(filter, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
@@ -236,12 +234,12 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
                 // Filter to only include items where the name contains the search term
                 // (Open5e searches full content, we want name-only matching)
                 var name = GetString(item, "name");
-                if (string.IsNullOrEmpty(name) || 
+                if (string.IsNullOrEmpty(name) ||
                     !name.Contains(query, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
-                
+
                 var suggestion = ParseSearchResult(item, category, config);
                 if (suggestion != null)
                 {
@@ -361,17 +359,17 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         if (slashIndex > 0 && slashIndex < trimmed.Length - 1)
         {
             var possibleCategory = trimmed[..slashIndex].ToLowerInvariant();
-            
+
             // Try exact match first
             if (Categories.ContainsKey(possibleCategory))
             {
                 return (possibleCategory, trimmed[(slashIndex + 1)..].Trim());
             }
-            
+
             // Try prefix/partial match (e.g., "spell" matches "spells", "monster" matches "monsters")
             var matchedCategory = Categories.Keys
                 .FirstOrDefault(k => k.StartsWith(possibleCategory, StringComparison.OrdinalIgnoreCase));
-            
+
             if (matchedCategory != null)
             {
                 return (matchedCategory, trimmed[(slashIndex + 1)..].Trim());
@@ -452,9 +450,12 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         var materialDesc = GetString(root, "material_specified") ?? GetString(root, "material");
 
         var components = new List<string>();
-        if (verbal == true) components.Add("V");
-        if (somatic == true) components.Add("S");
-        if (material == true) components.Add($"M{(!string.IsNullOrEmpty(materialDesc) ? $" ({materialDesc})" : "")}");
+        if (verbal == true)
+            components.Add("V");
+        if (somatic == true)
+            components.Add("S");
+        if (material == true)
+            components.Add($"M{(!string.IsNullOrEmpty(materialDesc) ? $" ({materialDesc})" : "")}");
         if (components.Count > 0)
             sb.AppendLine($"- **Components:** {string.Join(", ", components)}");
 

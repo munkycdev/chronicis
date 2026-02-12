@@ -1,4 +1,3 @@
-using System.Linq;
 using Chronicis.ResourceCompiler.Compiler;
 using Chronicis.ResourceCompiler.Options;
 using Chronicis.ResourceCompiler.Warnings;
@@ -18,7 +17,7 @@ if (!CompilerOptions.TryParse(args, out var options, out var error, out var show
         return 0;
     }
 
-    logger.LogWarning(error ?? "Invalid arguments.");
+    logger.LogWarning("{error}", error ?? "Invalid arguments.");
     return 1;
 }
 
@@ -29,7 +28,7 @@ var warningCount = result.Warnings.Count;
 var errorCount = result.Warnings.Count(warning => warning.Severity == WarningSeverity.Error);
 var warnCount = warningCount - errorCount;
 
-logger.LogWarning("Warnings: {WarningCount} (Errors: {ErrorCount}, Warnings: {WarnCount})", 
+logger.LogWarning("Warnings: {WarningCount} (Errors: {ErrorCount}, Warnings: {WarnCount})",
     warningCount, errorCount, warnCount);
 
 if (options.Verbose && result.Warnings.Count > 0)

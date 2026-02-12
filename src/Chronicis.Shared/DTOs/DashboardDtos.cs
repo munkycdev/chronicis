@@ -9,17 +9,17 @@ public class DashboardDto
     /// User's display name for personalized greeting.
     /// </summary>
     public string UserDisplayName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// All worlds the user has access to.
     /// </summary>
     public List<DashboardWorldDto> Worlds { get; set; } = new();
-    
+
     /// <summary>
     /// Characters claimed by the user across all worlds.
     /// </summary>
     public List<ClaimedCharacterDto> ClaimedCharacters { get; set; } = new();
-    
+
     /// <summary>
     /// Contextual prompts/suggestions for the user.
     /// </summary>
@@ -37,17 +37,17 @@ public class DashboardWorldDto
     public string? Description { get; set; }
     public DateTime CreatedAt { get; set; }
     public Guid? WorldRootArticleId { get; set; }
-    
+
     /// <summary>
     /// Total article count in this world.
     /// </summary>
     public int ArticleCount { get; set; }
-    
+
     /// <summary>
     /// Campaigns in this world.
     /// </summary>
     public List<DashboardCampaignDto> Campaigns { get; set; } = new();
-    
+
     /// <summary>
     /// Characters the current user has claimed in this world.
     /// </summary>
@@ -67,7 +67,7 @@ public class DashboardCampaignDto
     public bool IsActive { get; set; }
     public int SessionCount { get; set; }
     public int ArcCount { get; set; }
-    
+
     /// <summary>
     /// The current/most recent arc.
     /// </summary>

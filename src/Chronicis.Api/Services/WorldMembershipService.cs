@@ -1,10 +1,7 @@
 using Chronicis.Api.Data;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
-using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -92,7 +89,7 @@ public class WorldMembershipService : IWorldMembershipService
         member.Role = dto.Role;
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Updated member {MemberId} role to {Role} in world {WorldId}", 
+        _logger.LogDebug("Updated member {MemberId} role to {Role} in world {WorldId}",
             memberId, dto.Role, worldId);
 
         return new WorldMemberDto

@@ -12,9 +12,9 @@ public interface IQuestUpdateService
     /// Get paginated quest updates for a quest.
     /// </summary>
     Task<ServiceResult<PagedResult<QuestUpdateEntryDto>>> GetQuestUpdatesAsync(
-        Guid questId, 
-        Guid userId, 
-        int skip = 0, 
+        Guid questId,
+        Guid userId,
+        int skip = 0,
         int take = 20);
 
     /// <summary>
@@ -22,15 +22,15 @@ public interface IQuestUpdateService
     /// Also updates the parent Quest's UpdatedAt timestamp.
     /// </summary>
     Task<ServiceResult<QuestUpdateEntryDto>> CreateQuestUpdateAsync(
-        Guid questId, 
-        QuestUpdateCreateDto dto, 
+        Guid questId,
+        QuestUpdateCreateDto dto,
         Guid userId);
 
     /// <summary>
     /// Delete a quest update. GM can delete any, Player can delete own only.
     /// </summary>
     Task<ServiceResult<bool>> DeleteQuestUpdateAsync(
-        Guid questId, 
-        Guid updateId, 
+        Guid questId,
+        Guid updateId,
         Guid userId);
 }

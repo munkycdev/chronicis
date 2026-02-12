@@ -5,7 +5,6 @@ using Chronicis.Api.Data;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -47,7 +46,7 @@ public class ExportService : IExportService
             return null;
         }
 
-        _logger.LogDebug("Starting export of world {WorldId} ({WorldName}) for user {UserId}", 
+        _logger.LogDebug("Starting export of world {WorldId} ({WorldName}) for user {UserId}",
             worldId, world.Name, userId);
 
         // Get all articles for this world with their hierarchy info
@@ -86,7 +85,7 @@ public class ExportService : IExportService
             foreach (var campaign in campaigns)
             {
                 var campaignFolder = $"{worldFolderName}/Campaigns/{SanitizeFileName(campaign.Name)}";
-                
+
                 // Campaign info file
                 var campaignContent = BuildCampaignMarkdown(campaign);
                 await AddFileToArchive(archive, $"{campaignFolder}/{SanitizeFileName(campaign.Name)}.md", campaignContent);
@@ -96,7 +95,7 @@ public class ExportService : IExportService
                 foreach (var arc in campaignArcs)
                 {
                     var arcFolder = $"{campaignFolder}/{SanitizeFileName(arc.Name)}";
-                    
+
                     // Arc info file
                     var arcContent = BuildArcMarkdown(arc);
                     await AddFileToArchive(archive, $"{arcFolder}/{SanitizeFileName(arc.Name)}.md", arcContent);
@@ -128,17 +127,17 @@ public class ExportService : IExportService
 
         memoryStream.Position = 0;
         var result = memoryStream.ToArray();
-        
-        _logger.LogDebug("Export completed for world {WorldId}. Archive size: {Size} bytes", 
+
+        _logger.LogDebug("Export completed for world {WorldId}. Archive size: {Size} bytes",
             worldId, result.Length);
 
         return result;
     }
 
     private async Task ExportArticleHierarchy(
-        ZipArchive archive, 
-        List<Article> articles, 
-        string basePath, 
+        ZipArchive archive,
+        List<Article> articles,
+        string basePath,
         Guid? parentId)
     {
         var children = articles.Where(a => a.ParentId == parentId).OrderBy(a => a.Title).ToList();
@@ -273,11 +272,11 @@ public class ExportService : IExportService
 
         // Wiki links: <span data-type="wiki-link" data-target-id="guid" data-display="display">text</span>
         // Convert to: [[display]] (we lose the GUID link, but preserve the text)
-        markdown = Regex.Replace(markdown, 
-            @"<span[^>]*data-type=""wiki-link""[^>]*data-display=""([^""]+)""[^>]*>.*?</span>", 
+        markdown = Regex.Replace(markdown,
+            @"<span[^>]*data-type=""wiki-link""[^>]*data-display=""([^""]+)""[^>]*>.*?</span>",
             "[[$1]]", RegexOptions.IgnoreCase);
-        markdown = Regex.Replace(markdown, 
-            @"<span[^>]*data-type=""wiki-link""[^>]*>([^<]+)</span>", 
+        markdown = Regex.Replace(markdown,
+            @"<span[^>]*data-type=""wiki-link""[^>]*>([^<]+)</span>",
             "[[$1]]", RegexOptions.IgnoreCase);
 
         // Headers
@@ -350,7 +349,7 @@ public class ExportService : IExportService
         while (result != previousResult)
         {
             previousResult = result;
-            
+
             // Unordered lists
             result = Regex.Replace(result, @"<ul[^>]*>([\s\S]*?)</ul>", m =>
             {
@@ -473,7 +472,7 @@ public class ExportService : IExportService
         sanitized.Replace(':', '_');
 
         var result = sanitized.ToString().Trim();
-        
+
         // Limit length
         if (result.Length > 100)
             result = result.Substring(0, 100);

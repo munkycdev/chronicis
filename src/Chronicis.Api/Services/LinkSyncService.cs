@@ -1,7 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -39,7 +38,7 @@ public class LinkSyncService : ILinkSyncService
             .ToListAsync();
 
         var removedCount = existingLinks.Count;
-        
+
         if (existingLinks.Any())
         {
             _context.ArticleLinks.RemoveRange(existingLinks);

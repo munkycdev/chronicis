@@ -1,5 +1,4 @@
 using System.Net.Http.Json;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Client.Services;
 
@@ -79,7 +78,7 @@ public static class HttpClientExtensions
                 return await response.Content.ReadFromJsonAsync<T>();
             }
 
-            logger.LogWarning("Failed to create {Entity}: {StatusCode}", 
+            logger.LogWarning("Failed to create {Entity}: {StatusCode}",
                 entityDescription ?? typeof(T).Name, response.StatusCode);
             return null;
         }
@@ -109,7 +108,7 @@ public static class HttpClientExtensions
                 return await response.Content.ReadFromJsonAsync<T>();
             }
 
-            logger.LogWarning("Failed to update {Entity}: {StatusCode}", 
+            logger.LogWarning("Failed to update {Entity}: {StatusCode}",
                 entityDescription ?? typeof(T).Name, response.StatusCode);
             return null;
         }
@@ -134,7 +133,7 @@ public static class HttpClientExtensions
             var response = await http.DeleteAsync(url);
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogWarning("Failed to delete {Entity}: {StatusCode}", 
+                logger.LogWarning("Failed to delete {Entity}: {StatusCode}",
                     entityDescription ?? "entity", response.StatusCode);
             }
             return response.IsSuccessStatusCode;
@@ -163,7 +162,7 @@ public static class HttpClientExtensions
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                logger.LogWarning("Failed to patch {Entity}: {StatusCode} - {Error}", 
+                logger.LogWarning("Failed to patch {Entity}: {StatusCode} - {Error}",
                     entityDescription ?? "entity", response.StatusCode, errorContent);
             }
             return response.IsSuccessStatusCode;
@@ -192,7 +191,7 @@ public static class HttpClientExtensions
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                logger.LogWarning("Failed to update {Entity}: {StatusCode} - {Error}", 
+                logger.LogWarning("Failed to update {Entity}: {StatusCode} - {Error}",
                     entityDescription ?? "entity", response.StatusCode, errorContent);
             }
             return response.IsSuccessStatusCode;

@@ -1,10 +1,9 @@
 using Chronicis.Api.Data;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
+using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -94,7 +93,7 @@ public class WorldInvitationService : IWorldInvitationService
         _context.WorldInvitations.Add(invitation);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebugSanitized("Created invitation {Code} for world {WorldId} by user {UserId}", 
+        _logger.LogDebugSanitized("Created invitation {Code} for world {WorldId} by user {UserId}",
             code, worldId, userId);
 
         var creator = await _context.Users.FindAsync(userId);
@@ -215,7 +214,7 @@ public class WorldInvitationService : IWorldInvitationService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebugSanitized("User {UserId} joined world {WorldId} via invitation {Code}", 
+        _logger.LogDebugSanitized("User {UserId} joined world {WorldId} via invitation {Code}",
             userId, invitation.WorldId, normalizedCode);
 
         return new WorldJoinResultDto

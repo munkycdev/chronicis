@@ -38,7 +38,7 @@ public static class DatadogDiagnostics
             logger.Warning(ex, "Failed to read Datadog tracer state");
         }
     }
-    
+
     /// <summary>
     /// Reads current environment variables (DD_*) without interpretation or fallbacks.
     /// </summary>
@@ -57,14 +57,14 @@ public static class DatadogDiagnostics
             ASPNETCORE_ENVIRONMENT = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
         };
     }
-    
+
     /// <summary>
     /// Reads current tracer settings. Read-only snapshot of Tracer.Instance.Settings.
     /// </summary>
     public static DatadogTracerState ReadTracerState()
     {
         var settings = Tracer.Instance.Settings;
-        
+
         return new DatadogTracerState
         {
             ServiceName = settings.ServiceName,
@@ -80,7 +80,7 @@ public static class DatadogDiagnostics
     /// Attempts to reach a Datadog agent endpoint and returns connectivity status.
     /// </summary>
     public static async Task<AgentConnectivityResult> CheckAgentConnectivityAsync(
-        HttpClient httpClient, 
+        HttpClient httpClient,
         string agentBaseUrl)
     {
         if (string.IsNullOrEmpty(agentBaseUrl))
@@ -94,12 +94,12 @@ public static class DatadogDiagnostics
         }
 
         var infoUrl = $"{agentBaseUrl.TrimEnd('/')}/info";
-        
+
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var response = await httpClient.GetAsync(infoUrl, cts.Token);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync(cts.Token);
@@ -111,7 +111,7 @@ public static class DatadogDiagnostics
                     AgentInfo = content
                 };
             }
-            
+
             return new AgentConnectivityResult
             {
                 Url = infoUrl,

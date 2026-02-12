@@ -15,7 +15,7 @@ public static class JsUtilities
     {
         if (string.IsNullOrEmpty(text))
             return string.Empty;
-            
+
         return text
             .Replace("\\", "\\\\")  // Escape backslashes first
             .Replace("'", "\\'")

@@ -3,10 +3,7 @@ using Azure.AI.OpenAI;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
-using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 
 namespace Chronicis.Api.Services;
@@ -26,7 +23,7 @@ public class SummaryService : ISummaryService
     private const decimal InputTokenCostPer1K = 0.00040m;
     private const decimal OutputTokenCostPer1K = 0.00176m;
     private const int CharsPerToken = 4;
-    
+
     // Well-known template IDs (from seed data)
     private static readonly Guid DefaultTemplateId = Guid.Parse("00000000-0000-0000-0000-000000000001");
     private static readonly Guid CampaignRecapTemplateId = Guid.Parse("00000000-0000-0000-0000-000000000006");
@@ -87,8 +84,8 @@ public class SummaryService : ISummaryService
 
         var (primary, backlinks) = await GetArticleSourcesAsync(articleId);
         var promptTemplate = await GetEffectivePromptAsync(
-            article.SummaryTemplateId, 
-            article.SummaryCustomPrompt, 
+            article.SummaryTemplateId,
+            article.SummaryCustomPrompt,
             DefaultTemplateId);
 
         var sourceContent = FormatArticleSources(primary, backlinks);
@@ -129,7 +126,7 @@ public class SummaryService : ISummaryService
             var article = await _context.Articles
                 .Include(a => a.SummaryTemplate)
                 .FirstOrDefaultAsync(a => a.Id == articleId);
-                
+
             if (article == null)
             {
                 return new SummaryGenerationDto
@@ -166,15 +163,16 @@ public class SummaryService : ISummaryService
 
             var promptTemplate = await GetEffectivePromptAsync(templateId, customPrompt, DefaultTemplateId);
             var sourceContent = FormatArticleSources(primary, backlinks);
-            
+
             // Build sources list for response
             var allSources = new List<SourceContent>();
-            if (primary != null) allSources.Add(primary);
+            if (primary != null)
+                allSources.Add(primary);
             allSources.AddRange(backlinks);
-            
+
             // TODO: Implement web search when includeWeb is true
             var webContent = "";
-            
+
             var result = await GenerateSummaryInternalAsync(
                 article.Title,
                 promptTemplate,
@@ -211,7 +209,8 @@ public class SummaryService : ISummaryService
             .Include(a => a.SummaryTemplate)
             .FirstOrDefaultAsync(a => a.Id == articleId);
 
-        if (article == null) return null;
+        if (article == null)
+            return null;
 
         return new ArticleSummaryDto
         {
@@ -245,7 +244,8 @@ public class SummaryService : ISummaryService
     public async Task<bool> ClearArticleSummaryAsync(Guid articleId)
     {
         var article = await _context.Articles.FirstOrDefaultAsync(a => a.Id == articleId);
-        if (article == null) return false;
+        if (article == null)
+            return false;
 
         article.AISummary = null;
         article.AISummaryGeneratedAt = null;
@@ -305,8 +305,8 @@ public class SummaryService : ISummaryService
 
         var sources = await GetCampaignSourcesAsync(campaignId);
         var promptTemplate = await GetEffectivePromptAsync(
-            campaign.SummaryTemplateId, 
-            campaign.SummaryCustomPrompt, 
+            campaign.SummaryTemplateId,
+            campaign.SummaryCustomPrompt,
             CampaignRecapTemplateId);
 
         var sourceContent = FormatSources(sources);
@@ -344,7 +344,7 @@ public class SummaryService : ISummaryService
             var campaign = await _context.Campaigns
                 .Include(c => c.SummaryTemplate)
                 .FirstOrDefaultAsync(c => c.Id == campaignId);
-                
+
             if (campaign == null)
             {
                 return new SummaryGenerationDto
@@ -416,7 +416,8 @@ public class SummaryService : ISummaryService
             .Include(c => c.SummaryTemplate)
             .FirstOrDefaultAsync(c => c.Id == campaignId);
 
-        if (campaign == null) return null;
+        if (campaign == null)
+            return null;
 
         return new EntitySummaryDto
         {
@@ -434,7 +435,8 @@ public class SummaryService : ISummaryService
     public async Task<bool> ClearCampaignSummaryAsync(Guid campaignId)
     {
         var campaign = await _context.Campaigns.FirstOrDefaultAsync(c => c.Id == campaignId);
-        if (campaign == null) return false;
+        if (campaign == null)
+            return false;
 
         campaign.AISummary = null;
         campaign.AISummaryGeneratedAt = null;
@@ -447,8 +449,8 @@ public class SummaryService : ISummaryService
         // Get all public session articles in this campaign
         var sessions = await _context.Articles
             .AsNoTracking()
-            .Where(a => a.CampaignId == campaignId 
-                && a.Type == ArticleType.Session 
+            .Where(a => a.CampaignId == campaignId
+                && a.Type == ArticleType.Session
                 && a.Visibility == ArticleVisibility.Public
                 && !string.IsNullOrEmpty(a.Body))
             .OrderBy(a => a.SessionDate ?? a.CreatedAt)
@@ -478,8 +480,8 @@ public class SummaryService : ISummaryService
 
         var sources = await GetArcSourcesAsync(arcId);
         var promptTemplate = await GetEffectivePromptAsync(
-            arc.SummaryTemplateId, 
-            arc.SummaryCustomPrompt, 
+            arc.SummaryTemplateId,
+            arc.SummaryCustomPrompt,
             CampaignRecapTemplateId);
 
         var sourceContent = FormatSources(sources);
@@ -517,7 +519,7 @@ public class SummaryService : ISummaryService
             var arc = await _context.Arcs
                 .Include(a => a.SummaryTemplate)
                 .FirstOrDefaultAsync(a => a.Id == arcId);
-                
+
             if (arc == null)
             {
                 return new SummaryGenerationDto
@@ -589,7 +591,8 @@ public class SummaryService : ISummaryService
             .Include(a => a.SummaryTemplate)
             .FirstOrDefaultAsync(a => a.Id == arcId);
 
-        if (arc == null) return null;
+        if (arc == null)
+            return null;
 
         return new EntitySummaryDto
         {
@@ -607,7 +610,8 @@ public class SummaryService : ISummaryService
     public async Task<bool> ClearArcSummaryAsync(Guid arcId)
     {
         var arc = await _context.Arcs.FirstOrDefaultAsync(a => a.Id == arcId);
-        if (arc == null) return false;
+        if (arc == null)
+            return false;
 
         arc.AISummary = null;
         arc.AISummaryGeneratedAt = null;
@@ -620,8 +624,8 @@ public class SummaryService : ISummaryService
         // Get all public session articles in this arc
         var sessions = await _context.Articles
             .AsNoTracking()
-            .Where(a => a.ArcId == arcId 
-                && a.Type == ArticleType.Session 
+            .Where(a => a.ArcId == arcId
+                && a.Type == ArticleType.Session
                 && a.Visibility == ArticleVisibility.Public
                 && !string.IsNullOrEmpty(a.Body))
             .OrderBy(a => a.SessionDate ?? a.CreatedAt)
@@ -663,7 +667,7 @@ Based on the source materials above and following the custom instructions, provi
 
         // Use specified template or default
         var effectiveTemplateId = templateId ?? defaultTemplateId;
-        
+
         var template = await _context.SummaryTemplates
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == effectiveTemplateId);
@@ -698,12 +702,12 @@ Based on the source materials above and following the custom instructions, provi
     private static string FormatArticleSources(SourceContent? primary, List<SourceContent> backlinks)
     {
         var parts = new List<string>();
-        
+
         if (primary != null)
         {
             parts.Add($"=== CANONICAL CONTENT (from the article itself) ===\n{primary.Content}\n===");
         }
-        
+
         if (backlinks.Any())
         {
             parts.Add("=== REFERENCES FROM OTHER ARTICLES ===");
@@ -712,7 +716,7 @@ Based on the source materials above and following the custom instructions, provi
                 parts.Add($"--- From: {backlink.Title} ---\n{backlink.Content}\n---");
             }
         }
-        
+
         return string.Join("\n\n", parts);
     }
 

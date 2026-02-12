@@ -29,7 +29,8 @@ public class AdminAuthService : IAdminAuthService
     public async Task<bool> IsSysAdminAsync()
     {
         var user = await _authService.GetCurrentUserAsync();
-        if (user == null) return false;
+        if (user == null)
+            return false;
 
         return SysAdminEmails.Contains(user.Email)
             || SysAdminAuth0Ids.Contains(user.Auth0UserId);

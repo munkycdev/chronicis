@@ -18,12 +18,12 @@ public class QuestDto
     public string CreatedByName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    
+
     /// <summary>
     /// Base64-encoded rowversion for optimistic concurrency.
     /// </summary>
     public string RowVersion { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Total number of updates for this quest.
     /// </summary>

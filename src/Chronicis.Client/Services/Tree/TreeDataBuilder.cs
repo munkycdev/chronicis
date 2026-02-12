@@ -1,7 +1,6 @@
 using Chronicis.Client.Models;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Client.Services.Tree;
 

@@ -35,13 +35,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.ResourceCompiler", "src\Chronicis.ResourceCompiler\Chronicis.ResourceCompiler.csproj", "{D904D14A-9576-4AF4-8B14-F9B3CF44C30A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.ResourceCompiler.Tests", "src\Chronicis.ResourceCompiler.Tests\Chronicis.ResourceCompiler.Tests.csproj", "{5972F393-BA77-470F-ABF8-3F5510469F2C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.ResourceCompiler.Tests", "tests\Chronicis.ResourceCompiler.Tests\Chronicis.ResourceCompiler.Tests.csproj", "{5972F393-BA77-470F-ABF8-3F5510469F2C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{42216F0F-DDE9-44C4-8A1B-B6E2EB7D70DC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.Api.Tests", "src\Chronicis.Api.Tests\Chronicis.Api.Tests.csproj", "{52BD5FD1-66E7-4C68-BB33-359DA417688C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.Api.Tests", "tests\Chronicis.Api.Tests\Chronicis.Api.Tests.csproj", "{52BD5FD1-66E7-4C68-BB33-359DA417688C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.Client.Tests", "src\Chronicis.Client.Tests\Chronicis.Client.Tests.csproj", "{798926BA-9E58-4CA3-B4F3-2DCC5AF7872B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.Client.Tests", "tests\Chronicis.Client.Tests\Chronicis.Client.Tests.csproj", "{798926BA-9E58-4CA3-B4F3-2DCC5AF7872B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -174,7 +174,7 @@ Global
 		{D904D14A-9576-4AF4-8B14-F9B3CF44C30A} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{5972F393-BA77-470F-ABF8-3F5510469F2C} = {42216F0F-DDE9-44C4-8A1B-B6E2EB7D70DC}
 		{52BD5FD1-66E7-4C68-BB33-359DA417688C} = {42216F0F-DDE9-44C4-8A1B-B6E2EB7D70DC}
-		{798926BA-9E58-4CA3-B4F3-2DCC5AF7872B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{798926BA-9E58-4CA3-B4F3-2DCC5AF7872B} = {42216F0F-DDE9-44C4-8A1B-B6E2EB7D70DC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {97CE9E10-88C7-4F27-85CB-8C97BF8C6EC2}

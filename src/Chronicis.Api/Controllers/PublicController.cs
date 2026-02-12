@@ -1,6 +1,6 @@
-using Chronicis.Shared.Extensions;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chronicis.Api.Controllers;

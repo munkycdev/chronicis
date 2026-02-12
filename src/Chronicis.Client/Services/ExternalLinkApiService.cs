@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using Chronicis.Shared.DTOs;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Client.Services;
 
@@ -27,7 +26,7 @@ public class ExternalLinkApiService : IExternalLinkApiService
         }
 
         var url = $"external-links/suggestions?source={Uri.EscapeDataString(source)}&query={Uri.EscapeDataString(query ?? string.Empty)}";
-        
+
         if (worldId.HasValue)
         {
             url += $"&worldId={worldId.Value}";

@@ -263,7 +263,7 @@ public static class FontAwesomeIcons
             return GetAllIcons();
 
         var searchTerms = query.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        
+
         return GetAllIcons()
             .Where(icon =>
             {

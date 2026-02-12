@@ -1,7 +1,6 @@
 using Chronicis.Client.Models;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Client.Services.Tree;
 
@@ -431,8 +430,8 @@ internal sealed class TreeMutations
     /// </summary>
     public bool IsValidArticle(Guid nodeId)
     {
-        return _nodeIndex.TryGetNode(nodeId, out var node) && 
-               node != null && 
+        return _nodeIndex.TryGetNode(nodeId, out var node) &&
+               node != null &&
                node.NodeType == TreeNodeType.Article;
     }
 

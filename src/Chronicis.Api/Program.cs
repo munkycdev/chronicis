@@ -19,7 +19,7 @@ Log.Logger = new LoggerConfiguration()
 try
 {
     Log.Information("Starting Chronicis API");
-    
+
     // Log Datadog tracer state (read-only - tracer is auto-configured via DD_* env vars)
     DatadogDiagnostics.LogTracerState(Log.Logger);
 
@@ -78,7 +78,7 @@ try
                     "https://chronicis.app",
                     "https://www.chronicis.app",
                     "https://chronicis-client.azurewebsites.net",  // New App Service
-                    // Legacy Static Web App (will be removed in Phase 14)
+                                                                   // Legacy Static Web App (will be removed in Phase 14)
                     "https://ambitious-mushroom-015091e1e.5.azurestaticapps.net",
                     // Local development
                     "http://localhost:5001",
@@ -159,7 +159,7 @@ try
         var options = optionsSnapshot.Get("srd14");
         var cache = sp.GetRequiredService<IMemoryCache>();
         var logger = sp.GetRequiredService<ILogger<BlobExternalLinkProvider>>();
-        
+
         return new BlobExternalLinkProvider(options, cache, logger);
     });
 
@@ -170,7 +170,7 @@ try
         var options = optionsSnapshot.Get("srd24");
         var cache = sp.GetRequiredService<IMemoryCache>();
         var logger = sp.GetRequiredService<ILogger<BlobExternalLinkProvider>>();
-        
+
         return new BlobExternalLinkProvider(options, cache, logger);
     });
 
@@ -181,7 +181,7 @@ try
         var options = optionsSnapshot.Get("ros");
         var cache = sp.GetRequiredService<IMemoryCache>();
         var logger = sp.GetRequiredService<ILogger<BlobExternalLinkProvider>>();
-        
+
         return new BlobExternalLinkProvider(options, cache, logger);
     });
 

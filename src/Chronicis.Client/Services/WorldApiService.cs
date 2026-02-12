@@ -1,7 +1,4 @@
-using System.Net.Http.Json;
-using System.Net.Http.Headers;
 using Chronicis.Shared.DTOs;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Client.Services;
 
@@ -169,7 +166,7 @@ public class WorldApiService : IWorldApiService
     // ===== World Documents =====
 
     public async Task<WorldDocumentUploadResponseDto?> RequestDocumentUploadAsync(
-        Guid worldId, 
+        Guid worldId,
         WorldDocumentUploadRequestDto dto)
     {
         return await _http.PostEntityAsync<WorldDocumentUploadResponseDto>(
@@ -223,8 +220,8 @@ public class WorldApiService : IWorldApiService
     }
 
     public async Task<WorldDocumentDto?> UpdateDocumentAsync(
-        Guid worldId, 
-        Guid documentId, 
+        Guid worldId,
+        Guid documentId,
         WorldDocumentUpdateDto dto)
     {
         return await _http.PutEntityAsync<WorldDocumentDto>(

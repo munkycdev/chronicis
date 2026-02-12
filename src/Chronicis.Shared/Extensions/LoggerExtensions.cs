@@ -8,6 +8,7 @@ namespace Chronicis.Shared.Extensions;
 /// </summary>
 public static class LoggerExtensions
 {
+#pragma warning disable CA2254
     /// <summary>
     /// Logs an informational message with sanitized arguments.
     /// Use this when logging user-provided data.
@@ -44,6 +45,7 @@ public static class LoggerExtensions
             return;
 
         var sanitizedArgs = args.Select(arg => Utilities.LogSanitizer.SanitizeObject(arg)).ToArray();
+
         logger.LogError(message, sanitizedArgs);
     }
 
@@ -111,4 +113,6 @@ public static class LoggerExtensions
         var sanitizedArgs = args.Select(arg => Utilities.LogSanitizer.SanitizeObject(arg)).ToArray();
         logger.LogCritical(exception, message, sanitizedArgs);
     }
+
+#pragma warning restore CA2254
 }

@@ -181,7 +181,8 @@ public static class RenderDefinitionGeneratorService
         foreach (var fi in fields)
         {
             var lastUnderscore = fi.Name.LastIndexOf('_');
-            if (lastUnderscore <= 0) continue;
+            if (lastUnderscore <= 0)
+                continue;
 
             // Try progressively shorter prefixes
             var prefix = fi.Name[..lastUnderscore];
@@ -202,7 +203,8 @@ public static class RenderDefinitionGeneratorService
         foreach (var kv in validPrefixes)
         {
             var unclaimed = kv.Value.Where(f => !claimed.Contains(f.Name)).ToList();
-            if (unclaimed.Count < 3) continue;
+            if (unclaimed.Count < 3)
+                continue;
 
             groups.Add(new PrefixGroup
             {
@@ -219,7 +221,8 @@ public static class RenderDefinitionGeneratorService
 
     private static bool IsAbilityScoreGroup(PrefixGroup group)
     {
-        if (group.Fields.Count != 6) return false;
+        if (group.Fields.Count != 6)
+            return false;
         var suffixes = group.Fields
             .Select(f => StripPrefix(f.Name, group.Prefix).ToLowerInvariant())
             .ToHashSet();

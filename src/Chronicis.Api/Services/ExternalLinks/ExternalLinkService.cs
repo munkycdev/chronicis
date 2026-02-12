@@ -1,7 +1,6 @@
 using Chronicis.Api.Repositories;
 using Chronicis.Shared.Extensions;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services.ExternalLinks;
 

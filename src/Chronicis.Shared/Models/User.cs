@@ -49,17 +49,17 @@ public class User
     public bool HasCompletedOnboarding { get; set; } = false;
 
     // ===== Navigation Properties =====
-    
+
     /// <summary>
     /// All worlds owned by this user.
     /// </summary>
     public ICollection<World> OwnedWorlds { get; set; } = new List<World>();
-    
+
     /// <summary>
     /// All campaigns owned by this user (where they are DM).
     /// </summary>
     public ICollection<Campaign> OwnedCampaigns { get; set; } = new List<Campaign>();
-    
+
     /// <summary>
     /// All world memberships for this user.
     /// </summary>
@@ -74,7 +74,7 @@ public class User
     /// All world invitations created by this user.
     /// </summary>
     public ICollection<WorldInvitation> CreatedInvitations { get; set; } = new List<WorldInvitation>();
-    
+
     /// <summary>
     /// All arcs created by this user.
     /// </summary>
@@ -84,12 +84,12 @@ public class User
     /// All articles created by this user.
     /// </summary>
     public ICollection<Article> CreatedArticles { get; set; } = new List<Article>();
-    
+
     /// <summary>
     /// All articles last modified by this user.
     /// </summary>
     public ICollection<Article> ModifiedArticles { get; set; } = new List<Article>();
-    
+
     /// <summary>
     /// All characters owned by this user (where they are the player).
     /// </summary>

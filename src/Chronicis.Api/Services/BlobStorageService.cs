@@ -3,8 +3,6 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using Chronicis.Shared.Extensions;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -35,7 +33,7 @@ public class BlobStorageService : IBlobStorageService
             throw new InvalidOperationException("BlobStorage:ConnectionString not configured. Please add BlobStorage__ConnectionString to Azure configuration.");
         }
 
-        _containerName = configuration["BlobStorage:ContainerName"] 
+        _containerName = configuration["BlobStorage:ContainerName"]
             ?? configuration["BlobStorage__ContainerName"]
             ?? "chronicis-documents";
 
@@ -216,10 +214,10 @@ public class BlobStorageService : IBlobStorageService
         {
             // Generate SAS token only (query string)
             var sasToken = blobClient.GenerateSasUri(sasBuilder).Query;
-            
+
             // Build custom URL: {customDomain}/{container}/{blobPath}?{sasToken}
             var customUrl = $"{_customDomain.TrimEnd('/')}/{_containerName}/{blobClient.Name}{sasToken}";
-            
+
             return customUrl;
         }
         else

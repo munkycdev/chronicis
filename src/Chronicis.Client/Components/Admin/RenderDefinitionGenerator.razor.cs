@@ -4,7 +4,6 @@ using Chronicis.Client.Models;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 
 namespace Chronicis.Client.Components.Admin;
 
@@ -37,7 +36,8 @@ public partial class RenderDefinitionGenerator : ComponentBase
     {
         get
         {
-            if (string.IsNullOrEmpty(_recordId)) return "";
+            if (string.IsNullOrEmpty(_recordId))
+                return "";
             var parts = _recordId.Split('/');
             var category = parts.Length > 0 ? parts[0] : "unknown";
             return $"wwwroot/render-definitions/{_selectedSource}/{category}.json";
@@ -126,7 +126,8 @@ public partial class RenderDefinitionGenerator : ComponentBase
 
     private async Task TryLoadExistingDefinition()
     {
-        if (_sampleContent == null) return;
+        if (_sampleContent == null)
+            return;
 
         try
         {
@@ -163,7 +164,8 @@ public partial class RenderDefinitionGenerator : ComponentBase
 
     private void AutoGenerate()
     {
-        if (_sampleContent?.JsonData == null) return;
+        if (_sampleContent?.JsonData == null)
+            return;
 
         try
         {
@@ -202,7 +204,8 @@ public partial class RenderDefinitionGenerator : ComponentBase
 
     private void ApplyDefinition()
     {
-        if (string.IsNullOrWhiteSpace(_definitionJson)) return;
+        if (string.IsNullOrWhiteSpace(_definitionJson))
+            return;
 
         try
         {

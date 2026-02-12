@@ -17,7 +17,7 @@ public sealed class WikiLinkAutocompleteItem
     public string? ExternalId { get; private init; }
     public string? CategoryKey { get; private init; }
     public string? Icon { get; private init; }
-    
+
     /// <summary>
     /// If the suggestion matched via an alias, this contains the matched alias.
     /// Used for display: "MatchedAlias (Title)"
@@ -51,7 +51,7 @@ public sealed class WikiLinkAutocompleteItem
     public static WikiLinkAutocompleteItem FromExternal(ExternalLinkSuggestionDto suggestion)
     {
         var isCategory = suggestion.Category == "_category";
-        
+
         return new WikiLinkAutocompleteItem
         {
             IsExternal = true,

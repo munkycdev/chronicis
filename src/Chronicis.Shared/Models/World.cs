@@ -11,62 +11,62 @@ public class World
     /// Unique identifier for the world.
     /// </summary>
     public Guid Id { get; set; }
-    
+
     /// <summary>
     /// Display name of the world (e.g., "Forgotten Realms", "My Homebrew World").
     /// Max 200 characters.
     /// </summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// URL-friendly slug derived from name (e.g., "forgotten-realms").
     /// Max 200 characters. Unique per owner.
     /// </summary>
     public string Slug { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Optional description of the world.
     /// Max 1000 characters.
     /// </summary>
     public string? Description { get; set; }
-    
+
     /// <summary>
     /// The user who owns this world (typically the DM).
     /// </summary>
     public Guid OwnerId { get; set; }
-    
+
     /// <summary>
     /// When the world was created.
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
+
     // ===== Public Access =====
-    
+
     /// <summary>
     /// Whether this world is publicly accessible to anonymous users.
     /// When true, articles with Public visibility can be viewed without authentication.
     /// </summary>
     public bool IsPublic { get; set; } = false;
-    
+
     /// <summary>
     /// Globally unique URL-friendly slug for public access (e.g., "forgotten-realms").
     /// Only set when IsPublic is true. Max 100 characters.
     /// Lowercase alphanumeric with hyphens only, no leading/trailing hyphens.
     /// </summary>
     public string? PublicSlug { get; set; }
-    
+
     // ===== Navigation Properties =====
-    
+
     /// <summary>
     /// The user who owns this world.
     /// </summary>
     public User Owner { get; set; } = null!;
-    
+
     /// <summary>
     /// All campaigns within this world.
     /// </summary>
     public ICollection<Campaign> Campaigns { get; set; } = new List<Campaign>();
-    
+
     /// <summary>
     /// All articles scoped to this world (Wiki articles, Characters, etc.).
     /// </summary>

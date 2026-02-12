@@ -1,4 +1,3 @@
-using System.Linq;
 using Chronicis.ResourceCompiler.Compilation;
 using Chronicis.ResourceCompiler.Indexing;
 using Chronicis.ResourceCompiler.Manifest;

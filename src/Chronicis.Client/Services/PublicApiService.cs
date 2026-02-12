@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using Chronicis.Shared.DTOs;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Client.Services;
 
@@ -24,19 +23,19 @@ public class PublicApiService : IPublicApiService
         try
         {
             var response = await _http.GetAsync($"public/worlds/{publicSlug}");
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<WorldDetailDto>();
             }
-            
+
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 _logger.LogDebug("Public world not found: {PublicSlug}", publicSlug);
                 return null;
             }
-            
-            _logger.LogWarning("Failed to get public world {PublicSlug}: {StatusCode}", 
+
+            _logger.LogWarning("Failed to get public world {PublicSlug}: {StatusCode}",
                 publicSlug, response.StatusCode);
             return null;
         }
@@ -52,14 +51,14 @@ public class PublicApiService : IPublicApiService
         try
         {
             var response = await _http.GetAsync($"public/worlds/{publicSlug}/articles");
-            
+
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<List<ArticleTreeDto>>() 
+                return await response.Content.ReadFromJsonAsync<List<ArticleTreeDto>>()
                     ?? new List<ArticleTreeDto>();
             }
-            
-            _logger.LogWarning("Failed to get public article tree for {PublicSlug}: {StatusCode}", 
+
+            _logger.LogWarning("Failed to get public article tree for {PublicSlug}: {StatusCode}",
                 publicSlug, response.StatusCode);
             return new List<ArticleTreeDto>();
         }
@@ -75,19 +74,19 @@ public class PublicApiService : IPublicApiService
         try
         {
             var response = await _http.GetAsync($"public/worlds/{publicSlug}/articles/{articlePath}");
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<ArticleDto>();
             }
-            
+
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 _logger.LogDebug("Public article not found: {PublicSlug}/{ArticlePath}", publicSlug, articlePath);
                 return null;
             }
-            
-            _logger.LogWarning("Failed to get public article {PublicSlug}/{ArticlePath}: {StatusCode}", 
+
+            _logger.LogWarning("Failed to get public article {PublicSlug}/{ArticlePath}: {StatusCode}",
                 publicSlug, articlePath, response.StatusCode);
             return null;
         }
@@ -103,19 +102,19 @@ public class PublicApiService : IPublicApiService
         try
         {
             var response = await _http.GetAsync($"public/worlds/{publicSlug}/articles/resolve/{articleId}");
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadAsStringAsync();
             }
-            
+
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 _logger.LogDebug("Public article path not found: {PublicSlug}/{ArticleId}", publicSlug, articleId);
                 return null;
             }
-            
-            _logger.LogWarning("Failed to resolve public article path {PublicSlug}/{ArticleId}: {StatusCode}", 
+
+            _logger.LogWarning("Failed to resolve public article path {PublicSlug}/{ArticleId}: {StatusCode}",
                 publicSlug, articleId, response.StatusCode);
             return null;
         }

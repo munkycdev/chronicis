@@ -25,7 +25,7 @@ public class SummaryEstimateDto
     public decimal EstimatedCostUSD { get; set; }
     public bool HasExistingSummary { get; set; }
     public DateTime? ExistingSummaryDate { get; set; }
-    
+
     // Current configuration
     public Guid? TemplateId { get; set; }
     public string? TemplateName { get; set; }
@@ -42,22 +42,22 @@ public class GenerateSummaryRequestDto
     /// Template to use for generation. Null uses entity's saved template or default.
     /// </summary>
     public Guid? TemplateId { get; set; }
-    
+
     /// <summary>
     /// Custom prompt that overrides the template. Takes precedence over TemplateId.
     /// </summary>
     public string? CustomPrompt { get; set; }
-    
+
     /// <summary>
     /// Whether to include web search results in the summary.
     /// </summary>
     public bool IncludeWebSources { get; set; }
-    
+
     /// <summary>
     /// Whether to save these settings to the entity for future use.
     /// </summary>
     public bool SaveConfiguration { get; set; }
-    
+
     /// <summary>
     /// Maximum output tokens for the generated summary.
     /// </summary>
@@ -75,7 +75,7 @@ public class SummaryGenerationDto
     public int TokensUsed { get; set; }
     public decimal ActualCostUSD { get; set; }
     public string? ErrorMessage { get; set; }
-    
+
     /// <summary>
     /// Sources that were used to generate this summary
     /// </summary>
@@ -103,7 +103,7 @@ public class EntitySummaryDto
     public string? Summary { get; set; }
     public DateTime? GeneratedAt { get; set; }
     public bool HasSummary => !string.IsNullOrEmpty(Summary);
-    
+
     // Current configuration
     public Guid? TemplateId { get; set; }
     public string? TemplateName { get; set; }
@@ -120,7 +120,7 @@ public class ArticleSummaryDto
     public string? Summary { get; set; }
     public DateTime? GeneratedAt { get; set; }
     public bool HasSummary => !string.IsNullOrEmpty(Summary);
-    
+
     // Configuration
     public Guid? TemplateId { get; set; }
     public string? TemplateName { get; set; }

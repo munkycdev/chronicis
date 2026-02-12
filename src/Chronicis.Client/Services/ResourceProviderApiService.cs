@@ -29,7 +29,7 @@ public class ResourceProviderApiService
         try
         {
             var response = await _httpClient.GetAsync($"api/worlds/{worldId}/resource-providers");
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<List<WorldResourceProviderDto>>();

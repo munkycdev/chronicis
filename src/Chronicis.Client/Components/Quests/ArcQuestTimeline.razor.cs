@@ -47,7 +47,8 @@ public partial class ArcQuestTimeline : ComponentBase
 
     private async Task LoadUpdatesAsync()
     {
-        if (_quest == null) return;
+        if (_quest == null)
+            return;
 
         _isLoading = true;
         StateHasChanged();
@@ -55,7 +56,7 @@ public partial class ArcQuestTimeline : ComponentBase
         try
         {
             var result = await QuestApi.GetQuestUpdatesAsync(_quest.Id, _skip, _pageSize);
-            
+
             _updates.AddRange(result.Items);
             _hasMore = result.TotalCount > _updates.Count;
             _skip = _updates.Count;
@@ -73,7 +74,8 @@ public partial class ArcQuestTimeline : ComponentBase
 
     private async Task LoadMoreAsync()
     {
-        if (_quest == null || _isLoadingMore) return;
+        if (_quest == null || _isLoadingMore)
+            return;
 
         _isLoadingMore = true;
         StateHasChanged();
@@ -81,7 +83,7 @@ public partial class ArcQuestTimeline : ComponentBase
         try
         {
             var result = await QuestApi.GetQuestUpdatesAsync(_quest.Id, _skip, _pageSize);
-            
+
             _updates.AddRange(result.Items);
             _hasMore = result.TotalCount > _updates.Count;
             _skip = _updates.Count;
@@ -105,7 +107,8 @@ public partial class ArcQuestTimeline : ComponentBase
 
     private async Task DeleteUpdate(QuestUpdateEntryDto update)
     {
-        if (_quest == null) return;
+        if (_quest == null)
+            return;
 
         var confirmed = await DialogService.ShowMessageBox(
             "Delete Update",

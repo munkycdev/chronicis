@@ -1,5 +1,4 @@
 using Chronicis.Client.Services;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Chronicis.Client.Extensions;
 

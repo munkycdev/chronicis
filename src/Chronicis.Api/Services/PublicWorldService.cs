@@ -1,9 +1,8 @@
 using Chronicis.Api.Data;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
+using Chronicis.Shared.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -45,7 +44,7 @@ public class PublicWorldService : IPublicWorldService
             return null;
         }
 
-        _logger.LogDebugSanitized("Public world '{WorldName}' accessed via slug '{PublicSlug}'", 
+        _logger.LogDebugSanitized("Public world '{WorldName}' accessed via slug '{PublicSlug}'",
             world.Name, normalizedSlug);
 
         return new WorldDetailDto
@@ -249,7 +248,7 @@ public class PublicWorldService : IPublicWorldService
 
         // 4. Uncategorized (Legacy and other types without parents not already included)
         var includedIds = new HashSet<Guid>();
-        
+
         // Collect all IDs from campaigns/arcs/sessions
         foreach (var campaign in result.FirstOrDefault(r => r.Slug == "campaigns")?.Children ?? new List<ArticleTreeDto>())
         {
@@ -261,7 +260,7 @@ public class PublicWorldService : IPublicWorldService
                 }
             }
         }
-        
+
         // Collect character and wiki IDs
         foreach (var article in characterArticles)
         {
@@ -289,7 +288,7 @@ public class PublicWorldService : IPublicWorldService
             result.Add(uncategorizedGroup);
         }
 
-        _logger.LogDebugSanitized("Retrieved {Count} public articles for world '{PublicSlug}' in {GroupCount} groups", 
+        _logger.LogDebugSanitized("Retrieved {Count} public articles for world '{PublicSlug}' in {GroupCount} groups",
             allPublicArticles.Count, normalizedSlug, result.Count);
 
         return result;
@@ -447,7 +446,7 @@ public class PublicWorldService : IPublicWorldService
             World = new WorldContext { Id = world.Id, Name = world.Name, Slug = world.Slug }
         });
 
-        _logger.LogDebugSanitized("Public article '{Title}' accessed in world '{PublicSlug}'", 
+        _logger.LogDebugSanitized("Public article '{Title}' accessed in world '{PublicSlug}'",
             article.Title, normalizedSlug);
 
         return article;
@@ -477,8 +476,8 @@ public class PublicWorldService : IPublicWorldService
         // Get the article and verify it's public and belongs to this world
         var article = await _context.Articles
             .AsNoTracking()
-            .Where(a => a.Id == articleId && 
-                        a.WorldId == world.Id && 
+            .Where(a => a.Id == articleId &&
+                        a.WorldId == world.Id &&
                         a.Visibility == ArticleVisibility.Public)
             .Select(a => new { a.Id, a.Slug, a.ParentId })
             .FirstOrDefaultAsync();
@@ -513,7 +512,7 @@ public class PublicWorldService : IPublicWorldService
         }
 
         var path = string.Join("/", slugs);
-        _logger.LogDebugSanitized("Resolved article {ArticleId} to path '{Path}' in world '{PublicSlug}'", 
+        _logger.LogDebugSanitized("Resolved article {ArticleId} to path '{Path}' in world '{PublicSlug}'",
             articleId, path, normalizedSlug);
 
         return path;

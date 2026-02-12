@@ -1,5 +1,4 @@
 using Chronicis.Shared.DTOs;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Client.Services;
 
@@ -14,7 +13,7 @@ public interface IWikiLinkService
     /// The article is created in the Wiki folder if one exists.
     /// </summary>
     Task<ArticleDto?> CreateArticleFromAutocompleteAsync(string articleName, Guid worldId);
-    
+
     /// <summary>
     /// Finds the Wiki folder for a given world.
     /// </summary>
@@ -43,7 +42,7 @@ public class WikiLinkService : IWikiLinkService
         {
             // Find the Wiki folder for this world
             Guid? wikiParentId = await FindWikiFolderAsync(worldId);
-            
+
             var createDto = new ArticleCreateDto
             {
                 Title = articleName,
@@ -69,31 +68,31 @@ public class WikiLinkService : IWikiLinkService
         {
             // The Wiki folder is typically a child of the World article
             var rootArticles = await _articleApi.GetRootArticlesAsync(worldId);
-            
+
             if (rootArticles.Any())
             {
                 var worldArticle = rootArticles.First();
                 var worldChildren = await _articleApi.GetChildrenAsync(worldArticle.Id);
-                
+
                 // Look for an article named "Wiki" (case-insensitive)
-                var wikiFolder = worldChildren.FirstOrDefault(a => 
+                var wikiFolder = worldChildren.FirstOrDefault(a =>
                     a.Title.Equals("Wiki", StringComparison.OrdinalIgnoreCase));
-                
+
                 if (wikiFolder != null)
                 {
                     return wikiFolder.Id;
                 }
             }
-            
+
             // Fallback: check if Wiki is at root level
-            var rootWiki = rootArticles.FirstOrDefault(a => 
+            var rootWiki = rootArticles.FirstOrDefault(a =>
                 a.Title.Equals("Wiki", StringComparison.OrdinalIgnoreCase));
-            
+
             if (rootWiki != null)
             {
                 return rootWiki.Id;
             }
-            
+
             return null;
         }
         catch (Exception ex)

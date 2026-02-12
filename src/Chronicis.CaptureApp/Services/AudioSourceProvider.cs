@@ -1,4 +1,4 @@
-﻿using Chronicis.CaptureApp.Models;
+using Chronicis.CaptureApp.Models;
 using Microsoft.Extensions.Logging;
 using NAudio.CoreAudioApi;
 

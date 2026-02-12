@@ -9,27 +9,27 @@ public class ActiveContextDto
     /// The world ID this context belongs to.
     /// </summary>
     public Guid? WorldId { get; set; }
-    
+
     /// <summary>
     /// The explicitly active campaign ID (where IsActive = true).
     /// </summary>
     public Guid? CampaignId { get; set; }
-    
+
     /// <summary>
     /// The active campaign name.
     /// </summary>
     public string? CampaignName { get; set; }
-    
+
     /// <summary>
     /// The explicitly active arc ID (where IsActive = true).
     /// </summary>
     public Guid? ArcId { get; set; }
-    
+
     /// <summary>
     /// The active arc name.
     /// </summary>
     public string? ArcName { get; set; }
-    
+
     /// <summary>
     /// Whether an active context is available for quick session creation.
     /// True if both CampaignId and ArcId are set.

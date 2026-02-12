@@ -1,5 +1,3 @@
-using System.Linq;
-using Chronicis.ResourceCompiler.Indexing;
 using Chronicis.ResourceCompiler.Indexing.Models;
 using Chronicis.ResourceCompiler.Manifest.Models;
 using Chronicis.ResourceCompiler.Raw.Models;

@@ -9,17 +9,17 @@ public enum QuestStatus
     /// Quest is currently active and in progress.
     /// </summary>
     Active = 0,
-    
+
     /// <summary>
     /// Quest has been successfully completed.
     /// </summary>
     Completed = 1,
-    
+
     /// <summary>
     /// Quest has failed (objectives cannot be achieved).
     /// </summary>
     Failed = 2,
-    
+
     /// <summary>
     /// Quest has been abandoned by the party.
     /// </summary>

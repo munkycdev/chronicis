@@ -1,4 +1,4 @@
-﻿namespace Chronicis.CaptureApp.Services;
+namespace Chronicis.CaptureApp.Services;
 
 public interface ISystemTrayService
 {

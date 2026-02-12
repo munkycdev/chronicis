@@ -17,17 +17,17 @@ public sealed class DocumentContentResult
     /// Temporary SAS URL for downloading the document (valid for 15 minutes).
     /// </summary>
     public string DownloadUrl { get; }
-    
+
     /// <summary>
     /// Original filename of the document.
     /// </summary>
     public string FileName { get; }
-    
+
     /// <summary>
     /// MIME type of the document.
     /// </summary>
     public string ContentType { get; }
-    
+
     /// <summary>
     /// File size in bytes.
     /// </summary>

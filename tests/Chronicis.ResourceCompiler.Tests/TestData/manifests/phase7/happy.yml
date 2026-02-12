@@ -1,0 +1,23 @@
+entities:
+  Parent:
+    file: parent.json
+    pk: id
+    root: true
+    identity:
+      slugField: slug
+    output:
+      blobTemplate: "parents/{slug}.json"
+      index:
+        blob: "indexes/parents.json"
+        fields:
+          - id
+          - slug
+          - name
+    children:
+      - entity: Child
+        as: children
+        fk:
+          field: parentId
+  Child:
+    file: child.json
+    pk: id

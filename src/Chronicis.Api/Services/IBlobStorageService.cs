@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace Chronicis.Api.Services;
 
 /// <summary>

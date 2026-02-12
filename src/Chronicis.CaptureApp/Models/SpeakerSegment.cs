@@ -1,4 +1,4 @@
-﻿namespace Chronicis.CaptureApp.Models;
+namespace Chronicis.CaptureApp.Models;
 
 public class SpeakerSegment
 {

@@ -1,9 +1,7 @@
 using Chronicis.Api.Data;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -111,7 +109,7 @@ public class ArcService : IArcService
         _context.Arcs.Add(arc);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Created arc {ArcId} '{ArcName}' in campaign {CampaignId}", 
+        _logger.LogDebug("Created arc {ArcId} '{ArcName}' in campaign {CampaignId}",
             arc.Id, arc.Name, arc.CampaignId);
 
         return new ArcDto
@@ -142,7 +140,7 @@ public class ArcService : IArcService
 
         arc.Name = dto.Name;
         arc.Description = dto.Description;
-        
+
         if (dto.SortOrder.HasValue)
         {
             arc.SortOrder = dto.SortOrder.Value;

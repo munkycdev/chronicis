@@ -1,5 +1,4 @@
 using Chronicis.Shared.DTOs;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Client.Services;
 
@@ -88,7 +87,7 @@ public class ArticleCacheService : IArticleCacheService
         {
             _logger.LogDebug("Cache miss for article {ArticleId}, fetching from API", articleId);
             var article = await _articleApi.GetArticleAsync(articleId);
-            
+
             if (article == null)
             {
                 return null;
@@ -96,7 +95,7 @@ public class ArticleCacheService : IArticleCacheService
 
             // Cache the result
             CacheArticle(article);
-            
+
             lock (_lock)
             {
                 return _cache.GetValueOrDefault(articleId);
@@ -124,12 +123,12 @@ public class ArticleCacheService : IArticleCacheService
     public async Task<string?> GetNavigationPathAsync(Guid articleId)
     {
         var info = await GetArticleInfoAsync(articleId);
-        
+
         if (info?.Breadcrumbs != null && info.Breadcrumbs.Any())
         {
             return string.Join("/", info.Breadcrumbs.Select(b => b.Slug));
         }
-        
+
         return info?.Slug;
     }
 
@@ -138,7 +137,8 @@ public class ArticleCacheService : IArticleCacheService
     /// </summary>
     public void CacheArticle(ArticleDto article)
     {
-        if (article == null) return;
+        if (article == null)
+            return;
 
         var cachedInfo = new CachedArticleInfo
         {

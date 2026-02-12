@@ -1,5 +1,4 @@
 using Chronicis.Shared.DTOs;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -9,7 +8,7 @@ namespace Chronicis.Api.Services;
 public class PromptService : IPromptService
 {
     private readonly ILogger<PromptService> _logger;
-    
+
     // Configuration constants
     private const int StaleCharacterDays = 14;
     private const int SessionFollowUpDays = 7;
@@ -102,7 +101,7 @@ public class PromptService : IPromptService
             .SelectMany(w => w.Campaigns)
             .Where(c => c.SessionCount == 0)
             .ToList();
-        
+
         if (campaignsWithoutSessions.Any())
         {
             var campaign = campaignsWithoutSessions.First();
@@ -135,7 +134,7 @@ public class PromptService : IPromptService
         {
             var stalest = staleCharacters.First();
             var daysSinceUpdate = (int)(DateTime.UtcNow - (stalest.ModifiedAt ?? stalest.CreatedAt)).TotalDays;
-            
+
             prompts.Add(new PromptDto
             {
                 Key = $"stale-character-{stalest.Id}",
@@ -271,7 +270,7 @@ public class PromptService : IPromptService
         // Add a random tip if we need more prompts
         var random = new Random();
         var shuffledTips = tips.OrderBy(_ => random.Next()).ToList();
-        
+
         foreach (var tip in shuffledTips)
         {
             if (prompts.Count < MaxPrompts)

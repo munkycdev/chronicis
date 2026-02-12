@@ -28,14 +28,14 @@ public static class InvitationCodeGenerator
         // Generate a 4-character pronounceable part
         // Pattern alternates to create word-like strings
         var chars = new char[4];
-        
+
         // Random pattern: start with consonant or vowel
         bool startWithConsonant = RandomNumberGenerator.GetInt32(2) == 0;
-        
+
         for (int i = 0; i < 4; i++)
         {
             bool useConsonant = (i % 2 == 0) ? startWithConsonant : !startWithConsonant;
-            
+
             if (useConsonant)
             {
                 chars[i] = Consonants[RandomNumberGenerator.GetInt32(Consonants.Length)];
@@ -45,7 +45,7 @@ public static class InvitationCodeGenerator
                 chars[i] = Vowels[RandomNumberGenerator.GetInt32(Vowels.Length)];
             }
         }
-        
+
         return new string(chars);
     }
 
@@ -59,7 +59,7 @@ public static class InvitationCodeGenerator
 
         // Remove spaces, uppercase
         var cleaned = code.Trim().ToUpperInvariant().Replace(" ", "");
-        
+
         // If no hyphen and 8 chars, insert hyphen
         if (!cleaned.Contains('-') && cleaned.Length == 8)
         {
@@ -75,7 +75,7 @@ public static class InvitationCodeGenerator
     public static bool IsValidFormat(string code)
     {
         var normalized = NormalizeCode(code);
-        
+
         if (normalized.Length != 9) // XXXX-XXXX
             return false;
 
@@ -85,7 +85,8 @@ public static class InvitationCodeGenerator
         // Check all other chars are letters
         for (int i = 0; i < 9; i++)
         {
-            if (i == 4) continue;
+            if (i == 4)
+                continue;
             if (!char.IsLetter(normalized[i]))
                 return false;
         }

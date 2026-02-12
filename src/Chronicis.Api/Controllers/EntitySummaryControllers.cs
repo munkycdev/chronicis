@@ -41,7 +41,7 @@ public class ArticleSummaryController : ControllerBase
     public async Task<ActionResult<ArticleSummaryDto>> GetSummary(Guid articleId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         // Verify user has access
         if (!await HasAccessAsync(articleId, user.Id))
         {
@@ -51,7 +51,7 @@ public class ArticleSummaryController : ControllerBase
         _logger.LogDebug("Getting summary for article {ArticleId}", articleId);
 
         var summary = await _summaryService.GetArticleSummaryAsync(articleId);
-        
+
         if (summary == null)
         {
             return NoContent();
@@ -67,7 +67,7 @@ public class ArticleSummaryController : ControllerBase
     public async Task<ActionResult<SummaryPreviewDto>> GetSummaryPreview(Guid articleId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         // Verify user has access
         if (!await HasAccessAsync(articleId, user.Id))
         {
@@ -77,7 +77,7 @@ public class ArticleSummaryController : ControllerBase
         _logger.LogDebug("Getting summary preview for article {ArticleId}", articleId);
 
         var preview = await _summaryService.GetArticleSummaryPreviewAsync(articleId);
-        
+
         if (preview == null)
         {
             return NoContent();
@@ -93,7 +93,7 @@ public class ArticleSummaryController : ControllerBase
     public async Task<ActionResult<SummaryEstimateDto>> GetEstimate(Guid articleId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         // Verify user has access
         if (!await HasAccessAsync(articleId, user.Id))
         {
@@ -115,7 +115,7 @@ public class ArticleSummaryController : ControllerBase
         [FromBody] GenerateSummaryRequestDto? request)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         // Verify user has access
         if (!await HasAccessAsync(articleId, user.Id))
         {
@@ -125,7 +125,7 @@ public class ArticleSummaryController : ControllerBase
         _logger.LogDebug("Generating summary for article {ArticleId}", articleId);
 
         var result = await _summaryService.GenerateArticleSummaryAsync(articleId, request);
-        
+
         if (!result.Success)
         {
             return BadRequest(new { error = result.ErrorMessage });
@@ -141,7 +141,7 @@ public class ArticleSummaryController : ControllerBase
     public async Task<IActionResult> ClearSummary(Guid articleId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         // Verify user has access
         if (!await HasAccessAsync(articleId, user.Id))
         {
@@ -151,7 +151,7 @@ public class ArticleSummaryController : ControllerBase
         _logger.LogDebug("Clearing summary for article {ArticleId}", articleId);
 
         var success = await _summaryService.ClearArticleSummaryAsync(articleId);
-        
+
         if (!success)
         {
             return NotFound(new { error = "Article not found" });
@@ -201,7 +201,7 @@ public class CampaignSummaryController : ControllerBase
     public async Task<ActionResult<EntitySummaryDto>> GetSummary(Guid campaignId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         if (!await HasAccessAsync(campaignId, user.Id))
         {
             return NotFound(new { error = "Campaign not found or access denied" });
@@ -210,7 +210,7 @@ public class CampaignSummaryController : ControllerBase
         _logger.LogDebug("Getting summary for campaign {CampaignId}", campaignId);
 
         var summary = await _summaryService.GetCampaignSummaryAsync(campaignId);
-        
+
         if (summary == null)
         {
             return NoContent();
@@ -226,7 +226,7 @@ public class CampaignSummaryController : ControllerBase
     public async Task<ActionResult<SummaryEstimateDto>> GetEstimate(Guid campaignId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         if (!await HasAccessAsync(campaignId, user.Id))
         {
             return NotFound(new { error = "Campaign not found or access denied" });
@@ -247,7 +247,7 @@ public class CampaignSummaryController : ControllerBase
         [FromBody] GenerateSummaryRequestDto? request)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         if (!await HasAccessAsync(campaignId, user.Id))
         {
             return NotFound(new { error = "Campaign not found or access denied" });
@@ -256,7 +256,7 @@ public class CampaignSummaryController : ControllerBase
         _logger.LogDebug("Generating summary for campaign {CampaignId}", campaignId);
 
         var result = await _summaryService.GenerateCampaignSummaryAsync(campaignId, request);
-        
+
         if (!result.Success)
         {
             return BadRequest(new { error = result.ErrorMessage });
@@ -272,7 +272,7 @@ public class CampaignSummaryController : ControllerBase
     public async Task<IActionResult> ClearSummary(Guid campaignId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         if (!await HasAccessAsync(campaignId, user.Id))
         {
             return NotFound(new { error = "Campaign not found or access denied" });
@@ -281,7 +281,7 @@ public class CampaignSummaryController : ControllerBase
         _logger.LogDebug("Clearing summary for campaign {CampaignId}", campaignId);
 
         var success = await _summaryService.ClearCampaignSummaryAsync(campaignId);
-        
+
         if (!success)
         {
             return NotFound(new { error = "Campaign not found" });
@@ -331,7 +331,7 @@ public class ArcSummaryController : ControllerBase
     public async Task<ActionResult<EntitySummaryDto>> GetSummary(Guid arcId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         if (!await HasAccessAsync(arcId, user.Id))
         {
             return NotFound(new { error = "Arc not found or access denied" });
@@ -340,7 +340,7 @@ public class ArcSummaryController : ControllerBase
         _logger.LogDebug("Getting summary for arc {ArcId}", arcId);
 
         var summary = await _summaryService.GetArcSummaryAsync(arcId);
-        
+
         if (summary == null)
         {
             return NoContent();
@@ -356,7 +356,7 @@ public class ArcSummaryController : ControllerBase
     public async Task<ActionResult<SummaryEstimateDto>> GetEstimate(Guid arcId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         if (!await HasAccessAsync(arcId, user.Id))
         {
             return NotFound(new { error = "Arc not found or access denied" });
@@ -377,7 +377,7 @@ public class ArcSummaryController : ControllerBase
         [FromBody] GenerateSummaryRequestDto? request)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         if (!await HasAccessAsync(arcId, user.Id))
         {
             return NotFound(new { error = "Arc not found or access denied" });
@@ -386,7 +386,7 @@ public class ArcSummaryController : ControllerBase
         _logger.LogDebug("Generating summary for arc {ArcId}", arcId);
 
         var result = await _summaryService.GenerateArcSummaryAsync(arcId, request);
-        
+
         if (!result.Success)
         {
             return BadRequest(new { error = result.ErrorMessage });
@@ -402,7 +402,7 @@ public class ArcSummaryController : ControllerBase
     public async Task<IActionResult> ClearSummary(Guid arcId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        
+
         if (!await HasAccessAsync(arcId, user.Id))
         {
             return NotFound(new { error = "Arc not found or access denied" });
@@ -411,7 +411,7 @@ public class ArcSummaryController : ControllerBase
         _logger.LogDebug("Clearing summary for arc {ArcId}", arcId);
 
         var success = await _summaryService.ClearArcSummaryAsync(arcId);
-        
+
         if (!success)
         {
             return NotFound(new { error = "Arc not found" });

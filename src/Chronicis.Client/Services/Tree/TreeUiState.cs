@@ -1,6 +1,5 @@
 using Blazored.LocalStorage;
 using Chronicis.Client.Models;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Client.Services.Tree;
 
@@ -12,12 +11,12 @@ internal sealed class TreeUiState
 {
     private readonly ILocalStorageService _localStorage;
     private readonly ILogger _logger;
-    
+
     private const string ExpandedNodesStorageKey = "chronicis_expanded_nodes";
-    
+
     // Shared node index (owned by TreeStateService, passed in)
     private TreeNodeIndex _nodeIndex = new();
-    
+
     // UI State
     private readonly HashSet<Guid> _expandedNodeIds = new();
     private Guid? _selectedNodeId;

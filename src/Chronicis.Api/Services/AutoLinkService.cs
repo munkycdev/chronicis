@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Api.Services;
 
@@ -82,9 +81,9 @@ public class AutoLinkService : IAutoLinkService
             where a.WorldId == worldId
             where a.Id != articleId
             where !string.IsNullOrEmpty(a.Title)
-            select new 
-            { 
-                a.Id, 
+            select new
+            {
+                a.Id,
                 a.Title,
                 Aliases = a.Aliases.Select(al => al.AliasText).ToList()
             }
@@ -105,12 +104,12 @@ public class AutoLinkService : IAutoLinkService
         // Build a list of all searchable terms (titles + aliases) with their article info
         // Each term knows whether it's an alias or the canonical title
         var searchTerms = new List<(string Term, Guid ArticleId, string ArticleTitle, bool IsAlias)>();
-        
+
         foreach (var article in linkableArticles)
         {
             // Add the title
             searchTerms.Add((article.Title, article.Id, article.Title, false));
-            
+
             // Add all aliases
             foreach (var alias in article.Aliases)
             {

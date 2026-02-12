@@ -1,4 +1,3 @@
-using System.Linq;
 using Chronicis.ResourceCompiler.Warnings;
 
 namespace Chronicis.ResourceCompiler.Output;

@@ -55,7 +55,7 @@ public static partial class BlobFilenameParser
         if (string.IsNullOrWhiteSpace(slug))
         {
             slug = NormalizeSlug(baseName);
-            
+
             // If still empty after fallback, return empty (caller MUST skip and log warning)
             if (string.IsNullOrWhiteSpace(slug))
             {
