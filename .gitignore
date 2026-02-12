@@ -80,5 +80,5 @@ _buildtmp/*
 /ql/*
 sitecontainers-spec.json
 appsettings.json
-/src/Chronicis.ResourceCompiler.Tests/TestData/*
+/tests/Chronicis.ResourceCompiler.Tests/TestData/*
 /docs/legacy/*

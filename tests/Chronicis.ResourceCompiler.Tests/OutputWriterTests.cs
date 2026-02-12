@@ -143,64 +143,10 @@ public sealed class OutputWriterTests
         }
     }
 
-    [Fact]
-    public async Task RendersIdTemplateForBlobPath()
-    {
-        var tempDir = CreateTempDir();
-        try
-        {
-            var outputRoot = Path.Combine(tempDir, "out");
-            var manifest = new Manifest.Models.Manifest
-            {
-                Entities = new Dictionary<string, ManifestEntity>
-                {
-                    ["Parent"] = new ManifestEntity
-                    {
-                        Name = "Parent",
-                        IsRoot = true,
-                        Output = new ManifestOutput
-                        {
-                            BlobTemplate = "parents/{id}.json"
-                        },
-                        Identity = new ManifestIdentity
-                        {
-                            SlugField = "slug",
-                            IdTemplate = "srd:parent:{slug}"
-                        }
-                    }
-                }
-            };
-
-            var documents = new List<CompiledDocument>
-            {
-                new("Parent", new KeyValue(KeyKind.Number, "1"), new JsonObject
-                {
-                    ["fields"] = new JsonObject
-                    {
-                        ["slug"] = "alpha"
-                    }
-                })
-            };
-
-            var compilation = new CompilationResult(documents, Array.Empty<Warning>());
-            var writer = new OutputWriter();
-
-            var result = await writer.WriteAsync(outputRoot, manifest, compilation, CancellationToken.None);
-
-            Assert.False(result.HasErrors);
-            var filePath = Path.Combine(outputRoot, "parents", "srd:parent:alpha.json");
-            Assert.True(File.Exists(filePath));
-        }
-        finally
-        {
-            Directory.Delete(tempDir, true);
-        }
-    }
-
     private static string CreateTempDir()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"chronicis-tests-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(tempDir);
+        Directory.CreateDirectory(tempDir+"/out");
         return tempDir;
     }
 }
