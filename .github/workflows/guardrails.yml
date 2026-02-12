@@ -27,13 +27,15 @@ jobs:
           fi
 
       - name: Restore
-        run: dotnet restore
+       run: dotnet restore ./Chronicis.sln
+       
+     - name: Verify formatting
+       run: dotnet format ./Chronicis.sln --verify-no-changes --verbosity minimal
 
-      - name: Verify formatting
-        run: dotnet format --verify-no-changes --verbosity minimal
+     - name: Build
+       run: dotnet build ./Chronicis.sln --configuration Release --no-restore
 
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-
+     - name: Test
+       run: dotnet test ./Chronicis.sln --configuration Release --no-build --verbosity normal
       - name: Test
         run: dotnet test --configuration Release --no-build --verbosity normal
