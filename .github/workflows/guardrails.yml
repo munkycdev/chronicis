@@ -1,0 +1,39 @@
+name: Guardrails
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  guardrails:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+          cache: true
+
+      - name: Guardrail: forbid _Old files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -E '(_Old\.)' ; then
+            echo "Found forbidden fossil naming (_Old). Remove or rename these files."
+            exit 1
+          fi
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Verify formatting
+        run: dotnet format --verify-no-changes --verbosity minimal
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
