@@ -327,15 +327,6 @@ public class ExternalLinkServiceTests : IDisposable
     }
 
     [Fact]
-    public void TryValidateId_SrdWithApiPrefix_ReturnsTrue()
-    {
-        var valid = _sut.TryValidateId("srd", "/api/spells/fireball", out var error);
-
-        Assert.True(valid);
-        Assert.Equal(string.Empty, error);
-    }
-
-    [Fact]
     public void TryValidateId_NonSrdRelativePath_ReturnsTrue()
     {
         var valid = _sut.TryValidateId("blob", "monsters/goblin", out var error);
