@@ -10,23 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
           cache: true
 
       - name: Restore
-       run: dotnet restore ./Chronicis.sln
-       
-     - name: Verify formatting
-       run: dotnet format ./Chronicis.sln --verify-no-changes --verbosity minimal
+        run: dotnet restore ./Chronicis.sln
 
-     - name: Build
-       run: dotnet build ./Chronicis.sln --configuration Release --no-restore
+      - name: Verify formatting
+        run: dotnet format ./Chronicis.sln --verify-no-changes --verbosity minimal
 
-     - name: Test
-       run: dotnet test ./Chronicis.sln --configuration Release --no-build --verbosity normal
+      - name: Build
+        run: dotnet build ./Chronicis.sln --configuration Release --no-restore
+
       - name: Test
-        run: dotnet test --configuration Release --no-build --verbosity normal
+        run: dotnet test ./Chronicis.sln --configuration Release --no-build --verbosity normal
