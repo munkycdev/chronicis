@@ -15,6 +15,42 @@ All notable changes to this project are documented in this file.
 
 No breaking API changes.
 
+## [2.11.0] - 2026-02-13
+
+### Inline Article Images
+
+**Added:**
+- Inline image upload in TipTap article editor via drag-and-drop, paste, or toolbar button
+- Images uploaded to Azure Blob Storage and linked to articles via `WorldDocument.ArticleId`
+- Stable `chronicis-image:{documentId}` reference format stored in article HTML
+- Client-side SAS URL resolution on render via authenticated API call
+- In-memory SAS URL cache to avoid redundant API calls within a session
+- Image toolbar button above TipTap editor
+- TipTap `@tiptap/extension-image@3.11.0` integration for proper `<img>` node rendering
+- `ImagesController` proxy endpoint (`GET /api/images/{documentId}`) for authenticated image access
+- Automatic image cleanup when articles are deleted (blobs + DB records)
+- Inline images filtered from treeview's External Resources section (still visible in campaign document list)
+
+**API Endpoints:**
+- `GET /api/images/{documentId}` - Authenticated image proxy (302 redirect to SAS URL)
+
+**Schema Changes:**
+- `WorldDocument.ArticleId` nullable FK added (links inline images to their article)
+- Filtered index `IX_WorldDocuments_ArticleId` for efficient article image queries
+- `DeleteBehavior.SetNull` on FK (article deletion nullifies, cleanup handled explicitly)
+
+**Technical:**
+- `imageUpload.js` handles paste, drop, and file picker with file type/size validation (PNG, JPEG, GIF, WebP; 10 MB max)
+- Upload flow: validate → upload to blob via SAS URL → confirm → insert `chronicis-image:{documentId}` → resolve to SAS URL
+- `resolveEditorImages()` called on editor init to resolve stored references to fresh SAS URLs
+- `IWorldDocumentService.DeleteArticleImagesAsync()` for bulk image cleanup during article deletion
+- `TreeDataBuilder` filters documents with `ArticleId != null` from External Resources group
+
+**Migration:**
+- `20260211233703_AddArticleIdToWorldDocument`
+
+---
+
 ## [2.10.0] - 2026-02-08
 
 ### Quest Tracking System

@@ -1,6 +1,6 @@
 # Chronicis - Feature Documentation
 
-**Last Updated:** February 3, 2026
+**Last Updated:** February 13, 2026
 
 > **Note on Terminology:** This document uses vocabulary terms defined in [Vocabulary.md](Vocabulary.md). Key concepts include **WikiLinks** (internal article-to-article references), **ExternalReferences** (embedded third-party D&D content), and **WorldBookmarks** (user-saved external URLs). See Vocabulary.md for complete definitions.
 
@@ -249,6 +249,34 @@ All content editing follows an Obsidian-like paradigm.
 - Real-time rendering
 - Custom styling for headers, lists, code blocks
 - Wiki link support with autocomplete
+- Inline image upload (drag-and-drop, paste, toolbar button)
+
+---
+
+### Inline Article Images
+
+Upload images directly into article content via drag-and-drop, clipboard paste, or the toolbar image button.
+
+**How It Works:**
+1. Drop, paste, or pick an image file while editing an article
+2. Image uploads to Azure Blob Storage via SAS URL (same pipeline as document storage)
+3. A stable `chronicis-image:{documentId}` reference is stored in the article HTML
+4. On render, the reference is resolved to a fresh SAS URL via an authenticated API call
+5. SAS URLs are cached in-memory for the session to avoid redundant lookups
+
+**Supported Formats:** PNG, JPEG, GIF, WebP (max 10 MB)
+
+**Storage:**
+- Images are `WorldDocument` records with an `ArticleId` FK linking them to their article
+- Inline images are excluded from the treeview's External Resources section
+- Inline images remain visible in the campaign's document management page
+- Deleting an article automatically cleans up its associated images (blobs and DB records)
+
+**Technical Details:**
+- TipTap `@tiptap/extension-image` renders proper ProseMirror image nodes
+- `imageUpload.js` handles all three upload entry points with client-side validation
+- `resolveEditorImages()` runs on editor init to resolve stored references
+- `ImagesController` provides an authenticated proxy endpoint for image access
 
 **Keyboard Shortcuts:**
 - **Ctrl+S**: Save current article from anywhere in the app
@@ -472,6 +500,12 @@ icon: "🏰"
 | GET | `/api/worlds/{id}/documents` | List world documents |
 | GET | `/api/worlds/{id}/documents/{documentId}` | Get document with download URL |
 | DELETE | `/api/worlds/{id}/documents/{documentId}` | Delete document |
+
+### Image Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/images/{documentId}` | Authenticated image proxy (302 redirect to SAS URL) |
 
 ### Public World Endpoints (Anonymous)
 

@@ -1,7 +1,7 @@
 # Chronicis - Project Status
 
-**Last Updated:** February 3, 2026  
-**Project Phase:** External Links Complete
+**Last Updated:** February 13, 2026  
+**Project Phase:** Inline Article Images Complete
 
 ---
 
@@ -125,6 +125,15 @@ Net impact:
 - SAS URL-based downloads (direct browser access, no API streaming)
 - Document visibility controls (Public, MembersOnly, Private)
 - Document metadata tracking (filename, size, content type, upload date)
+
+**Inline Article Images:**
+- Drag-and-drop, paste, or toolbar-based image upload into article content
+- Images stored in Azure Blob Storage and linked to articles via WorldDocument.ArticleId
+- Stable `chronicis-image:{documentId}` references in article HTML (never expire)
+- Client-side SAS URL resolution on render with in-memory caching
+- Automatic image cleanup on article deletion (blobs + DB records)
+- Inline images hidden from treeview External Resources (visible in campaign document list)
+- Supported formats: PNG, JPEG, GIF, WebP (max 10 MB)
 
 **Keyboard Shortcuts:**
 - Ctrl+S: Save current article from anywhere in the app

@@ -266,7 +266,7 @@ internal sealed class TreeDataBuilder
             nodeIndex.AddNode(linkNode);
         }
 
-        foreach (var document in worldDocuments.OrderBy(d => d.Title))
+        foreach (var document in worldDocuments.Where(d => d.ArticleId == null).OrderBy(d => d.Title))
         {
             var documentNode = new TreeNode
             {

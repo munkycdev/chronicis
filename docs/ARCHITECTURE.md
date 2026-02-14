@@ -168,6 +168,33 @@ No schema changes occurred during canonicalization.
 
 ---
 
+# Inline Image Architecture
+
+Inline images use the existing WorldDocument/BlobStorage infrastructure with an article-level association.
+
+## Storage Model
+
+WorldDocument has a nullable ArticleId FK. Documents with ArticleId set are inline images; documents without are standalone uploads. This distinction drives filtering in the tree view (inline images excluded from External Resources) and cleanup on article deletion.
+
+## Reference Format
+
+Article HTML stores `chronicis-image:{documentId}` as the img src. This is a stable, non-expiring reference. On editor initialization, `resolveEditorImages()` walks the DOM, finds these references, and calls back to Blazor to resolve each to a fresh SAS URL via the existing `DownloadDocumentAsync` API. Resolved URLs are cached in-memory per session.
+
+## Upload Flow
+
+1. JS validates file type and size client-side
+2. JS calls Blazor `OnImageUploadRequested` → `WorldApi.RequestDocumentUploadAsync` (with ArticleId)
+3. JS uploads bytes directly to blob storage via SAS URL
+4. JS calls Blazor `OnImageUploadConfirmed` → `WorldApi.ConfirmDocumentUploadAsync`
+5. TipTap `setImage` command inserts the `chronicis-image:{documentId}` node
+6. `resolveEditorImages` immediately resolves to SAS URL for display
+
+## Cleanup
+
+`IWorldDocumentService.DeleteArticleImagesAsync(articleId)` deletes all blobs and DB records for an article's images. Called from `ArticlesController.DeleteArticleAndDescendantsAsync` during recursive article deletion.
+
+---
+
 # Testing
 
 Server:
