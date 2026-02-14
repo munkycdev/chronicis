@@ -1,7 +1,7 @@
+using System.Reflection;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
-using System.Reflection;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
@@ -123,7 +123,7 @@ public class ArchitecturalConventionTests
             var hasInterface = serviceType.GetInterfaces()
                 .Any(i => i.Name == interfaceName);
 
-            Assert.True(hasInterface, 
+            Assert.True(hasInterface,
                 $"Service {serviceType.Name} must implement interface {interfaceName}");
         }
     }
@@ -197,7 +197,7 @@ public class ArchitecturalConventionTests
             foreach (var method in methods)
             {
                 var returnsTask = method.ReturnType == typeof(Task) ||
-                                 (method.ReturnType.IsGenericType && 
+                                 (method.ReturnType.IsGenericType &&
                                   method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>));
 
                 if (returnsTask && !method.Name.EndsWith("Async"))
@@ -230,7 +230,7 @@ public class ArchitecturalConventionTests
         {
             var methods = serviceType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                 .Where(m => !m.IsSpecialName)
-                .Where(m => m.ReturnType.IsGenericType && 
+                .Where(m => m.ReturnType.IsGenericType &&
                            m.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
                 .ToList();
 
@@ -314,8 +314,8 @@ public class ArchitecturalConventionTests
         {
             var navigationProps = modelType.GetProperties()
                 .Where(p => p.PropertyType.Namespace?.StartsWith("Chronicis.Shared.Models") == true ||
-                           (p.PropertyType.IsGenericType && 
-                            p.PropertyType.GetGenericArguments().Any(a => 
+                           (p.PropertyType.IsGenericType &&
+                            p.PropertyType.GetGenericArguments().Any(a =>
                                 a.Namespace?.StartsWith("Chronicis.Shared.Models") == true)))
                 .ToList();
 

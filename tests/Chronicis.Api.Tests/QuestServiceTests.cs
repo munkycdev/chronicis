@@ -218,7 +218,7 @@ public class QuestServiceTests : IDisposable
         Assert.Equal("A new adventure", result.Value.Description);
         Assert.Equal(QuestStatus.Active, result.Value.Status);
         Assert.Equal(3, result.Value.SortOrder);
-        
+
         // Verify it was saved to database
         var saved = await _context.Quests.FindAsync(result.Value.Id);
         Assert.NotNull(saved);

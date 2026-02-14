@@ -23,11 +23,11 @@ public class WorldServiceTests : IDisposable
             .Options;
 
         _context = new ChronicisDbContext(options);
-        
+
         // Mock the membership and public sharing services
         _membershipService = Substitute.For<IWorldMembershipService>();
         _publicSharingService = Substitute.For<IWorldPublicSharingService>();
-        
+
         _service = new WorldService(
             _context,
             _membershipService,

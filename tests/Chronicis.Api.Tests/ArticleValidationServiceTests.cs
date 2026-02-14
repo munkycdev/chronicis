@@ -58,7 +58,7 @@ public class ArticleValidationServiceTests : IDisposable
         var campaign = TestHelpers.CreateCampaign(
             id: TestHelpers.FixedIds.Campaign1,
             worldId: world.Id);
-        
+
         var arc = TestHelpers.CreateArc(
             id: TestHelpers.FixedIds.Arc1,
             campaignId: campaign.Id);

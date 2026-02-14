@@ -188,7 +188,7 @@ public static class TestHelpers
     {
         var owner = CreateUser(id: ownerId ?? FixedIds.User1);
         var member = CreateUser(id: memberId ?? FixedIds.User2);
-        
+
         context.Users.AddRange(owner, member);
 
         var world = CreateWorld(
@@ -196,7 +196,7 @@ public static class TestHelpers
             ownerId: owner.Id,
             name: "Test World",
             slug: "test-world");
-        
+
         context.Worlds.Add(world);
 
         context.WorldMembers.AddRange(

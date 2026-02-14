@@ -360,7 +360,7 @@ public class CampaignServiceTests : IDisposable
     {
         // Activate campaign and arc
         await _service.ActivateCampaignAsync(TestHelpers.FixedIds.Campaign1, TestHelpers.FixedIds.User1);
-        
+
         var arc = await _context.Arcs.FindAsync(TestHelpers.FixedIds.Arc1);
         arc!.IsActive = true;
         await _context.SaveChangesAsync();

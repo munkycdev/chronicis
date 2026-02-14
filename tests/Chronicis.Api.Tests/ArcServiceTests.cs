@@ -322,7 +322,7 @@ public class ArcServiceTests : IDisposable
     public async Task ActivateArcAsync_DeactivatesOthers()
     {
         var arc2Id = Guid.Parse("30000000-0000-0000-0000-000000000002");
-        
+
         // Activate Arc 2 first
         var arc2 = await _context.Arcs.FindAsync(arc2Id);
         arc2!.IsActive = true;

@@ -22,10 +22,10 @@ public class ArticleServiceTests : IDisposable
             .Options;
 
         _context = new ChronicisDbContext(options);
-        
+
         // Mock hierarchy service for breadcrumb building
         _hierarchyService = Substitute.For<IArticleHierarchyService>();
-        
+
         _service = new ArticleService(
             _context,
             NullLogger<ArticleService>.Instance,
