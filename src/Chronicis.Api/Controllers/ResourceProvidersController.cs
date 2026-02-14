@@ -89,7 +89,7 @@ public class ResourceProvidersController : ControllerBase
     public async Task<IActionResult> ToggleProvider(
         Guid worldId,
         string providerCode,
-        [FromBody] ToggleResourceProviderRequest request)
+        [FromBody] ToggleResourceProviderRequestDto request)
     {
         try
         {

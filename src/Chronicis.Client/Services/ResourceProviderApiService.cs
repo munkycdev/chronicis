@@ -59,7 +59,7 @@ public class ResourceProviderApiService
     {
         try
         {
-            var request = new ToggleResourceProviderRequest { Enabled = enabled };
+            var request = new ToggleResourceProviderRequestDto { Enabled = enabled };
             var response = await _httpClient.PostAsJsonAsync(
                 $"api/worlds/{worldId}/resource-providers/{providerCode}/toggle",
                 request);

@@ -24,7 +24,7 @@ public class WorldResourceProviderDto
 /// <summary>
 /// Request to toggle a resource provider for a world.
 /// </summary>
-public class ToggleResourceProviderRequest
+public class ToggleResourceProviderRequestDto
 {
     public bool Enabled { get; set; }
 }

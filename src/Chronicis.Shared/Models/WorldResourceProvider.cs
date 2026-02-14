@@ -22,9 +22,10 @@ public class WorldResourceProvider
     public bool IsEnabled { get; set; }
 
     /// <summary>
-    /// When this provider was last enabled/disabled
+    /// When this provider was last enabled/disabled. 
+    /// Nullable to follow audit property conventions, though typically always set.
     /// </summary>
-    public DateTimeOffset ModifiedAt { get; set; }
+    public DateTimeOffset? ModifiedAt { get; set; }
 
     /// <summary>
     /// User ID who last enabled/disabled this provider
