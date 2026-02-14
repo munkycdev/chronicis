@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 /// <summary>
 /// Response DTO for WorldDocument.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldDocumentDto
 {
     public Guid Id { get; set; }
@@ -21,6 +24,7 @@ public class WorldDocumentDto
 /// Request DTO to initiate a document upload.
 /// Returns a SAS URL for direct client-to-blob upload.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldDocumentUploadRequestDto
 {
     /// <summary>
@@ -52,6 +56,7 @@ public class WorldDocumentUploadRequestDto
 /// <summary>
 /// Response DTO containing SAS URL for client upload.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldDocumentUploadResponseDto
 {
     /// <summary>
@@ -74,6 +79,7 @@ public class WorldDocumentUploadResponseDto
 /// <summary>
 /// Request DTO to confirm upload completion.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldDocumentConfirmUploadDto
 {
     /// <summary>
@@ -85,6 +91,7 @@ public class WorldDocumentConfirmUploadDto
 /// <summary>
 /// Request DTO to update document metadata.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldDocumentUpdateDto
 {
     /// <summary>
@@ -101,6 +108,7 @@ public class WorldDocumentUpdateDto
 /// <summary>
 /// Response DTO containing download URL for document.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldDocumentDownloadDto
 {
     /// <summary>

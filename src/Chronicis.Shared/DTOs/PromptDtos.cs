@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 /// <summary>
 /// A contextual prompt/suggestion for the user.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class PromptDto
 {
     /// <summary>

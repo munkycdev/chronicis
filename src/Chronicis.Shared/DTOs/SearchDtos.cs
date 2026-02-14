@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
+[ExcludeFromCodeCoverage]
 public class ArticleSearchResultDto
 {
     public Guid Id { get; set; }
@@ -11,6 +14,7 @@ public class ArticleSearchResultDto
     public DateTime LastModified { get; set; }
 }
 
+[ExcludeFromCodeCoverage]
 public class GlobalSearchResultsDto
 {
     public string Query { get; set; } = string.Empty;

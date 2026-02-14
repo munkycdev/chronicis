@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 // ====================================================================================
@@ -10,6 +12,7 @@ namespace Chronicis.Shared.DTOs;
 /// DTO representing an ExternalReference for API responses.
 /// Used for embedded references to third-party D&D content (SRD, Open5e, etc.).
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleExternalLinkDto
 {
     /// <summary>

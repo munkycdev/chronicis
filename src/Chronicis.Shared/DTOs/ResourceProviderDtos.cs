@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 /// <summary>
 /// DTO for resource provider information.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ResourceProviderDto
 {
     public string Code { get; set; } = string.Empty;
@@ -15,6 +18,7 @@ public class ResourceProviderDto
 /// <summary>
 /// DTO for resource provider with enabled status for a specific world.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldResourceProviderDto
 {
     public ResourceProviderDto Provider { get; set; } = new();
@@ -24,6 +28,7 @@ public class WorldResourceProviderDto
 /// <summary>
 /// Request to toggle a resource provider for a world.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ToggleResourceProviderRequestDto
 {
     public bool Enabled { get; set; }

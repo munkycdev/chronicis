@@ -1,11 +1,14 @@
 using Chronicis.Shared.Enums;
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
 /// Represents a quest within an Arc. Quests track objectives and their progression
 /// through status changes and timeline updates.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class Quest
 {
     /// <summary>

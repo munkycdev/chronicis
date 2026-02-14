@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 /// <summary>
 /// Full Arc details for display and editing.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArcDto
 {
     public Guid Id { get; set; }
@@ -20,6 +23,7 @@ public class ArcDto
 /// <summary>
 /// Lightweight Arc DTO for tree view display.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArcTreeDto
 {
     public Guid Id { get; set; }
@@ -33,6 +37,7 @@ public class ArcTreeDto
 /// <summary>
 /// Request DTO for creating new arcs.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArcCreateDto
 {
     public Guid CampaignId { get; set; }
@@ -44,6 +49,7 @@ public class ArcCreateDto
 /// <summary>
 /// Request DTO for updating existing arcs.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArcUpdateDto
 {
     public string Name { get; set; } = string.Empty;

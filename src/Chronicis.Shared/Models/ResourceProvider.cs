@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
 /// Represents an external resource provider (e.g., SRD, Open5e API)
 /// that can be enabled for worlds to access reference content.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ResourceProvider
 {
     /// <summary>

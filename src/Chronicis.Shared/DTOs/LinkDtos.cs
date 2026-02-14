@@ -1,5 +1,7 @@
 using Chronicis.Shared.Enums;
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 // ====================================================================================
@@ -11,6 +13,7 @@ namespace Chronicis.Shared.DTOs;
 /// <summary>
 /// Response containing WikiLink suggestions for autocomplete.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class LinkSuggestionsResponseDto
 {
     public List<LinkSuggestionDto> Suggestions { get; set; } = new();
@@ -19,6 +22,7 @@ public class LinkSuggestionsResponseDto
 /// <summary>
 /// A single article suggestion for WikiLink autocomplete.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class LinkSuggestionDto
 {
     /// <summary>
@@ -56,6 +60,7 @@ public class LinkSuggestionDto
 /// <summary>
 /// Response containing WikiLink backlinks to an article.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class BacklinksResponseDto
 {
     public List<BacklinkDto> Backlinks { get; set; } = new();
@@ -64,6 +69,7 @@ public class BacklinksResponseDto
 /// <summary>
 /// An article that contains a WikiLink to the current article.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class BacklinkDto
 {
     /// <summary>
@@ -95,6 +101,7 @@ public class BacklinkDto
 /// <summary>
 /// Request to resolve multiple article links at once.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class LinkResolutionRequestDto
 {
     public List<Guid> ArticleIds { get; set; } = new();
@@ -103,6 +110,7 @@ public class LinkResolutionRequestDto
 /// <summary>
 /// Response containing resolution status for requested articles.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class LinkResolutionResponseDto
 {
     /// <summary>
@@ -114,6 +122,7 @@ public class LinkResolutionResponseDto
 /// <summary>
 /// Information about whether a linked article exists.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ResolvedLinkDto
 {
     /// <summary>
@@ -140,6 +149,7 @@ public class ResolvedLinkDto
 /// <summary>
 /// Request to auto-link content in an article.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class AutoLinkRequestDto
 {
     /// <summary>
@@ -151,6 +161,7 @@ public class AutoLinkRequestDto
 /// <summary>
 /// Response from auto-link operation.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class AutoLinkResponseDto
 {
     /// <summary>
@@ -167,6 +178,7 @@ public class AutoLinkResponseDto
 /// <summary>
 /// Information about a single auto-link match.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class AutoLinkMatchDto
 {
     /// <summary>

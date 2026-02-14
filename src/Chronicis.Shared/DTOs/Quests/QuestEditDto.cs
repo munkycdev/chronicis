@@ -1,11 +1,14 @@
 using Chronicis.Shared.Enums;
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs.Quests;
 
 /// <summary>
 /// DTO for editing an existing quest.
 /// Includes RowVersion for optimistic concurrency.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class QuestEditDto
 {
     public string? Title { get; set; }

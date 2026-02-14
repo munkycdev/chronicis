@@ -1,10 +1,13 @@
 using Chronicis.Shared.Enums;
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs.Quests;
 
 /// <summary>
 /// Complete quest data transfer object.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class QuestDto
 {
     public Guid Id { get; set; }

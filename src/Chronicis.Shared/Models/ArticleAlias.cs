@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
 /// Represents an alternative name/alias for an article.
 /// Enables linking via multiple names (e.g., "Icara" and "Icarax" for the same character).
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleAlias
 {
     /// <summary>

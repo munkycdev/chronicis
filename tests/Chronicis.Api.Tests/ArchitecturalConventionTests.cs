@@ -2,6 +2,8 @@ using System.Reflection;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
+using Chronicis.Shared.Utilities;
+using Chronicis.Shared.Extensions;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
@@ -408,5 +410,265 @@ public class ArchitecturalConventionTests
         {
             Assert.Fail($"Many collection properties are not initialized: {violations.Count}. Consider initializing or making explicitly nullable.");
         }
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Shared Project - Utility Class Conventions
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void SharedUtilities_MustBeStatic()
+    {
+        var utilityTypes = typeof(SlugGenerator).Assembly.GetTypes()
+            .Where(t => t.Namespace == "Chronicis.Shared.Utilities")
+            .Where(t => t.IsClass && !t.IsAbstract)
+            .ToList();
+
+        var violations = utilityTypes
+            .Where(t => !t.IsAbstract || !t.IsSealed) // Static classes are abstract and sealed
+            .Select(t => t.Name)
+            .ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void SharedUtilities_MethodsMustBeStatic()
+    {
+        var utilityTypes = typeof(SlugGenerator).Assembly.GetTypes()
+            .Where(t => t.Namespace == "Chronicis.Shared.Utilities")
+            .Where(t => t.IsClass)
+            .ToList();
+
+        var violations = new List<string>();
+
+        foreach (var utilityType in utilityTypes)
+        {
+            var publicMethods = utilityType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Where(m => !m.IsSpecialName)
+                .ToList();
+
+            foreach (var method in publicMethods)
+            {
+                violations.Add($"{utilityType.Name}.{method.Name} is not static");
+            }
+        }
+
+        Assert.Empty(violations);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Shared Project - Extension Method Conventions
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void SharedExtensions_ClassesMustBeStatic()
+    {
+        var extensionTypes = typeof(LoggerExtensions).Assembly.GetTypes()
+            .Where(t => t.Namespace == "Chronicis.Shared.Extensions")
+            .Where(t => t.IsClass)
+            .Where(t => !t.IsDefined(typeof(System.Runtime.CompilerServices.CompilerGeneratedAttribute), false)) // Exclude compiler-generated types
+            .ToList();
+
+        var violations = extensionTypes
+            .Where(t => !t.IsAbstract || !t.IsSealed) // Static classes are abstract and sealed
+            .Select(t => t.Name)
+            .ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void SharedExtensions_ClassesMustEndWithExtensions()
+    {
+        var extensionTypes = typeof(LoggerExtensions).Assembly.GetTypes()
+            .Where(t => t.Namespace == "Chronicis.Shared.Extensions")
+            .Where(t => t.IsClass)
+            .Where(t => !t.IsDefined(typeof(System.Runtime.CompilerServices.CompilerGeneratedAttribute), false)) // Exclude compiler-generated types
+            .ToList();
+
+        var violations = extensionTypes
+            .Where(t => !t.Name.EndsWith("Extensions"))
+            .Select(t => t.Name)
+            .ToList();
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void SharedExtensions_MethodsMustBeStatic()
+    {
+        var extensionTypes = typeof(LoggerExtensions).Assembly.GetTypes()
+            .Where(t => t.Namespace == "Chronicis.Shared.Extensions")
+            .Where(t => t.IsClass)
+            .ToList();
+
+        var violations = new List<string>();
+
+        foreach (var extensionType in extensionTypes)
+        {
+            var publicMethods = extensionType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Where(m => !m.IsSpecialName)
+                .ToList();
+
+            foreach (var method in publicMethods)
+            {
+                violations.Add($"{extensionType.Name}.{method.Name} is not static");
+            }
+        }
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void SharedExtensions_FirstParameterMustHaveThis()
+    {
+        var extensionTypes = typeof(LoggerExtensions).Assembly.GetTypes()
+            .Where(t => t.Namespace == "Chronicis.Shared.Extensions")
+            .Where(t => t.IsClass)
+            .ToList();
+
+        var violations = new List<string>();
+
+        foreach (var extensionType in extensionTypes)
+        {
+            var publicMethods = extensionType.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                .Where(m => !m.IsSpecialName)
+                .ToList();
+
+            foreach (var method in publicMethods)
+            {
+                var parameters = method.GetParameters();
+                if (parameters.Length == 0)
+                {
+                    violations.Add($"{extensionType.Name}.{method.Name} has no parameters (extension methods require at least one)");
+                    continue;
+                }
+
+                // Check if first parameter has ExtensionAttribute (which corresponds to 'this' keyword)
+                var firstParam = parameters[0];
+                var hasThisModifier = firstParam.GetCustomAttributes(typeof(System.Runtime.CompilerServices.ExtensionAttribute), false).Any();
+                
+                if (!method.IsDefined(typeof(System.Runtime.CompilerServices.ExtensionAttribute), false))
+                {
+                    violations.Add($"{extensionType.Name}.{method.Name} first parameter is missing 'this' modifier");
+                }
+            }
+        }
+
+        Assert.Empty(violations);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Shared Project - Enum Validation
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void SharedEnums_MustHaveAtLeastOneValue()
+    {
+        var enumTypes = typeof(ArticleType).Assembly.GetTypes()
+            .Where(t => t.Namespace == "Chronicis.Shared.Enums")
+            .Where(t => t.IsEnum)
+            .ToList();
+
+        var violations = new List<string>();
+
+        foreach (var enumType in enumTypes)
+        {
+            var values = Enum.GetValues(enumType);
+            if (values.Length == 0)
+            {
+                violations.Add($"{enumType.Name} has no values");
+            }
+        }
+
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void SharedEnums_MustNotHaveDuplicateValues()
+    {
+        var enumTypes = typeof(ArticleType).Assembly.GetTypes()
+            .Where(t => t.Namespace == "Chronicis.Shared.Enums")
+            .Where(t => t.IsEnum)
+            .ToList();
+
+        var violations = new List<string>();
+
+        foreach (var enumType in enumTypes)
+        {
+            var values = Enum.GetValues(enumType);
+            var intValues = values.Cast<object>().Select(v => Convert.ToInt32(v)).ToList();
+            var duplicates = intValues.GroupBy(x => x).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+
+            if (duplicates.Any())
+            {
+                violations.Add($"{enumType.Name} has duplicate values: {string.Join(", ", duplicates)}");
+            }
+        }
+
+        Assert.Empty(violations);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Shared Project - Model Constructors
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void SharedModels_MustHaveParameterlessConstructor()
+    {
+        var modelTypes = typeof(Article).Assembly.GetTypes()
+            .Where(t => t.Namespace == "Chronicis.Shared.Models")
+            .Where(t => t.IsClass && !t.IsAbstract)
+            .ToList();
+
+        var violations = new List<string>();
+
+        foreach (var modelType in modelTypes)
+        {
+            var parameterlessConstructor = modelType.GetConstructor(
+                BindingFlags.Public | BindingFlags.Instance,
+                null,
+                Type.EmptyTypes,
+                null);
+
+            if (parameterlessConstructor == null)
+            {
+                violations.Add($"{modelType.Name} does not have a public parameterless constructor (required for EF Core)");
+            }
+        }
+
+        Assert.Empty(violations);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Shared Project - DTO Constructors
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void SharedDTOs_MustHaveParameterlessConstructor()
+    {
+        var dtoTypes = typeof(ArticleDto).Assembly.GetTypes()
+            .Where(t => t.Namespace != null && t.Namespace.StartsWith("Chronicis.Shared.DTOs"))
+            .Where(t => t.IsClass && !t.IsAbstract)
+            .ToList();
+
+        var violations = new List<string>();
+
+        foreach (var dtoType in dtoTypes)
+        {
+            var parameterlessConstructor = dtoType.GetConstructor(
+                BindingFlags.Public | BindingFlags.Instance,
+                null,
+                Type.EmptyTypes,
+                null);
+
+            if (parameterlessConstructor == null)
+            {
+                violations.Add($"{dtoType.Name} does not have a public parameterless constructor (required for JSON serialization)");
+            }
+        }
+
+        Assert.Empty(violations);
     }
 }

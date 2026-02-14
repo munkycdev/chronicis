@@ -1,11 +1,14 @@
 using Chronicis.Shared.Enums;
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
 /// Represents a user's membership in a world with their assigned role.
 /// World membership grants access to all campaigns within that world.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldMember
 {
     /// <summary>

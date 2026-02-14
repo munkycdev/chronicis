@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Chronicis.Shared.Models;
 /// Multiple users collaborate within a Campaign with role-based access.
 /// Sequential campaigns within a World share resources (Wiki, Characters).
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class Campaign
 {
     /// <summary>

@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
 /// Represents a user authenticated via Auth0.
 /// Each user has a unique Auth0 user ID and can own worlds, campaigns, and articles.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class User
 {
     /// <summary>

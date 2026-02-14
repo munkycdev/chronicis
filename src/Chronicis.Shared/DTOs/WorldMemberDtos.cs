@@ -1,10 +1,13 @@
 using Chronicis.Shared.Enums;
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 /// <summary>
 /// World member information
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldMemberDto
 {
     public Guid Id { get; set; }
@@ -21,6 +24,7 @@ public class WorldMemberDto
 /// <summary>
 /// DTO for updating a member's role in a world
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldMemberUpdateDto
 {
     public WorldRole Role { get; set; }
@@ -29,6 +33,7 @@ public class WorldMemberUpdateDto
 /// <summary>
 /// World invitation information
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldInvitationDto
 {
     public Guid Id { get; set; }
@@ -47,6 +52,7 @@ public class WorldInvitationDto
 /// <summary>
 /// DTO for creating a new world invitation
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldInvitationCreateDto
 {
     public WorldRole Role { get; set; } = WorldRole.Player;
@@ -57,6 +63,7 @@ public class WorldInvitationCreateDto
 /// <summary>
 /// DTO for joining a world via invitation code
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldJoinDto
 {
     public string Code { get; set; } = string.Empty;
@@ -65,6 +72,7 @@ public class WorldJoinDto
 /// <summary>
 /// Result of attempting to join a world
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldJoinResultDto
 {
     public bool Success { get; set; }

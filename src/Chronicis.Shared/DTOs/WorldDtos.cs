@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 /// <summary>
 /// Basic world information for lists
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldDto
 {
     public Guid Id { get; set; }
@@ -34,6 +37,7 @@ public class WorldDto
 /// <summary>
 /// Detailed world information including campaigns and members
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldDetailDto : WorldDto
 {
     public List<CampaignDto> Campaigns { get; set; } = new();
@@ -44,6 +48,7 @@ public class WorldDetailDto : WorldDto
 /// <summary>
 /// DTO for creating a new world
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldCreateDto
 {
     public string Name { get; set; } = string.Empty;
@@ -53,6 +58,7 @@ public class WorldCreateDto
 /// <summary>
 /// DTO for updating a world
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldUpdateDto
 {
     public string Name { get; set; } = string.Empty;
@@ -75,6 +81,7 @@ public class WorldUpdateDto
 /// <summary>
 /// DTO for checking public slug availability
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class PublicSlugCheckDto
 {
     public string Slug { get; set; } = string.Empty;
@@ -83,6 +90,7 @@ public class PublicSlugCheckDto
 /// <summary>
 /// Response for public slug availability check
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class PublicSlugCheckResultDto
 {
     public bool IsAvailable { get; set; }

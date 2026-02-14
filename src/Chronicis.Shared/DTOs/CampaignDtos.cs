@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 /// <summary>
 /// Basic campaign information for lists
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class CampaignDto
 {
     public Guid Id { get; set; }
@@ -21,6 +24,7 @@ public class CampaignDto
 /// <summary>
 /// Detailed campaign information including arcs
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class CampaignDetailDto : CampaignDto
 {
     public List<ArcDto> Arcs { get; set; } = new();
@@ -29,6 +33,7 @@ public class CampaignDetailDto : CampaignDto
 /// <summary>
 /// DTO for creating a new campaign
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class CampaignCreateDto
 {
     public Guid WorldId { get; set; }
@@ -39,6 +44,7 @@ public class CampaignCreateDto
 /// <summary>
 /// DTO for updating a campaign
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class CampaignUpdateDto
 {
     public string Name { get; set; } = string.Empty;

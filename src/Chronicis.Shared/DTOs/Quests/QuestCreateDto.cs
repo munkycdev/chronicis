@@ -1,10 +1,13 @@
 using Chronicis.Shared.Enums;
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs.Quests;
 
 /// <summary>
 /// DTO for creating a new quest.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class QuestCreateDto
 {
     public string Title { get; set; } = string.Empty;

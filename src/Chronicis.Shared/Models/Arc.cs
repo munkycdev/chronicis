@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Chronicis.Shared.Models;
 /// Arcs are the organizational containers for Sessions (e.g., "Act 1", "The Beginning").
 /// Each Campaign must have at least one Arc to contain Sessions.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class Arc
 {
     /// <summary>

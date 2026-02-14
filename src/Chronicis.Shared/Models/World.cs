@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Chronicis.Shared.Models;
 /// Each World has its own Wiki, Campaigns, and Characters.
 /// DMs create separate Worlds for different settings (e.g., "Forgotten Realms" vs "Eberron").
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class World
 {
     /// <summary>

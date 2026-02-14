@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
+[ExcludeFromCodeCoverage]
 public class ExternalLinkSuggestionDto
 {
     public string Source { get; set; } = string.Empty;
@@ -11,6 +14,7 @@ public class ExternalLinkSuggestionDto
     public string? Href { get; set; }
 }
 
+[ExcludeFromCodeCoverage]
 public class ExternalLinkContentDto
 {
     public string Source { get; set; } = string.Empty;
@@ -30,6 +34,7 @@ public class ExternalLinkContentDto
     public string? JsonData { get; set; }
 }
 
+[ExcludeFromCodeCoverage]
 public class ExternalLinkErrorDto
 {
     public string Message { get; set; } = string.Empty;

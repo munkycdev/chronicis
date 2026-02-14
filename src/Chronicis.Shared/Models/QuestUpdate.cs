@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
 /// Represents a timeline entry for a quest. QuestUpdates are append-only
 /// and provide a chronological log of quest progression during sessions.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class QuestUpdate
 {
     /// <summary>

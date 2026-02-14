@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Chronicis.Shared.Models;
 /// System templates are built-in and cannot be modified.
 /// Future: World-specific templates can be created by users.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class SummaryTemplate
 {
     /// <summary>

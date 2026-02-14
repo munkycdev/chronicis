@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
 /// Junction table tracking which resource providers are enabled for each world.
 /// Includes audit trail of when and by whom providers were enabled.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldResourceProvider
 {
     /// <summary>

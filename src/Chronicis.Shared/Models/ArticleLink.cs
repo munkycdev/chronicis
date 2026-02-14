@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
@@ -7,6 +9,7 @@ namespace Chronicis.Shared.Models;
 /// <strong>Vocabulary:</strong> This is a "WikiLink" - see docs/Vocabulary.md for terminology definitions.
 /// </para>
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleLink
 {
     /// <summary>

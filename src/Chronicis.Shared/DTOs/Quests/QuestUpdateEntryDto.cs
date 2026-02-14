@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs.Quests;
 
 /// <summary>
 /// Single quest update entry in the timeline.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class QuestUpdateEntryDto
 {
     public Guid Id { get; set; }

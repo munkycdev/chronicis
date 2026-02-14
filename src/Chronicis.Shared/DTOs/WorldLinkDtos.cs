@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 // ====================================================================================
@@ -9,6 +11,7 @@ namespace Chronicis.Shared.DTOs;
 /// <summary>
 /// DTO for reading a WorldBookmark.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldLinkDto
 {
     public Guid Id { get; set; }
@@ -22,6 +25,7 @@ public class WorldLinkDto
 /// <summary>
 /// DTO for creating a new WorldBookmark.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldLinkCreateDto
 {
     public string Url { get; set; } = string.Empty;
@@ -32,6 +36,7 @@ public class WorldLinkCreateDto
 /// <summary>
 /// DTO for updating an existing WorldBookmark.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldLinkUpdateDto
 {
     public string Url { get; set; } = string.Empty;

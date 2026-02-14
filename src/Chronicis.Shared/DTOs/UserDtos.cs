@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 /// <summary>
 /// User profile information returned to the client.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class UserProfileDto
 {
     public Guid Id { get; set; }
@@ -17,6 +20,7 @@ public class UserProfileDto
 /// <summary>
 /// Request to complete the onboarding flow.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class CompleteOnboardingDto
 {
     // Future: Could include preferences set during onboarding

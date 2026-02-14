@@ -102,7 +102,7 @@ public class EntitySummaryDto
     public string EntityType { get; set; } = string.Empty;
     public string? Summary { get; set; }
     public DateTime? GeneratedAt { get; set; }
-    public bool HasSummary => !string.IsNullOrEmpty(Summary);
+    public bool HasSummary => !string.IsNullOrWhiteSpace(Summary);
 
     // Current configuration
     public Guid? TemplateId { get; set; }
@@ -119,7 +119,7 @@ public class ArticleSummaryDto
     public Guid ArticleId { get; set; }
     public string? Summary { get; set; }
     public DateTime? GeneratedAt { get; set; }
-    public bool HasSummary => !string.IsNullOrEmpty(Summary);
+    public bool HasSummary => !string.IsNullOrWhiteSpace(Summary);
 
     // Configuration
     public Guid? TemplateId { get; set; }
@@ -136,5 +136,5 @@ public class SummaryPreviewDto
     public string Title { get; set; } = string.Empty;
     public string? Summary { get; set; }
     public string? TemplateName { get; set; }
-    public bool HasSummary => !string.IsNullOrEmpty(Summary);
+    public bool HasSummary => !string.IsNullOrWhiteSpace(Summary);
 }

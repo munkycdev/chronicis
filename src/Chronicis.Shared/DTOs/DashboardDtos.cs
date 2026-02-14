@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 /// <summary>
 /// Aggregated dashboard data for the current user.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class DashboardDto
 {
     /// <summary>
@@ -29,6 +32,7 @@ public class DashboardDto
 /// <summary>
 /// World information for dashboard display.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class DashboardWorldDto
 {
     public Guid Id { get; set; }
@@ -57,6 +61,7 @@ public class DashboardWorldDto
 /// <summary>
 /// Campaign information for dashboard display.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class DashboardCampaignDto
 {
     public Guid Id { get; set; }
@@ -77,6 +82,7 @@ public class DashboardCampaignDto
 /// <summary>
 /// Arc information for dashboard display.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class DashboardArcDto
 {
     public Guid Id { get; set; }
@@ -89,6 +95,7 @@ public class DashboardArcDto
 /// <summary>
 /// Character information for dashboard display.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class DashboardCharacterDto
 {
     public Guid Id { get; set; }

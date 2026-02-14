@@ -1,11 +1,14 @@
 using Chronicis.Shared.Enums;
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
 /// Represents an invitation code that allows users to join a world.
 /// Invitations can be single-use or multi-use with optional expiration.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldInvitation
 {
     /// <summary>

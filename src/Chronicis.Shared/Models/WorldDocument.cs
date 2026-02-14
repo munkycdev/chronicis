@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Models;
 
 /// <summary>
 /// Represents a document file stored in Azure Blob Storage associated with a World.
 /// Examples: PDFs, images, Word docs, campaign materials, maps, etc.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class WorldDocument
 {
     /// <summary>
