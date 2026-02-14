@@ -1,6 +1,5 @@
-using Chronicis.Shared.Enums;
-
 using System.Diagnostics.CodeAnalysis;
+using Chronicis.Shared.Enums;
 
 namespace Chronicis.Shared.DTOs;
 

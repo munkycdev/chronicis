@@ -1,9 +1,9 @@
 using System.Reflection;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
+using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
-using Chronicis.Shared.Extensions;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
@@ -548,7 +548,7 @@ public class ArchitecturalConventionTests
                 // Check if first parameter has ExtensionAttribute (which corresponds to 'this' keyword)
                 var firstParam = parameters[0];
                 var hasThisModifier = firstParam.GetCustomAttributes(typeof(System.Runtime.CompilerServices.ExtensionAttribute), false).Any();
-                
+
                 if (!method.IsDefined(typeof(System.Runtime.CompilerServices.ExtensionAttribute), false))
                 {
                     violations.Add($"{extensionType.Name}.{method.Name} first parameter is missing 'this' modifier");
