@@ -24,7 +24,6 @@
 @inject IMetadataDrawerService MetadataDrawerService
 @inject IKeyboardShortcutService KeyboardShortcutService
 @inject IWorldApiService WorldApi
-@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 
 @implements IDisposable
 
@@ -458,6 +457,9 @@ else
 
                 // Initialize image upload (drag-drop, paste)
                 await JSRuntime.InvokeVoidAsync("initializeImageUpload", $"tiptap-editor-{_article.Id}", _dotNetHelper);
+
+                // Resolve any chronicis-image: references to real SAS URLs
+                await JSRuntime.InvokeVoidAsync("resolveEditorImages", $"tiptap-editor-{_article.Id}", _dotNetHelper);
 
                 _editorInitialized = true;
             }
@@ -1245,8 +1247,35 @@ else
     [JSInvokable]
     public string GetImageProxyUrl(string documentIdStr)
     {
-        var apiBaseUrl = Configuration["ApiBaseUrl"]?.TrimEnd('/') ?? "http://localhost:7071";
-        return $"{apiBaseUrl}/api/images/{documentIdStr}";
+        // Return stable chronicis-image: reference (not a URL)
+        return $"chronicis-image:{documentIdStr}";
+    }
+
+    [JSInvokable]
+    public async Task<string?> ResolveImageUrl(string documentIdStr)
+    {
+        if (!Guid.TryParse(documentIdStr, out var documentId)) return null;
+
+        try
+        {
+            var result = await WorldApi.DownloadDocumentAsync(documentId);
+            return result?.DownloadUrl;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error resolving image URL for document {DocumentId}", documentId);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public void OnImageUploadStarted(string fileName)
+    {
+        InvokeAsync(() =>
+        {
+            Snackbar.Add($"Uploading {fileName}...", Severity.Info);
+            StateHasChanged();
+        });
     }
 
     [JSInvokable]

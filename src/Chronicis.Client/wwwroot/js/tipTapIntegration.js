@@ -115,12 +115,6 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
             HTMLAttributes: {
                 class: 'chronicis-inline-image',
             },
-        }).extend({
-            // Override addProseMirrorPlugins to remove default drop/paste handling
-            // We handle image drops and pastes in imageUpload.js instead
-            addProseMirrorPlugins() {
-                return [];
-            },
         }));
     }
 
