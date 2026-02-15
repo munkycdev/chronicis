@@ -251,7 +251,9 @@ public class SlugGeneratorTests
     [InlineData("   ", false)]
     public void IsValidSlug_InvalidSlugs_ReturnsFalse(string? slug, bool expected)
     {
+#pragma warning disable CS8604 // Possible null reference argument.
         var result = SlugGenerator.IsValidSlug(slug);
+#pragma warning restore CS8604 // Possible null reference argument.
         Assert.Equal(expected, result);
     }
 
