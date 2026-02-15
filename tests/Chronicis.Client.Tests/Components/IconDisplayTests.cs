@@ -1,6 +1,7 @@
 using Bunit;
 using Chronicis.Client.Components.Shared;
 using Xunit;
+using TestContext = Bunit.TestContext;
 
 namespace Chronicis.Client.Tests.Components;
 

@@ -1,6 +1,7 @@
 using Bunit;
 using Chronicis.Client.Components.Shared;
 using Xunit;
+using TestContext = Bunit.TestContext;
 
 namespace Chronicis.Client.Tests.Components;
 
@@ -105,7 +106,7 @@ public class PublicFooterTests : TestContext
         var cut = RenderComponent<PublicFooter>();
 
         // Assert
-        var currentYear = DateTime.Now.Year.ToString();
+        var currentYear = DateTimeOffset.Now.Year.ToString();
         Assert.Contains(currentYear, cut.Markup);
     }
 

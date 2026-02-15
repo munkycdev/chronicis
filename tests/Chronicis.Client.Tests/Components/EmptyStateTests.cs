@@ -2,6 +2,7 @@ using Bunit;
 using Chronicis.Client.Components.Shared;
 using MudBlazor;
 using Xunit;
+using TestContext = Bunit.TestContext;
 
 namespace Chronicis.Client.Tests.Components;
 

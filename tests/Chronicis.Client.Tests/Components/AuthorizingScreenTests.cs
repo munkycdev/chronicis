@@ -1,6 +1,7 @@
 using Bunit;
 using Chronicis.Client.Components.Routing;
 using Xunit;
+using TestContext = Bunit.TestContext;
 
 namespace Chronicis.Client.Tests.Components;
 
