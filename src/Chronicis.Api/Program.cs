@@ -41,9 +41,6 @@ try
     // Add controllers
     builder.Services.AddControllers();
 
-    // Application Insights (TO BE REMOVED IN LATER PHASE)
-    builder.Services.AddApplicationInsightsTelemetry();
-
     // Auth0 JWT Bearer Authentication
     var auth0Config = builder.Configuration.GetSection("Auth0").Get<Auth0Configuration>()
         ?? throw new InvalidOperationException("Auth0 configuration is missing");

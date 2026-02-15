@@ -12,6 +12,7 @@
 
 	<ItemGroup>
 		<!-- ASP.NET Core -->
+		<PackageReference Include="Azure.Core" Version="1.51.1" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
 		
 		<!-- Azure Services -->
@@ -31,7 +32,6 @@
 		</PackageReference>
 
 		<!-- Application Insights (TO BE REMOVED IN LATER PHASE) -->
-		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
 		
 		<!-- Serilog -->
 		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />

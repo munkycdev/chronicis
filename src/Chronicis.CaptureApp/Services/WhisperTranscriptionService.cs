@@ -31,9 +31,13 @@ public class WhisperTranscriptionService : ITranscriptionService, IDisposable
                 Directory.CreateDirectory(modelDir!);
             }
 
-            using var modelStream = await WhisperGgmlDownloader.GetGgmlModelAsync(model);
+            var client = new HttpClient();
+            var downloader = new WhisperGgmlDownloader(client);
+
+            using var modelStream = await downloader.GetGgmlModelAsync(model);
             using var fileWriter = File.OpenWrite(modelPath);
             await modelStream.CopyToAsync(fileWriter);
+            client.Dispose();
         }
 
         await Task.Run(() =>
