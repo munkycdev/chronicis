@@ -31,7 +31,7 @@ public class ArticleVisibilityTests
     public void ArticleVisibility_GetValues_ReturnsAllExpectedValues()
     {
         var values = Enum.GetValues<ArticleVisibility>();
-        
+
         Assert.Equal(3, values.Length);
         Assert.Contains(ArticleVisibility.Public, values);
         Assert.Contains(ArticleVisibility.MembersOnly, values);
@@ -42,7 +42,7 @@ public class ArticleVisibilityTests
     public void ArticleVisibility_GetNames_ReturnsCorrectNames()
     {
         var names = Enum.GetNames<ArticleVisibility>();
-        
+
         Assert.Equal(3, names.Length);
         Assert.Contains("Public", names);
         Assert.Contains("MembersOnly", names);
@@ -128,7 +128,7 @@ public class ArticleVisibilityTests
     {
         var result = Enum.TryParse<ArticleVisibility>(name, out var value);
         Assert.Equal(shouldSucceed, result);
-        
+
         if (shouldSucceed)
         {
             Assert.True(Enum.IsDefined(typeof(ArticleVisibility), value));
@@ -151,8 +151,8 @@ public class ArticleVisibilityTests
     [InlineData(ArticleVisibility.MembersOnly, ArticleVisibility.Public, false)]
     [InlineData(ArticleVisibility.Private, ArticleVisibility.Public, false)]
     public void ArticleVisibility_Comparison_ReflectsRestrictionLevel(
-        ArticleVisibility less, 
-        ArticleVisibility more, 
+        ArticleVisibility less,
+        ArticleVisibility more,
         bool lessIsLess)
     {
         Assert.Equal(lessIsLess, (int)less < (int)more);
@@ -163,11 +163,11 @@ public class ArticleVisibilityTests
     {
         // Ensure no gaps in the sequence 0, 1, 2
         var values = Enum.GetValues<ArticleVisibility>().Select(v => (int)v).OrderBy(v => v).ToList();
-        
+
         Assert.Equal(0, values[0]);
         Assert.Equal(1, values[1]);
         Assert.Equal(2, values[2]);
-        
+
         // No gaps
         for (int i = 0; i < values.Count - 1; i++)
         {

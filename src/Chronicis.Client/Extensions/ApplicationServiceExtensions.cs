@@ -26,9 +26,7 @@ public static class ApplicationServiceExtensions
         services.AddChronicisApiService<IUserApiService, UserApiService>();
         services.AddChronicisApiService<ICharacterApiService, CharacterApiService>();
         services.AddChronicisApiService<IDashboardApiService, DashboardApiService>();
-
-        // Concrete API service (no interface)
-        services.AddChronicisApiServiceConcrete<ResourceProviderApiService>();
+        services.AddChronicisApiService<IResourceProviderApiService, ResourceProviderApiService>();
 
         // API services with special dependencies
         services.AddChronicisApiServiceWithSnackbar<IQuestApiService, QuestApiService>();

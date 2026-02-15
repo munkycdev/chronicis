@@ -7,7 +7,7 @@ namespace Chronicis.Client.Components.Settings;
 
 public partial class WorldResourceProviders : ComponentBase
 {
-    [Inject] private ResourceProviderApiService ResourceProviderService { get; set; } = default!;
+    [Inject] private IResourceProviderApiService ResourceProviderService { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
     [Inject] private ILogger<WorldResourceProviders> Logger { get; set; } = default!;
 

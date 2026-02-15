@@ -1,0 +1,49 @@
+using Chronicis.Client.Services;
+using Xunit;
+
+namespace Chronicis.Client.Tests.Services;
+
+public class MetadataDrawerServiceTests
+{
+    [Fact]
+    public void Toggle_RaisesOnToggleEvent()
+    {
+        // Arrange
+        var sut = new MetadataDrawerService();
+        var eventRaised = false;
+        sut.OnToggle += () => eventRaised = true;
+
+        // Act
+        sut.Toggle();
+
+        // Assert
+        Assert.True(eventRaised);
+    }
+
+    [Fact]
+    public void Toggle_WithNoSubscribers_DoesNotThrow()
+    {
+        // Arrange
+        var sut = new MetadataDrawerService();
+
+        // Act & Assert - Should not throw
+        sut.Toggle();
+    }
+
+    [Fact]
+    public void Toggle_CalledMultipleTimes_RaisesEventEachTime()
+    {
+        // Arrange
+        var sut = new MetadataDrawerService();
+        var eventCount = 0;
+        sut.OnToggle += () => eventCount++;
+
+        // Act
+        sut.Toggle();
+        sut.Toggle();
+        sut.Toggle();
+
+        // Assert
+        Assert.Equal(3, eventCount);
+    }
+}

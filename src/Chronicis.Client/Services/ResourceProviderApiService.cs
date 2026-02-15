@@ -6,7 +6,7 @@ namespace Chronicis.Client.Services;
 /// <summary>
 /// Service for managing resource providers via the API.
 /// </summary>
-public class ResourceProviderApiService
+public class ResourceProviderApiService : IResourceProviderApiService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<ResourceProviderApiService> _logger;

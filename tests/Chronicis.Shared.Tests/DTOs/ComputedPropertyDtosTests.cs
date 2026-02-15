@@ -209,7 +209,7 @@ public class ComputedPropertyDtosTests
     public void ActiveContextDto_DefaultState_HasNoActiveContext()
     {
         var dto = new ActiveContextDto();
-        
+
         Assert.Null(dto.WorldId);
         Assert.Null(dto.CampaignId);
         Assert.Null(dto.ArcId);
@@ -220,7 +220,7 @@ public class ComputedPropertyDtosTests
     public void EntitySummaryDto_DefaultState_HasNoSummary()
     {
         var dto = new EntitySummaryDto();
-        
+
         Assert.Null(dto.Summary);
         Assert.False(dto.HasSummary);
     }
@@ -229,7 +229,7 @@ public class ComputedPropertyDtosTests
     public void ArticleSummaryDto_DefaultState_HasNoSummary()
     {
         var dto = new ArticleSummaryDto();
-        
+
         Assert.Null(dto.Summary);
         Assert.False(dto.HasSummary);
     }
@@ -238,7 +238,7 @@ public class ComputedPropertyDtosTests
     public void SummaryPreviewDto_DefaultState_HasNoSummary()
     {
         var dto = new SummaryPreviewDto();
-        
+
         Assert.Null(dto.Summary);
         Assert.False(dto.HasSummary);
         Assert.Equal(string.Empty, dto.Title);

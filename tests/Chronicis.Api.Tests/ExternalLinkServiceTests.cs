@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Api.Repositories;
 using Chronicis.Api.Services.ExternalLinks;
 using Chronicis.Shared.Models;
@@ -9,6 +10,8 @@ using Xunit;
 
 namespace Chronicis.Api.Tests;
 
+
+[SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>")]
 public class ExternalLinkServiceTests : IDisposable
 {
     private readonly IExternalLinkProviderRegistry _registry;
@@ -133,10 +136,10 @@ public class ExternalLinkServiceTests : IDisposable
     {
         var worldId = Guid.NewGuid();
         _resourceProviderRepository.GetWorldProvidersAsync(worldId)
-            .Returns(new List<(ResourceProvider Provider, bool IsEnabled)>
-            {
+            .Returns(
+            [
                 (new ResourceProvider { Code = "srd" }, false)
-            });
+            ]);
 
         var result = await _sut.GetSuggestionsAsync(worldId, "srd", "test", CancellationToken.None);
 
@@ -149,14 +152,14 @@ public class ExternalLinkServiceTests : IDisposable
     {
         var worldId = Guid.NewGuid();
         _resourceProviderRepository.GetWorldProvidersAsync(worldId)
-            .Returns(new List<(ResourceProvider Provider, bool IsEnabled)>
-            {
+            .Returns(
+            [
                 (new ResourceProvider { Code = "srd" }, true)
-            });
+            ]);
 
         var provider = Substitute.For<IExternalLinkProvider>();
         provider.SearchAsync("test", Arg.Any<CancellationToken>())
-            .Returns(new List<ExternalLinkSuggestion>());
+            .Returns([]);
         _registry.GetProvider("srd").Returns(provider);
 
         await _sut.GetSuggestionsAsync(worldId, "srd", "test", CancellationToken.None);
@@ -165,11 +168,11 @@ public class ExternalLinkServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetSuggestions_NoWorldId_SkipsWorldProviderCheck()
+    public async Task GetSuggestions_NoWorldId_SkipsWorldProviderCheckAsync()
     {
         var provider = Substitute.For<IExternalLinkProvider>();
         provider.SearchAsync("test", Arg.Any<CancellationToken>())
-            .Returns(new List<ExternalLinkSuggestion>());
+            .Returns([]);
         _registry.GetProvider("srd").Returns(provider);
 
         await _sut.GetSuggestionsAsync(null, "srd", "test", CancellationToken.None);
@@ -262,7 +265,7 @@ public class ExternalLinkServiceTests : IDisposable
     public void TryValidateSource_UnknownSource_NoProviders_ReturnsGenericError()
     {
         _registry.GetProvider("nope").Returns((IExternalLinkProvider?)null);
-        _registry.GetAllProviders().Returns(new List<IExternalLinkProvider>());
+        _registry.GetAllProviders().Returns([]);
 
         var valid = _sut.TryValidateSource("nope", out var error);
 
@@ -277,7 +280,7 @@ public class ExternalLinkServiceTests : IDisposable
         srdProvider.Key.Returns("srd");
 
         _registry.GetProvider("nope").Returns((IExternalLinkProvider?)null);
-        _registry.GetAllProviders().Returns(new List<IExternalLinkProvider> { srdProvider });
+        _registry.GetAllProviders().Returns([srdProvider]);
 
         var valid = _sut.TryValidateSource("nope", out var error);
 

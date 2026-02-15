@@ -31,7 +31,7 @@ public class WorldRoleTests
     public void WorldRole_GetValues_ReturnsAllExpectedValues()
     {
         var values = Enum.GetValues<WorldRole>();
-        
+
         Assert.Equal(3, values.Length);
         Assert.Contains(WorldRole.GM, values);
         Assert.Contains(WorldRole.Player, values);
@@ -42,7 +42,7 @@ public class WorldRoleTests
     public void WorldRole_GetNames_ReturnsCorrectNames()
     {
         var names = Enum.GetNames<WorldRole>();
-        
+
         Assert.Equal(3, names.Length);
         Assert.Contains("GM", names);
         Assert.Contains("Player", names);
@@ -128,7 +128,7 @@ public class WorldRoleTests
     {
         var result = Enum.TryParse<WorldRole>(name, out var value);
         Assert.Equal(shouldSucceed, result);
-        
+
         if (shouldSucceed)
         {
             Assert.True(Enum.IsDefined(typeof(WorldRole), value));
@@ -140,11 +140,11 @@ public class WorldRoleTests
     {
         // Ensure no gaps in the sequence 0, 1, 2
         var values = Enum.GetValues<WorldRole>().Select(v => (int)v).OrderBy(v => v).ToList();
-        
+
         Assert.Equal(0, values[0]);
         Assert.Equal(1, values[1]);
         Assert.Equal(2, values[2]);
-        
+
         // No gaps
         for (int i = 0; i < values.Count - 1; i++)
         {
@@ -157,19 +157,19 @@ public class WorldRoleTests
     [InlineData(WorldRole.Player, false, true, true)]
     [InlineData(WorldRole.Observer, false, false, true)]
     public void WorldRole_PermissionLevels_AreCorrect(
-        WorldRole role, 
-        bool canManageWorld, 
-        bool canEdit, 
+        WorldRole role,
+        bool canManageWorld,
+        bool canEdit,
         bool canRead)
     {
         // GM has full permissions
         // Player can edit but not manage
         // Observer is read-only
-        
+
         var actualCanManage = role == WorldRole.GM;
         var actualCanEdit = role == WorldRole.GM || role == WorldRole.Player;
         var actualCanRead = true; // All roles can read
-        
+
         Assert.Equal(canManageWorld, actualCanManage);
         Assert.Equal(canEdit, actualCanEdit);
         Assert.Equal(canRead, actualCanRead);
@@ -191,8 +191,8 @@ public class WorldRoleTests
     [InlineData(WorldRole.Player, WorldRole.GM, false)]
     [InlineData(WorldRole.Observer, WorldRole.GM, false)]
     public void WorldRole_Comparison_ReflectsPermissionHierarchy(
-        WorldRole more, 
-        WorldRole less, 
+        WorldRole more,
+        WorldRole less,
         bool moreIsMore)
     {
         // Lower numeric value = more permissions
@@ -205,7 +205,7 @@ public class WorldRoleTests
         var managementRoles = Enum.GetValues<WorldRole>()
             .Where(r => r == WorldRole.GM)
             .ToList();
-        
+
         Assert.Single(managementRoles);
         Assert.Equal(WorldRole.GM, managementRoles[0]);
     }
@@ -216,7 +216,7 @@ public class WorldRoleTests
         var readOnlyRoles = Enum.GetValues<WorldRole>()
             .Where(r => r == WorldRole.Observer)
             .ToList();
-        
+
         Assert.Single(readOnlyRoles);
         Assert.Equal(WorldRole.Observer, readOnlyRoles[0]);
     }

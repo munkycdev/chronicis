@@ -1,11 +1,15 @@
 @* ArticleMetadataDrawer.razor - Right-side metadata panel for articles *@
-@* Includes outgoing links, backlinks, and article info *@
+@* REFACTORED: Now manages data loading for backlinks, outgoing links, and external links *@
 
 @using Chronicis.Shared.Enums
 @using Chronicis.Shared.DTOs
 @inject IArticleApiService ArticleApi
+@inject ILinkApiService LinkApi
+@inject IArticleExternalLinkApiService ExternalLinkApi
+@inject IArticleCacheService ArticleCache
 @inject IUserApiService UserApi
 @inject ITreeStateService TreeState
+@inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
 <style>
@@ -123,18 +127,23 @@
             </div>
         </div>
         
-        <!-- Outgoing Links Panel -->
-        <OutgoingLinksPanel @ref="_outgoingLinksPanel" ArticleId="@Article.Id" IsOpen="@IsOpen" />
+        <!-- Outgoing Links Panel - REFACTORED to use data parameters -->
+        <OutgoingLinksPanel OutgoingLinks="_outgoingLinks"
+                            IsLoading="_loadingOutgoingLinks"
+                            OnNavigateToArticle="HandleNavigateToArticle" />
         
         <MudDivider Class="my-2" Style="opacity: 0.2;" />
         
-        <!-- Backlinks Panel -->
-        <BacklinksPanel @ref="_backlinksPanel" ArticleId="@Article.Id" IsOpen="@IsOpen" />
+        <!-- Backlinks Panel - REFACTORED to use data parameters -->
+        <BacklinksPanel Backlinks="_backlinks"
+                        IsLoading="_loadingBacklinks"
+                        OnNavigateToArticle="HandleNavigateToArticle" />
         
         <MudDivider Class="my-2" Style="opacity: 0.2;" />
         
-        <!-- External Links Panel -->
-        <ExternalLinksPanel @ref="_externalLinksPanel" ArticleId="@Article.Id" IsOpen="@IsOpen" />
+        <!-- External Links Panel - REFACTORED to use data parameters -->
+        <ExternalLinksPanel ExternalLinks="_externalLinks"
+                            IsLoading="_loadingExternalLinks" />
         
         <MudDivider Class="my-4" Style="opacity: 0.3;" />
         
@@ -324,9 +333,17 @@
 </MudDrawer>
 
 @code {
-    private OutgoingLinksPanel? _outgoingLinksPanel;
-    private BacklinksPanel? _backlinksPanel;
-    private ExternalLinksPanel? _externalLinksPanel;
+    // Link panel state - managed by THIS component
+    private List<BacklinkDto> _backlinks = new();
+    private bool _loadingBacklinks = false;
+    
+    private List<BacklinkDto> _outgoingLinks = new();
+    private bool _loadingOutgoingLinks = false;
+    
+    private List<ArticleExternalLinkDto> _externalLinks = new();
+    private bool _loadingExternalLinks = false;
+    
+    private Guid _lastArticleId = Guid.Empty;
     private bool _isCreator;
     private ArticleVisibility _currentVisibility;
     private bool _isSavingVisibility;
@@ -355,7 +372,7 @@
         _currentUserId = user?.Id;
     }
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         _isCreator = _currentUserId.HasValue && Article.CreatedBy == _currentUserId.Value;
         _currentVisibility = Article.Visibility;
@@ -370,6 +387,26 @@
         {
             _aliasesText = newAliasesText;
             _originalAliasesText = newAliasesText;
+        }
+        
+        // Load links when article changes
+        var articleChanged = Article.Id != _lastArticleId;
+        if (articleChanged)
+        {
+            _lastArticleId = Article.Id;
+            _backlinks = new();
+            _outgoingLinks = new();
+            _externalLinks = new();
+            
+            // Only load if drawer is already open
+            if (IsOpen)
+            {
+                await Task.WhenAll(
+                    LoadBacklinksAsync(),
+                    LoadOutgoingLinksAsync(),
+                    LoadExternalLinksAsync()
+                );
+            }
         }
     }
 
@@ -522,24 +559,110 @@
 
     public async Task RefreshPanelsAsync()
     {
-        if (_outgoingLinksPanel != null)
-        {
-            await _outgoingLinksPanel.RefreshAsync();
-        }
-        
-        if (_backlinksPanel != null)
-        {
-            await _backlinksPanel.RefreshAsync();
-        }
-        
-        if (_externalLinksPanel != null)
-        {
-            await _externalLinksPanel.RefreshAsync();
-        }
+        await Task.WhenAll(
+            LoadBacklinksAsync(),
+            LoadOutgoingLinksAsync(),
+            LoadExternalLinksAsync()
+        );
     }
 
     private async Task OnOpenChangedInternal()
     {
         await IsOpenChanged.InvokeAsync(IsOpen);
+        
+        // Load links when drawer opens (if not already loaded)
+        if (IsOpen)
+        {
+            var tasks = new List<Task>();
+            
+            if (!_backlinks.Any() && !_loadingBacklinks)
+                tasks.Add(LoadBacklinksAsync());
+                
+            if (!_outgoingLinks.Any() && !_loadingOutgoingLinks)
+                tasks.Add(LoadOutgoingLinksAsync());
+                
+            if (!_externalLinks.Any() && !_loadingExternalLinks)
+                tasks.Add(LoadExternalLinksAsync());
+            
+            if (tasks.Any())
+                await Task.WhenAll(tasks);
+        }
+    }
+
+    private async Task LoadBacklinksAsync()
+    {
+        _loadingBacklinks = true;
+        StateHasChanged();
+
+        try
+        {
+            _backlinks = await LinkApi.GetBacklinksAsync(Article.Id);
+        }
+        catch (Exception)
+        {
+            _backlinks = new List<BacklinkDto>();
+        }
+        finally
+        {
+            _loadingBacklinks = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadOutgoingLinksAsync()
+    {
+        _loadingOutgoingLinks = true;
+        StateHasChanged();
+
+        try
+        {
+            _outgoingLinks = await LinkApi.GetOutgoingLinksAsync(Article.Id);
+        }
+        catch (Exception)
+        {
+            _outgoingLinks = new List<BacklinkDto>();
+        }
+        finally
+        {
+            _loadingOutgoingLinks = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadExternalLinksAsync()
+    {
+        _loadingExternalLinks = true;
+        StateHasChanged();
+
+        try
+        {
+            _externalLinks = await ExternalLinkApi.GetExternalLinksAsync(Article.Id);
+        }
+        catch (Exception)
+        {
+            _externalLinks = new List<ArticleExternalLinkDto>();
+        }
+        finally
+        {
+            _loadingExternalLinks = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleNavigateToArticle(Guid articleId)
+    {
+        try
+        {
+            var path = await ArticleCache.GetNavigationPathAsync(articleId);
+            
+            if (!string.IsNullOrEmpty(path))
+            {
+                Navigation.NavigateTo($"/article/{path}");
+            }
+        }
+        catch (Exception)
+        {
+            // Navigation failed - could log or show error
+        }
     }
 }

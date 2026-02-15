@@ -52,7 +52,7 @@ public class ArticleTypeTests
     public void ArticleType_GetValues_ReturnsAllExpectedValues()
     {
         var values = Enum.GetValues<ArticleType>();
-        
+
         Assert.Equal(6, values.Length);
         Assert.Contains(ArticleType.WikiArticle, values);
         Assert.Contains(ArticleType.Character, values);
@@ -66,7 +66,7 @@ public class ArticleTypeTests
     public void ArticleType_GetNames_ReturnsCorrectNames()
     {
         var names = Enum.GetNames<ArticleType>();
-        
+
         Assert.Equal(6, names.Length);
         Assert.Contains("WikiArticle", names);
         Assert.Contains("Character", names);
@@ -177,7 +177,7 @@ public class ArticleTypeTests
     {
         var result = Enum.TryParse<ArticleType>(name, out var value);
         Assert.Equal(shouldSucceed, result);
-        
+
         if (shouldSucceed)
         {
             Assert.True(Enum.IsDefined(typeof(ArticleType), value));

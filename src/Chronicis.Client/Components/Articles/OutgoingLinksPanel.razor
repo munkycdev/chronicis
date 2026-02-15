@@ -1,119 +1,57 @@
 @using Chronicis.Shared.DTOs
-@inject ILinkApiService LinkApiService
-@inject IArticleCacheService ArticleCache
-@inject NavigationManager Navigation
-@inject ILogger<OutgoingLinksPanel> Logger
+
+@* Refactored OutgoingLinksPanel - Now accepts data as parameters instead of fetching directly *@
 
 <div class="links-panel">
     <div class="links-panel-header">
         <span class="links-panel-title">Links To</span>
-        @if (_loading)
+        @if (IsLoading)
         {
             <span class="links-panel-loading">...</span>
         }
-        <span class="links-panel-count">@_outgoingLinks.Count</span>
+        <span class="links-panel-count">@OutgoingLinks.Count</span>
     </div>
 
-    @if (_outgoingLinks.Any())
+    @if (OutgoingLinks.Any())
     {
         <div class="links-chip-container">
-            @foreach (var link in _outgoingLinks)
+            @foreach (var link in OutgoingLinks)
             {
                 <span class="link-chip" 
-                      @onclick="() => NavigateToArticle(link.ArticleId)"
+                      @onclick="() => OnNavigateToArticle.InvokeAsync(link.ArticleId)"
                       title="@link.DisplayPath">
                     @link.Title
                 </span>
             }
         </div>
     }
-    else if (!_loading)
+    else if (!IsLoading)
     {
         <div class="links-panel-empty">No outgoing links</div>
     }
 </div>
 
 @code {
-    [Parameter]
-    public Guid ArticleId { get; set; }
-
-    [Parameter]
-    public bool IsOpen { get; set; }
-
-    private List<BacklinkDto> _outgoingLinks = new();
-    private bool _loading = false;
-    private Guid _lastArticleId = Guid.Empty;
-    private bool _wasOpen = false;
-    private bool _hasLoaded = false;
-
-    protected override async Task OnParametersSetAsync()
-    {
-        var articleChanged = ArticleId != _lastArticleId;
-        var drawerOpened = IsOpen && !_wasOpen;
-        
-        if (articleChanged)
-        {
-            _lastArticleId = ArticleId;
-            _hasLoaded = false;
-            _outgoingLinks = new();
-        }
-        
-        // Load when drawer opens for the first time, or when article changes and drawer is already open
-        if ((drawerOpened || (articleChanged && IsOpen)) && !_hasLoaded)
-        {
-            await LoadAsync();
-        }
-        
-        _wasOpen = IsOpen;
-    }
+    /// <summary>
+    /// The list of outgoing links to display.
+    /// Parent component is responsible for loading this data.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public List<BacklinkDto> OutgoingLinks { get; set; } = new();
 
     /// <summary>
-    /// Public method to refresh the links (called after save).
+    /// Whether data is currently being loaded.
+    /// Controls the loading indicator display.
     /// </summary>
-    public async Task RefreshAsync()
-    {
-        await LoadAsync();
-    }
+    [Parameter]
+    public bool IsLoading { get; set; }
 
-    private async Task LoadAsync()
-    {
-        _loading = true;
-        _hasLoaded = true;
-        StateHasChanged();
-
-        try
-        {
-            _outgoingLinks = await LinkApiService.GetOutgoingLinksAsync(ArticleId);
-            Logger.LogDebug("Loaded {Count} outgoing links for article {ArticleId}", _outgoingLinks.Count, ArticleId);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error loading outgoing links for article {ArticleId}", ArticleId);
-            _outgoingLinks = new List<BacklinkDto>();
-        }
-        finally
-        {
-            _loading = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task NavigateToArticle(Guid articleId)
-    {
-        try
-        {
-            var path = await ArticleCache.GetNavigationPathAsync(articleId);
-            
-            if (!string.IsNullOrEmpty(path))
-            {
-                Navigation.NavigateTo($"/article/{path}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error navigating to article {ArticleId}", articleId);
-        }
-    }
+    /// <summary>
+    /// Callback when user clicks an outgoing link.
+    /// Parent handles the navigation logic.
+    /// </summary>
+    [Parameter]
+    public EventCallback<Guid> OnNavigateToArticle { get; set; }
 }
 
 <style>

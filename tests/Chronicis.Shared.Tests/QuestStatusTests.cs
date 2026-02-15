@@ -38,7 +38,7 @@ public class QuestStatusTests
     public void QuestStatus_GetValues_ReturnsAllExpectedValues()
     {
         var values = Enum.GetValues<QuestStatus>();
-        
+
         Assert.Equal(4, values.Length);
         Assert.Contains(QuestStatus.Active, values);
         Assert.Contains(QuestStatus.Completed, values);
@@ -50,7 +50,7 @@ public class QuestStatusTests
     public void QuestStatus_GetNames_ReturnsCorrectNames()
     {
         var names = Enum.GetNames<QuestStatus>();
-        
+
         Assert.Equal(4, names.Length);
         Assert.Contains("Active", names);
         Assert.Contains("Completed", names);
@@ -142,7 +142,7 @@ public class QuestStatusTests
     {
         var result = Enum.TryParse<QuestStatus>(name, out var value);
         Assert.Equal(shouldSucceed, result);
-        
+
         if (shouldSucceed)
         {
             Assert.True(Enum.IsDefined(typeof(QuestStatus), value));
@@ -154,12 +154,12 @@ public class QuestStatusTests
     {
         // Ensure no gaps in the sequence 0, 1, 2, 3
         var values = Enum.GetValues<QuestStatus>().Select(v => (int)v).OrderBy(v => v).ToList();
-        
+
         Assert.Equal(0, values[0]);
         Assert.Equal(1, values[1]);
         Assert.Equal(2, values[2]);
         Assert.Equal(3, values[3]);
-        
+
         // No gaps
         for (int i = 0; i < values.Count - 1; i++)
         {
@@ -188,7 +188,7 @@ public class QuestStatusTests
         var ongoingStates = Enum.GetValues<QuestStatus>()
             .Where(s => s == QuestStatus.Active)
             .ToList();
-        
+
         Assert.Single(ongoingStates);
         Assert.Equal(QuestStatus.Active, ongoingStates[0]);
     }

@@ -16,7 +16,7 @@ public class ArticleTests
     public void Article_DefaultValues_AreCorrect()
     {
         var article = new Article();
-        
+
         Assert.Equal(string.Empty, article.Title);
         Assert.Equal(string.Empty, article.Slug);
         Assert.Equal(ArticleType.WikiArticle, article.Type);
@@ -35,7 +35,7 @@ public class ArticleTests
         var before = DateTime.UtcNow.AddSeconds(-1);
         var article = new Article();
         var after = DateTime.UtcNow.AddSeconds(1);
-        
+
         Assert.InRange(article.CreatedAt, before, after);
     }
 
@@ -45,7 +45,7 @@ public class ArticleTests
         var before = DateTime.UtcNow.AddSeconds(-1);
         var article = new Article();
         var after = DateTime.UtcNow.AddSeconds(1);
-        
+
         Assert.InRange(article.EffectiveDate, before, after);
     }
 
@@ -119,7 +119,7 @@ public class ArticleTests
     {
         var summaryGeneratedAt = DateTime.UtcNow;
         var templateId = Guid.NewGuid();
-        
+
         var article = new Article
         {
             SummaryTemplateId = templateId,
@@ -163,7 +163,7 @@ public class ArticleTests
     public void Article_NavigationProperties_InitializeAsEmpty()
     {
         var article = new Article();
-        
+
         Assert.Empty(article.OutgoingLinks);
         Assert.Empty(article.IncomingLinks);
         Assert.Empty(article.Aliases);
@@ -175,7 +175,7 @@ public class ArticleTests
     public void Article_NullableNavigationProperties_AreNull()
     {
         var article = new Article();
-        
+
         Assert.Null(article.Parent);
         Assert.Null(article.Children);
         Assert.Null(article.World);

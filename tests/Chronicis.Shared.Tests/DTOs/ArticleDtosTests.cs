@@ -20,7 +20,7 @@ public class ArticleDtosTests
     public void ArticleDto_DefaultValues_AreCorrect()
     {
         var dto = new ArticleDto();
-        
+
         Assert.Equal(string.Empty, dto.Title);
         Assert.Equal(string.Empty, dto.Slug);
         Assert.Equal(string.Empty, dto.Body);
@@ -88,7 +88,7 @@ public class ArticleDtosTests
     public void ArticleTreeDto_DefaultValues_AreCorrect()
     {
         var dto = new ArticleTreeDto();
-        
+
         Assert.Equal(string.Empty, dto.Title);
         Assert.Equal(string.Empty, dto.Slug);
         Assert.False(dto.HasChildren);
@@ -136,7 +136,7 @@ public class ArticleDtosTests
     public void ArticleCreateDto_DefaultValues_AreCorrect()
     {
         var dto = new ArticleCreateDto();
-        
+
         Assert.Equal(string.Empty, dto.Title);
         Assert.Equal(string.Empty, dto.Body);
         Assert.Equal(ArticleType.WikiArticle, dto.Type);
@@ -179,7 +179,7 @@ public class ArticleDtosTests
     public void ArticleUpdateDto_DefaultValues_AreCorrect()
     {
         var dto = new ArticleUpdateDto();
-        
+
         Assert.Equal(string.Empty, dto.Title);
         Assert.Equal(string.Empty, dto.Body);
         Assert.Null(dto.Visibility);
@@ -222,7 +222,7 @@ public class ArticleDtosTests
     public void BreadcrumbDto_DefaultValues_AreCorrect()
     {
         var dto = new BreadcrumbDto();
-        
+
         Assert.Equal(string.Empty, dto.Title);
         Assert.Equal(string.Empty, dto.Slug);
         Assert.False(dto.IsWorld);

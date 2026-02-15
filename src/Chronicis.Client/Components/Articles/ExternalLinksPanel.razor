@@ -1,21 +1,21 @@
 @using Chronicis.Shared.DTOs
-@inject IArticleExternalLinkApiService ExternalLinkApiService
-@inject ILogger<ExternalLinksPanel> Logger
+
+@* Refactored ExternalLinksPanel - Now accepts data as parameters instead of fetching directly *@
 
 <div class="links-panel">
     <div class="links-panel-header">
         <span class="links-panel-title">External Resources</span>
-        @if (_loading)
+        @if (IsLoading)
         {
             <span class="links-panel-loading">...</span>
         }
-        <span class="links-panel-count">@_externalLinks.Count</span>
+        <span class="links-panel-count">@ExternalLinks.Count</span>
     </div>
 
-    @if (_externalLinks.Any())
+    @if (ExternalLinks.Any())
     {
         <div class="external-links-container">
-            @foreach (var group in _externalLinks.GroupBy(el => el.Source))
+            @foreach (var group in ExternalLinks.GroupBy(el => el.Source))
             {
                 <div class="external-links-source-group">
                     <div class="external-links-source-badge">@GetSourceDisplayName(group.Key)</div>
@@ -32,76 +32,26 @@
             }
         </div>
     }
-    else if (!_loading)
+    else if (!IsLoading)
     {
         <div class="links-panel-empty">No external resources</div>
     }
 </div>
 
 @code {
-    [Parameter]
-    public Guid ArticleId { get; set; }
-
-    [Parameter]
-    public bool IsOpen { get; set; }
-
-    private List<ArticleExternalLinkDto> _externalLinks = new();
-    private bool _loading = false;
-    private Guid _lastArticleId = Guid.Empty;
-    private bool _wasOpen = false;
-    private bool _hasLoaded = false;
-
-    protected override async Task OnParametersSetAsync()
-    {
-        var articleChanged = ArticleId != _lastArticleId;
-        var drawerOpened = IsOpen && !_wasOpen;
-        
-        if (articleChanged)
-        {
-            _lastArticleId = ArticleId;
-            _hasLoaded = false;
-            _externalLinks = new();
-        }
-        
-        // Load when drawer opens for the first time, or when article changes and drawer is already open
-        if ((drawerOpened || (articleChanged && IsOpen)) && !_hasLoaded)
-        {
-            await LoadAsync();
-        }
-        
-        _wasOpen = IsOpen;
-    }
+    /// <summary>
+    /// The list of external links to display.
+    /// Parent component is responsible for loading this data.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public List<ArticleExternalLinkDto> ExternalLinks { get; set; } = new();
 
     /// <summary>
-    /// Public method to refresh the external links (called after save).
+    /// Whether data is currently being loaded.
+    /// Controls the loading indicator display.
     /// </summary>
-    public async Task RefreshAsync()
-    {
-        await LoadAsync();
-    }
-
-    private async Task LoadAsync()
-    {
-        _loading = true;
-        _hasLoaded = true;
-        StateHasChanged();
-
-        try
-        {
-            _externalLinks = await ExternalLinkApiService.GetExternalLinksAsync(ArticleId);
-            Logger.LogDebug("Loaded {Count} external links for article {ArticleId}", _externalLinks.Count, ArticleId);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error loading external links for article {ArticleId}", ArticleId);
-            _externalLinks = new List<ArticleExternalLinkDto>();
-        }
-        finally
-        {
-            _loading = false;
-            StateHasChanged();
-        }
-    }
+    [Parameter]
+    public bool IsLoading { get; set; }
 
     private static string GetSourceDisplayName(string source)
     {

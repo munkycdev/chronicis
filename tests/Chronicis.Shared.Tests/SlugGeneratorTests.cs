@@ -249,7 +249,7 @@ public class SlugGeneratorTests
     [InlineData("", false)]
     [InlineData(null, false)]
     [InlineData("   ", false)]
-    public void IsValidSlug_InvalidSlugs_ReturnsFalse(string slug, bool expected)
+    public void IsValidSlug_InvalidSlugs_ReturnsFalse(string? slug, bool expected)
     {
         var result = SlugGenerator.IsValidSlug(slug);
         Assert.Equal(expected, result);
@@ -332,7 +332,7 @@ public class SlugGeneratorTests
             else
                 existingSlugs.Add($"slug-{i}");
         }
-        
+
         var result = SlugGenerator.GenerateUniqueSlug("slug", existingSlugs);
         Assert.Equal("slug-101", result);
     }
@@ -340,15 +340,15 @@ public class SlugGeneratorTests
     [Fact]
     public void GenerateUniqueSlug_MixedCollisions_HandlesCorrectly()
     {
-        var existingSlugs = new HashSet<string> 
-        { 
+        var existingSlugs = new HashSet<string>
+        {
             "test-slug",
             "other-slug",
             "test-slug-2",
             "another-slug",
             "test-slug-3"
         };
-        
+
         var result = SlugGenerator.GenerateUniqueSlug("test-slug", existingSlugs);
         Assert.Equal("test-slug-4", result);
     }
@@ -362,7 +362,7 @@ public class SlugGeneratorTests
     {
         var title = "Hello World";
         var slug = SlugGenerator.GenerateSlug(title);
-        
+
         Assert.True(SlugGenerator.IsValidSlug(slug));
     }
 
@@ -383,7 +383,7 @@ public class SlugGeneratorTests
     {
         var existingSlugs = new HashSet<string> { "test" };
         var slug = SlugGenerator.GenerateUniqueSlug("test", existingSlugs);
-        
+
         Assert.True(SlugGenerator.IsValidSlug(slug));
         Assert.Equal("test-2", slug);
     }
@@ -393,10 +393,10 @@ public class SlugGeneratorTests
     {
         var title = "My Article Title";
         var existingSlugs = new HashSet<string> { "my-article-title" };
-        
+
         var baseSlug = SlugGenerator.GenerateSlug(title);
         var uniqueSlug = SlugGenerator.GenerateUniqueSlug(baseSlug, existingSlugs);
-        
+
         Assert.Equal("my-article-title", baseSlug);
         Assert.Equal("my-article-title-2", uniqueSlug);
         Assert.True(SlugGenerator.IsValidSlug(uniqueSlug));

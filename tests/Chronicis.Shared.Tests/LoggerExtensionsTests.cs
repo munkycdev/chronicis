@@ -374,7 +374,7 @@ public class LoggerExtensionsTests
     public void AllLogMethods_CheckIsEnabledBeforeLogging()
     {
         var logger = Substitute.For<ILogger>();
-        
+
         // Set all log levels to disabled
         logger.IsEnabled(Arg.Any<LogLevel>()).Returns(false);
 

@@ -146,7 +146,7 @@ public sealed class OutputWriterTests
     private static string CreateTempDir()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"chronicis-tests-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(tempDir+"/out");
+        Directory.CreateDirectory(tempDir + "/out");
         return tempDir;
     }
 }
