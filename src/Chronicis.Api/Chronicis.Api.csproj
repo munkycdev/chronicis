@@ -34,14 +34,14 @@
 		<!-- Application Insights (TO BE REMOVED IN LATER PHASE) -->
 		
 		<!-- Serilog -->
-		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+		<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
 		
 		<!-- Datadog APM -->
 		<PackageReference Include="Datadog.Trace" Version="3.35.0" />
-		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 		<PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-		<PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+		<PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
 		
 		<!-- JWT Token Handling -->
 		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.15.0" />
