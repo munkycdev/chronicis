@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Chronicis.Api.Tests;
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>")]
 public class ArcServiceTests : IDisposable
 {
     private readonly ChronicisDbContext _context;
@@ -51,7 +52,7 @@ public class ArcServiceTests : IDisposable
     private void SeedTestData()
     {
         // Seed basic world with GM and Player
-        var (world, gm, player) = TestHelpers.SeedBasicWorld(_context);
+        var (world, gm, _) = TestHelpers.SeedBasicWorld(_context);
 
         // Add a campaign
         var campaign = TestHelpers.CreateCampaign(

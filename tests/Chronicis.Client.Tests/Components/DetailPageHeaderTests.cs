@@ -136,8 +136,8 @@ public class DetailPageHeaderTests : MudBlazorTestContext
         // Arrange
         var breadcrumbs = new List<BreadcrumbItem>
         {
-            new BreadcrumbItem("Worlds", "/worlds"),
-            new BreadcrumbItem("My World", null, disabled: true)
+            new("Worlds", "/worlds"),
+            new("My World", null, disabled: true)
         };
 
         // Act
@@ -160,10 +160,12 @@ public class DetailPageHeaderTests : MudBlazorTestContext
         // Act
         var cut = RenderComponent<DetailPageHeader>(parameters => parameters
             .Add(p => p.Title, "Original")
-            .Add(p => p.TitleChanged, (string title) => callbackTitle = title));
+            .Add(p => p.TitleChanged, title => callbackTitle = title));
 
         var textField = cut.FindComponent<MudTextField<string>>();
+#pragma warning disable BL0005 // Component parameter should not be set outside of its component.
         textField.Instance.Value = newTitle;
+#pragma warning restore BL0005 // Component parameter should not be set outside of its component.
         cut.InvokeAsync(async () => await textField.Instance.ValueChanged.InvokeAsync(newTitle));
 
         // Assert
@@ -182,7 +184,9 @@ public class DetailPageHeaderTests : MudBlazorTestContext
             .Add(p => p.OnTitleEdited, () => editedCallbackInvoked = true));
 
         var textField = cut.FindComponent<MudTextField<string>>();
+#pragma warning disable BL0005 // Component parameter should not be set outside of its component.
         textField.Instance.Value = "New Title";
+#pragma warning restore BL0005 // Component parameter should not be set outside of its component.
         cut.InvokeAsync(async () => await textField.Instance.ValueChanged.InvokeAsync("New Title"));
 
         // Assert

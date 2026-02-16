@@ -8,6 +8,14 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>$(NoWarn);IL2007;IL2008;xUnit1051</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>$(NoWarn);IL2007;IL2008;xUnit1051</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Azure.Core" Version="1.51.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
