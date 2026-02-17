@@ -1,0 +1,424 @@
+@page "/getting-started"
+@attribute [Authorize]
+@inject IUserApiService UserApi
+@inject IWorldApiService WorldApi
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+@code {
+    private readonly ILogger<GettingStarted> _logger;
+
+    // Direct constructor injection
+    public GettingStarted(ILogger<GettingStarted> logger)
+    {
+        _logger = logger;
+    }
+}
+
+<PageTitle>Quick Start Guide - Chronicis</PageTitle>
+
+<div class="getting-started-page">
+    <div class="getting-started-content">
+        @if (_currentStep == 0)
+        {
+            <!-- Step 1: Welcome -->
+            <div class="step-container chronicis-fade-in">
+                <div class="welcome-icon">📖✨</div>
+                <h1>@(_isReturningUser ? "Quick Start Guide" : "Welcome to Chronicis")</h1>
+                <p class="welcome-subtitle">
+                    Your personal chronicle for tabletop adventures
+                </p>
+                
+                <div class="welcome-features">
+                    <div class="feature-item">
+                        <span class="feature-icon">🌍</span>
+                        <div>
+                            <strong>Build Your World</strong>
+                            <p>Create rich settings with locations, NPCs, and lore</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📝</span>
+                        <div>
+                            <strong>Track Your Sessions</strong>
+                            <p>Document adventures and never forget what happened</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🔗</span>
+                        <div>
+                            <strong>Connect Everything</strong>
+                            <p>Link articles together with wiki-style [[brackets]]</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🤖</span>
+                        <div>
+                            <strong>AI-Powered Summaries</strong>
+                            <p>Let AI help you remember the important details</p>
+                        </div>
+                    </div>
+                </div>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           OnClick="NextStep"
+                           Class="mt-6"
+                           EndIcon="@Icons.Material.Filled.ArrowForward">
+                    @(_isReturningUser ? "Review the Basics" : "Let's Get Started")
+                </MudButton>
+            </div>
+        }
+        else if (_currentStep == 1)
+        {
+            <!-- Step 2: Understanding the Structure -->
+            <div class="step-container chronicis-fade-in">
+                <div class="step-icon">🏗️</div>
+                <h1>How Chronicis is Organized</h1>
+                <p class="step-subtitle">
+                    Your content is organized in a hierarchy that mirrors how tabletop campaigns work.
+                </p>
+
+                <div class="structure-explanation">
+                    <div class="structure-item">
+                        <div class="structure-header">
+                            <span class="structure-icon">🌍</span>
+                            <strong>World</strong>
+                        </div>
+                        <p>
+                            Your campaign setting — the universe where your adventures take place. 
+                            This could be an official setting like <em>Forgotten Realms</em> or <em>Eberron</em>, 
+                            or your own homebrew creation. Everything else lives inside a World.
+                        </p>
+                    </div>
+
+                    <div class="structure-item">
+                        <div class="structure-header">
+                            <span class="structure-icon">📜</span>
+                            <strong>Campaign</strong>
+                        </div>
+                        <p>
+                            A specific adventure or ongoing game with your group. You might run 
+                            <em>Curse of Strahd</em> and <em>Tomb of Annihilation</em> in the same world — 
+                            those would be two separate campaigns. Each campaign tracks its own story.
+                        </p>
+                    </div>
+
+                    <div class="structure-item">
+                        <div class="structure-header">
+                            <span class="structure-icon">📚</span>
+                            <strong>Arc</strong>
+                        </div>
+                        <p>
+                            Story chapters within a campaign. Maybe your party spent several sessions 
+                            in Waterdeep, then traveled to Baldur's Gate — those could be separate arcs. 
+                            Arcs help you organize sessions into meaningful chunks.
+                        </p>
+                    </div>
+
+                    <div class="structure-item">
+                        <div class="structure-header">
+                            <span class="structure-icon">🎲</span>
+                            <strong>Session</strong>
+                        </div>
+                        <p>
+                            A single game night. Each session belongs to an arc and captures what 
+                            happened during that play session — encounters, discoveries, memorable moments.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Default"
+                               OnClick="PreviousStep"
+                               StartIcon="@Icons.Material.Filled.ArrowBack">
+                        Back
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               OnClick="NextStep"
+                               EndIcon="@Icons.Material.Filled.ArrowForward">
+                        Continue
+                    </MudButton>
+                </div>
+            </div>
+        }
+        else if (_currentStep == 2)
+        {
+            <!-- Step 3: Sidebar Sections -->
+            <div class="step-container chronicis-fade-in">
+                <div class="step-icon">📂</div>
+                <h1>Your Sidebar Sections</h1>
+                <p class="step-subtitle">
+                    Each world has four main sections in the sidebar to organize your content.
+                </p>
+
+                <div class="sections-explanation">
+                    <div class="section-item campaigns">
+                        <div class="section-header">
+                            <span class="section-badge">📁</span>
+                            <strong>CAMPAIGNS</strong>
+                        </div>
+                        <p>
+                            Where your game sessions live. Create campaigns, add arcs to organize 
+                            the story, then log sessions as you play. This is your adventure timeline.
+                        </p>
+                        <div class="section-tip">
+                            <strong>Tip:</strong> After each session, jot down key events, NPCs met, 
+                            and decisions made. Future you will thank present you.
+                        </div>
+                    </div>
+
+                    <div class="section-item characters">
+                        <div class="section-header">
+                            <span class="section-badge">👥</span>
+                            <strong>PLAYER CHARACTERS</strong>
+                        </div>
+                        <p>
+                            Home for player characters in your group. Create a character articles on the World Detail page,
+                            then <strong>claim it as yours</strong> to see it on your dashboard. 
+                            Track backstory, goals, relationships, and growth.
+                        </p>
+                        <div class="section-tip">
+                            <strong>Tip:</strong> Link your character to NPCs and locations using 
+                            [[wiki links]] to build a web of connections.
+                        </div>
+                    </div>
+
+                    <div class="section-item wiki">
+                        <div class="section-header">
+                            <span class="section-badge">📖</span>
+                            <strong>WIKI</strong>
+                        </div>
+                        <p>
+                            Your world-building encyclopedia. Document locations, NPCs, factions, 
+                            items, lore, religions, history — anything that makes your world feel alive. 
+                            Nest articles to create hierarchies (e.g., Continent → Region → City → District).
+                        </p>
+                        <div class="section-tip">
+                            <strong>Tip:</strong> Use the AI Summary feature on articles with lots of 
+                            backlinks to auto-generate useful overviews.
+                        </div>
+                    </div>
+
+                    <div class="section-item resources">
+                        <div class="section-header">
+                            <span class="section-badge">🔗</span>
+                            <strong>EXTERNAL RESOURCES</strong>
+                        </div>
+                        <p>
+                            Quick links to tools your group uses — D&D Beyond character sheets, 
+                            Roll20 or Foundry VTT, shared Google Drives, Discord servers. 
+                            Plus, upload documents like character sheets, maps, handouts, and reference 
+                            materials (PDFs, Office files, images up to 200MB) to keep everything in one place.
+                        </p>
+                        <div class="section-tip">
+                            <strong>Tip:</strong> Only the world owner can upload and manage documents, 
+                            but all members can download them.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Default"
+                               OnClick="PreviousStep"
+                               StartIcon="@Icons.Material.Filled.ArrowBack">
+                        Back
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               OnClick="NextStep"
+                               EndIcon="@Icons.Material.Filled.ArrowForward">
+                        Continue
+                    </MudButton>
+                </div>
+            </div>
+        }
+        else if (_currentStep == 3)
+        {
+            <!-- Step 4: Ready to Go -->
+            <div class="step-container chronicis-fade-in">
+                <div class="step-icon">🎉</div>
+                <h1>You're Ready!</h1>
+                <p class="step-subtitle">
+                    Here's how to get the most out of Chronicis:
+                </p>
+
+                <div class="tips-grid">
+                    <div class="tip-card">
+                        <div class="tip-icon">🔗</div>
+                        <strong>Link Everything</strong>
+                        <p>Type <code>[[Article Name]]</code> to create links between articles. 
+                        This builds a connected knowledge base.</p>
+                    </div>
+
+                    <div class="tip-card">
+                        <div class="tip-icon">👤</div>
+                        <strong>Claim Your Character</strong>
+                        <p>Open your character article and click "Claim as My Character" 
+                        to see it on your dashboard.</p>
+                    </div>
+
+                    <div class="tip-card">
+                        <div class="tip-icon">🤖</div>
+                        <strong>Generate Summaries</strong>
+                        <p>Articles with backlinks can generate AI summaries. 
+                        Click the summary button in the article sidebar.</p>
+                    </div>
+
+                    <div class="tip-card">
+                        <div class="tip-icon">⌨️</div>
+                        <strong>Keyboard Shortcuts</strong>
+                        <p><code>Ctrl+S</code> to save, <code>Ctrl+N</code> to create a new article. 
+                        Your work also auto-saves as you type.</p>
+                    </div>
+
+                    <div class="tip-card">
+                        <div class="tip-icon">📂</div>
+                        <strong>Drag to Organize</strong>
+                        <p>Drag articles in the sidebar to reorganize your hierarchy. 
+                        Nest content however makes sense for your world.</p>
+                    </div>
+
+                    <div class="tip-card">
+                        <div class="tip-icon">🌐</div>
+                        <strong>Share Your World</strong>
+                        <p>Make your world public in World Settings to share it with anyone 
+                        via a custom URL—no login required for viewers.</p>
+                    </div>
+
+                    <div class="tip-card">
+                        <div class="tip-icon">🔒</div>
+                        <strong>Keep Secrets Private</strong>
+                        <p>Toggle any article to private in the metadata panel. 
+                        Only you can see private articles—perfect for DM notes or plot twists.</p>
+                    </div>
+
+                    <div class="tip-card">
+                        <div class="tip-icon">❓</div>
+                        <strong>Need Help?</strong>
+                        <p>Click the help icon in the top bar anytime to return to this guide.</p>
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Default"
+                               OnClick="PreviousStep"
+                               StartIcon="@Icons.Material.Filled.ArrowBack">
+                        Back
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               OnClick="CompleteOnboarding"
+                               Disabled="_isCompleting"
+                               EndIcon="@Icons.Material.Filled.Check">
+                        @if (_isCompleting)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Finishing up...</span>
+                        }
+                        else if (_isReturningUser)
+                        {
+                            <span>Back to Dashboard</span>
+                        }
+                        else
+                        {
+                            <span>Start Your Chronicle</span>
+                        }
+                    </MudButton>
+                </div>
+            </div>
+        }
+
+        <!-- Progress Dots -->
+        <div class="progress-dots">
+            @for (int i = 0; i < 4; i++)
+            {
+                var step = i;
+                <div class="dot @(step == _currentStep ? "active" : "") @(step < _currentStep ? "completed" : "")"
+                     @onclick="() => GoToStep(step)"></div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private int _currentStep = 0;
+    private bool _isCompleting = false;
+    private bool _isReturningUser = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var profile = await UserApi.GetUserProfileAsync();
+        _isReturningUser = profile?.HasCompletedOnboarding == true;
+    }
+
+    private void NextStep()
+    {
+        if (_currentStep < 3)
+        {
+            _currentStep++;
+            StateHasChanged();
+        }
+    }
+
+    private void PreviousStep()
+    {
+        if (_currentStep > 0)
+        {
+            _currentStep--;
+            StateHasChanged();
+        }
+    }
+
+    private void GoToStep(int step)
+    {
+        if (step >= 0 && step <= 3)
+        {
+            _currentStep = step;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CompleteOnboarding()
+    {
+        if (_isReturningUser)
+        {
+            Navigation.NavigateTo("/dashboard");
+            return;
+        }
+
+        _isCompleting = true;
+        StateHasChanged();
+
+        try
+        {
+            var success = await UserApi.CompleteOnboardingAsync();
+            if (success)
+            {
+                Navigation.NavigateTo("/dashboard", replace: true);
+            }
+            else
+            {
+                Snackbar.Add("Failed to complete setup. Please try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorSanitized(ex, "Error completing onboarding");
+            Snackbar.Add("An error occurred. Please try again.", Severity.Error);
+        }
+        finally
+        {
+            _isCompleting = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chronicis — Campaign Notes for Tabletop RPGs</title>
+    <base href="/" />
+    
+    <meta name="description" content="Chronicis is the knowledge base built for tabletop RPGs. Organize your world, link your lore, and let AI help you remember what happened three sessions ago." />
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+
+    <!-- MudBlazor -->
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+
+    <!-- Chronicis Theme (must load after MudBlazor) -->
+    <link href="/css/chronicis-theme.css" rel="stylesheet" />
+    <link href="/css/app.css" rel="stylesheet" />
+
+    <!-- Chronicis Components -->
+    <link href="/css/chronicis-public.css" rel="stylesheet" />
+    <link href="/css/chronicis-appbar.css" rel="stylesheet" />
+    <link href="/css/article-tree.css" rel="stylesheet" />
+    <link href="/css/chronicis-home.css" rel="stylesheet" />
+    <link href="/css/chronicis-search.css" rel="stylesheet" />
+    <link href="/css/chronicis-ai-summary.css" rel="stylesheet" />
+    <link href="/css/chronicis-emoji-picker.css" rel="stylesheet" />
+    <link href="/css/chronicis-icon-picker.css" rel="stylesheet" />
+    <link href="/css/chronicis-wiki-links.css" rel="stylesheet" />
+    <link href="/css/chronicis-detail-panel.css" rel="stylesheet" />
+    <link href="/css/tipTapStyles.css" rel="stylesheet" />
+    <link href="/css/chronicis-image-upload.css" rel="stylesheet" />
+    
+    <!-- Chronicis Page-Specific Styles -->
+    <link href="/css/chronicis-dashboard.css" rel="stylesheet" />
+    <link href="/css/chronicis-onboarding.css" rel="stylesheet" />
+    <link href="/css/chronicis-world-detail.css" rel="stylesheet" />
+    <link href="/css/chronicis-changelog.css" rel="stylesheet" />
+    <link href="/css/chronicis-auth.css" rel="stylesheet" />
+
+    <!-- Chronicis Favicon -->
+    <link rel="icon" href="/favicon.ico" />
+
+    <!-- DataDog RUM (Real User Monitoring) -->
+    <script>
+        (function(h,o,u,n,d) {
+            h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
+            d=o.createElement(u);d.async=1;d.src=n
+            n=o.getElementsByTagName(u)[0];n.parentNode.insertBefore(d,n)
+        })(window,document,'script','https://www.datadoghq-browser-agent.com/us1/v5/datadog-rum.js','DD_RUM')
+        
+        window.DD_RUM.onReady(function() {
+            window.DD_RUM.init({
+                clientToken: 'pubb03589c4fa34c0602e4968f6867aa522',
+                applicationId: 'a6697c45-806a-4bf9-bd5f-d4f7f3a1c824',
+                site: 'us5.datadoghq.com',
+                service: 'chronicis-client',
+                env: 'prod',
+                version: '1.0.0',
+                sessionSampleRate: 100,
+                sessionReplaySampleRate: 20,
+				trackBfcacheViews: true,
+                trackUserInteractions: true,
+                trackResources: true,
+                trackLongTasks: true,
+                defaultPrivacyLevel: 'mask-user-input'
+            });
+        });
+    </script>
+
+    <!-- TipTap Editor -->
+    <script type="module">
+        import { Editor, Node } from 'https://esm.sh/@tiptap/core@3.11.0';
+        import StarterKit from 'https://esm.sh/@tiptap/starter-kit@3.11.0';
+        import Image from 'https://esm.sh/@tiptap/extension-image@3.11.0';
+
+        window.TipTap = { Editor, StarterKit, Node, Image };
+        window.dispatchEvent(new Event('tiptap-ready'));
+    </script>
+
+    <!-- Emoji Picker (Picmo) -->
+    <script type="module">
+        import { createPicker } from 'https://unpkg.com/picmo@latest/dist/index.js';
+        window.Picmo = { createPicker };
+        window.dispatchEvent(new Event('picmo-ready'));
+    </script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="chronicis-loading-screen">
+            <div class="chronicis-loading-container">
+                <span class="chronicis-logo-animated">
+                    <img src="/images/logo.png" alt="Chronicis" class="chronicis-logo-pulse" height="250" width="250" style="margin-bottom:25px;" />
+                </span>
+                <h1 class="chronicis-loading-text">Loading Chronicis...</h1>
+                <h2 class="chronicis-loading-subtext">Your adventures deserve stories.</h2>
+            </div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        <div class="chronicis-error-container">
+            <div class="chronicis-error-icon">⚠️</div>
+            <div class="chronicis-error-text">
+                An error has occurred.
+                <a href="" class="reload">Reload</a>
+                <span class="dismiss">✕</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="/js/keyboardShortcuts.js"></script>
+    <script src="/js/wikiLinkExtension.js"></script>
+    <script src="/js/wikiLinkAutocomplete.js"></script>
+    <script src="/js/tipTapIntegration.js"></script>
+    <script src="/js/imageUpload.js"></script>
+    <script src="/js/emojiPickerInterop.js"></script>
+    <script src="/js/publicWikiLinks.js"></script>
+    <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
+</body>
+
+</html>

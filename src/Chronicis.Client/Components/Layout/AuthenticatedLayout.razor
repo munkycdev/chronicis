@@ -1,0 +1,366 @@
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Chronicis.Client.Models
+@using Chronicis.Shared.DTOs
+@using Chronicis.Client.Components.Quests
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject ITreeStateService TreeState
+@inject IAuthService AuthService
+@inject IArticleApiService ArticleApi
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject MudTheme ChronicisTheme
+@inject IMetadataDrawerService MetadataDrawerService
+@inject IQuestDrawerService QuestDrawerService
+@inject IKeyboardShortcutService KeyboardShortcutService
+@inject IAdminAuthService AdminAuthService
+@inject ILogger<AuthenticatedLayout> Logger
+@implements IAsyncDisposable
+
+<MudThemeProvider Theme="ChronicisTheme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="2">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="@ToggleDrawer" />
+
+        <a href="/dashboard" class="d-flex align-center chronicis-home-link">
+            <img src="/images/logo.png" alt="Chronicis" class="chronicis-logo" />
+            <MudText Typo="Typo.h6" Class="chronicis-title">Chronicis</MudText>
+        </a>
+
+        <MudSpacer />
+
+        <MudTextField @bind-Value="_globalSearchQuery"
+                      Placeholder="Search content..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Style="max-width: 400px; background-color: rgba(255,255,255,0.1);"
+                      Class="global-search-input"
+                      Immediate="true"
+                      @onkeydown="OnGlobalSearchKeyDown" />
+
+        <MudTooltip Text="Quick Start Guide">
+            <MudIconButton Icon="@Icons.Material.Filled.Help"
+                           Color="Color.Inherit"
+                           OnClick="@(() => Navigation.NavigateTo("/getting-started"))" />
+        </MudTooltip>
+
+        @if (_isSysAdmin)
+        {
+            <MudTooltip Text="Admin Utilities">
+                <MudIconButton Icon="@Icons.Material.Filled.AdminPanelSettings"
+                               Color="Color.Inherit"
+                               OnClick="@(() => Navigation.NavigateTo("/admin/utilities"))" />
+            </MudTooltip>
+        }
+
+        <MudMenu Icon="@Icons.Material.Filled.AccountCircle"
+                 Color="Color.Inherit"
+                 AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight">
+            <ChildContent>
+                <div class="user-info" style="padding: 12px 16px; min-width: 200px;">
+                    @if (!string.IsNullOrEmpty(_currentUser?.AvatarUrl))
+                    {
+                        <MudImage Src="@_currentUser.AvatarUrl" Style="margin-bottom: 8px;" />
+                    }
+                    <div style="margin-top: 8px;">
+                        <div style="font-weight: 600;">@_currentUser?.DisplayName</div>
+                        <div style="font-size: 0.85rem; opacity: 0.8;">@_currentUser?.Email</div>
+                    </div>
+                </div>
+                <MudDivider />
+                <MudMenuItem Icon="@Icons.Material.Filled.Settings"
+                    IconColor="Color.Default"
+                    Href="/settings">
+                    Settings
+                </MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.Logout"
+                    IconColor="Color.Primary"
+                    OnClick="BeginSignOut">
+                    Logout
+                </MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen"
+               Elevation="2"
+               ClipMode="DrawerClipMode.Always"
+               Width="320px">
+
+        <div class="chronicis-search-box">
+            <MudTextField @bind-Value="_treeSearch"
+                          @bind-Value:after="OnTreeSearchChanged"
+                          Placeholder="Filter articles..."
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@(_treeSearch?.Length > 0 ? Icons.Material.Filled.Clear : Icons.Material.Filled.Search)"
+                          AdornmentColor="Color.Primary"
+                          OnAdornmentClick="ClearSearch"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Immediate="true"
+                          DebounceInterval="200"
+                          Class="mb-2" />
+        </div>
+
+        <QuickAddSession />
+
+        <ArticleTreeView />
+    </MudDrawer>
+
+    <MudMainContent Class="mud-main-content">
+        <div class="authenticated-content-wrapper">
+            <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+                <ErrorBoundary>
+                    <ChildContent>
+                        @Body
+                    </ChildContent>
+                    <ErrorContent Context="exception">
+                        <div class="chronicis-error-state">
+                            <MudPaper Elevation="3" Class="pa-4">
+                                <div class="chronicis-empty-state">
+                                    <div class="chronicis-empty-state-icon">⚠️</div>
+                                    <MudText Typo="Typo.h5" Class="chronicis-empty-state-title mb-3">
+                                        Something went wrong
+                                    </MudText>
+                                    <MudText Typo="Typo.body1" Class="chronicis-empty-state-message mb-4">
+                                        An unexpected error occurred. Please try refreshing the page.
+                                    </MudText>
+                                    <MudButton Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               OnClick="@(() => Navigation.NavigateTo(Navigation.Uri, forceLoad: true))">
+                                        Refresh Page
+                                    </MudButton>
+                                </div>
+                            </MudPaper>
+                        </div>
+                    </ErrorContent>
+                </ErrorBoundary>
+            </MudContainer>
+            
+            <PublicFooter />
+        </div>
+    </MudMainContent>
+    
+    <!-- Quest Drawer (right side, Session/SessionNote pages only) -->
+    <QuestDrawer />
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private string? _treeSearch;
+    private string _globalSearchQuery = string.Empty;
+    private UserInfo? _currentUser;
+    private bool _isSysAdmin;
+    private DotNetObjectReference<AuthenticatedLayout>? _dotNetRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentUser = await AuthService.GetCurrentUserAsync();
+        _isSysAdmin = await AdminAuthService.IsSysAdminAsync();
+        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("chronicisKeyboardShortcuts.initialize", _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public void OnCtrlM()
+    {
+        MetadataDrawerService.Toggle();
+    }
+
+    [JSInvokable]
+    public void OnCtrlQ()
+    {
+        QuestDrawerService.Toggle();
+    }
+
+    [JSInvokable]
+    public void OnCtrlS()
+    {
+        KeyboardShortcutService.RequestSave();
+    }
+
+    [JSInvokable]
+    public async Task OnCtrlN()
+    {
+        // Create a sibling article to the currently selected article
+        var selectedId = TreeState.SelectedNodeId;
+        
+        if (!selectedId.HasValue)
+        {
+            Snackbar.Add("Select an article first, then press Ctrl+N to create a sibling", Severity.Info);
+            return;
+        }
+        
+        // Check if the selected node is an article
+        if (!TreeState.TryGetNode(selectedId.Value, out var selectedNode) || selectedNode == null)
+        {
+            Snackbar.Add("Select an article first, then press Ctrl+N to create a sibling", Severity.Info);
+            return;
+        }
+        
+        // Only allow Ctrl+N for Article nodes
+        if (selectedNode.NodeType != TreeNodeType.Article)
+        {
+            var nodeTypeName = selectedNode.NodeType switch
+            {
+                TreeNodeType.World => "World",
+                TreeNodeType.Campaign => "Campaign",
+                TreeNodeType.Arc => "Arc",
+                TreeNodeType.VirtualGroup => "folder",
+                TreeNodeType.ExternalLink => "link",
+                _ => "item"
+            };
+            Snackbar.Add($"Ctrl+N creates sibling articles. Select an article instead of a {nodeTypeName}.", Severity.Info);
+            return;
+        }
+        
+        // Get the current article to find its parent
+        var currentArticle = await ArticleApi.GetArticleDetailAsync(selectedId.Value);
+        if (currentArticle == null)
+        {
+            Snackbar.Add("Could not load the selected article", Severity.Warning);
+            return;
+        }
+        
+        Guid? parentId = currentArticle.ParentId;
+        
+        // Create sibling (same parent, same world/campaign context)
+        Guid? newArticleId;
+        if (parentId.HasValue)
+        {
+            newArticleId = await TreeState.CreateChildArticleAsync(parentId.Value);
+        }
+        else
+        {
+            // Root-level article - create sibling with same context
+            var createDto = new ArticleCreateDto
+            {
+                Title = string.Empty,
+                Body = string.Empty,
+                ParentId = null,
+                WorldId = currentArticle.WorldId,
+                CampaignId = currentArticle.CampaignId,
+                ArcId = currentArticle.ArcId,
+                Type = currentArticle.Type, // Use same type as current article (e.g., SessionNote)
+                EffectiveDate = DateTime.Now
+            };
+            
+            var created = await ArticleApi.CreateArticleAsync(createDto);
+            if (created != null)
+            {
+                await TreeState.RefreshAsync();
+                TreeState.SelectNode(created.Id);
+                newArticleId = created.Id;
+            }
+            else
+            {
+                newArticleId = null;
+            }
+        }
+        
+        if (newArticleId.HasValue)
+        {
+            Snackbar.Add("Article created (Ctrl+N)", Severity.Success);
+            
+            // Navigate to the new article
+            var newArticle = await ArticleApi.GetArticleDetailAsync(newArticleId.Value);
+            if (newArticle != null && newArticle.Breadcrumbs.Any())
+            {
+                var path = string.Join("/", newArticle.Breadcrumbs.Select(b => b.Slug));
+                Navigation.NavigateTo($"/article/{path}");
+            }
+        }
+        else
+        {
+            Snackbar.Add("Failed to create article", Severity.Error);
+        }
+    }
+
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> task)
+    {
+        _currentUser = await AuthService.GetCurrentUserAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void OnTreeSearchChanged()
+    {
+        // Real-time filtering as user types (debounced by MudTextField)
+        if (string.IsNullOrWhiteSpace(_treeSearch))
+        {
+            TreeState.ClearSearch();
+        }
+        else
+        {
+            TreeState.SetSearchQuery(_treeSearch);
+        }
+    }
+
+    private void ClearSearch()
+    {
+        _treeSearch = null;
+        TreeState.ClearSearch();
+    }
+
+    private void OnGlobalSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            ExecuteGlobalSearch();
+        }
+    }
+
+    private void ExecuteGlobalSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(_globalSearchQuery))
+        {
+            Navigation.NavigateTo($"/search?q={Uri.EscapeDataString(_globalSearchQuery)}");
+        }
+    }
+
+    private void BeginSignOut()
+    {
+        Navigation.NavigateToLogout("authentication/logout");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+        
+        if (_dotNetRef != null)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("chronicisKeyboardShortcuts.dispose");
+            }
+            catch
+            {
+                // Ignore errors during disposal (e.g., if JS context is gone)
+            }
+            _dotNetRef.Dispose();
+        }
+    }
+}

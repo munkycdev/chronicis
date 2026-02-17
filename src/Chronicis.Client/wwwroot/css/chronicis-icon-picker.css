@@ -1,0 +1,309 @@
+/* ============================================
+   Chronicis Icon Picker Styles
+   Font Awesome Icon Picker Component
+   ============================================ */
+
+.chronicis-icon-picker-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding-right:15px;
+    padding-bottom:15px;
+}
+
+/* Main Icon Button */
+.chronicis-icon-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 2px dashed rgba(196, 175, 142, 0.4);
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--chronicis-secondary-muted);
+    font-size: 1.25rem;
+    padding:25px;
+}
+
+.chronicis-icon-button:hover {
+    border-color: var(--chronicis-secondary);
+    background: rgba(196, 175, 142, 0.1);
+    color: var(--chronicis-secondary);
+}
+
+.chronicis-icon-button.has-icon {
+    border-style: solid;
+    border-color: var(--chronicis-secondary);
+    background: rgba(196, 175, 142, 0.15);
+    color: var(--chronicis-background-dark);
+}
+
+.chronicis-icon-button .placeholder-icon {
+    font-size: 1rem;
+    opacity: 0.6;
+}
+
+/* Clear Button */
+.chronicis-icon-clear-button {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 50%;
+    background: var(--chronicis-background-dark);
+    color: var(--chronicis-text-on-dark);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 1;
+}
+
+.chronicis-icon-picker-container:hover .chronicis-icon-clear-button {
+    opacity: 1;
+}
+
+.chronicis-icon-clear-button:hover {
+    background: var(--mud-palette-error, #f44336);
+}
+
+/* Backdrop */
+.chronicis-icon-picker-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+}
+
+/* Dropdown Container */
+.chronicis-icon-picker-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 360px;
+    max-height: 450px;
+    background: var(--chronicis-primary);
+    border: 1px solid rgba(196, 175, 142, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: iconPickerFadeIn 0.15s ease-out;
+}
+
+@keyframes iconPickerFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Search Box */
+.chronicis-icon-picker-search {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid rgba(196, 175, 142, 0.2);
+    gap: 8px;
+}
+
+.chronicis-icon-picker-search .search-icon {
+    color: var(--chronicis-secondary-muted);
+    font-size: 0.9rem;
+}
+
+.chronicis-icon-search-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(196, 175, 142, 0.2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--chronicis-text-on-dark);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.chronicis-icon-search-input:focus {
+    border-color: var(--chronicis-secondary);
+}
+
+.chronicis-icon-search-input::placeholder {
+    color: rgba(244, 240, 234, 0.5);
+}
+
+.chronicis-icon-picker-search .clear-search {
+    background: none;
+    border: none;
+    color: var(--chronicis-secondary-muted);
+    cursor: pointer;
+    padding: 4px;
+    font-size: 0.8rem;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.chronicis-icon-picker-search .clear-search:hover {
+    opacity: 1;
+}
+
+/* Category Tabs */
+.chronicis-icon-picker-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(196, 175, 142, 0.2);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.category-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--chronicis-secondary-muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.15s ease;
+}
+
+.category-tab:hover {
+    background: rgba(196, 175, 142, 0.15);
+    color: var(--chronicis-secondary);
+}
+
+.category-tab.active {
+    background: var(--chronicis-secondary);
+    color: var(--chronicis-background-dark);
+}
+
+/* Category Label */
+.chronicis-icon-picker-category-label {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: var(--chronicis-secondary-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(196, 175, 142, 0.1);
+}
+
+/* Icon Grid */
+.chronicis-icon-picker-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    max-height: 280px;
+}
+
+.icon-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--chronicis-text-on-dark);
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.15s ease;
+}
+
+.icon-option:hover {
+    background: rgba(196, 175, 142, 0.2);
+    color: var(--chronicis-secondary);
+    transform: scale(1.1);
+}
+
+.icon-option.selected {
+    background: var(--chronicis-secondary);
+    color: var(--chronicis-background-dark);
+}
+
+/* No Results */
+.chronicis-icon-picker-grid .no-results {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    color: var(--chronicis-secondary-muted);
+    gap: 8px;
+}
+
+.chronicis-icon-picker-grid .no-results i {
+    font-size: 2rem;
+    opacity: 0.5;
+}
+
+.chronicis-icon-picker-grid .no-results span {
+    font-size: 0.85rem;
+}
+
+/* More Results Notice */
+.chronicis-icon-picker-grid .more-results {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 8px;
+    font-size: 0.75rem;
+    color: var(--chronicis-secondary-muted);
+    opacity: 0.7;
+}
+
+/* Scrollbar Styling */
+.chronicis-icon-picker-grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chronicis-icon-picker-grid::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+.chronicis-icon-picker-grid::-webkit-scrollbar-thumb {
+    background: rgba(196, 175, 142, 0.3);
+    border-radius: 4px;
+}
+
+.chronicis-icon-picker-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(196, 175, 142, 0.5);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .chronicis-icon-picker-dropdown {
+        width: 300px;
+        left: -20px;
+    }
+    
+    .chronicis-icon-picker-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}

@@ -1,0 +1,60 @@
+@* Renders an icon - handles Font Awesome classes, emojis, or falls back to default *@
+
+@if (IsEmoji(Icon))
+{
+    <span class="@CssClass" style="@Style">@Icon</span>
+}
+else if (IsFontAwesome(Icon))
+{
+    <i class="@Icon @CssClass" style="@Style"></i>
+}
+else if (!string.IsNullOrEmpty(DefaultIcon))
+{
+    @if (IsFontAwesome(DefaultIcon))
+    {
+        <i class="@DefaultIcon @CssClass" style="@Style"></i>
+    }
+    else
+    {
+        <span class="@CssClass" style="@Style">@DefaultIcon</span>
+    }
+}
+
+@code {
+    /// <summary>
+    /// The icon to render (Font Awesome class like "fa-solid fa-dragon" or emoji like "🐉")
+    /// </summary>
+    [Parameter]
+    public string? Icon { get; set; }
+
+    /// <summary>
+    /// Fallback icon if Icon is null or empty
+    /// </summary>
+    [Parameter]
+    public string? DefaultIcon { get; set; } = "👤";
+
+    /// <summary>
+    /// Additional CSS classes
+    /// </summary>
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    /// <summary>
+    /// Inline styles
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    private bool IsEmoji(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return false;
+        // Emojis don't start with "fa-"
+        return !value.StartsWith("fa-");
+    }
+
+    private bool IsFontAwesome(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return false;
+        return value.StartsWith("fa-");
+    }
+}

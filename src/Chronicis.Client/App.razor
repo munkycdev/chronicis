@@ -1,0 +1,11 @@
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <ChronicisRouteView RouteData="@routeData" />
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <RedirectToDashboard />
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

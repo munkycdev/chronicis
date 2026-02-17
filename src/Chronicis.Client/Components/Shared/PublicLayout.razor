@@ -1,0 +1,17 @@
+@inherits LayoutComponentBase
+@inject MudTheme ChronicisTheme
+
+<MudThemeProvider Theme="ChronicisTheme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div class="public-layout">
+    <PublicNav />
+    
+    <main class="public-main">
+        @Body
+    </main>
+    
+    <PublicFooter />
+</div>

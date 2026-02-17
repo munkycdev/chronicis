@@ -1,0 +1,1159 @@
+@using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Components.Characters
+@using Chronicis.Client.Utilities
+@using Chronicis.Client.ViewModels.ArticleDetail
+@using Chronicis.Client.Services
+@using Chronicis.Shared.DTOs
+@using Chronicis.Shared.Enums
+@using Chronicis.Shared.Utilities
+@using Blazored.LocalStorage
+@using Microsoft.JSInterop
+@inject IArticleDetailViewModel ViewModel
+@inject IArticleDetailFacade Facade
+@inject ILinkApiService LinkApiService
+@inject IExternalLinkApiService ExternalLinkApiService
+@inject IWikiLinkService WikiLinkService
+@inject IAISummaryApiService SummaryApi
+@inject IMarkdownService MarkdownService
+@inject ITreeStateService TreeState
+@inject IAppContextService AppContext
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage
+@inject ILogger<ArticleDetail> Logger
+@inject IWorldApiService WorldApi
+
+@implements IDisposable
+
+@if (ViewModel.IsLoading)
+{
+    <LoadingSkeleton />
+}
+else if (ViewModel.Article == null)
+{
+    <EmptyState 
+        Icon="📝"
+        Title="No Article Selected"
+        Message="Select an article from the tree to view and edit its content."
+        ActionText="Create New Article"
+        OnActionClick="CreateRootArticle" />
+}
+else
+{
+    <style>
+        .mud-input.mud-input-underline:before,
+        .mud-input.mud-input-underline:after,
+        .mud-input.mud-input-underline:hover:not(.mud-disabled):before,
+        .mud-input.mud-input-underline:hover:not(.mud-disabled):after {
+            border-bottom: none !important;        
+        }
+
+        .mud-input,
+        .chronicis-editor-content {
+            border: solid 1px #c7c7c4;
+            border-radius: 4px;
+        }
+
+        .chronicis-article-title .mud-input {
+            padding-left:8px;
+        }
+    </style>
+
+    <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
+
+        <!-- Article Header (Breadcrumbs, Icon, Title, Divider) -->
+        <ArticleHeader Breadcrumbs="_breadcrumbs"
+                       @bind-Title="@EditTitle"
+                       IconEmoji="@ViewModel.Article.IconEmoji"
+                       OnIconChanged="HandleIconChanged"
+                       OnTitleEdited="HandleTitleEdited"
+                       OnEnterPressed="SaveArticle"
+                       OnMetadataToggle="ToggleMetadata"
+                       ShouldFocusTitle="_shouldFocusTitle"
+                       ShouldFocusTitleChanged="HandleFocusTitleChanged" />
+
+        @* Character Claim Button - only show for Character type articles *@
+        @if (ViewModel.Article.Type == ArticleType.Character)
+        {
+            <div class="mb-3">
+                <CharacterClaimButton CharacterId="@ViewModel.Article.Id" />
+            </div>
+        }
+
+        <!-- Editor Toolbar -->
+        <div class="chronicis-editor-toolbar mb-2">
+            <MudTooltip Text="Insert Image" Placement="Placement.Top">
+                <MudIconButton Icon="@Icons.Material.Filled.Image"
+                               Size="Size.Small"
+                               Color="Color.Default"
+                               OnClick="InsertImageFromToolbar"
+                               Disabled="!_editorInitialized" />
+            </MudTooltip>
+        </div>
+
+        <!-- TipTap Editor Container -->
+        <div id="tiptap-editor-@ViewModel.Article.Id" class="chronicis-editor-container mb-4"></div>
+
+        <!-- AI Summary Section -->
+        <AISummarySection EntityId="@ViewModel.Article.Id"
+                          EntityType="Article"
+                          IsExpanded="@_isSummaryExpanded"
+                          IsExpandedChanged="@((expanded) => _isSummaryExpanded = expanded)" />
+
+        <!-- Action Bar (Save Status + Buttons) -->
+        <ArticleActionBar IsSaving="ViewModel.IsSaving"
+                          IsAutoLinking="_isAutoLinking"
+                          IsCreatingChild="_isCreatingChild"
+                          HasUnsavedChanges="_hasUnsavedChanges"
+                          LastSaveTime="@_lastSaveTime"
+                          OnSave="SaveArticle"
+                          OnDelete="DeleteArticle"
+                          OnAutoLink="AutoLinkArticle"
+                          OnCreateChild="CreateChildArticle" />
+    </MudPaper>
+
+    <!-- Metadata Drawer -->
+    <ArticleMetadataDrawer @ref="_metadataDrawer"
+                           Article="ViewModel.Article"
+                           @bind-IsOpen="@ShowMetadataDrawer" />
+
+    <!-- External Link Preview Drawer -->
+    <MudDrawer @bind-Open="_externalPreviewOpen"
+               Anchor="Anchor.End"
+               Variant="@DrawerVariant.Temporary"
+               Elevation="9999"
+               Class="external-link-preview-drawer">
+        <MudDrawerHeader>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseExternalPreview" />
+            
+        </MudDrawerHeader>
+        <MudDrawerContainer>
+            <div class="external-link-preview-header">
+                @if (!string.IsNullOrWhiteSpace(_externalPreviewSource))
+                {
+                    <span class="external-link-preview-source">@_externalPreviewSource.ToUpperInvariant()</span>
+                }
+                <MudText Typo="Typo.h6">@(_externalPreviewTitle ?? "External Link")</MudText>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_externalPreviewContent?.Kind))
+            {
+                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                    @_externalPreviewContent.Kind
+                </MudText>
+            }
+            @if (_externalPreviewLoading)
+            {
+                <div class="d-flex justify-center align-center" style="padding: 24px;">
+                    <MudProgressCircular Indeterminate="true" />
+                </div>
+            }
+            else if (!string.IsNullOrWhiteSpace(_externalPreviewError))
+            {
+                <MudAlert Severity="Severity.Error">@_externalPreviewError</MudAlert>
+            }
+            else if (_externalPreviewContent != null)
+            {
+                <ExternalLinkDetailPanel Content="_externalPreviewContent" />
+            }
+        </MudDrawerContainer>
+    </MudDrawer>
+
+    <!-- Wiki Link Autocomplete -->
+    @if (_showAutocomplete && ViewModel.Article != null)
+    {
+        <ArticleDetailWikiLinkAutocomplete Suggestions="@_autocompleteSuggestions"
+                                           Loading="@_autocompleteLoading"
+                                           SelectedIndex="@_autocompleteSelectedIndex"
+                                           SelectedIndexChanged="OnAutocompleteIndexChanged"
+                                           OnSelect="OnAutocompleteSelect"
+                                           OnCreate="OnAutocompleteCreate"
+                                           Position="@_autocompletePosition"
+                                           Query="@_autocompleteQuery"
+                                           IsExternalQuery="@_autocompleteIsExternalQuery" />
+    }
+}
+
+@code {
+    // Properties that expose ViewModel state for two-way binding
+    private string EditTitle
+    {
+        get => ViewModel.EditTitle ?? string.Empty;
+        set => ViewModel.UpdateEditTitle(value);
+    }
+    
+    private string EditBody
+    {
+        get => ViewModel.EditBody ?? string.Empty;
+        set => ViewModel.UpdateEditBody(value);
+    }
+    
+    private bool ShowMetadataDrawer
+    {
+        get => ViewModel.ShowMetadataDrawer;
+        set { if (value != ViewModel.ShowMetadataDrawer) ViewModel.ToggleMetadataDrawer(); }
+    }
+    
+    // UI state (not managed by ViewModel)
+    private List<BreadcrumbItem>? _breadcrumbs;
+    private bool _hasUnsavedChanges = false;
+    private bool _editorInitialized = false;
+    private string _lastSaveTime = "just now";
+    private bool _isSummaryExpanded = false;
+    private bool _shouldFocusTitle = false;
+    private bool _isAutoLinking = false;
+    private bool _isCreatingChild = false;
+    
+    // Timer and references
+    private Timer? _autoSaveTimer;
+    private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
+    private ArticleMetadataDrawer? _metadataDrawer;
+    private bool _disposed = false;
+    
+    // Autocomplete state
+    private bool _showAutocomplete = false;
+    private bool _autocompleteLoading = false;
+    private List<WikiLinkAutocompleteItem> _autocompleteSuggestions = new();
+    private int _autocompleteSelectedIndex = 0;
+    private (double X, double Y) _autocompletePosition = (0, 0);
+    private string _autocompleteQuery = string.Empty;
+    private bool _autocompleteIsExternalQuery = false;
+    private string? _autocompleteExternalSourceKey;
+
+    // External link preview
+    private bool _externalPreviewOpen = false;
+    private bool _externalPreviewLoading = false;
+    private string? _externalPreviewError;
+    private ExternalLinkContentDto? _externalPreviewContent;
+    private string? _externalPreviewSource;
+    private string? _externalPreviewId;
+    private string? _externalPreviewTitle;
+    private readonly Dictionary<string, ExternalLinkContentDto> _externalLinkCache = new(StringComparer.OrdinalIgnoreCase);
+    
+    private const string LastArticlePathKey = "chronicis_last_article_path";
+
+    #region Lifecycle
+
+    protected override async Task OnInitializedAsync()
+    {
+        TreeState.OnStateChanged += OnTreeStateChanged;
+        ViewModel.OnStateChanged += OnViewModelStateChanged;
+        _dotNetHelper = DotNetObjectReference.Create(this);
+        await Task.CompletedTask;
+    }
+
+    protected override void OnInitialized()
+    {
+        OnCtrlNPressed += HandleCtrlNInstance;
+        base.OnInitialized();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && TreeState.SelectedArticleId.HasValue)
+        {
+            await ViewModel.LoadArticleAsync(TreeState.SelectedArticleId.Value);
+            StateHasChanged();
+            await Task.Delay(100);
+            await InitializeEditor();
+        }
+    }
+
+    private void OnViewModelStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        TreeState.OnStateChanged -= OnTreeStateChanged;
+        ViewModel.OnStateChanged -= OnViewModelStateChanged;
+        OnCtrlNPressed -= HandleCtrlNInstance;
+        _autoSaveTimer?.Dispose();
+        
+        // Clear and dispose the DotNetObjectReference
+        var helper = _dotNetHelper;
+        _dotNetHelper = null;
+        helper?.Dispose();
+    }
+
+    #endregion
+
+    #region Header Event Handlers
+
+    private void HandleTitleEdited() => _hasUnsavedChanges = true;
+
+    private async Task HandleIconChanged(string? newIcon)
+    {
+        if (ViewModel.Article == null || ViewModel.IsSaving) return;
+
+        ViewModel.Article.IconEmoji = newIcon;
+        StateHasChanged();
+
+        try
+        {
+            var updateDto = new ArticleUpdateDto
+            {
+                Title = EditTitle?.Trim() ?? string.Empty,
+                Body = EditBody,
+                EffectiveDate = ViewModel.Article.EffectiveDate,
+                IconEmoji = newIcon
+            };
+
+            await Facade.UpdateArticleAsync(ViewModel.Article.Id, updateDto);
+            ViewModel.Article.ModifiedAt = DateTime.Now;
+            _lastSaveTime = "just now";
+
+            await TreeState.RefreshAsync();
+            TreeState.UpdateNodeDisplay(ViewModel.Article.Id, EditTitle ?? string.Empty, newIcon);
+
+            Snackbar.Add($"Icon {(string.IsNullOrEmpty(newIcon) ? "removed" : "updated")}", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to save icon: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private void HandleFocusTitleChanged(bool value) => _shouldFocusTitle = value;
+
+    private void ToggleMetadata() => ShowMetadataDrawer = !ShowMetadataDrawer;
+
+    #endregion
+
+    #region Article Loading
+
+    private async void OnTreeStateChanged()
+    {
+        if (_disposed) return;
+        
+        await InvokeAsync(async () =>
+        {
+            if (_disposed) return;
+            
+            try
+            {
+                if (_editorInitialized && ViewModel.Article != null)
+                {
+                    await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", $"tiptap-editor-{ViewModel.Article.Id}");
+                }
+
+                _editorInitialized = false;
+
+                if (_disposed) return;
+
+                if (TreeState.SelectedArticleId.HasValue && TreeState.SelectedArticleId.Value != Guid.Empty)
+                {
+                    await ViewModel.LoadArticleAsync(TreeState.SelectedArticleId.Value);
+                }
+
+                if (_disposed) return;
+                StateHasChanged();
+
+                if (ViewModel.Article != null && !_disposed)
+                {
+                    LoadBreadcrumbs();
+                    await UpdatePageTitle();
+                    await SaveLastArticlePath();
+                    
+                    await Task.Delay(100);
+                    if (!_disposed)
+                    {
+                        await InitializeEditor();
+                    }
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // Component was disposed during async operation - this is expected during navigation
+            }
+            catch (JSDisconnectedException)
+            {
+                // JS runtime disconnected - this is expected during navigation
+            }
+        });
+    }
+
+    private void LoadBreadcrumbs()
+    {
+        if (ViewModel.Article?.Breadcrumbs != null && ViewModel.Article.Breadcrumbs.Any())
+        {
+            _breadcrumbs = new List<BreadcrumbItem>();
+            foreach (var crumb in ViewModel.Article.Breadcrumbs)
+            {
+                _breadcrumbs.Add(new BreadcrumbItem(crumb.Title, href: $"/article/{crumb.Slug}"));
+            }
+        }
+        else
+        {
+            _breadcrumbs = new List<BreadcrumbItem> { new("Dashboard", href: "/dashboard") };
+        }
+    }
+
+    private async Task UpdatePageTitle()
+    {
+        var pageTitle = string.IsNullOrEmpty(ViewModel.Article?.Title) ? "Untitled - Chronicis" : $"{ViewModel.Article.Title} - Chronicis";
+        await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(pageTitle)}'");
+    }
+
+    private async Task SaveLastArticlePath()
+    {
+        if (ViewModel.Article?.Breadcrumbs != null && ViewModel.Article.Breadcrumbs.Any())
+        {
+            var path = string.Join("/", ViewModel.Article.Breadcrumbs.Select(b => b.Slug));
+            await LocalStorage.SetItemAsStringAsync(LastArticlePathKey, path);
+        }
+    }
+
+    #endregion
+
+    #region Editor
+
+    private async Task InitializeEditor()
+    {
+        if (ViewModel.Article != null && !_editorInitialized && !_disposed && _dotNetHelper != null)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("initializeTipTapEditor", $"tiptap-editor-{ViewModel.Article.Id}", EditBody, _dotNetHelper);
+                
+                if (_disposed) return;
+                
+                await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", $"tiptap-editor-{ViewModel.Article.Id}", _dotNetHelper);
+
+                // Initialize image upload (drag-drop, paste)
+                await JSRuntime.InvokeVoidAsync("initializeImageUpload", $"tiptap-editor-{ViewModel.Article.Id}", _dotNetHelper);
+
+                // Resolve any chronicis-image: references to real SAS URLs
+                await JSRuntime.InvokeVoidAsync("resolveEditorImages", $"tiptap-editor-{ViewModel.Article.Id}", _dotNetHelper);
+
+                _editorInitialized = true;
+            }
+            catch (ObjectDisposedException)
+            {
+                // Component was disposed during async operation - this is expected during navigation
+            }
+            catch (JSDisconnectedException)
+            {
+                // JS runtime disconnected - this is expected during navigation
+            }
+            catch (Exception ex)
+            {
+                if (!_disposed)
+                {
+                    Snackbar.Add($"Failed to initialize editor: {ex.Message}", Severity.Warning);
+                }
+            }
+        }
+    }
+
+    [JSInvokable]
+    public void OnEditorUpdate(string markdown)
+    {
+        EditBody = markdown;
+        _hasUnsavedChanges = true;
+        _autoSaveTimer?.Dispose();
+        _autoSaveTimer = new Timer(async _ => await AutoSave(), null, 500, Timeout.Infinite);
+    }
+
+    private async Task AutoSave()
+    {
+        await InvokeAsync(async () =>
+        {
+            if (_hasUnsavedChanges && !ViewModel.IsSaving)
+                await SaveArticle();
+        });
+    }
+
+    #endregion
+
+    #region Save & Delete
+
+    private async Task SaveArticle()
+    {
+        if (ViewModel.Article == null) return;
+
+        await ViewModel.SaveArticleAsync();
+        
+        _hasUnsavedChanges = false;
+        _lastSaveTime = "just now";
+        
+        // Only refresh panels if the metadata drawer is open
+        if (_metadataDrawer != null && ShowMetadataDrawer)
+            await _metadataDrawer.RefreshPanelsAsync();
+    }
+
+    private async Task DeleteArticle()
+    {
+        if (ViewModel.Article == null) return;
+
+        var message = $"Are you sure you want to delete '{ViewModel.Article.Title}'?";
+        if (ViewModel.Article.ChildCount > 0)
+        {
+            var childText = ViewModel.Article.ChildCount == 1 ? "1 child article" : $"{ViewModel.Article.ChildCount} child articles";
+            message = $"Are you sure you want to delete '{ViewModel.Article.Title}'?\n\n⚠️ WARNING: This will also delete {childText} and all their descendants.";
+        }
+        message += "\n\nThis action cannot be undone.";
+
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", message)) return;
+
+        await ViewModel.DeleteArticleAsync();
+    }
+
+    private async Task AutoLinkArticle()
+    {
+        if (ViewModel.Article == null || _isAutoLinking) return;
+
+        _isAutoLinking = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await LinkApiService.AutoLinkAsync(ViewModel.Article.Id, EditBody);
+
+            if (result == null)
+            {
+                Snackbar.Add("Failed to scan for links", Severity.Error);
+                return;
+            }
+
+            if (result.LinksFound == 0)
+            {
+                Snackbar.Add("No linkable content found", Severity.Info);
+                return;
+            }
+
+            var matchList = string.Join("\n", result.Matches.Select(m => $"• \"{m.MatchedText}\" → {m.ArticleTitle}"));
+            if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Found {result.LinksFound} potential link(s):\n\n{matchList}\n\nApply these links?"))
+                return;
+
+            var jsMatches = result.Matches.Select(m => new
+            {
+                articleId = m.ArticleId.ToString(),
+                displayText = m.IsAliasMatch ? $"{m.MatchedText} → {m.ArticleTitle}" : m.MatchedText,
+                startIndex = m.StartIndex,
+                endIndex = m.EndIndex
+            }).ToArray();
+
+            await JSRuntime.InvokeVoidAsync("insertWikiLinksAtPositions", $"tiptap-editor-{ViewModel.Article.Id}", jsMatches);
+            
+            EditBody = await JSRuntime.InvokeAsync<string>("getTipTapContent", $"tiptap-editor-{ViewModel.Article.Id}");
+            _hasUnsavedChanges = true;
+            await SaveArticle();
+            Snackbar.Add($"Added {result.LinksFound} link(s)", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error auto-linking article {ArticleId}", ViewModel.Article.Id);
+            Snackbar.Add($"Failed to auto-link: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isAutoLinking = false;
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+
+    #region Article Creation
+
+    private async Task CreateRootArticle()
+    {
+        var worldId = AppContext.CurrentWorldId;
+        if (!worldId.HasValue || worldId == Guid.Empty)
+        {
+            Snackbar.Add("Please select a World first", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var createDto = new ArticleCreateDto
+            {
+                Title = "Untitled",
+                Body = string.Empty,
+                ParentId = null,
+                EffectiveDate = DateTime.Now,
+                WorldId = worldId.Value
+            };
+
+            await Facade.CreateArticleAsync(createDto);
+            await TreeState.RefreshAsync();
+            Snackbar.Add("Article created", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CreateSiblingArticle()
+    {
+        if (ViewModel.Article == null) return;
+
+        try
+        {
+            var createDto = new ArticleCreateDto
+            {
+                Title = string.Empty,
+                Body = string.Empty,
+                ParentId = ViewModel.Article.ParentId,
+                EffectiveDate = DateTime.Now,
+                WorldId = ViewModel.Article.WorldId,
+                CampaignId = ViewModel.Article.CampaignId
+            };
+
+            var created = await Facade.CreateArticleAsync(createDto);
+            if (created == null)
+            {
+                Snackbar.Add("Failed to create article", Severity.Error);
+                return;
+            }
+            
+            await TreeState.RefreshAsync();
+            TreeState.ExpandPathToAndSelect(created.Id);
+            
+            // Fetch the full article to get breadcrumbs for navigation
+            var articleDetail = await Facade.GetArticleAsync(created.Id);
+            if (articleDetail != null && articleDetail.Breadcrumbs.Any())
+            {
+                var path = Facade.BuildArticleUrlFromBreadcrumbs(articleDetail.Breadcrumbs);
+                Navigation.NavigateTo(path);
+            }
+            else
+            {
+                // Fallback to slug-only path
+                Navigation.NavigateTo($"/article/{created.Slug}");
+            }
+            
+            Snackbar.Add("New article created", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CreateChildArticle()
+    {
+        if (ViewModel.Article == null || _isCreatingChild) return;
+
+        _isCreatingChild = true;
+        StateHasChanged();
+
+        try
+        {
+            await ViewModel.CreateChildArticleAsync(string.Empty);
+            TreeState.ShouldFocusTitle = true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error creating child article under {ParentId}", ViewModel.Article.Id);
+            Snackbar.Add($"Failed to create child article: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isCreatingChild = false;
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+
+    #region Keyboard Shortcuts
+
+    private void OnMetadataDrawerToggle()
+    {
+        ShowMetadataDrawer = !ShowMetadataDrawer;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async void HandleSaveShortcut()
+    {
+        await InvokeAsync(SaveArticle);
+    }
+
+    [JSInvokable("HandleCtrlN")]
+    public static Task HandleCtrlN()
+    {
+        OnCtrlNPressed?.Invoke();
+        return Task.CompletedTask;
+    }
+
+    private static event Action? OnCtrlNPressed;
+
+    private async void HandleCtrlNInstance() => await InvokeAsync(CreateSiblingArticle);
+
+    #endregion
+
+    #region Wiki Link Autocomplete
+
+    [JSInvokable]
+    public async Task OnAutocompleteTriggered(string query, double x, double y)
+    {
+        _autocompletePosition = (x, y);
+        _showAutocomplete = true;
+        _autocompleteSelectedIndex = 0;
+
+        _autocompleteIsExternalQuery = TryParseExternalAutocompleteQuery(query, out var sourceKey, out var remainder);
+        _autocompleteExternalSourceKey = _autocompleteIsExternalQuery ? sourceKey : null;
+        _autocompleteQuery = _autocompleteIsExternalQuery ? remainder : query;
+
+        // For external queries (like srd/...), we have different length requirements:
+        // - Empty or short remainder: show categories (handled by server)
+        // - Any length after category selected: search immediately
+        // For internal queries: require 3 characters minimum
+        var minLength = _autocompleteIsExternalQuery ? 0 : 3;
+        
+        if (_autocompleteQuery.Length < minLength)
+        {
+            _autocompleteSuggestions = new();
+            StateHasChanged();
+            return;
+        }
+
+        _autocompleteLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var worldId = AppContext.CurrentWorldId ?? ViewModel.Article?.WorldId ?? Guid.Empty;
+            
+            if (_autocompleteIsExternalQuery)
+            {
+                var externalSuggestions = await ExternalLinkApiService.GetSuggestionsAsync(
+                    worldId,
+                    _autocompleteExternalSourceKey ?? string.Empty,
+                    _autocompleteQuery,
+                    CancellationToken.None);
+                _autocompleteSuggestions = externalSuggestions
+                    .Select(WikiLinkAutocompleteItem.FromExternal)
+                    .ToList();
+            }
+            else
+            {
+                var internalSuggestions = await LinkApiService.GetSuggestionsAsync(worldId, _autocompleteQuery);
+                _autocompleteSuggestions = internalSuggestions
+                    .Select(WikiLinkAutocompleteItem.FromInternal)
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting autocomplete suggestions");
+            _autocompleteSuggestions = new();
+        }
+        finally
+        {
+            _autocompleteLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public Task OnAutocompleteHidden()
+    {
+        _showAutocomplete = false;
+        _autocompleteSuggestions = new();
+        _autocompleteIsExternalQuery = false;
+        _autocompleteExternalSourceKey = null;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnAutocompleteArrowDown()
+    {
+        if (_autocompleteSuggestions.Any())
+        {
+            _autocompleteSelectedIndex = (_autocompleteSelectedIndex + 1) % _autocompleteSuggestions.Count;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnAutocompleteArrowUp()
+    {
+        if (_autocompleteSuggestions.Any())
+        {
+            _autocompleteSelectedIndex = (_autocompleteSelectedIndex - 1 + _autocompleteSuggestions.Count) % _autocompleteSuggestions.Count;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task OnAutocompleteEnter()
+    {
+        if (_autocompleteSuggestions.Any() && _autocompleteSelectedIndex < _autocompleteSuggestions.Count)
+            await OnAutocompleteSelect(_autocompleteSuggestions[_autocompleteSelectedIndex]);
+    }
+
+    private Task OnAutocompleteIndexChanged(int index)
+    {
+        _autocompleteSelectedIndex = index;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task OnAutocompleteSelect(WikiLinkAutocompleteItem suggestion)
+    {
+        if (ViewModel.Article == null) return;
+
+        try
+        {
+            // Handle category selection - update the editor text instead of inserting a link
+            if (suggestion.IsCategory && !string.IsNullOrEmpty(suggestion.CategoryKey))
+            {
+                await JSRuntime.InvokeVoidAsync(
+                    "updateAutocompleteText",
+                    $"tiptap-editor-{ViewModel.Article.Id}",
+                    $"{suggestion.Source}/{suggestion.CategoryKey}/");
+                
+                // Trigger autocomplete again with the new text
+                // The user can now type a search term
+                return;
+            }
+
+            if (suggestion.IsExternal)
+            {
+                if (string.IsNullOrWhiteSpace(suggestion.Source) || string.IsNullOrWhiteSpace(suggestion.ExternalId))
+                {
+                    Logger.LogWarning("External suggestion missing source or id");
+                    return;
+                }
+
+                await JSRuntime.InvokeVoidAsync(
+                    "insertExternalLinkToken",
+                    $"tiptap-editor-{ViewModel.Article.Id}",
+                    suggestion.Source,
+                    suggestion.ExternalId,
+                    suggestion.Title);
+            }
+            else
+            {
+                if (!suggestion.ArticleId.HasValue)
+                {
+                    Logger.LogWarning("Internal suggestion missing article id");
+                    return;
+                }
+
+                // If matched via alias, display "Alias → Title", otherwise just title
+                var displayText = !string.IsNullOrWhiteSpace(suggestion.MatchedAlias)
+                    ? $"{suggestion.MatchedAlias} → {suggestion.Title}"
+                    : suggestion.Title;
+
+                await JSRuntime.InvokeVoidAsync(
+                    "insertWikiLink",
+                    $"tiptap-editor-{ViewModel.Article.Id}",
+                    suggestion.ArticleId.Value.ToString(),
+                    displayText);
+            }
+            _showAutocomplete = false;
+            _autocompleteSuggestions = new();
+            StateHasChanged();
+            await Task.Delay(50);
+            await SaveArticle();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error inserting wiki link");
+            Snackbar.Add("Failed to insert link", Severity.Error);
+        }
+    }
+
+    private async Task OnAutocompleteCreate(string articleName)
+    {
+        if (_autocompleteIsExternalQuery)
+        {
+            return;
+        }
+
+        if (ViewModel.Article == null || string.IsNullOrWhiteSpace(articleName)) return;
+
+        try
+        {
+            var worldId = AppContext.CurrentWorldId ?? ViewModel.Article.WorldId ?? Guid.Empty;
+            var created = await WikiLinkService.CreateArticleFromAutocompleteAsync(articleName, worldId);
+            
+            if (created == null)
+            {
+                Snackbar.Add("Failed to create article", Severity.Error);
+                return;
+            }
+
+            await JSRuntime.InvokeVoidAsync("insertWikiLink", $"tiptap-editor-{ViewModel.Article.Id}", created.Id.ToString(), created.Title);
+            _showAutocomplete = false;
+            _autocompleteSuggestions = new();
+            StateHasChanged();
+
+            await Task.Delay(50);
+            await SaveArticle();
+            await TreeState.RefreshAsync();
+            Snackbar.Add($"Created and linked '{articleName}'", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error creating article from autocomplete");
+            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private static bool TryParseExternalAutocompleteQuery(string query, out string sourceKey, out string remainder)
+    {
+        sourceKey = string.Empty;
+        remainder = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return false;
+        }
+
+        var slashIndex = query.IndexOf('/');
+        if (slashIndex <= 0)
+        {
+            return false;
+        }
+
+        sourceKey = query.Substring(0, slashIndex).Trim().ToLowerInvariant();
+        remainder = query.Substring(slashIndex + 1);
+
+        return !string.IsNullOrWhiteSpace(sourceKey);
+    }
+
+    [JSInvokable]
+    public async Task OnWikiLinkClicked(string targetArticleId)
+    {
+        if (!Guid.TryParse(targetArticleId, out var articleId)) return;
+
+        try
+        {
+            var path = await Facade.GetArticleNavigationPathAsync(articleId);
+            if (!string.IsNullOrEmpty(path))
+                Navigation.NavigateTo($"/article/{path}");
+            else
+                Snackbar.Add("Article not found", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error navigating to wiki link: {ArticleId}", targetArticleId);
+            Snackbar.Add("Failed to navigate to article", Severity.Error);
+        }
+    }
+
+    [JSInvokable]
+    public async Task<string?> GetArticlePath(string targetArticleId)
+    {
+        if (!Guid.TryParse(targetArticleId, out var articleId)) return null;
+
+        try
+        {
+            return await Facade.GetArticleNavigationPathAsync(articleId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting article path: {ArticleId}", targetArticleId);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public async Task<object?> GetArticleSummaryPreview(string targetArticleId)
+    {
+        if (!Guid.TryParse(targetArticleId, out var articleId)) return null;
+
+        try
+        {
+            var preview = await SummaryApi.GetSummaryPreviewAsync(articleId);
+            if (preview == null || !preview.HasSummary) return null;
+
+            return new
+            {
+                title = preview.Title,
+                summary = preview.Summary,
+                templateName = preview.TemplateName
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting summary preview: {ArticleId}", targetArticleId);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnExternalLinkClicked(string source, string id, string title)
+    {
+        if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(id)) return;
+
+        _externalPreviewOpen = true;
+        _externalPreviewLoading = true;
+        _externalPreviewError = null;
+        _externalPreviewSource = source;
+        _externalPreviewId = id;
+        _externalPreviewTitle = string.IsNullOrWhiteSpace(title) ? "External Link" : title;
+        _externalPreviewContent = null;
+        StateHasChanged();
+
+        var cacheKey = GetExternalCacheKey(source, id);
+        if (_externalLinkCache.TryGetValue(cacheKey, out var cached))
+        {
+            _externalPreviewContent = cached;
+            _externalPreviewLoading = false;
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            var content = await ExternalLinkApiService.GetContentAsync(source, id, CancellationToken.None);
+
+            if (content == null || string.IsNullOrWhiteSpace(content.Markdown))
+            {
+                _externalPreviewError = "No content available.";
+                _externalPreviewContent = null;
+            }
+            else
+            {
+                _externalPreviewContent = content;
+                _externalLinkCache[cacheKey] = content;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading external link preview for {Source} {Id}", source, id);
+            _externalPreviewError = "Failed to load external content.";
+            _externalPreviewContent = null;
+        }
+        finally
+        {
+            _externalPreviewLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseExternalPreview()
+    {
+        _externalPreviewOpen = false;
+        StateHasChanged();
+    }
+
+    private static string GetExternalCacheKey(string source, string id) => $"{source}:{id}".ToLowerInvariant();
+
+    #endregion
+
+    #region Image Upload
+
+    [JSInvokable]
+    public async Task<object?> OnImageUploadRequested(string fileName, string contentType, long fileSize)
+    {
+        if (ViewModel.Article == null) return null;
+
+        var worldId = AppContext.CurrentWorldId ?? ViewModel.Article.WorldId ?? Guid.Empty;
+        if (worldId == Guid.Empty) return null;
+
+        try
+        {
+            var request = new WorldDocumentUploadRequestDto
+            {
+                FileName = fileName,
+                ContentType = contentType,
+                FileSizeBytes = fileSize,
+                ArticleId = ViewModel.Article.Id,
+                Description = $"Inline image for article: {ViewModel.Article.Title}"
+            };
+
+            var response = await WorldApi.RequestDocumentUploadAsync(worldId, request);
+            if (response == null) return null;
+
+            return new
+            {
+                uploadUrl = response.UploadUrl,
+                documentId = response.DocumentId.ToString()
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error requesting image upload for article {ArticleId}", ViewModel.Article.Id);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnImageUploadConfirmed(string documentIdStr)
+    {
+        if (ViewModel.Article == null || !Guid.TryParse(documentIdStr, out var documentId)) return;
+
+        var worldId = AppContext.CurrentWorldId ?? ViewModel.Article.WorldId ?? Guid.Empty;
+        if (worldId == Guid.Empty) return;
+
+        try
+        {
+            await WorldApi.ConfirmDocumentUploadAsync(worldId, documentId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error confirming image upload {DocumentId}", documentId);
+        }
+    }
+
+    [JSInvokable]
+    public string GetImageProxyUrl(string documentIdStr)
+    {
+        // Return stable chronicis-image: reference (not a URL)
+        return $"chronicis-image:{documentIdStr}";
+    }
+
+    [JSInvokable]
+    public async Task<string?> ResolveImageUrl(string documentIdStr)
+    {
+        if (!Guid.TryParse(documentIdStr, out var documentId)) return null;
+
+        try
+        {
+            var result = await WorldApi.DownloadDocumentAsync(documentId);
+            return result?.DownloadUrl;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error resolving image URL for document {DocumentId}", documentId);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public void OnImageUploadStarted(string fileName)
+    {
+        InvokeAsync(() =>
+        {
+            Snackbar.Add($"Uploading {fileName}...", Severity.Info);
+            StateHasChanged();
+        });
+    }
+
+    [JSInvokable]
+    public void OnImageUploadError(string message)
+    {
+        InvokeAsync(() =>
+        {
+            Snackbar.Add(message, Severity.Error);
+            StateHasChanged();
+        });
+    }
+
+    private async Task InsertImageFromToolbar()
+    {
+        if (ViewModel.Article == null || !_editorInitialized) return;
+        await JSRuntime.InvokeVoidAsync("triggerImageUpload", $"tiptap-editor-{ViewModel.Article.Id}", _dotNetHelper);
+    }
+
+    #endregion
+}

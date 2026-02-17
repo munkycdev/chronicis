@@ -1,0 +1,188 @@
+@* AISummarySection_REFACTORED.razor - Refactored with ViewModel pattern *@
+@* Zero business logic - all managed through ViewModel *@
+
+@using Chronicis.Client.ViewModels
+@implements IDisposable
+
+<div class="ai-summary-section @(ViewModel.HasSummary ? "has-summary" : "")">
+    <div class="ai-summary-header" @onclick="ViewModel.ToggleExpandedAsync">
+        <div class="header-left">
+            <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" 
+                     Size="Size.Small" 
+                     Class="header-icon" />
+            <MudText Typo="Typo.subtitle1" Class="header-title">AI Summary</MudText>
+            @if (ViewModel.HasSummary && ViewModel.GeneratedAt.HasValue)
+            {
+                <MudChip T="string" 
+                         Size="Size.Small" 
+                         Variant="Variant.Outlined" 
+                         Class="timestamp-chip">
+                    @ViewModel.GetRelativeTime(ViewModel.GeneratedAt.Value)
+                </MudChip>
+            }
+        </div>
+        <MudIcon Icon="@(ViewModel.IsExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" 
+                 Size="Size.Small"
+                 Class="expand-icon" />
+    </div>
+
+    @if (ViewModel.IsExpanded)
+    {
+        <div class="ai-summary-content">
+            @if (ViewModel.IsLoading)
+            {
+                <div class="loading-state">
+                    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="loading-bar" />
+                    <div class="loading-text">
+                        <MudIcon Icon="@Icons.Material.Filled.Psychology" Size="Size.Small" />
+                        <MudText Typo="Typo.body2">@ViewModel.LoadingMessage</MudText>
+                    </div>
+                </div>
+            }
+            else if (ViewModel.HasSummary)
+            {
+                @* Summary Display *@
+                <div class="summary-display">
+                    <div class="summary-text">@ViewModel.Summary</div>
+                    
+                    <div class="summary-footer">
+                        @if (!string.IsNullOrEmpty(ViewModel.TemplateName))
+                        {
+                            <MudText Typo="Typo.caption" Class="template-badge">
+                                <MudIcon Icon="@Icons.Material.Filled.Style" Size="Size.Small" />
+                                @ViewModel.TemplateName
+                            </MudText>
+                        }
+                        
+                        <div class="summary-actions">
+                            <MudTooltip Text="Regenerate summary">
+                                <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                                               Size="Size.Small"
+                                               OnClick="ViewModel.RegenerateSummaryAsync" />
+                            </MudTooltip>
+                            <MudTooltip Text="Copy to clipboard">
+                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                                               Size="Size.Small"
+                                               OnClick="ViewModel.CopySummaryAsync" />
+                            </MudTooltip>
+                            <MudTooltip Text="Clear summary">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               OnClick="ViewModel.ClearSummaryAsync" />
+                            </MudTooltip>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (ViewModel.Estimate != null)
+            {
+                @* Generate UI *@
+                @if (ViewModel.Estimate.SourceCount == 0)
+                {
+                    <div class="no-sources">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" />
+                        <MudText Typo="Typo.body2">@ViewModel.NoSourcesMessage</MudText>
+                    </div>
+                }
+                else
+                {
+                    <div class="generate-ui">
+                        @* Main Controls Row *@
+                        <div class="generate-main">
+                            <MudSelect T="Guid?" 
+                                       Value="@ViewModel.SelectedTemplateId"
+                                       ValueChanged="@((Guid? value) => ViewModel.SetSelectedTemplateId(value))"
+                                       Label="Template"
+                                       Variant="Variant.Outlined"
+                                       Dense="true"
+                                       Class="template-select">
+                                @foreach (var template in ViewModel.Templates)
+                                {
+                                    <MudSelectItem T="Guid?" Value="@template.Id">
+                                        @template.Name
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                            
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.AutoAwesome"
+                                       OnClick="ViewModel.GenerateSummaryAsync"
+                                       Disabled="@ViewModel.IsLoading"
+                                       Class="generate-button">
+                                Generate
+                            </MudButton>
+                        </div>
+
+                        @* Source count hint *@
+                        <MudText Typo="Typo.caption" Class="source-hint">
+                            @ViewModel.Estimate.SourceCount @ViewModel.SourceLabel@(ViewModel.Estimate.SourceCount == 1 ? "" : "s") will be analyzed
+                        </MudText>
+
+                        @* Advanced Options (collapsed by default) *@
+                        <MudExpansionPanels Class="advanced-panel" Elevation="0">
+                            <MudExpansionPanel Text="Advanced Options" Dense="true">
+                                <div class="advanced-content">
+                                    <MudTextField T="string"
+                                                  Value="@ViewModel.CustomPrompt"
+                                                  ValueChanged="@((string value) => ViewModel.SetCustomPrompt(value))"
+                                                  Label="Custom Instructions"
+                                                  Variant="Variant.Outlined"
+                                                  Lines="2"
+                                                  Placeholder="@ViewModel.CustomPromptPlaceholder"
+                                                  HelperText="Add extra guidance for the AI (optional)"
+                                                  Class="custom-prompt-field" />
+                                    
+                                    <MudCheckBox T="bool" 
+                                                 Value="@ViewModel.SaveConfiguration"
+                                                 ValueChanged="@((bool value) => ViewModel.SetSaveConfiguration(value))"
+                                                 Label="@ViewModel.RememberSettingsLabel"
+                                                 Dense="true"
+                                                 Class="remember-checkbox" />
+                                    
+                                    <MudTooltip Text="@ViewModel.GetEstimateTooltip()">
+                                        <MudText Typo="Typo.caption" Class="cost-hint">
+                                            <MudIcon Icon="@Icons.Material.Filled.Payments" Size="Size.Small" />
+                                            Est. ~$@ViewModel.Estimate.EstimatedCostUSD.ToString("F4")
+                                        </MudText>
+                                    </MudTooltip>
+                                </div>
+                            </MudExpansionPanel>
+                        </MudExpansionPanels>
+                    </div>
+                }
+            }
+            else if (!string.IsNullOrEmpty(ViewModel.ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="error-alert">
+                    @ViewModel.ErrorMessage
+                </MudAlert>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// ViewModel containing all state and behavior.
+    /// Parent creates this and wires it up with the facade.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public AISummarySectionViewModel ViewModel { get; set; } = null!;
+
+    protected override void OnInitialized()
+    {
+        ViewModel.StateChanged += OnStateChanged;
+    }
+
+    private void OnStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ViewModel.StateChanged -= OnStateChanged;
+    }
+}

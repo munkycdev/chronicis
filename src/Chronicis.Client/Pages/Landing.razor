@@ -1,0 +1,240 @@
+@page "/"
+@layout PublicLayout
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Chronicis — Campaign Notes for Tabletop RPGs</PageTitle>
+
+<div class="landing">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="">
+            
+            <h1 class="hero-title">
+                Never Lose Track of Your Campaign Again
+            </h1>
+            
+            <p class="hero-subtitle">
+                Chronicis is the knowledge base built for tabletop RPGs. 
+                Organize your world, link your lore, and let AI help you 
+                remember what happened three sessions ago.
+            </p>
+
+            <div class="hero-badge">
+                <span class="badge-icon">✨</span>
+                <span>Free during early access</span>
+            </div>
+            
+        </div>
+        
+        <div class="hero-visual">
+            <div class="browser-frame">
+                <div class="browser-header">
+                    <div class="browser-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <div class="browser-url">chronicis.app/forgotten-realms/session-notes/session-1-the-tavern</div>
+                </div>
+                <div class="browser-content">
+                    <img src="/images/ScreenshotDemo.png" 
+                         alt="Chronicis interface showing campaign notes" 
+                         onerror="this.parentElement.innerHTML='<div class=\'placeholder-screenshot\'><span>📚</span><p>Your campaign knowledge, beautifully organized</p></div>'" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Proof -->
+    <section class="social-proof">
+        <p>Built for the games you love</p>
+        <div class="game-icons">
+            <span title="Dungeons & Dragons">🐉</span>
+            <span title="Pathfinder">⚔️</span>
+            <span title="Call of Cthulhu">🐙</span>
+            <span title="Vampire: The Masquerade">🦇</span>
+            <span title="And many more...">✨</span>
+        </div>
+    </section>
+
+    <!-- Problem Statement -->
+    <section class="problem-section">
+        <div class="section-container">
+            <h2 class="section-eyebrow">The Problem</h2>
+            <h3 class="section-title">Campaign Notes Are a Mess</h3>
+            <p class="section-subtitle">
+                You've got session notes in Google Docs, NPC names in Discord, 
+                maps on your desktop, and that important plot detail... somewhere. 
+                When a player asks "Who was that merchant in Baldur's Gate?", 
+                you're digging through chaos.
+            </p>
+        </div>
+    </section>
+
+    <!-- Solution / Features -->
+    <section class="features-section">
+        <div class="section-container">
+            <h2 class="section-eyebrow">The Solution</h2>
+            <h3 class="section-title">One Place for Everything</h3>
+            
+            <div class="features-grid">
+                <div class="feature-card feature-highlight">
+                    <div class="feature-icon">🌳</div>
+                    <h4>Hierarchical Organization</h4>
+                    <p>
+                        Build your world like a wiki. Nest locations inside regions, 
+                        NPCs inside factions, spells inside schools. Drag and drop to reorganize anytime.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">#️⃣</div>
+                    <h4>Hashtag Linking</h4>
+                    <p>
+                        Type #Waterdeep and it becomes a link. Click to jump there. 
+                        Hover for a preview. No manual linking required.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h4>Automatic Backlinks</h4>
+                    <p>
+                        See every place an NPC, location, or concept is mentioned. 
+                        Discover connections across your campaign you didn't know existed.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h4>AI-Powered Summaries</h4>
+                    <p>
+                        Click a button and AI reads every mention of a character, 
+                        then writes a comprehensive summary. Perfect for session prep.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h4>Instant Search</h4>
+                    <p>
+                        Find anything in seconds. Search titles, content, or hashtags. 
+                        See exactly where your search term appears.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h4>Auto-Save Everything</h4>
+                    <p>
+                        Just type. Your work saves automatically as you go. 
+                        No save button, no lost work, no anxiety.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h4>External Reference Library</h4>
+                    <p>
+                        Link official content directly into your notes. 
+                        Search the SRD for spells, monsters, and rules. 
+                        Import with automatic hashtags and relationships.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📄</div>
+                    <h4>Document Library</h4>
+                    <p>
+                        Upload maps, handouts, character sheets, and homebrew content. 
+                        PDFs and images attach directly to articles. Search document 
+                        contents and link pages to your notes.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-section">
+        <div class="section-container">
+            <h2 class="section-eyebrow">How It Works</h2>
+            <h3 class="section-title">From Chaos to Chronicle in Minutes</h3>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h4>Create Your First Article</h4>
+                    <p>Start with anything—a character, a location, or your next session's notes.</p>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h4>Link with Hashtags</h4>
+                    <p>Mention #NPCName or #LocationName and watch connections form automatically.</p>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h4>Build Your World</h4>
+                    <p>Add more articles, nest them into hierarchies, and watch your campaign come alive.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonial / Quote -->
+    <section class="quote-section">
+        <div class="section-container">
+            <blockquote>
+                <p>"Finally, a tool that thinks like a DM."</p>
+                <cite>— What we hope you'll say after trying Chronicis</cite>
+            </blockquote>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="final-cta">
+        <div class="section-container">
+            <h2>Ready to Organize Your Campaign?</h2>
+            <p>
+                Join the early access and help shape the future of campaign management. 
+                It's free, it's fast, and your notes will thank you.
+            </p>
+            
+            <AuthorizeView>
+                <Authorized>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               Href="/dashboard"
+                               Class="cta-primary cta-large">
+                        Open Your Dashboard &nbsp; &nbsp;➤
+                    </MudButton>
+                </Authorized>
+                <NotAuthorized>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               Href="authentication/login"
+                               EndIcon="@Icons.Material.Filled.ArrowForward"
+                               Class="cta-primary cta-large">
+                        Create Your Free Account
+                    </MudButton>
+                    <p class="cta-subtext">Sign in with Google or Discord</p>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </section>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if user is authenticated - redirect to dashboard
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo("/dashboard");
+        }
+    }
+}

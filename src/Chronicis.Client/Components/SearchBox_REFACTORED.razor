@@ -1,0 +1,59 @@
+@* SearchBox.razor - Refactored to use ViewModel pattern *@
+@* Pure presentation component - no service dependencies *@
+
+@using Chronicis.Client.ViewModels
+
+<style>
+    .search-input {
+        background: var(--mud-palette-primary);
+    }
+</style>
+
+<div class="search-box">
+    <MudTextField @bind-Value="ViewModel.SearchText"
+                  Placeholder="Search entries..."
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Adornment="Adornment.End"
+                  AdornmentIcon="@(ViewModel.HasText ? Icons.Material.Filled.Close : Icons.Material.Filled.Search)"
+                  OnAdornmentClick="OnAdornmentClick"
+                  @onkeydown="OnKeyDown"
+                  Immediate="true"
+                  Class="search-input" 
+                  tabindex="1" />
+</div>
+
+@code {
+    /// <summary>
+    /// ViewModel containing search state and behavior.
+    /// Parent component creates this and wires up the events.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public SearchBoxViewModel ViewModel { get; set; } = null!;
+
+    private void OnAdornmentClick()
+    {
+        if (ViewModel.HasText)
+        {
+            // Clear button clicked
+            ViewModel.Clear();
+        }
+        else
+        {
+            // Search button clicked
+            ViewModel.ExecuteSearch();
+        }
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            ViewModel.ExecuteSearch();
+        }
+        else if (e.Key == "Escape")
+        {
+            ViewModel.Clear();
+        }
+    }
+}

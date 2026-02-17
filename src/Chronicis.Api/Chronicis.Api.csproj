@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<UserSecretsId>chronicis-api-secrets</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="Chronicis.Api.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- ASP.NET Core -->
+		<PackageReference Include="Azure.Core" Version="1.51.1" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+		
+		<!-- Azure Services -->
+		<PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
+		<PackageReference Include="Azure.Storage.Blobs" Version="12.22.2" />
+		
+		<!-- Entity Framework Core for SQL Server -->
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+
+		<!-- Application Insights (TO BE REMOVED IN LATER PHASE) -->
+		
+		<!-- Serilog -->
+		<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+		
+		<!-- Datadog APM -->
+		<PackageReference Include="Datadog.Trace" Version="3.35.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+		<PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+		<PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
+		
+		<!-- JWT Token Handling -->
+		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.16.0" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Reference to shared models/DTOs project -->
+		<ProjectReference Include="..\Chronicis.Shared\Chronicis.Shared.csproj" />
+	</ItemGroup>
+</Project>

@@ -1,0 +1,162 @@
+@* ArticleHeader.razor - Header section for article detail view *@
+@* Includes breadcrumbs, metadata toggle, icon picker, editable title, and divider *@
+
+@using Chronicis.Client.Components.Shared
+@inject IJSRuntime JSRuntime
+
+<!-- Breadcrumbs with Metadata Toggle -->
+<ChroniclsBreadcrumbs Items="Breadcrumbs" UseCustomLinks="true">
+    <MudTooltip Text="Metadata">
+        <MudIconButton Color="Color.Inherit"
+                       OnClick="OnMetadataToggleClick"
+                       Icon="@Icons.Material.Filled.ChromeReaderMode"
+                       Class="mt-0"
+                       Edge="Edge.End" />
+    </MudTooltip>
+</ChroniclsBreadcrumbs>
+
+<!-- Title Row with Icon Picker -->
+<div class="d-flex align-center mb-3">
+    <!-- Icon Picker Button -->
+    <IconPickerButton 
+        CurrentIcon="@IconEmoji"
+        OnIconChanged="OnIconChangedInternal" />
+    
+    <!-- Title (Always Editable) -->
+    <MudTextField @ref="_titleField"
+                  @bind-Value="Title"
+                  @bind-Value:after="OnTitleChangedInternal"
+                  Variant="Variant.Text"
+                  Placeholder="Untitled Article"
+                  Class="chronicis-article-title flex-grow-1"
+                  Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
+                  Immediate="true"
+                  @onkeydown="OnTitleKeyDownInternal"
+                  Underline="false" />
+</div>
+
+<!-- Divider -->
+<div class="chronicis-rune-divider mb-3"></div>
+
+@code {
+    private MudTextField<string>? _titleField;
+
+    #region Parameters
+
+    /// <summary>
+    /// The breadcrumb items to display for navigation.
+    /// </summary>
+    [Parameter]
+    public List<BreadcrumbItem>? Breadcrumbs { get; set; }
+
+    /// <summary>
+    /// The current title value (two-way bound).
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Callback when title changes (for two-way binding).
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> TitleChanged { get; set; }
+
+    /// <summary>
+    /// The current icon emoji (e.g., "fa-solid fa-dragon").
+    /// </summary>
+    [Parameter]
+    public string? IconEmoji { get; set; }
+
+    /// <summary>
+    /// Callback when the icon is changed or cleared.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string?> OnIconChanged { get; set; }
+
+    /// <summary>
+    /// Callback when title content is edited (for marking unsaved changes).
+    /// </summary>
+    [Parameter]
+    public EventCallback OnTitleEdited { get; set; }
+
+    /// <summary>
+    /// Callback when Enter key is pressed in title field (for triggering save).
+    /// </summary>
+    [Parameter]
+    public EventCallback OnEnterPressed { get; set; }
+
+    /// <summary>
+    /// Callback when the metadata toggle button is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnMetadataToggle { get; set; }
+
+    /// <summary>
+    /// When true, the title field will be focused on next render.
+    /// Component will set this to false after focusing.
+    /// </summary>
+    [Parameter]
+    public bool ShouldFocusTitle { get; set; }
+
+    /// <summary>
+    /// Callback to notify parent that focus has been handled.
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> ShouldFocusTitleChanged { get; set; }
+
+    #endregion
+
+    #region Lifecycle
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ShouldFocusTitle && _titleField != null)
+        {
+            await Task.Delay(100);
+            try
+            {
+                await _titleField.FocusAsync();
+                // Also try JS focus as backup
+                await JSRuntime.InvokeVoidAsync("eval", 
+                    "document.querySelector('.chronicis-article-title input')?.focus();");
+            }
+            catch 
+            { 
+                // Ignore focus errors
+            }
+            
+            // Notify parent that focus has been handled
+            await ShouldFocusTitleChanged.InvokeAsync(false);
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+
+    private async Task OnTitleChangedInternal()
+    {
+        await TitleChanged.InvokeAsync(Title);
+        await OnTitleEdited.InvokeAsync();
+    }
+
+    private async Task OnTitleKeyDownInternal(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await OnEnterPressed.InvokeAsync();
+        }
+    }
+
+    private async Task OnIconChangedInternal(string? newIcon)
+    {
+        await OnIconChanged.InvokeAsync(newIcon);
+    }
+
+    private async Task OnMetadataToggleClick()
+    {
+        await OnMetadataToggle.InvokeAsync();
+    }
+
+    #endregion
+}

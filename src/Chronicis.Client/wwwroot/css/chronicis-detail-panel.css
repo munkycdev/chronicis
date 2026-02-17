@@ -1,0 +1,162 @@
+/* ============================================
+   EXTERNAL LINK DETAIL PANEL
+   Structured rendering for blob-backed external content
+   ============================================ */
+
+.external-link-detail-panel {
+    padding: 0 16px 16px;
+}
+
+/* Subtitle (kind/type line below title) */
+.eldp-subtitle {
+    color: var(--mud-palette-text-secondary);
+    font-style: italic;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+/* Section container */
+.eldp-section {
+    margin-bottom: 1.25rem;
+}
+
+/* Section header */
+.eldp-section-header {
+    color: var(--chronicis-primary, #1F2A33);
+    font-family: var(--chronicis-font-display, serif);
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--chronicis-accent, #C4AF8E);
+}
+
+/* Section body */
+.eldp-section-body {
+    padding-left: 0;
+}
+
+/* Field row: label + value on one line */
+.eldp-field-row {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+    line-height: 1.5;
+    flex-wrap: wrap;
+}
+
+.eldp-field-label {
+    font-weight: 600;
+    color: var(--chronicis-primary, #1F2A33);
+    min-width: 100px;
+    flex-shrink: 0;
+}
+
+.eldp-field-label::after {
+    content: ":";
+}
+
+.eldp-field-value {
+    color: var(--mud-palette-text-primary);
+    flex: 1;
+    word-break: break-word;
+}
+
+/* Heading-rendered field (sub-section title) */
+.eldp-field-heading {
+    color: var(--chronicis-primary, #1F2A33);
+    font-family: var(--chronicis-font-display, serif);
+    font-size: 1rem;
+    font-weight: 500;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Rich text block */
+.eldp-field-richtext {
+    margin: 0.25rem 0 0.75rem;
+    line-height: 1.6;
+    color: var(--mud-palette-text-primary);
+}
+
+/* Nested section (object or array group) */
+.eldp-nested-section {
+    margin: 0.5rem 0;
+    padding-left: 0.75rem;
+    border-left: 2px solid var(--chronicis-accent, #C4AF8E);
+}
+
+/* Chip/tag display for simple arrays */
+.eldp-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.25rem 0;
+}
+
+.eldp-chip {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    background-color: rgba(196, 175, 142, 0.15);
+    border: 1px solid rgba(196, 175, 142, 0.3);
+    color: var(--chronicis-primary, #1F2A33);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+/* List items (array of objects) */
+.eldp-list-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(196, 175, 142, 0.2);
+}
+
+.eldp-list-item:last-child {
+    border-bottom: none;
+}
+
+.eldp-list-item-name {
+    font-weight: 600;
+    color: var(--chronicis-primary, #1F2A33);
+    margin-bottom: 0.25rem;
+}
+
+/* Table rendering */
+.eldp-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+}
+
+.eldp-table th {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 2px solid var(--chronicis-accent, #C4AF8E);
+    color: var(--chronicis-primary, #1F2A33);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.eldp-table td {
+    padding: 0.35rem 0.6rem;
+    border-bottom: 1px solid rgba(196, 175, 142, 0.15);
+    color: var(--mud-palette-text-primary);
+}
+
+.eldp-table tr:last-child td {
+    border-bottom: none;
+}
+
+.eldp-table tr:hover td {
+    background-color: rgba(196, 175, 142, 0.08);
+}
+
+/* Attribution footer */
+.eldp-attribution {
+    color: var(--mud-palette-text-secondary);
+    font-size: 0.8rem;
+    margin-top: 1rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(196, 175, 142, 0.2);
+}

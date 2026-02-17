@@ -1,0 +1,125 @@
+@using Chronicis.Shared.DTOs
+
+@* Refactored OutgoingLinksPanel - Now accepts data as parameters instead of fetching directly *@
+
+<div class="links-panel">
+    <div class="links-panel-header">
+        <span class="links-panel-title">Links To</span>
+        @if (IsLoading)
+        {
+            <span class="links-panel-loading">...</span>
+        }
+        <span class="links-panel-count">@OutgoingLinks.Count</span>
+    </div>
+
+    @if (OutgoingLinks.Any())
+    {
+        <div class="links-chip-container">
+            @foreach (var link in OutgoingLinks)
+            {
+                <span class="link-chip" 
+                      @onclick="() => OnNavigateToArticle.InvokeAsync(link.ArticleId)"
+                      title="@link.DisplayPath">
+                    @link.Title
+                </span>
+            }
+        </div>
+    }
+    else if (!IsLoading)
+    {
+        <div class="links-panel-empty">No outgoing links</div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// The list of outgoing links to display.
+    /// Parent component is responsible for loading this data.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public List<BacklinkDto> OutgoingLinks { get; set; } = new();
+
+    /// <summary>
+    /// Whether data is currently being loaded.
+    /// Controls the loading indicator display.
+    /// </summary>
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    /// <summary>
+    /// Callback when user clicks an outgoing link.
+    /// Parent handles the navigation logic.
+    /// </summary>
+    [Parameter]
+    public EventCallback<Guid> OnNavigateToArticle { get; set; }
+}
+
+<style>
+.links-panel {
+    padding: 12px 16px;
+}
+
+.links-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.links-panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mud-palette-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.links-panel-loading {
+    font-size: 12px;
+    color: #C4AF8E;
+}
+
+.links-panel-count {
+    font-size: 11px;
+    background: rgba(196, 175, 142, 0.2);
+    color: var(--mud-palette-text-secondary);
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: auto;
+}
+
+.links-chip-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.link-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 12px;
+    background: rgba(196, 175, 142, 0.1);
+    border: 1px solid rgba(196, 175, 142, 0.25);
+    border-radius: 12px;
+    color: var(--mud-palette-text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.link-chip:hover {
+    background: rgba(196, 175, 142, 0.25);
+    border-color: rgba(196, 175, 142, 0.5);
+    color: #C4AF8E;
+}
+
+.links-panel-empty {
+    font-size: 12px;
+    color: var(--mud-palette-text-secondary);
+    opacity: 0.6;
+    font-style: italic;
+}
+</style>

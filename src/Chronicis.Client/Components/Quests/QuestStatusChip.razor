@@ -1,0 +1,37 @@
+@using Chronicis.Shared.Enums
+
+@code {
+    [Parameter, EditorRequired]
+    public QuestStatus Status { get; set; }
+
+    private Color GetStatusColor()
+    {
+        return Status switch
+        {
+            QuestStatus.Active => Color.Success,
+            QuestStatus.Completed => Color.Info,
+            QuestStatus.Failed => Color.Error,
+            QuestStatus.Abandoned => Color.Default,
+            _ => Color.Default
+        };
+    }
+
+    private string GetStatusText()
+    {
+        return Status switch
+        {
+            QuestStatus.Active => "Active",
+            QuestStatus.Completed => "Completed",
+            QuestStatus.Failed => "Failed",
+            QuestStatus.Abandoned => "Abandoned",
+            _ => "Unknown"
+        };
+    }
+}
+
+<MudChip T="string"
+         Size="Size.Small" 
+         Color="@GetStatusColor()" 
+         Variant="Variant.Text">
+    @GetStatusText()
+</MudChip>

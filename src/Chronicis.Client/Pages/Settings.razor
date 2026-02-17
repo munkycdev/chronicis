@@ -1,0 +1,35 @@
+@page "/settings"
+@attribute [Authorize]
+@using Chronicis.Client.Components.Settings
+
+<PageTitle>Settings - Chronicis</PageTitle>
+
+<MudPaper Elevation="2" Class="settings-container pa-6">
+    <div class="settings-header mb-6">
+        <MudText Typo="Typo.h4" Class="settings-title">Settings</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            Manage your account, export data, and customize your experience.
+        </MudText>
+    </div>
+
+    <MudTabs Elevation="0" 
+             Rounded="true" 
+             ApplyEffectsToContainer="true" 
+             PanelClass="pt-6"
+             Color="Color.Primary"
+             SliderColor="Color.Primary"
+             Class="settings-tabs">
+        <MudTabPanel Text="Profile" Icon="@Icons.Material.Filled.Person">
+            <ProfileSection />
+        </MudTabPanel>
+        
+        <MudTabPanel Text="Data" Icon="@Icons.Material.Filled.Storage">
+            <DataManagementSection />
+        </MudTabPanel>
+        
+        <MudTabPanel Text="Preferences" Icon="@Icons.Material.Filled.Tune">
+            <PreferencesSection />
+        </MudTabPanel>
+    </MudTabs>
+</MudPaper>
+

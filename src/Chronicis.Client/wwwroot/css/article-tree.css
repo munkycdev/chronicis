@@ -1,0 +1,343 @@
+/* ============================================
+   Article Tree Navigation Styles
+   ============================================ */
+
+.article-tree {
+    padding: var(--chronicis-space-sm) 0;
+}
+
+/* Loading State */
+.article-tree__loading {
+    display: flex;
+    align-items: center;
+    padding: var(--chronicis-space-md);
+    color: var(--chronicis-text-on-dark);
+}
+
+/* Empty State */
+.article-tree__empty {
+    padding: var(--chronicis-space-lg) var(--chronicis-space-md);
+    text-align: center;
+    color: var(--chronicis-text-on-dark);
+}
+
+.article-tree__empty-icon {
+    font-size: 2.5rem;
+    opacity: 0.5;
+}
+
+/* Dashboard Link */
+.article-tree__dashboard-link {
+    display: flex;
+    align-items: center;
+    color: var(--chronicis-text-on-dark);
+    text-decoration: none;
+    transition: all var(--chronicis-transition-fast);
+    border-radius: 0;
+    padding-left:10px;
+    vertical-align: top;
+}
+
+.article-tree__dashboard-link:hover {
+    background-color: rgba(196, 175, 142, 0.12);
+    color: var(--chronicis-secondary);
+}
+
+/* New Article Button */
+.article-tree__new-article {
+    display: flex;
+    align-items: center;
+    padding: var(--chronicis-space-xs) var(--chronicis-space-md);
+    padding-left: calc(var(--chronicis-space-md) + 30px);
+    color: var(--chronicis-secondary-muted);
+    cursor: pointer;
+    transition: all var(--chronicis-transition-fast);
+    font-size: 0.875rem;
+}
+
+.article-tree__new-article:hover {
+    background-color: rgba(196, 175, 142, 0.12);
+    color: var(--chronicis-secondary);
+}
+
+/* ============================================
+   Tree Node Styles
+   ============================================ */
+
+.tree-node {
+    user-select: none;
+}
+
+.tree-node--hidden {
+    display: none;
+}
+
+.tree-node__content {
+    display: flex;
+    align-items: center;
+    padding: var(--chronicis-space-xs) var(--chronicis-space-sm);
+    padding-right: var(--chronicis-space-xs);
+    cursor: pointer;
+    transition: all var(--chronicis-transition-fast);
+    color: var(--chronicis-text-on-dark);
+    border-left: 3px solid transparent;
+}
+
+.tree-node__content:hover {
+    background-color: rgba(196, 175, 142, 0.12);
+    color: var(--chronicis-secondary);
+}
+
+/* Selected State */
+.tree-node--selected > .tree-node__content {
+    background-color: rgba(196, 175, 142, 0.2);
+    border-left-color: var(--chronicis-secondary);
+    color: var(--chronicis-secondary);
+}
+
+/* Expand Button */
+.tree-node__expand-btn {
+    color: var(--chronicis-secondary-muted) !important;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.tree-node__expand-btn:hover {
+    color: var(--chronicis-secondary) !important;
+}
+
+.tree-node__expand-spacer {
+    width: 28px;
+    flex-shrink: 0;
+}
+
+/* Icons */
+.tree-node__icon {
+    margin-right: var(--chronicis-space-sm);
+    flex-shrink: 0;
+}
+
+.tree-node__icon--material {
+    color: var(--chronicis-secondary-muted);
+}
+
+.tree-node--selected .tree-node__icon--material {
+    color: var(--chronicis-secondary);
+}
+
+.tree-node__icon--fa {
+    font-size: 1rem;
+    color: var(--chronicis-secondary);
+    width: 20px;
+    text-align: center;
+}
+
+.tree-node__icon--emoji {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* Private article icon */
+.tree-node__icon--private {
+    color: var(--chronicis-secondary-muted) !important;
+    opacity: 0.8;
+}
+
+/* Icon wrapper for overlay badges */
+.tree-node__icon-wrapper {
+    position: relative;
+    display: inline-flex;
+    margin-right: var(--chronicis-space-sm);
+    flex-shrink: 0;
+}
+
+.tree-node__icon-wrapper .tree-node__icon {
+    margin-right: 0;
+}
+
+/* AI Summary indicator badge */
+.tree-node__ai-badge {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    font-size: 0.6rem;
+    line-height: 1;
+    pointer-events: none;
+}
+
+/* Title */
+.tree-node__title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9375rem;
+}
+
+/* Children Container */
+.tree-node__children {
+    margin-left: var(--chronicis-space-md);
+    padding-left: var(--chronicis-space-sm);
+    border-left: 1px solid rgba(196, 175, 142, 0.2);
+}
+
+/* Menu Items */
+.mud-menu-item {
+    transition: all var(--chronicis-transition-fast);
+}
+
+.mud-menu-item:hover {
+    background-color: rgba(196, 175, 142, 0.1);
+}
+
+.mud-menu-item .mud-icon-root {
+    color: var(--chronicis-secondary-muted);
+}
+
+.mud-menu-item:hover .mud-icon-root {
+    color: var(--chronicis-secondary);
+}
+
+/* ============================================
+   Drag and Drop Styles
+   ============================================ */
+
+/* Dragging state on tree container */
+.article-tree--dragging {
+    cursor: grabbing;
+}
+
+/* Node being dragged */
+.tree-node--dragging {
+    opacity: 0.5;
+}
+
+.tree-node--dragging > .tree-node__content {
+    background-color: rgba(196, 175, 142, 0.1);
+}
+
+/* Valid drop target */
+.tree-node__content--drop-target {
+    background-color: rgba(196, 175, 142, 0.3) !important;
+    border-left-color: var(--chronicis-secondary);
+    box-shadow: inset 0 0 0 2px var(--chronicis-secondary);
+}
+
+/* Root drop zone */
+.article-tree__root-drop-zone {
+    display: flex;
+    align-items: center;
+    padding: var(--chronicis-space-sm) var(--chronicis-space-md);
+    padding-left: calc(var(--chronicis-space-md) + 30px);
+    margin-top: var(--chronicis-space-sm);
+    color: var(--chronicis-secondary-muted);
+    border: 2px dashed rgba(196, 175, 142, 0.3);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    transition: all var(--chronicis-transition-fast);
+}
+
+.article-tree__root-drop-zone--active {
+    background-color: rgba(196, 175, 142, 0.2);
+    border-color: var(--chronicis-secondary);
+    color: var(--chronicis-secondary);
+}
+
+/* ============================================
+   Node Type Specific Styles
+   ============================================ */
+
+/* World nodes */
+.tree-node--world > .tree-node__content {
+    padding-left: var(--chronicis-space-sm);
+    font-weight: 600;
+}
+
+.tree-node__title--world {
+    font-weight: 600;
+    color: var(--chronicis-secondary);
+}
+
+.tree-node__icon--world {
+    color: var(--chronicis-secondary) !important;
+}
+
+/* Campaign nodes */
+.tree-node--campaign > .tree-node__content {
+    font-weight: 500;
+}
+
+.tree-node__title--campaign {
+    font-weight: 500;
+}
+
+.tree-node__icon--campaign {
+    color: var(--chronicis-secondary-muted) !important;
+}
+
+/* Arc nodes */
+.tree-node--arc > .tree-node__content {
+    font-style: italic;
+}
+
+.tree-node__title--arc {
+    font-style: italic;
+}
+
+.tree-node__icon--arc {
+    color: var(--chronicis-secondary-muted) !important;
+}
+
+/* Virtual group nodes */
+.tree-node--virtualgroup > .tree-node__content {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.85;
+}
+
+.tree-node__title--virtual {
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tree-node__icon--virtual {
+    opacity: 0.7;
+}
+
+/* Non-selectable nodes (don't show pointer) */
+.tree-node__content--not-selectable {
+    cursor: default;
+}
+
+.tree-node__content--not-selectable:hover {
+    background-color: rgba(196, 175, 142, 0.08);
+}
+
+/* Empty group state */
+.tree-node__empty-group {
+    padding: var(--chronicis-space-xs) var(--chronicis-space-sm);
+    padding-left: var(--chronicis-space-md);
+    opacity: 0.7;
+}
+
+.tree-node__empty-group:hover {
+    opacity: 1;
+}
+
+/* Count badge for virtual groups */
+.tree-node__count-badge {
+    margin-left: auto !important;
+    font-size: 0.75rem !important;
+    height: 20px !important;
+    background-color: rgba(196, 175, 142, 0.2) !important;
+    color: var(--chronicis-secondary-muted) !important;
+}
+
+.tree-node--selected .tree-node__count-badge {
+    background-color: rgba(196, 175, 142, 0.3) !important;
+    color: var(--chronicis-secondary) !important;
+}

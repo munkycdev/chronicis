@@ -1,0 +1,76 @@
+﻿@page "/authentication/{action}"
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject NavigationManager Navigation
+
+<RemoteAuthenticatorView Action="@Action">
+    <LoggingIn>
+        <MudContainer Class="auth-container">
+            <MudPaper Elevation="3" Class="auth-paper">
+                <div class="auth-content">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+                    <MudText Typo="Typo.h6" Class="mt-4" Style="color: #F4F0EA;">Signing you in...</MudText>
+                    <MudText Typo="Typo.body2" Style="color: #F4F0EA;">Please wait while we authenticate you with Auth0</MudText>
+                </div>
+            </MudPaper>
+        </MudContainer>
+    </LoggingIn>
+
+    <CompletingLoggingIn>
+        <MudContainer Class="auth-container">
+            <MudPaper Elevation="3" Class="auth-paper auth-paper-light">
+                <div class="auth-content auth-content-dark">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+                    <MudText Typo="Typo.h6" Class="mt-4">Completing sign in...</MudText>
+                </div>
+            </MudPaper>
+        </MudContainer>
+    </CompletingLoggingIn>
+
+    <LogOut>
+        <MudContainer Class="auth-container">
+            <MudPaper Elevation="3" Class="auth-paper">
+                <div class="auth-content">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+                    <MudText Typo="Typo.h6" Class="mt-4" Style="color: #F4F0EA;">Signing you out...</MudText>
+                </div>
+            </MudPaper>
+        </MudContainer>
+    </LogOut>
+
+    <CompletingLogOut>
+        <MudContainer Class="auth-container">
+            <MudPaper Elevation="3" Class="auth-paper">
+                <div class="auth-content">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+                    <MudText Typo="Typo.h6" Class="mt-4">Completing sign out...</MudText>
+                </div>
+            </MudPaper>
+        </MudContainer>
+    </CompletingLogOut>
+
+    <LogInFailed>
+        <MudContainer Class="auth-container">
+            <MudPaper Elevation="3" Class="auth-paper">
+                <div class="auth-content">
+                    <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
+                    <MudText Typo="Typo.h6" Color="Color.Error" Class="mt-4">Authentication Failed</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">
+                        There was a problem signing you in. Please try again.
+                    </MudText>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Href="authentication/login"
+                               Class="mt-4">
+                        Return to Login
+                    </MudButton>
+                </div>
+            </MudPaper>
+        </MudContainer>
+    </LogInFailed>
+</RemoteAuthenticatorView>
+
+@code {
+    [Parameter]
+    public string? Action { get; set; }
+}

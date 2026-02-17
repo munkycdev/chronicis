@@ -1,0 +1,70 @@
+<style>
+    .search-input {
+        background: var(--mud-palette-primary);
+    }
+</style>
+@using Chronicis.Client.Services
+@inject ITreeStateService TreeState
+
+<div class="search-box">
+    <MudTextField @bind-Value="_searchText"
+                  Placeholder="Search entries..."
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Adornment="Adornment.End"
+                  AdornmentIcon="@(_hasText ? Icons.Material.Filled.Close : Icons.Material.Filled.Search)"
+                  OnAdornmentClick="OnAdornmentClick"
+                  @onkeydown="OnKeyDown"
+                  Immediate="true"
+                  Class="search-input" 
+                  tabindex="1" />
+</div>
+
+@code {
+    private string _searchText = string.Empty;
+    private bool _hasText => !string.IsNullOrWhiteSpace(_searchText);
+
+    protected override void OnInitialized()
+    {
+        TreeState.OnStateChanged += StateHasChanged;
+    }
+
+    private async Task OnAdornmentClick()
+    {
+        if (_hasText)
+        {
+            // Clear button clicked
+            _searchText = string.Empty;
+            TreeState.ClearSearch();
+        }
+        else
+        {
+            // Search button clicked
+            await ExecuteSearch();
+        }
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ExecuteSearch();
+        }
+        else if (e.Key == "Escape")
+        {
+            _searchText = string.Empty;
+            TreeState.ClearSearch();
+        }
+    }
+
+    private Task ExecuteSearch()
+    {
+        TreeState.SetSearchQuery(_searchText);
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        TreeState.OnStateChanged -= StateHasChanged;
+    }
+}

@@ -1,0 +1,40 @@
+@* Shared navigation component for public pages *@
+@inject NavigationManager Navigation
+
+<nav class="public-nav">
+    <div class="public-nav-content">
+        <a href="/" class="public-nav-brand">
+            <img src="/images/logo.png" alt="Chronicis" />
+            <span>Chronicis</span>
+        </a>
+        
+        <div class="public-nav-links">
+            <a href="/" class="">Home</a>
+            <a href="/about" class="">About</a>
+            <a href="/change-log" class="">Change Log</a>
+        </div>
+        
+        <div class="public-nav-actions">
+            <AuthorizeView>
+                <Authorized>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Href="/dashboard"
+                               Size="Size.Small"
+                               Class="public-nav-cta">
+                        Open Dashboard
+                    </MudButton>
+                </Authorized>
+                <NotAuthorized>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Href="authentication/login"
+                               Size="Size.Small"
+                               Class="public-nav-cta">
+                        Log In / Sign Up
+                    </MudButton>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</nav>

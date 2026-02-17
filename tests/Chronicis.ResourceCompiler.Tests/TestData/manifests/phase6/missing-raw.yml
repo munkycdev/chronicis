@@ -1,0 +1,7 @@
+entities:
+  Missing:
+    file: missing.json
+    pk: id
+    root: true
+    output:
+      blobTemplate: "missing/{id}.json"

@@ -1,0 +1,33 @@
+/* ArcQuestList.razor.css - Scoped styles for arc quest list */
+
+.arc-quest-list {
+    margin-bottom: 24px;
+}
+
+.quest-list-item {
+    border-bottom: 1px solid rgba(196, 175, 142, 0.1);
+}
+
+.quest-list-item:last-child {
+    border-bottom: none;
+}
+
+.quest-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+/* Align status chip with title baseline */
+.quest-list-item .d-flex.align-center.gap-2 {
+    align-items: center;
+}
+
+.quest-list-item ::deep .mud-chip {
+    align-self: flex-start;
+    margin-top: 2px;
+}

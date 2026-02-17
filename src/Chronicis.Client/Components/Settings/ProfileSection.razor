@@ -1,0 +1,72 @@
+@using Chronicis.Client.Services
+
+@if (_isLoading)
+{
+    <div class="d-flex justify-center pa-4">
+        <MudProgressCircular Indeterminate="true" Size="Size.Medium" Color="Color.Primary" />
+    </div>
+}
+else if (_user != null)
+{
+    <div class="d-flex flex-column flex-sm-row gap-4 align-start mb-4">
+        @if (!string.IsNullOrEmpty(_user.AvatarUrl))
+        {
+            <MudAvatar Size="Size.Large" Class="profile-avatar">
+                <MudImage Src="@_user.AvatarUrl" Alt="@_user.DisplayName" />
+            </MudAvatar>
+        }
+        else
+        {
+            <MudAvatar Size="Size.Large" Color="Color.Primary" Class="profile-avatar profile-avatar--initials">
+                @(_user.DisplayName?.FirstOrDefault())
+            </MudAvatar>
+        }
+
+        <div class="flex-grow-1">
+            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight: 600;">
+                @_user.DisplayName
+            </MudText>
+            <MudText Typo="Typo.body1" Class="mud-text-secondary mt-1">
+                @_user.Email
+            </MudText>
+        </div>
+    </div>
+
+    <MudDivider Class="my-4" />
+
+    <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="mb-2" Style="font-weight: 600;">
+        Account Information
+    </MudText>
+    
+    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+        Your profile information is managed through your authentication provider. 
+        To update your display name or avatar, please update it in your 
+        connected account (Google, Discord, etc.) and sign in again.
+    </MudText>
+}
+else
+{
+    <MudAlert Severity="Severity.Warning">
+        Unable to load profile information. Please try refreshing the page.
+    </MudAlert>
+}
+
+@code {
+    [Inject] private IAuthService AuthService { get; set; } = default!;
+
+    private UserInfo? _user;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _user = await AuthService.GetCurrentUserAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

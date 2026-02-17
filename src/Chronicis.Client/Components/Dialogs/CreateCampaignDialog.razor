@@ -1,0 +1,101 @@
+@using Chronicis.Shared.DTOs
+@inject ICampaignApiService CampaignApi
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.AutoStories" Class="mr-2" />
+            New Campaign
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_name"
+                      Label="Campaign Name"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      RequiredError="Name is required"
+                      Class="mb-3"
+                      @ref="_nameField"
+                      Immediate="true"
+                      OnKeyDown="@OnNameKeyDown" />
+        
+        <MudTextField @bind-Value="_description"
+                      Label="Description (optional)"
+                      Variant="Variant.Outlined"
+                      Lines="3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled"
+                   OnClick="Submit"
+                   Disabled="@(string.IsNullOrWhiteSpace(_name) || _isSubmitting)">
+            @if (_isSubmitting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Create
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? MudDialog { get; set; }
+
+    [Parameter]
+    public Guid WorldId { get; set; }
+
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private bool _isSubmitting = false;
+    private MudTextField<string>? _nameField;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _nameField != null)
+        {
+            await Task.Delay(100);
+            await _nameField.FocusAsync();
+        }
+    }
+
+    private void Cancel() => MudDialog?.Cancel();
+
+    private async Task OnNameKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_name) && !_isSubmitting)
+        {
+            await Submit();
+        }
+    }
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_name) || _isSubmitting) return;
+
+        _isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var createDto = new CampaignCreateDto
+            {
+                Name = _name.Trim(),
+                Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(),
+                WorldId = WorldId
+            };
+
+            var campaign = await CampaignApi.CreateCampaignAsync(createDto);
+            MudDialog?.Close(DialogResult.Ok(campaign));
+        }
+        catch
+        {
+            MudDialog?.Close(DialogResult.Cancel());
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

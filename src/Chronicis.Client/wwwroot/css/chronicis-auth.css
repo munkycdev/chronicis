@@ -1,0 +1,77 @@
+/* ==========================================================================
+   Chronicis Authentication Styles
+   Styles for the Authentication page (/authentication/{action})
+   ========================================================================== */
+
+.auth-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--chronicis-background-dark) 0%, var(--chronicis-primary) 100%);
+}
+
+.auth-paper {
+    padding: 3rem;
+    max-width: 500px;
+    width: 100%;
+    background-color: var(--chronicis-primary) !important;
+}
+
+.auth-paper-light {
+    background-color: var(--chronicis-background-light) !important;
+}
+
+.auth-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    color: var(--chronicis-text-on-dark);
+}
+
+.auth-content-dark {
+    color: var(--chronicis-background-dark);
+}
+
+/* ==========================================================================
+   Settings Page Styles
+   ========================================================================== */
+
+.settings-container {
+    max-width: 900px;
+    background-color: var(--chronicis-surface) !important;
+}
+
+.settings-header {
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+    padding-bottom: 1.5rem;
+}
+
+.settings-title {
+    color: var(--mud-palette-primary);
+}
+
+.settings-tabs .mud-tab {
+    text-transform: none;
+    font-weight: 500;
+}
+
+.settings-tabs .mud-tabs-toolbar {
+    background-color: transparent;
+}
+
+/* ==========================================================================
+   Profile Section Styles
+   ========================================================================== */
+
+.profile-avatar {
+    width: 96px;
+    height: 96px;
+    border: 3px solid var(--mud-palette-primary);
+}
+
+.profile-avatar--initials {
+    font-size: 2rem;
+    font-weight: 600;
+}

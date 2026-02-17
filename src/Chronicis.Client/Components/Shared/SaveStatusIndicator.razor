@@ -1,0 +1,40 @@
+@* SaveStatusIndicator.razor - Reusable save status display *@
+
+<div class="chronicis-save-status @StatusClass">
+    @if (IsSaving)
+    {
+        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+        <span>Saving...</span>
+    }
+    else if (HasUnsavedChanges)
+    {
+        <span>⚠️ Unsaved changes</span>
+    }
+    else
+    {
+        <span>✓ Saved@(string.IsNullOrEmpty(LastSaveTime) ? "" : $" {LastSaveTime}")</span>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Whether a save operation is currently in progress.
+    /// </summary>
+    [Parameter]
+    public bool IsSaving { get; set; }
+
+    /// <summary>
+    /// Whether there are unsaved changes pending.
+    /// </summary>
+    [Parameter]
+    public bool HasUnsavedChanges { get; set; }
+
+    /// <summary>
+    /// Optional: Display text for when the last save occurred (e.g., "just now").
+    /// If null or empty, just shows "Saved".
+    /// </summary>
+    [Parameter]
+    public string? LastSaveTime { get; set; }
+
+    private string StatusClass => IsSaving ? "saving" : HasUnsavedChanges ? "unsaved" : "saved";
+}

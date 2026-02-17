@@ -1,0 +1,102 @@
+@page "/article/{*Path}"
+@attribute [Authorize]
+@inject ITreeStateService TreeStateService
+@inject IArticleApiService ArticleApi
+@inject IQuoteService QuoteService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+@code {
+    private readonly ILogger<Articles> _logger;
+
+    // Direct constructor injection
+    public Articles(ILogger<Articles> logger)
+    {
+        _logger = logger;
+    }
+}
+
+@if (TreeStateService.SelectedArticleId.HasValue && TreeStateService.SelectedArticleId.Value != Guid.Empty)
+{
+    <ArticleDetail />
+}
+else
+{
+    <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
+        <h6>Loading article...</h6>
+    </MudPaper>
+}
+
+@code {
+    [Parameter]
+    public string? Path { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        TreeStateService.OnStateChanged += OnTreeStateChanged;
+        
+        // If URL has article path, load it
+        if (!string.IsNullOrEmpty(Path))
+        {
+            await LoadArticleByPath(Path);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Handle URL changes (browser back/forward)
+        if (!string.IsNullOrEmpty(Path))
+        {
+            await LoadArticleByPath(Path);
+        }
+    }
+    
+    private async Task LoadArticleByPath(string path)
+    {
+        try
+        {
+            var article = await ArticleApi.GetArticleByPathAsync(path);
+            
+            if (article != null)
+            {
+                if (article.Id != TreeStateService.SelectedArticleId)
+                {
+                    // Expand path to article and select it
+                    TreeStateService.ExpandPathToAndSelect(article.Id);
+                }
+            }
+            else
+            {
+                // Article not found - redirect to dashboard
+                _logger.LogWarningSanitized("Article not found for path: {Path}", path);
+                Navigation.NavigateTo("/dashboard", replace: true);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorSanitized(ex, "Error loading article by path: {Path}", path);
+            Navigation.NavigateTo("/dashboard", replace: true);
+        }
+    }
+
+    private async Task NavigateToArticle(Guid articleId)
+    {
+        // Get the full article details to build path from breadcrumbs
+        var article = await ArticleApi.GetArticleDetailAsync(articleId);
+        if (article != null && article.Breadcrumbs.Any())
+        {
+            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
+            Navigation.NavigateTo($"/article/{path}");
+        }
+    }    
+
+    private void OnTreeStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        TreeStateService.OnStateChanged -= OnTreeStateChanged;
+    }
+}

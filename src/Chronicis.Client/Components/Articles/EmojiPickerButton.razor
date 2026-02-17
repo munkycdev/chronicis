@@ -1,0 +1,172 @@
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+@code {
+    private readonly ILogger<EmojiPickerButton> _logger;
+
+    // Direct constructor injection
+    public EmojiPickerButton(ILogger<EmojiPickerButton> logger)
+    {
+        _logger = logger;
+    }
+}
+
+<div class="chronicis-emoji-picker-container" @onclick:stopPropagation="true">
+    <!-- Emoji Button -->
+    <button type="button" 
+            class="chronicis-emoji-button @(HasEmoji ? "has-emoji" : "")"
+            @onclick="TogglePicker"
+            title="@(HasEmoji ? "Change icon" : "Add icon")">
+        @if (HasEmoji)
+        {
+            <span>@CurrentEmoji</span>
+        }
+        else
+        {
+            <MudIcon Icon="@Icons.Material.Outlined.AddReaction" 
+                     Class="placeholder-icon" 
+                     Size="Size.Medium" />
+        }
+    </button>
+
+    <!-- Clear button (shown on hover when emoji exists) -->
+    @if (HasEmoji)
+    {
+        <button type="button" 
+                class="chronicis-emoji-clear-button"
+                @onclick="ClearEmoji"
+                @onclick:stopPropagation="true"
+                title="Remove icon">
+            ✕
+        </button>
+    }
+
+    <!-- Picker Dropdown -->
+    @if (_isPickerOpen)
+    {
+        <div class="chronicis-emoji-picker-dropdown" id="@_pickerId">
+            <!-- emoji-mart picker will be injected here by JS -->
+        </div>
+    }
+</div>
+
+@* Click-outside handler *@
+@if (_isPickerOpen)
+{
+    <div class="chronicis-emoji-picker-backdrop" 
+         @onclick="ClosePicker"
+         style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999;"></div>
+}
+
+@code {
+    /// <summary>
+    /// The current emoji value (null or empty means no icon set)
+    /// </summary>
+    [Parameter]
+    public string? CurrentEmoji { get; set; }
+
+    /// <summary>
+    /// Callback when an emoji is selected or cleared
+    /// </summary>
+    [Parameter]
+    public EventCallback<string?> OnEmojiChanged { get; set; }
+
+    /// <summary>
+    /// Whether the article is currently saving (to show loading state)
+    /// </summary>
+    [Parameter]
+    public bool IsSaving { get; set; }
+
+    private bool _isPickerOpen = false;
+    private string _pickerId = $"emoji-picker-{Guid.NewGuid():N}";
+    private DotNetObjectReference<EmojiPickerButton>? _dotNetHelper;
+    private bool _pickerInitialized = false;
+
+    private bool HasEmoji => !string.IsNullOrEmpty(CurrentEmoji);
+
+    protected override void OnInitialized()
+    {
+        _dotNetHelper = DotNetObjectReference.Create(this);
+    }
+
+    private async Task TogglePicker()
+    {
+        if (_isPickerOpen)
+        {
+            await ClosePicker();
+        }
+        else
+        {
+            await OpenPicker();
+        }
+    }
+
+    private async Task OpenPicker()
+    {
+        _isPickerOpen = true;
+        StateHasChanged();
+
+        // Wait for the DOM to update, then initialize the picker
+        await Task.Delay(50);
+        
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("initializeEmojiPicker", _pickerId, _dotNetHelper);
+            _pickerInitialized = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorSanitized(ex, "Failed to initialize emoji picker");
+        }
+    }
+
+    private async Task ClosePicker()
+    {
+        if (_pickerInitialized)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("destroyEmojiPicker", _pickerId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogErrorSanitized(ex, "Failed to destroy emoji picker");
+            }
+            _pickerInitialized = false;
+        }
+        
+        _isPickerOpen = false;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Called from JavaScript when an emoji is selected
+    /// </summary>
+    [JSInvokable]
+    public async Task OnEmojiSelected(string emoji)
+    {
+        await ClosePicker();
+        await OnEmojiChanged.InvokeAsync(emoji);
+    }
+
+    private async Task ClearEmoji()
+    {
+        await OnEmojiChanged.InvokeAsync(null);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_pickerInitialized)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("destroyEmojiPicker", _pickerId);
+            }
+            catch
+            {
+                // Ignore disposal errors (component may already be gone)
+            }
+        }
+        
+        _dotNetHelper?.Dispose();
+    }
+}

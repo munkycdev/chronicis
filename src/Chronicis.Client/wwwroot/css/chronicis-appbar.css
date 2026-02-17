@@ -1,0 +1,67 @@
+/* ============================================
+   Chronicis AppBar Styles
+   ============================================ */
+
+/* Clickable Home Link */
+.chronicis-home-link {
+    transition: all var(--chronicis-transition-fast);
+    padding: var(--chronicis-space-sm) var(--chronicis-space-md);
+    border-radius: var(--chronicis-radius-lg);
+    margin-left: calc(var(--chronicis-space-md) * -1);
+    text-decoration: none !important;
+}
+
+.chronicis-home-link:hover {
+    background-color: rgba(196, 175, 142, 0.1) !important;
+    text-decoration: none !important;
+}
+
+.chronicis-home-link:active {
+    transform: scale(0.98);
+}
+
+/* Make logo and title unselectable */
+.chronicis-home-link img,
+.chronicis-home-link .mud-typography {
+    user-select: none;
+}
+
+/* Override MudLink default styles */
+.chronicis-home-link.mud-link {
+    color: inherit !important;
+}
+
+/* ============================================
+   Quick Add Session Button
+   ============================================ */
+
+.quick-add-session-container {
+    padding: 0 16px 12px 16px;
+    border-bottom: 1px solid rgba(196, 175, 142, 0.2);
+    margin-bottom: 8px;
+}
+
+.quick-add-session-btn {
+    background: linear-gradient(135deg, var(--chronicis-secondary) 0%, var(--chronicis-secondary-muted) 100%) !important;
+    color: var(--chronicis-background-dark) !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: 0.3px;
+}
+
+.quick-add-session-btn:hover {
+    background: linear-gradient(135deg, var(--chronicis-secondary-muted) 0%, var(--chronicis-secondary) 100%) !important;
+    box-shadow: var(--chronicis-glow-secondary) !important;
+}
+
+.quick-add-session-btn:disabled {
+    opacity: 0.6 !important;
+}
+
+.quick-add-context-label {
+    display: block;
+    margin-top: 6px;
+    text-align: center;
+    color: rgba(244, 240, 234, 0.6);
+    font-size: 11px;
+}

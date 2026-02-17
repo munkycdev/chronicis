@@ -1,0 +1,75 @@
+using Chronicis.Shared.DTOs;
+
+namespace Chronicis.Client.Services;
+
+/// <summary>
+/// Service for Arc API operations.
+/// Uses HttpClientExtensions for consistent error handling and logging.
+/// </summary>
+public class ArcApiService : IArcApiService
+{
+    private readonly HttpClient _http;
+    private readonly ILogger<ArcApiService> _logger;
+
+    public ArcApiService(HttpClient http, ILogger<ArcApiService> logger)
+    {
+        _http = http;
+        _logger = logger;
+    }
+
+    public async Task<List<ArcDto>> GetArcsByCampaignAsync(Guid campaignId)
+    {
+        return await _http.GetListAsync<ArcDto>(
+            $"campaigns/{campaignId}/arcs",
+            _logger,
+            $"arcs for campaign {campaignId}");
+    }
+
+    public async Task<ArcDto?> GetArcAsync(Guid arcId)
+    {
+        return await _http.GetEntityAsync<ArcDto>(
+            $"arcs/{arcId}",
+            _logger,
+            $"arc {arcId}");
+    }
+
+    public async Task<ArcDto?> CreateArcAsync(ArcCreateDto dto)
+    {
+        return await _http.PostEntityAsync<ArcDto>(
+            "arcs",
+            dto,
+            _logger,
+            "arc");
+    }
+
+    public async Task<ArcDto?> UpdateArcAsync(Guid arcId, ArcUpdateDto dto)
+    {
+        return await _http.PutEntityAsync<ArcDto>(
+            $"arcs/{arcId}",
+            dto,
+            _logger,
+            $"arc {arcId}");
+    }
+
+    public async Task<bool> DeleteArcAsync(Guid arcId)
+    {
+        return await _http.DeleteEntityAsync(
+            $"arcs/{arcId}",
+            _logger,
+            $"arc {arcId}");
+    }
+
+    public async Task<bool> ActivateArcAsync(Guid arcId)
+    {
+        try
+        {
+            var response = await _http.PostAsync($"arcs/{arcId}/activate", null);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error activating arc {ArcId}", arcId);
+            return false;
+        }
+    }
+}

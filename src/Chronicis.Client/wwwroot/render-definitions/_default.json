@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "displayName": null,
+  "titleField": "name",
+  "sections": [],
+  "hidden": ["pk", "model"],
+  "catchAll": true
+}

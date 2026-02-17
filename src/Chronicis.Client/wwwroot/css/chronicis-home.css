@@ -1,0 +1,155 @@
+/* ============================================
+   Chronicis Home Page Styles
+   ============================================ */
+
+.chronicis-welcome-page {
+    padding: var(--chronicis-space-lg);
+    animation: chronicis-fade-in 0.5s ease-in;
+}
+
+/* Hero Section */
+.chronicis-hero {
+    position: relative;
+    overflow: hidden;
+}
+
+.chronicis-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(196, 175, 142, 0.1) 0%, transparent 70%);
+    animation: chronicis-glow-pulse 20s linear infinite;
+}
+
+.chronicis-hero h6 {
+    color: var(--chronicis-secondary);
+}
+/* Stat Cards */
+.chronicis-stat-card {
+  transition: all var(--chronicis-transition-normal);
+  border: 1px solid rgba(196, 175, 142, 0.2);
+}
+
+.chronicis-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(196, 175, 142, 0.3) !important;
+    border-color: rgba(196, 175, 142, 0.4);
+}
+
+/* Recent Articles List */
+.chronicis-welcome-page .mud-list-item {
+    transition: all var(--chronicis-transition-fast);
+    border-radius: var(--chronicis-radius-lg);
+    margin-bottom: var(--chronicis-space-xs);
+}
+
+.chronicis-welcome-page .mud-list-item:hover {
+    background-color: rgba(196, 175, 142, 0.1) !important;
+    padding-left: 20px;
+}
+
+.chronicis-welcome-page .mud-list-item:hover .mud-icon {
+    color: var(--mud-palette-primary) !important;
+    transform: scale(1.1);
+}
+
+/* Quick Actions Buttons */
+.chronicis-welcome-page .mud-button-outlined {
+    transition: all var(--chronicis-transition-fast);
+    border-width: 1.5px;
+}
+
+.chronicis-welcome-page .mud-button-outlined:hover {
+    transform: translateX(4px);
+    border-width: 2px;
+    background-color: rgba(196, 175, 142, 0.05);
+}
+
+.chronicis-welcome-page h5,
+.chronicis-welcome-page h5 {
+  color: var(--chronicis-primary);
+}
+
+.chronicis-welcome-page .mud-button-outlined.mud-button-outlined-primary {
+  border-color: var(--chronicis-primary);
+  color: var(--chronicis-primary);
+}
+/* Tips Card */
+.chronicis-welcome-page .mud-divider {
+  opacity: 0.3;
+}
+
+/* Loading Animation */
+.chronicis-welcome-page .mud-progress-circular {
+    color: var(--mud-palette-primary);
+}
+
+/* Empty State */
+.chronicis-welcome-page .text-center {
+    animation: chronicis-fade-in 0.6s ease-in;
+}
+
+/* Quote Footer */
+.chronicis-quote-footer {
+    transition: all var(--chronicis-transition-normal);
+}
+
+.chronicis-quote-footer .mud-icon-button {
+    transition: all var(--chronicis-transition-normal);
+}
+
+.chronicis-quote-footer .mud-icon-button:hover {
+    opacity: 1 !important;
+    transform: rotate(180deg);
+}
+
+.chronicis-quote-footer .mud-text {
+    transition: opacity var(--chronicis-transition-normal);
+}
+
+/* Article area scrollbar */
+.home-article-area {
+    overflow-y: auto;
+}
+
+.home-article-area::-webkit-scrollbar-track {
+    background: rgba(58, 71, 80, 0.05);
+}
+
+.home-article-area::-webkit-scrollbar-thumb {
+    background: rgba(196, 175, 142, 0.5);
+    border-radius: var(--chronicis-radius-sm);
+}
+
+.home-article-area::-webkit-scrollbar-thumb:hover {
+    background: var(--chronicis-secondary);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 960px) {
+    .chronicis-hero {
+        padding: var(--chronicis-space-xl) var(--chronicis-space-lg) !important;
+    }
+
+    .chronicis-hero .mud-typography-h2 {
+        font-size: 2rem;
+    }
+
+    .chronicis-stat-card {
+        margin-bottom: var(--chronicis-space-md);
+    }
+
+    .home-article-area {
+        padding-right: var(--chronicis-space-lg);
+    }
+
+    .home-backlinks-area {
+        display: none;
+    }
+}

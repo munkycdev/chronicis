@@ -1,0 +1,594 @@
+@page "/change-log"
+@layout PublicLayout
+
+<PageTitle>What's New — Chronicis</PageTitle>
+
+<div class="static-page">
+    <div class="static-page-content changelog-page">
+        <h1>What's New</h1>
+        <p class="changelog-subtitle">See what we've been working on</p>
+
+        @* February 2026 *@
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">2.11</span>
+                <span class="version-date">February 2026</span>
+            </div>
+            <h2>Inline Article Images</h2>
+            <p class="changelog-summary">
+                Drop, paste, or pick images directly into your session notes and wiki articles. 
+                Images upload to the cloud and display inline — no separate attachment step needed.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🖼️</span>
+                    <div>
+                        <strong>Drag &amp; Drop</strong> — Drop an image file anywhere in the editor 
+                        to upload and insert it inline
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">📋</span>
+                    <div>
+                        <strong>Paste from Clipboard</strong> — Copy an image and paste it directly 
+                        into your notes with <code>Ctrl+V</code>
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🔘</span>
+                    <div>
+                        <strong>Toolbar Button</strong> — Use the image button above the editor to 
+                        pick a file from your device
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🔒</span>
+                    <div>
+                        <strong>Secure Storage</strong> — Images are stored in Azure Blob Storage 
+                        with authenticated access and time-limited download URLs
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🧹</span>
+                    <div>
+                        <strong>Automatic Cleanup</strong> — Deleting an article removes its 
+                        associated images from storage automatically
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">2.10</span>
+                <span class="version-date">February 2026</span>
+            </div>
+            <h2>Quest Tracking</h2>
+            <p class="changelog-summary">
+                Keep your party's objectives organized and track progress in real-time. The new quest 
+                system integrates directly into your session workflow with a dedicated quest journal.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🎯</span>
+                    <div>
+                        <strong>Quest Management</strong> — Create and track quests for each story arc 
+                        with status tracking (Active, Completed, Failed)
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">⌨️</span>
+                    <div>
+                        <strong>Quick Access</strong> — Press <code>Ctrl+Q</code> while viewing a session 
+                        to open the quest drawer and add updates instantly
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">📔</span>
+                    <div>
+                        <strong>Quest Journal</strong> — Record progress with markdown-powered updates 
+                        that automatically link to the current session
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🔗</span>
+                    <div>
+                        <strong>Wiki Links in Updates</strong> — Reference characters, locations, and 
+                        items using <code>[[article]]</code> syntax right in your quest updates
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">📚</span>
+                    <div>
+                        <strong>SRD Integration</strong> — Link to spells, monsters, and magic items 
+                        from the D&D SRD using <code>[[srd/resource]]</code> in quest descriptions
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">⏱️</span>
+                    <div>
+                        <strong>Recent Updates Timeline</strong> — See the last 10 quest journal entries 
+                        at a glance to track recent progress
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🎨</span>
+                    <div>
+                        <strong>Status Badges</strong> — Color-coded quest status (green for active, 
+                        blue for completed, red for failed) makes it easy to see what's in progress
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        @* January 2026 *@
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">2.7</span>
+                <span class="version-date">January 2026</span>
+            </div>
+            <h2>External Knowledge Links</h2>
+            <p class="changelog-summary">
+                Bring your reference material directly into your notes. Link to external sources like
+                the D&D 5e SRD using the same wiki-style workflow, with rich in-app previews.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">📚</span>
+                    <div>
+                        <strong>SRD Autocomplete</strong> — Type <code>[[srd/</code> in any article to search
+                        spells, monsters, and other SRD content as you write
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🔗</span>
+                    <div>
+                        <strong>External Link Chips</strong> — External references appear as visually
+                        distinct link chips so you can easily tell them apart from your own articles
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">👁️</span>
+                    <div>
+                        <strong>In-App Previews</strong> — Click an external link to open a preview drawer
+                        showing the full reference content without leaving Chronicis
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🧩</span>
+                    <div>
+                        <strong>Extensible by Design</strong> — External sources are provider-based,
+                        making it easy to add new reference libraries in the future
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">📊</span>
+                    <div>
+                        <strong>Structured Rendering</strong> — External resources display with
+                        category-aware layouts, including D&amp;D-style stat blocks for bestiary
+                        entries with compact ability score tables
+                    </div>
+                </li>
+            </ul>
+        </section>
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">2.6</span>
+                <span class="version-date">January 2026</span>
+            </div>
+            <h2>Export & Settings</h2>
+            <p class="changelog-summary">
+                Take your world with you! Export your entire campaign to Markdown files, 
+                and customize your Chronicis experience with the new Settings page.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">📦</span>
+                    <div>
+                        <strong>World Export</strong> — Download your entire world as a zip archive 
+                        of Markdown files, organized by your article hierarchy
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">📁</span>
+                    <div>
+                        <strong>Structured Folders</strong> — Exports mirror your navigation tree 
+                        with Wiki, Characters, and Campaigns folders
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">📋</span>
+                    <div>
+                        <strong>Rich Metadata</strong> — Exported files include YAML frontmatter 
+                        with titles, types, dates, icons, and AI summaries
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">⚙️</span>
+                    <div>
+                        <strong>Settings Page</strong> — New <code>/settings</code> page with 
+                        Profile, Data management, and Preferences tabs
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">2.5</span>
+                <span class="version-date">January 2026</span>
+            </div>
+            <h2>Document Storage</h2>
+            <p class="changelog-summary">
+                Upload and manage campaign documents! Store character sheets, maps, handouts, 
+                and reference materials directly in your world.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">📎</span>
+                    <div>
+                        <strong>File Upload</strong> — Upload PDFs, Office documents (Word, Excel, 
+                        PowerPoint), images, text files, and markdown up to 200MB each
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🗂️</span>
+                    <div>
+                        <strong>Organized Storage</strong> — Documents appear in the navigation 
+                        tree under External Resources with file-type icons
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">✏️</span>
+                    <div>
+                        <strong>Metadata Management</strong> — Add titles and descriptions to 
+                        documents, edit them anytime
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">⬇️</span>
+                    <div>
+                        <strong>Secure Downloads</strong> — All world members can download documents 
+                        with time-limited secure links
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🔐</span>
+                    <div>
+                        <strong>GM-Controlled</strong> — Only world owners can upload, edit, or 
+                        delete documents
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">2.4</span>
+                <span class="version-date">January 2026</span>
+            </div>
+            <h2>Private Notes</h2>
+            <p class="changelog-summary">
+                Keep your secrets safe! Mark any article as private so only you can see it—
+                perfect for DM notes, character secrets, or plot twists.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🔒</span>
+                    <div>
+                        <strong>Privacy Toggle</strong> — One click in the metadata panel 
+                        to make any article private
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">👁️‍🗨️</span>
+                    <div>
+                        <strong>Your Eyes Only</strong> — Private articles are completely 
+                        hidden from other world members
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🔐</span>
+                    <div>
+                        <strong>Visual Indicator</strong> — Private articles show a lock icon 
+                        in the navigation tree so you always know what's hidden
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">2.3</span>
+                <span class="version-date">January 2026</span>
+            </div>
+            <h2>Invite Your Players</h2>
+            <p class="changelog-summary">
+                Collaborate with your gaming group! Share invitation codes to bring players 
+                into your world and manage your party all in one place.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🎟️</span>
+                    <div>
+                        <strong>Invitation Codes</strong> — Generate easy-to-share codes like 
+                        <code>FROG-AXLE</code> that players can use to join your world
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">👥</span>
+                    <div>
+                        <strong>Member Management</strong> — See who's in your world, 
+                        assign roles (GM, Player, Observer), and manage your party
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🚪</span>
+                    <div>
+                        <strong>Join a World</strong> — New players can join from the dashboard 
+                        with just an invitation code—no world creation required
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🌍</span>
+                    <div>
+                        <strong>World-Level Access</strong> — One membership gives access to 
+                        all campaigns in a world, making party management simple
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">2.2</span>
+                <span class="version-date">January 2026</span>
+            </div>
+            <h2>Public World Sharing</h2>
+            <p class="changelog-summary">
+                Share your world with anyone! Make your campaign wiki publicly accessible 
+                with a custom URL that you can share with players, friends, or the community.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🌐</span>
+                    <div>
+                        <strong>Public URLs</strong> — Get a custom link like 
+                        <code>chronicis.app/w/your-world</code> to share with anyone
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">👁️</span>
+                    <div>
+                        <strong>Visibility Controls</strong> — Choose which articles are Public, 
+                        Members Only, or Private—you decide what the world sees
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🔓</span>
+                    <div>
+                        <strong>No Login Required</strong> — Visitors can browse your public 
+                        content without creating an account
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">2.1</span>
+                <span class="version-date">December 2025</span>
+            </div>
+            <h2>New Dashboard & Character Claiming</h2>
+            <p class="changelog-summary">
+                A refreshed home screen that puts your campaigns front and center, plus the 
+                ability to claim characters as your own for quick access.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🏠</span>
+                    <div>
+                        <strong>World Panels</strong> — See all your worlds at a glance with 
+                        expandable panels showing campaigns, characters, and recent activity
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🎭</span>
+                    <div>
+                        <strong>Claim Characters</strong> — Mark characters as yours and access 
+                        them instantly from the dashboard
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">💡</span>
+                    <div>
+                        <strong>Smart Suggestions</strong> — Get contextual prompts based on 
+                        your activity to help you build out your campaign
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🚀</span>
+                    <div>
+                        <strong>Getting Started Guide</strong> — New users get a friendly 
+                        onboarding wizard to set up their first world
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        @* December 2025 *@
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">2.0</span>
+                <span class="version-date">December 2025</span>
+            </div>
+            <h2>Campaign Organization</h2>
+            <p class="changelog-summary">
+                A complete overhaul of how your content is organized. Create Worlds for different 
+                settings, organize Campaigns with story Arcs, and keep your Wiki, Characters, and 
+                Sessions neatly separated.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🌍</span>
+                    <div>
+                        <strong>Worlds</strong> — Create separate spaces for different campaign settings 
+                        (Forgotten Realms, Eberron, your homebrew)
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">⚔️</span>
+                    <div>
+                        <strong>Campaigns & Arcs</strong> — Organize your adventures into campaigns, 
+                        then break them into story arcs for easier navigation
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">📂</span>
+                    <div>
+                        <strong>Smart Groups</strong> — Your articles automatically organize into 
+                        Characters, Wiki, and Sessions based on type
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">1.9</span>
+                <span class="version-date">December 2025</span>
+            </div>
+            <h2>Wiki-Style Links</h2>
+            <p class="changelog-summary">
+                Link your articles together using familiar wiki syntax. Just type 
+                <code>[[Article Name]]</code> to create a connection.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🔗</span>
+                    <div>
+                        <strong>Easy Linking</strong> — Type <code>[[</code> to see suggestions 
+                        as you type, then select to insert a link
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">✨</span>
+                    <div>
+                        <strong>Create on the Fly</strong> — Link to an article that doesn't exist? 
+                        We'll create it for you automatically
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🔙</span>
+                    <div>
+                        <strong>Backlinks</strong> — See every article that references the one 
+                        you're viewing
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">1.8</span>
+                <span class="version-date">November 2025</span>
+            </div>
+            <h2>Search Everything</h2>
+            <p class="changelog-summary">
+                Find anything in your campaign with powerful full-text search across all your content.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🔍</span>
+                    <div>
+                        <strong>Global Search</strong> — Search across titles, content, and links 
+                        from anywhere in the app
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">📝</span>
+                    <div>
+                        <strong>Context Snippets</strong> — See exactly where your search term 
+                        appears in each result
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">1.7</span>
+                <span class="version-date">November 2025</span>
+            </div>
+            <h2>AI Summaries</h2>
+            <p class="changelog-summary">
+                Let AI analyze how an entity appears across your campaign and generate 
+                a comprehensive summary.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🤖</span>
+                    <div>
+                        <strong>Smart Summaries</strong> — AI reads every mention of a character, 
+                        location, or item to understand their role in your story
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">💰</span>
+                    <div>
+                        <strong>Cost Transparency</strong> — See estimated costs before 
+                        generating a summary
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">1.0</span>
+                <span class="version-date">November 2025</span>
+            </div>
+            <h2>Launch</h2>
+            <p class="changelog-summary">
+                The foundation of Chronicis—everything you need to start organizing your campaign.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🌳</span>
+                    <div>
+                        <strong>Hierarchical Articles</strong> — Nest your notes as deep as you need
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">✏️</span>
+                    <div>
+                        <strong>Inline Editing</strong> — Edit content in place with auto-save
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🎨</span>
+                    <div>
+                        <strong>Rich Text</strong> — Format your notes with headers, lists, 
+                        code blocks, and more
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🏠</span>
+                    <div>
+                        <strong>Dashboard</strong> — Quick access to recent articles and 
+                        campaign statistics
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="changelog-footer">
+            <p>
+                Have a feature request or found a bug? 
+                <a href="mailto:feedback@chronicis.app">Let us know</a>
+            </p>
+        </section>
+    </div>
+</div>
+
+

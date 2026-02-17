@@ -1,0 +1,115 @@
+@using Chronicis.Shared.DTOs
+@using Chronicis.Client.Models
+@using Chronicis.Client.Components.Shared
+
+<div class="rdg-container">
+    <MudText Typo="Typo.h5" Class="rdg-section-title mb-4">Render Definition Generator</MudText>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+        Load a sample external resource record, auto-generate a render definition, edit it, and preview the result.
+    </MudText>
+
+    @* --- Step 1: Record picker --- *@
+    <MudPaper Elevation="1" Class="pa-4 mb-4">
+        <MudText Typo="Typo.subtitle1" Class="mb-3">1. Select a sample record</MudText>
+        <div class="d-flex align-center gap-3 flex-wrap">
+            <MudSelect T="string" @bind-Value="_selectedSource" Label="Source"
+                       Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width: 160px;">
+                <MudSelectItem Value="@("ros")">ROS</MudSelectItem>
+                <MudSelectItem Value="@("srd")">SRD</MudSelectItem>
+            </MudSelect>
+
+            <MudAutocomplete T="string"
+                             Value="_recordId"
+                             Label="Record ID (e.g., bestiary/beast/garoug)"
+                             SearchFunc="SearchRecords"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Style="min-width: 400px;"
+                             DebounceInterval="300"
+                             MinCharacters="2"
+                             MaxItems="15"
+                             ResetValueOnEmptyText="false"
+                             CoerceText="true"
+                             ValueChanged="OnRecordSelected" />
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       OnClick="LoadSampleRecord" Disabled="_isLoading"
+                       StartIcon="@Icons.Material.Filled.Download">
+                Load
+            </MudButton>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_loadError))
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-3" Dense="true">@_loadError</MudAlert>
+        }
+        @if (!string.IsNullOrEmpty(_existingDefStatus))
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-3" Dense="true">@_existingDefStatus</MudAlert>
+        }
+    </MudPaper>
+
+    @if (_sampleContent != null)
+    {
+        @* --- Step 2: Generate / Edit --- *@
+        <MudPaper Elevation="1" Class="pa-4 mb-4">
+            <div class="d-flex align-center justify-space-between mb-3">
+                <MudText Typo="Typo.subtitle1">2. Render Definition JSON</MudText>
+                <div class="d-flex gap-2">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                               OnClick="AutoGenerate" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.AutoAwesome">
+                        Auto-Generate
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                               OnClick="ApplyDefinition" Size="Size.Small"
+                               Disabled="@(!_definitionDirty)"
+                               StartIcon="@Icons.Material.Filled.Refresh">
+                        Apply Preview
+                    </MudButton>
+                </div>
+            </div>
+
+            <MudTextField @bind-Value="_definitionJson"
+                          Lines="25"
+                          Variant="Variant.Outlined"
+                          Style="font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.8rem;"
+                          Immediate="false"
+                          DebounceInterval="500"
+                          TextChanged="OnDefinitionJsonChanged"
+                          Error="@(!string.IsNullOrEmpty(_jsonError))"
+                          ErrorText="@_jsonError" />
+
+            @if (!string.IsNullOrEmpty(_jsonError))
+            {
+                <MudAlert Severity="Severity.Warning" Class="mt-2" Dense="true">@_jsonError</MudAlert>
+            }
+        </MudPaper>
+
+        @* --- Step 3: Preview --- *@
+        <MudPaper Elevation="1" Class="pa-4 mb-4">
+            <div class="d-flex align-center justify-space-between mb-3">
+                <MudText Typo="Typo.subtitle1">3. Preview</MudText>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    @(_sampleContent.Title) — @(_sampleContent.Id)
+                </MudText>
+            </div>
+
+            <div class="rdg-preview-panel chronicis-scrollbar-light">
+                <ExternalLinkDetailPanel Content="@_sampleContent"
+                                         DefinitionOverride="@_activeDefinition" />
+            </div>
+        </MudPaper>
+
+        @* --- Step 4: Output path info --- *@
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudText Typo="Typo.subtitle1" Class="mb-2">4. Export</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+                Copy the JSON above and save to the appropriate render definition file.
+            </MudText>
+            <MudTextField Value="@SuggestedFilePath" ReadOnly="true" Label="Suggested file path"
+                          Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy" />
+        </MudPaper>
+    }
+</div>

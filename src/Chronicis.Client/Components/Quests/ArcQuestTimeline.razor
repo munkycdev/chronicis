@@ -1,0 +1,114 @@
+@using Chronicis.Shared.DTOs.Quests
+@using Chronicis.Shared.Enums
+
+<div class="arc-quest-timeline">
+    @if (_quest != null)
+    {
+        <div class="d-flex align-center justify-space-between mb-3">
+            <MudText Typo="Typo.h6" Style="color: var(--chronicis-beige-gold);">
+                <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Small" Class="mr-2" />
+                Quest Updates
+            </MudText>
+            
+            @if (_quest.UpdateCount > 0)
+            {
+                <MudText Typo="Typo.caption" Class="text-muted">
+                    @_quest.UpdateCount update@(_quest.UpdateCount == 1 ? "" : "s")
+                </MudText>
+            }
+        </div>
+
+        @if (_isLoading && !_updates.Any())
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+        }
+        else if (_updates.Any())
+        {
+            <MudTimeline TimelinePosition="TimelinePosition.Start" TimelineOrientation="TimelineOrientation.Vertical">
+                @foreach (var update in _updates)
+                {
+                    <MudTimelineItem Color="Color.Info" Size="Size.Small">
+                        <ItemOpposite>
+                            <MudText Typo="Typo.caption" Class="text-muted">
+                                @update.CreatedAt.ToString("MMM d, yyyy h:mm tt")
+                            </MudText>
+                        </ItemOpposite>
+                        <ItemContent>
+                            <MudCard Elevation="2" Class="quest-update-card">
+                                <MudCardContent>
+                                    <!-- Author and Session Info -->
+                                    <div class="d-flex align-center justify-space-between mb-2">
+                                        <div class="d-flex align-center gap-2">
+                                            @if (!string.IsNullOrEmpty(update.CreatedByAvatarUrl))
+                                            {
+                                                <MudAvatar Size="Size.Small">
+                                                    <MudImage Src="@update.CreatedByAvatarUrl" />
+                                                </MudAvatar>
+                                            }
+                                            else
+                                            {
+                                                <MudAvatar Size="Size.Small" Color="Color.Primary">
+                                                    @update.CreatedByName.FirstOrDefault()
+                                                </MudAvatar>
+                                            }
+                                            <MudText Typo="Typo.body2">@update.CreatedByName</MudText>
+                                            
+                                            @if (update.SessionId.HasValue && !string.IsNullOrEmpty(update.SessionTitle))
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Info">
+                                                    Session: @update.SessionTitle
+                                                </MudChip>
+                                            }
+                                        </div>
+                                        
+                                        @if (CanDeleteUpdate(update))
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                           Size="Size.Small"
+                                                           Color="Color.Error"
+                                                           OnClick="@(() => DeleteUpdate(update))" />
+                                        }
+                                    </div>
+
+                                    <!-- Update Body (HTML from TipTap) -->
+                                    <div class="quest-update-body">
+                                        @((MarkupString)update.Body)
+                                    </div>
+                                </MudCardContent>
+                            </MudCard>
+                        </ItemContent>
+                    </MudTimelineItem>
+                }
+            </MudTimeline>
+
+            <!-- Load More Button -->
+            @if (_hasMore)
+            {
+                <div class="text-center mt-3">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               OnClick="LoadMoreAsync"
+                               Disabled="_isLoadingMore">
+                        @if (_isLoadingMore)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        Load More
+                    </MudButton>
+                </div>
+            }
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">
+                No updates yet. Quest updates will appear here as progress is made.
+            </MudAlert>
+        }
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">
+            Select a quest to view updates
+        </MudAlert>
+    }
+</div>

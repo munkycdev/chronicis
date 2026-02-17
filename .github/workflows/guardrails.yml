@@ -1,0 +1,33 @@
+name: Guardrails
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  guardrails:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore ./Chronicis.CI.sln
+
+      - name: Verify formatting
+        run: dotnet format ./Chronicis.CI.sln --verify-no-changes --verbosity minimal
+
+      - name: Build
+        run: dotnet build ./Chronicis.CI.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test ./Chronicis.CI.sln --configuration Release --no-build --verbosity normal

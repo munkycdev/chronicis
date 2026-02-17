@@ -1,0 +1,14 @@
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/TestResults
+**/*.user
+**/*.suo
+**/*.cache
+**/node_modules
+**/*.md
+
+# excluding Windows-only project from the build context
+src/Chronicis.CaptureApp/

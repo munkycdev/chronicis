@@ -1,0 +1,101 @@
+@* CharacterClaimButton.razor - Refactored to accept data as parameters *@
+@* Pure presentation component - no service dependencies *@
+
+@if (IsLoading)
+{
+    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+}
+else if (ClaimStatus != null)
+{
+    @if (ClaimStatus.IsClaimedByMe)
+    {
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Success"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.CheckCircle"
+                   OnClick="HandleUnclaim"
+                   Disabled="IsProcessing">
+            @if (IsProcessing)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            My Character
+        </MudButton>
+    }
+    else if (ClaimStatus.IsClaimed)
+    {
+        <MudTooltip Text="@($"Claimed by {ClaimStatus.ClaimedByName}")">
+            <MudChip T="string" 
+                     Size="Size.Small" 
+                     Variant="Variant.Outlined"
+                     Icon="@Icons.Material.Filled.Person">
+                @ClaimStatus.ClaimedByName's Character
+            </MudChip>
+        </MudTooltip>
+    }
+    else
+    {
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                   OnClick="HandleClaim"
+                   Disabled="IsProcessing">
+            @if (IsProcessing)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Claim as My Character
+        </MudButton>
+    }
+}
+
+@code {
+    /// <summary>
+    /// The character's claim status data.
+    /// Parent component is responsible for loading this data.
+    /// </summary>
+    [Parameter]
+    public CharacterClaimStatusDto? ClaimStatus { get; set; }
+
+    /// <summary>
+    /// Whether data is currently being loaded.
+    /// Controls the loading indicator display.
+    /// </summary>
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    /// <summary>
+    /// Whether a claim/unclaim operation is in progress.
+    /// Controls button disabled state and processing indicator.
+    /// </summary>
+    [Parameter]
+    public bool IsProcessing { get; set; }
+
+    /// <summary>
+    /// Event raised when the user requests to claim the character.
+    /// Parent component handles the actual API call.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClaim { get; set; }
+
+    /// <summary>
+    /// Event raised when the user requests to unclaim the character.
+    /// Parent component handles the actual API call.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnUnclaim { get; set; }
+
+    private async Task HandleClaim()
+    {
+        await OnClaim.InvokeAsync();
+    }
+
+    private async Task HandleUnclaim()
+    {
+        await OnUnclaim.InvokeAsync();
+    }
+
+    // Note: CharacterClaimStatusDto is defined in Chronicis.Api\Controllers\CharactersController.cs
+    // This is a temporary location - ideally should be moved to Chronicis.Shared.DTOs
+}

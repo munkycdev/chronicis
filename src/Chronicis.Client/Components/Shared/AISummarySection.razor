@@ -1,0 +1,511 @@
+@using Chronicis.Shared.DTOs
+@inject IAISummaryApiService SummaryApi
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+
+<div class="ai-summary-section @(_summaryData?.HasSummary == true ? "has-summary" : "")">
+    <div class="ai-summary-header" @onclick="ToggleExpanded">
+        <div class="header-left">
+            <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" 
+                     Size="Size.Small" 
+                     Class="header-icon" />
+            <MudText Typo="Typo.subtitle1" Class="header-title">AI Summary</MudText>
+            @if (_summaryData?.HasSummary == true)
+            {
+                <MudChip T="string" 
+                         Size="Size.Small" 
+                         Variant="Variant.Outlined" 
+                         Class="timestamp-chip">
+                    @GetRelativeTime(_summaryData.GeneratedAt!.Value)
+                </MudChip>
+            }
+        </div>
+        <MudIcon Icon="@(IsExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" 
+                 Size="Size.Small"
+                 Class="expand-icon" />
+    </div>
+
+    @if (IsExpanded)
+    {
+        <div class="ai-summary-content">
+            @if (_isLoading)
+            {
+                <div class="loading-state">
+                    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="loading-bar" />
+                    <div class="loading-text">
+                        <MudIcon Icon="@Icons.Material.Filled.Psychology" Size="Size.Small" />
+                        <MudText Typo="Typo.body2">@_loadingMessage</MudText>
+                    </div>
+                </div>
+            }
+            else if (_summaryData?.HasSummary == true)
+            {
+                @* Summary Display *@
+                <div class="summary-display">
+                    <div class="summary-text">@_summaryData.Summary</div>
+                    
+                    <div class="summary-footer">
+                        @if (!string.IsNullOrEmpty(_summaryData.TemplateName))
+                        {
+                            <MudText Typo="Typo.caption" Class="template-badge">
+                                <MudIcon Icon="@Icons.Material.Filled.Style" Size="Size.Small" />
+                                @_summaryData.TemplateName
+                            </MudText>
+                        }
+                        
+                        <div class="summary-actions">
+                            <MudTooltip Text="Regenerate summary">
+                                <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                                               Size="Size.Small"
+                                               OnClick="RegenerateSummary" />
+                            </MudTooltip>
+                            <MudTooltip Text="Copy to clipboard">
+                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                                               Size="Size.Small"
+                                               OnClick="CopySummary" />
+                            </MudTooltip>
+                            <MudTooltip Text="Clear summary">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               OnClick="ClearSummary" />
+                            </MudTooltip>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (_estimate != null)
+            {
+                @* Generate UI *@
+                @if (_estimate.SourceCount == 0)
+                {
+                    <div class="no-sources">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" />
+                        <MudText Typo="Typo.body2">@NoSourcesMessage</MudText>
+                    </div>
+                }
+                else
+                {
+                    <div class="generate-ui">
+                        @* Main Controls Row *@
+                        <div class="generate-main">
+                            <MudSelect T="Guid?" 
+                                       @bind-Value="_selectedTemplateId"
+                                       Label="Template"
+                                       Variant="Variant.Outlined"
+                                       Dense="true"
+                                       Class="template-select">
+                                @foreach (var template in _templates)
+                                {
+                                    <MudSelectItem T="Guid?" Value="@template.Id">
+                                        @template.Name
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                            
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.AutoAwesome"
+                                       OnClick="GenerateSummary"
+                                       Disabled="_isLoading"
+                                       Class="generate-button">
+                                Generate
+                            </MudButton>
+                        </div>
+
+                        @* Source count hint *@
+                        <MudText Typo="Typo.caption" Class="source-hint">
+                            @_estimate.SourceCount @SourceLabel@(_estimate.SourceCount == 1 ? "" : "s") will be analyzed
+                        </MudText>
+
+                        @* Advanced Options (collapsed by default) *@
+                        <MudExpansionPanels Class="advanced-panel" Elevation="0">
+                            <MudExpansionPanel Text="Advanced Options" Dense="true" @bind-Expanded="_advancedExpanded">
+                                <div class="advanced-content">
+                                    <MudTextField T="string"
+                                                  @bind-Value="_customPrompt"
+                                                  Label="Custom Instructions"
+                                                  Variant="Variant.Outlined"
+                                                  Lines="2"
+                                                  Placeholder="@CustomPromptPlaceholder"
+                                                  HelperText="Add extra guidance for the AI (optional)"
+                                                  Class="custom-prompt-field" />
+                                    
+                                    <MudCheckBox T="bool" 
+                                                 @bind-Value="_saveConfiguration"
+                                                 Label="@RememberSettingsLabel"
+                                                 Dense="true"
+                                                 Class="remember-checkbox" />
+                                    
+                                    <MudTooltip Text="@GetEstimateTooltip()">
+                                        <MudText Typo="Typo.caption" Class="cost-hint">
+                                            <MudIcon Icon="@Icons.Material.Filled.Payments" Size="Size.Small" />
+                                            Est. ~$@_estimate.EstimatedCostUSD.ToString("F4")
+                                        </MudText>
+                                    </MudTooltip>
+                                </div>
+                            </MudExpansionPanel>
+                        </MudExpansionPanels>
+                    </div>
+                }
+            }
+            else if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="error-alert">
+                    @_errorMessage
+                </MudAlert>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// The entity ID (Article, Campaign, or Arc)
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Guid EntityId { get; set; }
+
+    /// <summary>
+    /// The type of entity: "Article", "Campaign", or "Arc"
+    /// </summary>
+    [Parameter]
+    public string EntityType { get; set; } = "Article";
+
+    [Parameter]
+    public bool IsExpanded { get; set; } = false;
+
+    [Parameter]
+    public EventCallback<bool> IsExpandedChanged { get; set; }
+
+    // Track previous parameter values to detect actual changes
+    private Guid _previousEntityId;
+    private string _previousEntityType = string.Empty;
+
+    private ArticleSummaryDto? _articleSummaryData;
+    private EntitySummaryDto? _entitySummaryData;
+    private SummaryEstimateDto? _estimate;
+    private List<SummaryTemplateDto> _templates = new();
+    private bool _isLoading = false;
+    private string _loadingMessage = "";
+    private string _errorMessage = "";
+    
+    private Guid? _selectedTemplateId;
+    private string? _customPrompt;
+    private bool _saveConfiguration = false;
+    private bool _advancedExpanded = false;
+
+    // Unified summary accessor
+    private SummaryDataAccessor? _summaryData => EntityType == "Article" 
+        ? (_articleSummaryData != null ? new SummaryDataAccessor(_articleSummaryData) : null)
+        : (_entitySummaryData != null ? new SummaryDataAccessor(_entitySummaryData) : null);
+
+    private string NoSourcesMessage => EntityType switch
+    {
+        "Article" => "This article has no content and isn't referenced by other articles. Add content or create wiki links like [[Article Name]] to generate a summary.",
+        "Campaign" => "No session notes found. Add sessions to your arcs to generate a campaign summary.",
+        "Arc" => "No session notes found in this arc yet.",
+        _ => "No sources available for summary generation."
+    };
+
+    private string SourceLabel => EntityType == "Article" ? "source" : "session";
+
+    private string RememberSettingsLabel => $"Remember settings for this {EntityType.ToLower()}";
+
+    private string CustomPromptPlaceholder => EntityType switch
+    {
+        "Article" => "e.g., Focus on relationships and motivations...",
+        "Campaign" => "e.g., Emphasize major plot developments...",
+        "Arc" => "e.g., Highlight character growth in this arc...",
+        _ => "Additional instructions for the AI..."
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _templates = await SummaryApi.GetTemplatesAsync();
+        
+        // Set default template if none selected
+        if (_selectedTemplateId == null && _templates.Any())
+        {
+            _selectedTemplateId = _templates.FirstOrDefault(t => t.Name == "Default")?.Id 
+                                  ?? _templates.First().Id;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Only reload if EntityId or EntityType actually changed
+        var entityChanged = _previousEntityId != EntityId || _previousEntityType != EntityType;
+        
+        if (entityChanged)
+        {
+            _previousEntityId = EntityId;
+            _previousEntityType = EntityType;
+            
+            // Clear state when entity changes
+            _estimate = null;
+            _errorMessage = "";
+            
+            await LoadSummaryData();
+        }
+    }
+
+    private async Task LoadSummaryData()
+    {
+        _errorMessage = "";
+        
+        if (EntityType == "Article")
+        {
+            _articleSummaryData = await SummaryApi.GetSummaryAsync(EntityId);
+            
+            if (_articleSummaryData?.HasSummary == true)
+            {
+                _selectedTemplateId = _articleSummaryData.TemplateId;
+                _customPrompt = _articleSummaryData.CustomPrompt;
+            }
+        }
+        else
+        {
+            _entitySummaryData = await SummaryApi.GetEntitySummaryAsync(EntityType, EntityId);
+            
+            if (_entitySummaryData?.HasSummary == true)
+            {
+                _selectedTemplateId = _entitySummaryData.TemplateId;
+                _customPrompt = _entitySummaryData.CustomPrompt;
+            }
+        }
+    }
+    
+    private async Task LoadEstimateData()
+    {
+        if (_summaryData?.HasSummary == true)
+        {
+            // Already has summary, no need for estimate
+            return;
+        }
+        
+        _isLoading = true;
+        _errorMessage = "";
+        StateHasChanged();
+        
+        try
+        {
+            if (EntityType == "Article")
+            {
+                _estimate = await SummaryApi.GetEstimateAsync(EntityId);
+            }
+            else
+            {
+                _estimate = await SummaryApi.GetEntityEstimateAsync(EntityType, EntityId);
+            }
+            
+            LoadSettingsFromEstimate();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Failed to load estimate: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void LoadSettingsFromEstimate()
+    {
+        if (_estimate != null)
+        {
+            _selectedTemplateId = _estimate.TemplateId 
+                ?? _templates.FirstOrDefault(t => t.Name == "Default")?.Id 
+                ?? _templates.FirstOrDefault()?.Id;
+            _customPrompt = _estimate.CustomPrompt;
+            _advancedExpanded = !string.IsNullOrEmpty(_customPrompt);
+        }
+    }
+
+    private async Task GenerateSummary()
+    {
+        _isLoading = true;
+        _loadingMessage = EntityType == "Article" 
+            ? "Reading backlinks and crafting summary..." 
+            : "Analyzing session notes...";
+        _errorMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            var request = new GenerateSummaryRequestDto
+            {
+                TemplateId = _selectedTemplateId,
+                CustomPrompt = string.IsNullOrWhiteSpace(_customPrompt) ? null : _customPrompt,
+                SaveConfiguration = _saveConfiguration
+            };
+
+            SummaryGenerationDto? result;
+            
+            if (EntityType == "Article")
+            {
+                result = await SummaryApi.GenerateSummaryAsync(EntityId, request);
+                if (result?.Success == true)
+                {
+                    _articleSummaryData = new ArticleSummaryDto
+                    {
+                        ArticleId = EntityId,
+                        Summary = result.Summary,
+                        GeneratedAt = result.GeneratedDate,
+                        TemplateId = _selectedTemplateId,
+                        TemplateName = _templates.FirstOrDefault(t => t.Id == _selectedTemplateId)?.Name
+                    };
+                }
+            }
+            else
+            {
+                result = await SummaryApi.GenerateEntitySummaryAsync(EntityType, EntityId, request);
+                if (result?.Success == true)
+                {
+                    _entitySummaryData = new EntitySummaryDto
+                    {
+                        EntityId = EntityId,
+                        EntityType = EntityType,
+                        Summary = result.Summary,
+                        GeneratedAt = result.GeneratedDate,
+                        TemplateId = _selectedTemplateId,
+                        TemplateName = _templates.FirstOrDefault(t => t.Id == _selectedTemplateId)?.Name
+                    };
+                }
+            }
+            
+            if (result?.Success == true)
+            {
+                Snackbar.Add("Summary generated!", Severity.Success);
+            }
+            else
+            {
+                _errorMessage = result?.ErrorMessage ?? "Failed to generate summary";
+                Snackbar.Add(_errorMessage, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RegenerateSummary()
+    {
+        await ClearSummary();
+        await GenerateSummary();
+    }
+
+    private async Task ClearSummary()
+    {
+        bool success;
+        
+        if (EntityType == "Article")
+        {
+            success = await SummaryApi.ClearSummaryAsync(EntityId);
+            _articleSummaryData = null;
+        }
+        else
+        {
+            success = await SummaryApi.ClearEntitySummaryAsync(EntityType, EntityId);
+            _entitySummaryData = null;
+        }
+        
+        if (success)
+        {
+            await LoadSummaryData();
+            Snackbar.Add("Summary cleared", Severity.Info);
+        }
+        else
+        {
+            Snackbar.Add("Failed to clear summary", Severity.Error);
+        }
+    }
+
+    private async Task CopySummary()
+    {
+        var summary = _summaryData?.Summary;
+        if (!string.IsNullOrEmpty(summary))
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", summary);
+            Snackbar.Add("Copied to clipboard", Severity.Success);
+        }
+    }
+
+    private async Task ToggleExpanded()
+    {
+        IsExpanded = !IsExpanded;
+        await IsExpandedChanged.InvokeAsync(IsExpanded);
+        
+        if (IsExpanded)
+        {
+            // Panel is opening - load estimate if needed
+            await LoadEstimateData();
+        }
+        else
+        {
+            // Panel is closing - clear estimate to force fresh fetch on next open
+            _estimate = null;
+            _errorMessage = "";
+        }
+    }
+
+    private string GetRelativeTime(DateTime date)
+    {
+        var span = DateTime.UtcNow - date;
+        
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        if (span.TotalDays < 7) return $"{(int)span.TotalDays}d ago";
+        
+        return date.ToLocalTime().ToString("MMM d");
+    }
+
+    private string GetEstimateTooltip()
+    {
+        if (_estimate == null) return "";
+        return $"~{_estimate.EstimatedInputTokens:N0} input tokens, ~{_estimate.EstimatedOutputTokens:N0} output tokens";
+    }
+
+    /// <summary>
+    /// Helper class to unify access to Article and Entity summary data
+    /// </summary>
+    private class SummaryDataAccessor
+    {
+        public string? Summary { get; }
+        public DateTime? GeneratedAt { get; }
+        public bool HasSummary { get; }
+        public string? TemplateName { get; }
+        public Guid? TemplateId { get; }
+        public string? CustomPrompt { get; }
+
+        public SummaryDataAccessor(ArticleSummaryDto dto)
+        {
+            Summary = dto.Summary;
+            GeneratedAt = dto.GeneratedAt;
+            HasSummary = dto.HasSummary;
+            TemplateName = dto.TemplateName;
+            TemplateId = dto.TemplateId;
+            CustomPrompt = dto.CustomPrompt;
+        }
+
+        public SummaryDataAccessor(EntitySummaryDto dto)
+        {
+            Summary = dto.Summary;
+            GeneratedAt = dto.GeneratedAt;
+            HasSummary = dto.HasSummary;
+            TemplateName = dto.TemplateName;
+            TemplateId = dto.TemplateId;
+            CustomPrompt = dto.CustomPrompt;
+        }
+    }
+}

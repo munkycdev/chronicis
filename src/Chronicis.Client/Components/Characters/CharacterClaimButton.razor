@@ -1,0 +1,160 @@
+@inject ICharacterApiService CharacterApi
+@inject ISnackbar Snackbar
+
+@code {
+    private readonly ILogger<CharacterClaimButton> _logger;
+
+    // Direct constructor injection
+    public CharacterClaimButton(ILogger<CharacterClaimButton> logger)
+    {
+        _logger = logger;
+    }
+}
+
+@if (_isLoading)
+{
+    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+}
+else if (_claimStatus != null)
+{
+    @if (_claimStatus.IsClaimedByMe)
+    {
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Success"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.CheckCircle"
+                   OnClick="UnclaimCharacter"
+                   Disabled="_isProcessing">
+            @if (_isProcessing)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            My Character
+        </MudButton>
+    }
+    else if (_claimStatus.IsClaimed)
+    {
+        <MudTooltip Text="@($"Claimed by {_claimStatus.ClaimedByName}")">
+            <MudChip T="string" 
+                     Size="Size.Small" 
+                     Variant="Variant.Outlined"
+                     Icon="@Icons.Material.Filled.Person">
+                @_claimStatus.ClaimedByName's Character
+            </MudChip>
+        </MudTooltip>
+    }
+    else
+    {
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                   OnClick="ClaimCharacter"
+                   Disabled="_isProcessing">
+            @if (_isProcessing)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Claim as My Character
+        </MudButton>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid CharacterId { get; set; }
+
+    [Parameter]
+    public EventCallback OnClaimChanged { get; set; }
+
+    private CharacterClaimStatusDto? _claimStatus;
+    private bool _isLoading = true;
+    private bool _isProcessing = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadClaimStatus();
+    }
+
+    private async Task LoadClaimStatus()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _claimStatus = await CharacterApi.GetClaimStatusAsync(CharacterId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorSanitized(ex, "Error loading claim status for character {CharacterId}", CharacterId);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ClaimCharacter()
+    {
+        _isProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            var success = await CharacterApi.ClaimCharacterAsync(CharacterId);
+            if (success)
+            {
+                Snackbar.Add("Character claimed! This is now your character.", Severity.Success);
+                await LoadClaimStatus();
+                await OnClaimChanged.InvokeAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to claim character", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorSanitized(ex, "Error claiming character {CharacterId}", CharacterId);
+            Snackbar.Add("An error occurred", Severity.Error);
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task UnclaimCharacter()
+    {
+        _isProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            var success = await CharacterApi.UnclaimCharacterAsync(CharacterId);
+            if (success)
+            {
+                Snackbar.Add("Character unclaimed", Severity.Info);
+                await LoadClaimStatus();
+                await OnClaimChanged.InvokeAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to unclaim character", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorSanitized(ex, "Error unclaiming character {CharacterId}", CharacterId);
+            Snackbar.Add("An error occurred", Severity.Error);
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,0 +1,49 @@
+@page "/admin/utilities"
+@attribute [Authorize]
+@inject IAdminAuthService AdminAuth
+@inject NavigationManager Navigation
+
+<PageTitle>Utilities - Chronicis</PageTitle>
+
+@if (_authorized == null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_authorized == false)
+{
+    <MudAlert Severity="Severity.Error" Class="ma-4">
+        You do not have permission to access this page.
+    </MudAlert>
+}
+else
+{
+    <MudPaper Elevation="2" Class="admin-container pa-6">
+        <div class="admin-header mb-6">
+            <MudText Typo="Typo.h4" Class="admin-title">Admin Utilities</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                System administration tools. Handle with care.
+            </MudText>
+        </div>
+
+        <MudTabs Elevation="0"
+                 Rounded="true"
+                 ApplyEffectsToContainer="true"
+                 PanelClass="pt-6"
+                 Color="Color.Primary"
+                 SliderColor="Color.Primary"
+                 Class="admin-tabs">
+            <MudTabPanel Text="External Resources" Icon="@Icons.Material.Filled.Extension">
+                <RenderDefinitionGenerator />
+            </MudTabPanel>
+        </MudTabs>
+    </MudPaper>
+}
+
+@code {
+    private bool? _authorized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _authorized = await AdminAuth.IsSysAdminAsync();
+    }
+}

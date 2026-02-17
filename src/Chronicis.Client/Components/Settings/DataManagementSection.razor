@@ -1,0 +1,155 @@
+@using Chronicis.Shared.DTOs
+
+<!-- Export Section -->
+<div class="mb-6">
+    <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="mb-2" Style="font-weight: 600;">
+        Export World Data
+    </MudText>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+        Download all articles, sessions, and notes from a world as a zip archive 
+        containing organized Markdown files. Great for backups or migrating to other tools.
+    </MudText>
+
+    @if (_isLoadingWorlds)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+    }
+    else if (_worlds == null || !_worlds.Any())
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Outlined">
+            You don't have any worlds to export yet. Create a world first!
+        </MudAlert>
+    }
+    else
+    {
+        <div class="d-flex flex-column flex-sm-row gap-3 align-start">
+            <MudSelect T="WorldDto" 
+                       @bind-Value="_selectedWorld" 
+                       Label="Select World"
+                       Variant="Variant.Outlined"
+                       AnchorOrigin="Origin.BottomCenter"
+                       Dense="true"
+                       Style="min-width: 280px;">
+                @foreach (var world in _worlds)
+                {
+                    <MudSelectItem Value="@world">@world.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Download"
+                       OnClick="ExportWorld"
+                       Disabled="@(_selectedWorld == null || _isExporting)">
+                @if (_isExporting)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Exporting...</span>
+                }
+                else
+                {
+                    <span>Export to Markdown</span>
+                }
+            </MudButton>
+        </div>
+
+        @if (_exportSuccess.HasValue)
+        {
+            <MudAlert Severity="@(_exportSuccess.Value ? Severity.Success : Severity.Error)" 
+                      Class="mt-4" 
+                      Dense="true"
+                      Variant="Variant.Outlined"
+                      ShowCloseIcon="true"
+                      CloseIconClicked="() => _exportSuccess = null">
+                @if (_exportSuccess.Value)
+                {
+                    <span>Export complete! Your download should begin automatically.</span>
+                }
+                else
+                {
+                    <span>Export failed. Please try again or contact support if the problem persists.</span>
+                }
+            </MudAlert>
+        }
+    }
+</div>
+
+<MudDivider Class="my-5" />
+
+<!-- Import Section (Placeholder) -->
+<div>
+    <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="mb-2" Style="font-weight: 600;">
+        Import Data
+    </MudText>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+        Import content from other tools or restore from a backup.
+    </MudText>
+    
+    <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Construction">
+        Import functionality is coming soon! We're working on support for importing from 
+        Markdown files, Notion exports, and other popular campaign management tools.
+    </MudAlert>
+</div>
+
+@code {
+    [Inject] private IWorldApiService WorldApi { get; set; } = default!;
+    [Inject] private IExportApiService ExportApi { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private List<WorldDto>? _worlds;
+    private WorldDto? _selectedWorld;
+    private bool _isLoadingWorlds = true;
+    private bool _isExporting = false;
+    private bool? _exportSuccess = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoadingWorlds = true;
+        try
+        {
+            _worlds = await WorldApi.GetWorldsAsync();
+            if (_worlds?.Any() == true)
+            {
+                _selectedWorld = _worlds.First();
+            }
+        }
+        finally
+        {
+            _isLoadingWorlds = false;
+        }
+    }
+
+    private async Task ExportWorld()
+    {
+        if (_selectedWorld == null) return;
+
+        _isExporting = true;
+        _exportSuccess = null;
+        StateHasChanged();
+
+        try
+        {
+            var success = await ExportApi.ExportWorldToMarkdownAsync(_selectedWorld.Id, _selectedWorld.Name);
+            _exportSuccess = success;
+
+            if (success)
+            {
+                Snackbar.Add($"Export of '{_selectedWorld.Name}' completed!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Export failed. Please try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _exportSuccess = false;
+            Snackbar.Add($"Export error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isExporting = false;
+            StateHasChanged();
+        }
+    }
+}

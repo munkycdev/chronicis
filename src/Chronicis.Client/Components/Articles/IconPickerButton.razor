@@ -1,0 +1,239 @@
+@inject IJSRuntime JSRuntime
+
+<div class="chronicis-icon-picker-container" @onclick:stopPropagation="true">
+    <!-- Icon Button -->
+    <button type="button" 
+            class="chronicis-icon-button @(HasIcon ? "has-icon" : "")"
+            @onclick="TogglePicker"
+            title="@(HasIcon ? "Change icon" : "Add icon")">
+        @if (HasIcon)
+        {
+            <i class="@CurrentIcon"></i>
+        }
+        else
+        {
+            <i class="fa-solid fa-plus placeholder-icon"></i>
+        }
+    </button>
+
+    <!-- Clear button (shown when icon exists) -->
+    @if (HasIcon)
+    {
+        <button type="button" 
+                class="chronicis-icon-clear-button"
+                @onclick="ClearIcon"
+                @onclick:stopPropagation="true"
+                title="Remove icon">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    }
+
+    <!-- Picker Dropdown -->
+    @if (_isPickerOpen)
+    {
+        <div class="chronicis-icon-picker-dropdown">
+            <!-- Search Box -->
+            <div class="chronicis-icon-picker-search">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" 
+                       @bind="_searchQuery" 
+                       @bind:event="oninput"
+                       @onkeyup="OnSearchKeyUp"
+                       placeholder="Search icons..."
+                       class="chronicis-icon-search-input" />
+                @if (!string.IsNullOrEmpty(_searchQuery))
+                {
+                    <button type="button" class="clear-search" @onclick="ClearSearch">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                }
+            </div>
+
+            <!-- Category Tabs -->
+            <div class="chronicis-icon-picker-categories">
+                <button type="button" 
+                        class="category-tab @(_selectedCategory == null ? "active" : "")"
+                        @onclick="@(() => SelectCategory(null))"
+                        title="All Icons">
+                    <i class="fa-solid fa-border-all"></i>
+                </button>
+                @foreach (var category in FontAwesomeIcons.Categories)
+                {
+                    <button type="button" 
+                            class="category-tab @(_selectedCategory == category.Name ? "active" : "")"
+                            @onclick="@(() => SelectCategory(category.Name))"
+                            title="@category.Name">
+                        <i class="@category.Icon"></i>
+                    </button>
+                }
+            </div>
+
+            <!-- Category Label -->
+            <div class="chronicis-icon-picker-category-label">
+                @if (!string.IsNullOrEmpty(_searchQuery))
+                {
+                    <span>Search results for "@_searchQuery" (@FilteredIcons.Count)</span>
+                }
+                else if (_selectedCategory != null)
+                {
+                    <span>@_selectedCategory (@FilteredIcons.Count)</span>
+                }
+                else
+                {
+                    <span>All Icons (@FilteredIcons.Count)</span>
+                }
+            </div>
+
+            <!-- Icon Grid -->
+            <div class="chronicis-icon-picker-grid">
+                @if (FilteredIcons.Count == 0)
+                {
+                    <div class="no-results">
+                        <i class="fa-solid fa-face-meh"></i>
+                        <span>No icons found</span>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var icon in FilteredIcons.Take(200))
+                    {
+                        <button type="button" 
+                                class="icon-option @(icon == CurrentIcon ? "selected" : "")"
+                                @onclick="@(() => SelectIcon(icon))"
+                                title="@GetIconDisplayName(icon)">
+                            <i class="@icon"></i>
+                        </button>
+                    }
+                    @if (FilteredIcons.Count > 200)
+                    {
+                        <div class="more-results">
+                            <span>+@(FilteredIcons.Count - 200) more - refine your search</span>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@* Click-outside handler *@
+@if (_isPickerOpen)
+{
+    <div class="chronicis-icon-picker-backdrop" 
+         @onclick="ClosePicker"></div>
+}
+
+@code {
+    /// <summary>
+    /// The current icon class (e.g., "fa-solid fa-dragon")
+    /// </summary>
+    [Parameter]
+    public string? CurrentIcon { get; set; }
+
+    /// <summary>
+    /// Callback when an icon is selected or cleared
+    /// </summary>
+    [Parameter]
+    public EventCallback<string?> OnIconChanged { get; set; }
+
+    private bool _isPickerOpen = false;
+    private string _searchQuery = string.Empty;
+    private string? _selectedCategory = null;
+
+    private bool HasIcon => !string.IsNullOrEmpty(CurrentIcon);
+
+    private List<string> FilteredIcons
+    {
+        get
+        {
+            IEnumerable<string> icons;
+
+            // Start with category filter or all icons
+            if (_selectedCategory != null)
+            {
+                var category = FontAwesomeIcons.Categories.FirstOrDefault(c => c.Name == _selectedCategory);
+                icons = category?.Icons ?? Array.Empty<string>();
+            }
+            else
+            {
+                icons = FontAwesomeIcons.GetAllIcons();
+            }
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(_searchQuery))
+            {
+                var searchTerms = _searchQuery.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                icons = icons.Where(icon =>
+                {
+                    var iconName = icon.Replace("fa-solid fa-", "").Replace("-", " ");
+                    return searchTerms.All(term => iconName.Contains(term));
+                });
+            }
+
+            return icons.ToList();
+        }
+    }
+
+    private void TogglePicker()
+    {
+        if (_isPickerOpen)
+        {
+            ClosePicker();
+        }
+        else
+        {
+            OpenPicker();
+        }
+    }
+
+    private void OpenPicker()
+    {
+        _isPickerOpen = true;
+        _searchQuery = string.Empty;
+        _selectedCategory = null;
+        StateHasChanged();
+    }
+
+    private void ClosePicker()
+    {
+        _isPickerOpen = false;
+        StateHasChanged();
+    }
+
+    private void SelectCategory(string? category)
+    {
+        _selectedCategory = category;
+        StateHasChanged();
+    }
+
+    private async Task SelectIcon(string icon)
+    {
+        ClosePicker();
+        await OnIconChanged.InvokeAsync(icon);
+    }
+
+    private async Task ClearIcon()
+    {
+        await OnIconChanged.InvokeAsync(null);
+    }
+
+    private void ClearSearch()
+    {
+        _searchQuery = string.Empty;
+        StateHasChanged();
+    }
+
+    private void OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        // Just trigger re-render for filtering
+        StateHasChanged();
+    }
+
+    private string GetIconDisplayName(string icon)
+    {
+        // Convert "fa-solid fa-dragon" to "Dragon"
+        var name = icon.Replace("fa-solid fa-", "").Replace("fa-regular fa-", "").Replace("fa-brands fa-", "");
+        return string.Join(" ", name.Split('-').Select(word => 
+            char.ToUpper(word[0]) + word.Substring(1)));
+    }
+}
