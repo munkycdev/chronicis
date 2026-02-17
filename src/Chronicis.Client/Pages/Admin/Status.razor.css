@@ -1,0 +1,21 @@
+.status-details {
+    line-height: 1.4;
+}
+
+.status-details .mud-typography-body2 {
+    margin-bottom: 4px;
+}
+
+.status-details .mud-typography-body2:last-of-type {
+    margin-bottom: 8px;
+}
+
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.admin-header .admin-title {
+    color: var(--mud-palette-text-primary);
+    font-weight: 600;
+}

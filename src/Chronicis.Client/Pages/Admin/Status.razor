@@ -1,0 +1,140 @@
+@page "/admin/status"
+@attribute [Authorize]
+@inject IAdminAuthService AdminAuth
+@inject IHealthStatusApiService HealthStatusApi
+@inject NavigationManager Navigation
+@using Chronicis.Shared.DTOs
+
+<PageTitle>System Status - Chronicis</PageTitle>
+
+@if (_authorized == null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_authorized == false)
+{
+    <MudAlert Severity="Severity.Error" Class="ma-4">
+        You do not have permission to access this page.
+    </MudAlert>
+}
+else
+{
+    <MudPaper Elevation="2" Class="admin-container pa-6">
+        <div class="admin-header mb-6">
+            <div class="d-flex justify-space-between align-center">
+                <div>
+                    <MudText Typo="Typo.h4" Class="admin-title">System Status</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        Monitor the health of all system dependencies.
+                    </MudText>
+                </div>
+                <MudButton Variant="Variant.Outlined" 
+                          StartIcon="@Icons.Material.Filled.Refresh"
+                          OnClick="RefreshStatus"
+                          Disabled="@_isLoading">
+                    Refresh
+                </MudButton>
+            </div>
+            
+            @if (_lastChecked.HasValue)
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary mt-2">
+                    Last checked: @_lastChecked.Value.ToString("MMM dd, yyyy 'at' h:mm tt")
+                </MudText>
+            }
+        </div>
+
+        <!-- Admin Navigation -->
+        <div class="mb-4">
+            <MudButtonGroup Variant="Variant.Outlined" Color="Color.Primary">
+                <MudButton StartIcon="@Icons.Material.Filled.Build" 
+                          Href="/admin/utilities"
+                          Variant="@(Navigation.Uri.Contains("/utilities") ? Variant.Filled : Variant.Outlined)">
+                    Utilities
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.HealthAndSafety" 
+                          Href="/admin/status"
+                          Variant="@(Navigation.Uri.Contains("/status") ? Variant.Filled : Variant.Outlined)">
+                    System Status
+                </MudButton>
+            </MudButtonGroup>
+        </div>
+
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-center ma-6">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+            </div>
+        }
+        else if (_healthStatus == null)
+        {
+            <MudAlert Severity="Severity.Error" Class="ma-4">
+                Unable to fetch system status. The health API may be unavailable.
+            </MudAlert>
+        }
+        else
+        {
+            <!-- Overall Status Banner -->
+            <MudAlert Severity="@GetOverallSeverity(_healthStatus.OverallStatus)" 
+                     Class="mb-4">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@GetOverallStatusIcon(_healthStatus.OverallStatus)" Class="mr-2" />
+                    <MudText Typo="Typo.h6">
+                        System is @_healthStatus.OverallStatus.ToUpperInvariant()
+                    </MudText>
+                </div>
+            </MudAlert>
+
+            <!-- Service Status Grid -->
+            <MudGrid>
+                @foreach (var service in _healthStatus.Services)
+                {
+                    var displayName = GetFriendlyServiceName(service.ServiceKey);
+                    var severity = GetStatusSeverity(service.Status);
+                    var statusColor = GetStatusColor(service.Status);
+                    
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCard Class="mud-height-full">
+                            <MudCardContent>
+                                <div class="d-flex align-center mb-3">
+                                    <MudIcon Icon="@GetServiceIcon(service.ServiceKey)" 
+                                            Color="@statusColor" 
+                                            Class="mr-3" 
+                                            Size="Size.Large" />
+                                    <div class="flex-grow-1">
+                                        <MudText Typo="Typo.h6">@displayName</MudText>
+                                        <MudChip T="string"
+                                                Size="Size.Small" 
+                                                Color="@statusColor" 
+                                                Variant="Variant.Filled"
+                                                Label="true"
+                                                Text="@service.Status.ToUpperInvariant()" />
+                                    </div>
+                                </div>
+                                
+                                <MudDivider Class="mb-3" />
+                                
+                                <div class="status-details">
+                                    <MudText Typo="Typo.body2" Class="mb-1">
+                                        <strong>Response:</strong> @($"{service.ResponseTimeMs:F0}ms")
+                                    </MudText>
+                                    
+                                    @if (!string.IsNullOrEmpty(service.Message))
+                                    {
+                                        <MudText Typo="Typo.body2" Class="mb-1">
+                                            <strong>Details:</strong> @service.Message
+                                        </MudText>
+                                    }
+                                    
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                        Checked: @service.CheckedAt.ToString("h:mm:ss tt")
+                                    </MudText>
+                                </div>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </MudPaper>
+}

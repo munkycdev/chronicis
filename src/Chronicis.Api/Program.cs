@@ -207,6 +207,14 @@ try
     builder.Services.AddScoped<IQuestService, QuestService>();
     builder.Services.AddScoped<IQuestUpdateService, QuestUpdateService>();
 
+    // Health check services
+    builder.Services.AddScoped<DatabaseHealthCheckService>();
+    builder.Services.AddScoped<AzureOpenAIHealthCheckService>();
+    builder.Services.AddScoped<BlobStorageHealthCheckService>();
+    builder.Services.AddScoped<Auth0HealthCheckService>();
+    builder.Services.AddScoped<Open5eHealthCheckService>();
+    builder.Services.AddScoped<ISystemHealthService, SystemHealthService>();
+
     // Repositories
     builder.Services.AddScoped<IResourceProviderRepository, ResourceProviderRepository>();
 

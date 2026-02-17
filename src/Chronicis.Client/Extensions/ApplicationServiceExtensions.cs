@@ -40,6 +40,14 @@ public static class ApplicationServiceExtensions
             return new PublicApiService(factory.CreateClient("ChronicisPublicApi"), logger);
         });
 
+        // Health Status API service (uses unauthenticated client since health endpoints are public)
+        services.AddScoped<IHealthStatusApiService>(sp =>
+        {
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            var logger = sp.GetRequiredService<ILogger<HealthStatusApiService>>();
+            return new HealthStatusApiService(factory.CreateClient("ChronicisPublicApi"), logger);
+        });
+
         // State & coordination services
         services.AddScoped<ITreeStateService, TreeStateService>();
         services.AddScoped<IAuthService, AuthService>();

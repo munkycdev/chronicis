@@ -1,4 +1,6 @@
 using Chronicis.Api.Data;
+using Chronicis.Api.Services;
+using Chronicis.Shared.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -16,15 +18,18 @@ public class HealthController : ControllerBase
     private readonly ChronicisDbContext _context;
     private readonly ILogger<HealthController> _logger;
     private readonly IConfiguration _configuration;
+    private readonly ISystemHealthService _systemHealthService;
 
     public HealthController(
         ChronicisDbContext context,
         ILogger<HealthController> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ISystemHealthService systemHealthService)
     {
         _context = context;
         _logger = logger;
         _configuration = configuration;
+        _systemHealthService = systemHealthService;
     }
 
     /// <summary>
@@ -96,6 +101,29 @@ public class HealthController : ControllerBase
                 error = ex.Message
             });
         }
+    }
+
+    /// <summary>
+    /// GET /api/health/status - Comprehensive system health status.
+    /// Returns the health status of all system dependencies.
+    /// </summary>
+    [HttpGet("status")]
+    public async Task<ActionResult<SystemHealthStatusDto>> GetSystemStatus()
+    {
+        _logger.LogInformation("System health status endpoint called");
+        
+        var systemHealth = await _systemHealthService.GetSystemHealthAsync();
+        
+        // Return appropriate HTTP status code based on overall health
+        var statusCode = systemHealth.OverallStatus switch
+        {
+            HealthStatus.Healthy => 200,
+            HealthStatus.Degraded => 200, // Still operational
+            HealthStatus.Unhealthy => 503,
+            _ => 200
+        };
+
+        return StatusCode(statusCode, systemHealth);
     }
 
     private static string MaskConnectionString(string connectionString)

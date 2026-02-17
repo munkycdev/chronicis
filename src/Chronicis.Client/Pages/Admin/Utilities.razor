@@ -25,6 +25,22 @@ else
             </MudText>
         </div>
 
+        <!-- Admin Navigation -->
+        <div class="mb-4">
+            <MudButtonGroup Variant="Variant.Outlined" Color="Color.Primary">
+                <MudButton StartIcon="@Icons.Material.Filled.Build" 
+                          Href="/admin/utilities"
+                          Variant="@(Navigation.Uri.Contains("/utilities") ? Variant.Filled : Variant.Outlined)">
+                    Utilities
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.HealthAndSafety" 
+                          Href="/admin/status"
+                          Variant="@(Navigation.Uri.Contains("/status") ? Variant.Filled : Variant.Outlined)">
+                    System Status
+                </MudButton>
+            </MudButtonGroup>
+        </div>
+
         <MudTabs Elevation="0"
                  Rounded="true"
                  ApplyEffectsToContainer="true"
