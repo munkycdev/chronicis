@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Shared;
 using MudBlazor;
@@ -9,6 +10,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the EntityListItem component.
 /// This component displays a clickable list item for entity lists.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class EntityListItemTests : MudBlazorTestContext
 {
     [Fact]

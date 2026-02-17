@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Chronicis.ResourceCompiler.Compilation;
@@ -11,6 +12,7 @@ using Xunit;
 
 namespace Chronicis.ResourceCompiler.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class DocumentAssemblerTests
 {
     [Fact]

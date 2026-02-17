@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Shared.Enums;
 
 namespace Chronicis.Client.Models;
@@ -6,6 +7,7 @@ namespace Chronicis.Client.Models;
 /// Represents a node in the navigation tree.
 /// Can represent a World, Campaign, Arc, Article, or Virtual Group.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class TreeNode
 {
     /// <summary>

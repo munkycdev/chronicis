@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Shared.Enums;
 
 namespace Chronicis.Shared.Models;
@@ -7,6 +8,7 @@ namespace Chronicis.Shared.Models;
 /// Core entity representing a hierarchical article/note in Chronicis.
 /// Supports infinite nesting through self-referencing ParentId.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class Article
 {
     /// <summary>

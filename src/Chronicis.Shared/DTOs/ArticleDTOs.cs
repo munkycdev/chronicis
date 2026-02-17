@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Shared.Enums;
 
 namespace Chronicis.Shared.DTOs;
@@ -6,6 +7,7 @@ namespace Chronicis.Shared.DTOs;
 /// Full article with all details and optional children.
 /// Used for detailed views, editing, and full CRUD operations.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleDto
 {
     public Guid Id { get; set; }
@@ -54,6 +56,7 @@ public class ArticleDto
 /// Lightweight DTO for tree view display.
 /// Contains only essential fields for efficient navigation rendering.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleTreeDto
 {
     public Guid Id { get; set; }
@@ -96,6 +99,7 @@ public class ArticleTreeDto
 /// <summary>
 /// Request DTO for creating new articles.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleCreateDto
 {
     public string Title { get; set; } = string.Empty;
@@ -129,6 +133,7 @@ public class ArticleCreateDto
 /// <summary>
 /// Request DTO for updating existing articles.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleUpdateDto
 {
     public string Title { get; set; } = string.Empty;
@@ -152,6 +157,7 @@ public class ArticleUpdateDto
 /// Breadcrumb item for navigation path display.
 /// Can represent either a World (when IsWorld=true) or an Article.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class BreadcrumbDto
 {
     public Guid Id { get; set; }
@@ -172,6 +178,7 @@ public class BreadcrumbDto
 /// <summary>
 /// Request DTO for moving an article to a new parent.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleMoveDto
 {
     /// <summary>
@@ -183,6 +190,7 @@ public class ArticleMoveDto
 /// <summary>
 /// DTO for article alias data.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleAliasDto
 {
     public Guid Id { get; set; }
@@ -207,6 +215,7 @@ public class ArticleAliasDto
 /// Request DTO for updating all aliases on an article.
 /// Accepts a comma-delimited string that will be parsed into individual aliases.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleAliasesUpdateDto
 {
     /// <summary>

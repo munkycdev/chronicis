@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Api.Models;
 
 /// <summary>
@@ -16,6 +18,7 @@ public enum ServiceStatus
 /// Wrapper for service operation results with explicit status.
 /// Eliminates ambiguity between "not found" and "access denied" scenarios.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ServiceResult<T>
 {
     public ServiceStatus Status { get; init; }

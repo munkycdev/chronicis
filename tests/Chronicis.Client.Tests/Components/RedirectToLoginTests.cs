@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit.TestDoubles;
 using Chronicis.Client.Components.Routing;
 using Xunit;
@@ -9,6 +10,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the RedirectToLogin component.
 /// This component redirects to the login page on initialization.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class RedirectToLoginTests : TestContext
 {
     [Fact]

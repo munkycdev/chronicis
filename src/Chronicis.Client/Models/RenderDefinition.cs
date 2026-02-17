@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace Chronicis.Client.Models;
@@ -6,6 +7,7 @@ namespace Chronicis.Client.Models;
 /// Defines how external link JSON content should be rendered for a given category.
 /// Loaded from wwwroot/render-definitions/{category}.json.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class RenderDefinition
 {
     /// <summary>Schema version for forward compatibility.</summary>

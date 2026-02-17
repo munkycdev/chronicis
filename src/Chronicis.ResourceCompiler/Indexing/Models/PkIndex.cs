@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.ResourceCompiler.Raw.Models;
 
 namespace Chronicis.ResourceCompiler.Indexing.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed class PkIndex
 {
     public PkIndex(string entityName, IReadOnlyDictionary<KeyValue, RawEntityRow> rowsByKey)

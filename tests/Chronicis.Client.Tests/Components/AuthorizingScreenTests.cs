@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Routing;
 using Xunit;
@@ -9,6 +10,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the AuthorizingScreen component.
 /// This component displays a loading screen while authentication state is determined.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class AuthorizingScreenTests : TestContext
 {
     [Fact]

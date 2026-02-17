@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Shared;
 using MudBlazor;
@@ -9,6 +10,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the ChroniclsBreadcrumbs component.
 /// This component displays breadcrumb navigation with optional custom styling and actions.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ChroniclsBreadcrumbsTests : MudBlazorTestContext
 {
     [Fact]

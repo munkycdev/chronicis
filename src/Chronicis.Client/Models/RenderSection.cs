@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace Chronicis.Client.Models;
@@ -5,6 +6,7 @@ namespace Chronicis.Client.Models;
 /// <summary>
 /// A visual section grouping related fields in the rendered output.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class RenderSection
 {
     /// <summary>Section heading displayed to the user.</summary>

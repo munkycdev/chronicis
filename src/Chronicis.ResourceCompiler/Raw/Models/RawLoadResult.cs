@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.ResourceCompiler.Warnings;
 
 namespace Chronicis.ResourceCompiler.Raw.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed class RawLoadResult
 {
     public RawLoadResult(IReadOnlyList<RawEntitySet> entitySets, IReadOnlyList<Warning> warnings)

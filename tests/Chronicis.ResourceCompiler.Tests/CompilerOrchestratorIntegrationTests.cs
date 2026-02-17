@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using Chronicis.ResourceCompiler.Compiler;
 using Chronicis.ResourceCompiler.Manifest;
@@ -7,6 +8,8 @@ using Xunit;
 
 namespace Chronicis.ResourceCompiler.Tests;
 
+
+[ExcludeFromCodeCoverage]
 public sealed class CompilerOrchestratorIntegrationTests
 {
     [Fact]

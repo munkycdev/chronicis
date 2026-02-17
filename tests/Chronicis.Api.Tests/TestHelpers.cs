@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Api.Data;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
@@ -7,6 +8,8 @@ namespace Chronicis.Api.Tests;
 /// <summary>
 /// Shared test utilities and common test data factories.
 /// </summary>
+
+[ExcludeFromCodeCoverage]
 public static class TestHelpers
 {
     // ────────────────────────────────────────────────────────────────

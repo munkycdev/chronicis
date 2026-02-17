@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.ResourceCompiler.Manifest.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed class ManifestChild
 {
     public string Entity { get; init; } = string.Empty;

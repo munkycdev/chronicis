@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.Extensions.Logging;
@@ -6,6 +7,7 @@ using Xunit;
 
 namespace Chronicis.Client.Tests.Services;
 
+[ExcludeFromCodeCoverage]
 public class WikiLinkServiceTests
 {
     private readonly IArticleApiService _articleApi;

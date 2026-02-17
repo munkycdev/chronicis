@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using MudBlazor.Services;
 
@@ -7,6 +8,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Base test context that includes MudBlazor service registration.
 /// Use this for testing components that depend on MudBlazor components.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class MudBlazorTestContext : TestContext
 {
     public MudBlazorTestContext()

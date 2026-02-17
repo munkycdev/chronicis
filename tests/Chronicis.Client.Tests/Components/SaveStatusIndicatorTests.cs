@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Shared;
 using MudBlazor;
@@ -9,6 +10,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the SaveStatusIndicator component.
 /// This component displays the current save status (saving, unsaved, saved).
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class SaveStatusIndicatorTests : MudBlazorTestContext
 {
     [Fact]

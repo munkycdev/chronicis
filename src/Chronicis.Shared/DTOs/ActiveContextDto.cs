@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 /// <summary>
 /// Response DTO for the active campaign/arc context used for quick session creation.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ActiveContextDto
 {
     /// <summary>

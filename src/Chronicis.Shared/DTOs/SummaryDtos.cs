@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.DTOs;
 
 /// <summary>
 /// Represents a summary template available for selection
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class SummaryTemplateDto
 {
     public Guid Id { get; set; }
@@ -14,6 +17,7 @@ public class SummaryTemplateDto
 /// <summary>
 /// Estimate for AI summary generation cost and scope
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class SummaryEstimateDto
 {
     public Guid EntityId { get; set; }
@@ -36,6 +40,7 @@ public class SummaryEstimateDto
 /// <summary>
 /// Request to generate AI summary with configuration options
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class GenerateSummaryRequestDto
 {
     /// <summary>
@@ -67,6 +72,7 @@ public class GenerateSummaryRequestDto
 /// <summary>
 /// Response from AI summary generation
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class SummaryGenerationDto
 {
     public bool Success { get; set; }
@@ -85,6 +91,7 @@ public class SummaryGenerationDto
 /// <summary>
 /// Represents a source used in summary generation
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class SummarySourceDto
 {
     public string Type { get; set; } = string.Empty; // "Backlink", "Session", "Web"
@@ -96,6 +103,7 @@ public class SummarySourceDto
 /// <summary>
 /// Summary data for display (for Campaign/Arc)
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class EntitySummaryDto
 {
     public Guid EntityId { get; set; }
@@ -114,6 +122,7 @@ public class EntitySummaryDto
 /// <summary>
 /// Summary data for Article display
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleSummaryDto
 {
     public Guid ArticleId { get; set; }
@@ -131,6 +140,7 @@ public class ArticleSummaryDto
 /// <summary>
 /// Lightweight summary preview for tooltip display
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class SummaryPreviewDto
 {
     public string Title { get; set; } = string.Empty;

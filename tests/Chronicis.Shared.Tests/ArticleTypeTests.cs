@@ -4,6 +4,7 @@ namespace Chronicis.Shared.Tests;
 /// Tests for the ArticleType enum to ensure all expected values exist
 /// and can be properly parsed and converted.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleTypeTests
 {
     [Fact]

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Extensions;
@@ -9,6 +10,8 @@ namespace Chronicis.ArchitecturalTests;
 /// Unified architectural tests that enforce design patterns and conventions across all projects.
 /// Uses reflection to discover assemblies and apply rules consistently.
 /// </summary>
+
+[ExcludeFromCodeCoverage]
 public class ArchitecturalConventionTests
 {
     private static readonly Assembly SharedAssembly = typeof(ArticleDto).Assembly;

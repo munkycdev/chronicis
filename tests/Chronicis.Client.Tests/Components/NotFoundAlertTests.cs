@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Shared;
 using MudBlazor;
@@ -9,6 +10,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the NotFoundAlert component.
 /// This component displays a warning alert for "not found" states.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class NotFoundAlertTests : MudBlazorTestContext
 {
     [Fact]

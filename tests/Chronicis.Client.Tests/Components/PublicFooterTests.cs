@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Shared;
 using Xunit;
@@ -9,6 +10,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the PublicFooter component.
 /// This component displays the footer with branding, navigation, and copyright.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class PublicFooterTests : TestContext
 {
     [Fact]

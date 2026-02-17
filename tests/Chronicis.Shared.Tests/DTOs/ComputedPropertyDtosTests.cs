@@ -3,6 +3,7 @@ namespace Chronicis.Shared.Tests.DTOs;
 /// <summary>
 /// Tests for DTOs with computed properties and business logic.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ComputedPropertyDtosTests
 {
     // ────────────────────────────────────────────────────────────────

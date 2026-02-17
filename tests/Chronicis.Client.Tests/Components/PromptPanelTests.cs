@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Bunit.TestDoubles;
 using Chronicis.Client.Components.Dashboard;
@@ -12,6 +13,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the PromptPanel component.
 /// This component displays contextual prompts and suggestions to users.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class PromptPanelTests : MudBlazorTestContext
 {
     private PromptDto CreatePrompt(

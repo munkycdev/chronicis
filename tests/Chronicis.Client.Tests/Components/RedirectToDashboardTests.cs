@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit.TestDoubles;
 using Chronicis.Client.Components.Routing;
 using Xunit;
@@ -9,6 +10,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the RedirectToDashboard component.
 /// This component redirects to the dashboard on initialization.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class RedirectToDashboardTests : TestContext
 {
     [Fact]
@@ -31,7 +33,7 @@ public class RedirectToDashboardTests : TestContext
         // Arrange
         var navMan = Services.GetService<FakeNavigationManager>();
 
-        // Act  
+        // Act
         RenderComponent<RedirectToDashboard>();
 
         // Assert

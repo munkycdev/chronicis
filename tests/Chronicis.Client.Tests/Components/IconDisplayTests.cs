@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Shared;
 using Xunit;
@@ -9,6 +10,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the IconDisplay component.
 /// This component renders icons (emojis or Font Awesome) with fallback support.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class IconDisplayTests : TestContext
 {
     [Fact]

@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
 using Xunit;
 
 namespace Chronicis.Client.Tests.Services;
 
+[ExcludeFromCodeCoverage]
 public class BreadcrumbServiceTests
 {
     private readonly BreadcrumbService _sut;

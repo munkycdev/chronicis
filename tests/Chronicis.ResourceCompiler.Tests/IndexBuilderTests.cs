@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.ResourceCompiler.Indexing;
 using Chronicis.ResourceCompiler.Manifest.Models;
 using Chronicis.ResourceCompiler.Raw;
@@ -7,6 +8,7 @@ using Xunit;
 
 namespace Chronicis.ResourceCompiler.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class IndexBuilderTests
 {
     [Fact]

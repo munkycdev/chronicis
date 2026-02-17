@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Chronicis.Api.Tests;
 
-
+[ExcludeFromCodeCoverage]
 [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>")]
 public class ExternalLinkServiceTests : IDisposable
 {

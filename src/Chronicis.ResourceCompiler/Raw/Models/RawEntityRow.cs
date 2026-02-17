@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace Chronicis.ResourceCompiler.Raw.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed class RawEntityRow
 {
     public RawEntityRow(string entityName, int rowIndex, JsonElement data, JsonElement? extractedPkElement)

@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Tests;
 
 /// <summary>
 /// Tests for the SlugGenerator utility class.
 /// Validates URL-safe slug generation, validation, and uniqueness handling.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class SlugGeneratorTests
 {
     // ────────────────────────────────────────────────────────────────

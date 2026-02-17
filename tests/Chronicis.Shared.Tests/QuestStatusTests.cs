@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Tests;
 
 /// <summary>
 /// Tests for the QuestStatus enum to ensure all expected values exist
 /// and can be properly parsed and converted.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class QuestStatusTests
 {
     [Fact]

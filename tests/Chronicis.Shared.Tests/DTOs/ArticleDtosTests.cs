@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Tests.DTOs;
 
 /// <summary>
 /// Tests for Article-related DTOs to ensure proper initialization and data integrity.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleDtosTests
 {
     // ────────────────────────────────────────────────────────────────

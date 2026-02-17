@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.ResourceCompiler.Raw.Models;
 
 namespace Chronicis.ResourceCompiler.Indexing.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed class FkIndex
 {
     public FkIndex(

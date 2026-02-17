@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Api.Data;
 using Chronicis.Api.Models;
 using Chronicis.Api.Services;
@@ -10,6 +11,7 @@ using Xunit;
 
 namespace Chronicis.Api.Tests;
 
+[ExcludeFromCodeCoverage]
 public class QuestUpdateServiceTests : IDisposable
 {
     private readonly ChronicisDbContext _context;

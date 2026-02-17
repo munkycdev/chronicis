@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Articles;
 using Chronicis.Shared.DTOs;
@@ -9,9 +10,10 @@ namespace Chronicis.Client.Tests.Components;
 /// <summary>
 /// Tests for the REFACTORED OutgoingLinksPanel component.
 /// This component now accepts data as parameters - trivially easy to test!
-/// 
+///
 /// Following the same pattern as BacklinksPanel.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class OutgoingLinksPanelTests : TestContext
 {
     [Fact]

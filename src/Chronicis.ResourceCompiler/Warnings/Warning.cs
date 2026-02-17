@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.ResourceCompiler.Warnings;
 
+[ExcludeFromCodeCoverage]
 public sealed class Warning
 {
     public Warning(WarningCode code, WarningSeverity severity, string message, string? entityName = null, string? jsonPath = null)

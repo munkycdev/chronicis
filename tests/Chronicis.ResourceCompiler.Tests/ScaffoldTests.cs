@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.ResourceCompiler.Manifest;
 using Chronicis.ResourceCompiler.Manifest.Models;
 using Chronicis.ResourceCompiler.Warnings;
@@ -5,6 +6,7 @@ using Xunit;
 
 namespace Chronicis.ResourceCompiler.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class ScaffoldTests
 {
     [Fact]

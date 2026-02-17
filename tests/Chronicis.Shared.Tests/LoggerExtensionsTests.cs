@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 
 namespace Chronicis.Shared.Tests;
@@ -6,6 +7,7 @@ namespace Chronicis.Shared.Tests;
 /// Tests for LoggerExtensions to ensure all extension methods properly sanitize
 /// user input before logging and respect log level filtering.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class LoggerExtensionsTests
 {
     // ────────────────────────────────────────────────────────────────

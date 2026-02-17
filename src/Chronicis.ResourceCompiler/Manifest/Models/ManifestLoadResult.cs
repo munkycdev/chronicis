@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.ResourceCompiler.Warnings;
 
 namespace Chronicis.ResourceCompiler.Manifest.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed class ManifestLoadResult
 {
     public ManifestLoadResult(Manifest? manifest, IReadOnlyList<Warning> warnings)

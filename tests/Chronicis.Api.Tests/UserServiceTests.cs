@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Api.Data;
 using Chronicis.Api.Services;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,8 @@ using Xunit;
 
 namespace Chronicis.Api.Tests;
 
+
+[ExcludeFromCodeCoverage]
 public class UserServiceTests : IDisposable
 {
     private readonly ChronicisDbContext _context;

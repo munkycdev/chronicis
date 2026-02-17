@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Characters;
 using Chronicis.Client.Services; // For CharacterClaimStatusDto
@@ -10,9 +11,10 @@ namespace Chronicis.Client.Tests.Components;
 /// <summary>
 /// Tests for the REFACTORED CharacterClaimButton component.
 /// This component now accepts data as parameters - trivially easy to test!
-/// 
+///
 /// Following the same pattern as BacklinksPanel, OutgoingLinksPanel, and ExternalLinksPanel.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class CharacterClaimButtonTests : MudBlazorTestContext
 {
     [Fact]

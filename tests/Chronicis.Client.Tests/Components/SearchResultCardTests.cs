@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Search;
 using Chronicis.Shared.DTOs;
@@ -10,6 +11,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the SearchResultCard component.
 /// This component displays a search result with highlighting and metadata.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class SearchResultCardTests : MudBlazorTestContext
 {
     private ArticleSearchResultDto CreateTestResult(

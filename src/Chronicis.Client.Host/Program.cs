@@ -1,14 +1,23 @@
-var builder = WebApplication.CreateBuilder(args);
+using System.Diagnostics.CodeAnalysis;
 
-var app = builder.Build();
+[ExcludeFromCodeCoverage]
+internal class Program
+{
+    private static void Main(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
 
-// Serve Blazor WebAssembly files
-app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
+        var app = builder.Build();
 
-app.UseRouting();
+        // Serve Blazor WebAssembly files
+        app.UseBlazorFrameworkFiles();
+        app.UseStaticFiles();
 
-// Fallback to index.html for client-side routing
-app.MapFallbackToFile("index.html");
+        app.UseRouting();
 
-app.Run();
+        // Fallback to index.html for client-side routing
+        app.MapFallbackToFile("index.html");
+
+        app.Run();
+    }
+}

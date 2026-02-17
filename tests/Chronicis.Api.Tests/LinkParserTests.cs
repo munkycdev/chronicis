@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Api.Services;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
 
+
+[ExcludeFromCodeCoverage]
 public class LinkParserTests
 {
     private readonly LinkParser _parser;

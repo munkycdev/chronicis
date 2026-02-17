@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Client.Services;
 using NSubstitute;
 using Xunit;
 
 namespace Chronicis.Client.Tests.Services;
 
+[ExcludeFromCodeCoverage]
 public class QuestDrawerServiceTests : IDisposable
 {
     private readonly IMetadataDrawerService _metadataDrawerService;

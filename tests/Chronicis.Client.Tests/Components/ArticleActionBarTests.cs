@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Articles;
 using Chronicis.Client.Components.Shared;
@@ -10,6 +11,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the ArticleActionBar component.
 /// This component displays action buttons and save status for article editing.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleActionBarTests : MudBlazorTestContext
 {
     [Fact]

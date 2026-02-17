@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Shared;
 using MudBlazor;
@@ -9,6 +10,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the DetailPageHeader component.
 /// This component displays a header with breadcrumbs, icon, and editable title.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class DetailPageHeaderTests : MudBlazorTestContext
 {
     [Fact]

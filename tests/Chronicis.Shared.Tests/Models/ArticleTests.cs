@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Tests.Models;
 
 /// <summary>
 /// Tests for the Article domain model.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ArticleTests
 {
     [Fact]

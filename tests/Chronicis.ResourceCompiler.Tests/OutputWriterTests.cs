@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using Chronicis.ResourceCompiler.Compilation.Models;
 using Chronicis.ResourceCompiler.Indexing.Models;
@@ -8,6 +9,7 @@ using Xunit;
 
 namespace Chronicis.ResourceCompiler.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class OutputWriterTests
 {
     [Fact]

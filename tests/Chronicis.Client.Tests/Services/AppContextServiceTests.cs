@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Blazored.LocalStorage;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
@@ -7,6 +8,7 @@ using Xunit;
 
 namespace Chronicis.Client.Tests.Services;
 
+[ExcludeFromCodeCoverage]
 public class AppContextServiceTests
 {
     private readonly IWorldApiService _worldApi;

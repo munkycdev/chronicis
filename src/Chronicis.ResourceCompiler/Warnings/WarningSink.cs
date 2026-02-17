@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.ResourceCompiler.Warnings;
 
+[ExcludeFromCodeCoverage]
 public sealed class WarningSink
 {
     private readonly List<Warning> _warnings = new();

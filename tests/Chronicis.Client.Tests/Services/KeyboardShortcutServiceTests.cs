@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Client.Services;
 using Xunit;
 
 namespace Chronicis.Client.Tests.Services;
 
+[ExcludeFromCodeCoverage]
 public class KeyboardShortcutServiceTests
 {
     [Fact]

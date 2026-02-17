@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -6,6 +7,7 @@ namespace Chronicis.Client.Models;
 /// <summary>
 /// Defines how a single JSON field should be rendered.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class RenderField
 {
     /// <summary>
@@ -55,6 +57,7 @@ public class RenderField
 /// Deserializes either a JSON string or a JSON array of strings into List&lt;string&gt;.
 /// Serializes as a single string when the list has exactly one element.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class StringOrStringArrayConverter : JsonConverter<List<string>>
 {
     public override List<string> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

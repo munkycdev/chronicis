@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Quests;
 using Chronicis.Shared.Enums;
@@ -10,6 +11,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the QuestStatusChip component.
 /// This component displays a colored chip based on quest status.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class QuestStatusChipTests : MudBlazorTestContext
 {
     [Fact]

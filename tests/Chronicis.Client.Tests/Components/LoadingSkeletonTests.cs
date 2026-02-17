@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Shared;
 using Xunit;
@@ -8,6 +9,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the LoadingSkeleton component.
 /// This component displays a loading skeleton for article detail pages.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class LoadingSkeletonTests : MudBlazorTestContext
 {
     [Fact]

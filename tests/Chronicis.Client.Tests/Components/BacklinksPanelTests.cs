@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Articles;
 using Chronicis.Shared.DTOs;
@@ -9,13 +10,14 @@ namespace Chronicis.Client.Tests.Components;
 /// <summary>
 /// Tests for the REFACTORED BacklinksPanel component.
 /// This component now accepts data as parameters - MUCH easier to test!
-/// 
+///
 /// Benefits of refactoring:
 /// - No service dependencies to mock
 /// - Simple data-driven tests
 /// - Fast, focused assertions
 /// - Clear component responsibility (display only)
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class BacklinksPanelTests : TestContext
 {
     [Fact]

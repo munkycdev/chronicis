@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.ResourceCompiler.Warnings;
 
 namespace Chronicis.ResourceCompiler.Compilation.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed class CompilationResult
 {
     public CompilationResult(IReadOnlyList<CompiledDocument> documents, IReadOnlyList<Warning> warnings)

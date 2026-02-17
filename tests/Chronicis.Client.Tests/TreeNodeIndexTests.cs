@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Client.Models;
 using Chronicis.Client.Services.Tree;
 using Xunit;
 
 namespace Chronicis.Client.Tests;
 
+[ExcludeFromCodeCoverage]
 public class TreeNodeIndexTests
 {
     [Fact]

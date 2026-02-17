@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Client.Services;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -5,6 +6,7 @@ using Xunit;
 
 namespace Chronicis.Client.Tests.Services;
 
+[ExcludeFromCodeCoverage]
 public class MarkdownServiceTests
 {
     private readonly ILogger<MarkdownService> _logger;

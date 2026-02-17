@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Api.Data;
 using Chronicis.Api.Services;
 using Chronicis.Shared.Enums;
@@ -8,6 +9,8 @@ using Xunit;
 
 namespace Chronicis.Api.Tests;
 
+
+[ExcludeFromCodeCoverage]
 public class ArticleHierarchyServiceTests : IDisposable
 {
     private readonly ChronicisDbContext _context;

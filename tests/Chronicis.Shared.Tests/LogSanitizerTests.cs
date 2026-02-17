@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Tests;
 
 /// <summary>
 /// Tests for the LogSanitizer utility class.
 /// Validates log injection prevention and input sanitization for secure logging.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class LogSanitizerTests
 {
     // ────────────────────────────────────────────────────────────────

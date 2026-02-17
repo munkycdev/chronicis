@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Api.Data;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
@@ -8,6 +9,7 @@ using Xunit;
 
 namespace Chronicis.Api.Tests;
 
+[ExcludeFromCodeCoverage]
 public class CampaignServiceTests : IDisposable
 {
     private readonly ChronicisDbContext _context;

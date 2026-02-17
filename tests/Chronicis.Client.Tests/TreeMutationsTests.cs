@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Client.Models;
 using Chronicis.Client.Services;
 using Chronicis.Client.Services.Tree;
@@ -10,6 +11,7 @@ using Xunit;
 
 namespace Chronicis.Client.Tests;
 
+[ExcludeFromCodeCoverage]
 public class TreeMutationsTests
 {
     private readonly IArticleApiService _articleApi;

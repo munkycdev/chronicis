@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Shared;
 using MudBlazor;
@@ -10,6 +11,7 @@ namespace Chronicis.Client.Tests.Components;
 /// Tests for the EmptyState component.
 /// This component displays an empty state with optional action button.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class EmptyStateTests : TestContext
 {
     [Fact]

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Chronicis.ResourceCompiler.Indexing;
 using Chronicis.ResourceCompiler.Indexing.Models;
@@ -6,6 +7,7 @@ using Xunit;
 
 namespace Chronicis.ResourceCompiler.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class KeyCanonicalizerTests
 {
     [Fact]

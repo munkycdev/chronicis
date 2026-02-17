@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Blazored.LocalStorage;
 using Chronicis.Client.Models;
 using Chronicis.Client.Services.Tree;
@@ -8,6 +9,7 @@ using Xunit;
 
 namespace Chronicis.Client.Tests;
 
+[ExcludeFromCodeCoverage]
 public class TreeUiStateTests
 {
     private readonly ILocalStorageService _localStorage;
