@@ -5,15 +5,23 @@ on:
     branches: [ main ]
 
 permissions:
-  contents: read
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   guardrails:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout (main)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -21,44 +29,157 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore
+        shell: pwsh
         run: dotnet restore ./Chronicis.CI.sln
 
       - name: Verify formatting
+        shell: pwsh
         run: dotnet format ./Chronicis.CI.sln --verify-no-changes --verbosity minimal
 
       - name: Build
+        shell: pwsh
         run: dotnet build ./Chronicis.CI.sln --configuration Release --no-restore
 
-      - name: Test (with coverage forced)        
+      - name: Test (with coverage forced)
+        shell: pwsh
         run: dotnet test ./Chronicis.CI.sln --configuration Release --no-build --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura
 
-      - name: Locate coverage files
-        shell: bash
-        run: |
-          echo "Searching for coverage outputs..."
-          find . -type f \( -name "coverage.cobertura.xml" -o -name "*.cobertura.xml" -o -name "coverage.xml" -o -name "coverage.json" -o -name "coverage.opencover.xml" \) -print
-          echo ""
-          echo "Searching for TestResults folders..."
-          find . -type d -name "TestResults" -print
-
       - name: Install ReportGenerator
+        shell: pwsh
         run: dotnet tool update -g dotnet-reportgenerator-globaltool
 
-      - name: Generate coverage summary + HTML report
-        shell: bash
+      - name: Generate coverage HTML + summary
+        shell: pwsh
         run: |
-          reportgenerator \
-            -reports:"**/*.cobertura.xml" \
-            -targetdir:"coveragereport" \
-            -reporttypes:"MarkdownSummaryGithub;Html"
+          reportgenerator `
+            -reports:"**/*.cobertura.xml" `
+            -targetdir:"coveragereport" `
+            -reporttypes:"Html;MarkdownSummaryGithub"
 
       - name: Publish coverage summary to GitHub Actions
-        shell: bash
+        shell: pwsh
         run: |
-          cat coveragereport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+          if (Test-Path "coveragereport/SummaryGithub.md") {
+            Get-Content "coveragereport/SummaryGithub.md" | Add-Content $env:GITHUB_STEP_SUMMARY
+          } else {
+            "Coverage summary not found." | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
 
-      - name: Upload HTML coverage report artifact
-        uses: actions/upload-artifact@v4
+      - name: Compute overall coverage rates
+        id: rates
+        shell: pwsh
+        run: |
+          $cobertura = Get-ChildItem -Recurse -Filter *.cobertura.xml | Select-Object -First 1
+          if (-not $cobertura) { throw "No cobertura files found." }
+
+          Write-Host "Using cobertura file: $($cobertura.FullName)"
+
+          python3 ci/coverage/extract_rates.py "$($cobertura.FullName)" | Out-File -Encoding utf8 rates.json
+
+          $rates = Get-Content rates.json | ConvertFrom-Json
+          "linePct=$($rates.linePct)"   | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+          "branchPct=$($rates.branchPct)" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+
+      - name: Checkout coverage history branch
+        uses: actions/checkout@v4
         with:
-          name: coverage-report
-          path: coveragereport
+          ref: coverage-history
+          path: _history
+          fetch-depth: 1
+
+      - name: Update history.json
+        shell: pwsh
+        env:
+          LINE_PCT: ${{ steps.rates.outputs.linePct }}
+          BRANCH_PCT: ${{ steps.rates.outputs.branchPct }}
+          SHA: ${{ github.sha }}
+        run: |
+          if (-not (Test-Path "_history/history.json")) {
+            '{ "points": [] }' | Out-File -Encoding utf8 "_history/history.json"
+          }
+
+          $iso = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+          "ISO_DATE=$iso" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
+          python3 -c @"
+import json, os
+
+path = "_history/history.json"
+data = json.load(open(path))
+points = data.get("points", [])
+
+sha = os.environ["SHA"]
+date = os.environ["ISO_DATE"]
+line = os.environ.get("LINE_PCT")
+branch = os.environ.get("BRANCH_PCT")
+
+def to_float(x):
+    try:
+        return float(x) if x not in (None, "None", "") else None
+    except Exception:
+        return None
+
+new_point = {
+    "date": date,
+    "sha": sha,
+    "linePct": to_float(line),
+    "branchPct": to_float(branch),
+}
+
+points = [p for p in points if p.get("sha") != sha]
+points.append(new_point)
+points = points[-200:]
+
+data["points"] = points
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+"@
+
+      - name: Commit updated history.json
+        shell: pwsh
+        working-directory: _history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add history.json
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "No history changes to commit."
+            exit 0
+          }
+
+          git commit -m "Update coverage history: $env:ISO_DATE"
+          git push origin HEAD:coverage-history
+
+      - name: Assemble Pages site
+        shell: pwsh
+        run: |
+          if (Test-Path "site") { Remove-Item -Recurse -Force "site" }
+          New-Item -ItemType Directory -Force -Path "site/coverage" | Out-Null
+
+          Copy-Item -Recurse -Force "ci/pages/*" "site/"
+
+          New-Item -ItemType Directory -Force -Path "site/coverage/report" | Out-Null
+          Copy-Item -Recurse -Force "coveragereport/*" "site/coverage/report/"
+
+          Copy-Item -Force "_history/history.json" "site/coverage/history.json"
+
+          "OK" | Out-File -Encoding utf8 "site/health.txt"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy-pages:
+    needs: guardrails
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
