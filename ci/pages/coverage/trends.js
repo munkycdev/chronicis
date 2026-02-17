@@ -63,8 +63,19 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        scales: { y: { min: 0, max: 100 } },
-        plugins: { legend: { position: "top" } }
+
+        // Stop animation loop
+        animation: false,
+
+        // Prevent resize thrash
+        resizeDelay: 200,
+
+        scales: {
+          y: { min: 0, max: 100 }
+        },
+        plugins: {
+          legend: { position: "top" }
+        }
       }
     });
   } catch (err) {
