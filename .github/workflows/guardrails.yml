@@ -29,5 +29,27 @@ jobs:
       - name: Build
         run: dotnet build ./Chronicis.CI.sln --configuration Release --no-restore
 
-      - name: Test
+      - name: Test (with coverage)
         run: dotnet test ./Chronicis.CI.sln --configuration Release --no-build --verbosity normal
+
+      - name: Install ReportGenerator
+        run: dotnet tool update -g dotnet-reportgenerator-globaltool
+
+      - name: Generate coverage summary + HTML report
+        shell: bash
+        run: |
+          reportgenerator \
+            -reports:"**/TestResults/coverage/coverage.cobertura.xml" \
+            -targetdir:"coveragereport" \
+            -reporttypes:"MarkdownSummaryGithub;Html"
+
+      - name: Publish coverage summary to GitHub Actions
+        shell: bash
+        run: |
+          cat coveragereport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload HTML coverage report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coveragereport
