@@ -15,7 +15,7 @@
   }
 
   try {
-    const res = await fetch("./history.json", { cache: "no-store" });
+    const res = await fetch("/coverage/history.json", { cache: "no-store" });
     if (!res.ok) throw new Error(`history.json fetch failed: ${res.status}`);
     const data = await res.json();
 
