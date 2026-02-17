@@ -77,7 +77,7 @@ jobs:
           python3 ci/coverage/extract_rates.py "$($cobertura.FullName)" | Out-File -Encoding utf8 rates.json
 
           $rates = Get-Content rates.json | ConvertFrom-Json
-          "linePct=$($rates.linePct)"   | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+          "linePct=$($rates.linePct)"     | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
           "branchPct=$($rates.branchPct)" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
 
       - name: Checkout coverage history branch
@@ -87,53 +87,17 @@ jobs:
           path: _history
           fetch-depth: 1
 
-      - name: Update history.json
+      - name: Update history.json (via script)
+        id: history
         shell: pwsh
         env:
           LINE_PCT: ${{ steps.rates.outputs.linePct }}
           BRANCH_PCT: ${{ steps.rates.outputs.branchPct }}
           SHA: ${{ github.sha }}
+          HISTORY_PATH: _history/history.json
         run: |
-          if (-not (Test-Path "_history/history.json")) {
-            '{ "points": [] }' | Out-File -Encoding utf8 "_history/history.json"
-          }
-
-          $iso = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+          $iso = python3 ci/coverage/update_history.py
           "ISO_DATE=$iso" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
-
-          python3 -c @"
-import json, os
-
-path = "_history/history.json"
-data = json.load(open(path))
-points = data.get("points", [])
-
-sha = os.environ["SHA"]
-date = os.environ["ISO_DATE"]
-line = os.environ.get("LINE_PCT")
-branch = os.environ.get("BRANCH_PCT")
-
-def to_float(x):
-    try:
-        return float(x) if x not in (None, "None", "") else None
-    except Exception:
-        return None
-
-new_point = {
-    "date": date,
-    "sha": sha,
-    "linePct": to_float(line),
-    "branchPct": to_float(branch),
-}
-
-points = [p for p in points if p.get("sha") != sha]
-points.append(new_point)
-points = points[-200:]
-
-data["points"] = points
-with open(path, "w") as f:
-    json.dump(data, f, indent=2)
-"@
 
       - name: Commit updated history.json
         shell: pwsh
