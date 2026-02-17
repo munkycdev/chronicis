@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Services;
@@ -31,6 +32,7 @@ public interface ICharacterApiService
 /// <summary>
 /// Status of a character's claim.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class CharacterClaimStatusDto
 {
     public Guid CharacterId { get; set; }
