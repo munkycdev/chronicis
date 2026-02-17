@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+    <!-- Automatically enable coverage when running tests -->
+    <CollectCoverage Condition="'$(IsTestProject)' == 'true'">true</CollectCoverage>
+
+    <!-- Output format -->
+    <CoverletOutputFormat Condition="'$(IsTestProject)' == 'true'">
+      cobertura
+    </CoverletOutputFormat>
+
+    <!-- Output location -->
+    <CoverletOutput Condition="'$(IsTestProject)' == 'true'">
+      $(MSBuildProjectDirectory)/TestResults/coverage/
+    </CoverletOutput>
+
+    <!-- Optional: merge multiple test projects -->
+    <MergeWith Condition="'$(IsTestProject)' == 'true'">
+      $(SolutionDir)\coverage\coverage.cobertura.xml
+    </MergeWith>
+  </PropertyGroup>
+</Project>

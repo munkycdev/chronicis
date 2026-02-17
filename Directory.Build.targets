@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+    <CoverletOutput>$(MSBuildProjectDirectory)\TestResults\coverage\coverage.</CoverletOutput>
+    <Exclude>[*.Tests?]*</Exclude>
+  </PropertyGroup>
+</Project>
