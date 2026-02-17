@@ -29,8 +29,8 @@ jobs:
       - name: Build
         run: dotnet build ./Chronicis.CI.sln --configuration Release --no-restore
 
-      - name: Test (with coverage)
-        run: dotnet test ./Chronicis.CI.sln --configuration Release --no-build --verbosity normal
+      - name: Test (with coverage forced)        
+        run: dotnet test ./Chronicis.CI.sln --configuration Release --no-build --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura
 
       - name: Locate coverage files
         shell: bash
@@ -48,7 +48,7 @@ jobs:
         shell: bash
         run: |
           reportgenerator \
-            -reports:"**/TestResults/coverage/coverage.cobertura.xml" \
+            -reports:"**/*.cobertura.xml" \
             -targetdir:"coveragereport" \
             -reporttypes:"MarkdownSummaryGithub;Html"
 
