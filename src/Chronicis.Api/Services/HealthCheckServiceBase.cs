@@ -1,5 +1,5 @@
-using Chronicis.Shared.DTOs;
 using System.Diagnostics;
+using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Api.Services;
 
@@ -16,7 +16,7 @@ public abstract class HealthCheckServiceBase : IHealthCheckService
     {
         var stopwatch = Stopwatch.StartNew();
         var checkedAt = DateTime.UtcNow;
-        
+
         try
         {
             var (status, message) = await PerformHealthCheckAsync();

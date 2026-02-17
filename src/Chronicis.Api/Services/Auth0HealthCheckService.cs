@@ -8,8 +8,8 @@ public class Auth0HealthCheckService : HealthCheckServiceBase
     private readonly IConfiguration _configuration;
 
     public Auth0HealthCheckService(
-        HttpClient httpClient, 
-        IConfiguration configuration, 
+        HttpClient httpClient,
+        IConfiguration configuration,
         ILogger<Auth0HealthCheckService> logger)
         : base(logger)
     {
@@ -20,7 +20,7 @@ public class Auth0HealthCheckService : HealthCheckServiceBase
     protected override async Task<(string Status, string? Message)> PerformHealthCheckAsync()
     {
         var domain = _configuration["Auth0:Domain"];
-        
+
         if (string.IsNullOrEmpty(domain))
         {
             return (HealthStatus.Unhealthy, "Auth0 domain not configured");
@@ -30,7 +30,7 @@ public class Auth0HealthCheckService : HealthCheckServiceBase
         {
             var wellKnownUrl = $"https://{domain}/.well-known/openid-configuration";
             var response = await _httpClient.GetAsync(wellKnownUrl);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return (HealthStatus.Healthy, "Auth0 well-known endpoint accessible");

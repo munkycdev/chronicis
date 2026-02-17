@@ -24,14 +24,14 @@ public class HealthStatusApiService : IHealthStatusApiService
         {
             _logger.LogInformation("Requesting health status from /health/status");
             var response = await _httpClient.GetAsync("/health/status");
-            
+
             _logger.LogInformation("Health status API returned {StatusCode}", response.StatusCode);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
                 _logger.LogDebug("Health status response: {Content}", content);
-                
+
                 return System.Text.Json.JsonSerializer.Deserialize<SystemHealthStatusDto>(content, new System.Text.Json.JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true

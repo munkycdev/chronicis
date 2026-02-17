@@ -111,9 +111,9 @@ public class HealthController : ControllerBase
     public async Task<ActionResult<SystemHealthStatusDto>> GetSystemStatus()
     {
         _logger.LogInformation("System health status endpoint called");
-        
+
         var systemHealth = await _systemHealthService.GetSystemHealthAsync();
-        
+
         // Return appropriate HTTP status code based on overall health
         var statusCode = systemHealth.OverallStatus switch
         {

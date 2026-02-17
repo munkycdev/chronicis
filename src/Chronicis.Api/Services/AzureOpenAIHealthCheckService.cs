@@ -8,8 +8,8 @@ public class AzureOpenAIHealthCheckService : HealthCheckServiceBase
     private readonly HttpClient _httpClient;
 
     public AzureOpenAIHealthCheckService(
-        IConfiguration configuration, 
-        HttpClient httpClient, 
+        IConfiguration configuration,
+        HttpClient httpClient,
         ILogger<AzureOpenAIHealthCheckService> logger)
         : base(logger)
     {

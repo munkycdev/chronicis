@@ -81,7 +81,7 @@ public class SystemHealthService : ISystemHealthService
 
         if (hasUnhealthy)
             return HealthStatus.Unhealthy;
-        
+
         if (hasDegraded)
             return HealthStatus.Degraded;
 

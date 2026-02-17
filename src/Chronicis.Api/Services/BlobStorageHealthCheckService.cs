@@ -8,7 +8,7 @@ public class BlobStorageHealthCheckService : HealthCheckServiceBase
     private readonly IConfiguration _configuration;
 
     public BlobStorageHealthCheckService(
-        IConfiguration configuration, 
+        IConfiguration configuration,
         ILogger<BlobStorageHealthCheckService> logger)
         : base(logger)
     {
@@ -29,10 +29,10 @@ public class BlobStorageHealthCheckService : HealthCheckServiceBase
         {
             var blobServiceClient = new BlobServiceClient(connectionString);
             var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
-            
+
             // Check if container exists and is accessible
             var exists = await containerClient.ExistsAsync();
-            
+
             if (!exists)
             {
                 return (HealthStatus.Unhealthy, "Container does not exist or is not accessible");

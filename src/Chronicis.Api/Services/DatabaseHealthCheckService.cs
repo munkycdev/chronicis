@@ -17,7 +17,7 @@ public class DatabaseHealthCheckService : HealthCheckServiceBase
     protected override async Task<(string Status, string? Message)> PerformHealthCheckAsync()
     {
         var canConnect = await _context.Database.CanConnectAsync();
-        
+
         if (!canConnect)
         {
             return (HealthStatus.Unhealthy, "Cannot connect to database");

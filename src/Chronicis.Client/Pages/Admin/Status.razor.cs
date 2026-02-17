@@ -13,7 +13,7 @@ public partial class Status
     protected override async Task OnInitializedAsync()
     {
         _authorized = await AdminAuth.IsSysAdminAsync();
-        
+
         if (_authorized == true)
         {
             await LoadHealthStatus();
@@ -29,7 +29,7 @@ public partial class Status
     {
         _isLoading = true;
         StateHasChanged();
-        
+
         try
         {
             _healthStatus = await HealthStatusApi.GetSystemHealthAsync();
