@@ -19,7 +19,7 @@ if not os.path.exists(path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     data = {"points": []}
 else:
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8-sig") as f:
         data = json.load(f)
 
 points = data.get("points", [])
