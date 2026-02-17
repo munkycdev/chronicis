@@ -32,6 +32,15 @@ jobs:
       - name: Test (with coverage)
         run: dotnet test ./Chronicis.CI.sln --configuration Release --no-build --verbosity normal
 
+      - name: Locate coverage files
+        shell: bash
+        run: |
+          echo "Searching for coverage outputs..."
+          find . -type f \( -name "coverage.cobertura.xml" -o -name "*.cobertura.xml" -o -name "coverage.xml" -o -name "coverage.json" -o -name "coverage.opencover.xml" \) -print
+          echo ""
+          echo "Searching for TestResults folders..."
+          find . -type d -name "TestResults" -print
+
       - name: Install ReportGenerator
         run: dotnet tool update -g dotnet-reportgenerator-globaltool
 
