@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Chronicis.Shared.Tests.DTOs;
 
 /// <summary>

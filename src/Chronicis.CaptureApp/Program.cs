@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.CaptureApp.Services;
 using Chronicis.CaptureApp.UI;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Chronicis.CaptureApp;
 
+[ExcludeFromCodeCoverage]
 internal static class Program
 {
     [STAThread]
