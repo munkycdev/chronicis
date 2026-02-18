@@ -41,7 +41,8 @@ jobs:
         run: dotnet build ./Chronicis.CI.sln --configuration Release --no-restore
 
       # ------------------------------------------------------------
-      # Run ONLY Chronicis.Shared.Tests with deterministic output root
+      # Run ONLY Chronicis.Shared.Tests with coverage
+      # Also: search workspace for cobertura outputs and copy into a known folder
       # ------------------------------------------------------------
       - name: Test Chronicis.Shared.Tests (with coverage)
         shell: pwsh
@@ -49,20 +50,54 @@ jobs:
           $outDir = Join-Path $env:GITHUB_WORKSPACE "TestResults/Chronicis.Shared.Tests"
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
-          # This is an output *prefix*. Coverlet may append target framework, etc.
-          # Example outputs:
-          #   coverage.cobertura.xml
-          #   coverage.net9.0.cobertura.xml
+          # Try to force output to our folder (Coverlet uses this as a prefix)
           $outPrefix = Join-Path $outDir "coverage"
 
+          Write-Host "Running tests with coverage..."
           dotnet test ./tests/Chronicis.Shared.Tests/Chronicis.Shared.Tests.csproj `
             --configuration Release `
-            --no-build `
             --verbosity normal `
             /p:CollectCoverage=true `
             /p:CoverletOutputFormat=cobertura `
             /p:CoverletOutput="$outPrefix"
 
+          Write-Host ""
+          Write-Host "Searching for cobertura files anywhere in the workspace..."
+          $found = Get-ChildItem -Recurse -Path $env:GITHUB_WORKSPACE -Filter *.cobertura.xml -ErrorAction SilentlyContinue
+
+          if (-not $found -or $found.Count -eq 0) {
+            Write-Host "No cobertura files were generated anywhere. Diagnostics follow."
+            Write-Host ""
+            Write-Host "List TestResults folder:"
+            if (Test-Path (Join-Path $env:GITHUB_WORKSPACE "TestResults")) {
+              Get-ChildItem -Recurse (Join-Path $env:GITHUB_WORKSPACE "TestResults") | ForEach-Object { Write-Host $_.FullName }
+            } else {
+              Write-Host "No TestResults folder exists."
+            }
+
+            Write-Host ""
+            Write-Host "List test project bin/obj (Release) folders:"
+            $testRoot = Join-Path $env:GITHUB_WORKSPACE "tests/Chronicis.Shared.Tests"
+            if (Test-Path $testRoot) {
+              Get-ChildItem -Recurse $testRoot -Directory -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -match "/bin/Release|/obj/Release" } |
+                Select-Object -First 200 |
+                ForEach-Object { Write-Host $_.FullName }
+            }
+
+            throw "Coverlet did not produce any *.cobertura.xml files."
+          }
+
+          Write-Host "Cobertura files found:"
+          $found | ForEach-Object { Write-Host $_.FullName }
+
+          Write-Host ""
+          Write-Host "Copying cobertura files into $outDir ..."
+          foreach ($f in $found) {
+            Copy-Item -Force $f.FullName (Join-Path $outDir $f.Name)
+          }
+
+          Write-Host ""
           Write-Host "Coverage output directory contents:"
           Get-ChildItem -Recurse $outDir | ForEach-Object { Write-Host $_.FullName }
 
@@ -71,7 +106,7 @@ jobs:
         run: dotnet tool update -g dotnet-reportgenerator-globaltool
 
       # ------------------------------------------------------------
-      # Find the actual Cobertura file(s) created and generate report
+      # Generate HTML + merged Cobertura from the known folder
       # ------------------------------------------------------------
       - name: Generate coverage HTML + summary
         shell: pwsh
@@ -88,7 +123,6 @@ jobs:
           Write-Host "Using cobertura files:"
           $reports | ForEach-Object { Write-Host $_ }
 
-          # ReportGenerator accepts a semicolon-separated list
           $reportArg = ($reports -join ';')
 
           reportgenerator `
