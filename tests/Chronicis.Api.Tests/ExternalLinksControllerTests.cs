@@ -58,6 +58,21 @@ public class ExternalLinksControllerTests
     }
 
     [Fact]
+    public async Task GetSuggestions_NullQuery_PassesEmptyQueryToService()
+    {
+        var service = Substitute.For<IExternalLinkService>();
+        service.GetSuggestionsAsync(Arg.Any<Guid?>(), "srd", "", Arg.Any<CancellationToken>())
+            .Returns([]);
+        var sut = new ExternalLinksController(service, NullLogger<ExternalLinksController>.Instance);
+
+        var result = await sut.GetSuggestions(Guid.NewGuid(), "srd", null, CancellationToken.None);
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var payload = Assert.IsType<List<ExternalLinkSuggestionDto>>(ok.Value);
+        Assert.Empty(payload);
+        await service.Received(1).GetSuggestionsAsync(Arg.Any<Guid?>(), "srd", "", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task GetContent_MissingSourceOrId_ReturnsBadRequest()
     {
         var service = Substitute.For<IExternalLinkService>();
@@ -67,6 +82,19 @@ public class ExternalLinksControllerTests
         var bad = Assert.IsType<BadRequestObjectResult>(result.Result);
         var error = Assert.IsType<ExternalLinkErrorDto>(bad.Value);
         Assert.Equal("Source and id are required", error.Message);
+    }
+
+    [Fact]
+    public async Task GetContent_MissingSource_ReturnsBadRequest_WithoutCallingService()
+    {
+        var service = Substitute.For<IExternalLinkService>();
+        var sut = new ExternalLinksController(service, NullLogger<ExternalLinksController>.Instance);
+
+        var result = await sut.GetContent("", "/api/spells/acid-arrow", CancellationToken.None);
+        var bad = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var error = Assert.IsType<ExternalLinkErrorDto>(bad.Value);
+        Assert.Equal("Source and id are required", error.Message);
+        await service.DidNotReceiveWithAnyArgs().GetContentAsync(default!, default!, default);
     }
 
     [Fact]
