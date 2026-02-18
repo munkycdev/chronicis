@@ -62,42 +62,6 @@ jobs:
             /p:CoverletOutput="$outPrefix"
 
           Write-Host ""
-          Write-Host "Searching for cobertura files anywhere in the workspace..."
-          $found = Get-ChildItem -Recurse -Path $env:GITHUB_WORKSPACE -Filter *.cobertura.xml -ErrorAction SilentlyContinue
-
-          if (-not $found -or $found.Count -eq 0) {
-            Write-Host "No cobertura files were generated anywhere. Diagnostics follow."
-            Write-Host ""
-            Write-Host "List TestResults folder:"
-            if (Test-Path (Join-Path $env:GITHUB_WORKSPACE "TestResults")) {
-              Get-ChildItem -Recurse (Join-Path $env:GITHUB_WORKSPACE "TestResults") | ForEach-Object { Write-Host $_.FullName }
-            } else {
-              Write-Host "No TestResults folder exists."
-            }
-
-            Write-Host ""
-            Write-Host "List test project bin/obj (Release) folders:"
-            $testRoot = Join-Path $env:GITHUB_WORKSPACE "tests/Chronicis.Shared.Tests"
-            if (Test-Path $testRoot) {
-              Get-ChildItem -Recurse $testRoot -Directory -ErrorAction SilentlyContinue |
-                Where-Object { $_.FullName -match "/bin/Release|/obj/Release" } |
-                Select-Object -First 200 |
-                ForEach-Object { Write-Host $_.FullName }
-            }
-
-            throw "Coverlet did not produce any *.cobertura.xml files."
-          }
-
-          Write-Host "Cobertura files found:"
-          $found | ForEach-Object { Write-Host $_.FullName }
-
-          Write-Host ""
-          Write-Host "Copying cobertura files into $outDir ..."
-          foreach ($f in $found) {
-            Copy-Item -Force $f.FullName (Join-Path $outDir $f.Name)
-          }
-
-          Write-Host ""
           Write-Host "Coverage output directory contents:"
           Get-ChildItem -Recurse $outDir | ForEach-Object { Write-Host $_.FullName }
 
