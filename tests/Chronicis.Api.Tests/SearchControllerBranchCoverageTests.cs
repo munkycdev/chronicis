@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Chronicis.Api.Controllers;
 using Xunit;
 
@@ -5,6 +6,21 @@ namespace Chronicis.Api.Tests;
 
 public class SearchControllerBranchCoverageTests
 {
+    [Fact]
+    public void SearchController_HashtagPattern_StaticInitializer_IsCovered()
+    {
+        var field = typeof(SearchController).GetField(
+            "HashtagPattern",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+        Assert.NotNull(field);
+
+        var regex = Assert.IsType<Regex>(field!.GetValue(null));
+        var match = regex.Match("value #tag_1 value");
+        Assert.True(match.Success);
+        Assert.Equal("tag_1", match.Groups[1].Value);
+    }
+
     [Fact]
     public void SearchController_ExtractSnippet_CoversBranches()
     {
