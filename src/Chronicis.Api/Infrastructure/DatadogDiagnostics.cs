@@ -27,11 +27,20 @@ public static class DatadogDiagnostics
     /// Read-only - does not configure anything.
     /// </summary>
     public static void LogTracerState(Serilog.ILogger logger)
+        => LogTracerState(logger, ReadEnvironmentVariables, ReadTracerState);
+
+    /// <summary>
+    /// Internal overload to support deterministic testing of success and failure paths.
+    /// </summary>
+    internal static void LogTracerState(
+        Serilog.ILogger logger,
+        Func<DatadogEnvVars> envVarsReader,
+        Func<DatadogTracerState> tracerStateReader)
     {
         try
         {
-            var envVars = ReadEnvironmentVariables();
-            var tracerSettings = Tracer.Instance.Settings;
+            _ = envVarsReader();
+            _ = tracerStateReader();
         }
         catch (Exception ex)
         {
@@ -70,11 +79,14 @@ public static class DatadogDiagnostics
             ServiceName = settings.ServiceName,
             Environment = settings.Environment,
             ServiceVersion = settings.ServiceVersion,
-            AgentUri = settings.AgentUri?.ToString(),
+            AgentUri = UriToStringOrNull(settings.AgentUri),
             LogsInjectionEnabled = settings.LogsInjectionEnabled,
             TraceEnabled = settings.TraceEnabled
         };
     }
+
+    internal static string? UriToStringOrNull(Uri? uri)
+        => uri is null ? null : uri.ToString();
 
     /// <summary>
     /// Attempts to reach a Datadog agent endpoint and returns connectivity status.

@@ -78,6 +78,28 @@ public class CurrentUserServiceTests
         Assert.True(_sut.IsAuthenticated);
     }
 
+    [Fact]
+    public void IsAuthenticated_ReturnsFalse_WhenPrincipalHasNoIdentity()
+    {
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal()
+        };
+        _httpContextAccessor.HttpContext.Returns(httpContext);
+
+        Assert.False(_sut.IsAuthenticated);
+    }
+
+    [Fact]
+    public void IsAuthenticated_ReturnsFalse_WhenUserIsNull()
+    {
+        var httpContext = Substitute.For<HttpContext>();
+        httpContext.User.Returns((ClaimsPrincipal)null!);
+        _httpContextAccessor.HttpContext.Returns(httpContext);
+
+        Assert.False(_sut.IsAuthenticated);
+    }
+
     // ── GetAuth0UserId ───────────────────────────────────────────
 
     [Fact]
@@ -160,6 +182,34 @@ public class CurrentUserServiceTests
     }
 
     [Fact]
+    public async Task GetCurrentUser_UsesSafeFallbacks_WhenContextDisappearsAfterAuthCheck()
+    {
+        var testUser = CreateTestUser();
+        var firstContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(
+                [new Claim(ClaimTypes.NameIdentifier, "auth0|123")],
+                "Bearer"))
+        };
+
+        _httpContextAccessor.HttpContext.Returns(firstContext, firstContext, null);
+
+        _userService.GetOrCreateUserAsync(
+            Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<string?>())
+            .Returns(testUser);
+
+        var result = await _sut.GetCurrentUserAsync();
+
+        Assert.Equal(testUser, result);
+        await _userService.Received(1).GetOrCreateUserAsync(
+            "auth0|123",
+            "",
+            "Unknown User",
+            null);
+    }
+
+    [Fact]
     public async Task GetCurrentUser_CachesResult_OnSecondCall()
     {
         var testUser = CreateTestUser();
@@ -226,6 +276,99 @@ public class CurrentUserServiceTests
             "nick@example.com",
             "nicky",
             null);
+    }
+
+    [Fact]
+    public async Task GetCurrentUser_FallsBackToRawNameClaim()
+    {
+        var testUser = CreateTestUser();
+        SetupHttpContext(authenticated: true,
+            new Claim(ClaimTypes.NameIdentifier, "auth0|123"),
+            new Claim("email", "rawname@example.com"),
+            new Claim("name", "Raw Name"));
+
+        _userService.GetOrCreateUserAsync(
+            Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<string?>())
+            .Returns(testUser);
+
+        await _sut.GetCurrentUserAsync();
+
+        await _userService.Received(1).GetOrCreateUserAsync(
+            "auth0|123",
+            "rawname@example.com",
+            "Raw Name",
+            null);
+    }
+
+    [Fact]
+    public async Task GetCurrentUser_FallsBackToPreferredUsername()
+    {
+        var testUser = CreateTestUser();
+        SetupHttpContext(authenticated: true,
+            new Claim(ClaimTypes.NameIdentifier, "auth0|123"),
+            new Claim("email", "pref@example.com"),
+            new Claim("preferred_username", "pref-user"));
+
+        _userService.GetOrCreateUserAsync(
+            Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<string?>())
+            .Returns(testUser);
+
+        await _sut.GetCurrentUserAsync();
+
+        await _userService.Received(1).GetOrCreateUserAsync(
+            "auth0|123",
+            "pref@example.com",
+            "pref-user",
+            null);
+    }
+
+    [Fact]
+    public async Task GetCurrentUser_FallsBackToGivenName()
+    {
+        var testUser = CreateTestUser();
+        SetupHttpContext(authenticated: true,
+            new Claim(ClaimTypes.NameIdentifier, "auth0|123"),
+            new Claim("email", "given@example.com"),
+            new Claim("given_name", "Given"));
+
+        _userService.GetOrCreateUserAsync(
+            Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<string?>())
+            .Returns(testUser);
+
+        await _sut.GetCurrentUserAsync();
+
+        await _userService.Received(1).GetOrCreateUserAsync(
+            "auth0|123",
+            "given@example.com",
+            "Given",
+            null);
+    }
+
+    [Fact]
+    public async Task GetCurrentUser_FallsBackToPictureClaim_WhenCustomPictureMissing()
+    {
+        var testUser = CreateTestUser();
+        SetupHttpContext(authenticated: true,
+            new Claim(ClaimTypes.NameIdentifier, "auth0|123"),
+            new Claim(ClaimTypes.Email, "pic@example.com"),
+            new Claim(ClaimTypes.Name, "Pic User"),
+            new Claim("picture", "https://img.example.com/pic.jpg"));
+
+        _userService.GetOrCreateUserAsync(
+            Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<string?>())
+            .Returns(testUser);
+
+        await _sut.GetCurrentUserAsync();
+
+        await _userService.Received(1).GetOrCreateUserAsync(
+            "auth0|123",
+            "pic@example.com",
+            "Pic User",
+            "https://img.example.com/pic.jpg");
     }
 
     [Fact]
