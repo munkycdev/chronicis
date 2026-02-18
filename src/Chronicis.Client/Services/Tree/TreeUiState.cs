@@ -345,13 +345,16 @@ internal sealed class TreeUiState
         // Expand nodes that have visible children
         foreach (var nodeId in matchingNodeIds)
         {
-            if (_nodeIndex.TryGetNode(nodeId, out var node) && node != null)
+            var node = _nodeIndex.GetNode(nodeId);
+            if (node == null)
             {
-                if (node.Children.Any(c => c.IsVisible))
-                {
-                    node.IsExpanded = true;
-                    _expandedNodeIds.Add(nodeId);
-                }
+                continue;
+            }
+
+            if (node.Children.Any(c => c.IsVisible))
+            {
+                node.IsExpanded = true;
+                _expandedNodeIds.Add(nodeId);
             }
         }
     }

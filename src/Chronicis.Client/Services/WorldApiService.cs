@@ -196,27 +196,19 @@ public class WorldApiService : IWorldApiService
 
     public async Task<DocumentDownloadResult?> DownloadDocumentAsync(Guid documentId)
     {
-        try
-        {
-            var downloadInfo = await _http.GetEntityAsync<WorldDocumentDownloadDto>(
-                $"/documents/{documentId}/content",
-                _logger,
-                $"download URL for document {documentId}");
+        var downloadInfo = await _http.GetEntityAsync<WorldDocumentDownloadDto>(
+            $"/documents/{documentId}/content",
+            _logger,
+            $"download URL for document {documentId}");
 
-            if (downloadInfo == null)
-                return null;
-
-            return new DocumentDownloadResult(
-                downloadInfo.DownloadUrl,
-                downloadInfo.FileName,
-                downloadInfo.ContentType,
-                downloadInfo.FileSizeBytes);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting download URL for document {DocumentId}", documentId);
+        if (downloadInfo == null)
             return null;
-        }
+
+        return new DocumentDownloadResult(
+            downloadInfo.DownloadUrl,
+            downloadInfo.FileName,
+            downloadInfo.ContentType,
+            downloadInfo.FileSizeBytes);
     }
 
     public async Task<WorldDocumentDto?> UpdateDocumentAsync(

@@ -205,6 +205,19 @@ public class TreeUiStateTests
         Assert.Null(_uiState.SelectedNodeId);
     }
 
+    [Fact]
+    public void ClearSelection_WhenSelectedNodeNoLongerExists_ClearsId()
+    {
+        var firstIndex = CreateIndexWithSingleNode(out var node);
+        _uiState.SetNodeIndex(firstIndex);
+        _uiState.SelectNode(node.Id);
+        _uiState.SetNodeIndex(new TreeNodeIndex());
+
+        _uiState.ClearSelection();
+
+        Assert.Null(_uiState.SelectedNodeId);
+    }
+
     // ============================================
     // Expansion Invariant Tests
     // ============================================
@@ -271,6 +284,26 @@ public class TreeUiStateTests
         var result = _uiState.ExpandNode(Guid.NewGuid());
 
         // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void CollapseNode_OnNonExistentNode_ShouldReturnFalse()
+    {
+        _uiState.SetNodeIndex(new TreeNodeIndex());
+
+        var result = _uiState.CollapseNode(Guid.NewGuid());
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void ToggleNode_OnNonExistentNode_ShouldReturnFalse()
+    {
+        _uiState.SetNodeIndex(new TreeNodeIndex());
+
+        var result = _uiState.ToggleNode(Guid.NewGuid());
+
         Assert.False(result);
     }
 
@@ -382,6 +415,27 @@ public class TreeUiStateTests
         Assert.Null(_uiState.PendingSelectionId);
     }
 
+    [Fact]
+    public void ClearPendingSelection_ShouldClearPendingId()
+    {
+        var nodeId = Guid.NewGuid();
+        _uiState.ExpandPathToAndSelect(nodeId, isInitialized: false);
+
+        _uiState.ClearPendingSelection();
+
+        Assert.Null(_uiState.PendingSelectionId);
+    }
+
+    [Fact]
+    public void ExpandPathToAndSelect_WhenNodeMissing_ReturnsFalse()
+    {
+        _uiState.SetNodeIndex(new TreeNodeIndex());
+
+        var result = _uiState.ExpandPathToAndSelect(Guid.NewGuid(), isInitialized: true);
+
+        Assert.False(result);
+    }
+
     // ============================================
     // Search Tests
     // ============================================
@@ -468,6 +522,35 @@ public class TreeUiStateTests
     }
 
     [Fact]
+    public void SetSearchQuery_DoesNotExpandNode_WhenVisibleChildrenAreAbsent()
+    {
+        var index = new TreeNodeIndex();
+        var node = CreateArticleNode(Guid.NewGuid(), "Dragon");
+        index.AddNode(node);
+        _uiState.SetNodeIndex(index);
+
+        _uiState.SetSearchQuery("dragon");
+
+        Assert.False(node.IsExpanded);
+    }
+
+    [Fact]
+    public void SetSearchQuery_UsesContainerParent_WhenNoDirectParentId()
+    {
+        var index = new TreeNodeIndex();
+        var group = CreateVirtualGroupNode(VirtualGroupType.Wiki, "Wiki");
+        var child = CreateArticleNode(Guid.NewGuid(), "Magic");
+        group.Children.Add(child);
+        index.AddNode(group);
+        index.AddNode(child);
+        _uiState.SetNodeIndex(index);
+
+        _uiState.SetSearchQuery("magic");
+
+        Assert.True(group.IsVisible);
+    }
+
+    [Fact]
     public void SetSearchQuery_WithEmptyString_ShouldClearSearch()
     {
         // Arrange
@@ -481,6 +564,35 @@ public class TreeUiStateTests
         // Assert
         Assert.False(_uiState.IsSearchActive);
         Assert.True(node.IsVisible);
+    }
+
+    [Fact]
+    public void SetSearchQuery_WithNullValue_TreatsAsEmpty()
+    {
+        var nodeIndex = CreateIndexWithSingleNode(out _);
+        _uiState.SetNodeIndex(nodeIndex);
+
+        _uiState.SetSearchQuery(null!);
+
+        Assert.False(_uiState.IsSearchActive);
+        Assert.Equal(string.Empty, _uiState.SearchQuery);
+    }
+
+    [Fact]
+    public void ApplySearchFilter_ExpandsParent_WhenItHasVisibleChildren()
+    {
+        var index = new TreeNodeIndex();
+        var parent = CreateArticleNode(Guid.NewGuid(), "Parent");
+        var child = CreateArticleNode(Guid.NewGuid(), "Magic Child");
+        child.ParentId = parent.Id;
+        parent.Children.Add(child);
+        index.AddNode(parent);
+        index.AddNode(child);
+        _uiState.SetNodeIndex(index);
+
+        _uiState.SetSearchQuery("magic");
+
+        Assert.True(parent.IsExpanded);
     }
 
     // ============================================
@@ -505,6 +617,41 @@ public class TreeUiStateTests
         Assert.Null(_uiState.SelectedNodeId);
         Assert.Equal(string.Empty, _uiState.SearchQuery);
         Assert.False(_uiState.IsSearchActive);
+    }
+
+    [Fact]
+    public void RestoreExpandedNodesPreserving_ExpandsOnlyExistingNodes()
+    {
+        var index = new TreeNodeIndex();
+        var existing = CreateArticleNode(Guid.NewGuid(), "Existing");
+        index.AddNode(existing);
+        _uiState.SetNodeIndex(index);
+
+        _uiState.RestoreExpandedNodesPreserving(new[] { existing.Id, Guid.NewGuid() });
+
+        Assert.True(existing.IsExpanded);
+        Assert.Contains(existing.Id, _uiState.ExpandedNodeIds);
+    }
+
+    [Fact]
+    public async Task SaveExpandedStateAsync_WhenStorageThrows_DoesNotThrow()
+    {
+        var index = CreateIndexWithSingleNode(out var node);
+        _uiState.SetNodeIndex(index);
+        _uiState.ExpandNode(node.Id);
+        _localStorage.SetItemAsync(Arg.Any<string>(), Arg.Any<List<Guid>>())
+            .Returns(_ => ValueTask.FromException(new InvalidOperationException("boom")));
+
+        await _uiState.SaveExpandedStateAsync();
+    }
+
+    [Fact]
+    public async Task RestoreExpandedStateFromStorageAsync_WhenStorageThrows_DoesNotThrow()
+    {
+        _localStorage.GetItemAsync<List<Guid>>(Arg.Any<string>())
+            .Returns(_ => new ValueTask<List<Guid>>(Task.FromException<List<Guid>>(new InvalidOperationException("boom"))));
+
+        await _uiState.RestoreExpandedStateFromStorageAsync();
     }
 
     // ============================================

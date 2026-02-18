@@ -121,7 +121,7 @@ public static class RenderDefinitionGeneratorService
                             f.Name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
                         return new RenderField
                         {
-                            Path = match?.Name ?? $"ability_score_{suffix}",
+                            Path = match!.Name,
                             Label = AbilityLabels[i]
                         };
                     }).ToList()
@@ -196,15 +196,13 @@ public static class RenderDefinitionGeneratorService
         // Also consolidate nested prefixes: prefer "ability_score" over "ability"
         var validPrefixes = candidates
             .Where(kv => kv.Value.Count >= 3)
-            .OrderByDescending(kv => kv.Key.Length)
             .ToList();
+        validPrefixes.Sort((a, b) => b.Key.Length.CompareTo(a.Key.Length));
 
         var claimed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in validPrefixes)
         {
             var unclaimed = kv.Value.Where(f => !claimed.Contains(f.Name)).ToList();
-            if (unclaimed.Count < 3)
-                continue;
 
             groups.Add(new PrefixGroup
             {

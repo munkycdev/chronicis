@@ -68,6 +68,18 @@ public class TreeNodeIndexTests
     }
 
     [Fact]
+    public void GetNode_ShouldReturnNodeForExistingNode()
+    {
+        var index = new TreeNodeIndex();
+        var node = CreateArticleNode(Guid.NewGuid(), "Node");
+        index.AddNode(node);
+
+        var result = index.GetNode(node.Id);
+
+        Assert.Same(node, result);
+    }
+
+    [Fact]
     public void ContainsNode_ShouldReturnTrueForExistingNode()
     {
         // Arrange
@@ -147,6 +159,17 @@ public class TreeNodeIndexTests
         Assert.Contains(node1, allNodes);
         Assert.Contains(node2, allNodes);
         Assert.Contains(node3, allNodes);
+    }
+
+    [Fact]
+    public void Nodes_ShouldExposeIndexedDictionary()
+    {
+        var index = new TreeNodeIndex();
+        var node = CreateArticleNode(Guid.NewGuid(), "Node");
+        index.AddNode(node);
+
+        Assert.True(index.Nodes.ContainsKey(node.Id));
+        Assert.Same(node, index.Nodes[node.Id]);
     }
 
     [Fact]

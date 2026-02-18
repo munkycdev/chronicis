@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Runtime.Serialization;
 using Chronicis.Client.Services;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -463,5 +465,47 @@ public class MarkdownServiceTests
         // Assert
         Assert.Contains("<p>", result);
         Assert.Contains("Just some plain text", result);
+    }
+
+    [Fact]
+    public void ToHtml_WhenSanitizerThrows_ReturnsEscapedFallback()
+    {
+        SetPrivateField(_sut, "_sanitizer", null);
+
+        var result = _sut.ToHtml("**boom**");
+
+        Assert.Contains("<p>", result);
+        Assert.Contains("**boom**", result);
+    }
+
+    [Fact]
+    public void ToPlainText_WhenPipelineIsNull_StillConvertsMarkdown()
+    {
+        SetPrivateField(_sut, "_pipeline", null);
+
+        var markdown = "# heading";
+        var result = _sut.ToPlainText(markdown);
+
+        Assert.Equal("heading\n", result);
+    }
+
+    [Fact]
+    public void ToPlainText_WhenPipelineInvalid_ReturnsOriginalMarkdown()
+    {
+#pragma warning disable SYSLIB0050
+        var badPipeline = (Markdig.MarkdownPipeline)FormatterServices.GetUninitializedObject(typeof(Markdig.MarkdownPipeline));
+#pragma warning restore SYSLIB0050
+        SetPrivateField(_sut, "_pipeline", badPipeline);
+
+        var markdown = "# heading";
+        var result = _sut.ToPlainText(markdown);
+
+        Assert.Equal(markdown, result);
+    }
+
+    private static void SetPrivateField(object target, string fieldName, object? value)
+    {
+        var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        field!.SetValue(target, value);
     }
 }

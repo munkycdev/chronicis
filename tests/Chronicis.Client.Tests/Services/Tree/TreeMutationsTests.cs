@@ -353,6 +353,18 @@ public class TreeMutationsTests
     }
 
     [Fact]
+    public async Task CreateRootArticleAsync_WhenApiReturnsNull_ShouldReturnNull()
+    {
+        _appContext.CurrentWorldId.Returns(Guid.NewGuid());
+        _articleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>()).Returns((ArticleDto?)null);
+        _mutations.SetNodeIndex(new TreeNodeIndex());
+
+        var result = await _mutations.CreateRootArticleAsync();
+
+        Assert.Null(result);
+    }
+
+    [Fact]
     public async Task CreateChildArticleAsync_WithNonExistentParent_ShouldReturnNull()
     {
         // Arrange
@@ -395,6 +407,46 @@ public class TreeMutationsTests
         await _articleApi.Received(1).CreateArticleAsync(Arg.Is<ArticleCreateDto>(dto =>
             dto.Type == ArticleType.Session &&
             dto.ArcId == arcId));
+    }
+
+    [Theory]
+    [InlineData(VirtualGroupType.Wiki, ArticleType.WikiArticle)]
+    [InlineData(VirtualGroupType.PlayerCharacters, ArticleType.Character)]
+    [InlineData(VirtualGroupType.Uncategorized, ArticleType.Legacy)]
+    [InlineData(VirtualGroupType.Links, ArticleType.WikiArticle)]
+    public async Task CreateChildArticleAsync_UnderVirtualGroup_UsesExpectedType(VirtualGroupType groupType, ArticleType expectedType)
+    {
+        var index = new TreeNodeIndex();
+        var group = new TreeNode
+        {
+            Id = Guid.NewGuid(),
+            NodeType = TreeNodeType.VirtualGroup,
+            VirtualGroupType = groupType,
+            WorldId = Guid.NewGuid()
+        };
+        index.AddNode(group);
+        _mutations.SetNodeIndex(index);
+
+        _articleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>()).Returns(new ArticleDto { Id = Guid.NewGuid() });
+
+        await _mutations.CreateChildArticleAsync(group.Id);
+
+        await _articleApi.Received(1).CreateArticleAsync(Arg.Is<ArticleCreateDto>(d =>
+            d.ParentId == null && d.Type == expectedType));
+    }
+
+    [Fact]
+    public async Task CreateChildArticleAsync_WhenApiReturnsNull_ShouldReturnNull()
+    {
+        var index = new TreeNodeIndex();
+        var parent = CreateArticleNode(Guid.NewGuid(), "Parent");
+        index.AddNode(parent);
+        _mutations.SetNodeIndex(index);
+        _articleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>()).Returns((ArticleDto?)null);
+
+        var result = await _mutations.CreateChildArticleAsync(parent.Id);
+
+        Assert.Null(result);
     }
 
     // ============================================
@@ -453,6 +505,21 @@ public class TreeMutationsTests
         Assert.True(result);
         Assert.True(_refreshCallbackInvoked);
         await _articleApi.Received(1).DeleteArticleAsync(article.Id);
+    }
+
+    [Fact]
+    public async Task DeleteArticleAsync_WhenApiThrows_ShouldReturnFalse()
+    {
+        var index = new TreeNodeIndex();
+        var article = CreateArticleNode(Guid.NewGuid(), "A");
+        index.AddNode(article);
+        _mutations.SetNodeIndex(index);
+        _articleApi.DeleteArticleAsync(article.Id)
+            .Returns(Task.FromException<bool>(new InvalidOperationException("boom")));
+
+        var result = await _mutations.DeleteArticleAsync(article.Id);
+
+        Assert.False(result);
     }
 
     // ============================================
@@ -523,6 +590,186 @@ public class TreeMutationsTests
     }
 
     [Fact]
+    public async Task MoveArticleAsync_WhenSourceNodeIsNotArticle_ShouldReturnFalse()
+    {
+        var index = new TreeNodeIndex();
+        var world = new TreeNode { Id = Guid.NewGuid(), NodeType = TreeNodeType.World, Title = "W" };
+        index.AddNode(world);
+        _mutations.SetNodeIndex(index);
+
+        var result = await _mutations.MoveArticleAsync(world.Id, null);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task MoveArticleAsync_ToLinksGroup_ShouldReturnFalse()
+    {
+        var index = new TreeNodeIndex();
+        var article = CreateArticleNode(Guid.NewGuid(), "A");
+        var links = new TreeNode { Id = Guid.NewGuid(), NodeType = TreeNodeType.VirtualGroup, VirtualGroupType = VirtualGroupType.Links };
+        index.AddNode(article);
+        index.AddNode(links);
+        _mutations.SetNodeIndex(index);
+
+        var result = await _mutations.MoveArticleAsync(article.Id, links.Id);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task MoveArticleAsync_ToPlayerCharactersGroup_ChangesType()
+    {
+        var index = new TreeNodeIndex();
+        var article = CreateArticleNode(Guid.NewGuid(), "A");
+        article.ArticleType = ArticleType.WikiArticle;
+        var group = new TreeNode { Id = Guid.NewGuid(), NodeType = TreeNodeType.VirtualGroup, VirtualGroupType = VirtualGroupType.PlayerCharacters };
+        index.AddNode(article);
+        index.AddNode(group);
+        _mutations.SetNodeIndex(index);
+        _articleApi.MoveArticleAsync(article.Id, null).Returns(true);
+        _articleApi.GetArticleDetailAsync(article.Id).Returns(new ArticleDto { Id = article.Id, Title = "A", Body = "" });
+        _articleApi.UpdateArticleAsync(article.Id, Arg.Any<ArticleUpdateDto>()).Returns(new ArticleDto { Id = article.Id });
+
+        var result = await _mutations.MoveArticleAsync(article.Id, group.Id);
+
+        Assert.True(result);
+        await _articleApi.Received(1).UpdateArticleAsync(article.Id, Arg.Is<ArticleUpdateDto>(d => d.Type == ArticleType.Character));
+    }
+
+    [Fact]
+    public async Task MoveArticleAsync_ToUncategorizedGroup_ChangesType()
+    {
+        var index = new TreeNodeIndex();
+        var article = CreateArticleNode(Guid.NewGuid(), "A");
+        article.ArticleType = ArticleType.WikiArticle;
+        var group = new TreeNode { Id = Guid.NewGuid(), NodeType = TreeNodeType.VirtualGroup, VirtualGroupType = VirtualGroupType.Uncategorized };
+        index.AddNode(article);
+        index.AddNode(group);
+        _mutations.SetNodeIndex(index);
+        _articleApi.MoveArticleAsync(article.Id, null).Returns(true);
+        _articleApi.GetArticleDetailAsync(article.Id).Returns(new ArticleDto { Id = article.Id, Title = "A", Body = "" });
+        _articleApi.UpdateArticleAsync(article.Id, Arg.Any<ArticleUpdateDto>()).Returns(new ArticleDto { Id = article.Id });
+
+        var result = await _mutations.MoveArticleAsync(article.Id, group.Id);
+
+        Assert.True(result);
+        await _articleApi.Received(1).UpdateArticleAsync(article.Id, Arg.Is<ArticleUpdateDto>(d => d.Type == ArticleType.Legacy));
+    }
+
+    [Fact]
+    public async Task MoveArticleAsync_VirtualGroup_WhenMoveFails_ReturnsFalse()
+    {
+        var index = new TreeNodeIndex();
+        var article = CreateArticleNode(Guid.NewGuid(), "A");
+        var wiki = new TreeNode { Id = Guid.NewGuid(), NodeType = TreeNodeType.VirtualGroup, VirtualGroupType = VirtualGroupType.Wiki };
+        index.AddNode(article);
+        index.AddNode(wiki);
+        _mutations.SetNodeIndex(index);
+        _articleApi.MoveArticleAsync(article.Id, null).Returns(false);
+
+        var result = await _mutations.MoveArticleAsync(article.Id, wiki.Id);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task MoveArticleAsync_VirtualGroup_WhenUpdateReturnsNull_StillReturnsTrue()
+    {
+        var index = new TreeNodeIndex();
+        var article = CreateArticleNode(Guid.NewGuid(), "A");
+        article.ArticleType = ArticleType.Character;
+        var wiki = new TreeNode { Id = Guid.NewGuid(), NodeType = TreeNodeType.VirtualGroup, VirtualGroupType = VirtualGroupType.Wiki };
+        index.AddNode(article);
+        index.AddNode(wiki);
+        _mutations.SetNodeIndex(index);
+        _articleApi.MoveArticleAsync(article.Id, null).Returns(true);
+        _articleApi.GetArticleDetailAsync(article.Id).Returns(new ArticleDto { Id = article.Id, Title = "A", Body = "" });
+        _articleApi.UpdateArticleAsync(article.Id, Arg.Any<ArticleUpdateDto>()).Returns((ArticleDto?)null);
+
+        var result = await _mutations.MoveArticleAsync(article.Id, wiki.Id);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task MoveArticleAsync_VirtualGroup_WhenApiThrows_ReturnsFalse()
+    {
+        var index = new TreeNodeIndex();
+        var article = CreateArticleNode(Guid.NewGuid(), "A");
+        var wiki = new TreeNode { Id = Guid.NewGuid(), NodeType = TreeNodeType.VirtualGroup, VirtualGroupType = VirtualGroupType.Wiki };
+        index.AddNode(article);
+        index.AddNode(wiki);
+        _mutations.SetNodeIndex(index);
+        _articleApi.MoveArticleAsync(article.Id, null)
+            .Returns(Task.FromException<bool>(new InvalidOperationException("boom")));
+
+        var result = await _mutations.MoveArticleAsync(article.Id, wiki.Id);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task MoveArticleAsync_ToNonArticleTarget_ShouldReturnFalse()
+    {
+        var index = new TreeNodeIndex();
+        var source = CreateArticleNode(Guid.NewGuid(), "S");
+        var world = new TreeNode { Id = Guid.NewGuid(), NodeType = TreeNodeType.World, Title = "W" };
+        index.AddNode(source);
+        index.AddNode(world);
+        _mutations.SetNodeIndex(index);
+
+        var result = await _mutations.MoveArticleAsync(source.Id, world.Id);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task MoveArticleAsync_ToArticle_WhenApiThrows_ReturnsFalse()
+    {
+        var index = new TreeNodeIndex();
+        var source = CreateArticleNode(Guid.NewGuid(), "S");
+        var target = CreateArticleNode(Guid.NewGuid(), "T");
+        index.AddNode(source);
+        index.AddNode(target);
+        _mutations.SetNodeIndex(index);
+        _articleApi.MoveArticleAsync(source.Id, target.Id)
+            .Returns(Task.FromException<bool>(new InvalidOperationException("boom")));
+
+        var result = await _mutations.MoveArticleAsync(source.Id, target.Id);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void IsDescendantOf_WhenNodeMissing_ReturnsFalse()
+    {
+        _mutations.SetNodeIndex(new TreeNodeIndex());
+        Assert.False(_mutations.IsDescendantOf(Guid.NewGuid(), Guid.NewGuid()));
+    }
+
+    [Fact]
+    public void IsDescendantOf_WhenParentMissingInIndex_ReturnsFalse()
+    {
+        var index = new TreeNodeIndex();
+        var child = CreateArticleNode(Guid.NewGuid(), "C");
+        child.ParentId = Guid.NewGuid();
+        index.AddNode(child);
+        _mutations.SetNodeIndex(index);
+
+        Assert.False(_mutations.IsDescendantOf(child.Id, Guid.NewGuid()));
+    }
+
+    [Fact]
+    public void CanAcceptChildren_AndDropTarget_ReturnFalse_WhenNodeMissing()
+    {
+        _mutations.SetNodeIndex(new TreeNodeIndex());
+
+        Assert.False(_mutations.CanAcceptChildren(Guid.NewGuid()));
+        Assert.False(_mutations.IsValidDropTarget(Guid.NewGuid()));
+    }
+
+    [Fact]
     public async Task MoveArticleAsync_ToWikiGroup_ShouldMoveAndChangeType()
     {
         // Arrange
@@ -584,6 +831,63 @@ public class TreeMutationsTests
         Assert.True(result);
         Assert.True(_refreshCallbackInvoked);
         await _articleApi.Received(1).MoveArticleAsync(source.Id, target.Id);
+    }
+
+    [Fact]
+    public async Task MoveArticleAsync_ToMissingTargetNode_AllowsApiMove()
+    {
+        var index = new TreeNodeIndex();
+        var source = CreateArticleNode(Guid.NewGuid(), "Source");
+        index.AddNode(source);
+        _mutations.SetNodeIndex(index);
+        var missingTargetId = Guid.NewGuid();
+        _articleApi.MoveArticleAsync(source.Id, missingTargetId).Returns(true);
+
+        var result = await _mutations.MoveArticleAsync(source.Id, missingTargetId);
+
+        Assert.True(result);
+        await _articleApi.Received(1).MoveArticleAsync(source.Id, missingTargetId);
+    }
+
+    [Fact]
+    public async Task MoveArticleAsync_ToValidArticle_WhenApiReturnsFalse_DoesNotRefresh()
+    {
+        var index = new TreeNodeIndex();
+        var source = CreateArticleNode(Guid.NewGuid(), "Source");
+        var target = CreateArticleNode(Guid.NewGuid(), "Target");
+        index.AddNode(source);
+        index.AddNode(target);
+        _mutations.SetNodeIndex(index);
+        _articleApi.MoveArticleAsync(source.Id, target.Id).Returns(false);
+        _refreshCallbackInvoked = false;
+
+        var result = await _mutations.MoveArticleAsync(source.Id, target.Id);
+
+        Assert.False(result);
+        Assert.False(_refreshCallbackInvoked);
+    }
+
+    [Fact]
+    public async Task MoveArticleAsync_ToUnknownVirtualGroup_UsesExistingTypeFallback()
+    {
+        var index = new TreeNodeIndex();
+        var source = CreateArticleNode(Guid.NewGuid(), "Source");
+        source.ArticleType = ArticleType.Legacy;
+        var unknownGroup = new TreeNode
+        {
+            Id = Guid.NewGuid(),
+            NodeType = TreeNodeType.VirtualGroup,
+            VirtualGroupType = (VirtualGroupType)999
+        };
+        index.AddNode(source);
+        index.AddNode(unknownGroup);
+        _mutations.SetNodeIndex(index);
+        _articleApi.MoveArticleAsync(source.Id, null).Returns(true);
+
+        var result = await _mutations.MoveArticleAsync(source.Id, unknownGroup.Id);
+
+        Assert.True(result);
+        await _articleApi.DidNotReceive().UpdateArticleAsync(Arg.Any<Guid>(), Arg.Any<ArticleUpdateDto>());
     }
 
     // ============================================

@@ -98,6 +98,26 @@ public class AppContextServiceTests
     }
 
     [Fact]
+    public async Task InitializeAsync_RestoresSavedCampaign_WhenValid()
+    {
+        var worldId = Guid.NewGuid();
+        var campaignId = Guid.NewGuid();
+        _worldApi.GetWorldsAsync().Returns(new List<WorldDto> { new() { Id = worldId, Name = "W" } });
+        _worldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto
+        {
+            Id = worldId,
+            Name = "W",
+            Campaigns = new List<CampaignDto> { new() { Id = campaignId, Name = "C" } }
+        });
+        _localStorage.GetItemAsStringAsync("chronicis_current_world_id").Returns($"\"{worldId}\"");
+        _localStorage.GetItemAsStringAsync("chronicis_current_campaign_id").Returns($"\"{campaignId}\"");
+
+        await _sut.InitializeAsync();
+
+        Assert.Equal(campaignId, _sut.CurrentCampaignId);
+    }
+
+    [Fact]
     public async Task InitializeAsync_WhenSavedWorldDoesNotExist_SelectsFirstWorld()
     {
         // Arrange
@@ -151,6 +171,21 @@ public class AppContextServiceTests
 
         // Assert
         await _worldApi.Received(1).GetWorldsAsync();
+    }
+
+    [Fact]
+    public async Task InitializeAsync_WhenLocalStorageThrows_StillInitializes()
+    {
+        var worldId = Guid.NewGuid();
+        _worldApi.GetWorldsAsync().Returns(new List<WorldDto> { new() { Id = worldId, Name = "W" } });
+        _worldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto { Id = worldId, Name = "W", Campaigns = new List<CampaignDto>() });
+        _localStorage.GetItemAsStringAsync(Arg.Any<string>())
+            .Returns(_ => new ValueTask<string>(Task.FromException<string>(new InvalidOperationException("boom"))));
+
+        await _sut.InitializeAsync();
+
+        Assert.True(_sut.IsInitialized);
+        Assert.Equal(worldId, _sut.CurrentWorldId);
     }
 
     [Fact]
@@ -422,6 +457,23 @@ public class AppContextServiceTests
 
         // Assert
         Assert.Null(_sut.CurrentCampaign);
+    }
+
+    [Fact]
+    public async Task RefreshCurrentWorldAsync_RaisesContextChanged_WhenWorldReloads()
+    {
+        var worldId = Guid.NewGuid();
+        _worldApi.GetWorldAsync(worldId).Returns(
+            new WorldDetailDto { Id = worldId, Name = "A", Campaigns = new List<CampaignDto>() },
+            new WorldDetailDto { Id = worldId, Name = "B", Campaigns = new List<CampaignDto>() });
+
+        await _sut.SelectWorldAsync(worldId);
+        var raised = false;
+        _sut.OnContextChanged += () => raised = true;
+
+        await _sut.RefreshCurrentWorldAsync();
+
+        Assert.True(raised);
     }
 
     [Fact]

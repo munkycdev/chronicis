@@ -149,6 +149,16 @@ public class QuestDrawerServiceTests : IDisposable
     }
 
     [Fact]
+    public void MetadataDrawerToggle_WhenQuestDrawerOpen_WithoutCloseSubscriber_StillCloses()
+    {
+        _sut.Open();
+
+        _metadataDrawerService.OnToggle += Raise.Event<Action>();
+
+        Assert.False(_sut.IsOpen);
+    }
+
+    [Fact]
     public void MetadataDrawerToggle_WhenQuestDrawerClosed_DoesNothing()
     {
         // Arrange

@@ -124,6 +124,19 @@ public class WikiLinkServiceTests
         Assert.Null(result);
     }
 
+    [Fact]
+    public async Task CreateArticleFromAutocompleteAsync_WhenCreateThrows_ReturnsNull()
+    {
+        var worldId = Guid.NewGuid();
+        _articleApi.GetRootArticlesAsync(worldId).Returns(new List<ArticleTreeDto>());
+        _articleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>())
+            .Returns(Task.FromException<ArticleDto?>(new InvalidOperationException("boom")));
+
+        var result = await _sut.CreateArticleFromAutocompleteAsync("Article", worldId);
+
+        Assert.Null(result);
+    }
+
     // ════════════════════════════════════════════════════════════════
     //  FindWikiFolderAsync Tests
     // ════════════════════════════════════════════════════════════════

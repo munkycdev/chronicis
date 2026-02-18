@@ -131,8 +131,8 @@ internal sealed class TreeDataBuilder
                 continue;
             }
 
-            var worldLinks = linksByWorld.TryGetValue(world.Id, out var links) ? links : new List<WorldLinkDto>();
-            var worldDocuments = documentsByWorld.TryGetValue(world.Id, out var docs) ? docs : new List<WorldDocumentDto>();
+            var worldLinks = linksByWorld[world.Id];
+            var worldDocuments = documentsByWorld[world.Id];
 
             var worldNode = BuildWorldNode(
                 world,
@@ -213,9 +213,7 @@ internal sealed class TreeDataBuilder
         // Build Campaigns group
         foreach (var campaign in campaigns.OrderBy(c => c.Name))
         {
-            var arcs = arcsByCampaign.TryGetValue(campaign.Id, out var campaignArcs)
-                ? campaignArcs
-                : new List<ArcDto>();
+            var arcs = arcsByCampaign[campaign.Id];
 
             var campaignNode = BuildCampaignNode(campaign, arcs, worldArticles, articleIndex, nodeIndex);
             campaignsGroup.Children.Add(campaignNode);
@@ -225,9 +223,7 @@ internal sealed class TreeDataBuilder
 
         // Build Characters group
         var characterArticles = worldArticles
-            .Where(a => a.Type == ArticleType.Character && a.ParentId == null)
-            .OrderBy(a => a.Title)
-            .ToList();
+            .Where(a => a.Type == ArticleType.Character && a.ParentId == null).OrderBy(a => a.Title).ToList();
 
         foreach (var article in characterArticles)
         {
@@ -296,9 +292,7 @@ internal sealed class TreeDataBuilder
                        a.Type != ArticleType.Character &&
                        a.Type != ArticleType.Session &&
                        a.Type != ArticleType.SessionNote &&
-                       a.Type != ArticleType.CharacterNote)
-            .OrderBy(a => a.Title)
-            .ToList();
+                       a.Type != ArticleType.CharacterNote).OrderBy(a => a.Title).ToList();
 
         foreach (var article in uncategorizedArticles)
         {
@@ -380,9 +374,7 @@ internal sealed class TreeDataBuilder
         };
 
         var sessionArticles = worldArticles
-            .Where(a => a.ArcId == arc.Id && a.Type == ArticleType.Session)
-            .OrderBy(a => a.Title)
-            .ToList();
+            .Where(a => a.ArcId == arc.Id && a.Type == ArticleType.Session).OrderBy(a => a.Title).ToList();
 
         foreach (var article in sessionArticles)
         {
