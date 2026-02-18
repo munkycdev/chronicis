@@ -41,7 +41,7 @@ jobs:
         run: dotnet build ./Chronicis.CI.sln --configuration Release --no-restore
 
       # ------------------------------------------------------------
-      # Run ONLY Chronicis.Shared.Tests with deterministic coverage
+      # Run ONLY Chronicis.Shared.Tests with deterministic output root
       # ------------------------------------------------------------
       - name: Test Chronicis.Shared.Tests (with coverage)
         shell: pwsh
@@ -49,6 +49,10 @@ jobs:
           $outDir = Join-Path $env:GITHUB_WORKSPACE "TestResults/Chronicis.Shared.Tests"
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
+          # This is an output *prefix*. Coverlet may append target framework, etc.
+          # Example outputs:
+          #   coverage.cobertura.xml
+          #   coverage.net9.0.cobertura.xml
           $outPrefix = Join-Path $outDir "coverage"
 
           dotnet test ./tests/Chronicis.Shared.Tests/Chronicis.Shared.Tests.csproj `
@@ -67,7 +71,7 @@ jobs:
         run: dotnet tool update -g dotnet-reportgenerator-globaltool
 
       # ------------------------------------------------------------
-      # Generate HTML + merged Cobertura
+      # Find the actual Cobertura file(s) created and generate report
       # ------------------------------------------------------------
       - name: Generate coverage HTML + summary
         shell: pwsh
@@ -84,7 +88,7 @@ jobs:
           Write-Host "Using cobertura files:"
           $reports | ForEach-Object { Write-Host $_ }
 
-          # ReportGenerator accepts a semicolon-separated list for -reports:
+          # ReportGenerator accepts a semicolon-separated list
           $reportArg = ($reports -join ';')
 
           reportgenerator `
@@ -102,7 +106,7 @@ jobs:
           }
 
       # ------------------------------------------------------------
-      # Compute rates from the merged Cobertura file
+      # Compute rates from the merged Cobertura file produced above
       # ------------------------------------------------------------
       - name: Compute overall coverage rates
         id: rates
@@ -111,8 +115,12 @@ jobs:
           $mergedCobertura = "coveragereport/Cobertura.xml"
 
           if (-not (Test-Path $mergedCobertura)) {
+            Write-Host "coveragereport directory contents:"
+            Get-ChildItem -Recurse "coveragereport" | ForEach-Object { Write-Host $_.FullName }
             throw "Merged Cobertura.xml not found at $mergedCobertura"
           }
+
+          Write-Host "Using merged cobertura file: $mergedCobertura"
 
           python3 ci/coverage/extract_rates.py $mergedCobertura | Out-File -Encoding utf8 rates.json
 
