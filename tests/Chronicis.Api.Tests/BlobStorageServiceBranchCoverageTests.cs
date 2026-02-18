@@ -1,6 +1,6 @@
-using System.Runtime.CompilerServices;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Sas;
@@ -77,8 +77,10 @@ public class BlobStorageServiceBranchCoverageTests
         var sanitized = (string)sanitize.Invoke(null, [longFile])!;
         Assert.True(sanitized.Length <= 200);
         var sanitizedUnsafe = (string)sanitize.Invoke(null, ["folder/sub\\file?.txt"])!;
-        Assert.DoesNotContain('/', sanitizedUnsafe);
-        Assert.DoesNotContain('\\', sanitizedUnsafe);
+        foreach (var invalidChar in Path.GetInvalidFileNameChars())
+        {
+            Assert.DoesNotContain(invalidChar, sanitizedUnsafe);
+        }
 
         var buildSas = RemainingApiBranchCoverageTestHelpers.GetMethod(typeof(BlobStorageService), "BuildSasUrl");
         var blobService = (BlobStorageService)RuntimeHelpers.GetUninitializedObject(typeof(BlobStorageService));

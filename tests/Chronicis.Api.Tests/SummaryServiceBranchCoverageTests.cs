@@ -1,7 +1,7 @@
+using System.Runtime.CompilerServices;
 using Chronicis.Api.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
