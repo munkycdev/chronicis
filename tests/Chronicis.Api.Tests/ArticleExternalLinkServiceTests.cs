@@ -37,8 +37,10 @@ public class ArticleExternalLinkServiceTests : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if (_disposed) return;
-        if (disposing) _context.Dispose();
+        if (_disposed)
+            return;
+        if (disposing)
+            _context.Dispose();
         _disposed = true;
     }
 
