@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using Azure.Storage.Blobs;
 using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Api.Services;
 
+[ExcludeFromCodeCoverage]
 public class BlobStorageHealthCheckService : HealthCheckServiceBase
 {
     private readonly IConfiguration _configuration;

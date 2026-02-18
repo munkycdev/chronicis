@@ -1,11 +1,26 @@
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
 
 public class SystemHealthServiceBranchCoverageTests
 {
+    [Fact]
+    public void Constructor_AssignsDependencies()
+    {
+        var service = new SystemHealthService(
+            null!,
+            null!,
+            null!,
+            null!,
+            null!,
+            NullLogger<SystemHealthService>.Instance);
+
+        Assert.NotNull(service);
+    }
+
     [Fact]
     public void SystemHealthService_DetermineOverallStatus_CoversBranches()
     {

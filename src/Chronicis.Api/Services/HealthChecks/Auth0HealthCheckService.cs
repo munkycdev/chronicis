@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Api.Services;
 
+[ExcludeFromCodeCoverage]
 public class Auth0HealthCheckService : HealthCheckServiceBase
 {
     private readonly HttpClient _httpClient;

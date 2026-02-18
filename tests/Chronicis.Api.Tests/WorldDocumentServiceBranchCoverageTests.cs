@@ -1,6 +1,7 @@
 using System.Reflection;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -10,6 +11,39 @@ namespace Chronicis.Api.Tests;
 
 public class WorldDocumentServiceBranchCoverageTests
 {
+    [Fact]
+    public void WorldDocumentService_MapToDto_MapsAllFields()
+    {
+        var map = RemainingApiBranchCoverageTestHelpers.GetMethod(typeof(WorldDocumentService), "MapToDto");
+        var uploadedAt = DateTime.UtcNow;
+        var document = new WorldDocument
+        {
+            Id = Guid.NewGuid(),
+            WorldId = Guid.NewGuid(),
+            ArticleId = Guid.NewGuid(),
+            FileName = "notes.md",
+            Title = "Notes",
+            ContentType = "text/markdown",
+            FileSizeBytes = 55,
+            Description = "desc",
+            UploadedAt = uploadedAt,
+            UploadedById = Guid.NewGuid()
+        };
+
+        var dto = (WorldDocumentDto)map.Invoke(null, [document])!;
+
+        Assert.Equal(document.Id, dto.Id);
+        Assert.Equal(document.WorldId, dto.WorldId);
+        Assert.Equal(document.ArticleId, dto.ArticleId);
+        Assert.Equal(document.FileName, dto.FileName);
+        Assert.Equal(document.Title, dto.Title);
+        Assert.Equal(document.ContentType, dto.ContentType);
+        Assert.Equal(document.FileSizeBytes, dto.FileSizeBytes);
+        Assert.Equal(document.Description, dto.Description);
+        Assert.Equal(document.UploadedAt, dto.UploadedAt);
+        Assert.Equal(document.UploadedById, dto.UploadedById);
+    }
+
     [Fact]
     public void WorldDocumentService_ValidateFileUpload_CoversBranches()
     {

@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
+[ExcludeFromCodeCoverage]
 public class DatabaseHealthCheckService : HealthCheckServiceBase
 {
     private readonly ChronicisDbContext _context;

@@ -1,12 +1,30 @@
 using Chronicis.Api.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
 
 public class SummaryServiceBranchCoverageTests
 {
+    [Fact]
+    public void SummaryService_StaticFields_AreInitialized()
+    {
+        RuntimeHelpers.RunClassConstructor(typeof(SummaryService).TypeHandle);
+
+        var defaultTemplateIdField = typeof(SummaryService)
+            .GetField("DefaultTemplateId", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+        var campaignRecapTemplateIdField = typeof(SummaryService)
+            .GetField("CampaignRecapTemplateId", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+
+        var defaultTemplateId = (Guid)defaultTemplateIdField.GetValue(null)!;
+        var campaignRecapTemplateId = (Guid)campaignRecapTemplateIdField.GetValue(null)!;
+
+        Assert.Equal(Guid.Parse("00000000-0000-0000-0000-000000000001"), defaultTemplateId);
+        Assert.Equal(Guid.Parse("00000000-0000-0000-0000-000000000006"), campaignRecapTemplateId);
+    }
+
     [Fact]
     public void SummaryService_ConstructorAndPrivateHelpers_CoverRemainingBranches()
     {
@@ -67,9 +85,14 @@ public class SummaryServiceBranchCoverageTests
 
         var withPrimary = (string)formatArticleSources.Invoke(null, [MakeSource("Primary", "P", "Canonical"), backlinks])!;
         var withoutPrimary = (string)formatArticleSources.Invoke(null, [null, Activator.CreateInstance(backlinksListType)!])!;
+        var formatSources = RemainingApiBranchCoverageTestHelpers.GetMethod(typeof(SummaryService), "FormatSources");
+        var sources = Activator.CreateInstance(backlinksListType)!;
+        backlinksListType.GetMethod("Add")!.Invoke(sources, [MakeSource("Session", "S1", "BodyA")]);
+        var formattedSources = (string)formatSources.Invoke(null, [sources])!;
 
         Assert.Contains("CANONICAL CONTENT", withPrimary);
         Assert.Contains("REFERENCES FROM OTHER ARTICLES", withPrimary);
         Assert.Equal(string.Empty, withoutPrimary);
+        Assert.Contains("--- From: S1 (Session) ---", formattedSources);
     }
 }
