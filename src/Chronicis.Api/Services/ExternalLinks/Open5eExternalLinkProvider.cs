@@ -447,7 +447,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         var verbal = GetBool(root, "verbal");
         var somatic = GetBool(root, "somatic");
         var material = GetBool(root, "material");
-        var materialDesc = GetString(root, "material_specified") ?? GetString(root, "material");
+        var materialDesc = GetString(root, "material_specified");
 
         var components = new List<string>();
         if (verbal == true)
@@ -502,8 +502,8 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
 
         // Basic stats
         sb.AppendLine("## Statistics");
-        var ac = GetString(root, "armor_class") ?? GetInt(root, "armor_class")?.ToString();
-        var hp = GetString(root, "hit_points") ?? GetInt(root, "hit_points")?.ToString();
+        var ac = GetString(root, "armor_class");
+        var hp = GetString(root, "hit_points");
         var hitDice = GetString(root, "hit_dice");
         var cr = GetString(root, "challenge_rating") ?? GetString(root, "cr");
 
@@ -655,7 +655,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         sb.AppendLine();
 
         var size = GetString(root, "size");
-        var speed = GetString(root, "speed") ?? GetInt(root, "speed_desc")?.ToString();
+        var speed = GetString(root, "speed");
 
         if (!string.IsNullOrEmpty(size))
             sb.AppendLine($"**Size:** {size}");
@@ -891,7 +891,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
                 return false;
             if (value.ValueKind == JsonValueKind.String)
             {
-                var str = value.GetString()?.ToLower();
+                var str = value.GetString()!.ToLowerInvariant();
                 return str == "true" || str == "yes";
             }
         }

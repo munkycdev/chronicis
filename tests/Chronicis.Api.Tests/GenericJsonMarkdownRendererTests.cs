@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using Chronicis.Api.Services.ExternalLinks;
 using Xunit;
@@ -16,7 +18,8 @@ public class GenericJsonMarkdownRendererTests
           "pk": "spells.fireball",
           "fields": {
             "name": "Fireball",
-            "level": 3
+            "level": 3,
+            "spellLevel": 3
           }
         }
         """);
@@ -26,6 +29,7 @@ public class GenericJsonMarkdownRendererTests
         Assert.Contains("# Fireball", markdown);
         Assert.Contains("## Attributes", markdown);
         Assert.Contains("- **Level**: 3", markdown);
+        Assert.Contains("- **Spell Level**: 3", markdown);
         Assert.DoesNotContain("Pk", markdown);
         Assert.DoesNotContain("**Name**", markdown);
         Assert.Contains("*Source: SRD 2014*", markdown);
@@ -46,6 +50,23 @@ public class GenericJsonMarkdownRendererTests
 
         Assert.Contains("# fallback-title", markdown);
         Assert.Contains("- **Desc**: Some text", markdown);
+    }
+
+    [Fact]
+    public void RenderMarkdown_UsesFallbackTitle_WhenNameIsWhitespace()
+    {
+        using var json = JsonDocument.Parse("""
+        {
+          "fields": {
+            "name": "   ",
+            "desc": "Some text"
+          }
+        }
+        """);
+
+        var markdown = GenericJsonMarkdownRenderer.RenderMarkdown(json, "Ros", "fallback-title");
+
+        Assert.Contains("# fallback-title", markdown);
     }
 
     [Fact]
@@ -100,5 +121,48 @@ public class GenericJsonMarkdownRendererTests
         Assert.Contains("- **Aliases**:", markdown);
         Assert.Contains("- **Name**: Guardian Shell", markdown);
         Assert.Contains("- **Notes**: null", markdown);
+    }
+
+    [Fact]
+    public void RenderMarkdown_CoversTopLevelNonFieldsAndNestedArrayBranches()
+    {
+        using var json = JsonDocument.Parse("""
+        {
+          "fields": "not-an-object",
+          "is_magic": true,
+          "arr": [[1], null]
+        }
+        """);
+
+        var markdown = GenericJsonMarkdownRenderer.RenderMarkdown(json, "SRD", "fallback");
+
+        Assert.Contains("# fallback", markdown);
+        Assert.Contains("- **Fields**: not-an-object", markdown);
+        Assert.Contains("- **Is Magic**: True", markdown);
+        Assert.Contains("- (nested array)", markdown);
+    }
+
+    [Fact]
+    public void PrivateHelpers_HandleEdgeCases()
+    {
+        var renderProperty = typeof(GenericJsonMarkdownRenderer).GetMethod(
+            "RenderProperty",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+        var formatFieldName = typeof(GenericJsonMarkdownRenderer).GetMethod(
+            "FormatFieldName",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+        var escapeMarkdown = typeof(GenericJsonMarkdownRenderer).GetMethod(
+            "EscapeMarkdown",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var sb = new StringBuilder();
+        renderProperty.Invoke(null, [sb, "undef", default(JsonElement), 0]);
+        Assert.Equal(string.Empty, sb.ToString());
+
+        var formatted = (string?)formatFieldName.Invoke(null, [""]);
+        Assert.Equal(string.Empty, formatted);
+
+        var escaped = (string?)escapeMarkdown.Invoke(null, [""]);
+        Assert.Equal(string.Empty, escaped);
     }
 }

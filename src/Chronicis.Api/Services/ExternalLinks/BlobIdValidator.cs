@@ -42,13 +42,6 @@ public static partial class BlobIdValidator
             return false;
         }
 
-        // Check for path traversal patterns
-        if (id.Contains("..", StringComparison.Ordinal))
-        {
-            error = "ID contains path traversal pattern (..)";
-            return false;
-        }
-
         // Validate format: lowercase alphanumeric + hyphens with at least one slash
         if (!ValidIdPattern().IsMatch(id))
         {

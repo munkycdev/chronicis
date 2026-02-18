@@ -87,13 +87,6 @@ public static partial class BlobFilenameParser
         // Trim leading and trailing hyphens
         normalized = normalized.Trim('-');
 
-        // Collapse multiple consecutive hyphens to single hyphen
-        // (shouldn't happen with regex above, but defensive)
-        while (normalized.Contains("--", StringComparison.Ordinal))
-        {
-            normalized = normalized.Replace("--", "-");
-        }
-
         return normalized;
     }
 

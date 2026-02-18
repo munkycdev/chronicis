@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Chronicis.Api.Services.ExternalLinks;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -74,5 +75,98 @@ public class BlobExternalLinkProviderTests
         Assert.Equal("The requested content could not be found.", result.Markdown);
         Assert.Equal("Source: SRD 2014", result.Attribution);
         Assert.Null(result.ExternalUrl);
+    }
+
+    [Fact]
+    public void BuildCacheKey_WithAndWithoutKey_ReturnsExpectedValue()
+    {
+        var options = CreateOptions();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var sut = new BlobExternalLinkProvider(options, cache, NullLogger<BlobExternalLinkProvider>.Instance);
+
+        var method = typeof(BlobExternalLinkProvider).GetMethod(
+            "BuildCacheKey",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        var withoutKey = (string)method.Invoke(sut, ["Children", null])!;
+        var withKey = (string)method.Invoke(sut, ["Children", "path-a"])!;
+
+        Assert.Equal("ExternalLinks:srd14:Children", withoutKey);
+        Assert.Equal("ExternalLinks:srd14:Children:path-a", withKey);
+    }
+
+    [Fact]
+    public void FilterChildFiles_EmptySearchTerm_ReturnsAllFiles()
+    {
+        var options = CreateOptions();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var sut = new BlobExternalLinkProvider(options, cache, NullLogger<BlobExternalLinkProvider>.Instance);
+
+        var method = typeof(BlobExternalLinkProvider).GetMethod(
+            "FilterChildFiles",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        var files = new List<CategoryItem>
+        {
+            new("spells/fireball", "Fireball", "2014/spells/fireball.json", null),
+            new("spells/acid-arrow", "Acid Arrow", "2014/spells/acid-arrow.json", null)
+        };
+
+        var result = (IEnumerable<ExternalLinkSuggestion>)method.Invoke(
+            sut,
+            [files, "", "spells"])!;
+
+        var list = result.ToList();
+        Assert.Equal(2, list.Count);
+        Assert.All(list, x =>
+        {
+            Assert.Equal("srd14", x.Source);
+            Assert.Equal("Spells", x.Subtitle);
+            Assert.Equal("spells", x.Category);
+        });
+    }
+
+    [Fact]
+    public void FilterChildFiles_MultiTokenSearch_UsesAndMatching()
+    {
+        var options = CreateOptions();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var sut = new BlobExternalLinkProvider(options, cache, NullLogger<BlobExternalLinkProvider>.Instance);
+
+        var method = typeof(BlobExternalLinkProvider).GetMethod(
+            "FilterChildFiles",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        var files = new List<CategoryItem>
+        {
+            new("spells/acid-arrow", "Acid Arrow", "2014/spells/acid-arrow.json", null),
+            new("spells/arrow-storm", "Arrow Storm", "2014/spells/arrow-storm.json", null),
+            new("spells/fireball", "Fireball", "2014/spells/fireball.json", null)
+        };
+
+        var result = (IEnumerable<ExternalLinkSuggestion>)method.Invoke(
+            sut,
+            [files, "acid arrow", "spells"])!;
+
+        var only = Assert.Single(result);
+        Assert.Equal("Acid Arrow", only.Title);
+        Assert.Equal("spells/acid-arrow", only.Id);
+    }
+
+    [Fact]
+    public void CacheBlobPathMapping_WritesExpectedCacheEntry()
+    {
+        var options = CreateOptions();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var sut = new BlobExternalLinkProvider(options, cache, NullLogger<BlobExternalLinkProvider>.Instance);
+
+        var method = typeof(BlobExternalLinkProvider).GetMethod(
+            "CacheBlobPathMapping",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        method.Invoke(sut, ["bestiary/beast", "Bestiary/Beast"]);
+
+        Assert.True(cache.TryGetValue("ExternalLinks:srd14:BlobPathMap:bestiary/beast", out string? mapped));
+        Assert.Equal("Bestiary/Beast", mapped);
     }
 }

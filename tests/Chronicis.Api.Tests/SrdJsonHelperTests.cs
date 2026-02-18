@@ -42,6 +42,14 @@ public class SrdJsonHelperTests
         Assert.Equal("Fallback", SrdJsonHelper.ExtractTitle(doc, "fallback"));
     }
 
+    [Fact]
+    public void ExtractTitle_WhenFieldsIsNotObject_FallsBackWithoutThrowing()
+    {
+        using var doc = JsonDocument.Parse("""{"fields":123}""");
+
+        Assert.Equal("Fallback", SrdJsonHelper.ExtractTitle(doc, "fallback"));
+    }
+
     // ── ExtractPk ────────────────────────────────────────────────
 
     [Fact]
@@ -64,6 +72,14 @@ public class SrdJsonHelperTests
     public void ExtractPk_ReturnsNull_WhenPkIsNotString()
     {
         using var doc = JsonDocument.Parse("""{"pk":42}""");
+
+        Assert.Null(SrdJsonHelper.ExtractPk(doc));
+    }
+
+    [Fact]
+    public void ExtractPk_WhenRootIsNotObject_ReturnsNull()
+    {
+        using var doc = JsonDocument.Parse("""[1,2,3]""");
 
         Assert.Null(SrdJsonHelper.ExtractPk(doc));
     }

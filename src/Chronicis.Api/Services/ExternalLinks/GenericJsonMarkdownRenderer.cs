@@ -102,7 +102,7 @@ public static class GenericJsonMarkdownRenderer
         switch (value.ValueKind)
         {
             case JsonValueKind.String:
-                var str = value.GetString() ?? string.Empty;
+                var str = value.GetString()!;
                 sb.AppendLine($"{indentStr}- **{EscapeMarkdown(displayName)}**: {EscapeMarkdown(str)}");
                 break;
 
@@ -147,7 +147,7 @@ public static class GenericJsonMarkdownRenderer
             switch (item.ValueKind)
             {
                 case JsonValueKind.String:
-                    var str = item.GetString() ?? string.Empty;
+                    var str = item.GetString()!;
                     sb.AppendLine($"{childIndentStr}- {EscapeMarkdown(str)}");
                     break;
 

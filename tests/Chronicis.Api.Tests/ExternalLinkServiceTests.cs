@@ -321,6 +321,15 @@ public class ExternalLinkServiceTests : IDisposable
     }
 
     [Fact]
+    public void TryValidateId_InvalidRelativeUri_ReturnsFalse()
+    {
+        var valid = _sut.TryValidateId("srd", "http://[::1", out var error);
+
+        Assert.False(valid);
+        Assert.Contains("relative path", error);
+    }
+
+    [Fact]
     public void TryValidateId_SrdWithoutApiPrefix_ReturnsFalse()
     {
         var valid = _sut.TryValidateId("srd", "spells/fireball", out var error);

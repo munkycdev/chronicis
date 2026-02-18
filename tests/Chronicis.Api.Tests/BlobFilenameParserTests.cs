@@ -83,6 +83,14 @@ public class BlobFilenameParserTests
         Assert.Equal("animated-armor", result);
     }
 
+    [Fact]
+    public void DeriveSlug_ReturnsEmpty_WhenBothPrimaryAndFallbackNormalizeEmpty()
+    {
+        var result = BlobFilenameParser.DeriveSlug(".json");
+
+        Assert.Equal(string.Empty, result);
+    }
+
     // ── PrettifySlug ─────────────────────────────────────────────
 
     [Theory]
@@ -110,5 +118,11 @@ public class BlobFilenameParserTests
     public void PrettifySlug_HandlesMultipleHyphens()
     {
         Assert.Equal("Red Dragon Wyrmling", BlobFilenameParser.PrettifySlug("red-dragon-wyrmling"));
+    }
+
+    [Fact]
+    public void PrettifySlug_HandlesSingleLetterWords()
+    {
+        Assert.Equal("A B C", BlobFilenameParser.PrettifySlug("a-b-c"));
     }
 }

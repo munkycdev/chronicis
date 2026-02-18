@@ -30,6 +30,17 @@ public class ExternalLinkProviderRegistryTests
     }
 
     [Fact]
+    public void GetProvider_UnknownKey_ReturnsNull()
+    {
+        var srdProvider = Substitute.For<IExternalLinkProvider>();
+        srdProvider.Key.Returns("srd");
+
+        var sut = new ExternalLinkProviderRegistry([srdProvider]);
+
+        Assert.Null(sut.GetProvider("ros"));
+    }
+
+    [Fact]
     public void Constructor_DuplicateKeys_KeepsFirstProvider()
     {
         var first = Substitute.For<IExternalLinkProvider>();

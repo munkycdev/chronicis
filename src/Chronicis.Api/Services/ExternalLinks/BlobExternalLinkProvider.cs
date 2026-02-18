@@ -769,9 +769,6 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
             .Where(t => !string.IsNullOrWhiteSpace(t))
             .ToList();
 
-        if (tokens.Count == 0)
-            return Enumerable.Empty<ExternalLinkSuggestion>();
-
         return files
             .Where(item => tokens.All(token =>
                 item.Title.Contains(token, StringComparison.OrdinalIgnoreCase)))
