@@ -23,13 +23,25 @@ public partial class ArticleExternalLinkService : IArticleExternalLinkService
     }
 
     /// <summary>
-    /// Regex pattern to extract external links from article HTML.
-    /// Matches: &lt;span data-type="external-link" ... data-source="..." data-id="..." data-title="..."&gt;
+    /// Regex to find span elements with data-type="external-link".
+    /// Captures the full attribute block so individual data-* attributes can be extracted.
     /// </summary>
     [GeneratedRegex(
-        @"<span[^>]*data-type=""external-link""[^>]*data-source=""([^""]*)""[^>]*data-id=""([^""]*)""[^>]*data-title=""([^""]*)""[^>]*>",
+        @"<span\s([^>]*data-type=""external-link""[^>]*)>",
         RegexOptions.IgnoreCase | RegexOptions.Compiled)]
-    private static partial Regex ExternalLinkRegex();
+    private static partial Regex ExternalLinkSpanRegex();
+
+    /// <summary>Extracts data-source value from an attribute string.</summary>
+    [GeneratedRegex(@"data-source=""([^""]*)""", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    private static partial Regex DataSourceRegex();
+
+    /// <summary>Extracts data-id value from an attribute string.</summary>
+    [GeneratedRegex(@"data-id=""([^""]*)""", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    private static partial Regex DataIdRegex();
+
+    /// <summary>Extracts data-title value from an attribute string.</summary>
+    [GeneratedRegex(@"data-title=""([^""]*)""", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    private static partial Regex DataTitleRegex();
 
     public async Task SyncExternalLinksAsync(Guid articleId, string? htmlContent)
     {
@@ -126,6 +138,7 @@ public partial class ArticleExternalLinkService : IArticleExternalLinkService
 
     /// <summary>
     /// Extracts external link information from HTML content.
+    /// Attribute order within the span is not significant.
     /// </summary>
     private List<(string Source, string ExternalId, string DisplayTitle)> ExtractExternalLinksFromHtml(string? htmlContent)
     {
@@ -135,23 +148,27 @@ public partial class ArticleExternalLinkService : IArticleExternalLinkService
         }
 
         var links = new List<(string Source, string ExternalId, string DisplayTitle)>();
-        var matches = ExternalLinkRegex().Matches(htmlContent);
+        var spanMatches = ExternalLinkSpanRegex().Matches(htmlContent);
 
-        foreach (Match match in matches)
+        foreach (Match spanMatch in spanMatches)
         {
-            if (match.Success && match.Groups.Count >= 4)
-            {
-                var source = match.Groups[1].Value;
-                var externalId = match.Groups[2].Value;
-                var displayTitle = match.Groups[3].Value;
+            if (!spanMatch.Success) continue;
 
-                // Validate that we have all required fields
-                if (!string.IsNullOrWhiteSpace(source) &&
-                    !string.IsNullOrWhiteSpace(externalId) &&
-                    !string.IsNullOrWhiteSpace(displayTitle))
-                {
-                    links.Add((source, externalId, displayTitle));
-                }
+            var attrs = spanMatch.Groups[1].Value;
+
+            var sourceMatch = DataSourceRegex().Match(attrs);
+            var idMatch = DataIdRegex().Match(attrs);
+            var titleMatch = DataTitleRegex().Match(attrs);
+
+            var source = sourceMatch.Success ? sourceMatch.Groups[1].Value : string.Empty;
+            var externalId = idMatch.Success ? idMatch.Groups[1].Value : string.Empty;
+            var displayTitle = titleMatch.Success ? titleMatch.Groups[1].Value : string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(source) &&
+                !string.IsNullOrWhiteSpace(externalId) &&
+                !string.IsNullOrWhiteSpace(displayTitle))
+            {
+                links.Add((source, externalId, displayTitle));
             }
         }
 
