@@ -72,14 +72,23 @@ jobs:
       - name: Generate coverage HTML + summary
         shell: pwsh
         run: |
-          $coverageFile = "TestResults/Chronicis.Shared.Tests/coverage.cobertura.xml"
+          $outDir = "TestResults/Chronicis.Shared.Tests"
 
-          if (-not (Test-Path $coverageFile)) {
-            throw "Coverage file not found at $coverageFile"
+          $reports = Get-ChildItem -Recurse -Path $outDir -Filter *.cobertura.xml | Select-Object -ExpandProperty FullName
+          if (-not $reports -or $reports.Count -eq 0) {
+            Write-Host "No cobertura files found under $outDir. Directory contents:"
+            Get-ChildItem -Recurse -Path $outDir | ForEach-Object { Write-Host $_.FullName }
+            throw "No cobertura files found under $outDir"
           }
 
+          Write-Host "Using cobertura files:"
+          $reports | ForEach-Object { Write-Host $_ }
+
+          # ReportGenerator accepts a semicolon-separated list for -reports:
+          $reportArg = ($reports -join ';')
+
           reportgenerator `
-            -reports:$coverageFile `
+            -reports:"$reportArg" `
             -targetdir:"coveragereport" `
             -reporttypes:"Html;MarkdownSummaryGithub;Cobertura"
 
