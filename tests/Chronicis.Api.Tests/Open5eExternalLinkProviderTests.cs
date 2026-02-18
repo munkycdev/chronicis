@@ -532,10 +532,11 @@ public class Open5eExternalLinkProviderTests
             using var objectMissingPropDoc = JsonDocument.Parse("""{"name":"x"}""");
             Assert.Null(getString.Invoke(null, [objectMissingPropDoc.RootElement, "missing"]));
 
-            using var boolDoc = JsonDocument.Parse("""{"a":true,"b":false,"c":"yes"}""");
+            using var boolDoc = JsonDocument.Parse("""{"a":true,"b":false,"c":"yes","d":"true"}""");
             Assert.Equal(true, getBool.Invoke(null, [boolDoc.RootElement, "a"]));
             Assert.Equal(false, getBool.Invoke(null, [boolDoc.RootElement, "b"]));
             Assert.Equal(true, getBool.Invoke(null, [boolDoc.RootElement, "c"]));
+            Assert.Equal(true, getBool.Invoke(null, [boolDoc.RootElement, "d"]));
             Assert.Null(getBool.Invoke(null, [objectMissingPropDoc.RootElement, "missing"]));
 
             using var boolNoDoc = JsonDocument.Parse("""{"x":"no","n":123}""");

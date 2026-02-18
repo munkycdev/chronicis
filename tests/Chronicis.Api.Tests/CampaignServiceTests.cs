@@ -1,8 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Chronicis.Api.Data;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
+using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -391,5 +393,32 @@ public class CampaignServiceTests : IDisposable
 
         Assert.Equal(TestHelpers.FixedIds.World1, context.WorldId);
         Assert.Null(context.CampaignId);
+    }
+
+    [Fact]
+    public void Mapping_UsesFallbacks_WhenOwnerAndArcsMissing()
+    {
+        var campaign = new Campaign
+        {
+            Id = Guid.NewGuid(),
+            WorldId = Guid.NewGuid(),
+            Name = "No Owner",
+            OwnerId = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow,
+            Owner = null!,
+            Arcs = null!
+        };
+
+        var mapToDto = typeof(CampaignService).GetMethod("MapToDto", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var mapToDetailDto = typeof(CampaignService).GetMethod("MapToDetailDto", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var dto = (CampaignDto)mapToDto.Invoke(null, [campaign])!;
+        var detail = (CampaignDetailDto)mapToDetailDto.Invoke(null, [campaign])!;
+
+        Assert.Equal("Unknown", dto.OwnerName);
+        Assert.Equal(0, dto.ArcCount);
+        Assert.Equal("Unknown", detail.OwnerName);
+        Assert.Equal(0, detail.ArcCount);
+        Assert.Empty(detail.Arcs);
     }
 }

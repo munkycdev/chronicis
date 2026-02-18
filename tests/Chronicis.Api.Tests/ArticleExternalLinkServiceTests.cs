@@ -203,6 +203,20 @@ public class ArticleExternalLinkServiceTests : IDisposable
         Assert.Equal(0, count);
     }
 
+    [Fact]
+    public async Task Sync_SkipsSpansWithMissingAttributes()
+    {
+        var html = @"
+            <span data-type=""external-link"" data-id=""spells/fireball"" data-title=""Fireball"">text</span>
+            <span data-type=""external-link"" data-source=""srd14"" data-title=""Fireball"">text</span>
+            <span data-type=""external-link"" data-source=""srd14"" data-id=""spells/fireball"">text</span>";
+
+        await _service.SyncExternalLinksAsync(_articleId, html);
+
+        var count = await _context.ArticleExternalLinks.CountAsync();
+        Assert.Equal(0, count);
+    }
+
     // ── GetExternalLinksForArticleAsync ───────────────────────────
 
     [Fact]

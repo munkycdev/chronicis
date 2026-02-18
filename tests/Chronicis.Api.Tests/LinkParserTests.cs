@@ -113,6 +113,18 @@ public class LinkParserTests
     }
 
     [Fact]
+    public void ParseLinks_HtmlFormat_DuplicateGuid_ParsesOnlyOnce()
+    {
+        var guid = Guid.Parse("12345678-1234-1234-1234-123456789012");
+        var body = $"<span data-target-id=\"{guid}\">First</span> and <span data-target-id=\"{guid}\">Second</span>";
+
+        var links = _parser.ParseLinks(body).ToList();
+
+        Assert.Single(links);
+        Assert.Equal("First", links[0].DisplayText);
+    }
+
+    [Fact]
     public void ParseLinks_HtmlFormat_WithExtraAttributes_ParsesCorrectly()
     {
         var guid = Guid.Parse("12345678-1234-1234-1234-123456789012");
@@ -209,6 +221,18 @@ public class LinkParserTests
         Assert.Single(linksUpper);
         Assert.Equal(guid, linksLower[0].TargetArticleId);
         Assert.Equal(guid, linksUpper[0].TargetArticleId);
+    }
+
+    [Fact]
+    public void ParseLinks_LegacyFormat_WithWhitespaceDisplayText_ParsesTrimmedDisplay()
+    {
+        var guid = Guid.Parse("12345678-1234-1234-1234-123456789012");
+        var body = $"[[{guid}|  Display Name  ]]";
+
+        var links = _parser.ParseLinks(body).ToList();
+
+        Assert.Single(links);
+        Assert.Equal("Display Name", links[0].DisplayText);
     }
 
     [Fact]

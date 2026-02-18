@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -6,12 +7,13 @@ namespace Chronicis.Api.Data
     /// <summary>
     /// Design-time factory for creating ChronicisDbContext during migrations.
     /// This ensures EF Core tools can create the context without running the full application.
-    /// 
+    ///
     /// Connection string resolution (in order of priority):
     /// 1. Environment variable: CHRONICIS_CONNECTION_STRING
     /// 2. local.settings.json: ConnectionStrings:ChronicisDb
     /// 3. Fallback to localhost SQL Server (for local development)
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public class ChronicisDbContextFactory : IDesignTimeDbContextFactory<ChronicisDbContext>
     {
         public ChronicisDbContext CreateDbContext(string[] args)

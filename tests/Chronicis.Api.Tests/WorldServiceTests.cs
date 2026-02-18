@@ -1,8 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Chronicis.Api.Data;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
+using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -314,5 +316,36 @@ public class WorldServiceTests : IDisposable
         var world = await _service.GetWorldBySlugAsync("test-world", TestHelpers.FixedIds.User3);
 
         Assert.Null(world);
+    }
+
+    [Fact]
+    public void Mapping_UsesFallbacks_WhenOwnerCampaignsAndMembersMissing()
+    {
+        var world = new World
+        {
+            Id = Guid.NewGuid(),
+            Name = "Fallback World",
+            Slug = "fallback-world",
+            OwnerId = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow,
+            Owner = null!,
+            Campaigns = null!,
+            Members = null!
+        };
+
+        var mapToDto = typeof(WorldService).GetMethod("MapToDto", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var mapToDetailDto = typeof(WorldService).GetMethod("MapToDetailDto", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var dto = (WorldDto)mapToDto.Invoke(null, [world])!;
+        var detail = (WorldDetailDto)mapToDetailDto.Invoke(null, [world])!;
+
+        Assert.Equal("Unknown", dto.OwnerName);
+        Assert.Equal(0, dto.CampaignCount);
+        Assert.Equal(0, dto.MemberCount);
+        Assert.Equal("Unknown", detail.OwnerName);
+        Assert.Equal(0, detail.CampaignCount);
+        Assert.Equal(0, detail.MemberCount);
+        Assert.Empty(detail.Campaigns);
+        Assert.Empty(detail.Members);
     }
 }

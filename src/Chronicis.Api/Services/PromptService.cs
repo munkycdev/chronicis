@@ -158,9 +158,10 @@ public class PromptService : IPromptService
         {
             foreach (var campaign in world.Campaigns.Where(c => c.IsActive))
             {
-                if (campaign.CurrentArc?.LatestSessionDate != null)
+                var latestSessionDate = campaign.CurrentArc?.LatestSessionDate;
+                if (latestSessionDate.HasValue)
                 {
-                    var lastSession = campaign.CurrentArc.LatestSessionDate.Value;
+                    var lastSession = latestSessionDate.Value;
                     var daysSinceSession = (int)(DateTime.UtcNow - lastSession).TotalDays;
 
                     // Session was 2-7 days ago - good time to add notes while fresh

@@ -119,6 +119,26 @@ public class PromptServiceTests
     }
 
     [Fact]
+    public void GeneratePrompts_StaleCharacterWithNullModifiedAt_UsesCreatedAt()
+    {
+        var dashboard = DashboardWithWorld(withCampaign: true, withSessions: true);
+        dashboard.ClaimedCharacters = new List<ClaimedCharacterDto>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Title = "Bilbo",
+                CreatedAt = DateTime.UtcNow.AddDays(-21),
+                ModifiedAt = null
+            }
+        };
+
+        var result = _sut.GeneratePrompts(dashboard);
+
+        Assert.Contains(result, p => p.Key.StartsWith("stale-character-"));
+    }
+
+    [Fact]
     public void GeneratePrompts_RecentSession_SuggestsFollowUp()
     {
         var dashboard = DashboardWithWorld(
@@ -137,6 +157,75 @@ public class PromptServiceTests
     }
 
     [Fact]
+    public void GeneratePrompts_SessionOutsideFollowUpWindow_DoesNotSuggestFollowUp()
+    {
+        var dashboard = DashboardWithWorld(
+            withCampaign: true,
+            withSessions: true,
+            campaignActive: true,
+            latestSessionDate: DateTime.UtcNow.AddDays(-10));
+        dashboard.ClaimedCharacters = new List<ClaimedCharacterDto>
+        {
+            new() { Id = Guid.NewGuid(), Title = "Fresh Char", CreatedAt = DateTime.UtcNow }
+        };
+
+        var result = _sut.GeneratePrompts(dashboard);
+
+        Assert.DoesNotContain(result, p => p.Key.StartsWith("session-followup-"));
+    }
+
+    [Fact]
+    public void GeneratePrompts_OneDaySinceSession_DoesNotSuggestFollowUp()
+    {
+        var dashboard = DashboardWithWorld(
+            withCampaign: true,
+            withSessions: true,
+            campaignActive: true,
+            latestSessionDate: DateTime.UtcNow.AddDays(-1));
+        dashboard.ClaimedCharacters = new List<ClaimedCharacterDto>
+        {
+            new() { Id = Guid.NewGuid(), Title = "Fresh Char", CreatedAt = DateTime.UtcNow }
+        };
+
+        var result = _sut.GeneratePrompts(dashboard);
+
+        Assert.DoesNotContain(result, p => p.Key.StartsWith("session-followup-"));
+    }
+
+    [Fact]
+    public void GeneratePrompts_CurrentArcWithoutSessionDate_DoesNotSuggestFollowUp()
+    {
+        var dashboard = DashboardWithWorld(withCampaign: true, withSessions: true, campaignActive: true);
+        dashboard.Worlds[0].Campaigns[0].CurrentArc = new DashboardArcDto();
+        dashboard.ClaimedCharacters = new List<ClaimedCharacterDto>
+        {
+            new() { Id = Guid.NewGuid(), Title = "Fresh Char", CreatedAt = DateTime.UtcNow }
+        };
+
+        var result = _sut.GeneratePrompts(dashboard);
+
+        Assert.DoesNotContain(result, p => p.Key.StartsWith("session-followup-"));
+    }
+
+    [Fact]
+    public void GeneratePrompts_ActiveCampaignWithoutCurrentArc_DoesNotSuggestFollowUp()
+    {
+        var dashboard = DashboardWithWorld(
+            withCampaign: true,
+            withSessions: true,
+            campaignActive: true,
+            latestSessionDate: null);
+        dashboard.ClaimedCharacters = new List<ClaimedCharacterDto>
+        {
+            new() { Id = Guid.NewGuid(), Title = "Fresh Char", CreatedAt = DateTime.UtcNow }
+        };
+
+        var result = _sut.GeneratePrompts(dashboard);
+
+        Assert.DoesNotContain(result, p => p.Key.StartsWith("session-followup-"));
+    }
+
+    [Fact]
     public void GeneratePrompts_ManyArticles_SuggestsWikiLinks()
     {
         var dashboard = DashboardWithWorld(withCampaign: true, withSessions: true);
@@ -149,6 +238,21 @@ public class PromptServiceTests
         var result = _sut.GeneratePrompts(dashboard);
 
         Assert.Contains(result, p => p.Key == "try-wiki-links");
+    }
+
+    [Fact]
+    public void GeneratePrompts_TenArticles_SuggestsAiSummaries()
+    {
+        var dashboard = DashboardWithWorld(withCampaign: true, withSessions: true);
+        dashboard.Worlds[0].ArticleCount = 10;
+        dashboard.ClaimedCharacters = new List<ClaimedCharacterDto>
+        {
+            new() { Id = Guid.NewGuid(), Title = "Char", CreatedAt = DateTime.UtcNow, ModifiedAt = DateTime.UtcNow }
+        };
+
+        var result = _sut.GeneratePrompts(dashboard);
+
+        Assert.Contains(result, p => p.Key == "try-ai-summaries");
     }
 
     [Fact]

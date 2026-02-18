@@ -61,12 +61,7 @@ public class LinkParser : ILinkParser
 
         foreach (Match match in matches)
         {
-            var guidString = match.Groups[1].Value;
-
-            if (!Guid.TryParse(guidString, out var targetArticleId))
-            {
-                continue;
-            }
+            var targetArticleId = Guid.Parse(match.Groups[1].Value);
 
             // Skip if we've already processed this target
             if (!processedGuids.Add(targetArticleId))
@@ -75,9 +70,7 @@ public class LinkParser : ILinkParser
             }
 
             // Get display text and trim whitespace
-            var displayText = match.Groups[2].Success
-                ? match.Groups[2].Value.Trim()
-                : null;
+            var displayText = match.Groups[2].Value.Trim();
 
             var position = match.Index;
 
@@ -91,12 +84,7 @@ public class LinkParser : ILinkParser
 
         foreach (Match match in matches)
         {
-            var guidString = match.Groups[1].Value;
-
-            if (!Guid.TryParse(guidString, out var targetArticleId))
-            {
-                continue;
-            }
+            var targetArticleId = Guid.Parse(match.Groups[1].Value);
 
             // Skip if we've already processed this target (from HTML parsing)
             if (!processedGuids.Add(targetArticleId))

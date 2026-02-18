@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,6 +7,7 @@ namespace Chronicis.Api.Data;
 /// <summary>
 /// Database context for Chronicis application.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ChronicisDbContext : DbContext
 {
     // ===== Core Entities =====
