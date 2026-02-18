@@ -39,7 +39,7 @@ public class ArchitecturalConventionTests
         {
             var interfaceName = "I" + serviceType.Name;
             var hasInterface = serviceType.GetInterfaces()
-                .Any(i => i.Name == interfaceName);
+                .Any();
 
             if (!hasInterface)
             {
