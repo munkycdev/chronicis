@@ -14,21 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Update this to your solution file.
   SOLUTION_PATH: ./Chronicis.CI.sln
-
-  # Deterministic output roots (always inside GITHUB_WORKSPACE).
-  COVERAGE_ROOT_REL: TestResults/Coverage
   REPORT_DIR_REL: coveragereport
-
-  # Optional: Coverlet filters. Leave empty to not pass them.
-  # Coverlet MSBuild supports /p:Exclude and /p:Include filter expressions.  %2c is the safe separator in YAML/PS contexts.
-  # Examples (optional):
-  # COVERLET_EXCLUDE: "[*.Tests?]*%2c[*]xunit.*%2c[*]nunit.*%2c[*]mstest.*"
-  # COVERLET_EXCLUDE_BY_FILE: "**/*Designer.cs%2c**/*.g.cs%2c**/*.generated.cs"
-  COVERLET_EXCLUDE: ""
-  COVERLET_INCLUDE: ""
-  COVERLET_EXCLUDE_BY_FILE: ""
 
 jobs:
   guardrails:
@@ -45,7 +32,6 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      # Optional but useful for CI determinism/debugging
       - name: Show .NET info
         shell: pwsh
         run: |
@@ -61,157 +47,69 @@ jobs:
         run: dotnet build "${{ env.SOLUTION_PATH }}" --configuration Release --no-restore
 
       # ------------------------------------------------------------
-      # Deterministic coverage collection
+      # Coverage collection using coverlet.collector (XPlat Code Coverage)
       #
-      # Why this is deterministic:
-      # - All outputs go beneath $GITHUB_WORKSPACE/<COVERAGE_ROOT_REL>
-      # - Raw outputs are separated by test project and TargetFramework
-      #   => prevents multi-target overwrite collisions.
-      # - We then normalize into a flat folder whose filenames encode <TestProject>.<TFM>
-      # - No repo-wide globs, only controlled directory enumeration.
-      #
-      # Requirements:
-      # - Each test project must reference coverlet.msbuild (MSBuild integration).  See Coverlet docs.
-      # - Do NOT also run --collect:"XPlat Code Coverage" in the same job, or you risk double tooling confusion.
+      # Key difference from coverlet.msbuild: the collector approach works
+      # at test runtime, not build time. This means --no-build is safe and
+      # instrumentation of referenced assemblies works correctly via the
+      # Include filter in coverlet.runsettings.
       # ------------------------------------------------------------
-      - name: Test solution with coverage (Coverlet MSBuild)
+      - name: Test with coverage (XPlat Code Coverage)
         shell: pwsh
         run: |
           $workspace = $env:GITHUB_WORKSPACE
+          $resultsDir = Join-Path $workspace "TestResults"
 
-          $coverageRoot = Join-Path $workspace "${{ env.COVERAGE_ROOT_REL }}"
-          $rawRoot      = Join-Path $coverageRoot "raw"
-          $flatRoot     = Join-Path $coverageRoot "cobertura"
-          $reportDir    = Join-Path $workspace "${{ env.REPORT_DIR_REL }}"
-
-          # Clean to avoid accidental "old files included" merges (classic CI drift cause).
-          if (Test-Path $coverageRoot) { Remove-Item -Recurse -Force $coverageRoot }
-          if (Test-Path $reportDir)    { Remove-Item -Recurse -Force $reportDir }
-
-          New-Item -ItemType Directory -Force -Path $rawRoot  | Out-Null
-          New-Item -ItemType Directory -Force -Path $flatRoot | Out-Null
-
-          # Convert to forward slashes because MSBuild on Linux can normalize separators.
-          $rawRootSlash = ($rawRoot.Replace('\', '/')).TrimEnd('/')
-
-          # IMPORTANT:
-          # We want MSBuild to expand $(MSBuildProjectName) and $(TargetFramework).
-          # So we concatenate the literal MSBuild property tokens from a single-quoted string.
-          $coverletOutput = $rawRootSlash + "/" + '$(MSBuildProjectName)/$(TargetFramework)/'
-
-          Write-Host "Workspace     : $workspace"
-          Write-Host "Coverage root : $coverageRoot"
-          Write-Host "Raw root      : $rawRoot"
-          Write-Host "Flat root     : $flatRoot"
-          Write-Host "Report dir    : $reportDir"
-          Write-Host "CoverletOutput: $coverletOutput"
-
-          $msbuildProps = @(
-            "/p:CollectCoverage=true",
-            "/p:CoverletOutputFormat=cobertura",
-            "/p:CoverletOutput=$coverletOutput",
-            "/p:DeterministicReport=true"
-          )
-
-          # Optional filters (only appended if non-empty).
-          if (-not [string]::IsNullOrWhiteSpace("${{ env.COVERLET_EXCLUDE }}")) {
-            $msbuildProps += "/p:Exclude=${{ env.COVERLET_EXCLUDE }}"
-          }
-          if (-not [string]::IsNullOrWhiteSpace("${{ env.COVERLET_INCLUDE }}")) {
-            $msbuildProps += "/p:Include=${{ env.COVERLET_INCLUDE }}"
-          }
-          if (-not [string]::IsNullOrWhiteSpace("${{ env.COVERLET_EXCLUDE_BY_FILE }}")) {
-            $msbuildProps += "/p:ExcludeByFile=${{ env.COVERLET_EXCLUDE_BY_FILE }}"
-          }
-
-          Write-Host "Running: dotnet test ${{ env.SOLUTION_PATH }} (Release, --no-build) with MSBuild coverage props:"
-          $msbuildProps | ForEach-Object { Write-Host "  $_" }
+          # Clean previous results
+          if (Test-Path $resultsDir) { Remove-Item -Recurse -Force $resultsDir }
 
           dotnet test "${{ env.SOLUTION_PATH }}" `
             --configuration Release `
             --no-build `
             --verbosity normal `
-            @msbuildProps
+            --collect:"XPlat Code Coverage" `
+            --settings coverlet.runsettings `
+            --results-directory "$resultsDir"
 
-          # Validate raw outputs exist.
-          $rawCobertura = Get-ChildItem -Recurse -Path $rawRoot -Filter *.cobertura.xml -ErrorAction SilentlyContinue
-          if (-not $rawCobertura -or $rawCobertura.Count -eq 0) {
-            Write-Host "No raw cobertura files found under: $rawRoot"
-            Write-Host "Diagnostics: listing TestResults and project bin/obj (first 300 entries)..."
-            if (Test-Path (Join-Path $workspace "TestResults")) {
-              Get-ChildItem -Recurse (Join-Path $workspace "TestResults") | Select-Object -First 300 | ForEach-Object { Write-Host $_.FullName }
-            } else {
-              Write-Host "No TestResults folder exists."
+          # Find all coverage files produced by the collector
+          $coberturaFiles = Get-ChildItem -Recurse -Path $resultsDir -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue
+          if (-not $coberturaFiles -or $coberturaFiles.Count -eq 0) {
+            Write-Host "No coverage.cobertura.xml files found under: $resultsDir"
+            if (Test-Path $resultsDir) {
+              Get-ChildItem -Recurse $resultsDir | Select-Object -First 300 | ForEach-Object { Write-Host $_.FullName }
             }
-            throw "Coverage collection produced zero *.cobertura.xml files."
+            throw "Coverage collection produced zero cobertura files."
           }
 
-          Write-Host "Raw cobertura files found:"
-          $rawCobertura | Sort-Object FullName | ForEach-Object { Write-Host "  $($_.FullName)" }
-
-          # Normalize into deterministic, unique filenames:
-          #   <TestProject>.<TFM>.cobertura.xml
-          foreach ($f in $rawCobertura) {
-            # Expected directory layout: raw/<TestProject>/<TFM>/<file>
-            $tfm  = Split-Path $f.DirectoryName -Leaf
-            $proj = Split-Path (Split-Path $f.DirectoryName -Parent) -Leaf
-
-            if ([string]::IsNullOrWhiteSpace($proj)) { $proj = "unknown-project" }
-            if ([string]::IsNullOrWhiteSpace($tfm))  { $tfm  = "unknown-tfm" }
-
-            $destName = "$proj.$tfm.cobertura.xml"
-            $destPath = Join-Path $flatRoot $destName
-
-            Copy-Item -Force $f.FullName $destPath
-          }
-
-          # Validate normalized outputs exist and are unique.
-          $flatCobertura = Get-ChildItem -Path $flatRoot -Filter *.cobertura.xml | Sort-Object Name
-          if (-not $flatCobertura -or $flatCobertura.Count -eq 0) {
-            throw "Normalization step produced zero files in $flatRoot"
-          }
-
-          $dupes = $flatCobertura | Group-Object Name | Where-Object { $_.Count -gt 1 }
-          if ($dupes) {
-            Write-Host "Duplicate normalized filenames detected (would cause nondeterministic merges):"
-            $dupes | ForEach-Object { Write-Host "  $($_.Name) x $($_.Count)" }
-            throw "Duplicate normalized cobertura filenames detected."
-          }
-
-          Write-Host "Normalized cobertura files (deterministic set for merging):"
-          $flatCobertura | ForEach-Object { Write-Host "  $($_.FullName)" }
+          Write-Host "Coverage files found ($($coberturaFiles.Count)):"
+          $coberturaFiles | Sort-Object FullName | ForEach-Object { Write-Host "  $($_.FullName)" }
 
       - name: Install ReportGenerator
         shell: pwsh
         run: dotnet tool update -g dotnet-reportgenerator-globaltool
 
-      # ------------------------------------------------------------
-      # Merge + publish report
-      #
-      # Why this is deterministic:
-      # - We pass ReportGenerator an explicit, sorted semicolon-separated list of reports (no repo-wide globs).
-      # - Output directory is always the same known folder under GITHUB_WORKSPACE.
-      # ------------------------------------------------------------
-      - name: Generate merged coverage HTML + Cobertura.xml + summary
+      - name: Generate merged coverage report
         shell: pwsh
         run: |
-          $workspace   = $env:GITHUB_WORKSPACE
-          $coverageRoot = Join-Path $workspace "${{ env.COVERAGE_ROOT_REL }}"
-          $flatRoot     = Join-Path $coverageRoot "cobertura"
-          $reportDir    = Join-Path $workspace "${{ env.REPORT_DIR_REL }}"
+          $workspace = $env:GITHUB_WORKSPACE
+          $resultsDir = Join-Path $workspace "TestResults"
+          $reportDir  = Join-Path $workspace "${{ env.REPORT_DIR_REL }}"
 
+          if (Test-Path $reportDir) { Remove-Item -Recurse -Force $reportDir }
           New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
 
-          $reports = Get-ChildItem -Path $flatRoot -Filter *.cobertura.xml | Sort-Object Name | Select-Object -ExpandProperty FullName
+          # Collect all cobertura files and build a sorted, semicolon-separated list
+          $reports = Get-ChildItem -Recurse -Path $resultsDir -Filter "coverage.cobertura.xml" `
+            | Sort-Object FullName `
+            | Select-Object -ExpandProperty FullName
+
           if (-not $reports -or $reports.Count -eq 0) {
-            Write-Host "No normalized cobertura files found in: $flatRoot"
-            Get-ChildItem -Recurse $coverageRoot | Select-Object -First 300 | ForEach-Object { Write-Host $_.FullName }
             throw "No cobertura files to merge."
           }
 
           $reportArg = ($reports -join ';')
 
-          Write-Host "ReportGenerator inputs:"
+          Write-Host "ReportGenerator inputs ($($reports.Count) files):"
           $reports | ForEach-Object { Write-Host "  $_" }
 
           reportgenerator `
@@ -219,7 +117,7 @@ jobs:
             -targetdir:"$reportDir" `
             -reporttypes:"Html;Cobertura;MarkdownSummaryGithub"
 
-          Write-Host "Report directory contents (top-level):"
+          Write-Host "Report generated. Contents:"
           Get-ChildItem $reportDir | ForEach-Object { Write-Host "  $($_.FullName)" }
 
       - name: Publish coverage summary to GitHub Actions
@@ -229,35 +127,26 @@ jobs:
           if (Test-Path $summary) {
             Get-Content $summary | Add-Content $env:GITHUB_STEP_SUMMARY
           } else {
-            Write-Host "SummaryGithub.md not found; listing report folder:"
-            Get-ChildItem -Recurse (Join-Path $env:GITHUB_WORKSPACE "${{ env.REPORT_DIR_REL }}") | Select-Object -First 200 | ForEach-Object { Write-Host $_.FullName }
             "Coverage summary not found." | Add-Content $env:GITHUB_STEP_SUMMARY
           }
 
-      # ------------------------------------------------------------
-      # Compute overall rates from merged Cobertura
-      # ------------------------------------------------------------
       - name: Compute overall coverage rates
         id: rates
         shell: pwsh
         run: |
           $reportDir = Join-Path $env:GITHUB_WORKSPACE "${{ env.REPORT_DIR_REL }}"
-
-          # Prefer the conventional name, but fall back to discovery for robustness.
           $merged = Join-Path $reportDir "Cobertura.xml"
+
           if (-not (Test-Path $merged)) {
             $found = Get-ChildItem -Path $reportDir -Filter *Cobertura*.xml -ErrorAction SilentlyContinue | Select-Object -First 1
             if ($found) { $merged = $found.FullName }
           }
 
           if (-not (Test-Path $merged)) {
-            Write-Host "Merged Cobertura not found; report directory listing:"
-            Get-ChildItem -Recurse $reportDir | Select-Object -First 300 | ForEach-Object { Write-Host $_.FullName }
             throw "Merged Cobertura.xml not found."
           }
 
           Write-Host "Using merged Cobertura file: $merged"
-
           python3 ci/coverage/extract_rates.py $merged | Out-File -Encoding utf8 rates.json
 
           $rates = Get-Content rates.json | ConvertFrom-Json
@@ -265,7 +154,7 @@ jobs:
           "branchPct=$($rates.branchPct)" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
 
       # ------------------------------------------------------------
-      # Update coverage history branch (history.json)
+      # Update coverage history branch
       # ------------------------------------------------------------
       - name: Checkout coverage history branch
         uses: actions/checkout@v4
@@ -316,11 +205,8 @@ jobs:
           New-Item -ItemType Directory -Force -Path (Join-Path $site "coverage/report") | Out-Null
 
           Copy-Item -Recurse -Force "ci/pages/*" $site
-
           Copy-Item -Recurse -Force "${{ env.REPORT_DIR_REL }}/*" (Join-Path $site "coverage/report/")
-
           Copy-Item -Force "_history/history.json" (Join-Path $site "coverage/history.json")
-
           "OK" | Out-File -Encoding utf8 (Join-Path $site "health.txt")
 
       - name: Upload Pages artifact

@@ -4,11 +4,14 @@
     <DataCollectors>
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
-          <Format>cobertura,opencover</Format>
-          <Exclude>[*.Tests]*,[*]*.Migrations.*</Exclude>
+          <Format>cobertura</Format>
+          <Include>[Chronicis.Api]*,[Chronicis.Client]*,[Chronicis.Shared]*,[Chronicis.ResourceCompiler]*</Include>
+          <Exclude>[*.Tests]*,[*.Tests?]*,[*]*.Migrations.*</Exclude>
           <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
           <ExcludeByFile>**/Migrations/**/*.cs</ExcludeByFile>
           <SkipAutoProps>true</SkipAutoProps>
+          <SingleHit>false</SingleHit>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
         </Configuration>
       </DataCollector>
     </DataCollectors>
