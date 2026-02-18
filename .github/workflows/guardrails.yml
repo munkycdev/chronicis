@@ -41,20 +41,19 @@ jobs:
         run: dotnet build ./Chronicis.CI.sln --configuration Release --no-restore
 
       # ------------------------------------------------------------
-      # Run ONLY Chronicis.Shared.Tests with coverage
-      # Also: search workspace for cobertura outputs and copy into a known folder
+      # Run Chronicis.*.Tests with coverage
       # ------------------------------------------------------------
-      - name: Test Chronicis.Shared.Tests (with coverage)
+      - name: Test Chronicis.*.Tests (with coverage)
         shell: pwsh
         run: |
-          $outDir = Join-Path $env:GITHUB_WORKSPACE "TestResults/Chronicis.Shared.Tests"
+          $outDir = Join-Path $env:GITHUB_WORKSPACE "TestResults"
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
           # Try to force output to our folder (Coverlet uses this as a prefix)
           $outPrefix = Join-Path $outDir "coverage"
 
           Write-Host "Running tests with coverage..."
-          dotnet test ./tests/Chronicis.Shared.Tests/Chronicis.Shared.Tests.csproj `
+          dotnet test ./Chronicis.CI.sln `
             --configuration Release `
             --verbosity normal `
             /p:CollectCoverage=true `
@@ -75,7 +74,7 @@ jobs:
       - name: Generate coverage HTML + summary
         shell: pwsh
         run: |
-          $outDir = "TestResults/Chronicis.Shared.Tests"
+          $outDir = "TestResults"
 
           $reports = Get-ChildItem -Recurse -Path $outDir -Filter *.cobertura.xml | Select-Object -ExpandProperty FullName
           if (-not $reports -or $reports.Count -eq 0) {
