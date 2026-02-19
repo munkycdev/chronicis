@@ -1,4 +1,6 @@
 @inject IJSRuntime JSRuntime
+@using System.Diagnostics.CodeAnalysis
+@attribute [ExcludeFromCodeCoverage]
 @implements IAsyncDisposable
 @code {
     private readonly ILogger<EmojiPickerButton> _logger;

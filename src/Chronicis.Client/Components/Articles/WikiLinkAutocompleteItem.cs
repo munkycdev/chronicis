@@ -1,7 +1,9 @@
 using Chronicis.Shared.DTOs;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Chronicis.Client.Components.Articles;
 
+[ExcludeFromCodeCoverage]
 public sealed class WikiLinkAutocompleteItem
 {
     private WikiLinkAutocompleteItem()

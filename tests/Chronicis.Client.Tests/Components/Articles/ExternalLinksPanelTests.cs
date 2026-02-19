@@ -154,4 +154,26 @@ public class ExternalLinksPanelTests : TestContext
         var badges = cut.FindAll(".external-links-source-badge");
         Assert.Equal(2, badges.Count);
     }
+
+    [Theory]
+    [InlineData("SRD14", "SRD 1.4")]
+    [InlineData("SRD24", "SRD 2.4")]
+    [InlineData("ROS", "Ruins of Symbaroum")]
+    [InlineData("custom", "CUSTOM")]
+    public void ExternalLinksPanel_MapsSourceNames(string source, string expectedBadgeText)
+    {
+        // Arrange
+        var externalLinks = new List<ArticleExternalLinkDto>
+        {
+            new() { Source = source, DisplayTitle = "Source Link", ExternalId = "key" }
+        };
+
+        // Act
+        var cut = RenderComponent<ExternalLinksPanel>(parameters => parameters
+            .Add(p => p.ExternalLinks, externalLinks));
+
+        // Assert
+        var badge = cut.Find(".external-links-source-badge");
+        Assert.Equal(expectedBadgeText, badge.TextContent.Trim());
+    }
 }

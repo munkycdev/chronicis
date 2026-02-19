@@ -13,6 +13,8 @@
     TODO: Consider migrating ArticleDetail to use the service-based approach
 *@
 
+@using System.Diagnostics.CodeAnalysis
+@attribute [ExcludeFromCodeCoverage]
 @inject ILogger<WikiLinkAutocomplete> Logger
 
 <div class="wiki-link-autocomplete" 

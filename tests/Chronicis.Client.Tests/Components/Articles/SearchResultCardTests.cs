@@ -34,63 +34,64 @@ public class SearchResultCardTests : MudBlazorTestContext
     [Fact]
     public void SearchResultCard_WithTitleMatch_ShowsTitleMatchChip()
     {
-        // Arrange
         var result = CreateTestResult(matchType: "title");
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, "test"));
 
-        // Assert
         Assert.Contains("Title Match", cut.Markup);
     }
 
     [Fact]
     public void SearchResultCard_WithContentMatch_ShowsContentMatchChip()
     {
-        // Arrange
         var result = CreateTestResult(matchType: "content");
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, "test"));
 
-        // Assert
         Assert.Contains("Content Match", cut.Markup);
     }
 
     [Fact]
     public void SearchResultCard_WithHashtagMatch_ShowsHashtagMatchChip()
     {
-        // Arrange
         var result = CreateTestResult(matchType: "hashtag");
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, "test"));
 
-        // Assert
         Assert.Contains("Hashtag Match", cut.Markup);
+    }
+
+    [Fact]
+    public void SearchResultCard_WithUnknownMatchType_ShowsFallbackChipText()
+    {
+        var result = CreateTestResult(matchType: "unknown");
+
+        var cut = RenderComponent<SearchResultCard>(parameters => parameters
+            .Add(p => p.Result, result)
+            .Add(p => p.Query, "test"));
+
+        Assert.Contains("Match", cut.Markup);
     }
 
     [Theory]
     [InlineData("title", Color.Primary)]
     [InlineData("content", Color.Info)]
     [InlineData("hashtag", Color.Success)]
+    [InlineData("unknown", Color.Default)]
     public void SearchResultCard_MatchTypeChip_HasCorrectColor(string matchType, Color expectedColor)
     {
-        // Arrange
         var result = CreateTestResult(matchType: matchType);
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, "test"));
 
-        // Assert
         var chip = cut.FindComponent<MudChip<string>>();
         Assert.Equal(expectedColor, chip.Instance.Color);
     }
@@ -98,54 +99,44 @@ public class SearchResultCardTests : MudBlazorTestContext
     [Fact]
     public void SearchResultCard_HighlightsQueryInTitle()
     {
-        // Arrange
         var result = CreateTestResult(title: "Dragon Quest Adventure");
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, "dragon"));
 
-        // Assert
         Assert.Contains("<mark class=\"search-highlight\">Dragon</mark>", cut.Markup);
     }
 
     [Fact]
     public void SearchResultCard_WithSnippet_RendersSnippet()
     {
-        // Arrange
         var snippet = "This is a snippet of matched content";
         var result = CreateTestResult(snippet: snippet);
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, "test"));
 
-        // Assert
         Assert.Contains(snippet, cut.Markup);
     }
 
     [Fact]
     public void SearchResultCard_HighlightsQueryInSnippet()
     {
-        // Arrange
         var snippet = "This contains the dragon keyword";
         var result = CreateTestResult(snippet: snippet);
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, "dragon"));
 
-        // Assert
         Assert.Contains("<mark class=\"search-highlight\">dragon</mark>", cut.Markup);
     }
 
     [Fact]
     public void SearchResultCard_WithAncestors_RendersBreadcrumbs()
     {
-        // Arrange
         var ancestors = new List<BreadcrumbDto>
         {
             new() { Id = Guid.NewGuid(), Title = "World", Slug = "world" },
@@ -153,12 +144,10 @@ public class SearchResultCardTests : MudBlazorTestContext
         };
         var result = CreateTestResult(ancestors: ancestors);
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, "test"));
 
-        // Assert
         var breadcrumbs = cut.FindComponent<MudBreadcrumbs>();
         Assert.NotNull(breadcrumbs);
         Assert.Contains("World", cut.Markup);
@@ -168,15 +157,12 @@ public class SearchResultCardTests : MudBlazorTestContext
     [Fact]
     public void SearchResultCard_WithoutAncestors_DoesNotRenderBreadcrumbs()
     {
-        // Arrange
         var result = CreateTestResult(ancestors: new List<BreadcrumbDto>());
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, "test"));
 
-        // Assert
         var breadcrumbs = cut.FindComponents<MudBreadcrumbs>();
         Assert.Empty(breadcrumbs);
     }
@@ -184,11 +170,9 @@ public class SearchResultCardTests : MudBlazorTestContext
     [Fact]
     public void SearchResultCard_OnClick_TriggersCallback()
     {
-        // Arrange
         var clicked = false;
         var result = CreateTestResult();
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, "test")
@@ -197,22 +181,18 @@ public class SearchResultCardTests : MudBlazorTestContext
         var card = cut.FindComponent<MudCard>();
         card.Find(".search-result-card").Click();
 
-        // Assert
         Assert.True(clicked);
     }
 
     [Fact]
     public void SearchResultCard_CardHasCursorPointer()
     {
-        // Arrange
         var result = CreateTestResult();
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, "test"));
 
-        // Assert
         var card = cut.FindComponent<MudCard>();
         Assert.Contains("cursor: pointer", card.Markup);
     }
@@ -220,31 +200,51 @@ public class SearchResultCardTests : MudBlazorTestContext
     [Fact]
     public void SearchResultCard_HighlightingIsCaseInsensitive()
     {
-        // Arrange
         var result = CreateTestResult(title: "Dragon Quest");
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, "DRAGON"));
 
-        // Assert
         Assert.Contains("<mark class=\"search-highlight\">Dragon</mark>", cut.Markup);
     }
 
     [Fact]
     public void SearchResultCard_WithEmptyQuery_DoesNotHighlight()
     {
-        // Arrange
         var result = CreateTestResult(title: "Dragon Quest");
 
-        // Act
         var cut = RenderComponent<SearchResultCard>(parameters => parameters
             .Add(p => p.Result, result)
             .Add(p => p.Query, string.Empty));
 
-        // Assert
         Assert.DoesNotContain("<mark", cut.Markup);
         Assert.Contains("Dragon Quest", cut.Markup);
+    }
+
+    [Fact]
+    public void SearchResultCard_WhenUpdatedJustNow_ShowsJustNow()
+    {
+        var result = CreateTestResult();
+        result.LastModified = DateTime.UtcNow.AddSeconds(-10);
+
+        var cut = RenderComponent<SearchResultCard>(parameters => parameters
+            .Add(p => p.Result, result)
+            .Add(p => p.Query, "test"));
+
+        Assert.Contains("Just now", cut.Markup);
+    }
+
+    [Fact]
+    public void SearchResultCard_WhenOlderThanMonth_ShowsDate()
+    {
+        var result = CreateTestResult();
+        result.LastModified = DateTime.UtcNow.AddDays(-45);
+
+        var cut = RenderComponent<SearchResultCard>(parameters => parameters
+            .Add(p => p.Result, result)
+            .Add(p => p.Query, "test"));
+
+        Assert.Contains(result.LastModified.ToString("MMM d, yyyy"), cut.Markup);
     }
 }

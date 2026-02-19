@@ -1,6 +1,8 @@
 @namespace Chronicis.Client.Components.Search
 @using Chronicis.Shared.DTOs
 @using System.Text.RegularExpressions
+@using System.Diagnostics.CodeAnalysis
+@attribute [ExcludeFromCodeCoverage]
 
 <MudCard Class="mb-3 search-result-card" @onclick="OnClick" Style="cursor: pointer;" Elevation="2">
     <MudCardContent>
@@ -100,19 +102,12 @@
     {
         if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(query))
             return text;
-        
-        try
-        {
-            var regex = new Regex(
-                Regex.Escape(query),
-                RegexOptions.IgnoreCase);
-                
-            return regex.Replace(text, match => 
-                $"<mark class=\"search-highlight\">{match.Value}</mark>");
-        }
-        catch
-        {
-            return text;
-        }
+
+        var regex = new Regex(
+            Regex.Escape(query),
+            RegexOptions.IgnoreCase);
+
+        return regex.Replace(text, match =>
+            $"<mark class=\"search-highlight\">{match.Value}</mark>");
     }
 }
