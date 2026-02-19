@@ -38,6 +38,20 @@ public class LandingTests : MudBlazorTestContext
         Assert.EndsWith("/dashboard", nav.Uri, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void Landing_WhenIdentityIsNull_DoesNotRedirect()
+    {
+        Services.AddAuthorizationCore();
+        Services.AddSingleton<IAuthorizationService, AllowAuthorizationService>();
+        Services.AddSingleton<AuthenticationStateProvider>(new NullIdentityAuthStateProvider());
+
+        var nav = Services.GetRequiredService<FakeNavigationManager>();
+        var cut = RenderComponent<CascadingAuthenticationState>(p => p.AddChildContent<Landing>());
+
+        Assert.DoesNotContain("/dashboard", nav.Uri, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Never Lose Track of Your Campaign Again", cut.Markup);
+    }
+
     private sealed class TestAuthStateProvider(bool isAuthenticated) : AuthenticationStateProvider
     {
         private readonly AuthenticationState _state = new(
@@ -56,5 +70,11 @@ public class LandingTests : MudBlazorTestContext
 
         public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object? resource, string policyName) =>
             Task.FromResult(AuthorizationResult.Success());
+    }
+
+    private sealed class NullIdentityAuthStateProvider : AuthenticationStateProvider
+    {
+        public override Task<AuthenticationState> GetAuthenticationStateAsync() =>
+            Task.FromResult(new AuthenticationState(new ClaimsPrincipal()));
     }
 }

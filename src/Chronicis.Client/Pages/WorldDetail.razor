@@ -384,7 +384,7 @@ else if (_world != null)
                                 }
                             </div>
 
-                            @if (_world?.IsPublic == true && !string.IsNullOrEmpty(_world?.PublicSlug))
+                            @if (ShouldShowPublicPreview())
                             {
                                 <div class="d-flex align-center gap-2 mt-3">
                                     <MudTextField Value="@GetFullPublicUrl()"
@@ -1182,6 +1182,13 @@ else if (_world != null)
     {
         if (_world == null || string.IsNullOrEmpty(_world.PublicSlug)) return string.Empty;
         return $"{GetPublicUrlBase()}{_world.PublicSlug}";
+    }
+
+    private bool ShouldShowPublicPreview()
+    {
+        return _world is not null
+            && _world.IsPublic
+            && !string.IsNullOrEmpty(_world.PublicSlug);
     }
 
     private async Task CopyPublicUrl()

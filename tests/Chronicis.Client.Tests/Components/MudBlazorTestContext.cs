@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Bunit;
+using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 
 namespace Chronicis.Client.Tests.Components;
@@ -15,6 +17,12 @@ public class MudBlazorTestContext : TestContext
     {
         // Register MudBlazor services required for MudBlazor components
         Services.AddMudServices();
+
+        // Allow rendering components that use constructor injection.
+        ComponentFactories.Add(
+            componentType => typeof(IComponent).IsAssignableFrom(componentType)
+                && componentType.Namespace?.StartsWith("Chronicis.Client", StringComparison.Ordinal) == true,
+            componentType => (IComponent)ActivatorUtilities.CreateInstance(Services, componentType));
 
         // Setup JSInterop to handle MudBlazor's JavaScript interop calls
         // This prevents errors when MudBlazor components try to call JavaScript

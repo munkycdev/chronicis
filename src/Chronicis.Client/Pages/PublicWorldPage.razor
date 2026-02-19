@@ -12,7 +12,7 @@
 
 @implements IDisposable
 
-<PageTitle>@(_world?.Name ?? "World") — Chronicis</PageTitle>
+<PageTitle>@GetPageTitle()</PageTitle>
 
 @if (_isLoading)
 {
@@ -390,4 +390,10 @@ else
         ArticleType.Legacy => "Article",
         _ => "Article"
     };
+
+    private string GetPageTitle()
+    {
+        var worldName = string.IsNullOrWhiteSpace(_world?.Name) ? "World" : _world.Name;
+        return $"{worldName} — Chronicis";
+    }
 }

@@ -42,4 +42,18 @@ public class UtilitiesTests : MudBlazorTestContext
         Assert.Contains("System Status", cut.Markup);
         Assert.Contains("External Resources", cut.Markup);
     }
+
+    [Fact]
+    public void Utilities_WhileAuthorizing_ShowsLoadingBar()
+    {
+        var adminAuth = Substitute.For<IAdminAuthService>();
+        var tcs = new TaskCompletionSource<bool>();
+        adminAuth.IsSysAdminAsync().Returns(tcs.Task);
+        Services.AddSingleton(adminAuth);
+
+        var cut = RenderComponent<UtilitiesPage>();
+
+        Assert.Contains("mud-progress-linear", cut.Markup, StringComparison.OrdinalIgnoreCase);
+    }
+
 }
