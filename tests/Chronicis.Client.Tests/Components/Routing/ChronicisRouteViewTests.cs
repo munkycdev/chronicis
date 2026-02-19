@@ -1,9 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Bunit.TestDoubles;
 using Chronicis.Client.Components.Routing;
 using Chronicis.Client.Components.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
 using Xunit;
 
 namespace Chronicis.Client.Tests.Components.Routing;
@@ -11,6 +13,11 @@ namespace Chronicis.Client.Tests.Components.Routing;
 [ExcludeFromCodeCoverage]
 public class ChronicisRouteViewTests : MudBlazorTestContext
 {
+    public ChronicisRouteViewTests()
+    {
+        this.AddTestAuthorization();
+    }
+
     [Fact]
     public void DetermineLayoutType_UsesExplicitLayout()
     {
@@ -44,6 +51,25 @@ public class ChronicisRouteViewTests : MudBlazorTestContext
         Assert.Equal(typeof(PublicLayout), result);
     }
 
+    [Fact]
+    public void Render_WithExplicitSimpleLayout_RendersPublicPageContent()
+    {
+        var routeData = new RouteData(typeof(TestSimplePublicPage), new Dictionary<string, object?>());
+        var cut = RenderComponent<ChronicisRouteView>(p => p.Add(x => x.RouteData, routeData));
+
+        Assert.Contains("PUBLIC-PAGE", cut.Markup);
+    }
+
+    [Fact]
+    public void Render_WithExplicitSimpleLayoutAndAuthorize_RendersNotAuthorizedFlow()
+    {
+        var routeData = new RouteData(typeof(TestSimpleAuthorizedPage), new Dictionary<string, object?>());
+        var cut = RenderComponent<ChronicisRouteView>(p => p.Add(x => x.RouteData, routeData));
+
+        Assert.Contains("LAYOUT:", cut.Markup);
+        Assert.DoesNotContain("AUTH-PAGE", cut.Markup);
+    }
+
     private static Type? InvokeDetermineLayoutType(ChronicisRouteView instance, Type pageType)
     {
         var method = typeof(ChronicisRouteView).GetMethod("DetermineLayoutType", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -61,4 +87,36 @@ public class ChronicisRouteViewTests : MudBlazorTestContext
     [Route("/test-layout")]
     [Layout(typeof(PublicLayout))]
     private sealed class TestLayoutPage : ComponentBase { }
+
+    private sealed class TestSimpleLayout : LayoutComponentBase
+    {
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenElement(0, "section");
+            builder.AddContent(1, "LAYOUT:");
+            builder.AddContent(2, Body);
+            builder.CloseElement();
+        }
+    }
+
+    [Route("/simple-public")]
+    [Layout(typeof(TestSimpleLayout))]
+    private sealed class TestSimplePublicPage : ComponentBase
+    {
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.AddContent(0, "PUBLIC-PAGE");
+        }
+    }
+
+    [Route("/simple-auth")]
+    [Authorize]
+    [Layout(typeof(TestSimpleLayout))]
+    private sealed class TestSimpleAuthorizedPage : ComponentBase
+    {
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.AddContent(0, "AUTH-PAGE");
+        }
+    }
 }
