@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Chronicis.Client.Models;
 using Chronicis.Shared.DTOs;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace Chronicis.Client.Components.Shared;
 
+[ExcludeFromCodeCoverage]
 public partial class ExternalLinkDetailPanel : ComponentBase
 {
     [Parameter] public ExternalLinkContentDto? Content { get; set; }

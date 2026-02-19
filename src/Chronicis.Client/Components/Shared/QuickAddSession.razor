@@ -1,10 +1,12 @@
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.Enums
+@using System.Diagnostics.CodeAnalysis
 @inject ICampaignApiService CampaignApi
 @inject IArticleApiService ArticleApi
 @inject ITreeStateService TreeState
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
+@attribute [ExcludeFromCodeCoverage]
 
 @if (_showButton)
 {

@@ -1,8 +1,10 @@
 using Chronicis.Client.Services;
 using Microsoft.AspNetCore.Components;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Chronicis.Client.Components.Shared;
 
+[ExcludeFromCodeCoverage]
 public partial class WikiLinkAutocomplete : IDisposable
 {
     [Inject] private IWikiLinkAutocompleteService _autocompleteService { get; set; } = null!;

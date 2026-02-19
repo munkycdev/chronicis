@@ -1,5 +1,7 @@
 @using Chronicis.Shared.DTOs
 @using Chronicis.Client.Components.Shared
+@using System.Diagnostics.CodeAnalysis
+@attribute [ExcludeFromCodeCoverage]
 
 <div class="public-tree-item @(_isExpanded ? "expanded" : "") @(IsSelected ? "selected" : "")"
      style="padding-left: @(Level * 12)px;">

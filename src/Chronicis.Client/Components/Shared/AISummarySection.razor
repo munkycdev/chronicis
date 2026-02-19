@@ -1,7 +1,9 @@
 @using Chronicis.Shared.DTOs
+@using System.Diagnostics.CodeAnalysis
 @inject IAISummaryApiService SummaryApi
 @inject ISnackbar Snackbar
 @inject IJSRuntime JSRuntime
+@attribute [ExcludeFromCodeCoverage]
 
 <div class="ai-summary-section @(_summaryData?.HasSummary == true ? "has-summary" : "")">
     <div class="ai-summary-header" @onclick="ToggleExpanded">

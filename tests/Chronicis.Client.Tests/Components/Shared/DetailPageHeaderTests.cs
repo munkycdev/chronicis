@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Chronicis.Client.Components.Shared;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using Xunit;
 
@@ -212,5 +213,33 @@ public class DetailPageHeaderTests : MudBlazorTestContext
 
         var mudIcon = cut.FindComponent<MudIcon>();
         Assert.Equal(icon, mudIcon.Instance.Icon);
+    }
+
+    [Fact]
+    public async Task DetailPageHeader_OnEnterPressed_CallbackFiresOnEnterKey()
+    {
+        var invoked = false;
+        var cut = RenderComponent<DetailPageHeader>(parameters => parameters
+            .Add(p => p.Title, "Test")
+            .Add(p => p.OnEnterPressed, () => invoked = true));
+
+        var input = cut.Find("input");
+        await input.KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+
+        Assert.True(invoked);
+    }
+
+    [Fact]
+    public async Task DetailPageHeader_OnEnterPressed_DoesNotFireOnNonEnterKey()
+    {
+        var invoked = false;
+        var cut = RenderComponent<DetailPageHeader>(parameters => parameters
+            .Add(p => p.Title, "Test")
+            .Add(p => p.OnEnterPressed, () => invoked = true));
+
+        var input = cut.Find("input");
+        await input.KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+
+        Assert.False(invoked);
     }
 }
