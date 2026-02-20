@@ -14,7 +14,7 @@
     {
         <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
     }
-    else if (_worlds == null || !_worlds.Any())
+    else if (_worlds is not { Count: > 0 })
     {
         <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Outlined">
             You don't have any worlds to export yet. Create a world first!
@@ -30,7 +30,7 @@
                        AnchorOrigin="Origin.BottomCenter"
                        Dense="true"
                        Style="min-width: 280px;">
-                @foreach (var world in _worlds)
+                @foreach (var world in _worlds!)
                 {
                     <MudSelectItem Value="@world">@world.Name</MudSelectItem>
                 }
@@ -60,7 +60,7 @@
                       Dense="true"
                       Variant="Variant.Outlined"
                       ShowCloseIcon="true"
-                      CloseIconClicked="() => _exportSuccess = null">
+                      CloseIconClicked="DismissExportAlert">
                 @if (_exportSuccess.Value)
                 {
                     <span>Export complete! Your download should begin automatically.</span>
@@ -151,5 +151,10 @@
             _isExporting = false;
             StateHasChanged();
         }
+    }
+
+    private void DismissExportAlert(MudAlert? _)
+    {
+        _exportSuccess = null;
     }
 }

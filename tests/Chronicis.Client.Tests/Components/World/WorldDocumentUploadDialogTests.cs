@@ -1,5 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
+using System.Text;
 using Bunit;
 using Chronicis.Client.Components.World;
 using Chronicis.Client.Services;
@@ -68,6 +71,18 @@ public class WorldDocumentUploadDialogTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task Upload_WhenFileDataMissing_DoesNotCallApi()
+    {
+        var cut = RenderComponent<WorldDocumentUploadDialog>(p => p.Add(x => x.WorldId, Guid.NewGuid()));
+        SetField(cut.Instance, "_selectedFile", CreateBrowserFile("notes.txt", "text/plain", 3));
+        SetField(cut.Instance, "_fileData", null);
+
+        await InvokePrivateOnRendererAsync(cut, "Upload");
+
+        await _worldApi.DidNotReceive().RequestDocumentUploadAsync(Arg.Any<Guid>(), Arg.Any<WorldDocumentUploadRequestDto>());
+    }
+
+    [Fact]
     public async Task Upload_WhenBlobUploadThrows_ShowsError()
     {
         var worldId = Guid.NewGuid();
@@ -88,6 +103,183 @@ public class WorldDocumentUploadDialogTests : MudBlazorTestContext
         await _worldApi.DidNotReceive().ConfirmDocumentUploadAsync(Arg.Any<Guid>(), Arg.Any<Guid>());
         _snackbar.Received().Add(Arg.Is<string>(m => m.Contains("Upload failed", StringComparison.OrdinalIgnoreCase)), Severity.Error);
         Assert.False(GetField<bool>(cut.Instance, "_isUploading"));
+    }
+
+    [Fact]
+    public async Task Upload_WhenBlobUploadReturnsFailureStatus_IncludesStatusCodeInError()
+    {
+        var worldId = Guid.NewGuid();
+        using var endpoint = StartUploadEndpoint(500, "Internal Server Error");
+
+        _worldApi.RequestDocumentUploadAsync(worldId, Arg.Any<WorldDocumentUploadRequestDto>())
+            .Returns(new WorldDocumentUploadResponseDto
+            {
+                DocumentId = Guid.NewGuid(),
+                UploadUrl = endpoint.Url,
+                Title = "notes"
+            });
+
+        var cut = RenderComponent<WorldDocumentUploadDialog>(p => p.Add(x => x.WorldId, worldId));
+        SetField(cut.Instance, "_selectedFile", CreateBrowserFile("notes.txt", "text/plain", 3));
+        SetField(cut.Instance, "_fileData", new byte[] { 1, 2, 3 });
+
+        await InvokePrivateOnRendererAsync(cut, "Upload");
+        await endpoint.RequestHandled;
+
+        _snackbar.Received().Add(Arg.Is<string>(m => m.Contains("Blob upload failed", StringComparison.OrdinalIgnoreCase)), Severity.Error);
+        Assert.False(GetField<bool>(cut.Instance, "_isUploading"));
+    }
+
+    [Fact]
+    public async Task Upload_WhenSuccessful_ConfirmsAndShowsSuccess()
+    {
+        var worldId = Guid.NewGuid();
+        var documentId = Guid.NewGuid();
+        using var endpoint = StartUploadEndpoint(201, "Created");
+
+        _worldApi.RequestDocumentUploadAsync(worldId, Arg.Any<WorldDocumentUploadRequestDto>())
+            .Returns(new WorldDocumentUploadResponseDto
+            {
+                DocumentId = documentId,
+                UploadUrl = endpoint.Url,
+                Title = "notes"
+            });
+        _worldApi.ConfirmDocumentUploadAsync(worldId, documentId).Returns(new WorldDocumentDto
+        {
+            Id = documentId,
+            Title = "notes"
+        });
+
+        var cut = RenderComponent<WorldDocumentUploadDialog>(p => p.Add(x => x.WorldId, worldId));
+        SetField(cut.Instance, "_selectedFile", CreateBrowserFile("notes.txt", "text/plain", 3));
+        SetField(cut.Instance, "_fileData", new byte[] { 1, 2, 3 });
+        SetField(cut.Instance, "_description", "desc");
+
+        await InvokePrivateOnRendererAsync(cut, "Upload");
+        await endpoint.RequestHandled;
+
+        await _worldApi.Received(1).RequestDocumentUploadAsync(worldId, Arg.Is<WorldDocumentUploadRequestDto>(r =>
+            r.FileName == "notes.txt" &&
+            r.ContentType == "text/plain" &&
+            r.FileSizeBytes == 3 &&
+            r.Description == "desc"));
+        await _worldApi.Received(1).ConfirmDocumentUploadAsync(worldId, documentId);
+        _snackbar.Received(1).Add("Document 'notes' uploaded successfully", Severity.Success);
+    }
+
+    [Fact]
+    public async Task Upload_WhenConfirmReturnsNull_ShowsErrorAndResetsState()
+    {
+        var worldId = Guid.NewGuid();
+        var documentId = Guid.NewGuid();
+        using var endpoint = StartUploadEndpoint(201, "Created");
+
+        _worldApi.RequestDocumentUploadAsync(worldId, Arg.Any<WorldDocumentUploadRequestDto>())
+            .Returns(new WorldDocumentUploadResponseDto
+            {
+                DocumentId = documentId,
+                UploadUrl = endpoint.Url,
+                Title = "notes"
+            });
+        _worldApi.ConfirmDocumentUploadAsync(worldId, documentId).Returns((WorldDocumentDto?)null);
+
+        var cut = RenderComponent<WorldDocumentUploadDialog>(p => p.Add(x => x.WorldId, worldId));
+        SetField(cut.Instance, "_selectedFile", CreateBrowserFile("notes.txt", "text/plain", 3));
+        SetField(cut.Instance, "_fileData", new byte[] { 1, 2, 3 });
+
+        await InvokePrivateOnRendererAsync(cut, "Upload");
+        await endpoint.RequestHandled;
+
+        _snackbar.Received().Add(Arg.Is<string>(m => m.Contains("Failed to confirm upload", StringComparison.Ordinal)), Severity.Error);
+        Assert.False(GetField<bool>(cut.Instance, "_isUploading"));
+        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_uploadStatus"));
+    }
+
+    [Fact]
+    public async Task DialogRender_WhenUploading_ShowsUploadStatus()
+    {
+        var provider = RenderComponent<MudDialogProvider>();
+        var dialogs = Services.GetRequiredService<IDialogService>();
+        _ = await dialogs.ShowAsync<WorldDocumentUploadDialog>("Upload Document",
+            new DialogParameters { ["WorldId"] = Guid.NewGuid() });
+
+        var dialog = provider.FindComponent<WorldDocumentUploadDialog>();
+        SetField(dialog.Instance, "_isUploading", true);
+        SetField(dialog.Instance, "_uploadStatus", "Uploading file...");
+        dialog.Render();
+
+        Assert.Contains("Uploading file...", provider.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task DialogRender_WhenSelectedAndValidationError_ShowsErrorAlert()
+    {
+        var provider = RenderComponent<MudDialogProvider>();
+        var dialogs = Services.GetRequiredService<IDialogService>();
+        _ = await dialogs.ShowAsync<WorldDocumentUploadDialog>("Upload Document",
+            new DialogParameters { ["WorldId"] = Guid.NewGuid() });
+
+        var dialog = provider.FindComponent<WorldDocumentUploadDialog>();
+        SetField(dialog.Instance, "_selectedFile", CreateBrowserFile("notes.txt", "text/plain", 3));
+        SetField(dialog.Instance, "_validationError", "bad file");
+        dialog.Render();
+
+        Assert.Contains("bad file", provider.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task DialogRender_Cancel_ClosesDialog()
+    {
+        var provider = RenderComponent<MudDialogProvider>();
+        var dialogs = Services.GetRequiredService<IDialogService>();
+        _ = await dialogs.ShowAsync<WorldDocumentUploadDialog>("Upload Document",
+            new DialogParameters { ["WorldId"] = Guid.NewGuid() });
+
+        var dialog = provider.FindComponent<WorldDocumentUploadDialog>();
+        await InvokePrivateOnRendererAsync(dialog, "Cancel");
+
+        provider.WaitForAssertion(() =>
+        {
+            Assert.DoesNotContain("Upload Document", provider.Markup, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
+    public async Task DialogRender_UploadSuccess_ClosesDialog()
+    {
+        var worldId = Guid.NewGuid();
+        var documentId = Guid.NewGuid();
+        using var endpoint = StartUploadEndpoint(201, "Created");
+
+        _worldApi.RequestDocumentUploadAsync(worldId, Arg.Any<WorldDocumentUploadRequestDto>())
+            .Returns(new WorldDocumentUploadResponseDto
+            {
+                DocumentId = documentId,
+                UploadUrl = endpoint.Url,
+                Title = "notes"
+            });
+        _worldApi.ConfirmDocumentUploadAsync(worldId, documentId).Returns(new WorldDocumentDto
+        {
+            Id = documentId,
+            Title = "notes"
+        });
+
+        var provider = RenderComponent<MudDialogProvider>();
+        var dialogs = Services.GetRequiredService<IDialogService>();
+        _ = await dialogs.ShowAsync<WorldDocumentUploadDialog>("Upload Document",
+            new DialogParameters { ["WorldId"] = worldId });
+
+        var dialog = provider.FindComponent<WorldDocumentUploadDialog>();
+        SetField(dialog.Instance, "_selectedFile", CreateBrowserFile("notes.txt", "text/plain", 3));
+        SetField(dialog.Instance, "_fileData", new byte[] { 1, 2, 3 });
+
+        await InvokePrivateOnRendererAsync(dialog, "Upload");
+        await endpoint.RequestHandled;
+
+        provider.WaitForAssertion(() =>
+        {
+            Assert.DoesNotContain("Upload Document", provider.Markup, StringComparison.Ordinal);
+        });
     }
 
     [Fact]
@@ -143,6 +335,18 @@ public class WorldDocumentUploadDialogTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task OnFileSelected_WhenTitleAlreadySet_DoesNotOverwriteTitle()
+    {
+        var cut = RenderComponent<WorldDocumentUploadDialog>(p => p.Add(x => x.WorldId, Guid.NewGuid()));
+        SetField(cut.Instance, "_title", "Custom Title");
+        var file = CreateBrowserFile("adventure-notes.txt", "text/plain", 3);
+
+        await InvokePrivateOnRendererAsync(cut, "OnFileSelected", CreateInputFileChangeArgs(file));
+
+        Assert.Equal("Custom Title", GetField<string>(cut.Instance, "_title"));
+    }
+
+    [Fact]
     public void HandlesUploadingRenderState_WhenUploading()
     {
         var cut = RenderComponent<WorldDocumentUploadDialog>(p => p.Add(x => x.WorldId, Guid.NewGuid()));
@@ -166,6 +370,7 @@ public class WorldDocumentUploadDialogTests : MudBlazorTestContext
 
         Assert.Same(file, GetField<IBrowserFile?>(cut.Instance, "_selectedFile"));
     }
+
 
     private static IBrowserFile CreateBrowserFile(string name, string contentType, long size)
     {
@@ -231,5 +436,52 @@ public class WorldDocumentUploadDialogTests : MudBlazorTestContext
                 await task;
             }
         });
+    }
+
+    private static TestUploadEndpoint StartUploadEndpoint(int statusCode, string reasonPhrase)
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var client = await listener.AcceptTcpClientAsync();
+                using var stream = client.GetStream();
+                using var reader = new StreamReader(stream, Encoding.ASCII, leaveOpen: true);
+
+                string? line;
+                while (!string.IsNullOrEmpty(line = await reader.ReadLineAsync()))
+                {
+                }
+
+                var response = $"HTTP/1.1 {statusCode} {reasonPhrase}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+                var bytes = Encoding.ASCII.GetBytes(response);
+                await stream.WriteAsync(bytes);
+                await stream.FlushAsync();
+                tcs.TrySetResult();
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetException(ex);
+            }
+            finally
+            {
+                listener.Stop();
+            }
+        });
+
+        return new TestUploadEndpoint($"http://127.0.0.1:{port}/upload", tcs.Task, listener);
+    }
+
+    private sealed record TestUploadEndpoint(string Url, Task RequestHandled, TcpListener Listener) : IDisposable
+    {
+        public void Dispose()
+        {
+            Listener.Stop();
+        }
     }
 }

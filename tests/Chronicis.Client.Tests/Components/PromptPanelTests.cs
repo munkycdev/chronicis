@@ -224,6 +224,23 @@ public class PromptPanelTests : MudBlazorTestContext
     }
 
     [Fact]
+    public void PromptPanel_UnknownCategory_UsesNoCategoryClass()
+    {
+        var prompts = new List<PromptDto>
+        {
+            CreatePrompt(category: (PromptCategory)999)
+        };
+
+        var cut = RenderComponent<PromptPanel>(parameters => parameters
+            .Add(p => p.Prompts, prompts));
+
+        var item = cut.Find(".prompt-item");
+        Assert.DoesNotContain("missing-fundamental", item.ClassName, StringComparison.Ordinal);
+        Assert.DoesNotContain("needs-attention", item.ClassName, StringComparison.Ordinal);
+        Assert.DoesNotContain("suggestion", item.ClassName, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void PromptPanel_WithMultiplePrompts_RendersAll()
     {
         // Arrange

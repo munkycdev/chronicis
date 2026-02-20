@@ -52,9 +52,10 @@ public class CharacterClaimButtonTests : MudBlazorTestContext
         Assert.Equal(Color.Success, button.Instance.Color);
     }
 
-    [Fact(Skip = "MudTooltip requires MudPopoverProvider - low priority for data parameters validation")]
+    [Fact]
     public void CharacterClaimButton_ShowsClaimedByOther_WhenClaimedByAnotherUser()
     {
+        EnsurePopoverProvider();
         // Arrange
         var claimStatus = new CharacterClaimStatusDto
         {
@@ -195,9 +196,10 @@ public class CharacterClaimButtonTests : MudBlazorTestContext
         Assert.True(progressIndicators.Count > 0, "Should show processing indicator");
     }
 
-    [Fact(Skip = "MudTooltip requires MudPopoverProvider - low priority for data parameters validation")]
+    [Fact]
     public void CharacterClaimButton_ShowsTooltip_WhenClaimedByOther()
     {
+        EnsurePopoverProvider();
         // Arrange
         var claimStatus = new CharacterClaimStatusDto
         {
@@ -215,5 +217,59 @@ public class CharacterClaimButtonTests : MudBlazorTestContext
         // Assert
         var tooltip = cut.FindComponent<MudTooltip>();
         Assert.Equal("Claimed by Bob", tooltip.Instance.Text);
+    }
+
+    [Fact]
+    public void CharacterClaimButton_WithNullClaimStatus_RendersNoAction()
+    {
+        var cut = RenderComponent<CharacterClaimButton_REFACTORED>(parameters => parameters
+            .Add(p => p.ClaimStatus, (CharacterClaimStatusDto?)null)
+            .Add(p => p.IsLoading, false));
+
+        Assert.DoesNotContain("Claim as My Character", cut.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("My Character", cut.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CharacterClaimButton_WhenClaimedByMeAndProcessing_ShowsSpinner()
+    {
+        var claimStatus = new CharacterClaimStatusDto
+        {
+            CharacterId = Guid.NewGuid(),
+            IsClaimed = true,
+            IsClaimedByMe = true,
+            ClaimedByName = "Self"
+        };
+
+        var cut = RenderComponent<CharacterClaimButton_REFACTORED>(parameters => parameters
+            .Add(p => p.ClaimStatus, claimStatus)
+            .Add(p => p.IsLoading, false)
+            .Add(p => p.IsProcessing, true));
+
+        Assert.NotEmpty(cut.FindAll(".mud-progress-circular"));
+    }
+
+    [Fact]
+    public void CharacterClaimButton_WhenClaimedByOtherWithNoName_ShowsFallbackText()
+    {
+        EnsurePopoverProvider();
+        var claimStatus = new CharacterClaimStatusDto
+        {
+            CharacterId = Guid.NewGuid(),
+            IsClaimed = true,
+            IsClaimedByMe = false,
+            ClaimedByName = null
+        };
+
+        var cut = RenderComponent<CharacterClaimButton_REFACTORED>(parameters => parameters
+            .Add(p => p.ClaimStatus, claimStatus)
+            .Add(p => p.IsLoading, false));
+
+        Assert.Contains("Character", cut.Markup, StringComparison.Ordinal);
+    }
+
+    private void EnsurePopoverProvider()
+    {
+        _ = RenderComponent<MudPopoverProvider>();
     }
 }

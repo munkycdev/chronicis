@@ -31,54 +31,22 @@
         var layoutType = DetermineLayoutType(pageType);
         var requiresAuth = pageType.GetCustomAttributes(typeof(AuthorizeAttribute), true).Any();
 
-        if (layoutType != null)
+        // DetermineLayoutType always returns a concrete layout.
+        builder.OpenComponent<LayoutView>(0);
+        builder.AddAttribute(1, "Layout", layoutType);
+        builder.AddAttribute(2, "ChildContent", (RenderFragment)(contentBuilder =>
         {
-            // Render with layout
-            builder.OpenComponent<LayoutView>(0);
-            builder.AddAttribute(1, "Layout", layoutType);
-            builder.AddAttribute(2, "ChildContent", (RenderFragment)(contentBuilder =>
-            {
-                if (requiresAuth)
-                {
-                    // Use AuthorizeRouteView for pages with [Authorize]
-                    contentBuilder.OpenComponent<AuthorizeRouteView>(0);
-                    contentBuilder.AddAttribute(1, "RouteData", RouteData);
-                    contentBuilder.AddAttribute(2, "Authorizing", (RenderFragment)(authorizingBuilder =>
-                    {
-                        authorizingBuilder.OpenComponent<AuthorizingScreen>(0);
-                        authorizingBuilder.CloseComponent();
-                    }));
-                    contentBuilder.AddAttribute(3, "NotAuthorized", (RenderFragment<AuthenticationState>)(authState =>
-                    {
-                        return notAuthBuilder =>
-                        {
-                            notAuthBuilder.OpenComponent<RedirectToLogin>(0);
-                            notAuthBuilder.CloseComponent();
-                        };
-                    }));
-                    contentBuilder.CloseComponent();
-                }
-                else
-                {
-                    // Render public page directly
-                    RenderPageComponent(contentBuilder, pageType, RouteData);
-                }
-            }));
-            builder.CloseComponent();
-        }
-        else
-        {
-            // No layout specified
             if (requiresAuth)
             {
-                builder.OpenComponent<AuthorizeRouteView>(0);
-                builder.AddAttribute(1, "RouteData", RouteData);
-                builder.AddAttribute(2, "Authorizing", (RenderFragment)(authorizingBuilder =>
+                // Use AuthorizeRouteView for pages with [Authorize]
+                contentBuilder.OpenComponent<AuthorizeRouteView>(0);
+                contentBuilder.AddAttribute(1, "RouteData", RouteData);
+                contentBuilder.AddAttribute(2, "Authorizing", (RenderFragment)(authorizingBuilder =>
                 {
                     authorizingBuilder.OpenComponent<AuthorizingScreen>(0);
                     authorizingBuilder.CloseComponent();
                 }));
-                builder.AddAttribute(3, "NotAuthorized", (RenderFragment<AuthenticationState>)(authState =>
+                contentBuilder.AddAttribute(3, "NotAuthorized", (RenderFragment<AuthenticationState>)(authState =>
                 {
                     return notAuthBuilder =>
                     {
@@ -86,13 +54,15 @@
                         notAuthBuilder.CloseComponent();
                     };
                 }));
-                builder.CloseComponent();
+                contentBuilder.CloseComponent();
             }
             else
             {
-                RenderPageComponent(builder, pageType, RouteData);
+                // Render public page directly
+                RenderPageComponent(contentBuilder, pageType, RouteData);
             }
-        }
+        }));
+        builder.CloseComponent();
     };
 
     private void RenderPageComponent(RenderTreeBuilder builder, Type pageType, RouteData routeData)
@@ -105,7 +75,7 @@
         builder.CloseComponent();
     }
 
-    private Type? DetermineLayoutType(Type pageType)
+    private Type DetermineLayoutType(Type pageType)
     {
         // Check if page has explicit @layout directive
         var layoutAttribute = pageType.GetCustomAttributes(typeof(LayoutAttribute), true)

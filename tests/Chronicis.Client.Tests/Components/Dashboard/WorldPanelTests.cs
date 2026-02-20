@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Bunit;
 using Bunit.TestDoubles;
 using Chronicis.Client.Components.Dashboard;
 using Chronicis.Client.Services;
@@ -120,6 +121,26 @@ public class WorldPanelTests : MudBlazorTestContext
         Assert.Equal(before, nav.Uri);
     }
 
+    [Fact]
+    public async Task NavigateToCharacter_WhenBreadcrumbsEmpty_DoesNotNavigate()
+    {
+        var world = CreateWorld();
+        var instance = CreateInstance(world);
+        var characterId = Guid.NewGuid();
+        var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
+        Assert.NotNull(nav);
+        var before = nav!.Uri;
+        _articleApi.GetArticleDetailAsync(characterId).Returns(new ArticleDto
+        {
+            Id = characterId,
+            Breadcrumbs = new List<BreadcrumbDto>()
+        });
+
+        await InvokePrivateAsync(instance, "NavigateToCharacter", characterId);
+
+        Assert.Equal(before, nav.Uri);
+    }
+
     [Theory]
     [InlineData(0, "just now")]
     [InlineData(30, "30m ago")]
@@ -197,6 +218,82 @@ public class WorldPanelTests : MudBlazorTestContext
         var cut = RenderComponent<WorldPanel>(p => p.Add(x => x.World, world).Add(x => x.IsExpanded, false));
 
         Assert.DoesNotContain("A world of adventure", cut.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Render_WhenHasCampaignsButNoneActive_HidesCampaignSections()
+    {
+        var world = CreateWorld();
+        world.Campaigns = new List<DashboardCampaignDto>
+        {
+            new() { Id = Guid.NewGuid(), Name = "Dormant", IsActive = false, SessionCount = 1, ArcCount = 1 }
+        };
+
+        var cut = RenderComponent<WorldPanel>(p => p.Add(x => x.World, world).Add(x => x.IsExpanded, true));
+
+        Assert.DoesNotContain("Active Campaign", cut.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("No campaigns yet", cut.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Render_WhenWorldHasCharacters_ShowsCharacterChip()
+    {
+        var world = CreateWorld();
+        world.Campaigns = new List<DashboardCampaignDto>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Solo Campaign",
+                IsActive = true,
+                SessionCount = 1,
+                ArcCount = 1,
+                CurrentArc = new DashboardArcDto
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Solo Arc",
+                    SessionCount = 1
+                }
+            }
+        };
+        world.MyCharacters = new List<DashboardCharacterDto>
+        {
+            new() { Id = Guid.NewGuid(), Title = "Thorne", IconEmoji = "🛡️" }
+        };
+
+        var cut = RenderComponent<WorldPanel>(p => p.Add(x => x.World, world).Add(x => x.IsExpanded, true));
+
+        Assert.Contains("My Characters", cut.Markup, StringComparison.Ordinal);
+        Assert.Contains("Thorne", cut.Markup, StringComparison.Ordinal);
+        Assert.Contains("1 campaign", cut.Markup, StringComparison.Ordinal);
+        Assert.Contains("1 character", cut.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Render_CharacterChipClick_NavigatesToCharacterArticle()
+    {
+        var characterId = Guid.NewGuid();
+        _articleApi.GetArticleDetailAsync(characterId).Returns(new ArticleDto
+        {
+            Id = characterId,
+            Breadcrumbs = new List<BreadcrumbDto> { new() { Slug = "party" }, new() { Slug = "thorne" } }
+        });
+
+        var world = CreateWorld();
+        world.MyCharacters = new List<DashboardCharacterDto>
+        {
+            new() { Id = characterId, Title = "Thorne", IconEmoji = "🛡️" }
+        };
+
+        var cut = RenderComponent<WorldPanel>(p => p.Add(x => x.World, world).Add(x => x.IsExpanded, true));
+        var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
+        Assert.NotNull(nav);
+
+        var chip = cut.Find(".character-chip");
+        chip.Click();
+
+        cut.WaitForAssertion(() =>
+            Assert.Contains("/article/party/thorne", nav!.Uri, StringComparison.OrdinalIgnoreCase));
     }
 
     private WorldPanel CreateInstance(DashboardWorldDto world)

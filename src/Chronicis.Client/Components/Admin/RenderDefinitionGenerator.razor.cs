@@ -39,7 +39,7 @@ public partial class RenderDefinitionGenerator : ComponentBase
             if (string.IsNullOrEmpty(_recordId))
                 return "";
             var parts = _recordId.Split('/');
-            var category = parts.Length > 0 ? parts[0] : "unknown";
+            var category = parts[0];
             return $"wwwroot/render-definitions/{_selectedSource}/{category}.json";
         }
     }

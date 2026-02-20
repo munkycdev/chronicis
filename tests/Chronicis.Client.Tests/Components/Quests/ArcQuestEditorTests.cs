@@ -167,6 +167,228 @@ public class ArcQuestEditorTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task ArcQuestEditor_SaveQuest_WhenAlreadySaving_ReturnsEarly()
+    {
+        var questApi = RegisterServices();
+        var quest = CreateQuest("Q", "desc");
+        var cut = RenderEditor(p => p.Add(x => x.Quest, quest));
+        SetPrivateField(cut.Instance, "_isSaving", true);
+
+        await InvokePrivateOnRendererAsync(cut, "SaveQuestAsync");
+
+        await questApi.DidNotReceive().UpdateQuestAsync(Arg.Any<Guid>(), Arg.Any<QuestEditDto>());
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_SaveTitleAsync_WhenTitleUnchanged_DoesNotSave()
+    {
+        var questApi = RegisterServices();
+        var quest = CreateQuest("Same", "desc");
+        var cut = RenderEditor(p => p.Add(x => x.Quest, quest));
+        SetPrivateField(cut.Instance, "_editTitle", "Same");
+
+        await InvokePrivateOnRendererAsync(cut, "SaveTitleAsync");
+
+        await questApi.DidNotReceive().UpdateQuestAsync(Arg.Any<Guid>(), Arg.Any<QuestEditDto>());
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_SaveTitleAsync_WhenQuestNull_DoesNotSave()
+    {
+        var questApi = RegisterServices();
+        var cut = RenderEditor(p => p.Add(x => x.Quest, (QuestDto?)null));
+        SetPrivateField(cut.Instance, "_editTitle", "Changed");
+
+        await InvokePrivateOnRendererAsync(cut, "SaveTitleAsync");
+
+        await questApi.DidNotReceive().UpdateQuestAsync(Arg.Any<Guid>(), Arg.Any<QuestEditDto>());
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_AutoSaveAsync_WhenNoUnsavedChanges_DoesNotSave()
+    {
+        var questApi = RegisterServices();
+        var quest = CreateQuest("Q", "desc");
+        var cut = RenderEditor(p => p.Add(x => x.Quest, quest));
+        SetPrivateField(cut.Instance, "_hasUnsavedChanges", false);
+
+        await InvokePrivateOnRendererAsync(cut, "AutoSaveAsync");
+
+        await questApi.DidNotReceive().UpdateQuestAsync(Arg.Any<Guid>(), Arg.Any<QuestEditDto>());
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_AutoSaveAsync_WhenUnsavedAndNotSaving_Saves()
+    {
+        var questApi = RegisterServices();
+        var quest = CreateQuest("Q", "desc");
+        questApi.UpdateQuestAsync(quest.Id, Arg.Any<QuestEditDto>()).Returns(quest);
+        var cut = RenderEditor(p => p.Add(x => x.Quest, quest));
+        SetPrivateField(cut.Instance, "_hasUnsavedChanges", true);
+        SetPrivateField(cut.Instance, "_isSaving", false);
+
+        await InvokePrivateOnRendererAsync(cut, "AutoSaveAsync");
+
+        await questApi.Received(1).UpdateQuestAsync(quest.Id, Arg.Any<QuestEditDto>());
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_InitializeEditor_WhenAlreadyInitialized_DoesNothing()
+    {
+        RegisterServices();
+        var cut = RenderEditor(p => p.Add(x => x.Quest, (QuestDto?)null));
+        SetPrivateField(cut.Instance, "_editorInitialized", true);
+
+        await InvokePrivateOnRendererAsync(cut, "InitializeEditorAsync");
+
+        Assert.True(GetPrivateField<bool>(cut.Instance, "_editorInitialized"));
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_InitializeEditor_WhenDisposed_DoesNothing()
+    {
+        RegisterServices();
+        var cut = RenderEditor(p => p.Add(x => x.Quest, (QuestDto?)null));
+        SetPrivateField(cut.Instance, "_disposed", true);
+
+        await InvokePrivateOnRendererAsync(cut, "InitializeEditorAsync");
+
+        Assert.True(GetPrivateField<bool>(cut.Instance, "_disposed"));
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_InitializeEditor_WhenObjectDisposedException_IsIgnored()
+    {
+        RegisterServices();
+        var snackbar = Services.GetRequiredService<ISnackbar>();
+        var quest = CreateQuest("Q", "desc");
+
+        JSInterop.SetupVoid("initializeTipTapEditor", _ => true)
+            .SetException(new ObjectDisposedException("obj"));
+
+        var cut = RenderEditor(p => p.Add(x => x.Quest, quest));
+
+        var dotNetRef = DotNetObjectReference.Create(cut.Instance);
+        SetPrivateField(cut.Instance, "_dotNetHelper", dotNetRef);
+
+        await InvokePrivateOnRendererAsync(cut, "InitializeEditorAsync");
+
+        snackbar.DidNotReceive().Add(Arg.Any<string>(), Arg.Any<Severity>());
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_InitializeEditor_WhenJsDisconnected_IsIgnored()
+    {
+        RegisterServices();
+        var snackbar = Services.GetRequiredService<ISnackbar>();
+        var quest = CreateQuest("Q", "desc");
+
+        JSInterop.SetupVoid("initializeTipTapEditor", _ => true)
+            .SetException(new JSDisconnectedException("gone"));
+
+        var cut = RenderEditor(p => p.Add(x => x.Quest, quest));
+
+        var dotNetRef = DotNetObjectReference.Create(cut.Instance);
+        SetPrivateField(cut.Instance, "_dotNetHelper", dotNetRef);
+
+        await InvokePrivateOnRendererAsync(cut, "InitializeEditorAsync");
+
+        snackbar.DidNotReceive().Add(Arg.Any<string>(), Arg.Any<Severity>());
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_DisposeEditorAsync_WhenDestroyThrows_StillClearsInitialized()
+    {
+        RegisterServices();
+        JSInterop.SetupVoid("destroyTipTapEditor", _ => true)
+            .SetException(new InvalidOperationException("dispose fail"));
+        var quest = CreateQuest("Q", "desc");
+        var cut = RenderEditor(p => p.Add(x => x.Quest, quest));
+        SetPrivateField(cut.Instance, "_editorInitialized", true);
+
+        await InvokePrivateOnRendererAsync(cut, "DisposeEditorAsync");
+
+        Assert.False(GetPrivateField<bool>(cut.Instance, "_editorInitialized"));
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_OnParametersSetAsync_WhenQuestIdUnchanged_DoesNotResetEdits()
+    {
+        RegisterServices();
+        var quest = CreateQuest("Original", "desc");
+        var cut = RenderEditor(p => p.Add(x => x.Quest, quest));
+        SetPrivateField(cut.Instance, "_editTitle", "Local Edit");
+
+        var sameIdQuest = CreateQuest("Server Value", "server desc");
+        sameIdQuest.Id = quest.Id;
+        cut.SetParametersAndRender(p => p.Add(x => x.Quest, sameIdQuest));
+
+        var editTitle = GetPrivateField<string>(cut.Instance, "_editTitle");
+        Assert.Equal("Local Edit", editTitle);
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_OnParametersSetAsync_WhenDescriptionNull_UsesEmptyString()
+    {
+        RegisterServices();
+        var quest = CreateQuest("Original", null);
+        var cut = RenderEditor(p => p.Add(x => x.Quest, quest));
+
+        await InvokePrivateOnRendererAsync(cut, "OnParametersSetAsync");
+
+        Assert.Equal(string.Empty, GetPrivateField<string>(cut.Instance, "_editDescription"));
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_SaveQuest_WhenUpdatedDescriptionNull_UsesEmptyString()
+    {
+        var questApi = RegisterServices();
+        var quest = CreateQuest("Old", "old");
+        var updated = CreateQuest("New", null);
+        updated.Id = quest.Id;
+        questApi.UpdateQuestAsync(quest.Id, Arg.Any<QuestEditDto>()).Returns(updated);
+        var cut = RenderEditor(p => p.Add(x => x.Quest, quest));
+
+        await InvokePrivateOnRendererAsync(cut, "SaveQuestAsync");
+
+        Assert.Equal(string.Empty, GetPrivateField<string>(cut.Instance, "_editDescription"));
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_SaveQuest_WhenConflictReloadDescriptionNull_UsesEmptyString()
+    {
+        var questApi = RegisterServices();
+        var quest = CreateQuest("Old", "old");
+        var current = CreateQuest("Server", null);
+        current.Id = quest.Id;
+        questApi.UpdateQuestAsync(quest.Id, Arg.Any<QuestEditDto>()).Returns((QuestDto?)null);
+        questApi.GetQuestAsync(quest.Id).Returns(current);
+        var cut = RenderEditor(p => p.Add(x => x.Quest, quest));
+
+        await InvokePrivateOnRendererAsync(cut, "SaveQuestAsync");
+
+        Assert.Equal(string.Empty, GetPrivateField<string>(cut.Instance, "_editDescription"));
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_SaveQuest_WhenTitleAndDescriptionWhitespace_SendsNullValues()
+    {
+        var questApi = RegisterServices();
+        var quest = CreateQuest("Old", "old");
+        var updated = CreateQuest("Old", "old");
+        updated.Id = quest.Id;
+        questApi.UpdateQuestAsync(quest.Id, Arg.Any<QuestEditDto>()).Returns(updated);
+        var cut = RenderEditor(p => p.Add(x => x.Quest, quest));
+        SetPrivateField(cut.Instance, "_editTitle", "   ");
+        SetPrivateField(cut.Instance, "_editDescription", "   ");
+
+        await InvokePrivateOnRendererAsync(cut, "SaveQuestAsync");
+
+        await questApi.Received(1).UpdateQuestAsync(quest.Id, Arg.Is<QuestEditDto>(d =>
+            d.Title == null && d.Description == null));
+    }
+
+    [Fact]
     public void ArcQuestEditor_OnStatusChanged_TriggersSavePath()
     {
         RegisterServices();
@@ -229,6 +451,71 @@ public class ArcQuestEditorTests : MudBlazorTestContext
         _ = (string)property.GetValue(cut.Instance)!;
     }
 
+    [Fact]
+    public async Task ArcQuestEditor_DisposeAsync_WhenDotNetHelperPresent_DisposesReference()
+    {
+        RegisterServices();
+        var cut = RenderEditor(p => p.Add(x => x.Quest, CreateQuest("Q", "desc")));
+        var dotNetRef = DotNetObjectReference.Create(cut.Instance);
+        SetPrivateField(cut.Instance, "_dotNetHelper", dotNetRef);
+
+        await cut.Instance.DisposeAsync();
+
+        Assert.Throws<ObjectDisposedException>(() => _ = dotNetRef.Value);
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_InitializeEditor_WhenDisposedAfterTipTapInit_ReturnsBeforeAutocompleteInit()
+    {
+        RegisterServices();
+        ArcQuestEditor? instance = null;
+        var jsRuntime = new CallbackJsRuntime(identifier =>
+        {
+            if (identifier == "initializeTipTapEditor" && instance != null)
+            {
+                SetPrivateField(instance, "_disposed", true);
+            }
+        });
+        Services.AddSingleton<IJSRuntime>(jsRuntime);
+        var cut = RenderEditor(p => p.Add(x => x.Quest, CreateQuest("Q", "desc")));
+        instance = cut.Instance;
+        var dotNetRef = DotNetObjectReference.Create(cut.Instance);
+        SetPrivateField(cut.Instance, "_dotNetHelper", dotNetRef);
+
+        await InvokePrivateOnRendererAsync(cut, "InitializeEditorAsync");
+
+        Assert.DoesNotContain("initializeWikiLinkAutocomplete", jsRuntime.Identifiers);
+        Assert.False(GetPrivateField<bool>(cut.Instance, "_editorInitialized"));
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_DisposeEditorAsync_WhenDestroySucceeds_CallsDestroy()
+    {
+        RegisterServices();
+        var jsRuntime = new CallbackJsRuntime(_ => { });
+        Services.AddSingleton<IJSRuntime>(jsRuntime);
+        var cut = RenderEditor(p => p.Add(x => x.Quest, CreateQuest("Q", "desc")));
+        SetPrivateField(cut.Instance, "_editorInitialized", true);
+
+        await InvokePrivateOnRendererAsync(cut, "DisposeEditorAsync");
+
+        Assert.Contains("destroyTipTapEditor", jsRuntime.Identifiers);
+        Assert.False(GetPrivateField<bool>(cut.Instance, "_editorInitialized"));
+    }
+
+    [Fact]
+    public async Task ArcQuestEditor_DisposeAsync_WhenDotNetHelperNull_Completes()
+    {
+        RegisterServices();
+        var cut = RenderEditor(p => p.Add(x => x.Quest, CreateQuest("Q", "desc")));
+        SetPrivateField(cut.Instance, "_dotNetHelper", null);
+        SetPrivateField(cut.Instance, "_editorInitialized", false);
+
+        await cut.Instance.DisposeAsync();
+
+        Assert.True(GetPrivateField<bool>(cut.Instance, "_disposed"));
+    }
+
     private IQuestApiService RegisterServices()
     {
         var questApi = Substitute.For<IQuestApiService>();
@@ -288,5 +575,24 @@ public class ArcQuestEditorTests : MudBlazorTestContext
     {
         var method = instance.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)!;
         return method.Invoke(instance, args);
+    }
+
+    private sealed class CallbackJsRuntime(Action<string> onInvoke) : IJSRuntime
+    {
+        public List<string> Identifiers { get; } = new();
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
+        {
+            Identifiers.Add(identifier);
+            onInvoke(identifier);
+            return ValueTask.FromResult(default(TValue)!);
+        }
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
+        {
+            Identifiers.Add(identifier);
+            onInvoke(identifier);
+            return ValueTask.FromResult(default(TValue)!);
+        }
     }
 }

@@ -107,4 +107,15 @@ public class QuestStatusChipTests : MudBlazorTestContext
         var chip = cut.FindComponent<MudChip<string>>();
         Assert.Equal(Variant.Text, chip.Instance.Variant);
     }
+
+    [Fact]
+    public void QuestStatusChip_WithUnknownStatus_UsesUnknownTextAndDefaultColor()
+    {
+        var cut = RenderComponent<QuestStatusChip>(parameters => parameters
+            .Add(p => p.Status, (QuestStatus)999));
+
+        Assert.Contains("Unknown", cut.Markup);
+        var chip = cut.FindComponent<MudChip<string>>();
+        Assert.Equal(Color.Default, chip.Instance.Color);
+    }
 }

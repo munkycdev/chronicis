@@ -44,6 +44,7 @@
 
         @if (AppContext.CurrentWorld?.Campaigns.Count > 0)
         {
+            var campaigns = AppContext.CurrentWorld!.Campaigns;
             <div class="selector-row">
                 <MudSelect T="Guid?" 
                            Value="_selectedCampaignId"
@@ -59,7 +60,7 @@
                             <span>Wiki & Characters</span>
                         </div>
                     </MudSelectItem>
-                    @foreach (var campaign in AppContext.CurrentWorld?.Campaigns ?? new List<CampaignDto>())
+                    @foreach (var campaign in campaigns)
                     {
                         <MudSelectItem T="Guid?" Value="@((Guid?)campaign.Id)">
                             <div class="selector-item">

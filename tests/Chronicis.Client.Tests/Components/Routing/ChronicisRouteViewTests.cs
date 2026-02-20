@@ -13,9 +13,11 @@ namespace Chronicis.Client.Tests.Components.Routing;
 [ExcludeFromCodeCoverage]
 public class ChronicisRouteViewTests : MudBlazorTestContext
 {
+    private readonly TestAuthorizationContext _authContext;
+
     public ChronicisRouteViewTests()
     {
-        this.AddTestAuthorization();
+        _authContext = this.AddTestAuthorization();
     }
 
     [Fact]
@@ -63,11 +65,35 @@ public class ChronicisRouteViewTests : MudBlazorTestContext
     [Fact]
     public void Render_WithExplicitSimpleLayoutAndAuthorize_RendersNotAuthorizedFlow()
     {
+        _authContext.SetNotAuthorized();
         var routeData = new RouteData(typeof(TestSimpleAuthorizedPage), new Dictionary<string, object?>());
         var cut = RenderComponent<ChronicisRouteView>(p => p.Add(x => x.RouteData, routeData));
 
         Assert.Contains("LAYOUT:", cut.Markup);
         Assert.DoesNotContain("AUTH-PAGE", cut.Markup);
+    }
+
+    [Fact]
+    public void Render_WithExplicitSimpleLayoutAndAuthorize_WhenAuthorizing_ShowsAuthorizingScreen()
+    {
+        _authContext.SetAuthorizing();
+        var routeData = new RouteData(typeof(TestSimpleAuthorizedPage), new Dictionary<string, object?>());
+
+        var cut = RenderComponent<ChronicisRouteView>(p => p.Add(x => x.RouteData, routeData));
+
+        Assert.Contains("Loading Chronicis", cut.Markup, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Render_PublicPage_PassesRouteValuesToPageComponent()
+    {
+        var routeData = new RouteData(
+            typeof(TestSimplePublicPageWithRouteValue),
+            new Dictionary<string, object?> { ["Slug"] = "acid-arrow" });
+
+        var cut = RenderComponent<ChronicisRouteView>(p => p.Add(x => x.RouteData, routeData));
+
+        Assert.Contains("ROUTE:acid-arrow", cut.Markup);
     }
 
     private static Type? InvokeDetermineLayoutType(ChronicisRouteView instance, Type pageType)
@@ -106,6 +132,19 @@ public class ChronicisRouteViewTests : MudBlazorTestContext
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
             builder.AddContent(0, "PUBLIC-PAGE");
+        }
+    }
+
+    [Route("/simple-public-with-route-value/{Slug}")]
+    [Layout(typeof(TestSimpleLayout))]
+    private sealed class TestSimplePublicPageWithRouteValue : ComponentBase
+    {
+        [Parameter]
+        public string? Slug { get; set; }
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.AddContent(0, $"ROUTE:{Slug}");
         }
     }
 

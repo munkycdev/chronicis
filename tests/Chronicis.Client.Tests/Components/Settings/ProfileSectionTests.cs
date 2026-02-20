@@ -67,4 +67,32 @@ public class ProfileSectionTests : MudBlazorTestContext
         cut.WaitForAssertion(() =>
             Assert.Contains("Unable to load profile information", cut.Markup, StringComparison.OrdinalIgnoreCase));
     }
+
+    [Fact]
+    public void ShowsLoadingIndicator_WhileUserIsLoading()
+    {
+        var tcs = new TaskCompletionSource<UserInfo?>();
+        _authService.GetCurrentUserAsync().Returns(tcs.Task);
+
+        var cut = RenderComponent<ProfileSection>();
+
+        Assert.NotEmpty(cut.FindAll(".mud-progress-circular"));
+        tcs.SetResult(null);
+    }
+
+    [Fact]
+    public void RendersFallbackAvatar_WhenDisplayNameMissing()
+    {
+        _authService.GetCurrentUserAsync().Returns(new UserInfo
+        {
+            DisplayName = null,
+            Email = "nodisplay@example.com",
+            AvatarUrl = null
+        });
+
+        var cut = RenderComponent<ProfileSection>();
+
+        cut.WaitForAssertion(() =>
+            Assert.Contains("nodisplay@example.com", cut.Markup, StringComparison.OrdinalIgnoreCase));
+    }
 }

@@ -119,6 +119,46 @@ public class ArcQuestListTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task ArcQuestList_CreateQuest_WhenDialogResultNull_DoesNotShowSuccess()
+    {
+        RegisterServices(new List<QuestDto>());
+        var dialogService = Services.GetRequiredService<IDialogService>();
+        var snackbar = Services.GetRequiredService<ISnackbar>();
+
+        var dialogRef = Substitute.For<IDialogReference>();
+        dialogRef.Result.Returns(Task.FromResult<DialogResult?>(null));
+        dialogService.ShowAsync<CreateQuestDialog>(Arg.Any<string>(), Arg.Any<DialogParameters>())
+            .Returns(Task.FromResult(dialogRef));
+
+        var cut = RenderComponent<ArcQuestList>(p => p
+            .Add(x => x.ArcId, Guid.NewGuid())
+            .Add(x => x.IsGm, true));
+
+        await InvokePrivateOnRendererAsync(cut, "CreateQuest");
+
+        snackbar.DidNotReceive().Add("Quest created successfully", Severity.Success);
+    }
+
+    [Fact]
+    public async Task ArcQuestList_CreateQuest_WhenDialogThrows_ShowsErrorMessage()
+    {
+        RegisterServices(new List<QuestDto>());
+        var dialogService = Services.GetRequiredService<IDialogService>();
+        var snackbar = Services.GetRequiredService<ISnackbar>();
+
+        dialogService.ShowAsync<CreateQuestDialog>(Arg.Any<string>(), Arg.Any<DialogParameters>())
+            .Returns(_ => Task.FromException<IDialogReference>(new InvalidOperationException("explode")));
+
+        var cut = RenderComponent<ArcQuestList>(p => p
+            .Add(x => x.ArcId, Guid.NewGuid())
+            .Add(x => x.IsGm, true));
+
+        await InvokePrivateOnRendererAsync(cut, "CreateQuest");
+
+        snackbar.Received().Add(Arg.Is<string>(m => m.Contains("Failed to create quest: explode")), Severity.Error);
+    }
+
+    [Fact]
     public async Task ArcQuestList_EditQuest_Gm_ShowsInfo()
     {
         RegisterServices(new List<QuestDto>());
@@ -194,6 +234,153 @@ public class ArcQuestListTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task ArcQuestList_DeleteQuest_ConfirmTrueAndApiFailure_ShowsError()
+    {
+        var quest = CreateQuest("No Delete");
+        var questApi = RegisterServices(new List<QuestDto> { quest });
+        var dialogService = Services.GetRequiredService<IDialogService>();
+        var snackbar = Services.GetRequiredService<ISnackbar>();
+
+        dialogService.ShowMessageBox(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<DialogOptions>())
+            .Returns(Task.FromResult<bool?>(true));
+        questApi.DeleteQuestAsync(quest.Id).Returns(false);
+
+        var cut = RenderComponent<ArcQuestList>(p => p
+            .Add(x => x.ArcId, quest.ArcId)
+            .Add(x => x.IsGm, true));
+
+        await InvokePrivateOnRendererAsync(cut, "DeleteQuest", quest);
+
+        snackbar.Received().Add("Failed to delete quest", Severity.Error);
+    }
+
+    [Fact]
+    public async Task ArcQuestList_DeleteQuest_WhenAlreadyDeleting_ReturnsEarly()
+    {
+        var quest = CreateQuest("Busy");
+        var questApi = RegisterServices(new List<QuestDto> { quest });
+        var cut = RenderComponent<ArcQuestList>(p => p
+            .Add(x => x.ArcId, quest.ArcId)
+            .Add(x => x.IsGm, true));
+        SetField(cut.Instance, "_isDeleting", true);
+
+        await InvokePrivateOnRendererAsync(cut, "DeleteQuest", quest);
+
+        await questApi.DidNotReceive().DeleteQuestAsync(Arg.Any<Guid>());
+    }
+
+    [Fact]
+    public async Task ArcQuestList_DeleteQuest_WhenNotGm_ReturnsEarly()
+    {
+        var quest = CreateQuest("No Perms");
+        var questApi = RegisterServices(new List<QuestDto> { quest });
+        var cut = RenderComponent<ArcQuestList>(p => p
+            .Add(x => x.ArcId, quest.ArcId)
+            .Add(x => x.IsGm, false));
+
+        await InvokePrivateOnRendererAsync(cut, "DeleteQuest", quest);
+
+        await questApi.DidNotReceive().DeleteQuestAsync(Arg.Any<Guid>());
+    }
+
+    [Fact]
+    public void ArcQuestList_OnParametersSetAsync_WhenArcIdEmpty_DoesNotReload()
+    {
+        var questApi = RegisterServices(new List<QuestDto>());
+        var cut = RenderComponent<ArcQuestList>(p => p
+            .Add(x => x.ArcId, Guid.NewGuid())
+            .Add(x => x.IsGm, true));
+        var before = GetQuestLoadCallCount(questApi);
+
+        cut.SetParametersAndRender(p => p.Add(x => x.ArcId, Guid.Empty));
+
+        Assert.Equal(before, GetQuestLoadCallCount(questApi));
+    }
+
+    [Fact]
+    public void ArcQuestList_RendersQuestRows_WithGmOnlyAndPluralizedUpdates()
+    {
+        var quests = new List<QuestDto>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(),
+                ArcId = Guid.NewGuid(),
+                Title = "Quest One",
+                Status = QuestStatus.Active,
+                IsGmOnly = true,
+                UpdateCount = 2,
+                UpdatedAt = DateTime.UtcNow,
+                RowVersion = "v1"
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                ArcId = Guid.NewGuid(),
+                Title = "Quest Two",
+                Status = QuestStatus.Completed,
+                IsGmOnly = false,
+                UpdateCount = 1,
+                UpdatedAt = DateTime.UtcNow.AddMinutes(-5),
+                RowVersion = "v2"
+            }
+        };
+        RegisterServices(quests);
+
+        var cut = RenderComponent<ArcQuestList>(p => p
+            .Add(x => x.ArcId, quests[0].ArcId)
+            .Add(x => x.IsGm, true));
+
+        Assert.Contains("GM Only", cut.Markup);
+        Assert.Contains("2 updates", cut.Markup);
+        Assert.Contains("1 update", cut.Markup);
+        Assert.NotEmpty(cut.FindAll("button[title='Edit quest']"));
+        Assert.NotEmpty(cut.FindAll("button[title='Delete quest']"));
+    }
+
+    [Fact]
+    public async Task ArcQuestList_EditAndDeleteButtonClick_InvokeHandlers()
+    {
+        var quest = CreateQuest("Clickable");
+        var questApi = RegisterServices(new List<QuestDto> { quest });
+        var dialogService = Services.GetRequiredService<IDialogService>();
+        var snackbar = Services.GetRequiredService<ISnackbar>();
+        dialogService.ShowMessageBox(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<DialogOptions>())
+            .Returns(Task.FromResult<bool?>(false));
+
+        var cut = RenderComponent<ArcQuestList>(p => p
+            .Add(x => x.ArcId, quest.ArcId)
+            .Add(x => x.IsGm, true));
+
+        var editButton = cut.Find("button[title='Edit quest']");
+        var deleteButton = cut.Find("button[title='Delete quest']");
+
+        await cut.InvokeAsync(() => editButton.Click());
+        await cut.InvokeAsync(() => deleteButton.Click());
+
+        snackbar.Received().Add(Arg.Is<string>(s => s.Contains("Editing quest")), Severity.Info);
+        await questApi.DidNotReceive().DeleteQuestAsync(Arg.Any<Guid>());
+    }
+
+    [Fact]
+    public void ArcQuestList_EmptyState_ForGmAndNonGm()
+    {
+        RegisterServices(new List<QuestDto>());
+
+        var gmCut = RenderComponent<ArcQuestList>(p => p
+            .Add(x => x.ArcId, Guid.NewGuid())
+            .Add(x => x.IsGm, true));
+        var playerCut = RenderComponent<ArcQuestList>(p => p
+            .Add(x => x.ArcId, Guid.NewGuid())
+            .Add(x => x.IsGm, false));
+
+        Assert.Contains("Create your first quest", gmCut.Markup);
+        Assert.Contains("hasn't created any quests yet", playerCut.Markup);
+    }
+
+    [Fact]
     public async Task ArcQuestList_DeleteQuest_WhenApiThrows_ShowsError()
     {
         var quest = CreateQuest("Boom");
@@ -260,6 +447,13 @@ public class ArcQuestListTests : MudBlazorTestContext
                 await task;
             }
         });
+    }
+
+    private static void SetField(object instance, string fieldName, object? value)
+    {
+        var field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(field);
+        field!.SetValue(instance, value);
     }
 
     private static int GetQuestLoadCallCount(IQuestApiService questApi)

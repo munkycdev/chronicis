@@ -68,6 +68,18 @@ public class ArcQuestTimelineTests : MudBlazorTestContext
     }
 
     [Fact]
+    public void ArcQuestTimeline_ShowsSingularUpdateCount_WhenQuestHasOneUpdate()
+    {
+        RegisterServices();
+        var quest = CreateQuest();
+        quest.UpdateCount = 1;
+
+        var cut = RenderComponent<ArcQuestTimeline>(p => p.Add(x => x.Quest, quest));
+
+        Assert.Contains("1 update", cut.Markup);
+    }
+
+    [Fact]
     public async Task ArcQuestTimeline_LoadMore_AppendsData()
     {
         var questApi = RegisterServices();
@@ -111,6 +123,27 @@ public class ArcQuestTimelineTests : MudBlazorTestContext
         await InvokePrivateOnRendererAsync(cut, "LoadUpdatesAsync");
 
         snackbar.Received().Add(Arg.Is<string>(s => s.Contains("Failed to load quest updates")), Severity.Error);
+    }
+
+    [Fact]
+    public async Task ArcQuestTimeline_LoadMore_WhenApiThrows_ShowsError()
+    {
+        var questApi = RegisterServices();
+        var snackbar = Services.GetRequiredService<ISnackbar>();
+        var quest = CreateQuest();
+
+        questApi.GetQuestUpdatesAsync(quest.Id, 0, 20).Returns(new PagedResult<QuestUpdateEntryDto>
+        {
+            Items = new List<QuestUpdateEntryDto> { CreateUpdate(quest.Id, "first") },
+            TotalCount = 2
+        });
+        questApi.GetQuestUpdatesAsync(quest.Id, 1, 20)
+            .Returns(_ => Task.FromException<PagedResult<QuestUpdateEntryDto>>(new InvalidOperationException("load-more-fail")));
+
+        var cut = RenderComponent<ArcQuestTimeline>(p => p.Add(x => x.Quest, quest));
+        await InvokePrivateOnRendererAsync(cut, "LoadMoreAsync");
+
+        snackbar.Received().Add(Arg.Is<string>(s => s.Contains("Failed to load more updates")), Severity.Error);
     }
 
     [Fact]
@@ -163,6 +196,87 @@ public class ArcQuestTimelineTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task ArcQuestTimeline_DeleteUpdate_WhenQuestIsNull_ReturnsEarly()
+    {
+        var questApi = RegisterServices();
+        var update = CreateUpdate(Guid.NewGuid());
+        var cut = RenderComponent<ArcQuestTimeline>(p => p.Add(x => x.Quest, (QuestDto?)null));
+
+        await InvokePrivateOnRendererAsync(cut, "DeleteUpdate", update);
+
+        await questApi.DidNotReceive().DeleteQuestUpdateAsync(Arg.Any<Guid>(), Arg.Any<Guid>());
+    }
+
+    [Fact]
+    public async Task ArcQuestTimeline_LoadUpdates_WhenQuestIsNull_ReturnsEarly()
+    {
+        var questApi = RegisterServices();
+        var cut = RenderComponent<ArcQuestTimeline>(p => p.Add(x => x.Quest, (QuestDto?)null));
+
+        await InvokePrivateOnRendererAsync(cut, "LoadUpdatesAsync");
+
+        await questApi.DidNotReceive().GetQuestUpdatesAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<int>());
+    }
+
+    [Fact]
+    public async Task ArcQuestTimeline_LoadMore_WhenAlreadyLoadingMore_ReturnsEarly()
+    {
+        var questApi = RegisterServices();
+        var quest = CreateQuest();
+        var cut = RenderComponent<ArcQuestTimeline>(p => p.Add(x => x.Quest, quest));
+        SetField(cut.Instance, "_isLoadingMore", true);
+        var beforeCalls = GetQuestLoadCallCount(questApi);
+
+        await InvokePrivateOnRendererAsync(cut, "LoadMoreAsync");
+
+        Assert.Equal(beforeCalls, GetQuestLoadCallCount(questApi));
+    }
+
+    [Fact]
+    public async Task ArcQuestTimeline_LoadMore_WhenQuestIsNull_ReturnsEarly()
+    {
+        var questApi = RegisterServices();
+        var cut = RenderComponent<ArcQuestTimeline>(p => p.Add(x => x.Quest, (QuestDto?)null));
+        var beforeCalls = GetQuestLoadCallCount(questApi);
+
+        await InvokePrivateOnRendererAsync(cut, "LoadMoreAsync");
+
+        Assert.Equal(beforeCalls, GetQuestLoadCallCount(questApi));
+    }
+
+    [Fact]
+    public async Task ArcQuestTimeline_OnParametersSetAsync_WhenBothQuestIdsNull_DoesNotLoad()
+    {
+        var questApi = RegisterServices();
+        var cut = RenderComponent<ArcQuestTimeline>(p => p.Add(x => x.Quest, (QuestDto?)null));
+        var beforeCalls = GetQuestLoadCallCount(questApi);
+
+        await InvokePrivateOnRendererAsync(cut, "OnParametersSetAsync");
+
+        Assert.Equal(beforeCalls, GetQuestLoadCallCount(questApi));
+    }
+
+    [Fact]
+    public void ArcQuestTimeline_OnParametersSetAsync_WhenQuestIdUnchanged_DoesNotLoadAgain()
+    {
+        var questApi = RegisterServices();
+        var quest = CreateQuest();
+        var cut = RenderComponent<ArcQuestTimeline>(p => p.Add(x => x.Quest, quest));
+        var beforeCalls = GetQuestLoadCallCount(questApi);
+        var sameQuestDifferentObject = new QuestDto
+        {
+            Id = quest.Id,
+            ArcId = quest.ArcId,
+            Title = "Updated title",
+            RowVersion = "v2"
+        };
+
+        cut.SetParametersAndRender(p => p.Add(x => x.Quest, sameQuestDifferentObject));
+
+        Assert.Equal(beforeCalls, GetQuestLoadCallCount(questApi));
+    }
+
+    [Fact]
     public async Task ArcQuestTimeline_DeleteUpdate_WhenFailure_ShowsError()
     {
         var questApi = RegisterServices();
@@ -202,6 +316,66 @@ public class ArcQuestTimelineTests : MudBlazorTestContext
         var result = (bool)InvokePrivate(cut.Instance, "CanDeleteUpdate", update)!;
 
         Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void ArcQuestTimeline_RendersAvatarAndSessionChip()
+    {
+        var questApi = RegisterServices();
+        var quest = CreateQuest();
+        questApi.GetQuestUpdatesAsync(quest.Id, 0, 20).Returns(new PagedResult<QuestUpdateEntryDto>
+        {
+            Items = new List<QuestUpdateEntryDto>
+            {
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    QuestId = quest.Id,
+                    Body = "body",
+                    CreatedBy = Guid.NewGuid(),
+                    CreatedByName = "Author",
+                    CreatedByAvatarUrl = "https://example.com/avatar.png",
+                    SessionId = Guid.NewGuid(),
+                    SessionTitle = "Session 12",
+                    CreatedAt = DateTime.UtcNow
+                }
+            },
+            TotalCount = 1
+        });
+
+        var cut = RenderComponent<ArcQuestTimeline>(p => p.Add(x => x.Quest, quest));
+
+        Assert.Contains("avatar.png", cut.Markup, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Session: Session 12", cut.Markup);
+    }
+
+    [Fact]
+    public async Task ArcQuestTimeline_DeleteButtonClick_InvokesDeleteHandler()
+    {
+        var questApi = RegisterServices();
+        var dialog = Services.GetRequiredService<IDialogService>();
+        var quest = CreateQuest();
+        var update = CreateUpdate(quest.Id);
+        var currentUserId = update.CreatedBy;
+
+        questApi.GetQuestUpdatesAsync(quest.Id, 0, 20).Returns(new PagedResult<QuestUpdateEntryDto>
+        {
+            Items = new List<QuestUpdateEntryDto> { update },
+            TotalCount = 1
+        });
+        dialog.ShowMessageBox(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<DialogOptions>())
+            .Returns(Task.FromResult<bool?>(false));
+
+        var cut = RenderComponent<ArcQuestTimeline>(p => p
+            .Add(x => x.Quest, quest)
+            .Add(x => x.IsGm, false)
+            .Add(x => x.CurrentUserId, currentUserId));
+
+        var deleteButton = cut.Find("button.mud-icon-button");
+        await cut.InvokeAsync(() => deleteButton.Click());
+
+        await questApi.DidNotReceive().DeleteQuestUpdateAsync(Arg.Any<Guid>(), Arg.Any<Guid>());
     }
 
     private IQuestApiService RegisterServices()
@@ -257,5 +431,17 @@ public class ArcQuestTimelineTests : MudBlazorTestContext
                 await task;
             }
         });
+    }
+
+    private static int GetQuestLoadCallCount(IQuestApiService questApi)
+    {
+        return questApi.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(IQuestApiService.GetQuestUpdatesAsync));
+    }
+
+    private static void SetField(object instance, string fieldName, object? value)
+    {
+        var field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(field);
+        field!.SetValue(instance, value);
     }
 }

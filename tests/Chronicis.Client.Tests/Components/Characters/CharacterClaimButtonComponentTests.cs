@@ -132,6 +132,82 @@ public class CharacterClaimButtonComponentTests : MudBlazorTestContext
         _snackbar.Received().Add("Failed to unclaim character", Severity.Error);
     }
 
+    [Fact]
+    public void OnParametersSetAsync_WhenLoadThrows_StopsLoading()
+    {
+        var characterId = Guid.NewGuid();
+        _characterApi.GetClaimStatusAsync(characterId)
+            .Returns(_ => Task.FromException<CharacterClaimStatusDto>(new InvalidOperationException("boom")));
+
+        var cut = RenderComponent<CharacterClaimButton>(p => p.Add(x => x.CharacterId, characterId));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.False(GetField<bool>(cut.Instance, "_isLoading"));
+        });
+    }
+
+    [Fact]
+    public async Task ClaimCharacter_WhenApiThrows_ShowsGenericError()
+    {
+        var characterId = Guid.NewGuid();
+        _characterApi.GetClaimStatusAsync(characterId).Returns(new CharacterClaimStatusDto
+        {
+            CharacterId = characterId,
+            IsClaimed = false,
+            IsClaimedByMe = false
+        });
+        _characterApi.ClaimCharacterAsync(characterId)
+            .Returns(_ => Task.FromException<bool>(new InvalidOperationException("explode")));
+
+        var cut = RenderComponent<CharacterClaimButton>(p => p.Add(x => x.CharacterId, characterId));
+        await InvokePrivateOnRendererAsync(cut, "ClaimCharacter");
+
+        _snackbar.Received().Add("An error occurred", Severity.Error);
+        Assert.False(GetField<bool>(cut.Instance, "_isProcessing"));
+    }
+
+    [Fact]
+    public async Task UnclaimCharacter_WhenApiThrows_ShowsGenericError()
+    {
+        var characterId = Guid.NewGuid();
+        _characterApi.GetClaimStatusAsync(characterId).Returns(new CharacterClaimStatusDto
+        {
+            CharacterId = characterId,
+            IsClaimed = true,
+            IsClaimedByMe = true
+        });
+        _characterApi.UnclaimCharacterAsync(characterId)
+            .Returns(_ => Task.FromException<bool>(new InvalidOperationException("explode")));
+
+        var cut = RenderComponent<CharacterClaimButton>(p => p.Add(x => x.CharacterId, characterId));
+        await InvokePrivateOnRendererAsync(cut, "UnclaimCharacter");
+
+        _snackbar.Received().Add("An error occurred", Severity.Error);
+        Assert.False(GetField<bool>(cut.Instance, "_isProcessing"));
+    }
+
+    [Fact]
+    public void Render_WhenClaimedByOther_ShowsClaimedChip()
+    {
+        var characterId = Guid.NewGuid();
+        _characterApi.GetClaimStatusAsync(characterId).Returns(new CharacterClaimStatusDto
+        {
+            CharacterId = characterId,
+            IsClaimed = true,
+            IsClaimedByMe = false,
+            ClaimedByName = "Alice"
+        });
+        _ = RenderComponent<MudPopoverProvider>();
+
+        var cut = RenderComponent<CharacterClaimButton>(p => p.Add(x => x.CharacterId, characterId));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Alice's Character", cut.Markup);
+        });
+    }
+
     private static T GetField<T>(object instance, string fieldName)
     {
         var field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);

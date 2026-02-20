@@ -5,6 +5,7 @@ using Chronicis.Client.Components.Dialogs;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using NSubstitute;
 using Xunit;
 
@@ -63,6 +64,22 @@ public class JoinWorldDialogTests : MudBlazorTestContext
         await cut.InvokeAsync(() => InvokePrivateAsync(cut.Instance, "Submit"));
 
         Assert.Equal("Invalid code", GetField<string?>(cut.Instance, "_error"));
+    }
+
+    [Fact]
+    public async Task Submit_FailedResultWithoutMessage_UsesDefaultError()
+    {
+        _worldApi.JoinWorldAsync(Arg.Any<string>()).Returns(new WorldJoinResultDto
+        {
+            Success = false,
+            ErrorMessage = null
+        });
+        var cut = RenderComponent<JoinWorldDialog>();
+        SetField(cut.Instance, "_code", "bad");
+
+        await cut.InvokeAsync(() => InvokePrivateAsync(cut.Instance, "Submit"));
+
+        Assert.Equal("Failed to join world.", GetField<string?>(cut.Instance, "_error"));
     }
 
     [Fact]
@@ -145,6 +162,35 @@ public class JoinWorldDialogTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task Cancel_WhenDialogOpen_ClosesDialog()
+    {
+        var provider = RenderComponent<MudDialogProvider>();
+        var dialogs = Services.GetRequiredService<IDialogService>();
+        _ = await dialogs.ShowAsync<JoinWorldDialog>("Join a World");
+        var dialog = provider.FindComponent<JoinWorldDialog>();
+
+        await dialog.InvokeAsync(() => InvokePrivate(dialog.Instance, "Cancel"));
+
+        provider.WaitForAssertion(() =>
+            Assert.DoesNotContain("Invitation Code", provider.Markup, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task GoToWorld_WhenDialogOpen_ClosesWithResult()
+    {
+        var provider = RenderComponent<MudDialogProvider>();
+        var dialogs = Services.GetRequiredService<IDialogService>();
+        _ = await dialogs.ShowAsync<JoinWorldDialog>("Join a World");
+        var dialog = provider.FindComponent<JoinWorldDialog>();
+        SetField(dialog.Instance, "_result", new WorldJoinResultDto { Success = true, WorldName = "Realm" });
+
+        await dialog.InvokeAsync(() => InvokePrivate(dialog.Instance, "GoToWorld"));
+
+        provider.WaitForAssertion(() =>
+            Assert.DoesNotContain("Join a World", provider.Markup, StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void HandlesSuccessRenderState_WhenJoinSucceeded()
     {
         var cut = RenderComponent<JoinWorldDialog>();
@@ -176,6 +222,56 @@ public class JoinWorldDialogTests : MudBlazorTestContext
         var result = GetField<WorldJoinResultDto?>(cut.Instance, "_result");
         Assert.NotNull(result);
         Assert.False(result!.Success);
+    }
+
+    [Fact]
+    public async Task DialogRender_ShowsInitialJoinContent()
+    {
+        var provider = RenderComponent<MudDialogProvider>();
+        var dialogs = Services.GetRequiredService<IDialogService>();
+
+        _ = await dialogs.ShowAsync<JoinWorldDialog>("Join a World");
+
+        provider.WaitForAssertion(() =>
+        {
+            Assert.Contains("Join a World", provider.Markup, StringComparison.Ordinal);
+            Assert.Contains("Invitation Code", provider.Markup, StringComparison.Ordinal);
+            Assert.Contains("Join", provider.Markup, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
+    public async Task DialogRender_WhenSubmitting_ShowsProgress()
+    {
+        var provider = RenderComponent<MudDialogProvider>();
+        var dialogs = Services.GetRequiredService<IDialogService>();
+
+        _ = await dialogs.ShowAsync<JoinWorldDialog>("Join a World");
+        var dialog = provider.FindComponent<JoinWorldDialog>();
+        SetField(dialog.Instance, "_code", "ABC-123");
+        SetField(dialog.Instance, "_isSubmitting", true);
+        dialog.Render();
+
+        Assert.NotEmpty(provider.FindAll(".mud-progress-circular"));
+    }
+
+    [Fact]
+    public async Task DialogRender_WhenSuccess_ShowsGoToWorld()
+    {
+        var provider = RenderComponent<MudDialogProvider>();
+        var dialogs = Services.GetRequiredService<IDialogService>();
+
+        _ = await dialogs.ShowAsync<JoinWorldDialog>("Join a World");
+        var dialog = provider.FindComponent<JoinWorldDialog>();
+        SetField(dialog.Instance, "_result", new WorldJoinResultDto
+        {
+            Success = true,
+            WorldName = "Eberron"
+        });
+        dialog.Render();
+
+        Assert.Contains("Go to World", provider.Markup, StringComparison.Ordinal);
+        Assert.Contains("Successfully joined", provider.Markup, StringComparison.Ordinal);
     }
 
     private static async Task InvokePrivateAsync(object target, string methodName, params object[] args)

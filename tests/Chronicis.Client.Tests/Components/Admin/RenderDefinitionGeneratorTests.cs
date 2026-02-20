@@ -31,6 +31,14 @@ public class RenderDefinitionGeneratorTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task SearchRecords_WhenQueryWhitespace_ReturnsEmpty()
+    {
+        var instance = CreateInstance();
+        var result = await InvokePrivateAsync<IEnumerable<string>>(instance, "SearchRecords", "   ", CancellationToken.None);
+        Assert.Empty(result);
+    }
+
+    [Fact]
     public async Task SearchRecords_WhenSuccess_ReturnsIds()
     {
         var instance = CreateInstance();
@@ -280,6 +288,25 @@ public class RenderDefinitionGeneratorTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task TryLoadExistingDefinition_WhenIdHasNoSlash_UsesNullCategoryPath()
+    {
+        var instance = CreateInstance();
+        SetField(instance, "_sampleContent", new ExternalLinkContentDto
+        {
+            Source = "ros",
+            Id = "dragon",
+            Title = "Dragon",
+            JsonData = "{\"name\":\"Dragon\"}"
+        });
+        _renderService.ResolveAsync("ros", null)
+            .Returns(new RenderDefinition());
+
+        await InvokePrivateAsync(instance, "TryLoadExistingDefinition");
+
+        await _renderService.Received(1).ResolveAsync("ros", null);
+    }
+
+    [Fact]
     public void AutoGenerate_WhenNoSampleContent_DoesNothing()
     {
         var instance = CreateInstance();
@@ -423,6 +450,17 @@ public class RenderDefinitionGeneratorTests : MudBlazorTestContext
         Assert.NotNull(GetField<RenderDefinition?>(instance, "_activeDefinition"));
         Assert.False(GetField<bool>(instance, "_definitionDirty"));
         Assert.Null(GetField<string?>(instance, "_jsonError"));
+    }
+
+    [Fact]
+    public void ApplyDefinition_WhenJsonNullLiteral_SetsNullError()
+    {
+        var instance = CreateInstance();
+        SetField(instance, "_definitionJson", "null");
+
+        InvokePrivate(instance, "ApplyDefinition");
+
+        Assert.Equal("Deserialized to null.", GetField<string?>(instance, "_jsonError"));
     }
 
     private RenderDefinitionGenerator CreateInstance()
