@@ -1,9 +1,0 @@
-entities:
-  Parent:
-    file: collision-parent.json
-    pk: id
-    root: true
-    identity:
-      slugField: slug
-    output:
-      blobTemplate: "parents/{slug}.json"
