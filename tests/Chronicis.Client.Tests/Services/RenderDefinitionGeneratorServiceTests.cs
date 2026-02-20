@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Chronicis.Client.Services;
 using Xunit;
 
 namespace Chronicis.Client.Tests.Services;
 
+[ExcludeFromCodeCoverage]
 public class RenderDefinitionGeneratorServiceTests
 {
     [Fact]
@@ -57,7 +59,7 @@ public class RenderDefinitionGeneratorServiceTests
 
         var ability = Assert.Single(result.Sections.Where(s => s.Render == "stat-row"));
         Assert.Equal("Ability Scores", ability.Label);
-        Assert.Equal(6, ability.Fields.Count);
+        Assert.Equal(6, ability.Fields!.Count);
 
         var additional = Assert.Single(result.Sections.Where(s => s.Label == "Additional Data"));
         Assert.True(additional.Collapsed);
@@ -97,8 +99,26 @@ public class RenderDefinitionGeneratorServiceTests
 
         Assert.Equal("name", result.TitleField);
         var overview = Assert.Single(result.Sections.Where(s => s.Label == "Overview"));
-        Assert.Contains(overview.Fields, f => f.Path == "foo_desc" && f.Render == "richtext");
-        Assert.Contains(overview.Fields, f => f.Path == "hit_points" && f.Label == "Hit Points");
+        Assert.Contains(overview.Fields!, f => f.Path == "foo_desc" && f.Render == "richtext");
+        Assert.Contains(overview.Fields!, f => f.Path == "hit_points" && f.Label == "Hit Points");
+    }
+
+    [Fact]
+    public void Generate_TreatsEmptyArraysAsNullLikeValues()
+    {
+        var json = """
+        {
+          "name": "ArrayCase",
+          "saving_throw_fire": [],
+          "saving_throw_cold": [],
+          "saving_throw_poison": [],
+          "saving_throw_acid": "+1"
+        }
+        """;
+
+        var result = RenderDefinitionGeneratorService.Generate(JsonDocument.Parse(json).RootElement);
+        var group = Assert.Single(result.Sections.Where(s => s.Label == "Saving Throws"));
+        Assert.True(group.Collapsed);
     }
 
     [Fact]
@@ -122,40 +142,24 @@ public class RenderDefinitionGeneratorServiceTests
     }
 
     [Fact]
-    public void Generate_TreatsEmptyArraysAsNullLikeValues()
+    public void Generate_UsesTitle_WhenNameNotPresent()
     {
-        var json = """
-        {
-          "name": "ArrayCase",
-          "saving_throw_fire": [],
-          "saving_throw_cold": [],
-          "saving_throw_poison": [],
-          "saving_throw_acid": "+1"
-        }
-        """;
+        var json = """{"title":"My Article","level":5}""";
 
         var result = RenderDefinitionGeneratorService.Generate(JsonDocument.Parse(json).RootElement);
-        var group = Assert.Single(result.Sections.Where(s => s.Label == "Saving Throws"));
-        Assert.True(group.Collapsed);
+
+        Assert.Equal("title", result.TitleField);
     }
 
     [Fact]
-    public void PrivateHelpers_StripPrefixAndPluralization_HandleEdgeBranches()
+    public void Generate_NoSections_WhenOnlyTitleAndHidden()
     {
-        var type = typeof(RenderDefinitionGeneratorService);
-        var stripPrefix = type.GetMethod("StripPrefix", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var formatGroupLabel = type.GetMethod("FormatGroupLabel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var json = """{"name":"X","pk":1,"model":"m"}""";
 
-        Assert.NotNull(stripPrefix);
-        Assert.NotNull(formatGroupLabel);
+        var result = RenderDefinitionGeneratorService.Generate(JsonDocument.Parse(json).RootElement);
 
-        var unchanged = (string)stripPrefix!.Invoke(null, new object[] { "name", "prefix" })!;
-        var pluralized = (string)formatGroupLabel!.Invoke(null, new object[] { "saving_throw" })!;
-        var alreadyPlural = (string)formatGroupLabel!.Invoke(null, new object[] { "species" })!;
-
-        Assert.Equal("name", unchanged);
-        Assert.Equal("Saving Throws", pluralized);
-        Assert.Equal("Species", alreadyPlural);
+        Assert.Empty(result.Sections);
+        Assert.Contains("pk", result.Hidden);
+        Assert.Contains("model", result.Hidden);
     }
 }
-
