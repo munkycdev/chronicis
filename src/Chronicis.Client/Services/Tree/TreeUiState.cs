@@ -343,10 +343,9 @@ internal sealed class TreeUiState
         }
 
         // Expand nodes that have visible children
-        foreach (var nodeId in matchingNodeIds)
+        foreach (var node in _nodeIndex.AllNodes)
         {
-            var node = _nodeIndex.GetNode(nodeId);
-            if (node == null)
+            if (!matchingNodeIds.Contains(node.Id))
             {
                 continue;
             }
@@ -354,7 +353,7 @@ internal sealed class TreeUiState
             if (node.Children.Any(c => c.IsVisible))
             {
                 node.IsExpanded = true;
-                _expandedNodeIds.Add(nodeId);
+                _expandedNodeIds.Add(node.Id);
             }
         }
     }
