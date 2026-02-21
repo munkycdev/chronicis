@@ -18,13 +18,13 @@ public class WorldDocumentService : IWorldDocumentService
 
     // File validation constants
     private const long MaxFileSizeBytes = 209_715_200; // 200 MB
-    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".md",
         ".png", ".jpg", ".jpeg", ".gif", ".webp"
     };
 
-    private static readonly Dictionary<string, string> ExtensionToMimeType = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly Dictionary<string, string> ExtensionToMimeType = new(StringComparer.OrdinalIgnoreCase)
     {
         { ".pdf", "application/pdf" },
         { ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
@@ -321,7 +321,7 @@ public class WorldDocumentService : IWorldDocumentService
 
     // ===== Private Helper Methods =====
 
-    private void ValidateFileUpload(WorldDocumentUploadRequestDto request)
+    internal void ValidateFileUpload(WorldDocumentUploadRequestDto request)
     {
         // Validate file size
         if (request.FileSizeBytes <= 0)
@@ -398,7 +398,7 @@ public class WorldDocumentService : IWorldDocumentService
         return title;
     }
 
-    private static WorldDocumentDto MapToDto(WorldDocument document)
+    internal static WorldDocumentDto MapToDto(WorldDocument document)
     {
         return new WorldDocumentDto
         {

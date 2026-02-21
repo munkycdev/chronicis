@@ -314,70 +314,9 @@ else
 
     private List<BreadcrumbItem> GetBreadcrumbItems()
     {
-        var items = new List<BreadcrumbItem>();
-        
-        if (_currentArticle?.Breadcrumbs == null) return items;
-
-        // Determine which breadcrumbs are virtual (Campaign/Arc/Player Characters/Wiki) vs real articles
-        var campaignId = _currentArticle.CampaignId;
-        var arcId = _currentArticle.ArcId;
-        
-        // Virtual group slugs that shouldn't be clickable
-        var virtualGroupSlugs = new HashSet<string> { "characters", "wiki", "campaigns", "uncategorized" };
-
-        foreach (var crumb in _currentArticle.Breadcrumbs)
-        {
-            var isLast = crumb.Id == _currentArticle.Id;
-            
-            if (crumb.IsWorld)
-            {
-                // World - always clickable, goes back to world landing
-                items.Add(new BreadcrumbItem(crumb.Title, $"/w/{PublicSlug}"));
-            }
-            else if (crumb.Id == Guid.Empty || virtualGroupSlugs.Contains(crumb.Slug.ToLowerInvariant()))
-            {
-                // Virtual group breadcrumb (Player Characters, Wiki, etc.) - not clickable
-                items.Add(new BreadcrumbItem(crumb.Title, null, disabled: true));
-            }
-            else if (campaignId.HasValue && crumb.Id == campaignId.Value)
-            {
-                // Campaign breadcrumb - virtual, not clickable
-                items.Add(new BreadcrumbItem(crumb.Title, null, disabled: true));
-            }
-            else if (arcId.HasValue && crumb.Id == arcId.Value)
-            {
-                // Arc breadcrumb - virtual, not clickable
-                items.Add(new BreadcrumbItem(crumb.Title, null, disabled: true));
-            }
-            else
-            {
-                // Real article breadcrumb
-                if (isLast)
-                {
-                    items.Add(new BreadcrumbItem(crumb.Title, null, disabled: true));
-                }
-                else
-                {
-                    // Build path for this article
-                    // Only include real article slugs (not virtual groups)
-                    var articleSlugs = _currentArticle.Breadcrumbs
-                        .Where(b => !b.IsWorld && 
-                               b.Id != Guid.Empty &&
-                               !virtualGroupSlugs.Contains(b.Slug.ToLowerInvariant()) &&
-                               !(campaignId.HasValue && b.Id == campaignId.Value) &&
-                               !(arcId.HasValue && b.Id == arcId.Value))
-                        .TakeWhile(b => b.Id != crumb.Id)
-                        .Select(b => b.Slug)
-                        .ToList();
-                    articleSlugs.Add(crumb.Slug);
-                    var path = string.Join("/", articleSlugs);
-                    
-                    items.Add(new BreadcrumbItem(crumb.Title, $"/w/{PublicSlug}/{path}"));
-                }
-            }
-        }
-
-        return items;
+        return _currentArticle == null
+            ? new List<BreadcrumbItem>()
+            : PublicBreadcrumbBuilder.Build(PublicSlug, _currentArticle);
     }
 
     private static string GetArticleTypeLabel(ArticleType type) => type switch

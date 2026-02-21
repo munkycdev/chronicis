@@ -1,5 +1,5 @@
-using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text.Json;
 using Chronicis.Client.Models;
 using Chronicis.Shared.DTOs;

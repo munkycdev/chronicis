@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using Chronicis.Api.Data;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
@@ -333,11 +332,8 @@ public class WorldServiceTests : IDisposable
             Members = null!
         };
 
-        var mapToDto = typeof(WorldService).GetMethod("MapToDto", BindingFlags.NonPublic | BindingFlags.Static)!;
-        var mapToDetailDto = typeof(WorldService).GetMethod("MapToDetailDto", BindingFlags.NonPublic | BindingFlags.Static)!;
-
-        var dto = (WorldDto)mapToDto.Invoke(null, [world])!;
-        var detail = (WorldDetailDto)mapToDetailDto.Invoke(null, [world])!;
+        var dto = WorldService.MapToDto(world);
+        var detail = WorldService.MapToDetailDto(world);
 
         Assert.Equal("Unknown", dto.OwnerName);
         Assert.Equal(0, dto.CampaignCount);

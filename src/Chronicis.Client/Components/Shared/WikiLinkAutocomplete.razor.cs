@@ -1,6 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Client.Services;
 using Microsoft.AspNetCore.Components;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Chronicis.Client.Components.Shared;
 

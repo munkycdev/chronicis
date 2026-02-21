@@ -1,8 +1,8 @@
 using Bunit;
 using Chronicis.Client.Pages.Admin;
 using Chronicis.Client.Services;
-using Chronicis.Shared.DTOs;
 using Chronicis.Client.Tests.Components;
+using Chronicis.Shared.DTOs;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Xunit;

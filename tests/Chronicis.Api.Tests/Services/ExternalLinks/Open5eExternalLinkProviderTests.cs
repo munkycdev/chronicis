@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Text.Json;
 using Chronicis.Api.Services.ExternalLinks;
 using Chronicis.Api.Tests.TestDoubles;
 using Microsoft.Extensions.Logging.Abstractions;

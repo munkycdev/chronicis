@@ -1,5 +1,5 @@
-using Chronicis.Shared.DTOs;
 using System.Diagnostics.CodeAnalysis;
+using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Client.Components.Articles;
 

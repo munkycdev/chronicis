@@ -315,7 +315,7 @@ public class WorldService : IWorldService
         return SlugGenerator.GenerateUniqueSlug(baseSlug, existingSlugs);
     }
 
-    private static WorldDto MapToDto(World world)
+    internal static WorldDto MapToDto(World world)
     {
         return new WorldDto
         {
@@ -333,7 +333,7 @@ public class WorldService : IWorldService
         };
     }
 
-    private static WorldDetailDto MapToDetailDto(World world)
+    internal static WorldDetailDto MapToDetailDto(World world)
     {
         return new WorldDetailDto
         {
