@@ -13,12 +13,11 @@ public partial class ExportService
         await writer.WriteAsync(content);
     }
 
-    private static string SanitizeFileName(string name)
+    internal static string SanitizeFileName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
             return "Untitled";
 
-        // Replace invalid filename characters
         var invalid = Path.GetInvalidFileNameChars();
         var sanitized = new StringBuilder(name);
         foreach (var c in invalid)
@@ -26,21 +25,19 @@ public partial class ExportService
             sanitized.Replace(c, '_');
         }
 
-        // Also replace some characters that might cause issues
         sanitized.Replace('/', '_');
         sanitized.Replace('\\', '_');
         sanitized.Replace(':', '_');
 
         var result = sanitized.ToString().Trim();
 
-        // Limit length
         if (result.Length > 100)
-            result = result.Substring(0, 100);
+            result = result[..100];
 
         return result;
     }
 
-    private static string EscapeYaml(string value)
+    internal static string EscapeYaml(string value)
     {
         if (string.IsNullOrEmpty(value))
             return value;

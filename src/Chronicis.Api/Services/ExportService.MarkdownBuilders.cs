@@ -5,11 +5,10 @@ namespace Chronicis.Api.Services;
 
 public partial class ExportService
 {
-    private string BuildArticleMarkdown(Article article)
+    internal string BuildArticleMarkdown(Article article)
     {
         var sb = new StringBuilder();
 
-        // YAML frontmatter
         sb.AppendLine("---");
         sb.AppendLine($"title: \"{EscapeYaml(article.Title)}\"");
         sb.AppendLine($"type: {article.Type}");
@@ -26,37 +25,39 @@ public partial class ExportService
         sb.AppendLine("---");
         sb.AppendLine();
 
-        // Title
         sb.AppendLine($"# {article.Title}");
         sb.AppendLine();
 
-        // Body content (convert HTML to Markdown)
         if (!string.IsNullOrEmpty(article.Body))
         {
-            var markdown = HtmlToMarkdown(article.Body);
-            sb.AppendLine(markdown);
+            sb.AppendLine(HtmlToMarkdownConverter.Convert(article.Body));
         }
 
-        // AI Summary section
-        if (!string.IsNullOrEmpty(article.AISummary))
-        {
-            sb.AppendLine();
-            sb.AppendLine("---");
-            sb.AppendLine();
-            sb.AppendLine("## AI Summary");
-            sb.AppendLine();
-            sb.AppendLine(article.AISummary);
-            if (article.AISummaryGeneratedAt.HasValue)
-            {
-                sb.AppendLine();
-                sb.AppendLine($"*Generated: {article.AISummaryGeneratedAt:yyyy-MM-dd HH:mm:ss}*");
-            }
-        }
+        AppendAISummary(sb, article);
 
         return sb.ToString();
     }
 
-    private string BuildCampaignMarkdown(Campaign campaign)
+    private static void AppendAISummary(StringBuilder sb, Article article)
+    {
+        if (string.IsNullOrEmpty(article.AISummary))
+            return;
+
+        sb.AppendLine();
+        sb.AppendLine("---");
+        sb.AppendLine();
+        sb.AppendLine("## AI Summary");
+        sb.AppendLine();
+        sb.AppendLine(article.AISummary);
+
+        if (article.AISummaryGeneratedAt.HasValue)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"*Generated: {article.AISummaryGeneratedAt:yyyy-MM-dd HH:mm:ss}*");
+        }
+    }
+
+    internal string BuildCampaignMarkdown(Campaign campaign)
     {
         var sb = new StringBuilder();
 
@@ -70,14 +71,12 @@ public partial class ExportService
         sb.AppendLine();
 
         if (!string.IsNullOrEmpty(campaign.Description))
-        {
             sb.AppendLine(campaign.Description);
-        }
 
         return sb.ToString();
     }
 
-    private string BuildArcMarkdown(Arc arc)
+    internal string BuildArcMarkdown(Arc arc)
     {
         var sb = new StringBuilder();
 
@@ -92,9 +91,7 @@ public partial class ExportService
         sb.AppendLine();
 
         if (!string.IsNullOrEmpty(arc.Description))
-        {
             sb.AppendLine(arc.Description);
-        }
 
         return sb.ToString();
     }
