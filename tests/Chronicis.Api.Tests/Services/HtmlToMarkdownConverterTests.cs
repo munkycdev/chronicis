@@ -217,4 +217,13 @@ public class HtmlToMarkdownConverterTests
         Assert.Contains("1. first", result);
         Assert.Contains("> quote", result);
     }
+
+    [Fact]
+    public void Convert_HandlesListItemWithoutClosingTag()
+    {
+        // Exercises the break in ExtractListItems when </li> is missing
+        var html = "<ul><li>no closing tag</ul>";
+        var result = HtmlToMarkdownConverter.Convert(html);
+        Assert.DoesNotContain("<li>", result);
+    }
 }

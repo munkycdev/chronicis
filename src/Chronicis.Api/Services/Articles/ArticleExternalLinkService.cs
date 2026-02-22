@@ -152,9 +152,6 @@ public partial class ArticleExternalLinkService : IArticleExternalLinkService
 
         foreach (Match spanMatch in spanMatches)
         {
-            if (!spanMatch.Success)
-                continue;
-
             var attrs = spanMatch.Groups[1].Value;
 
             var sourceMatch = DataSourceRegex().Match(attrs);
