@@ -148,4 +148,231 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
         }
     }, { passive: true });
 
+    // Expose a setter so insertWikiLink / insertExternalLinkToken can close the popup
+    // without needing access to the closure-scoped flag directly.
+    window._setAutocompleteVisible = (value) => { autocompleteVisible = value; };
 }
+
+/**
+ * Insert a wiki link at the current cursor position, replacing the [[ trigger text.
+ * @param {string} editorId - The editor container ID
+ * @param {string} articleId - The GUID of the article to link
+ * @param {string} displayText - The text to display
+ */
+function insertWikiLink(editorId, articleId, displayText) {
+    const editor = window.tipTapEditors[editorId];
+    if (!editor) {
+        console.error('Editor not found:', editorId);
+        return;
+    }
+
+    const customDisplayText = window._wikiLinkCustomDisplayText;
+    const finalDisplayText = customDisplayText && customDisplayText.trim() ? customDisplayText.trim() : displayText;
+
+    window._wikiLinkCustomDisplayText = null;
+    if (window._setAutocompleteVisible) window._setAutocompleteVisible(false);
+
+    const { from } = editor.state.selection;
+    const doc = editor.state.doc;
+    let bracketPos = -1;
+
+    for (let pos = from - 1; pos >= Math.max(0, from - 100); pos--) {
+        try {
+            const char1 = doc.textBetween(pos, pos + 1, '');
+            const char2 = pos > 0 ? doc.textBetween(pos - 1, pos, '') : '';
+            if (char2 === '[' && char1 === '[') {
+                bracketPos = pos - 1;
+                break;
+            }
+        } catch (e) {
+            continue;
+        }
+    }
+
+    if (bracketPos === -1) {
+        console.error('Could not find [[ before cursor');
+        return;
+    }
+
+    editor
+        .chain()
+        .focus()
+        .deleteRange({ from: bracketPos, to: from })
+        .insertContent({ type: 'wikiLink', attrs: { targetArticleId: articleId, displayText: finalDisplayText, broken: false } })
+        .insertContent(' ')
+        .run();
+}
+
+/**
+ * Insert an external link token at the current cursor position.
+ * @param {string} editorId - The editor container ID
+ * @param {string} source - External source key
+ * @param {string} id - External id value
+ * @param {string} title - Display title
+ */
+function insertExternalLinkToken(editorId, source, id, title) {
+    const editor = window.tipTapEditors[editorId];
+    if (!editor) {
+        console.error('Editor not found:', editorId);
+        return;
+    }
+
+    if (!source || !id) {
+        console.error('External link token missing source or id');
+        return;
+    }
+
+    const customDisplayText = window._wikiLinkCustomDisplayText;
+    const finalTitle = customDisplayText && customDisplayText.trim() ? customDisplayText.trim() : title;
+
+    window._wikiLinkCustomDisplayText = null;
+    if (window._setAutocompleteVisible) window._setAutocompleteVisible(false);
+
+    const { from } = editor.state.selection;
+    const doc = editor.state.doc;
+    let bracketPos = -1;
+
+    for (let pos = from - 1; pos >= Math.max(0, from - 100); pos--) {
+        try {
+            const char1 = doc.textBetween(pos, pos + 1, '');
+            const char2 = pos > 0 ? doc.textBetween(pos - 1, pos, '') : '';
+            if (char2 === '[' && char1 === '[') {
+                bracketPos = pos - 1;
+                break;
+            }
+        } catch (e) {
+            continue;
+        }
+    }
+
+    if (bracketPos === -1) {
+        console.error('Could not find [[ before cursor');
+        return;
+    }
+
+    editor
+        .chain()
+        .focus()
+        .deleteRange({ from: bracketPos, to: from })
+        .insertContent({ type: 'externalLink', attrs: { source: source, externalId: id, title: finalTitle } })
+        .insertContent(' ')
+        .run();
+}
+
+/**
+ * Update the autocomplete text (for category selection).
+ * @param {string} editorId - The editor container ID
+ * @param {string} newText - The new text to insert (e.g., "srd/spells/")
+ */
+function updateAutocompleteText(editorId, newText) {
+    const editor = window.tipTapEditors[editorId];
+    if (!editor) {
+        console.error('Editor not found:', editorId);
+        return;
+    }
+
+    const { from } = editor.state.selection;
+    const doc = editor.state.doc;
+    let bracketPos = -1;
+
+    for (let pos = from - 1; pos >= Math.max(0, from - 100); pos--) {
+        try {
+            const char1 = doc.textBetween(pos, pos + 1, '');
+            const char2 = pos > 0 ? doc.textBetween(pos - 1, pos, '') : '';
+            if (char2 === '[' && char1 === '[') {
+                bracketPos = pos - 1;
+                break;
+            }
+        } catch (e) {
+            continue;
+        }
+    }
+
+    if (bracketPos === -1) {
+        console.error('Could not find [[ before cursor');
+        return;
+    }
+
+    editor.chain().focus().deleteRange({ from: bracketPos, to: from }).insertContent('[[' + newText).run();
+}
+
+/**
+ * Insert multiple wiki links at specified HTML character positions.
+ * @param {string} editorId - The editor container ID
+ * @param {Array<{articleId: string, displayText: string, startIndex: number, endIndex: number}>} matches
+ */
+function insertWikiLinksAtPositions(editorId, matches) {
+    const editor = window.tipTapEditors[editorId];
+    if (!editor) {
+        console.error('Editor not found:', editorId);
+        return;
+    }
+
+    if (!matches || matches.length === 0) {
+        return;
+    }
+
+    let html = editor.getHTML();
+
+    // Sort descending so replacements from the end don't shift earlier offsets
+    const sortedMatches = [...matches].sort((a, b) => b.startIndex - a.startIndex);
+
+    for (const match of sortedMatches) {
+        const { articleId, displayText, startIndex, endIndex } = match;
+
+        if (startIndex < 0 || endIndex > html.length || startIndex >= endIndex) {
+            console.warn('insertWikiLinksAtPositions: skipping out-of-range match', match);
+            continue;
+        }
+
+        const textAtPosition = html.substring(startIndex, endIndex);
+        if (textAtPosition.toLowerCase() !== (displayText || '').toLowerCase()) {
+            console.warn(`insertWikiLinksAtPositions: text mismatch at ${startIndex}-${endIndex}: expected "${displayText}", found "${textAtPosition}"`);
+            continue;
+        }
+
+        const wikiLinkHtml = `<span data-type="wiki-link" class="wiki-link-node" data-target-id="${articleId}" data-display="${escapeHtmlAttr(displayText)}">${escapeHtml(displayText)}</span>`;
+        html = html.substring(0, startIndex) + wikiLinkHtml + html.substring(endIndex);
+    }
+
+    editor.commands.setContent(html);
+    console.log(`Inserted ${matches.length} wiki links`);
+}
+
+/**
+ * Get the current HTML content from the editor.
+ * @param {string} editorId - The editor container ID
+ * @returns {string} The HTML content
+ */
+function getTipTapContent(editorId) {
+    const editor = window.tipTapEditors[editorId];
+    if (!editor) {
+        console.error('Editor not found:', editorId);
+        return '';
+    }
+    return editor.getHTML();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function escapeHtmlAttr(text) {
+    if (!text) return '';
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+// Make all functions globally available
+window.initializeWikiLinkAutocomplete = initializeWikiLinkAutocomplete;
+window.insertWikiLink = insertWikiLink;
+window.insertExternalLinkToken = insertExternalLinkToken;
+window.updateAutocompleteText = updateAutocompleteText;
+window.insertWikiLinksAtPositions = insertWikiLinksAtPositions;
+window.getTipTapContent = getTipTapContent;
