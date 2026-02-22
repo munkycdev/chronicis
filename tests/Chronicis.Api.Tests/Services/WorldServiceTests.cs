@@ -208,6 +208,22 @@ public class WorldServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateWorldAsync_AddsCreatorAsGmMember()
+    {
+        var dto = new WorldCreateDto { Name = "Membership Test World" };
+
+        var world = await _service.CreateWorldAsync(dto, TestHelpers.FixedIds.User1);
+
+        // The creator must be a WorldMember with GM role so GetUserWorldsAsync can return it
+        var member = await _context.WorldMembers
+            .FirstOrDefaultAsync(m => m.WorldId == world.Id && m.UserId == TestHelpers.FixedIds.User1);
+
+        Assert.NotNull(member);
+        Assert.Equal(WorldRole.GM, member.Role);
+        Assert.Null(member.InvitedBy); // Self-created, no inviter
+    }
+
+    [Fact]
     public async Task CreateWorldAsync_DuplicateSlug_GeneratesUnique()
     {
         // Create first world

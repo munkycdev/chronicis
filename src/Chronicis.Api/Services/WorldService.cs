@@ -194,6 +194,18 @@ public class WorldService : IWorldService
         };
         _context.Arcs.Add(arc);
 
+        // Add the creator as a GM member of their new world
+        var ownerMembership = new WorldMember
+        {
+            Id = Guid.NewGuid(),
+            WorldId = world.Id,
+            UserId = userId,
+            Role = WorldRole.GM,
+            JoinedAt = now,
+            InvitedBy = null
+        };
+        _context.WorldMembers.Add(ownerMembership);
+
         await _context.SaveChangesAsync();
 
         _logger.LogDebug("Created world {WorldId} with default content for user {UserId}", world.Id, userId);
