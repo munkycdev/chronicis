@@ -1,14 +1,12 @@
+using Chronicis.Shared.Admin;
+
 namespace Chronicis.Client.Services;
 
 /// <summary>
 /// Determines whether the current user has system administrator privileges.
-/// Currently hardcoded to a specific user; will be extended to support
-/// role-based admin access in the future.
+/// Extends the shared <see cref="ISysAdminAuthService"/> contract so the same
+/// interface is used on both API and Client.
 /// </summary>
-public interface IAdminAuthService
+public interface IAdminAuthService : ISysAdminAuthService
 {
-    /// <summary>
-    /// Returns true if the current authenticated user is a system administrator.
-    /// </summary>
-    Task<bool> IsSysAdminAsync();
 }

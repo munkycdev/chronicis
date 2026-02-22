@@ -1,4 +1,6 @@
 using Chronicis.Client.Services;
+using Chronicis.Shared.Admin;
+using Microsoft.Extensions.Options;
 
 namespace Chronicis.Client.Extensions;
 
@@ -8,11 +10,21 @@ namespace Chronicis.Client.Extensions;
 public static class ApplicationServiceExtensions
 {
     /// <summary>
-    /// Adds all Chronicis application services including API services, 
+    /// Adds all Chronicis application services including API services,
     /// state services, and domain services.
     /// </summary>
-    public static IServiceCollection AddChronicisApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddChronicisApplicationServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
+        // SysAdmin checker — reads from the "SysAdmin" config section in wwwroot/appsettings.json
+        services.Configure<SysAdminOptions>(configuration.GetSection("SysAdmin"));
+        services.AddSingleton<ISysAdminChecker>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<SysAdminOptions>>().Value;
+            return new SysAdminChecker(options);
+        });
+
         // API Services - use the authenticated "ChronicisApi" client
         services.AddChronicisApiService<IArticleApiService, ArticleApiService>();
         services.AddChronicisApiService<ISearchApiService, SearchApiService>();
@@ -27,6 +39,7 @@ public static class ApplicationServiceExtensions
         services.AddChronicisApiService<ICharacterApiService, CharacterApiService>();
         services.AddChronicisApiService<IDashboardApiService, DashboardApiService>();
         services.AddChronicisApiService<IResourceProviderApiService, ResourceProviderApiService>();
+        services.AddChronicisApiService<IAdminApiService, AdminApiService>();
 
         // API services with special dependencies
         services.AddChronicisApiServiceWithSnackbar<IQuestApiService, QuestApiService>();

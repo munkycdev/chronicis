@@ -1,0 +1,48 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Color="Color.Error">
+            <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
+            Delete World
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Class="mb-3">
+            This will <strong>permanently delete</strong> <em>@WorldName</em> and all
+            associated campaigns, arcs, articles, and data. This cannot be undone.
+        </MudText>
+        <MudText Class="mb-2">
+            Type <strong>@WorldName</strong> to confirm:
+        </MudText>
+        <MudTextField @bind-Value="_confirmText"
+                      Label="World name"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      AutoFocus="true" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error"
+                   Variant="Variant.Filled"
+                   OnClick="Confirm"
+                   Disabled="@(!CanConfirm)"
+                   StartIcon="@Icons.Material.Filled.DeleteForever">
+            Delete Forever
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? MudDialog { get; set; }
+
+    [Parameter] public string WorldName { get; set; } = string.Empty;
+
+    private string _confirmText = "";
+
+    private bool CanConfirm =>
+        string.Equals(_confirmText, WorldName, StringComparison.Ordinal);
+
+    private void Cancel() => MudDialog?.Cancel();
+    private void Confirm() => MudDialog?.Close(DialogResult.Ok(true));
+}

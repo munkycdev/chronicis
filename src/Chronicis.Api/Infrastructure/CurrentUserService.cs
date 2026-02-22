@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Chronicis.Api.Services;
+using Chronicis.Shared.Admin;
 using Chronicis.Shared.Models;
 
 namespace Chronicis.Api.Infrastructure;
@@ -12,15 +13,18 @@ public class CurrentUserService : ICurrentUserService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserService _userService;
+    private readonly ISysAdminChecker _sysAdminChecker;
     private User? _cachedUser;
     private bool _userLookedUp;
 
     public CurrentUserService(
         IHttpContextAccessor httpContextAccessor,
-        IUserService userService)
+        IUserService userService,
+        ISysAdminChecker sysAdminChecker)
     {
         _httpContextAccessor = httpContextAccessor;
         _userService = userService;
+        _sysAdminChecker = sysAdminChecker;
     }
 
     public bool IsAuthenticated =>
@@ -86,6 +90,18 @@ public class CurrentUserService : ICurrentUserService
         var user = await GetCurrentUserAsync();
         return user ?? throw new InvalidOperationException(
             "User not found. Ensure this endpoint requires authentication.");
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> IsSysAdminAsync()
+    {
+        var auth0UserId = GetAuth0UserId();
+        if (string.IsNullOrEmpty(auth0UserId))
+            return false;
+
+        // Resolve email from the cached/current user to support email-based sysadmin checks.
+        var user = await GetCurrentUserAsync();
+        return _sysAdminChecker.IsSysAdmin(auth0UserId, user?.Email);
     }
 
     /// <summary>

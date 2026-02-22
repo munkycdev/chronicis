@@ -1,6 +1,8 @@
 using Chronicis.Client.Extensions;
 using Chronicis.Client.Services;
+using Chronicis.Shared.Admin;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
 using MudBlazor;
@@ -11,6 +13,15 @@ namespace Chronicis.Client.Tests.Extensions;
 
 public class ApplicationServiceExtensionsTests
 {
+    private static IConfiguration BuildConfig() =>
+        new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["SysAdmin:Auth0UserIds:0"] = "oauth2|discord|123",
+                ["SysAdmin:Emails:0"] = "admin@example.com",
+            })
+            .Build();
+
     [Fact]
     public void AddChronicisApplicationServices_RegistersCoreApplicationServices()
     {
@@ -22,7 +33,7 @@ public class ApplicationServiceExtensionsTests
         services.AddSingleton(Substitute.For<IJSRuntime>());
         services.AddSingleton<NavigationManager>(new TestNavigationManager("https://client.example/"));
 
-        var returned = services.AddChronicisApplicationServices();
+        var returned = services.AddChronicisApplicationServices(BuildConfig());
 
         Assert.Same(services, returned);
         using var provider = services.BuildServiceProvider();
@@ -33,6 +44,8 @@ public class ApplicationServiceExtensionsTests
         Assert.NotNull(provider.GetRequiredService<IPublicApiService>());
         Assert.NotNull(provider.GetRequiredService<IHealthStatusApiService>());
         Assert.NotNull(provider.GetRequiredService<IRenderDefinitionService>());
+        Assert.NotNull(provider.GetRequiredService<IAdminApiService>());
+        Assert.NotNull(provider.GetRequiredService<ISysAdminChecker>());
     }
 
     private sealed class TestNavigationManager : NavigationManager

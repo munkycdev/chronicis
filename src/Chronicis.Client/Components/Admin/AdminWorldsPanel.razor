@@ -1,0 +1,70 @@
+@using Chronicis.Shared.DTOs
+
+<div class="awp-container">
+    <MudText Typo="Typo.h5" Class="awp-section-title mb-2">World Management</MudText>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+        All worlds across the platform. Deletion is permanent and cannot be undone.
+    </MudText>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+    }
+    else if (!string.IsNullOrEmpty(_loadError))
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_loadError</MudAlert>
+    }
+    else
+    {
+        <MudTable Items="_worlds"
+                  Dense="true"
+                  Hover="true"
+                  Striped="true"
+                  Loading="_isLoading"
+                  SortLabel="Sort By"
+                  Class="awp-table">
+            <ToolBarContent>
+                <MudText Typo="Typo.subtitle1">@_worlds.Count world(s)</MudText>
+                <MudSpacer />
+                <MudTooltip Text="Refresh">
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                                   Color="Color.Default"
+                                   OnClick="LoadWorldsAsync" />
+                </MudTooltip>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<AdminWorldSummaryDto, object>(x => x.Name)">Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<AdminWorldSummaryDto, object>(x => x.OwnerName)">Owner</MudTableSortLabel></MudTh>
+                <MudTh>Campaigns</MudTh>
+                <MudTh>Arcs</MudTh>
+                <MudTh>Articles</MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<AdminWorldSummaryDto, object>(x => x.CreatedAt)">Created</MudTableSortLabel></MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">
+                    <MudText Typo="Typo.body2" Style="font-weight:600;">@context.Name</MudText>
+                </MudTd>
+                <MudTd DataLabel="Owner">
+                    <MudText Typo="Typo.body2">@context.OwnerName</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@context.OwnerEmail</MudText>
+                </MudTd>
+                <MudTd DataLabel="Campaigns">@context.CampaignCount</MudTd>
+                <MudTd DataLabel="Arcs">@context.ArcCount</MudTd>
+                <MudTd DataLabel="Articles">@context.ArticleCount</MudTd>
+                <MudTd DataLabel="Created">@context.CreatedAt.ToString("yyyy-MM-dd")</MudTd>
+                <MudTd>
+                    <MudTooltip Text="Delete world">
+                        <MudIconButton Icon="@Icons.Material.Filled.DeleteForever"
+                                       Color="Color.Error"
+                                       Size="Size.Small"
+                                       OnClick="@(() => OpenDeleteDialogAsync(context))" />
+                    </MudTooltip>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="pa-4 mud-text-secondary">No worlds found.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    }
+</div>

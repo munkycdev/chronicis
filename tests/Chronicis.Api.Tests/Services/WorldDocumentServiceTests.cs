@@ -97,7 +97,7 @@ public class WorldDocumentServiceTests
         {
             FileSizeBytes = 1024,
             FileName = "notes.txt",
-            ContentType = null
+            ContentType = default
         });
     }
 

@@ -31,7 +31,7 @@ internal class Program
         builder.Services.AddChronicisHttpClients(builder.Configuration);
 
         // Application Services
-        builder.Services.AddChronicisApplicationServices();
+        builder.Services.AddChronicisApplicationServices(builder.Configuration);
 
         await builder.Build().RunAsync();
     }

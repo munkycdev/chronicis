@@ -5,6 +5,7 @@ using Chronicis.Api.Repositories;
 using Chronicis.Api.Services;
 using Chronicis.Api.Services.Articles;
 using Chronicis.Api.Services.ExternalLinks;
+using Chronicis.Shared.Admin;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -124,6 +125,14 @@ internal class Program
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
+            // SysAdmin checker — reads from the "SysAdmin" config section
+            builder.Services.Configure<SysAdminOptions>(builder.Configuration.GetSection("SysAdmin"));
+            builder.Services.AddSingleton<Chronicis.Shared.Admin.ISysAdminChecker>(sp =>
+            {
+                var options = sp.GetRequiredService<IOptions<SysAdminOptions>>().Value;
+                return new SysAdminChecker(options);
+            });
+
             // External links
             builder.Services.AddMemoryCache();
             builder.Services.AddHttpClient(); // General-purpose HttpClient for diagnostics
@@ -212,6 +221,7 @@ internal class Program
             builder.Services.AddScoped<IResourceProviderService, ResourceProviderService>();
             builder.Services.AddScoped<IQuestService, QuestService>();
             builder.Services.AddScoped<IQuestUpdateService, QuestUpdateService>();
+            builder.Services.AddScoped<IAdminService, AdminService>();
 
             // Health check services
             builder.Services.AddScoped<DatabaseHealthCheckService>();

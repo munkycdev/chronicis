@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
+using Chronicis.Shared.Admin;
 using Chronicis.Shared.Models;
 using Microsoft.AspNetCore.Http;
 using NSubstitute;
@@ -14,13 +15,15 @@ public class CurrentUserServiceTests
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserService _userService;
+    private readonly ISysAdminChecker _sysAdminChecker;
     private readonly CurrentUserService _sut;
 
     public CurrentUserServiceTests()
     {
         _httpContextAccessor = Substitute.For<IHttpContextAccessor>();
         _userService = Substitute.For<IUserService>();
-        _sut = new CurrentUserService(_httpContextAccessor, _userService);
+        _sysAdminChecker = Substitute.For<ISysAdminChecker>();
+        _sut = new CurrentUserService(_httpContextAccessor, _userService, _sysAdminChecker);
     }
 
     // ── Helpers ───────────────────────────────────────────────────
@@ -510,5 +513,77 @@ public class CurrentUserServiceTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _sut.GetRequiredUserAsync());
+    }
+
+    // ── IsSysAdminAsync ──────────────────────────────────────────
+
+    [Fact]
+    public async Task IsSysAdminAsync_ReturnsFalse_WhenNotAuthenticated()
+    {
+        SetupHttpContext(authenticated: false);
+
+        Assert.False(await _sut.IsSysAdminAsync());
+        _sysAdminChecker.DidNotReceive().IsSysAdmin(Arg.Any<string>(), Arg.Any<string?>());
+    }
+
+    [Fact]
+    public async Task IsSysAdminAsync_ReturnsFalse_WhenHttpContextIsNull()
+    {
+        SetupNullHttpContext();
+
+        Assert.False(await _sut.IsSysAdminAsync());
+        _sysAdminChecker.DidNotReceive().IsSysAdmin(Arg.Any<string>(), Arg.Any<string?>());
+    }
+
+    [Fact]
+    public async Task IsSysAdminAsync_ReturnsTrue_WhenCheckerConfirms()
+    {
+        var testUser = CreateTestUser("auth0|sysadmin");
+        SetupHttpContext(authenticated: true,
+            new Claim(ClaimTypes.NameIdentifier, "auth0|sysadmin"),
+            new Claim(ClaimTypes.Email, "admin@chronicis.app"),
+            new Claim(ClaimTypes.Name, "Admin"));
+
+        _userService.GetOrCreateUserAsync(Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<string?>())
+            .Returns((User?)testUser);
+
+        _sysAdminChecker.IsSysAdmin("auth0|sysadmin", testUser.Email).Returns(true);
+
+        Assert.True(await _sut.IsSysAdminAsync());
+    }
+
+    [Fact]
+    public async Task IsSysAdminAsync_ReturnsFalse_WhenCheckerDenies()
+    {
+        var testUser = CreateTestUser("auth0|regular");
+        SetupHttpContext(authenticated: true,
+            new Claim(ClaimTypes.NameIdentifier, "auth0|regular"),
+            new Claim(ClaimTypes.Email, "player@example.com"),
+            new Claim(ClaimTypes.Name, "Player"));
+
+        _userService.GetOrCreateUserAsync(Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<string?>())
+            .Returns(testUser);
+
+        _sysAdminChecker.IsSysAdmin(Arg.Any<string>(), Arg.Any<string?>()).Returns(false);
+
+        Assert.False(await _sut.IsSysAdminAsync());
+    }
+
+    [Fact]
+    public async Task IsSysAdminAsync_PassesNullEmail_WhenUserNotFound()
+    {
+        SetupHttpContext(authenticated: true,
+            new Claim(ClaimTypes.NameIdentifier, "auth0|ghost"));
+
+        _userService.GetOrCreateUserAsync(Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<string>(), Arg.Any<string?>())
+            .Returns((User?)null);
+
+        _sysAdminChecker.IsSysAdmin("auth0|ghost", null).Returns(false);
+
+        Assert.False(await _sut.IsSysAdminAsync());
+        _sysAdminChecker.Received(1).IsSysAdmin("auth0|ghost", null);
     }
 }

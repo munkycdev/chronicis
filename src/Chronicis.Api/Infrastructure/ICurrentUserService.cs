@@ -1,3 +1,4 @@
+using Chronicis.Shared.Admin;
 using Chronicis.Shared.Models;
 
 namespace Chronicis.Api.Infrastructure;
@@ -6,7 +7,7 @@ namespace Chronicis.Api.Infrastructure;
 /// Service for accessing the current authenticated user.
 /// Replaces the FunctionContext-based user access pattern from Azure Functions.
 /// </summary>
-public interface ICurrentUserService
+public interface ICurrentUserService : ISysAdminAuthService
 {
     /// <summary>
     /// Gets the current authenticated user, or null if not authenticated.

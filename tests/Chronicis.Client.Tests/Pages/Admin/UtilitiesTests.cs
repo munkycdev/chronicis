@@ -1,6 +1,7 @@
 using Chronicis.Client.Components.Admin;
 using Chronicis.Client.Services;
 using Chronicis.Client.Tests.Components;
+using Chronicis.Shared.DTOs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
@@ -31,15 +32,27 @@ public class UtilitiesTests : MudBlazorTestContext
         adminAuth.IsSysAdminAsync().Returns(true);
 
         Services.AddSingleton(adminAuth);
+
+        // Dependencies for the Worlds tab (AdminWorldsPanel)
+        var adminApi = Substitute.For<IAdminApiService>();
+        adminApi.GetWorldSummariesAsync().Returns(new List<AdminWorldSummaryDto>());
+        Services.AddSingleton(adminApi);
+        Services.AddSingleton(Substitute.For<ISnackbar>());
+        Services.AddSingleton(Substitute.For<ILogger<AdminWorldsPanel>>());
+        Services.AddSingleton(Substitute.For<IDialogService>());
+
+        // Dependencies for the External Resources tab (RenderDefinitionGenerator)
         Services.AddSingleton(Substitute.For<IExternalLinkApiService>());
         Services.AddSingleton(Substitute.For<IRenderDefinitionService>());
         Services.AddSingleton(Substitute.For<ILogger<RenderDefinitionGenerator>>());
+
         RenderComponent<MudPopoverProvider>();
 
         var cut = RenderComponent<UtilitiesPage>();
 
         Assert.Contains("Admin Utilities", cut.Markup);
         Assert.Contains("System Status", cut.Markup);
+        Assert.Contains("Worlds", cut.Markup);
         Assert.Contains("External Resources", cut.Markup);
     }
 
@@ -55,5 +68,4 @@ public class UtilitiesTests : MudBlazorTestContext
 
         Assert.Contains("mud-progress-linear", cut.Markup, StringComparison.OrdinalIgnoreCase);
     }
-
 }
