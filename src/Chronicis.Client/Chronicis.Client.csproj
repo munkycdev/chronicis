@@ -4,6 +4,10 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<!-- Disable native WASM/Emscripten AOT compilation. IL trimming (tree shaking) is still
+		     active via the wasm-tools workload, which is what we want for bundle size reduction.
+		     AOT requires Python/Emscripten in the build environment and increases bundle size. -->
+		<WasmBuildNative>false</WasmBuildNative>
 	</PropertyGroup>
 
 	<ItemGroup>

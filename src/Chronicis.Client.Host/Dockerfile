@@ -2,6 +2,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
+# Install wasm-tools workload to enable IL trimming (tree shaking) for Blazor WASM.
+# Done before COPY so this layer is cached independently of source changes.
+RUN dotnet workload install wasm-tools
+
 # Copy repo (context should be repo root)
 COPY . .
 

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.JSInterop;
 using MudBlazor;
 
@@ -24,11 +25,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<TInterface>(sp =>
         {
-            var factory = sp.GetRequiredService<IHttpClientFactory>();
-            var logger = sp.GetRequiredService<ILogger<TImplementation>>();
-            var httpClient = factory.CreateClient(httpClientName);
-
-            return (TInterface)Activator.CreateInstance(typeof(TImplementation), httpClient, logger)!;
+            var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(httpClientName);
+            return ActivatorUtilities.CreateInstance<TImplementation>(sp, httpClient);
         });
 
         return services;
@@ -50,12 +48,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<TInterface>(sp =>
         {
-            var factory = sp.GetRequiredService<IHttpClientFactory>();
-            var logger = sp.GetRequiredService<ILogger<TImplementation>>();
-            var snackbar = sp.GetRequiredService<ISnackbar>();
-            var httpClient = factory.CreateClient(httpClientName);
-
-            return (TInterface)Activator.CreateInstance(typeof(TImplementation), httpClient, logger, snackbar)!;
+            var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(httpClientName);
+            return ActivatorUtilities.CreateInstance<TImplementation>(sp, httpClient);
         });
 
         return services;
@@ -77,12 +71,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<TInterface>(sp =>
         {
-            var factory = sp.GetRequiredService<IHttpClientFactory>();
-            var jsRuntime = sp.GetRequiredService<IJSRuntime>();
-            var logger = sp.GetRequiredService<ILogger<TImplementation>>();
-            var httpClient = factory.CreateClient(httpClientName);
-
-            return (TInterface)Activator.CreateInstance(typeof(TImplementation), httpClient, jsRuntime, logger)!;
+            var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(httpClientName);
+            return ActivatorUtilities.CreateInstance<TImplementation>(sp, httpClient);
         });
 
         return services;
@@ -102,11 +92,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<TImplementation>(sp =>
         {
-            var factory = sp.GetRequiredService<IHttpClientFactory>();
-            var logger = sp.GetRequiredService<ILogger<TImplementation>>();
-            var httpClient = factory.CreateClient(httpClientName);
-
-            return (TImplementation)Activator.CreateInstance(typeof(TImplementation), httpClient, logger)!;
+            var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(httpClientName);
+            return ActivatorUtilities.CreateInstance<TImplementation>(sp, httpClient);
         });
 
         return services;
