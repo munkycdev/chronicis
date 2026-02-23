@@ -237,6 +237,18 @@
     background-color: var(--chronicis-background-dark);
 }
 
+/* Metadata drawer overrides - right-side panel uses light (off-white) background */
+.metadata-drawer.mud-drawer,
+.metadata-drawer .mud-drawer-paper {
+    background-color: var(--chronicis-soft-off-white) !important;
+    border-right: none;
+    border-left: 1px solid var(--chronicis-primary);
+}
+
+.metadata-drawer .mud-drawer-content {
+    background-color: var(--chronicis-soft-off-white) !important;
+}
+
 /* Main Content */
 .mud-main-content {
     background-color: var(--chronicis-background-content);

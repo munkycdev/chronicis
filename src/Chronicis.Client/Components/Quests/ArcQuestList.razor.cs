@@ -14,6 +14,9 @@ public partial class ArcQuestList : ComponentBase
     [Parameter]
     public bool IsGm { get; set; }
 
+    [Parameter]
+    public EventCallback<QuestDto> OnEditQuest { get; set; }
+
     [Inject] private IQuestApiService QuestApi { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
@@ -102,15 +105,12 @@ public partial class ArcQuestList : ComponentBase
         }
     }
 
-    private void EditQuest(QuestDto quest)
+    private async Task EditQuest(QuestDto quest)
     {
         if (!_isGm)
             return;
 
-        // This will be handled by the parent ArcDetail page
-        // which will show the quest editor inline
-        // For now, just show a placeholder
-        Snackbar.Add($"Editing quest: {quest.Title}", Severity.Info);
+        await OnEditQuest.InvokeAsync(quest);
     }
 
     private async Task DeleteQuest(QuestDto quest)

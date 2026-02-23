@@ -1,7 +1,3 @@
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.JSInterop;
-using MudBlazor;
-
 namespace Chronicis.Client.Extensions;
 
 /// <summary>

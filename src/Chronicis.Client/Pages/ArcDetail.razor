@@ -88,7 +88,7 @@ else if (_arc != null)
         }
 
         <!-- Quests Section -->
-        <ArcQuestList ArcId="@ArcId" IsGm="_isCurrentUserGM" />
+        <ArcQuestList ArcId="@ArcId" IsGm="_isCurrentUserGM" OnEditQuest="OnEditQuest" />
 
         @if (_selectedQuest != null)
         {
@@ -453,6 +453,12 @@ else if (_arc != null)
     private void OnQuestUpdated(QuestDto updatedQuest)
     {
         _selectedQuest = updatedQuest;
+        StateHasChanged();
+    }
+
+    private void OnEditQuest(QuestDto quest)
+    {
+        _selectedQuest = quest;
         StateHasChanged();
     }
 }

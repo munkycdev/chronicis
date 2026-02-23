@@ -122,6 +122,40 @@ public class QuestDrawerTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task QuestDrawer_LoadQuestsAsync_FiltersOutGmOnlyQuests()
+    {
+        var rendered = CreateRenderedSut();
+        var articleId = Guid.NewGuid();
+        var arcId = Guid.NewGuid();
+        var playerQuest = CreateQuest("Player Quest", arcId);
+        var gmQuest = CreateQuest("GM Quest", arcId);
+        gmQuest.IsGmOnly = true;
+
+        rendered.TreeState.SelectedNodeId.Returns(articleId);
+        rendered.ArticleApi.GetArticleDetailAsync(articleId).Returns(new ArticleDto
+        {
+            Id = articleId,
+            Type = ArticleType.Session,
+            WorldId = Guid.NewGuid(),
+            ArcId = arcId
+        });
+        rendered.QuestApi.GetArcQuestsAsync(arcId).Returns(new List<QuestDto> { playerQuest, gmQuest });
+        rendered.QuestApi.GetQuestUpdatesAsync(playerQuest.Id, 0, 5).Returns(new PagedResult<QuestUpdateEntryDto>
+        {
+            Items = new List<QuestUpdateEntryDto>(),
+            TotalCount = 0
+        });
+
+        await InvokePrivateOnRendererAsync(rendered.Cut, "LoadQuestsAsync");
+
+        var quests = GetPrivateField<List<QuestDto>>(rendered.Cut.Instance, "_quests");
+        Assert.NotNull(quests);
+        Assert.Single(quests);
+        Assert.Equal(playerQuest.Id, quests![0].Id);
+        Assert.DoesNotContain(quests, q => q.IsGmOnly);
+    }
+
+    [Fact]
     public async Task QuestDrawer_ResolveSessionIdFromParentAsync_FindsSession()
     {
         var rendered = CreateRenderedSut();
@@ -342,6 +376,7 @@ public class QuestDrawerTests : MudBlazorTestContext
             ArcId = arcId,
             WorldId = Guid.NewGuid()
         });
+        SetPrivateField(rendered.Cut.Instance, "_currentArcId", arcId);
         SetPrivateField(rendered.Cut.Instance, "_questsLoadedForArc", true);
         SetPrivateField(rendered.Cut.Instance, "_quests", new List<QuestDto> { firstQuest });
         rendered.QuestApi.GetQuestUpdatesAsync(firstQuest.Id, 0, 5).Returns(new PagedResult<QuestUpdateEntryDto>
@@ -374,6 +409,7 @@ public class QuestDrawerTests : MudBlazorTestContext
             WorldId = Guid.NewGuid()
         });
         rendered.QuestApi.GetArcQuestsAsync(arcId).Returns(new List<QuestDto> { quest });
+        SetPrivateField(rendered.Cut.Instance, "_currentArcId", arcId);
         SetPrivateField(rendered.Cut.Instance, "_selectedQuestId", selectedQuestId);
 
         await InvokePrivateOnRendererAsync(rendered.Cut, "LoadQuestsAsync");
@@ -969,6 +1005,7 @@ public class QuestDrawerTests : MudBlazorTestContext
             WorldId = Guid.NewGuid(),
             ArcId = arcId
         });
+        SetPrivateField(rendered.Cut.Instance, "_currentArcId", arcId);
         SetPrivateField(rendered.Cut.Instance, "_quests", null);
         SetPrivateField(rendered.Cut.Instance, "_questsLoadedForArc", true);
 

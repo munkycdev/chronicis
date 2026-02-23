@@ -17,13 +17,13 @@ namespace Chronicis.Client.Tests.Pages;
 
 public class ArcDetailTests : MudBlazorTestContext
 {
+    // ── Unsaved-changes flags ──────────────────────────────────────
+
     [Fact]
     public void ArcDetail_OnNameChanged_SetsUnsavedChanges()
     {
         var rendered = CreateRenderedSut();
-
         InvokePrivate(rendered.Instance, "OnNameChanged");
-
         Assert.True(GetPrivateBoolField(rendered.Instance, "_hasUnsavedChanges"));
     }
 
@@ -31,9 +31,7 @@ public class ArcDetailTests : MudBlazorTestContext
     public void ArcDetail_OnDescriptionChanged_SetsUnsavedChanges()
     {
         var rendered = CreateRenderedSut();
-
         InvokePrivate(rendered.Instance, "OnDescriptionChanged");
-
         Assert.True(GetPrivateBoolField(rendered.Instance, "_hasUnsavedChanges"));
     }
 
@@ -41,19 +39,17 @@ public class ArcDetailTests : MudBlazorTestContext
     public void ArcDetail_OnSortOrderChanged_SetsUnsavedChanges()
     {
         var rendered = CreateRenderedSut();
-
         InvokePrivate(rendered.Instance, "OnSortOrderChanged");
-
         Assert.True(GetPrivateBoolField(rendered.Instance, "_hasUnsavedChanges"));
     }
+
+    // ── SaveArc ────────────────────────────────────────────────────
 
     [Fact]
     public async Task ArcDetail_SaveArc_WhenArcNull_DoesNotCallUpdate()
     {
         var rendered = CreateRenderedSut();
-
         await InvokePrivateOnRendererAsync(rendered.Cut, "SaveArc");
-
         await rendered.ArcApi.DidNotReceive().UpdateArcAsync(Arg.Any<Guid>(), Arg.Any<ArcUpdateDto>());
     }
 
@@ -63,9 +59,7 @@ public class ArcDetailTests : MudBlazorTestContext
         var rendered = CreateRenderedSut();
         SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc" });
         SetPrivateField(rendered.Instance, "_isSaving", true);
-
         await InvokePrivateOnRendererAsync(rendered.Cut, "SaveArc");
-
         await rendered.ArcApi.DidNotReceive().UpdateArcAsync(Arg.Any<Guid>(), Arg.Any<ArcUpdateDto>());
     }
 
@@ -74,13 +68,11 @@ public class ArcDetailTests : MudBlazorTestContext
     {
         var rendered = CreateRenderedSut();
         var arc = new ArcDto { Id = rendered.ArcId, Name = "Old", Description = "Old", SortOrder = 1 };
-
         SetPrivateField(rendered.Instance, "_arc", arc);
         SetPrivateField(rendered.Instance, "_editName", " Updated Arc ");
         SetPrivateField(rendered.Instance, "_editDescription", "   ");
         SetPrivateField(rendered.Instance, "_editSortOrder", 5);
         SetPrivateField(rendered.Instance, "_hasUnsavedChanges", true);
-
         rendered.ArcApi.UpdateArcAsync(rendered.ArcId, Arg.Any<ArcUpdateDto>())
             .Returns(new ArcDto { Id = rendered.ArcId, Name = "Updated Arc", Description = null, SortOrder = 5 });
 
@@ -94,12 +86,51 @@ public class ArcDetailTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task ArcDetail_SaveArc_WhenUpdateReturnsNull_KeepsUnsavedChanges()
+    {
+        var rendered = CreateRenderedSut();
+        SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc" });
+        SetPrivateField(rendered.Instance, "_editName", "Changed");
+        SetPrivateField(rendered.Instance, "_hasUnsavedChanges", true);
+        rendered.ArcApi.UpdateArcAsync(rendered.ArcId, Arg.Any<ArcUpdateDto>()).Returns((ArcDto?)null);
+
+        await InvokePrivateOnRendererAsync(rendered.Cut, "SaveArc");
+
+        Assert.True(GetPrivateBoolField(rendered.Instance, "_hasUnsavedChanges"));
+        await rendered.TreeState.DidNotReceive().RefreshAsync();
+    }
+
+    [Fact]
+    public async Task ArcDetail_SaveArc_WhenUpdateThrows_ResetsSavingFlag()
+    {
+        var rendered = CreateRenderedSut();
+        SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc" });
+        SetPrivateField(rendered.Instance, "_editName", "Changed");
+        rendered.ArcApi.UpdateArcAsync(rendered.ArcId, Arg.Any<ArcUpdateDto>())
+            .Returns(Task.FromException<ArcDto?>(new Exception("boom")));
+
+        await InvokePrivateOnRendererAsync(rendered.Cut, "SaveArc");
+
+        Assert.False(GetPrivateBoolField(rendered.Instance, "_isSaving"));
+    }
+
+    // ── OnActiveToggle ─────────────────────────────────────────────
+
+    [Fact]
     public async Task ArcDetail_OnActiveToggle_WhenArcNull_ReturnsEarly()
     {
         var rendered = CreateRenderedSut();
-
         await InvokePrivateOnRendererAsync(rendered.Cut, "OnActiveToggle", true);
+        await rendered.ArcApi.DidNotReceive().ActivateArcAsync(Arg.Any<Guid>());
+    }
 
+    [Fact]
+    public async Task ArcDetail_OnActiveToggle_WhenAlreadyToggling_ReturnsEarly()
+    {
+        var rendered = CreateRenderedSut();
+        SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc" });
+        SetPrivateField(rendered.Instance, "_isTogglingActive", true);
+        await InvokePrivateOnRendererAsync(rendered.Cut, "OnActiveToggle", true);
         await rendered.ArcApi.DidNotReceive().ActivateArcAsync(Arg.Any<Guid>());
     }
 
@@ -135,11 +166,21 @@ public class ArcDetailTests : MudBlazorTestContext
     {
         var rendered = CreateRenderedSut();
         SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc", IsActive = true });
-
         await InvokePrivateOnRendererAsync(rendered.Cut, "OnActiveToggle", false);
-
         await rendered.ArcApi.DidNotReceive().ActivateArcAsync(Arg.Any<Guid>());
     }
+
+    [Fact]
+    public async Task ArcDetail_OnActiveToggle_WhenActivateThrows_ResetsTogglingFlag()
+    {
+        var rendered = CreateRenderedSut();
+        SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc" });
+        rendered.ArcApi.ActivateArcAsync(rendered.ArcId).Returns(Task.FromException<bool>(new Exception("boom")));
+        await InvokePrivateOnRendererAsync(rendered.Cut, "OnActiveToggle", true);
+        Assert.False(GetPrivateBoolField(rendered.Instance, "_isTogglingActive"));
+    }
+
+    // ── DeleteArc ─────────────────────────────────────────────────
 
     [Fact]
     public async Task ArcDetail_DeleteArc_WithExistingSessions_ReturnsEarly()
@@ -147,9 +188,7 @@ public class ArcDetailTests : MudBlazorTestContext
         var rendered = CreateRenderedSut();
         SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc" });
         SetPrivateField(rendered.Instance, "_sessions", new List<ArticleTreeDto> { new() { Id = Guid.NewGuid() } });
-
         await InvokePrivateOnRendererAsync(rendered.Cut, "DeleteArc");
-
         await rendered.ArcApi.DidNotReceive().DeleteArcAsync(Arg.Any<Guid>());
     }
 
@@ -159,11 +198,8 @@ public class ArcDetailTests : MudBlazorTestContext
         var rendered = CreateRenderedSut();
         SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc", CampaignId = Guid.NewGuid() });
         SetPrivateField(rendered.Instance, "_sessions", new List<ArticleTreeDto>());
-        rendered.JsRuntime.InvokeAsync<bool>("confirm", Arg.Any<object?[]>())
-            .Returns(new ValueTask<bool>(false));
-
+        rendered.JsRuntime.InvokeAsync<bool>("confirm", Arg.Any<object?[]>()).Returns(new ValueTask<bool>(false));
         await InvokePrivateOnRendererAsync(rendered.Cut, "DeleteArc");
-
         await rendered.ArcApi.DidNotReceive().DeleteArcAsync(Arg.Any<Guid>());
     }
 
@@ -174,8 +210,7 @@ public class ArcDetailTests : MudBlazorTestContext
         var campaignId = Guid.NewGuid();
         SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc", CampaignId = campaignId });
         SetPrivateField(rendered.Instance, "_sessions", new List<ArticleTreeDto>());
-        rendered.JsRuntime.InvokeAsync<bool>("confirm", Arg.Any<object?[]>())
-            .Returns(new ValueTask<bool>(true));
+        rendered.JsRuntime.InvokeAsync<bool>("confirm", Arg.Any<object?[]>()).Returns(new ValueTask<bool>(true));
 
         await InvokePrivateOnRendererAsync(rendered.Cut, "DeleteArc");
 
@@ -185,13 +220,39 @@ public class ArcDetailTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task ArcDetail_DeleteArc_WhenDeleteThrows_DoesNotThrow()
+    {
+        var rendered = CreateRenderedSut();
+        var campaignId = Guid.NewGuid();
+        SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc", CampaignId = campaignId });
+        SetPrivateField(rendered.Instance, "_sessions", new List<ArticleTreeDto>());
+        rendered.JsRuntime.InvokeAsync<bool>("confirm", Arg.Any<object?[]>()).Returns(new ValueTask<bool>(true));
+        rendered.ArcApi.DeleteArcAsync(rendered.ArcId).Returns(Task.FromException<bool>(new Exception("boom")));
+
+        var ex = await Record.ExceptionAsync(() => InvokePrivateOnRendererAsync(rendered.Cut, "DeleteArc"));
+
+        Assert.Null(ex);
+    }
+
+    // ── CreateSession ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task ArcDetail_CreateSession_WhenArcOrCampaignMissing_ReturnsEarly()
+    {
+        var rendered = CreateRenderedSut();
+        SetPrivateField(rendered.Instance, "_arc", null);
+        SetPrivateField(rendered.Instance, "_campaign", null);
+        await InvokePrivateOnRendererAsync(rendered.Cut, "CreateSession");
+        await rendered.ArticleApi.DidNotReceive().CreateArticleAsync(Arg.Any<ArticleCreateDto>());
+    }
+
+    [Fact]
     public async Task ArcDetail_CreateSession_WhenCreateFails_DoesNotRefreshTree()
     {
         var rendered = CreateRenderedSut();
         SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc" });
         SetPrivateField(rendered.Instance, "_campaign", new CampaignDto { Id = Guid.NewGuid(), WorldId = Guid.NewGuid(), Name = "Campaign" });
         SetPrivateField(rendered.Instance, "_sessions", new List<ArticleTreeDto>());
-
         rendered.ArticleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>()).Returns((ArticleDto?)null);
 
         await InvokePrivateOnRendererAsync(rendered.Cut, "CreateSession");
@@ -211,11 +272,9 @@ public class ArcDetailTests : MudBlazorTestContext
             Slug = "session-1",
             Breadcrumbs = [new BreadcrumbDto { Slug = "world" }, new BreadcrumbDto { Slug = "session-1" }]
         };
-
         SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc", CampaignId = campaignId });
         SetPrivateField(rendered.Instance, "_campaign", new CampaignDto { Id = campaignId, WorldId = worldId, Name = "Campaign" });
         SetPrivateField(rendered.Instance, "_sessions", new List<ArticleTreeDto>());
-
         rendered.ArticleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>()).Returns(created);
         rendered.ArcApi.GetArcAsync(rendered.ArcId).Returns(new ArcDto { Id = rendered.ArcId, Name = "Arc", CampaignId = campaignId });
         rendered.ArticleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>());
@@ -230,11 +289,33 @@ public class ArcDetailTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task ArcDetail_CreateSession_WithoutBreadcrumbs_UsesSlugFallbackNavigation()
+    {
+        var rendered = CreateRenderedSut();
+        var campaignId = Guid.NewGuid();
+        var worldId = Guid.NewGuid();
+        var created = new ArticleDto { Id = Guid.NewGuid(), Slug = "session-fallback", Breadcrumbs = new List<BreadcrumbDto>() };
+        SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc", CampaignId = campaignId });
+        SetPrivateField(rendered.Instance, "_campaign", new CampaignDto { Id = campaignId, WorldId = worldId, Name = "Campaign" });
+        SetPrivateField(rendered.Instance, "_sessions", new List<ArticleTreeDto>());
+        rendered.ArticleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>()).Returns(created);
+        rendered.ArcApi.GetArcAsync(rendered.ArcId).Returns(new ArcDto { Id = rendered.ArcId, Name = "Arc", CampaignId = campaignId });
+        rendered.ArticleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>());
+        rendered.CampaignApi.GetCampaignAsync(campaignId).Returns(new CampaignDetailDto { Id = campaignId, WorldId = worldId, Name = "Campaign" });
+        rendered.WorldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto { Id = worldId, Name = "World", Slug = "world" });
+
+        await InvokePrivateOnRendererAsync(rendered.Cut, "CreateSession");
+
+        Assert.EndsWith("/article/session-fallback", rendered.Navigation.Uri, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // ── NavigateToSession ─────────────────────────────────────────
+
+    [Fact]
     public async Task ArcDetail_NavigateToSession_WithoutBreadcrumbs_UsesSlugFallback()
     {
         var rendered = CreateRenderedSut();
         var session = new ArticleTreeDto { Id = Guid.NewGuid(), Slug = "fallback-session" };
-
         rendered.ArticleApi.GetArticleDetailAsync(session.Id).Returns(new ArticleDto { Id = session.Id, Slug = session.Slug });
 
         await InvokePrivateAsync(rendered.Instance, "NavigateToSession", session);
@@ -243,13 +324,25 @@ public class ArcDetailTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task ArcDetail_NavigateToSession_WhenArticleNull_UsesSlugFallback()
+    {
+        var rendered = CreateRenderedSut();
+        var session = new ArticleTreeDto { Id = Guid.NewGuid(), Slug = "slug-fallback" };
+        rendered.ArticleApi.GetArticleDetailAsync(session.Id).Returns((ArticleDto?)null);
+
+        await InvokePrivateAsync(rendered.Instance, "NavigateToSession", session);
+
+        Assert.EndsWith("/article/slug-fallback", rendered.Navigation.Uri, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // ── LoadArcAsync ──────────────────────────────────────────────
+
+    [Fact]
     public async Task ArcDetail_LoadArcAsync_WhenArcNull_NavigatesToDashboard()
     {
         var rendered = CreateRenderedSut();
         rendered.ArcApi.GetArcAsync(rendered.ArcId).Returns((ArcDto?)null);
-
         await InvokePrivateOnRendererAsync(rendered.Cut, "LoadArcAsync");
-
         Assert.EndsWith("/dashboard", rendered.Navigation.Uri, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -286,6 +379,35 @@ public class ArcDetailTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task ArcDetail_LoadArcAsync_WhenCampaignNotNullButWorldNull_UsesFallbackBreadcrumbs()
+    {
+        var rendered = CreateRenderedSut();
+        var campaignId = Guid.NewGuid();
+        var worldId = Guid.NewGuid();
+        rendered.ArcApi.GetArcAsync(rendered.ArcId).Returns(new ArcDto
+        {
+            Id = rendered.ArcId,
+            CampaignId = campaignId,
+            Name = "Arc With No World"
+        });
+        rendered.ArticleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>());
+        rendered.CampaignApi.GetCampaignAsync(campaignId).Returns(new CampaignDetailDto
+        {
+            Id = campaignId,
+            WorldId = worldId,
+            Name = "Campaign"
+        });
+        rendered.WorldApi.GetWorldAsync(worldId).Returns((WorldDetailDto?)null);
+        rendered.AuthService.GetCurrentUserAsync().Returns((UserInfo?)null);
+
+        await InvokePrivateOnRendererAsync(rendered.Cut, "LoadArcAsync");
+
+        var breadcrumbs = GetPrivateField<List<BreadcrumbItem>>(rendered.Instance, "_breadcrumbs");
+        Assert.Equal(2, breadcrumbs.Count);
+        Assert.Equal("Arc With No World", breadcrumbs[1].Text);
+    }
+
+    [Fact]
     public async Task ArcDetail_LoadArcAsync_WhenUserIsMember_SetsCurrentUserAndGmFlag()
     {
         var rendered = CreateRenderedSut();
@@ -311,10 +433,7 @@ public class ArcDetailTests : MudBlazorTestContext
             Id = worldId,
             Name = "World",
             Slug = "world",
-            Members = new List<WorldMemberDto>
-            {
-                new() { UserId = userId, Email = email, Role = WorldRole.GM }
-            }
+            Members = new List<WorldMemberDto> { new() { UserId = userId, Email = email, Role = WorldRole.GM } }
         });
         rendered.BreadcrumbService.ForArc(Arg.Any<ArcDto>(), Arg.Any<CampaignDto>(), Arg.Any<WorldDto>())
             .Returns(new List<BreadcrumbItem> { new("Dashboard", "/dashboard"), new("Arc", null, true) });
@@ -327,134 +446,42 @@ public class ArcDetailTests : MudBlazorTestContext
     }
 
     [Fact]
-    public async Task ArcDetail_SaveArc_WhenUpdateReturnsNull_KeepsUnsavedChanges()
+    public async Task ArcDetail_LoadArcAsync_WhenThrows_ShowsSnackbarError()
     {
         var rendered = CreateRenderedSut();
-        SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc" });
-        SetPrivateField(rendered.Instance, "_editName", "Changed");
-        SetPrivateField(rendered.Instance, "_hasUnsavedChanges", true);
-        rendered.ArcApi.UpdateArcAsync(rendered.ArcId, Arg.Any<ArcUpdateDto>()).Returns((ArcDto?)null);
+        rendered.ArcApi.GetArcAsync(rendered.ArcId)
+            .Returns(Task.FromException<ArcDto?>(new Exception("network failure")));
 
-        await InvokePrivateOnRendererAsync(rendered.Cut, "SaveArc");
+        await InvokePrivateOnRendererAsync(rendered.Cut, "LoadArcAsync");
 
-        Assert.True(GetPrivateBoolField(rendered.Instance, "_hasUnsavedChanges"));
-        await rendered.TreeState.DidNotReceive().RefreshAsync();
+        rendered.Snackbar.Received(1).Add(
+            Arg.Is<string>(s => s.Contains("network failure")),
+            Severity.Error,
+            Arg.Any<Action<SnackbarOptions>>());
+        Assert.False(GetPrivateBoolField(rendered.Instance, "_isLoading"));
     }
 
-    [Fact]
-    public async Task ArcDetail_SaveArc_WhenUpdateThrows_ResetsSavingFlag()
-    {
-        var rendered = CreateRenderedSut();
-        SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc" });
-        SetPrivateField(rendered.Instance, "_editName", "Changed");
-        rendered.ArcApi.UpdateArcAsync(rendered.ArcId, Arg.Any<ArcUpdateDto>())
-            .Returns(Task.FromException<ArcDto?>(new Exception("boom")));
-
-        await InvokePrivateOnRendererAsync(rendered.Cut, "SaveArc");
-
-        Assert.False(GetPrivateBoolField(rendered.Instance, "_isSaving"));
-    }
-
-    [Fact]
-    public async Task ArcDetail_OnActiveToggle_WhenAlreadyToggling_ReturnsEarly()
-    {
-        var rendered = CreateRenderedSut();
-        SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc" });
-        SetPrivateField(rendered.Instance, "_isTogglingActive", true);
-
-        await InvokePrivateOnRendererAsync(rendered.Cut, "OnActiveToggle", true);
-
-        await rendered.ArcApi.DidNotReceive().ActivateArcAsync(Arg.Any<Guid>());
-    }
-
-    [Fact]
-    public async Task ArcDetail_OnActiveToggle_WhenActivateThrows_ResetsTogglingFlag()
-    {
-        var rendered = CreateRenderedSut();
-        SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc" });
-        rendered.ArcApi.ActivateArcAsync(rendered.ArcId).Returns(Task.FromException<bool>(new Exception("boom")));
-
-        await InvokePrivateOnRendererAsync(rendered.Cut, "OnActiveToggle", true);
-
-        Assert.False(GetPrivateBoolField(rendered.Instance, "_isTogglingActive"));
-    }
-
-    [Fact]
-    public async Task ArcDetail_DeleteArc_WhenDeleteThrows_DoesNotThrow()
-    {
-        var rendered = CreateRenderedSut();
-        var campaignId = Guid.NewGuid();
-        SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc", CampaignId = campaignId });
-        SetPrivateField(rendered.Instance, "_sessions", new List<ArticleTreeDto>());
-        rendered.JsRuntime.InvokeAsync<bool>("confirm", Arg.Any<object?[]>()).Returns(new ValueTask<bool>(true));
-        rendered.ArcApi.DeleteArcAsync(rendered.ArcId).Returns(Task.FromException<bool>(new Exception("boom")));
-
-        var ex = await Record.ExceptionAsync(() => InvokePrivateOnRendererAsync(rendered.Cut, "DeleteArc"));
-
-        Assert.Null(ex);
-    }
-
-    [Fact]
-    public async Task ArcDetail_CreateSession_WhenArcOrCampaignMissing_ReturnsEarly()
-    {
-        var rendered = CreateRenderedSut();
-        SetPrivateField(rendered.Instance, "_arc", null);
-        SetPrivateField(rendered.Instance, "_campaign", null);
-
-        await InvokePrivateOnRendererAsync(rendered.Cut, "CreateSession");
-
-        await rendered.ArticleApi.DidNotReceive().CreateArticleAsync(Arg.Any<ArticleCreateDto>());
-    }
-
-    [Fact]
-    public async Task ArcDetail_CreateSession_WithoutBreadcrumbs_UsesSlugFallbackNavigation()
-    {
-        var rendered = CreateRenderedSut();
-        var campaignId = Guid.NewGuid();
-        var worldId = Guid.NewGuid();
-        var created = new ArticleDto
-        {
-            Id = Guid.NewGuid(),
-            Slug = "session-fallback",
-            Breadcrumbs = new List<BreadcrumbDto>()
-        };
-
-        SetPrivateField(rendered.Instance, "_arc", new ArcDto { Id = rendered.ArcId, Name = "Arc", CampaignId = campaignId });
-        SetPrivateField(rendered.Instance, "_campaign", new CampaignDto { Id = campaignId, WorldId = worldId, Name = "Campaign" });
-        SetPrivateField(rendered.Instance, "_sessions", new List<ArticleTreeDto>());
-        rendered.ArticleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>()).Returns(created);
-        rendered.ArcApi.GetArcAsync(rendered.ArcId).Returns(new ArcDto { Id = rendered.ArcId, Name = "Arc", CampaignId = campaignId });
-        rendered.ArticleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>());
-        rendered.CampaignApi.GetCampaignAsync(campaignId).Returns(new CampaignDetailDto { Id = campaignId, WorldId = worldId, Name = "Campaign" });
-        rendered.WorldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto { Id = worldId, Name = "World", Slug = "world" });
-
-        await InvokePrivateOnRendererAsync(rendered.Cut, "CreateSession");
-
-        Assert.EndsWith("/article/session-fallback", rendered.Navigation.Uri, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task ArcDetail_NavigateToSession_WhenArticleNull_UsesSlugFallback()
-    {
-        var rendered = CreateRenderedSut();
-        var session = new ArticleTreeDto { Id = Guid.NewGuid(), Slug = "slug-fallback" };
-        rendered.ArticleApi.GetArticleDetailAsync(session.Id).Returns((ArticleDto?)null);
-
-        await InvokePrivateAsync(rendered.Instance, "NavigateToSession", session);
-
-        Assert.EndsWith("/article/slug-fallback", rendered.Navigation.Uri, StringComparison.OrdinalIgnoreCase);
-    }
+    // ── Quest callbacks ───────────────────────────────────────────
 
     [Fact]
     public async Task ArcDetail_OnQuestUpdated_SetsSelectedQuest()
     {
         var rendered = CreateRenderedSut();
         var quest = new QuestDto { Id = Guid.NewGuid(), Title = "Quest" };
-
         await InvokePrivateOnRendererAsync(rendered.Cut, "OnQuestUpdated", quest);
-
         Assert.Equal(quest.Id, GetPrivateField<QuestDto>(rendered.Instance, "_selectedQuest").Id);
     }
+
+    [Fact]
+    public async Task ArcDetail_OnEditQuest_SetsSelectedQuest()
+    {
+        var rendered = CreateRenderedSut();
+        var quest = new QuestDto { Id = Guid.NewGuid(), Title = "Side Quest" };
+        await InvokePrivateOnRendererAsync(rendered.Cut, "OnEditQuest", quest);
+        Assert.Equal(quest.Id, GetPrivateField<QuestDto>(rendered.Instance, "_selectedQuest").Id);
+    }
+
+    // ── Infrastructure ────────────────────────────────────────────
 
     private RenderedContext CreateRenderedSut()
     {
@@ -495,7 +522,8 @@ public class ArcDetailTests : MudBlazorTestContext
         var cut = RenderComponent<ArcDetail>(parameters => parameters.Add(p => p.ArcId, arcId));
         var navigation = Services.GetRequiredService<NavigationManager>();
 
-        return new RenderedContext(cut, cut.Instance, arcApi, campaignApi, worldApi, articleApi, authService, breadcrumbService, treeState, jsRuntime, navigation, arcId);
+        return new RenderedContext(cut, cut.Instance, arcApi, campaignApi, worldApi, articleApi,
+            authService, breadcrumbService, treeState, jsRuntime, navigation, arcId, snackbar);
     }
 
     private static void InvokePrivate(object instance, string methodName, params object[] args)
@@ -511,9 +539,7 @@ public class ArcDetailTests : MudBlazorTestContext
         Assert.NotNull(method);
         var result = method!.Invoke(instance, args);
         if (result is Task task)
-        {
             await task;
-        }
     }
 
     private static Task InvokePrivateOnRendererAsync(IRenderedComponent<ArcDetail> cut, string methodName, params object[] args)
@@ -524,9 +550,7 @@ public class ArcDetailTests : MudBlazorTestContext
             Assert.NotNull(method);
             var result = method!.Invoke(cut.Instance, args);
             if (result is Task task)
-            {
                 await task;
-            }
         });
     }
 
@@ -563,5 +587,6 @@ public class ArcDetailTests : MudBlazorTestContext
         ITreeStateService TreeState,
         IJSRuntime JsRuntime,
         NavigationManager Navigation,
-        Guid ArcId);
+        Guid ArcId,
+        ISnackbar Snackbar);
 }

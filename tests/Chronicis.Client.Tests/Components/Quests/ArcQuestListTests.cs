@@ -159,35 +159,41 @@ public class ArcQuestListTests : MudBlazorTestContext
     }
 
     [Fact]
-    public async Task ArcQuestList_EditQuest_Gm_ShowsInfo()
+    public async Task ArcQuestList_EditQuest_Gm_InvokesOnEditQuestCallback()
     {
         RegisterServices(new List<QuestDto>());
-        var snackbar = Services.GetRequiredService<ISnackbar>();
         var quest = CreateQuest("Edit Me");
+        QuestDto? capturedQuest = null;
 
         var cut = RenderComponent<ArcQuestList>(p => p
             .Add(x => x.ArcId, quest.ArcId)
-            .Add(x => x.IsGm, true));
+            .Add(x => x.IsGm, true)
+            .Add(x => x.OnEditQuest, (QuestDto q) => { capturedQuest = q; }));
 
-        InvokePrivate(cut.Instance, "EditQuest", quest);
+        await cut.InvokeAsync(() => cut.Instance.GetType()
+            .GetMethod("EditQuest", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .Invoke(cut.Instance, new object[] { quest }));
 
-        snackbar.Received().Add(Arg.Is<string>(s => s.Contains("Editing quest")), Severity.Info);
+        Assert.Equal(quest, capturedQuest);
     }
 
     [Fact]
-    public void ArcQuestList_EditQuest_NonGm_ReturnsWithoutSnackbar()
+    public async Task ArcQuestList_EditQuest_NonGm_DoesNotInvokeCallback()
     {
         RegisterServices(new List<QuestDto>());
-        var snackbar = Services.GetRequiredService<ISnackbar>();
         var quest = CreateQuest("No Edit");
+        QuestDto? capturedQuest = null;
 
         var cut = RenderComponent<ArcQuestList>(p => p
             .Add(x => x.ArcId, quest.ArcId)
-            .Add(x => x.IsGm, false));
+            .Add(x => x.IsGm, false)
+            .Add(x => x.OnEditQuest, (QuestDto q) => { capturedQuest = q; }));
 
-        InvokePrivate(cut.Instance, "EditQuest", quest);
+        await cut.InvokeAsync(() => cut.Instance.GetType()
+            .GetMethod("EditQuest", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .Invoke(cut.Instance, new object[] { quest }));
 
-        snackbar.DidNotReceive().Add(Arg.Any<string>(), Arg.Any<Severity>());
+        Assert.Null(capturedQuest);
     }
 
     [Fact]
@@ -345,14 +351,15 @@ public class ArcQuestListTests : MudBlazorTestContext
         var quest = CreateQuest("Clickable");
         var questApi = RegisterServices(new List<QuestDto> { quest });
         var dialogService = Services.GetRequiredService<IDialogService>();
-        var snackbar = Services.GetRequiredService<ISnackbar>();
         dialogService.ShowMessageBox(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<DialogOptions>())
             .Returns(Task.FromResult<bool?>(false));
 
+        QuestDto? capturedQuest = null;
         var cut = RenderComponent<ArcQuestList>(p => p
             .Add(x => x.ArcId, quest.ArcId)
-            .Add(x => x.IsGm, true));
+            .Add(x => x.IsGm, true)
+            .Add(x => x.OnEditQuest, (QuestDto q) => { capturedQuest = q; }));
 
         var editButton = cut.Find("button[title='Edit quest']");
         var deleteButton = cut.Find("button[title='Delete quest']");
@@ -360,7 +367,7 @@ public class ArcQuestListTests : MudBlazorTestContext
         await cut.InvokeAsync(() => editButton.Click());
         await cut.InvokeAsync(() => deleteButton.Click());
 
-        snackbar.Received().Add(Arg.Is<string>(s => s.Contains("Editing quest")), Severity.Info);
+        Assert.Equal(quest.Id, capturedQuest?.Id);
         await questApi.DidNotReceive().DeleteQuestAsync(Arg.Any<Guid>());
     }
 

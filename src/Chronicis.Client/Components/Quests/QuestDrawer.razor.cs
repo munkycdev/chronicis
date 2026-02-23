@@ -82,6 +82,8 @@ public partial class QuestDrawer : IAsyncDisposable
             _selectedQuest = null;
             _recentUpdates = null;
             _validationError = null;
+            _questsLoadedForArc = false;
+            _quests = null;
             StateHasChanged();
         });
     }
@@ -122,13 +124,25 @@ public partial class QuestDrawer : IAsyncDisposable
                 return;
             }
 
-            _currentArcId = selectedArticle.ArcId;
+            var incomingArcId = selectedArticle.ArcId;
 
-            if (!_currentArcId.HasValue)
+            if (!incomingArcId.HasValue)
             {
                 _emptyStateMessage = "This session is not associated with an arc.";
                 return;
             }
+
+            // Reset cache if the arc has changed
+            if (_currentArcId != incomingArcId)
+            {
+                _questsLoadedForArc = false;
+                _quests = null;
+                _selectedQuestId = null;
+                _selectedQuest = null;
+                _recentUpdates = null;
+            }
+
+            _currentArcId = incomingArcId;
 
             // Resolve SessionId
             if (selectedArticle.Type == ArticleType.Session)
@@ -145,7 +159,9 @@ public partial class QuestDrawer : IAsyncDisposable
             // Only load quests if we haven't already loaded for this arc (prevent duplicate fetches)
             if (!_questsLoadedForArc)
             {
-                _quests = await QuestApi.GetArcQuestsAsync(_currentArcId.Value);
+                var allQuests = await QuestApi.GetArcQuestsAsync(_currentArcId.Value);
+                // The drawer is a player-facing view — GM-only quests are never shown here
+                _quests = allQuests.Where(q => !q.IsGmOnly).ToList();
                 _questsLoadedForArc = true;
             }
 
