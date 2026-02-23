@@ -1,39 +1,27 @@
 @page "/search"
 @attribute [Authorize]
-@inject ISearchApiService SearchApi
-@inject IBreadcrumbService BreadcrumbService
-@inject NavigationManager Navigation
-@inject ITreeStateService TreeState
-
-@code {
-    private readonly ILogger<Search> _logger;
-
-    // Direct constructor injection
-    public Search(ILogger<Search> logger)
-    {
-        _logger = logger;
-    }
-}
+@implements IDisposable
+@inject SearchViewModel ViewModel
 
 <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
-    @if (_isLoading)
+    @if (ViewModel.IsLoading)
     {
         <div class="d-flex flex-column align-center mt-8">
             <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
             <MudText Typo="Typo.h6" Class="mt-4">Searching...</MudText>
         </div>
     }
-    else if (_results == null)
+    else if (ViewModel.Results == null)
     {
         <div class="text-center mt-8">
             <MudIcon Icon="@Icons.Material.Filled.Search" Size="Size.Large" Color="Color.Secondary" Class="mb-4" />
             <MudText Typo="Typo.h5" Color="Color.Secondary">Enter a search term to begin</MudText>
         </div>
     }
-    else if (_results.TotalResults == 0)
+    else if (ViewModel.Results.TotalResults == 0)
     {
         <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-4">
-            <MudText Typo="Typo.h6">No results found for "<strong>@_results.Query</strong>"</MudText>
+            <MudText Typo="Typo.h6">No results found for "<strong>@ViewModel.Results.Query</strong>"</MudText>
             <MudText Typo="Typo.body2" Class="mt-2">Try different keywords or check your spelling</MudText>
         </MudAlert>
     }
@@ -44,54 +32,54 @@
                 Search Results
             </MudText>
             <MudText Typo="Typo.body1" Class="mt-2" Color="Color.Secondary">
-                Found <strong>@_results.TotalResults</strong> result@(_results.TotalResults == 1 ? "" : "s") for "<strong>@_results.Query</strong>"
+                Found <strong>@ViewModel.Results.TotalResults</strong> result@(ViewModel.Results.TotalResults == 1 ? "" : "s") for "<strong>@ViewModel.Results.Query</strong>"
             </MudText>
         </div>
 
         @* Title Matches *@
-        @if (_results.TitleMatches.Any())
+        @if (ViewModel.Results.TitleMatches.Any())
         {
             <div class="search-group mt-6">
                 <MudText Typo="Typo.h6" Class="search-group-header mb-3">
                     <MudIcon Icon="@Icons.Material.Filled.Title" Class="mr-2" />
-                    Title Matches (@_results.TitleMatches.Count)
+                    Title Matches (@ViewModel.Results.TitleMatches.Count)
                 </MudText>
-                
-                @foreach (var result in _results.TitleMatches)
+
+                @foreach (var result in ViewModel.Results.TitleMatches)
                 {
-                    <SearchResultCard Result="@result" Query="@_results.Query" OnClick="@(() => NavigateToArticle(result))" />
+                    <SearchResultCard Result="@result" Query="@ViewModel.Results.Query" OnClick="@(() => ViewModel.NavigateToArticle(result))" />
                 }
             </div>
         }
 
         @* Content Matches *@
-        @if (_results.BodyMatches.Any())
+        @if (ViewModel.Results.BodyMatches.Any())
         {
             <div class="search-group mt-6">
                 <MudText Typo="Typo.h6" Class="search-group-header mb-3">
                     <MudIcon Icon="@Icons.Material.Filled.Description" Class="mr-2" />
-                    Content Matches (@_results.BodyMatches.Count)
+                    Content Matches (@ViewModel.Results.BodyMatches.Count)
                 </MudText>
-                
-                @foreach (var result in _results.BodyMatches)
+
+                @foreach (var result in ViewModel.Results.BodyMatches)
                 {
-                    <SearchResultCard Result="@result" Query="@_results.Query" OnClick="@(() => NavigateToArticle(result))" />
+                    <SearchResultCard Result="@result" Query="@ViewModel.Results.Query" OnClick="@(() => ViewModel.NavigateToArticle(result))" />
                 }
             </div>
         }
 
         @* Hashtag Matches *@
-        @if (_results.HashtagMatches.Any())
+        @if (ViewModel.Results.HashtagMatches.Any())
         {
             <div class="search-group mt-6">
                 <MudText Typo="Typo.h6" Class="search-group-header mb-3">
                     <MudIcon Icon="@Icons.Material.Filled.Tag" Class="mr-2" />
-                    Hashtag Matches (@_results.HashtagMatches.Count)
+                    Hashtag Matches (@ViewModel.Results.HashtagMatches.Count)
                 </MudText>
-                
-                @foreach (var result in _results.HashtagMatches)
+
+                @foreach (var result in ViewModel.Results.HashtagMatches)
                 {
-                    <SearchResultCard Result="@result" Query="@_results.Query" OnClick="@(() => NavigateToArticle(result))" />
+                    <SearchResultCard Result="@result" Query="@ViewModel.Results.Query" OnClick="@(() => ViewModel.NavigateToArticle(result))" />
                 }
             </div>
         }
@@ -101,56 +89,18 @@
 @code {
     [SupplyParameterFromQuery(Name = "q")]
     public string? SearchQuery { get; set; }
-    
-    private GlobalSearchResultsDto? _results;
-    private bool _isLoading;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (!string.IsNullOrWhiteSpace(SearchQuery))
-        {
-            await PerformSearch();
-        }
-        else
-        {
-            _results = null;
-        }
+        ViewModel.PropertyChanged += OnViewModelChanged;
+        await ViewModel.SearchAsync(SearchQuery);
     }
 
-    private async Task PerformSearch()
-    {
-        _isLoading = true;
-        StateHasChanged();
-        
-        try
-        {
-            _results = await SearchApi.SearchContentAsync(SearchQuery!);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogErrorSanitized(ex, "Search error for query: {Query}", SearchQuery);
-            _results = null;
-        }
-        finally
-        {
-            _isLoading = false;
-            StateHasChanged();
-        }
-    }
+    private void OnViewModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        => InvokeAsync(StateHasChanged);
 
-    private void NavigateToArticle(ArticleSearchResultDto result)
+    public void Dispose()
     {
-        TreeState.ExpandPathToAndSelect(result.Id);
-        
-        // Build path from ancestor breadcrumbs
-        if (result.AncestorPath != null && result.AncestorPath.Any())
-        {
-            var path = BreadcrumbService.BuildArticleUrl(result.AncestorPath);
-            Navigation.NavigateTo(path);
-        }
-        else
-        {
-            Navigation.NavigateTo($"/article/{result.Slug}");
-        }
+        ViewModel.PropertyChanged -= OnViewModelChanged;
     }
 }

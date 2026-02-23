@@ -1,31 +1,13 @@
 @page "/dashboard"
 @attribute [Authorize]
+@implements IDisposable
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Client.Components.Dialogs
-@inject IDashboardApiService DashboardApi
-@inject IUserApiService UserApi
-@inject IWorldApiService WorldApi
-@inject IQuoteService QuoteService
-@inject ITreeStateService TreeStateService
-@inject IDialogService DialogService
-@inject NavigationManager Navigation
-@inject ISnackbar Snackbar
-@inject IArticleApiService ArticleApi
-@implements IDisposable
+@inject DashboardViewModel ViewModel
 
 <PageTitle>Dashboard - Chronicis</PageTitle>
 
-@code {
-    private readonly ILogger<Dashboard> _logger;
-
-    // Direct constructor injection
-    public Dashboard(ILogger<Dashboard> logger)
-    {
-        _logger = logger;
-    }
-}
-
-@if (_isLoading)
+@if (ViewModel.IsLoading)
 {
     <MudPaper Elevation="2" Class="dashboard-container">
         <div class="dashboard-loading">
@@ -34,13 +16,13 @@
         </div>
     </MudPaper>
 }
-else if (_dashboard == null)
+else if (ViewModel.Dashboard == null)
 {
     <MudPaper Elevation="2" Class="dashboard-container">
         <div class="dashboard-error">
             <MudIcon Icon="@Icons.Material.Filled.Error" Size="Size.Large" Color="Color.Error" />
             <MudText Typo="Typo.h6" Class="mt-4">Unable to load dashboard</MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadDashboard" Class="mt-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => ViewModel.LoadDashboardAsync())" Class="mt-4">
                 Try Again
             </MudButton>
         </div>
@@ -54,19 +36,19 @@ else
             <div class="hero-content">
                 <div class="hero-text">
                     <MudText Typo="Typo.h3" Class="hero-title">
-                        Welcome back, <span class="user-name">@_dashboard.UserDisplayName</span>
+                        Welcome back, <span class="user-name">@ViewModel.Dashboard.UserDisplayName</span>
                     </MudText>
                     <MudText Typo="Typo.body1" Class="hero-subtitle">
                         Your chronicle awaits. What story will you tell today?
                     </MudText>
-                    @if (_quote != null)
+                    @if (ViewModel.Quote != null)
                     {
                         <div class="hero-quote">
                             <MudText Typo="Typo.body2" Class="quote-text">
-                                "@_quote.Content"
+                                "@ViewModel.Quote.Content"
                             </MudText>
                             <MudText Typo="Typo.caption" Class="quote-author">
-                                — @_quote.Author
+                                — @ViewModel.Quote.Author
                             </MudText>
                         </div>
                     }
@@ -75,14 +57,14 @@ else
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
                                Size="Size.Large"
-                               OnClick="CreateNewWorld"
+                               OnClick="@(() => ViewModel.CreateNewWorldAsync())"
                                Class="hero-button">
                         Create New World
                     </MudButton>
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Primary"
                                Size="Size.Large"
-                               OnClick="JoinWorld"
+                               OnClick="@(() => ViewModel.JoinWorldAsync())"
                                Class="hero-button">
                         Join a World
                     </MudButton>
@@ -90,12 +72,12 @@ else
             </div>
 
             <!-- Prompts in Hero -->
-            @if (_dashboard.Prompts.Any())
+            @if (ViewModel.Dashboard.Prompts.Any())
             {
                 <div class="hero-prompts">
-                    @foreach (var prompt in _dashboard.Prompts.Take(3))
+                    @foreach (var prompt in ViewModel.Dashboard.Prompts.Take(3))
                     {
-                        <div class="hero-prompt-card @GetCategoryClass(prompt.Category)" @onclick="() => HandlePromptClick(prompt)">
+                        <div class="hero-prompt-card @DashboardViewModel.GetCategoryClass(prompt.Category)" @onclick="() => ViewModel.HandlePromptClick(prompt)">
                             <div class="prompt-icon">
                                 <IconDisplay Icon="@prompt.Icon" DefaultIcon="💡" />
                             </div>
@@ -119,19 +101,19 @@ else
                 <MudGrid>
                     <!-- Main Content: World Panels -->
                     <MudItem xs="12" md="8">
-                        @if (_orderedWorlds.Any())
+                        @if (ViewModel.OrderedWorlds.Any())
                         {
                             <!-- Primary World -->
-                            <WorldPanel World="@_orderedWorlds.First()"
+                            <WorldPanel World="@ViewModel.OrderedWorlds.First()"
                                         IsExpanded="true" />
 
                             <!-- Other Worlds -->
-                            @if (_orderedWorlds.Count > 1)
+                            @if (ViewModel.OrderedWorlds.Count > 1)
                             {
                                 <MudText Typo="Typo.overline" Class="other-worlds-header">
                                     Other Worlds
                                 </MudText>
-                                @foreach (var world in _orderedWorlds.Skip(1))
+                                @foreach (var world in ViewModel.OrderedWorlds.Skip(1))
                                 {
                                     <WorldPanel World="@world"
                                                 IsExpanded="false"
@@ -156,7 +138,7 @@ else
                                                Color="Color.Primary"
                                                Size="Size.Large"
                                                StartIcon="@Icons.Material.Filled.Add"
-                                               OnClick="CreateNewWorld"
+                                               OnClick="@(() => ViewModel.CreateNewWorldAsync())"
                                                Class="mt-4">
                                         Create Your First World
                                     </MudButton>
@@ -168,7 +150,7 @@ else
                     <!-- Sidebar -->
                     <MudItem xs="12" md="4">
                         <!-- My Characters Summary -->
-                        @if (_dashboard.ClaimedCharacters.Any())
+                        @if (ViewModel.Dashboard.ClaimedCharacters.Any())
                         {
                             <MudPaper Elevation="1" Class="sidebar-panel mb-4">
                                 <MudText Typo="Typo.h6" Class="panel-title">
@@ -176,9 +158,9 @@ else
                                     My Characters
                                 </MudText>
                                 <div class="characters-summary">
-                                    @foreach (var character in _dashboard.ClaimedCharacters.Take(5))
+                                    @foreach (var character in ViewModel.Dashboard.ClaimedCharacters.Take(5))
                                     {
-                                        <div class="character-item" @onclick="async () => await NavigateToCharacter(character.Id)">
+                                        <div class="character-item" @onclick="async () => await ViewModel.NavigateToCharacterAsync(character.Id)">
                                             <IconDisplay Icon="@character.IconEmoji" DefaultIcon="👤" CssClass="character-icon" />
                                             <div class="character-info">
                                                 <span class="character-name">@character.Title</span>
@@ -186,10 +168,10 @@ else
                                             </div>
                                         </div>
                                     }
-                                    @if (_dashboard.ClaimedCharacters.Count > 5)
+                                    @if (ViewModel.Dashboard.ClaimedCharacters.Count > 5)
                                     {
                                         <MudText Typo="Typo.caption" Class="more-characters">
-                                            +@(_dashboard.ClaimedCharacters.Count - 5) more characters
+                                            +@(ViewModel.Dashboard.ClaimedCharacters.Count - 5) more characters
                                         </MudText>
                                     }
                                 </div>
@@ -204,19 +186,19 @@ else
                             </MudText>
                             <div class="stats-grid">
                                 <div class="stat-box">
-                                    <span class="stat-number">@_dashboard.Worlds.Count</span>
+                                    <span class="stat-number">@ViewModel.Dashboard.Worlds.Count</span>
                                     <span class="stat-label">Worlds</span>
                                 </div>
                                 <div class="stat-box">
-                                    <span class="stat-number">@_dashboard.Worlds.Sum(w => w.Campaigns.Count)</span>
+                                    <span class="stat-number">@ViewModel.Dashboard.Worlds.Sum(w => w.Campaigns.Count)</span>
                                     <span class="stat-label">Campaigns</span>
                                 </div>
                                 <div class="stat-box">
-                                    <span class="stat-number">@_dashboard.Worlds.Sum(w => w.ArticleCount)</span>
+                                    <span class="stat-number">@ViewModel.Dashboard.Worlds.Sum(w => w.ArticleCount)</span>
                                     <span class="stat-label">Articles</span>
                                 </div>
                                 <div class="stat-box">
-                                    <span class="stat-number">@_dashboard.ClaimedCharacters.Count</span>
+                                    <span class="stat-number">@ViewModel.Dashboard.ClaimedCharacters.Count</span>
                                     <span class="stat-label">Characters</span>
                                 </div>
                             </div>
@@ -229,169 +211,18 @@ else
 }
 
 @code {
-    private DashboardDto? _dashboard;
-    private List<DashboardWorldDto> _orderedWorlds = new();
-    private Quote? _quote;
-    private bool _isLoading = true;
-
     protected override async Task OnInitializedAsync()
     {
-        // Check if user needs onboarding
-        var profile = await UserApi.GetUserProfileAsync();
-        if (profile != null && !profile.HasCompletedOnboarding)
-        {
-            Navigation.NavigateTo("/getting-started", replace: true);
-            return;
-        }
-
-        TreeStateService.OnStateChanged += OnTreeStateChanged;
-
-        await Task.WhenAll(
-            LoadDashboard(),
-            LoadQuote()
-        );
+        ViewModel.PropertyChanged += OnViewModelChanged;
+        await ViewModel.InitializeAsync();
     }
 
-    private async Task LoadDashboard()
-    {
-        _isLoading = true;
-        StateHasChanged();
-
-        try
-        {
-            _dashboard = await DashboardApi.GetDashboardAsync();
-
-            if (_dashboard != null)
-            {
-                // Order worlds: prioritize those with active campaigns, then by most recent activity
-                _orderedWorlds = _dashboard.Worlds
-                    .OrderByDescending(w => w.Campaigns.Any(c => c.IsActive))
-                    .ThenByDescending(w => w.Campaigns
-                        .Where(c => c.CurrentArc?.LatestSessionDate != null)
-                        .Select(c => c.CurrentArc!.LatestSessionDate)
-                        .DefaultIfEmpty(DateTime.MinValue)
-                        .Max())
-                    .ThenByDescending(w => w.CreatedAt)
-                    .ToList();
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogErrorSanitized(ex, "Error loading dashboard");
-            Snackbar.Add("Failed to load dashboard", Severity.Error);
-        }
-        finally
-        {
-            _isLoading = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task LoadQuote()
-    {
-        try
-        {
-            _quote = await QuoteService.GetRandomQuoteAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogErrorSanitized(ex, "Error loading quote");
-        }
-    }
-
-    private async Task CreateNewWorld()
-    {
-        try
-        {
-            var createDto = new WorldCreateDto
-            {
-                Name = "New World",
-                Description = "A new world for your adventures"
-            };
-
-            var world = await WorldApi.CreateWorldAsync(createDto);
-
-            if (world != null)
-            {
-                Snackbar.Add($"World '{world.Name}' created!", Severity.Success);
-                await TreeStateService.RefreshAsync();
-
-                if (world.WorldRootArticleId.HasValue)
-                {
-                    TreeStateService.ShouldFocusTitle = true;
-                    Navigation.NavigateTo($"/world/{world.Slug}");
-                }
-                else
-                {
-                    await LoadDashboard();
-                }
-            }
-            else
-            {
-                Snackbar.Add("Failed to create world", Severity.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogErrorSanitized(ex, "Error creating world");
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private async Task JoinWorld()
-    {
-        var dialog = await DialogService.ShowAsync<JoinWorldDialog>("Join a World");
-        var result = await dialog.Result;
-
-        if (result != null && !result.Canceled && result.Data is Chronicis.Shared.DTOs.WorldJoinResultDto joinResult)
-        {
-            Snackbar.Add($"Welcome to {joinResult.WorldName}!", Severity.Success);
-            await TreeStateService.RefreshAsync();
-            await LoadDashboard();
-
-            if (joinResult.WorldId.HasValue)
-            {
-                Navigation.NavigateTo($"/world/{joinResult.WorldId}");
-            }
-        }
-    }
-
-    private async Task NavigateToCharacter(Guid characterId)
-    {
-        var article = await ArticleApi.GetArticleDetailAsync(characterId);
-        if (article != null && article.Breadcrumbs.Any())
-        {
-            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-            Navigation.NavigateTo($"/article/{path}");
-        }
-    }
-
-    private void HandlePromptClick(PromptDto prompt)
-    {
-        if (!string.IsNullOrEmpty(prompt.ActionUrl))
-        {
-            Navigation.NavigateTo(prompt.ActionUrl, forceLoad: true);
-        }
-    }
-
-    private string GetCategoryClass(PromptCategory category)
-    {
-        return category switch
-        {
-            PromptCategory.MissingFundamental => "missing-fundamental",
-            PromptCategory.NeedsAttention => "needs-attention",
-            PromptCategory.Suggestion => "suggestion",
-            _ => ""
-        };
-    }
-
-    private void OnTreeStateChanged()
-    {
-        InvokeAsync(StateHasChanged);
-    }
+    private void OnViewModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        => InvokeAsync(StateHasChanged);
 
     public void Dispose()
     {
-        TreeStateService.OnStateChanged -= OnTreeStateChanged;
+        ViewModel.PropertyChanged -= OnViewModelChanged;
+        ViewModel.Dispose();
     }
 }
