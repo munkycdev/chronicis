@@ -1,6 +1,7 @@
 using Chronicis.Client.Abstractions;
 using Chronicis.Client.Infrastructure;
 using Chronicis.Client.Services;
+using Chronicis.Client.ViewModels;
 using Chronicis.Shared.Admin;
 using Microsoft.Extensions.Options;
 
@@ -68,6 +69,10 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IUserNotifier, UserNotifier>();
         services.AddScoped<IConfirmationService, ConfirmationService>();
         services.AddScoped<IPageTitleService, PageTitleService>();
+
+        // ViewModels
+        services.AddTransient<SearchViewModel>();
+        services.AddTransient<DashboardViewModel>();
 
         // State & coordination services
         services.AddScoped<ITreeStateService, TreeStateService>();
