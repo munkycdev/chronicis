@@ -75,6 +75,10 @@ public static class ApplicationServiceExtensions
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<CampaignDetailViewModel>();
         services.AddTransient<ArcDetailViewModel>();
+        services.AddTransient<WorldDetailViewModel>();
+        services.AddTransient<WorldLinksViewModel>();
+        services.AddTransient<WorldDocumentsViewModel>();
+        services.AddTransient<WorldSharingViewModel>();
 
         // State & coordination services
         services.AddScoped<ITreeStateService, TreeStateService>();

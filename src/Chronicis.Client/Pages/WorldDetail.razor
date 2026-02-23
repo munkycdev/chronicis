@@ -1,38 +1,35 @@
 @page "/world/{WorldId:guid}"
 @attribute [Authorize]
-@using Chronicis.Shared.DTOs
-@using Chronicis.Shared.Enums
+@implements IDisposable
 @using Chronicis.Client.Components.Dialogs
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Client.Components.World
 @using Chronicis.Client.Components.Settings
-@using Chronicis.Client.Utilities
-@inject IWorldApiService WorldApi
-@inject ICampaignApiService CampaignApi
-@inject ITreeStateService TreeState
-@inject IBreadcrumbService BreadcrumbService
-@inject ISnackbar Snackbar
-@inject IDialogService DialogService
-@inject NavigationManager Navigation
+@inject WorldDetailViewModel ViewModel
+@inject WorldLinksViewModel LinksViewModel
+@inject WorldDocumentsViewModel DocumentsViewModel
+@inject WorldSharingViewModel SharingViewModel
 @inject IJSRuntime JSRuntime
-@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
 
-@if (_isLoading)
+@if (ViewModel.IsLoading)
 {
     <LoadingSkeleton />
 }
-else if (_world != null)
+else if (ViewModel.World != null)
 {
     <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
-        <DetailPageHeader Breadcrumbs="_breadcrumbs"
+        <DetailPageHeader Breadcrumbs="ViewModel.Breadcrumbs"
                           Icon="@Icons.Material.Filled.Public"
-                          @bind-Title="_editName"
+                          Title="@ViewModel.EditName"
+                          TitleChanged="@(v => ViewModel.EditName = v)"
                           Placeholder="World Name"
-                          OnTitleEdited="OnNameChanged"
-                          OnEnterPressed="SaveWorld" />
+                          OnTitleEdited="@(() => {})"
+                          OnEnterPressed="@(() => ViewModel.SaveAsync(SharingViewModel))" />
 
         <!-- Description -->
-        <MudTextField @bind-Value="_editDescription"
+        <MudTextField Value="@ViewModel.EditDescription"
+                      ValueChanged="@((string v) => ViewModel.EditDescription = v)"
                       Label="Description"
                       Variant="Variant.Outlined"
                       Lines="5"
@@ -40,8 +37,7 @@ else if (_world != null)
                       MaxLines="20"
                       Placeholder="Describe your world..."
                       Class="mb-4"
-                      Immediate="true"
-                      @onkeyup="OnDescriptionChanged" />
+                      Immediate="true" />
 
         <!-- Overview Section: Stats + Quick Actions -->
         <div class="world-overview mb-4">
@@ -49,21 +45,21 @@ else if (_world != null)
                 <div class="stat-card">
                     <MudIcon Icon="@Icons.Material.Filled.AutoStories" Class="stat-icon" />
                     <div class="stat-content">
-                        <div class="stat-value">@_world.CampaignCount</div>
+                        <div class="stat-value">@ViewModel.World.CampaignCount</div>
                         <div class="stat-label">Campaigns</div>
                     </div>
                 </div>
                 <div class="stat-card">
                     <MudIcon Icon="@Icons.Material.Filled.Group" Class="stat-icon" />
                     <div class="stat-content">
-                        <div class="stat-value">@_world.MemberCount</div>
+                        <div class="stat-value">@ViewModel.World.MemberCount</div>
                         <div class="stat-label">Members</div>
                     </div>
                 </div>
                 <div class="stat-card">
                     <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Class="stat-icon" />
                     <div class="stat-content">
-                        <div class="stat-value">@_world.CreatedAt.ToString("MMM yyyy")</div>
+                        <div class="stat-value">@ViewModel.World.CreatedAt.ToString("MMM yyyy")</div>
                         <div class="stat-label">Created</div>
                     </div>
                 </div>
@@ -73,21 +69,21 @@ else if (_world != null)
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.AutoStories"
-                           OnClick="CreateCampaign"
+                           OnClick="@(() => ViewModel.CreateCampaignAsync())"
                            Size="Size.Small">
                     New Campaign
                 </MudButton>
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Person"
-                           OnClick="CreateCharacter"
+                           OnClick="@(() => ViewModel.CreateCharacterAsync())"
                            Size="Size.Small">
                     New Character
                 </MudButton>
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.MenuBook"
-                           OnClick="CreateWikiArticle"
+                           OnClick="@(() => ViewModel.CreateWikiArticleAsync())"
                            Size="Size.Small">
                     New Article
                 </MudButton>
@@ -95,12 +91,11 @@ else if (_world != null)
         </div>
 
         <!-- Tabbed Content -->
-        <MudTabs Elevation="0" 
-                 Rounded="true" 
+        <MudTabs Elevation="0"
+                 Rounded="true"
                  ApplyEffectsToContainer="true"
-                 PanelClass="pa-4"
-                 @bind-ActivePanelIndex="_activeTabIndex">
-            
+                 PanelClass="pa-4">
+
             <!-- Resources Tab -->
             <MudTabPanel Text="Resources" Icon="@Icons.Material.Filled.Folder">
                 <div class="resources-section">
@@ -111,119 +106,75 @@ else if (_world != null)
                             <MudButton Variant="Variant.Text"
                                        Color="Color.Primary"
                                        StartIcon="@Icons.Material.Filled.Add"
-                                       OnClick="StartAddLink"
+                                       OnClick="@(() => LinksViewModel.StartAddLink())"
                                        Size="Size.Small">
                                 Add Link
                             </MudButton>
                         </div>
 
-                        @if (_links.Count == 0 && !_isAddingLink)
+                        @if (LinksViewModel.Links.Count == 0 && !LinksViewModel.IsAddingLink)
                         {
                             <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                                No external links yet. Add links to Roll20, D&D Beyond, or other resources.
+                                No external links yet. Add links to Roll20, D&amp;D Beyond, or other resources.
                             </MudText>
                         }
 
-                        @foreach (var link in _links)
+                        @foreach (var link in LinksViewModel.Links)
                         {
                             <div class="resource-item">
-                                @if (_editingLinkId == link.Id)
+                                @if (LinksViewModel.EditingLinkId == link.Id)
                                 {
-                                    <!-- Edit Mode -->
-                                    <MudIcon Icon="@Icons.Material.Filled.Link" 
-                                             Size="Size.Small" 
-                                             Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
-                                    <MudTextField @bind-Value="_editLinkTitle"
-                                                  Placeholder="Title"
-                                                  Variant="Variant.Outlined"
-                                                  Margin="Margin.Dense"
-                                                  Style="min-width: 150px;" />
-                                    <MudTextField @bind-Value="_editLinkUrl"
-                                                  Placeholder="URL"
-                                                  Variant="Variant.Outlined"
-                                                  Margin="Margin.Dense"
-                                                  Class="flex-grow-1" />
-                                    <MudTextField @bind-Value="_editLinkDescription"
-                                                  Placeholder="Description (optional)"
-                                                  Variant="Variant.Outlined"
-                                                  Margin="Margin.Dense"
-                                                  Style="min-width: 150px;" />
-                                    <MudIconButton Icon="@Icons.Material.Filled.Check"
-                                                   Color="Color.Success"
-                                                   Size="Size.Small"
-                                                   OnClick="SaveEditLink"
-                                                   Disabled="_isSavingLink" />
-                                    <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                                   Color="Color.Default"
-                                                   Size="Size.Small"
-                                                   OnClick="CancelEditLink" />
+                                    <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
+                                    <MudTextField Value="@LinksViewModel.EditLinkTitle"
+                                                  ValueChanged="@((string v) => LinksViewModel.EditLinkTitle = v)"
+                                                  Placeholder="Title" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 150px;" />
+                                    <MudTextField Value="@LinksViewModel.EditLinkUrl"
+                                                  ValueChanged="@((string v) => LinksViewModel.EditLinkUrl = v)"
+                                                  Placeholder="URL" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
+                                    <MudTextField Value="@LinksViewModel.EditLinkDescription"
+                                                  ValueChanged="@((string v) => LinksViewModel.EditLinkDescription = v)"
+                                                  Placeholder="Description (optional)" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 150px;" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small"
+                                                   OnClick="@(() => LinksViewModel.SaveEditLinkAsync())" Disabled="LinksViewModel.IsSavingLink" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" Size="Size.Small"
+                                                   OnClick="@(() => LinksViewModel.CancelEditLink())" />
                                 }
                                 else
                                 {
-                                    <!-- View Mode -->
-                                    <img src="@GetFaviconUrl(link.Url)" 
-                                         alt="" 
-                                         style="width: 20px; height: 20px; flex-shrink: 0;"
-                                         @onerror="HandleFaviconError" />
+                                    <img src="@WorldLinksViewModel.GetFaviconUrl(link.Url)" alt="" style="width: 20px; height: 20px; flex-shrink: 0;" />
                                     <div class="flex-grow-1">
-                                        <MudLink Href="@link.Url" 
-                                                 Target="_blank" 
-                                                 Typo="Typo.body1"
-                                                 Style="color: var(--chronicis-beige-gold);">
+                                        <MudLink Href="@link.Url" Target="_blank" Typo="Typo.body1" Style="color: var(--chronicis-beige-gold);">
                                             @link.Title
-                                            <MudIcon Icon="@Icons.Material.Filled.OpenInNew" 
-                                                     Size="Size.Small" 
-                                                     Style="font-size: 14px; vertical-align: middle; margin-left: 4px;" />
+                                            <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Style="font-size: 14px; vertical-align: middle; margin-left: 4px;" />
                                         </MudLink>
                                         @if (!string.IsNullOrWhiteSpace(link.Description))
                                         {
-                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                                @link.Description
-                                            </MudText>
+                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@link.Description</MudText>
                                         }
                                     </div>
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                   Color="Color.Default"
-                                                   Size="Size.Small"
-                                                   OnClick="() => StartEditLink(link)" />
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                   Color="Color.Error"
-                                                   Size="Size.Small"
-                                                   OnClick="() => DeleteLink(link)" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small" OnClick="@(() => LinksViewModel.StartEditLink(link))" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => LinksViewModel.DeleteLinkAsync(link))" />
                                 }
                             </div>
                         }
 
-                        @if (_isAddingLink)
+                        @if (LinksViewModel.IsAddingLink)
                         {
                             <div class="resource-item">
-                                <MudIcon Icon="@Icons.Material.Filled.AddLink" 
-                                         Size="Size.Small" 
-                                         Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
-                                <MudTextField @bind-Value="_newLinkTitle"
-                                              Placeholder="Title (e.g., Roll20 Campaign)"
-                                              Variant="Variant.Outlined"
-                                              Margin="Margin.Dense"
-                                              Style="min-width: 150px;" />
-                                <MudTextField @bind-Value="_newLinkUrl"
-                                              Placeholder="URL (e.g., https://roll20.net/...)"
-                                              Variant="Variant.Outlined"
-                                              Margin="Margin.Dense"
-                                              Class="flex-grow-1" />
-                                <MudTextField @bind-Value="_newLinkDescription"
-                                              Placeholder="Description (optional)"
-                                              Variant="Variant.Outlined"
-                                              Margin="Margin.Dense"
-                                              Style="min-width: 150px;" />
-                                <MudIconButton Icon="@Icons.Material.Filled.Check"
-                                               Color="Color.Success"
-                                               Size="Size.Small"
-                                               OnClick="SaveNewLink"
-                                               Disabled="_isSavingLink" />
-                                <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                               Color="Color.Default"
-                                               Size="Size.Small"
-                                               OnClick="CancelAddLink" />
+                                <MudIcon Icon="@Icons.Material.Filled.AddLink" Size="Size.Small" Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
+                                <MudTextField Value="@LinksViewModel.NewLinkTitle"
+                                              ValueChanged="@((string v) => LinksViewModel.NewLinkTitle = v)"
+                                              Placeholder="Title (e.g., Roll20 Campaign)" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 150px;" />
+                                <MudTextField Value="@LinksViewModel.NewLinkUrl"
+                                              ValueChanged="@((string v) => LinksViewModel.NewLinkUrl = v)"
+                                              Placeholder="URL (e.g., https://roll20.net/...)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
+                                <MudTextField Value="@LinksViewModel.NewLinkDescription"
+                                              ValueChanged="@((string v) => LinksViewModel.NewLinkDescription = v)"
+                                              Placeholder="Description (optional)" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 150px;" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small"
+                                               OnClick="@(() => LinksViewModel.SaveNewLinkAsync())" Disabled="LinksViewModel.IsSavingLink" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" Size="Size.Small"
+                                               OnClick="@(() => LinksViewModel.CancelAddLink())" />
                             </div>
                         }
                     </div>
@@ -234,19 +185,19 @@ else if (_world != null)
                     <div class="resource-subsection">
                         <div class="d-flex align-center justify-space-between mb-2">
                             <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">Documents</MudText>
-                            @if (_isCurrentUserGM)
+                            @if (ViewModel.IsCurrentUserGm)
                             {
                                 <MudButton Variant="Variant.Text"
                                            Color="Color.Primary"
                                            StartIcon="@Icons.Material.Filled.Upload"
-                                           OnClick="OpenUploadDialog"
+                                           OnClick="@(() => DocumentsViewModel.OpenUploadDialogAsync(WorldId))"
                                            Size="Size.Small">
                                     Upload
                                 </MudButton>
                             }
                         </div>
 
-                        @if (_documents.Count == 0)
+                        @if (DocumentsViewModel.Documents.Count == 0)
                         {
                             <MudText Typo="Typo.body2" Class="mud-text-secondary">
                                 No documents uploaded yet. Upload PDFs, Office files, images, or other documents.
@@ -254,72 +205,44 @@ else if (_world != null)
                         }
                         else
                         {
-                            @foreach (var doc in _documents.OrderBy(d => d.Title))
+                            @foreach (var doc in DocumentsViewModel.Documents.OrderBy(d => d.Title))
                             {
                                 <div class="resource-item">
-                                    @if (_editingDocumentId == doc.Id)
+                                    @if (DocumentsViewModel.EditingDocumentId == doc.Id)
                                     {
-                                        <!-- Edit Mode -->
-                                        <MudIcon Icon="@GetDocumentIcon(doc.ContentType)" 
-                                                 Size="Size.Small" 
-                                                 Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
-                                        <MudTextField @bind-Value="_editDocumentTitle"
-                                                      Placeholder="Title"
-                                                      Variant="Variant.Outlined"
-                                                      Margin="Margin.Dense"
-                                                      Style="min-width: 200px;" />
-                                        <MudTextField @bind-Value="_editDocumentDescription"
-                                                      Placeholder="Description (optional)"
-                                                      Variant="Variant.Outlined"
-                                                      Margin="Margin.Dense"
-                                                      Style="flex: 1;" />
-                                        <MudIconButton Icon="@Icons.Material.Filled.Check"
-                                                       Color="Color.Success"
-                                                       Size="Size.Small"
-                                                       OnClick="SaveDocumentEdit"
-                                                       Disabled="_isSavingDocument" />
-                                        <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                                       Color="Color.Default"
-                                                       Size="Size.Small"
-                                                       OnClick="CancelDocumentEdit" />
+                                        <MudIcon Icon="@WorldDocumentsViewModel.GetDocumentIcon(doc.ContentType)" Size="Size.Small" Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
+                                        <MudTextField Value="@DocumentsViewModel.EditDocumentTitle"
+                                                      ValueChanged="@((string v) => DocumentsViewModel.EditDocumentTitle = v)"
+                                                      Placeholder="Title" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 200px;" />
+                                        <MudTextField Value="@DocumentsViewModel.EditDocumentDescription"
+                                                      ValueChanged="@((string v) => DocumentsViewModel.EditDocumentDescription = v)"
+                                                      Placeholder="Description (optional)" Variant="Variant.Outlined" Margin="Margin.Dense" Style="flex: 1;" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small"
+                                                       OnClick="@(() => DocumentsViewModel.SaveDocumentEditAsync())" Disabled="DocumentsViewModel.IsSavingDocument" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" Size="Size.Small"
+                                                       OnClick="@(() => DocumentsViewModel.CancelDocumentEdit())" />
                                     }
                                     else
                                     {
-                                        <!-- View Mode -->
-                                        <MudIcon Icon="@GetDocumentIcon(doc.ContentType)" 
-                                                 Size="Size.Small" 
-                                                 Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
+                                        <MudIcon Icon="@WorldDocumentsViewModel.GetDocumentIcon(doc.ContentType)" Size="Size.Small" Style="color: var(--chronicis-beige-gold); flex-shrink: 0;" />
                                         <div style="flex: 1; min-width: 0;">
-                                            <MudText Typo="Typo.body2" Style="font-weight: 500;">
-                                                @doc.Title
-                                            </MudText>
+                                            <MudText Typo="Typo.body2" Style="font-weight: 500;">@doc.Title</MudText>
                                             @if (!string.IsNullOrEmpty(doc.Description))
                                             {
-                                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                                    @doc.Description
-                                                </MudText>
+                                                <MudText Typo="Typo.caption" Class="mud-text-secondary">@doc.Description</MudText>
                                             }
                                             <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                                @FormatFileSize(doc.FileSizeBytes) • Uploaded @doc.UploadedAt.ToString("MMM d, yyyy")
+                                                @WorldDocumentsViewModel.FormatFileSize(doc.FileSizeBytes) • Uploaded @doc.UploadedAt.ToString("MMM d, yyyy")
                                             </MudText>
                                         </div>
-                                        <MudIconButton Icon="@Icons.Material.Filled.Download"
-                                                       Color="Color.Primary"
-                                                       Size="Size.Small"
-                                                       OnClick="@(() => DownloadDocument(doc.Id))"
-                                                       title="Download" />
-                                        @if (_isCurrentUserGM)
+                                        <MudIconButton Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small"
+                                                       OnClick="@(() => DocumentsViewModel.DownloadDocumentAsync(doc.Id))" title="Download" />
+                                        @if (ViewModel.IsCurrentUserGm)
                                         {
-                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                           Color="Color.Default"
-                                                           Size="Size.Small"
-                                                           OnClick="@(() => StartEditDocument(doc))"
-                                                           title="Edit" />
-                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                           Color="Color.Error"
-                                                           Size="Size.Small"
-                                                           OnClick="@(() => DeleteDocument(doc.Id))"
-                                                           title="Delete" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small"
+                                                           OnClick="@(() => DocumentsViewModel.StartEditDocument(doc))" title="Edit" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                                           OnClick="@(() => DocumentsViewModel.DeleteDocumentAsync(doc.Id))" title="Delete" />
                                         }
                                     }
                                 </div>
@@ -330,64 +253,60 @@ else if (_world != null)
             </MudTabPanel>
 
             <!-- Members & Sharing Tab -->
-            <MudTabPanel Text="Members & Sharing" Icon="@Icons.Material.Filled.People">
-                <!-- Members Section -->
-                <WorldMembersPanel WorldId="WorldId" 
-                                   CurrentUserId="_currentUserId"
-                                   IsCurrentUserGM="_isCurrentUserGM"
-                                   OnMembersChanged="OnMembersChanged" />
+            <MudTabPanel Text="Members &amp; Sharing" Icon="@Icons.Material.Filled.People">
+                <WorldMembersPanel WorldId="WorldId"
+                                   CurrentUserId="ViewModel.CurrentUserId"
+                                   IsCurrentUserGM="ViewModel.IsCurrentUserGm"
+                                   OnMembersChanged="@(() => ViewModel.OnMembersChangedAsync())" />
 
                 <MudDivider Class="my-4" />
 
                 <!-- Public Sharing Section -->
                 <div class="sharing-section">
-                    <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight: 600;">
-                        Public Sharing
-                    </MudText>
+                    <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight: 600;">Public Sharing</MudText>
 
                     <div class="pa-3 rounded" style="background: var(--mud-palette-background-grey);">
                         <div class="d-flex align-center gap-3 mb-3">
-                            <MudSwitch @bind-Value="_isPublic"
+                            <MudSwitch Value="@SharingViewModel.IsPublic"
+                                       ValueChanged="@((bool v) => { SharingViewModel.IsPublic = v; SharingViewModel.OnPublicToggleChanged(ViewModel.World); })"
                                        Color="Color.Primary"
                                        Label="Make this world publicly accessible"
-                                       T="bool"
-                                       @bind-Value:after="OnPublicToggleChanged" />
+                                       T="bool" />
                         </div>
 
-                        @if (_isPublic)
+                        @if (SharingViewModel.IsPublic)
                         {
                             <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
                                 Anyone with the link can view articles marked as "Public". Members-only and private articles remain hidden.
                             </MudText>
 
                             <div class="d-flex align-center gap-2 mb-2">
-                                <MudText Typo="Typo.body2" Style="white-space: nowrap;">@GetPublicUrlBase()</MudText>
-                                <MudTextField @bind-Value="_publicSlug"
+                                <MudText Typo="Typo.body2" Style="white-space: nowrap;">@SharingViewModel.GetPublicUrlBase(Navigation.BaseUri)</MudText>
+                                <MudTextField Value="@SharingViewModel.PublicSlug"
+                                              ValueChanged="@((string v) => { SharingViewModel.PublicSlug = v; _ = SharingViewModel.CheckSlugAvailabilityAsync(WorldId); })"
                                               Placeholder="your-world-slug"
                                               Variant="Variant.Outlined"
                                               Margin="Margin.Dense"
                                               Immediate="true"
-                                              DebounceInterval="500"
-                                              @bind-Value:after="CheckSlugAvailability"
                                               Style="max-width: 300px;"
-                                              Disabled="_isCheckingSlug"
-                                              Error="@(!string.IsNullOrEmpty(_slugError))"
-                                              ErrorText="@_slugError"
-                                              HelperText="@_slugHelperText" />
-                                @if (_isCheckingSlug)
+                                              Disabled="SharingViewModel.IsCheckingSlug"
+                                              Error="@(!string.IsNullOrEmpty(SharingViewModel.SlugError))"
+                                              ErrorText="@SharingViewModel.SlugError"
+                                              HelperText="@SharingViewModel.SlugHelperText" />
+                                @if (SharingViewModel.IsCheckingSlug)
                                 {
                                     <MudProgressCircular Size="Size.Small" Indeterminate="true" />
                                 }
-                                else if (_slugIsAvailable && !string.IsNullOrEmpty(_publicSlug))
+                                else if (SharingViewModel.SlugIsAvailable && !string.IsNullOrEmpty(SharingViewModel.PublicSlug))
                                 {
                                     <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
                                 }
                             </div>
 
-                            @if (ShouldShowPublicPreview())
+                            @if (SharingViewModel.ShouldShowPublicPreview(ViewModel.World))
                             {
                                 <div class="d-flex align-center gap-2 mt-3">
-                                    <MudTextField Value="@GetFullPublicUrl()"
+                                    <MudTextField Value="@SharingViewModel.GetFullPublicUrl(Navigation.BaseUri, ViewModel.World)"
                                                   Label="Public URL"
                                                   Variant="Variant.Outlined"
                                                   Margin="Margin.Dense"
@@ -399,7 +318,7 @@ else if (_world != null)
                                     <MudButton Variant="Variant.Outlined"
                                                Color="Color.Primary"
                                                StartIcon="@Icons.Material.Filled.OpenInNew"
-                                               Href="@GetFullPublicUrl()"
+                                               Href="@SharingViewModel.GetFullPublicUrl(Navigation.BaseUri, ViewModel.World)"
                                                Target="_blank">
                                         Preview
                                     </MudButton>
@@ -418,7 +337,7 @@ else if (_world != null)
 
             <!-- Settings Tab -->
             <MudTabPanel Text="Settings" Icon="@Icons.Material.Filled.Settings">
-                @if (_isCurrentUserGM)
+                @if (ViewModel.IsCurrentUserGm)
                 {
                     <WorldResourceProviders WorldId="WorldId" />
                 }
@@ -433,12 +352,11 @@ else if (_world != null)
 
         <!-- Save Status -->
         <div class="chronicis-flex-between mt-4">
-            <SaveStatusIndicator IsSaving="_isSaving" HasUnsavedChanges="_hasUnsavedChanges" />
-
+            <SaveStatusIndicator IsSaving="ViewModel.IsSaving" HasUnsavedChanges="ViewModel.HasUnsavedChanges" />
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
-                       OnClick="SaveWorld"
-                       Disabled="_isSaving"
+                       OnClick="@(() => ViewModel.SaveAsync(SharingViewModel))"
+                       Disabled="ViewModel.IsSaving"
                        StartIcon="@Icons.Material.Filled.Save">
                 Save
             </MudButton>
@@ -450,760 +368,35 @@ else if (_world != null)
     [Parameter]
     public Guid WorldId { get; set; }
 
-    private WorldDetailDto? _world;
-    private string _editName = string.Empty;
-    private string _editDescription = string.Empty;
-    private bool _isLoading = true;
-    private bool _isSaving = false;
-    private bool _hasUnsavedChanges = false;
-    private List<BreadcrumbItem> _breadcrumbs = new();
-
-    // Current user info
-    private Guid _currentUserId;
-    private bool _isCurrentUserGM = false;
-
-    // Links state
-    private List<WorldLinkDto> _links = new();
-    private bool _isAddingLink = false;
-    private bool _isSavingLink = false;
-    private string _newLinkTitle = string.Empty;
-    private string _newLinkUrl = string.Empty;
-    private string _newLinkDescription = string.Empty;
-
-    // Edit link state
-    private Guid? _editingLinkId = null;
-    private string _editLinkTitle = string.Empty;
-    private string _editLinkUrl = string.Empty;
-    private string _editLinkDescription = string.Empty;
-
-    // Documents state
-    private List<WorldDocumentDto> _documents = new();
-    private Guid? _editingDocumentId = null;
-    private string _editDocumentTitle = string.Empty;
-    private string _editDocumentDescription = string.Empty;
-    private bool _isSavingDocument = false;
-
-    // Public sharing state
-    private bool _isPublic = false;
-    private string _publicSlug = string.Empty;
-    private bool _isCheckingSlug = false;
-    private bool _slugIsAvailable = false;
-    private string? _slugError = null;
-    private string? _slugHelperText = null;
-
-    // Tab state
-    private int _activeTabIndex = 0;
-
     protected override async Task OnParametersSetAsync()
     {
-        await LoadWorldAsync();
-    }
-
-    private async Task LoadWorldAsync()
-    {
-        _isLoading = true;
-        StateHasChanged();
-
-        try
-        {
-            // Get auth state for current user matching
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            
-            _world = await WorldApi.GetWorldAsync(WorldId);
-            if (_world == null)
-            {
-                Navigation.NavigateTo("/dashboard", replace: true);
-                return;
-            }
-            else
-            {
-                _editName = _world.Name;
-                _editDescription = _world.Description ?? string.Empty;
-                _hasUnsavedChanges = false;
-
-                // Initialize public sharing state
-                _isPublic = _world.IsPublic;
-                _publicSlug = _world.PublicSlug ?? string.Empty;
-                _slugIsAvailable = _world.IsPublic; // If already public, slug is valid
-                _slugError = null;
-                _slugHelperText = null;
-
-                // Check current user's role
-                if (_world.Members != null)
-                {
-                    // Get current user's email from auth claims
-                    var userEmail = authState.User.FindFirst("https://chronicis.app/email")?.Value
-                                 ?? authState.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
-                                 ?? authState.User.FindFirst("email")?.Value;
-
-                    if (!string.IsNullOrEmpty(userEmail))
-                    {
-                        var currentMember = _world.Members.FirstOrDefault(m => 
-                            m.Email.Equals(userEmail, StringComparison.OrdinalIgnoreCase));
-                        
-                        if (currentMember != null)
-                        {
-                            _currentUserId = currentMember.UserId;
-                            _isCurrentUserGM = currentMember.Role == WorldRole.GM;
-                        }
-                    }
-                }
-
-                _breadcrumbs = BreadcrumbService.ForWorld(_world);
-
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_world.Name)} - Chronicis'");
-                
-                // Load links
-                _links = await WorldApi.GetWorldLinksAsync(WorldId);
-                
-                // Load documents
-                _documents = await WorldApi.GetWorldDocumentsAsync(WorldId);
-                
-                // Highlight in tree
-                TreeState.ExpandPathToAndSelect(WorldId);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to load world: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private void OnNameChanged() => _hasUnsavedChanges = true;
-    private void OnDescriptionChanged() => _hasUnsavedChanges = true;
-
-    private async Task OnMembersChanged()
-    {
-        // Reload world to get updated member count
-        if (_world != null)
-        {
-            var updated = await WorldApi.GetWorldAsync(WorldId);
-            if (updated != null)
-            {
-                _world.MemberCount = updated.MemberCount;
-                _world.Members = updated.Members;
-                StateHasChanged();
-            }
-        }
-    }
-
-    private async Task SaveWorld()
-    {
-        if (_world == null || _isSaving) return;
-
-        // Validate public slug if making public
-        if (_isPublic && !_slugIsAvailable)
-        {
-            Snackbar.Add("Please enter a valid, available public slug before saving", Severity.Warning);
-            return;
-        }
-
-        _isSaving = true;
-        StateHasChanged();
-
-        try
-        {
-            var updateDto = new WorldUpdateDto
-            {
-                Name = _editName.Trim(),
-                Description = string.IsNullOrWhiteSpace(_editDescription) ? null : _editDescription.Trim(),
-                IsPublic = _isPublic,
-                PublicSlug = _isPublic ? _publicSlug.Trim().ToLowerInvariant() : null
-            };
-
-            var updated = await WorldApi.UpdateWorldAsync(WorldId, updateDto);
-            if (updated != null)
-            {
-                _world.Name = updated.Name;
-                _world.Description = updated.Description;
-                _world.IsPublic = updated.IsPublic;
-                _world.PublicSlug = updated.PublicSlug;
-                _hasUnsavedChanges = false;
-
-                await TreeState.RefreshAsync();
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_editName)} - Chronicis'");
-                
-                Snackbar.Add("World saved", Severity.Success);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to save: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isSaving = false;
-            StateHasChanged();
-        }
-    }
-
-    // ===== Link Management =====
-
-    private void StartAddLink()
-    {
-        _isAddingLink = true;
-        _newLinkTitle = string.Empty;
-        _newLinkUrl = string.Empty;
-        _newLinkDescription = string.Empty;
-    }
-
-    private void CancelAddLink()
-    {
-        _isAddingLink = false;
-        _newLinkTitle = string.Empty;
-        _newLinkUrl = string.Empty;
-        _newLinkDescription = string.Empty;
-    }
-
-    private async Task SaveNewLink()
-    {
-        if (string.IsNullOrWhiteSpace(_newLinkTitle) || string.IsNullOrWhiteSpace(_newLinkUrl))
-        {
-            Snackbar.Add("Title and URL are required", Severity.Warning);
-            return;
-        }
-
-        // Basic URL validation
-        if (!Uri.TryCreate(_newLinkUrl, UriKind.Absolute, out var uri) || 
-            (uri.Scheme != "http" && uri.Scheme != "https"))
-        {
-            Snackbar.Add("Please enter a valid URL (starting with http:// or https://)", Severity.Warning);
-            return;
-        }
-
-        _isSavingLink = true;
-        StateHasChanged();
-
-        try
-        {
-            var dto = new WorldLinkCreateDto
-            {
-                Title = _newLinkTitle.Trim(),
-                Url = _newLinkUrl.Trim(),
-                Description = string.IsNullOrWhiteSpace(_newLinkDescription) ? null : _newLinkDescription.Trim()
-            };
-
-            var created = await WorldApi.CreateWorldLinkAsync(WorldId, dto);
-            if (created != null)
-            {
-                // Reload links to get proper alphabetical order
-                _links = await WorldApi.GetWorldLinksAsync(WorldId);
-                await TreeState.RefreshAsync();
-                _isAddingLink = false;
-                _newLinkTitle = string.Empty;
-                _newLinkUrl = string.Empty;
-                _newLinkDescription = string.Empty;
-                Snackbar.Add("Link added", Severity.Success);
-            }
-            else
-            {
-                Snackbar.Add("Failed to add link", Severity.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to add link: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isSavingLink = false;
-            StateHasChanged();
-        }
-    }
-
-    private void StartEditLink(WorldLinkDto link)
-    {
-        _editingLinkId = link.Id;
-        _editLinkTitle = link.Title;
-        _editLinkUrl = link.Url;
-        _editLinkDescription = link.Description ?? string.Empty;
-    }
-
-    private void CancelEditLink()
-    {
-        _editingLinkId = null;
-        _editLinkTitle = string.Empty;
-        _editLinkUrl = string.Empty;
-        _editLinkDescription = string.Empty;
-    }
-
-    private async Task SaveEditLink()
-    {
-        if (_editingLinkId == null) return;
-
-        if (string.IsNullOrWhiteSpace(_editLinkTitle) || string.IsNullOrWhiteSpace(_editLinkUrl))
-        {
-            Snackbar.Add("Title and URL are required", Severity.Warning);
-            return;
-        }
-
-        // Basic URL validation
-        if (!Uri.TryCreate(_editLinkUrl, UriKind.Absolute, out var uri) || 
-            (uri.Scheme != "http" && uri.Scheme != "https"))
-        {
-            Snackbar.Add("Please enter a valid URL (starting with http:// or https://)", Severity.Warning);
-            return;
-        }
-
-        _isSavingLink = true;
-        StateHasChanged();
-
-        try
-        {
-            var dto = new WorldLinkUpdateDto
-            {
-                Title = _editLinkTitle.Trim(),
-                Url = _editLinkUrl.Trim(),
-                Description = string.IsNullOrWhiteSpace(_editLinkDescription) ? null : _editLinkDescription.Trim()
-            };
-
-            var updated = await WorldApi.UpdateWorldLinkAsync(WorldId, _editingLinkId.Value, dto);
-            if (updated != null)
-            {
-                // Reload links to get proper alphabetical order
-                _links = await WorldApi.GetWorldLinksAsync(WorldId);
-                await TreeState.RefreshAsync();
-                _editingLinkId = null;
-                _editLinkTitle = string.Empty;
-                _editLinkUrl = string.Empty;
-                _editLinkDescription = string.Empty;
-                Snackbar.Add("Link updated", Severity.Success);
-            }
-            else
-            {
-                Snackbar.Add("Failed to update link", Severity.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to update link: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isSavingLink = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task DeleteLink(WorldLinkDto link)
-    {
-        var confirmed = await DialogService.ShowMessageBox(
-            "Delete Link",
-            $"Are you sure you want to delete \"{link.Title}\"?",
-            yesText: "Delete",
-            cancelText: "Cancel");
-
-        if (confirmed != true) return;
-
-        try
-        {
-            var deleted = await WorldApi.DeleteWorldLinkAsync(WorldId, link.Id);
-            if (deleted)
-            {
-                _links.Remove(link);
-                await TreeState.RefreshAsync();
-                Snackbar.Add("Link deleted", Severity.Success);
-                StateHasChanged();
-            }
-            else
-            {
-                Snackbar.Add("Failed to delete link", Severity.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to delete link: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private static string GetFaviconUrl(string url)
-    {
-        try
-        {
-            var uri = new Uri(url);
-            return $"https://www.google.com/s2/favicons?domain={uri.Host}&sz=32";
-        }
-        catch
-        {
-            return string.Empty;
-        }
-    }
-
-    private void HandleFaviconError()
-    {
-        // Favicon errors are handled via CSS fallback
-    }
-
-    // ===== Document Upload =====
-
-    private async Task OpenUploadDialog()
-    {
-        var parameters = new DialogParameters
-        {
-            { "WorldId", WorldId }
-        };
-
-        var options = new DialogOptions 
-        { 
-            MaxWidth = MaxWidth.Small, 
-            FullWidth = true 
-        };
-
-        var dialog = await DialogService.ShowAsync<WorldDocumentUploadDialog>("Upload Document", parameters, options);
-        var result = await dialog.Result;
-
-        if (result != null && !result.Canceled)
-        {
-            // Reload documents
-            _documents = await WorldApi.GetWorldDocumentsAsync(WorldId);
-            
-            // Refresh tree to show new document
-            await TreeState.RefreshAsync();
-            
-            StateHasChanged();
-        }
-    }
-
-    private void StartEditDocument(WorldDocumentDto document)
-    {
-        _editingDocumentId = document.Id;
-        _editDocumentTitle = document.Title;
-        _editDocumentDescription = document.Description ?? string.Empty;
-    }
-
-    private void CancelDocumentEdit()
-    {
-        _editingDocumentId = null;
-        _editDocumentTitle = string.Empty;
-        _editDocumentDescription = string.Empty;
-    }
-
-    private async Task SaveDocumentEdit()
-    {
-        if (_editingDocumentId == null) return;
-
-        _isSavingDocument = true;
-        StateHasChanged();
-
-        try
-        {
-            var updateDto = new WorldDocumentUpdateDto
-            {
-                Title = _editDocumentTitle,
-                Description = _editDocumentDescription
-            };
-
-            var updated = await WorldApi.UpdateDocumentAsync(WorldId, _editingDocumentId.Value, updateDto);
-            
-            if (updated != null)
-            {
-                // Update local list
-                var doc = _documents.FirstOrDefault(d => d.Id == _editingDocumentId.Value);
-                if (doc != null)
-                {
-                    doc.Title = updated.Title;
-                    doc.Description = updated.Description;
-                }
-
-                _editingDocumentId = null;
-                _editDocumentTitle = string.Empty;
-                _editDocumentDescription = string.Empty;
-
-                // Refresh tree to show updated name
-                await TreeState.RefreshAsync();
-                
-                Snackbar.Add("Document updated", Severity.Success);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to update document: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isSavingDocument = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task DeleteDocument(Guid documentId)
-    {
-        var doc = _documents.FirstOrDefault(d => d.Id == documentId);
-        if (doc == null) return;
-
-        var confirmed = await DialogService.ShowMessageBox(
-            "Delete Document",
-            $"Are you sure you want to delete \"{doc.Title}\"? This action cannot be undone.",
-            yesText: "Delete",
-            cancelText: "Cancel");
-
-        if (confirmed == true)
-        {
-            var success = await WorldApi.DeleteDocumentAsync(WorldId, documentId);
-            
-            if (success)
-            {
-                _documents.Remove(doc);
-                await TreeState.RefreshAsync();
-                Snackbar.Add("Document deleted", Severity.Success);
-            }
-            else
-            {
-                Snackbar.Add("Failed to delete document", Severity.Error);
-            }
-        }
-    }
-
-    private async Task DownloadDocument(Guid documentId)
-    {
-        try
-        {
-            var download = await WorldApi.DownloadDocumentAsync(documentId);
-
-            if (download == null)
-            {
-                Snackbar.Add("Failed to get download URL", Severity.Error);
-                return;
-            }
-
-            // Open the SAS URL in a new tab for download
-            await JSRuntime.InvokeVoidAsync("open", download.DownloadUrl, "_blank");
-
-            Snackbar.Add($"Opening {download.FileName}", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error downloading document: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private string GetDocumentIcon(string contentType)
-    {
-        return contentType.ToLowerInvariant() switch
-        {
-            "application/pdf" => Icons.Material.Filled.PictureAsPdf,
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => Icons.Material.Filled.Description,
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => Icons.Material.Filled.TableChart,
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation" => Icons.Material.Filled.Slideshow,
-            "text/plain" => Icons.Material.Filled.TextSnippet,
-            "text/markdown" => Icons.Material.Filled.Article,
-            string ct when ct.StartsWith("image/") => Icons.Material.Filled.Image,
-            _ => Icons.Material.Filled.InsertDriveFile
-        };
-    }
-
-    private string FormatFileSize(long bytes)
-    {
-        string[] sizes = { "B", "KB", "MB", "GB" };
-        double len = bytes;
-        int order = 0;
-        while (len >= 1024 && order < sizes.Length - 1)
-        {
-            order++;
-            len = len / 1024;
-        }
-        return $"{len:0.##} {sizes[order]}";
-    }
-
-    // ===== Article Creation =====
-
-    private async Task CreateCampaign()
-    {
-        var parameters = new DialogParameters
-        {
-            { "WorldId", WorldId }
-        };
-
-        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("New Campaign", parameters);
-        var result = await dialog.Result;
-
-        if (result != null && !result.Canceled && result.Data is CampaignDto campaign)
-        {
-            await TreeState.RefreshAsync();
-            await LoadWorldAsync();
-            Navigation.NavigateTo($"/campaign/{campaign.Id}");
-            Snackbar.Add("Campaign created", Severity.Success);
-        }
-    }
-
-    private async Task CreateCharacter()
-    {
-        var parameters = new DialogParameters
-        {
-            { "WorldId", WorldId },
-            { "ArticleType", Chronicis.Shared.Enums.ArticleType.Character }
-        };
-
-        var dialog = await DialogService.ShowAsync<CreateArticleDialog>("New Player Character", parameters);
-        var result = await dialog.Result;
-
-        if (result != null && !result.Canceled && result.Data is ArticleDto article)
-        {
-            await TreeState.RefreshAsync();
-            NavigateToArticle(article);
-            Snackbar.Add("Character created", Severity.Success);
-        }
-    }
-
-    private async Task CreateWikiArticle()
-    {
-        var parameters = new DialogParameters
-        {
-            { "WorldId", WorldId },
-            { "ArticleType", Chronicis.Shared.Enums.ArticleType.WikiArticle }
-        };
-
-        var dialog = await DialogService.ShowAsync<CreateArticleDialog>("New Wiki Article", parameters);
-        var result = await dialog.Result;
-
-        if (result != null && !result.Canceled && result.Data is ArticleDto article)
-        {
-            await TreeState.RefreshAsync();
-            NavigateToArticle(article);
-            Snackbar.Add("Article created", Severity.Success);
-        }
-    }
-
-    private void NavigateToArticle(ArticleDto article)
-    {
-        // Build full path from breadcrumbs to ensure correct world context
-        if (article.Breadcrumbs != null && article.Breadcrumbs.Any())
-        {
-            var path = BreadcrumbService.BuildArticleUrl(article.Breadcrumbs);
-            Navigation.NavigateTo(path);
-        }
-        else
-        {
-            // Fallback to slug only (shouldn't happen for properly created articles)
-            Navigation.NavigateTo($"/article/{article.Slug}");
-        }
-    }
-
-    // ===== Public Sharing =====
-
-    private void OnPublicToggleChanged()
-    {
-        _hasUnsavedChanges = true;
-        
-        if (_isPublic && string.IsNullOrEmpty(_publicSlug))
-        {
-            // Suggest a slug based on world name
-            _publicSlug = GenerateSlugFromName(_world?.Name ?? "");
-            _ = CheckSlugAvailability();
-        }
-    }
-
-    private static string GenerateSlugFromName(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name)) return string.Empty;
-        
-        var slug = name.Trim().ToLowerInvariant();
-        slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[\s_]+", "-");
-        slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[^a-z0-9-]", "");
-        slug = System.Text.RegularExpressions.Regex.Replace(slug, @"-+", "-");
-        slug = slug.Trim('-');
-        
-        return slug.Length >= 3 ? slug : slug.PadRight(3, '0');
-    }
-
-    private async Task CheckSlugAvailability()
-    {
-        if (string.IsNullOrWhiteSpace(_publicSlug))
-        {
-            _slugIsAvailable = false;
-            _slugError = null;
-            _slugHelperText = null;
-            return;
-        }
-
-        _isCheckingSlug = true;
-        _slugError = null;
-        _slugHelperText = null;
-        StateHasChanged();
-
-        try
-        {
-            var result = await WorldApi.CheckPublicSlugAsync(WorldId, _publicSlug);
-            
-            if (result == null)
-            {
-                _slugError = "Failed to check availability";
-                _slugIsAvailable = false;
-            }
-            else if (!string.IsNullOrEmpty(result.ValidationError))
-            {
-                _slugError = result.ValidationError;
-                _slugIsAvailable = false;
-                if (!string.IsNullOrEmpty(result.SuggestedSlug))
-                {
-                    _slugHelperText = $"Try: {result.SuggestedSlug}";
-                }
-            }
-            else if (!result.IsAvailable)
-            {
-                _slugError = "This slug is already taken";
-                _slugIsAvailable = false;
-                if (!string.IsNullOrEmpty(result.SuggestedSlug))
-                {
-                    _slugHelperText = $"Try: {result.SuggestedSlug}";
-                }
-            }
-            else
-            {
-                _slugIsAvailable = true;
-                _slugHelperText = "Available!";
-            }
-            
-            _hasUnsavedChanges = true;
-        }
-        catch (Exception ex)
-        {
-            _slugError = $"Error: {ex.Message}";
-            _slugIsAvailable = false;
-        }
-        finally
-        {
-            _isCheckingSlug = false;
-            StateHasChanged();
-        }
-    }
-
-    private string GetPublicUrlBase()
-    {
-        var baseUri = Navigation.BaseUri.TrimEnd('/');
-        return $"{baseUri}/w/";
-    }
-
-    private string GetFullPublicUrl()
-    {
-        if (_world == null || string.IsNullOrEmpty(_world.PublicSlug)) return string.Empty;
-        return $"{GetPublicUrlBase()}{_world.PublicSlug}";
-    }
-
-    private bool ShouldShowPublicPreview()
-    {
-        return _world is not null
-            && _world.IsPublic
-            && !string.IsNullOrEmpty(_world.PublicSlug);
+        ViewModel.PropertyChanged += OnViewModelChanged;
+        LinksViewModel.PropertyChanged += OnViewModelChanged;
+        DocumentsViewModel.PropertyChanged += OnViewModelChanged;
+        SharingViewModel.PropertyChanged += OnViewModelChanged;
+
+        await ViewModel.LoadAsync(WorldId, SharingViewModel, LinksViewModel, DocumentsViewModel);
     }
 
     private async Task CopyPublicUrl()
     {
-        var url = GetFullPublicUrl();
+        var url = SharingViewModel.GetFullPublicUrl(Navigation.BaseUri, ViewModel.World);
         if (string.IsNullOrEmpty(url)) return;
-
         try
         {
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", url);
-            Snackbar.Add("Public URL copied to clipboard", Severity.Success);
         }
-        catch
-        {
-            Snackbar.Add("Failed to copy URL", Severity.Error);
-        }
+        catch { /* clipboard not available in all contexts */ }
+    }
+
+    private void OnViewModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        ViewModel.PropertyChanged -= OnViewModelChanged;
+        LinksViewModel.PropertyChanged -= OnViewModelChanged;
+        DocumentsViewModel.PropertyChanged -= OnViewModelChanged;
+        SharingViewModel.PropertyChanged -= OnViewModelChanged;
     }
 }
