@@ -1,44 +1,34 @@
 @page "/campaign/{CampaignId:guid}"
 @attribute [Authorize]
-@using Chronicis.Shared.DTOs
+@implements IDisposable
 @using Chronicis.Client.Components.Dialogs
 @using Chronicis.Client.Components.Shared
-@using Chronicis.Client.Utilities
-@inject ICampaignApiService CampaignApi
-@inject IArcApiService ArcApi
-@inject IWorldApiService WorldApi
-@inject ITreeStateService TreeState
-@inject IBreadcrumbService BreadcrumbService
-@inject ISnackbar Snackbar
-@inject IDialogService DialogService
-@inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
+@inject CampaignDetailViewModel ViewModel
 
-@if (_isLoading)
+@if (ViewModel.IsLoading)
 {
     <LoadingSkeleton />
 }
-else if (_campaign != null)
+else if (ViewModel.Campaign != null)
 {
     <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
-        <DetailPageHeader Breadcrumbs="_breadcrumbs"
+        <DetailPageHeader Breadcrumbs="ViewModel.Breadcrumbs"
                           Icon="@Icons.Material.Filled.AutoStories"
-                          @bind-Title="_editName"
+                          Title="@ViewModel.EditName"
+                          TitleChanged="@(v => ViewModel.EditName = v)"
                           Placeholder="Campaign Name"
-                          OnTitleEdited="OnNameChanged"
-                          OnEnterPressed="SaveCampaign" />
+                          OnTitleEdited="@(() => {})"
+                          OnEnterPressed="@(() => ViewModel.SaveAsync())" />
 
-        <!-- Description -->
-        <MudTextField @bind-Value="_editDescription"
+        <MudTextField Value="@ViewModel.EditDescription"
+                      ValueChanged="@((string v) => ViewModel.EditDescription = v)"
                       Label="Description"
                       Variant="Variant.Outlined"
                       Lines="3"
                       Placeholder="Describe your campaign..."
                       Class="mb-4"
-                      Immediate="true"
-                      @onkeyup="OnDescriptionChanged" />
+                      Immediate="true" />
 
-        <!-- Arcs Section -->
         <div class="d-flex align-center justify-space-between mb-3">
             <MudText Typo="Typo.h6" Style="color: var(--chronicis-beige-gold);">
                 <MudIcon Icon="@Icons.Material.Filled.Bookmark" Size="Size.Small" Class="mr-2" />
@@ -48,19 +38,19 @@ else if (_campaign != null)
                        Color="Color.Primary"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Add"
-                       OnClick="CreateArc">
+                       OnClick="@(() => ViewModel.CreateArcAsync())">
                 New Arc
             </MudButton>
         </div>
 
-        @if (_arcs.Any())
+        @if (ViewModel.Arcs.Any())
         {
             <MudList T="ArcDto" Dense="true" Class="mb-4">
-                @foreach (var arc in _arcs.OrderBy(a => a.SortOrder))
+                @foreach (var arc in ViewModel.Arcs.OrderBy(a => a.SortOrder))
                 {
                     <EntityListItem Icon="@Icons.Material.Filled.Bookmark"
                                     Title="@arc.Name"
-                                    OnClick="@(() => NavigateToArc(arc.Id))">
+                                    OnClick="@(() => ViewModel.NavigateToArc(arc.Id))">
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
                             @arc.SessionCount sessions
                         </MudChip>
@@ -75,59 +65,57 @@ else if (_campaign != null)
             </MudAlert>
         }
 
-        <!-- Campaign Info -->
         <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
             Campaign Info
         </MudText>
-        
+
         <MudSimpleTable Dense="true" Hover="true" Class="mb-4">
             <tbody>
                 <tr>
                     <td><MudIcon Icon="@Icons.Material.Filled.PlayCircle" Size="Size.Small" Class="mr-2" />Active Campaign</td>
                     <td>
-                        <MudSwitch T="bool" 
-                                   Value="_campaign.IsActive" 
-                                   ValueChanged="OnActiveToggle"
+                        <MudSwitch T="bool"
+                                   Value="ViewModel.Campaign.IsActive"
+                                   ValueChanged="@((bool v) => ViewModel.OnActiveToggleAsync(v))"
                                    Color="Color.Success"
                                    Size="Size.Small"
-                                   Disabled="_isTogglingActive" />
+                                   Disabled="ViewModel.IsTogglingActive" />
                     </td>
                 </tr>
                 <tr>
                     <td><MudIcon Icon="@Icons.Material.Filled.Layers" Size="Size.Small" Class="mr-2" />Arcs</td>
-                    <td>@_campaign.ArcCount</td>
+                    <td>@ViewModel.Campaign.ArcCount</td>
                 </tr>
                 <tr>
                     <td><MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-2" />Owner</td>
-                    <td>@_campaign.OwnerName</td>
+                    <td>@ViewModel.Campaign.OwnerName</td>
                 </tr>
                 <tr>
                     <td><MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="mr-2" />Created</td>
-                    <td>@_campaign.CreatedAt.ToString("MMMM d, yyyy")</td>
+                    <td>@ViewModel.Campaign.CreatedAt.ToString("MMMM d, yyyy")</td>
                 </tr>
-                @if (_campaign.StartedAt.HasValue)
+                @if (ViewModel.Campaign.StartedAt.HasValue)
                 {
                     <tr>
                         <td><MudIcon Icon="@Icons.Material.Filled.PlayArrow" Size="Size.Small" Class="mr-2" />Started</td>
-                        <td>@_campaign.StartedAt.Value.ToString("MMMM d, yyyy")</td>
+                        <td>@ViewModel.Campaign.StartedAt.Value.ToString("MMMM d, yyyy")</td>
                     </tr>
                 }
             </tbody>
         </MudSimpleTable>
 
-        <!-- AI Summary Section -->
-        <AISummarySection EntityId="CampaignId" 
-                          EntityType="Campaign" 
-                          @bind-IsExpanded="_summaryExpanded" />
+        <AISummarySection EntityId="CampaignId"
+                          EntityType="Campaign"
+                          IsExpanded="ViewModel.SummaryExpanded"
+                          IsExpandedChanged="@((bool v) => ViewModel.SummaryExpanded = v)" />
 
-        <!-- Save Status -->
         <div class="chronicis-flex-between mt-4">
-            <SaveStatusIndicator IsSaving="_isSaving" HasUnsavedChanges="_hasUnsavedChanges" />
+            <SaveStatusIndicator IsSaving="ViewModel.IsSaving" HasUnsavedChanges="ViewModel.HasUnsavedChanges" />
 
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
-                       OnClick="SaveCampaign"
-                       Disabled="_isSaving"
+                       OnClick="@(() => ViewModel.SaveAsync())"
+                       Disabled="ViewModel.IsSaving"
                        StartIcon="@Icons.Material.Filled.Save">
                 Save
             </MudButton>
@@ -139,182 +127,17 @@ else if (_campaign != null)
     [Parameter]
     public Guid CampaignId { get; set; }
 
-    private CampaignDetailDto? _campaign;
-    private List<ArcDto> _arcs = new();
-    private WorldDto? _world;
-    private string _editName = string.Empty;
-    private string _editDescription = string.Empty;
-    private bool _isLoading = true;
-    private bool _isSaving = false;
-    private bool _isTogglingActive = false;
-    private bool _hasUnsavedChanges = false;
-    private bool _summaryExpanded = false;
-    private List<BreadcrumbItem> _breadcrumbs = new();
-
     protected override async Task OnParametersSetAsync()
     {
-        await LoadCampaignAsync();
+        ViewModel.PropertyChanged += OnViewModelChanged;
+        await ViewModel.LoadAsync(CampaignId);
     }
 
-    private async Task LoadCampaignAsync()
+    private void OnViewModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
     {
-        _isLoading = true;
-        StateHasChanged();
-
-        try
-        {
-            _campaign = await CampaignApi.GetCampaignAsync(CampaignId);
-            if (_campaign == null)
-            {
-                Navigation.NavigateTo("/dashboard", replace: true);
-                return;
-            }
-            else
-            {
-                _editName = _campaign.Name;
-                _editDescription = _campaign.Description ?? string.Empty;
-                _hasUnsavedChanges = false;
-
-                // Load arcs
-                _arcs = await ArcApi.GetArcsByCampaignAsync(CampaignId);
-
-                // Load world for breadcrumbs
-                _world = (await WorldApi.GetWorldAsync(_campaign.WorldId)) as WorldDto;
-
-                if (_world != null)
-                {
-                    _breadcrumbs = BreadcrumbService.ForCampaign(_campaign, _world);
-                }
-                else
-                {
-                    // Fallback if world not loaded
-                    _breadcrumbs = new List<BreadcrumbItem>
-                    {
-                        new("Dashboard", href: "/dashboard"),
-                        new(_campaign.Name, href: null, disabled: true)
-                    };
-                }
-
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_campaign.Name)} - Chronicis'");
-                
-                // Highlight in tree
-                TreeState.ExpandPathToAndSelect(CampaignId);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to load campaign: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isLoading = false;
-        }
+        ViewModel.PropertyChanged -= OnViewModelChanged;
     }
-
-    private void OnNameChanged() => _hasUnsavedChanges = true;
-    private void OnDescriptionChanged() => _hasUnsavedChanges = true;
-
-    private async Task OnActiveToggle(bool isActive)
-    {
-        if (_campaign == null || _isTogglingActive) return;
-        
-        _isTogglingActive = true;
-        StateHasChanged();
-
-        try
-        {
-            if (isActive)
-            {
-                var success = await CampaignApi.ActivateCampaignAsync(CampaignId);
-                if (success)
-                {
-                    _campaign.IsActive = true;
-                    Snackbar.Add("Campaign set as active", Severity.Success);
-                }
-                else
-                {
-                    Snackbar.Add("Failed to activate campaign", Severity.Error);
-                }
-            }
-            else
-            {
-                // To deactivate, we'd need a separate endpoint or just not support it
-                // For now, show a message that you need to activate another campaign
-                Snackbar.Add("To deactivate, set another campaign as active", Severity.Info);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isTogglingActive = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task SaveCampaign()
-    {
-        if (_campaign == null || _isSaving) return;
-
-        _isSaving = true;
-        StateHasChanged();
-
-        try
-        {
-            var updateDto = new CampaignUpdateDto
-            {
-                Name = _editName.Trim(),
-                Description = string.IsNullOrWhiteSpace(_editDescription) ? null : _editDescription.Trim()
-            };
-
-            var updated = await CampaignApi.UpdateCampaignAsync(CampaignId, updateDto);
-            if (updated != null)
-            {
-                _campaign.Name = updated.Name;
-                _campaign.Description = updated.Description;
-                _hasUnsavedChanges = false;
-
-                await TreeState.RefreshAsync();
-                await JSRuntime.InvokeVoidAsync("eval", $"document.title = '{JsUtilities.EscapeForJs(_editName)} - Chronicis'");
-                
-                Snackbar.Add("Campaign saved", Severity.Success);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to save: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isSaving = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task CreateArc()
-    {
-        var parameters = new DialogParameters
-        {
-            { "CampaignId", CampaignId }
-        };
-
-        var dialog = await DialogService.ShowAsync<CreateArcDialog>("New Arc", parameters);
-        var result = await dialog.Result;
-
-        if (result != null && !result.Canceled && result.Data is ArcDto arc)
-        {
-            await TreeState.RefreshAsync();
-            await LoadCampaignAsync();
-            Navigation.NavigateTo($"/arc/{arc.Id}");
-            Snackbar.Add("Arc created", Severity.Success);
-        }
-    }
-
-    private void NavigateToArc(Guid arcId)
-    {
-        Navigation.NavigateTo($"/arc/{arcId}");
-    }
-
 }
