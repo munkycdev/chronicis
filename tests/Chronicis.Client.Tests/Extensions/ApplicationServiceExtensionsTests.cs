@@ -1,3 +1,4 @@
+using Chronicis.Client.Abstractions;
 using Chronicis.Client.Extensions;
 using Chronicis.Client.Services;
 using Chronicis.Shared.Admin;
@@ -30,6 +31,7 @@ public class ApplicationServiceExtensionsTests
         services.AddHttpClient("ChronicisApi", c => c.BaseAddress = new Uri("https://api.example/"));
         services.AddHttpClient("ChronicisPublicApi", c => c.BaseAddress = new Uri("https://public.example/"));
         services.AddSingleton(Substitute.For<ISnackbar>());
+        services.AddSingleton(Substitute.For<IDialogService>());
         services.AddSingleton(Substitute.For<IJSRuntime>());
         services.AddSingleton<NavigationManager>(new TestNavigationManager("https://client.example/"));
 
@@ -46,6 +48,12 @@ public class ApplicationServiceExtensionsTests
         Assert.NotNull(provider.GetRequiredService<IRenderDefinitionService>());
         Assert.NotNull(provider.GetRequiredService<IAdminApiService>());
         Assert.NotNull(provider.GetRequiredService<ISysAdminChecker>());
+
+        // UI Infrastructure abstractions
+        Assert.NotNull(provider.GetRequiredService<IAppNavigator>());
+        Assert.NotNull(provider.GetRequiredService<IUserNotifier>());
+        Assert.NotNull(provider.GetRequiredService<IConfirmationService>());
+        Assert.NotNull(provider.GetRequiredService<IPageTitleService>());
     }
 
     private sealed class TestNavigationManager : NavigationManager

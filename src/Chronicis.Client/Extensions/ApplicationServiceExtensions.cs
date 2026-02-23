@@ -1,3 +1,5 @@
+using Chronicis.Client.Abstractions;
+using Chronicis.Client.Infrastructure;
 using Chronicis.Client.Services;
 using Chronicis.Shared.Admin;
 using Microsoft.Extensions.Options;
@@ -60,6 +62,12 @@ public static class ApplicationServiceExtensions
             var logger = sp.GetRequiredService<ILogger<HealthStatusApiService>>();
             return new HealthStatusApiService(factory.CreateClient("ChronicisPublicApi"), logger);
         });
+
+        // UI Infrastructure abstractions — decouple ViewModels from MudBlazor/JS/NavigationManager
+        services.AddScoped<IAppNavigator, AppNavigator>();
+        services.AddScoped<IUserNotifier, UserNotifier>();
+        services.AddScoped<IConfirmationService, ConfirmationService>();
+        services.AddScoped<IPageTitleService, PageTitleService>();
 
         // State & coordination services
         services.AddScoped<ITreeStateService, TreeStateService>();
