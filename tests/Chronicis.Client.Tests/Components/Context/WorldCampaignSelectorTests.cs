@@ -35,6 +35,16 @@ public class WorldCampaignSelectorTests : MudBlazorTestContext
         Services.AddSingleton(_snackbar);
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _snackbar.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
     [Fact]
     public async Task OnWorldChanged_WhenDifferentWorld_SelectsWorld()
     {

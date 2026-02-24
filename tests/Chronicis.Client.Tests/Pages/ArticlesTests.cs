@@ -236,7 +236,7 @@ public class ArticlesTests : MudBlazorTestContext
         SetProperty(sut, "ArticleApi", api);
         SetProperty(sut, "QuoteService", Substitute.For<IQuoteService>());
         SetProperty(sut, "Navigation", nav);
-        sut.Path = path;
+        SetProperty(sut, nameof(Articles.Path), path);
 
         return sut;
     }

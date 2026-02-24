@@ -30,6 +30,16 @@ public class WorldMembersPanelTests : MudBlazorTestContext
         Services.AddSingleton(_snackbar);
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _snackbar.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
     [Theory]
     [InlineData(WorldRole.GM, Color.Warning)]
     [InlineData(WorldRole.Player, Color.Primary)]

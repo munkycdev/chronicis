@@ -25,6 +25,16 @@ public class DataManagementSectionTests : MudBlazorTestContext
         Services.AddSingleton(_snackbar);
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _snackbar.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
     [Fact]
     public void ShowsNoWorldsMessage_WhenWorldListEmpty()
     {

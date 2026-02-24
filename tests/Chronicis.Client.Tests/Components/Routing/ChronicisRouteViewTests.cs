@@ -23,10 +23,7 @@ public class ChronicisRouteViewTests : MudBlazorTestContext
     [Fact]
     public void DetermineLayoutType_UsesExplicitLayout()
     {
-        var instance = new ChronicisRouteView
-        {
-            RouteData = new RouteData(typeof(TestLayoutPage), new Dictionary<string, object?>())
-        };
+        var instance = CreateInstance(new RouteData(typeof(TestLayoutPage), new Dictionary<string, object?>()));
         var result = InvokeDetermineLayoutType(instance, typeof(TestLayoutPage));
         Assert.Equal(typeof(PublicLayout), result);
     }
@@ -34,10 +31,7 @@ public class ChronicisRouteViewTests : MudBlazorTestContext
     [Fact]
     public void DetermineLayoutType_UsesAuthenticatedLayout_ForAuthorizePages()
     {
-        var instance = new ChronicisRouteView
-        {
-            RouteData = new RouteData(typeof(TestAuthorizedPage), new Dictionary<string, object?>())
-        };
+        var instance = CreateInstance(new RouteData(typeof(TestAuthorizedPage), new Dictionary<string, object?>()));
         var result = InvokeDetermineLayoutType(instance, typeof(TestAuthorizedPage));
         Assert.Equal(typeof(Chronicis.Client.Components.Layout.AuthenticatedLayout), result);
     }
@@ -45,10 +39,7 @@ public class ChronicisRouteViewTests : MudBlazorTestContext
     [Fact]
     public void DetermineLayoutType_DefaultsToPublicLayout()
     {
-        var instance = new ChronicisRouteView
-        {
-            RouteData = new RouteData(typeof(TestPublicPage), new Dictionary<string, object?>())
-        };
+        var instance = CreateInstance(new RouteData(typeof(TestPublicPage), new Dictionary<string, object?>()));
         var result = InvokeDetermineLayoutType(instance, typeof(TestPublicPage));
         Assert.Equal(typeof(PublicLayout), result);
     }
@@ -101,6 +92,15 @@ public class ChronicisRouteViewTests : MudBlazorTestContext
         var method = typeof(ChronicisRouteView).GetMethod("DetermineLayoutType", BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.NotNull(method);
         return (Type?)method!.Invoke(instance, [pageType]);
+    }
+
+    private static ChronicisRouteView CreateInstance(RouteData routeData)
+    {
+        var instance = new ChronicisRouteView();
+        var property = typeof(ChronicisRouteView).GetProperty(nameof(ChronicisRouteView.RouteData), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        Assert.NotNull(property);
+        property!.SetValue(instance, routeData);
+        return instance;
     }
 
     [Route("/test-public")]

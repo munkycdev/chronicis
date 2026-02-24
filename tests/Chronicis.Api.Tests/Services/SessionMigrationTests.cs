@@ -350,7 +350,8 @@ public class SessionMigrationTests : IDisposable
         await RunSessionBackfillAsync();
 
         var updated = await _context.QuestUpdates.FindAsync(update.Id);
-        Assert.Equal(sessionArticle.Id, updated.SessionId);
+        Assert.NotNull(updated);
+        Assert.Equal(sessionArticle.Id, updated!.SessionId);
     }
 
     [Fact]

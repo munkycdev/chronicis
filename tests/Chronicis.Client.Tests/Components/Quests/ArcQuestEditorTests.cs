@@ -312,7 +312,7 @@ public class ArcQuestEditorTests : MudBlazorTestContext
     }
 
     [Fact]
-    public async Task ArcQuestEditor_OnParametersSetAsync_WhenQuestIdUnchanged_DoesNotResetEdits()
+    public void ArcQuestEditor_OnParametersSetAsync_WhenQuestIdUnchanged_DoesNotResetEdits()
     {
         RegisterServices();
         var quest = CreateQuest("Original", "desc");

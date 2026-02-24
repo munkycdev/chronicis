@@ -28,6 +28,16 @@ public class WorldResourceProvidersTests : MudBlazorTestContext
         Services.AddSingleton(_logger);
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _snackbar.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
     [Fact]
     public void OnParametersSetAsync_LoadsAndSortsProviders()
     {

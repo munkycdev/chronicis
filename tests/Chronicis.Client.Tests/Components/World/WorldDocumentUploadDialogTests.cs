@@ -27,6 +27,16 @@ public class WorldDocumentUploadDialogTests : MudBlazorTestContext
         Services.AddSingleton(_snackbar);
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _snackbar.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
     [Theory]
     [InlineData(512L, "512 B")]
     [InlineData(1024L, "1 KB")]
