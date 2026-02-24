@@ -28,6 +28,7 @@ public class ChronicisDbContext : DbContext
     public DbSet<WorldResourceProvider> WorldResourceProviders { get; set; } = null!;
     public DbSet<Quest> Quests { get; set; } = null!;
     public DbSet<QuestUpdate> QuestUpdates { get; set; } = null!;
+    public DbSet<Session> Sessions { get; set; } = null!;
 
 
     public ChronicisDbContext(DbContextOptions<ChronicisDbContext> options)
@@ -54,6 +55,7 @@ public class ChronicisDbContext : DbContext
         ConfigureWorldResourceProvider(modelBuilder);
         ConfigureQuest(modelBuilder);
         ConfigureQuestUpdate(modelBuilder);
+        ConfigureSession(modelBuilder);
     }
 
     private static void ConfigureUser(ModelBuilder modelBuilder)
@@ -290,9 +292,9 @@ public class ChronicisDbContext : DbContext
                 .HasForeignKey(a => a.CampaignId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Article -> Arc (for Session articles)
+            // Article -> Arc (for Session articles) — uses renamed nav property SessionArticles
             entity.HasOne(a => a.Arc)
-                .WithMany(arc => arc.Sessions)
+                .WithMany(arc => arc.SessionArticles)
                 .HasForeignKey(a => a.ArcId)
                 .OnDelete(DeleteBehavior.Restrict);
 
@@ -321,6 +323,15 @@ public class ChronicisDbContext : DbContext
             entity.HasIndex(a => a.CreatedBy);
             entity.HasIndex(a => a.Type);
             entity.HasIndex(a => a.Title);
+            entity.HasIndex(a => a.SessionId)
+                .HasDatabaseName("IX_Articles_SessionId")
+                .HasFilter("[SessionId] IS NOT NULL");
+
+            // Article -> Session entity (nullable FK for SessionNote articles)
+            entity.HasOne(a => a.Session)
+                .WithMany(s => s.SessionNotes)
+                .HasForeignKey(a => a.SessionId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Unique constraint: Slug must be unique among siblings
             // For root articles (ParentId is null), scope by WorldId
@@ -783,6 +794,15 @@ public class ChronicisDbContext : DbContext
                 .HasForeignKey(qu => qu.SessionId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            // QuestUpdate -> Session entity (NO ACTION - bridge FK; becomes canonical in Phase 7)
+            // SQL Server disallows SET NULL here due to multiple cascade paths through
+            // Quest → Arc → Campaign → World. SessionEntityId must be nulled manually
+            // in application code if a Session is ever deleted.
+            entity.HasOne(qu => qu.SessionEntity)
+                .WithMany(s => s.QuestUpdates)
+                .HasForeignKey(qu => qu.SessionEntityId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             // QuestUpdate -> Creator (User) (RESTRICT - don't allow user deletion if they created updates)
             entity.HasOne(qu => qu.Creator)
                 .WithMany(u => u.CreatedQuestUpdates)
@@ -795,6 +815,60 @@ public class ChronicisDbContext : DbContext
 
             entity.HasIndex(qu => qu.SessionId)
                 .HasDatabaseName("IX_QuestUpdate_SessionId");
+
+            entity.HasIndex(qu => qu.SessionEntityId)
+                .HasDatabaseName("IX_QuestUpdate_SessionEntityId")
+                .HasFilter("[SessionEntityId] IS NOT NULL");
+        });
+    }
+
+    private static void ConfigureSession(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Session>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+
+            entity.Property(s => s.Name)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            // PublicNotes and PrivateNotes are HTML (unbounded nvarchar(max))
+            entity.Property(s => s.PublicNotes);
+            entity.Property(s => s.PrivateNotes);
+            entity.Property(s => s.AiSummary);
+
+            // Timestamps
+            entity.Property(s => s.CreatedAt).IsRequired();
+            entity.Property(s => s.ModifiedAt);  // nullable per convention
+
+            // Session -> Arc (CASCADE delete - removing arc removes sessions)
+            entity.HasOne(s => s.Arc)
+                .WithMany(a => a.SessionEntities)
+                .HasForeignKey(s => s.ArcId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Session -> Creator (User) (RESTRICT)
+            entity.HasOne(s => s.Creator)
+                .WithMany(u => u.CreatedSessions)
+                .HasForeignKey(s => s.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Session -> AiSummaryGeneratedBy (User) (optional, SET NULL when user deleted not applicable
+            // — use NoAction to avoid multiple cascade paths; user deletion is Restricted anyway)
+            entity.HasOne(s => s.AiSummaryGeneratedBy)
+                .WithMany()
+                .HasForeignKey(s => s.AiSummaryGeneratedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes
+            entity.HasIndex(s => s.ArcId)
+                .HasDatabaseName("IX_Sessions_ArcId");
+
+            entity.HasIndex(s => s.CreatedBy)
+                .HasDatabaseName("IX_Sessions_CreatedBy");
+
+            entity.HasIndex(s => new { s.ArcId, s.SessionDate })
+                .HasDatabaseName("IX_Sessions_ArcId_SessionDate");
         });
     }
 }

@@ -26,6 +26,13 @@ public class QuestUpdate
     public Guid? SessionId { get; set; }
 
     /// <summary>
+    /// Optional reference to the Session entity where this update occurred.
+    /// Bridge column added during Phase 1 migration. Backfilled from legacy SessionId.
+    /// Will become the canonical FK in Phase 7 when legacy SessionId is removed.
+    /// </summary>
+    public Guid? SessionEntityId { get; set; }
+
+    /// <summary>
     /// Update content (HTML from TipTap editor). Required, non-empty.
     /// </summary>
     public string Body { get; set; } = string.Empty;
@@ -51,6 +58,12 @@ public class QuestUpdate
     /// The session article where this update occurred (if any).
     /// </summary>
     public Article? Session { get; set; }
+
+    /// <summary>
+    /// The Session entity where this update occurred (if any).
+    /// Bridge nav property — populated during and after Phase 1 migration.
+    /// </summary>
+    public Session? SessionEntity { get; set; }
 
     /// <summary>
     /// User who created this update.

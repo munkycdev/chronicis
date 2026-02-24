@@ -99,7 +99,13 @@ public class Arc
     public User Creator { get; set; } = null!;
 
     /// <summary>
-    /// All session articles within this arc.
+    /// Legacy session articles within this arc (ArticleType.Session).
+    /// Retained for backward compatibility during migration to Session entities.
     /// </summary>
-    public ICollection<Article> Sessions { get; set; } = new List<Article>();
+    public ICollection<Article> SessionArticles { get; set; } = new List<Article>();
+
+    /// <summary>
+    /// First-class Session entities within this arc.
+    /// </summary>
+    public ICollection<Session> SessionEntities { get; set; } = new List<Session>();
 }
