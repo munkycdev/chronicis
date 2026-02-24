@@ -65,6 +65,12 @@ public partial class ExportService : IExportService
             .Where(a => campaigns.Select(c => c.Id).Contains(a.CampaignId))
             .ToListAsync();
 
+        var arcIds = arcs.Select(a => a.Id).ToList();
+        var sessionEntities = await _db.Sessions
+            .AsNoTracking()
+            .Where(s => arcIds.Contains(s.ArcId))
+            .ToListAsync();
+
         // Build the zip archive
         using var memoryStream = new MemoryStream();
         using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
@@ -80,43 +86,55 @@ public partial class ExportService : IExportService
             await ExportArticleHierarchy(archive, characters, $"{worldFolderName}/Characters", null);
 
             // Export campaigns with their sessions
+            var usedCampaignNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var campaign in campaigns)
             {
-                var campaignFolder = $"{worldFolderName}/Campaigns/{SanitizeFileName(campaign.Name)}";
+                var campaignFolderName = GetUniqueSiblingName(campaign.Name, usedCampaignNames);
+                var campaignFolder = $"{worldFolderName}/Campaigns/{campaignFolderName}";
 
                 // Campaign info file
                 var campaignContent = BuildCampaignMarkdown(campaign);
-                await AddFileToArchive(archive, $"{campaignFolder}/{SanitizeFileName(campaign.Name)}.md", campaignContent);
+                await AddFileToArchive(archive, $"{campaignFolder}/{campaignFolderName}.md", campaignContent);
 
                 // Export arcs and sessions
                 var campaignArcs = arcs.Where(a => a.CampaignId == campaign.Id).OrderBy(a => a.SortOrder).ToList();
+                var usedArcNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var arc in campaignArcs)
                 {
-                    var arcFolder = $"{campaignFolder}/{SanitizeFileName(arc.Name)}";
+                    var arcFolderName = GetUniqueSiblingName(arc.Name, usedArcNames);
+                    var arcFolder = $"{campaignFolder}/{arcFolderName}";
 
                     // Arc info file
                     var arcContent = BuildArcMarkdown(arc);
-                    await AddFileToArchive(archive, $"{arcFolder}/{SanitizeFileName(arc.Name)}.md", arcContent);
+                    await AddFileToArchive(archive, $"{arcFolder}/{arcFolderName}.md", arcContent);
 
-                    // Sessions in this arc
-                    var sessions = articles
-                        .Where(a => a.ArcId == arc.Id && a.Type == ArticleType.Session)
-                        .OrderBy(a => a.SessionDate ?? a.EffectiveDate)
+                    // Session entities in this arc
+                    var arcSessions = sessionEntities
+                        .Where(s => s.ArcId == arc.Id)
+                        .OrderBy(s => s.SessionDate ?? s.CreatedAt)
+                        .ThenBy(s => s.Name)
                         .ToList();
 
-                    foreach (var session in sessions)
+                    var usedSessionFolderNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var session in arcSessions)
                     {
-                        var sessionContent = BuildArticleMarkdown(session);
-                        var sessionFileName = SanitizeFileName(session.Title);
-                        await AddFileToArchive(archive, $"{arcFolder}/{sessionFileName}/{sessionFileName}.md", sessionContent);
+                        var sessionFolderName = GetUniqueSiblingName(session.Name, usedSessionFolderNames);
+                        var sessionContent = BuildSessionMarkdown(session);
+                        await AddFileToArchive(archive, $"{arcFolder}/{sessionFolderName}/{sessionFolderName}.md", sessionContent);
 
-                        // Session notes as children
-                        var sessionNotes = articles.Where(a => a.ParentId == session.Id).ToList();
+                        // Session notes attached via Article.SessionId
+                        var sessionNotes = articles
+                            .Where(a => a.SessionId == session.Id && a.Type == ArticleType.SessionNote)
+                            .OrderBy(a => a.CreatedAt)
+                            .ThenBy(a => a.Title)
+                            .ToList();
+
+                        var usedSessionNoteNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                         foreach (var note in sessionNotes)
                         {
                             var noteContent = BuildArticleMarkdown(note);
-                            var noteFileName = SanitizeFileName(note.Title);
-                            await AddFileToArchive(archive, $"{arcFolder}/{sessionFileName}/{noteFileName}.md", noteContent);
+                            var noteFileName = GetUniqueSiblingName(note.Title, usedSessionNoteNames);
+                            await AddFileToArchive(archive, $"{arcFolder}/{sessionFolderName}/{noteFileName}.md", noteContent);
                         }
                     }
                 }
@@ -139,10 +157,11 @@ public partial class ExportService : IExportService
         Guid? parentId)
     {
         var children = articles.Where(a => a.ParentId == parentId).OrderBy(a => a.Title).ToList();
+        var usedSiblingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var article in children)
         {
-            var articleFileName = SanitizeFileName(article.Title);
+            var articleFileName = GetUniqueSiblingName(article.Title, usedSiblingNames);
             var hasChildren = articles.Any(a => a.ParentId == article.Id);
 
             if (hasChildren)

@@ -76,6 +76,60 @@ public partial class ExportService
         return sb.ToString();
     }
 
+    internal string BuildSessionMarkdown(Session session)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine("---");
+        sb.AppendLine($"title: \"{EscapeYaml(session.Name)}\"");
+        sb.AppendLine("type: Session");
+        sb.AppendLine($"created: {session.CreatedAt:yyyy-MM-dd HH:mm:ss}");
+        if (session.ModifiedAt.HasValue)
+        {
+            sb.AppendLine($"modified: {session.ModifiedAt:yyyy-MM-dd HH:mm:ss}");
+        }
+
+        if (session.SessionDate.HasValue)
+        {
+            sb.AppendLine($"session_date: {session.SessionDate:yyyy-MM-dd}");
+        }
+
+        sb.AppendLine("---");
+        sb.AppendLine();
+        sb.AppendLine($"# {session.Name}");
+        sb.AppendLine();
+
+        if (!string.IsNullOrEmpty(session.PublicNotes))
+        {
+            sb.AppendLine(HtmlToMarkdownConverter.Convert(session.PublicNotes));
+        }
+
+        AppendSessionAiSummary(sb, session);
+
+        return sb.ToString();
+    }
+
+    private static void AppendSessionAiSummary(StringBuilder sb, Session session)
+    {
+        if (string.IsNullOrEmpty(session.AiSummary))
+        {
+            return;
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("---");
+        sb.AppendLine();
+        sb.AppendLine("## AI Summary");
+        sb.AppendLine();
+        sb.AppendLine(session.AiSummary);
+
+        if (session.AiSummaryGeneratedAt.HasValue)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"*Generated: {session.AiSummaryGeneratedAt:yyyy-MM-dd HH:mm:ss}*");
+        }
+    }
+
     internal string BuildArcMarkdown(Arc arc)
     {
         var sb = new StringBuilder();
