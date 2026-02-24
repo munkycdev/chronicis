@@ -643,6 +643,59 @@ public class SummaryService : ISummaryService
 
     #endregion
 
+    #region Session Summary
+
+    public async Task<SummaryGenerationDto> GenerateSessionSummaryFromSourcesAsync(
+        string sessionName,
+        string sourceContent,
+        IReadOnlyList<SummarySourceDto> sources,
+        int maxOutputTokens = 1500)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(sourceContent))
+            {
+                return new SummaryGenerationDto
+                {
+                    Success = false,
+                    ErrorMessage = "No public content available for this session."
+                };
+            }
+
+            var promptTemplate = await GetEffectivePromptAsync(null, null, CampaignRecapTemplateId);
+            var webContent = "";
+
+            var internalSources = sources
+                .Select(s => new SourceContent
+                {
+                    Type = s.Type,
+                    Title = s.Title,
+                    Content = string.Empty,
+                    ArticleId = s.ArticleId
+                })
+                .ToList();
+
+            return await GenerateSummaryInternalAsync(
+                sessionName,
+                promptTemplate,
+                sourceContent,
+                webContent,
+                internalSources,
+                maxOutputTokens);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating AI summary for session '{SessionName}'", sessionName);
+            return new SummaryGenerationDto
+            {
+                Success = false,
+                ErrorMessage = $"Error generating summary: {ex.Message}"
+            };
+        }
+    }
+
+    #endregion
+
     #region Internal Helpers
 
     private async Task<string> GetEffectivePromptAsync(Guid? templateId, string? customPrompt, Guid defaultTemplateId)

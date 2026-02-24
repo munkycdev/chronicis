@@ -1,6 +1,7 @@
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Models;
 using Chronicis.Api.Services;
+using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
@@ -73,6 +74,28 @@ public class SessionsController : ControllerBase
         _logger.LogDebug("Updating session notes for session {SessionId} by user {UserId}", sessionId, user.Id);
 
         var result = await _sessionService.UpdateSessionNotesAsync(sessionId, dto, user.Id);
+
+        return result.Status switch
+        {
+            ServiceStatus.Success => Ok(result.Value),
+            ServiceStatus.NotFound => NotFound(new { error = result.ErrorMessage }),
+            ServiceStatus.Forbidden => StatusCode(403, new { error = result.ErrorMessage }),
+            ServiceStatus.ValidationError => BadRequest(new { error = result.ErrorMessage }),
+            _ => StatusCode(500, new { error = "An unexpected error occurred" })
+        };
+    }
+
+    /// <summary>
+    /// POST /api/sessions/{sessionId}/ai-summary/generate - Generate a public-safe AI summary for a session.
+    /// </summary>
+    [HttpPost("sessions/{sessionId:guid}/ai-summary/generate")]
+    public async Task<ActionResult<SummaryGenerationDto>> GenerateAiSummary(Guid sessionId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        _logger.LogDebug("Generating AI summary for session {SessionId} by user {UserId}", sessionId, user.Id);
+
+        var result = await _sessionService.GenerateAiSummaryAsync(sessionId, user.Id);
 
         return result.Status switch
         {

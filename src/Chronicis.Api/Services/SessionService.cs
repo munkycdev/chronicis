@@ -1,5 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Models;
+using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
@@ -11,11 +12,16 @@ namespace Chronicis.Api.Services;
 public class SessionService : ISessionService
 {
     private readonly ChronicisDbContext _context;
+    private readonly ISummaryService _summaryService;
     private readonly ILogger<SessionService> _logger;
 
-    public SessionService(ChronicisDbContext context, ILogger<SessionService> logger)
+    public SessionService(
+        ChronicisDbContext context,
+        ISummaryService summaryService,
+        ILogger<SessionService> logger)
     {
         _context = context;
+        _summaryService = summaryService;
         _logger = logger;
     }
 
@@ -140,6 +146,97 @@ public class SessionService : ISessionService
         _logger.LogDebug("Updated session notes for session {SessionId}", sessionId);
 
         return ServiceResult<SessionDto>.Success(MapDto(session));
+    }
+
+    public async Task<ServiceResult<SummaryGenerationDto>> GenerateAiSummaryAsync(Guid sessionId, Guid userId)
+    {
+        var session = await _context.Sessions
+            .Include(s => s.Arc)
+                .ThenInclude(a => a.Campaign)
+                    .ThenInclude(c => c.World)
+                        .ThenInclude(w => w.Members)
+            .FirstOrDefaultAsync(s => s.Id == sessionId);
+
+        if (session == null)
+        {
+            return ServiceResult<SummaryGenerationDto>.NotFound("Session not found");
+        }
+
+        var membership = session.Arc.Campaign.World.Members.FirstOrDefault(m => m.UserId == userId);
+        if (membership == null)
+        {
+            return ServiceResult<SummaryGenerationDto>.NotFound("Session not found or access denied");
+        }
+
+        var summarySources = new List<SummarySourceDto>();
+        var sourceBlocks = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(session.PublicNotes))
+        {
+            sourceBlocks.Add($"--- From: {session.Name} (Public Notes) ---\n{session.PublicNotes}\n---");
+            summarySources.Add(new SummarySourceDto
+            {
+                Type = "SessionPublicNotes",
+                Title = $"{session.Name} (Public Notes)"
+            });
+        }
+
+        // Security rule: source filtering is fixed and caller-independent. Only Public SessionNote bodies are allowed.
+        var publicSessionNotes = await _context.Articles
+            .AsNoTracking()
+            .Where(a => a.SessionId == sessionId
+                && a.Type == ArticleType.SessionNote
+                && a.Visibility == ArticleVisibility.Public
+                && !string.IsNullOrEmpty(a.Body))
+            .OrderBy(a => a.CreatedAt)
+            .Select(a => new
+            {
+                a.Id,
+                a.Title,
+                a.Body
+            })
+            .ToListAsync();
+
+        foreach (var note in publicSessionNotes)
+        {
+            sourceBlocks.Add($"--- From: {note.Title} (SessionNote) ---\n{note.Body}\n---");
+            summarySources.Add(new SummarySourceDto
+            {
+                Type = "SessionNote",
+                Title = note.Title ?? "Session Note",
+                ArticleId = note.Id
+            });
+        }
+
+        if (sourceBlocks.Count == 0)
+        {
+            return ServiceResult<SummaryGenerationDto>.ValidationError("No public content available for this session.");
+        }
+
+        var sourceContent = string.Join("\n\n", sourceBlocks);
+        var generation = await _summaryService.GenerateSessionSummaryFromSourcesAsync(
+            session.Name,
+            sourceContent,
+            summarySources);
+
+        if (!generation.Success)
+        {
+            return ServiceResult<SummaryGenerationDto>.ValidationError(
+                generation.ErrorMessage ?? "Error generating session summary");
+        }
+
+        var generatedAt = DateTime.UtcNow;
+        session.AiSummary = generation.Summary;
+        session.AiSummaryGeneratedAt = generatedAt;
+        session.AiSummaryGeneratedByUserId = userId;
+
+        await _context.SaveChangesAsync();
+
+        generation.GeneratedDate = generatedAt;
+
+        _logger.LogDebug("Generated AI summary for session {SessionId}", sessionId);
+
+        return ServiceResult<SummaryGenerationDto>.Success(generation);
     }
 
     private async Task<string> GenerateUniqueRootSlugAsync(string title, Guid worldId)

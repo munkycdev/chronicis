@@ -76,4 +76,13 @@ public interface ISummaryService
     /// Clear the summary for an arc.
     /// </summary>
     Task<bool> ClearArcSummaryAsync(Guid arcId);
+
+    /// <summary>
+    /// Generate a session summary from pre-filtered public-safe source content.
+    /// </summary>
+    Task<SummaryGenerationDto> GenerateSessionSummaryFromSourcesAsync(
+        string sessionName,
+        string sourceContent,
+        IReadOnlyList<SummarySourceDto> sources,
+        int maxOutputTokens = 1500);
 }
