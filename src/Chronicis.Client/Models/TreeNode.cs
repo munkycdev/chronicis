@@ -137,6 +137,7 @@ public class TreeNode
         TreeNodeType.World => true,
         TreeNodeType.Campaign => true,
         TreeNodeType.Arc => true,
+        TreeNodeType.Session => true,
         TreeNodeType.ExternalLink => true, // Opens in new tab
         _ => false
     };
@@ -157,6 +158,7 @@ public class TreeNode
         },
         TreeNodeType.Campaign => false, // Add arcs via separate flow
         TreeNodeType.Arc => true, // Add sessions
+        TreeNodeType.Session => false, // SessionNotes are created via session workflows
         TreeNodeType.Article => true,
         TreeNodeType.ExternalLink => false, // Links don't have children
         _ => false
@@ -212,6 +214,7 @@ public class TreeNode
         },
         TreeNodeType.Campaign => "fa-solid fa-dungeon",
         TreeNodeType.Arc => "fa-solid fa-book-open",
+        TreeNodeType.Session => "fa-solid fa-calendar-day",
         TreeNodeType.ExternalLink => "fa-solid fa-external-link-alt",
         TreeNodeType.Article => ArticleType switch
         {

@@ -1,5 +1,6 @@
 using Chronicis.Client.Models;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 
 namespace Chronicis.Client.Services.Tree;
@@ -14,6 +15,7 @@ internal sealed class TreeDataBuilder
     private readonly IWorldApiService _worldApi;
     private readonly ICampaignApiService _campaignApi;
     private readonly IArcApiService _arcApi;
+    private readonly ISessionApiService _sessionApi;
     private readonly ILogger _logger;
 
     public TreeDataBuilder(
@@ -21,12 +23,14 @@ internal sealed class TreeDataBuilder
         IWorldApiService worldApi,
         ICampaignApiService campaignApi,
         IArcApiService arcApi,
+        ISessionApiService sessionApi,
         ILogger logger)
     {
         _articleApi = articleApi;
         _worldApi = worldApi;
         _campaignApi = campaignApi;
         _arcApi = arcApi;
+        _sessionApi = sessionApi;
         _logger = logger;
     }
 
@@ -115,6 +119,17 @@ internal sealed class TreeDataBuilder
             arcsByCampaign[allCampaigns[i].Id] = arcResults[i];
         }
 
+        // Phase 3b: Fetch sessions for all arcs in parallel
+        var allArcs = arcResults.SelectMany(r => r).ToList();
+        var sessionTasks = allArcs.Select(a => _sessionApi.GetSessionsByArcAsync(a.Id)).ToList();
+        await Task.WhenAll(sessionTasks);
+
+        var sessionsByArc = new Dictionary<Guid, List<SessionTreeDto>>();
+        for (int i = 0; i < allArcs.Count; i++)
+        {
+            sessionsByArc[allArcs[i].Id] = sessionTasks[i].Result;
+        }
+
         _logger.LogDebug("Phase 3 complete: {Count} total arcs in {Ms}ms",
             arcResults.Sum(r => r.Count), stopwatch.ElapsedMilliseconds);
 
@@ -140,6 +155,7 @@ internal sealed class TreeDataBuilder
                 allArticles,
                 articleIndex,
                 arcsByCampaign,
+                sessionsByArc,
                 worldLinks,
                 worldDocuments,
                 nodeIndex);
@@ -188,6 +204,7 @@ internal sealed class TreeDataBuilder
         List<ArticleTreeDto> allArticles,
         Dictionary<Guid, ArticleTreeDto> articleIndex,
         Dictionary<Guid, List<ArcDto>> arcsByCampaign,
+        Dictionary<Guid, List<SessionTreeDto>> sessionsByArc,
         List<WorldLinkDto> worldLinks,
         List<WorldDocumentDto> worldDocuments,
         TreeNodeIndex nodeIndex)
@@ -215,7 +232,7 @@ internal sealed class TreeDataBuilder
         {
             var arcs = arcsByCampaign[campaign.Id];
 
-            var campaignNode = BuildCampaignNode(campaign, arcs, worldArticles, articleIndex, nodeIndex);
+            var campaignNode = BuildCampaignNode(campaign, arcs, worldArticles, articleIndex, sessionsByArc, nodeIndex);
             campaignsGroup.Children.Add(campaignNode);
             nodeIndex.AddNode(campaignNode);
         }
@@ -333,6 +350,7 @@ internal sealed class TreeDataBuilder
         List<ArcDto> arcs,
         List<ArticleTreeDto> worldArticles,
         Dictionary<Guid, ArticleTreeDto> articleIndex,
+        Dictionary<Guid, List<SessionTreeDto>> sessionsByArc,
         TreeNodeIndex nodeIndex)
     {
         var campaignNode = new TreeNode
@@ -347,7 +365,7 @@ internal sealed class TreeDataBuilder
 
         foreach (var arc in arcs.OrderBy(a => a.SortOrder).ThenBy(a => a.Name))
         {
-            var arcNode = BuildArcNode(arc, worldArticles, articleIndex, nodeIndex);
+            var arcNode = BuildArcNode(arc, worldArticles, articleIndex, sessionsByArc, nodeIndex);
             campaignNode.Children.Add(arcNode);
             nodeIndex.AddNode(arcNode);
         }
@@ -361,6 +379,7 @@ internal sealed class TreeDataBuilder
         ArcDto arc,
         List<ArticleTreeDto> worldArticles,
         Dictionary<Guid, ArticleTreeDto> articleIndex,
+        Dictionary<Guid, List<SessionTreeDto>> sessionsByArc,
         TreeNodeIndex nodeIndex)
     {
         var arcNode = new TreeNode
@@ -373,18 +392,83 @@ internal sealed class TreeDataBuilder
             IconEmoji = "fa-solid fa-book-open"
         };
 
-        var sessionArticles = worldArticles
-            .Where(a => a.ArcId == arc.Id && a.Type == ArticleType.Session).OrderBy(a => a.Title).ToList();
+        var sessions = sessionsByArc.TryGetValue(arc.Id, out var sessionList)
+            ? sessionList
+            : new List<SessionTreeDto>();
 
-        foreach (var article in sessionArticles)
+        if (sessions.Count > 0)
         {
-            var articleNode = BuildArticleNodeWithChildren(article, worldArticles, articleIndex, nodeIndex);
-            arcNode.Children.Add(articleNode);
+            foreach (var session in sessions)
+            {
+                var sessionNode = BuildSessionNode(session, arc, worldArticles, articleIndex, nodeIndex);
+                arcNode.Children.Add(sessionNode);
+            }
+        }
+        else
+        {
+            // Legacy fallback: keep session-article tree support until Phase 7 cleanup.
+            var sessionArticles = worldArticles
+                .Where(a => a.ArcId == arc.Id && a.Type == ArticleType.Session)
+                .OrderBy(a => a.Title)
+                .ToList();
+
+            foreach (var article in sessionArticles)
+            {
+                var articleNode = BuildArticleNodeWithChildren(article, worldArticles, articleIndex, nodeIndex);
+                arcNode.Children.Add(articleNode);
+            }
         }
 
         arcNode.ChildCount = arcNode.Children.Count;
 
         return arcNode;
+    }
+
+    private TreeNode BuildSessionNode(
+        SessionTreeDto session,
+        ArcDto arc,
+        List<ArticleTreeDto> worldArticles,
+        Dictionary<Guid, ArticleTreeDto> articleIndex,
+        TreeNodeIndex nodeIndex)
+    {
+        var sessionNode = new TreeNode
+        {
+            Id = session.Id,
+            NodeType = TreeNodeType.Session,
+            Title = session.Name,
+            CampaignId = arc.CampaignId,
+            ArcId = arc.Id,
+            IconEmoji = "fa-solid fa-calendar-day",
+            HasAISummary = session.HasAiSummary
+        };
+
+        nodeIndex.AddNode(sessionNode);
+
+        var sessionNotes = worldArticles
+            .Where(a => a.Type == ArticleType.SessionNote && a.SessionId == session.Id)
+            .OrderBy(a => a.Title)
+            .ToList();
+
+        if (sessionNotes.Count == 0)
+        {
+            sessionNode.ChildCount = 0;
+            return sessionNode;
+        }
+
+        var sessionNoteIds = sessionNotes.Select(n => n.Id).ToHashSet();
+        var rootSessionNotes = sessionNotes
+            .Where(n => !n.ParentId.HasValue || !sessionNoteIds.Contains(n.ParentId.Value))
+            .ToList();
+
+        foreach (var note in rootSessionNotes)
+        {
+            var noteNode = BuildArticleNodeWithChildren(note, sessionNotes, articleIndex, nodeIndex);
+            noteNode.ParentId = sessionNode.Id;
+            sessionNode.Children.Add(noteNode);
+        }
+
+        sessionNode.ChildCount = sessionNode.Children.Count;
+        return sessionNode;
     }
 
     private TreeNode BuildArticleNodeWithChildren(

@@ -164,11 +164,12 @@ internal sealed class TreeUiState
 
         if (_nodeIndex.TryGetNode(nodeId, out var node) && node != null)
         {
-            // Selectable node types: Article, World, Campaign, Arc
+            // Selectable node types: Article, World, Campaign, Arc, Session
             if (node.NodeType == TreeNodeType.Article ||
                 node.NodeType == TreeNodeType.World ||
                 node.NodeType == TreeNodeType.Campaign ||
-                node.NodeType == TreeNodeType.Arc)
+                node.NodeType == TreeNodeType.Arc ||
+                node.NodeType == TreeNodeType.Session)
             {
                 node.IsSelected = true;
                 _selectedNodeId = nodeId;
@@ -326,10 +327,10 @@ internal sealed class TreeUiState
         var searchLower = _searchQuery.ToLowerInvariant();
         var matchingNodeIds = new HashSet<Guid>();
 
-        // Find all matching nodes (articles only for search)
+        // Find all matching nodes (articles + sessions)
         foreach (var node in _nodeIndex.AllNodes)
         {
-            if (node.NodeType == TreeNodeType.Article &&
+            if ((node.NodeType == TreeNodeType.Article || node.NodeType == TreeNodeType.Session) &&
                 node.Title.Contains(searchLower, StringComparison.OrdinalIgnoreCase))
             {
                 AddNodeAndAncestors(node, matchingNodeIds);

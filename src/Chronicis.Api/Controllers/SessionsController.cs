@@ -31,6 +31,26 @@ public class SessionsController : ControllerBase
     }
 
     /// <summary>
+    /// GET /api/arcs/{arcId}/sessions - List Session entities for an arc (tree/navigation).
+    /// </summary>
+    [HttpGet("arcs/{arcId:guid}/sessions")]
+    public async Task<ActionResult<List<SessionTreeDto>>> GetSessionsByArc(Guid arcId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        var result = await _sessionService.GetSessionsByArcAsync(arcId, user.Id);
+
+        return result.Status switch
+        {
+            ServiceStatus.Success => Ok(result.Value ?? new List<SessionTreeDto>()),
+            ServiceStatus.NotFound => NotFound(new { error = result.ErrorMessage }),
+            ServiceStatus.Forbidden => StatusCode(403, new { error = result.ErrorMessage }),
+            ServiceStatus.ValidationError => BadRequest(new { error = result.ErrorMessage }),
+            _ => StatusCode(500, new { error = "An unexpected error occurred" })
+        };
+    }
+
+    /// <summary>
     /// POST /api/arcs/{arcId}/sessions - Create a session and one default public SessionNote.
     /// </summary>
     [HttpPost("arcs/{arcId:guid}/sessions")]

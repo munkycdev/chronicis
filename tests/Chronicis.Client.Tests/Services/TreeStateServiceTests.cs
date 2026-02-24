@@ -1,6 +1,8 @@
 using Blazored.LocalStorage;
+using Chronicis.Client.Models;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -10,6 +12,11 @@ namespace Chronicis.Client.Tests.Services;
 
 public class TreeStateServiceTests
 {
+    private static readonly Guid TestWorldId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly Guid TestCampaignId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private static readonly Guid TestArcId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
+    private static readonly Guid TestRootArticleId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+
     [Fact]
     public async Task InitializeAndRefresh_PopulateState()
     {
@@ -206,18 +213,94 @@ public class TreeStateServiceTests
         Assert.Empty(sut.CachedArticles);
     }
 
+    [Fact]
+    public async Task InitializeAsync_BuildsSessionNodes_AndPlacesSessionNotesUnderSessionBySessionId()
+    {
+        var sessionId = Guid.NewGuid();
+        var legacySessionArticleId = Guid.NewGuid();
+        var sessionNoteId = Guid.NewGuid();
+        var (sut, articleApi, _, sessionApi, _, _) = CreateSut();
+
+        articleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>
+        {
+            new()
+            {
+                Id = legacySessionArticleId,
+                WorldId = TestWorldId,
+                Title = "Legacy Session",
+                Slug = "legacy-session",
+                Type = ArticleType.Session,
+                ArcId = TestArcId,
+                CampaignId = TestCampaignId,
+                ParentId = null
+            },
+            new()
+            {
+                Id = sessionNoteId,
+                WorldId = TestWorldId,
+                Title = "Player Notes",
+                Slug = "player-notes",
+                Type = ArticleType.SessionNote,
+                ArcId = TestArcId,
+                CampaignId = TestCampaignId,
+                ParentId = legacySessionArticleId,
+                SessionId = sessionId
+            }
+        });
+
+        sessionApi.GetSessionsByArcAsync(TestArcId).Returns(new List<SessionTreeDto>
+        {
+            new()
+            {
+                Id = sessionId,
+                ArcId = TestArcId,
+                Name = "Session 12"
+            }
+        });
+
+        await sut.InitializeAsync();
+
+        var arcNode = sut.RootNodes
+            .SelectMany(GetAllNodes)
+            .First(n => n.NodeType == TreeNodeType.Arc);
+
+        var sessionNode = Assert.Single(arcNode.Children);
+        Assert.Equal(TreeNodeType.Session, sessionNode.NodeType);
+        Assert.Equal(sessionId, sessionNode.Id);
+
+        var noteNode = Assert.Single(sessionNode.Children);
+        Assert.Equal(TreeNodeType.Article, noteNode.NodeType);
+        Assert.Equal(ArticleType.SessionNote, noteNode.ArticleType);
+        Assert.Equal(sessionNoteId, noteNode.Id);
+        Assert.Equal(sessionNode.Id, noteNode.ParentId);
+
+        Assert.DoesNotContain(arcNode.Children, n => n.NodeType == TreeNodeType.Article && n.Id == legacySessionArticleId);
+    }
+
+    private static IEnumerable<TreeNode> GetAllNodes(TreeNode node)
+    {
+        yield return node;
+        foreach (var child in node.Children)
+        {
+            foreach (var descendant in GetAllNodes(child))
+            {
+                yield return descendant;
+            }
+        }
+    }
+
     private static (
         TreeStateService Svc,
         IArticleApiService ArticleApi,
         IWorldApiService WorldApi,
-        ICampaignApiService CampaignApi,
+        ISessionApiService SessionApi,
         IAppContextService AppContext,
         ILocalStorageService LocalStorage) CreateSut()
     {
-        var worldId = Guid.NewGuid();
-        var campaignId = Guid.NewGuid();
-        var arcId = Guid.NewGuid();
-        var articleId = Guid.NewGuid();
+        var worldId = TestWorldId;
+        var campaignId = TestCampaignId;
+        var arcId = TestArcId;
+        var articleId = TestRootArticleId;
 
         var articleApi = Substitute.For<IArticleApiService>();
         articleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>
@@ -240,10 +323,12 @@ public class TreeStateServiceTests
 
         var campaignApi = Substitute.For<ICampaignApiService>();
         var arcApi = Substitute.For<IArcApiService>();
+        var sessionApi = Substitute.For<ISessionApiService>();
         arcApi.GetArcsByCampaignAsync(campaignId).Returns(new List<ArcDto>
         {
             new() { Id = arcId, CampaignId = campaignId, Name = "Arc", SortOrder = 0 }
         });
+        sessionApi.GetSessionsByArcAsync(arcId).Returns(new List<SessionTreeDto>());
 
         var appContext = Substitute.For<IAppContextService>();
         appContext.CurrentWorldId.Returns(worldId);
@@ -256,11 +341,12 @@ public class TreeStateServiceTests
             worldApi,
             campaignApi,
             arcApi,
+            sessionApi,
             appContext,
             storage,
             NullLogger<TreeStateService>.Instance);
 
-        return (sut, articleApi, worldApi, campaignApi, appContext, storage);
+        return (sut, articleApi, worldApi, sessionApi, appContext, storage);
     }
 }
 

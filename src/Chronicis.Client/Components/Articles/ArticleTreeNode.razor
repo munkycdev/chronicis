@@ -195,6 +195,7 @@
             TreeNodeType.World => "tree-node__title--world",
             TreeNodeType.Campaign => "tree-node__title--campaign",
             TreeNodeType.Arc => "tree-node__title--arc",
+            TreeNodeType.Session => "tree-node__title--arc",
             TreeNodeType.VirtualGroup => "tree-node__title--virtual",
             _ => ""
         };
@@ -207,6 +208,7 @@
             TreeNodeType.World => "tree-node__icon--world",
             TreeNodeType.Campaign => "tree-node__icon--campaign",
             TreeNodeType.Arc => "tree-node__icon--arc",
+            TreeNodeType.Session => "tree-node__icon--arc",
             TreeNodeType.VirtualGroup => "tree-node__icon--virtual",
             _ => ""
         };
@@ -239,6 +241,7 @@
             },
             TreeNodeType.Campaign => Icons.Material.Filled.AutoStories,
             TreeNodeType.Arc => Icons.Material.Filled.Bookmark,
+            TreeNodeType.Session => Icons.Material.Filled.EventNote,
             TreeNodeType.Article => Node.HasChildren ? Icons.Material.Filled.Folder : Icons.Material.Filled.Description,
             _ => Icons.Material.Filled.Description
         };
@@ -282,6 +285,10 @@
                 
             case TreeNodeType.Arc:
                 Navigation.NavigateTo($"/arc/{Node.Id}");
+                break;
+
+            case TreeNodeType.Session:
+                await OnSelect.InvokeAsync(Node.Id);
                 break;
                 
             case TreeNodeType.Article:

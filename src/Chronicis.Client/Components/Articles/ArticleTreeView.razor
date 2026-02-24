@@ -142,6 +142,11 @@
             case TreeNodeType.Arc:
                 Navigation.NavigateTo($"/arc/{nodeId}");
                 break;
+
+            case TreeNodeType.Session:
+                // Session detail page arrives in Phase 6. For Phase 5, preserve tree selection/expand behavior.
+                TreeState.ExpandPathToAndSelect(nodeId);
+                break;
                 
             case TreeNodeType.VirtualGroup:
                 // Virtual groups just expand/collapse, don't navigate

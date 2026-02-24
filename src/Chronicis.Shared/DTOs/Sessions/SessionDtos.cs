@@ -23,6 +23,20 @@ public class SessionDto
 }
 
 /// <summary>
+/// Lightweight Session DTO for tree/navigation usage.
+/// Excludes notes content fields.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class SessionTreeDto
+{
+    public Guid Id { get; set; }
+    public Guid ArcId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public DateTime? SessionDate { get; set; }
+    public bool HasAiSummary { get; set; }
+}
+
+/// <summary>
 /// Request DTO for creating a Session entity.
 /// </summary>
 [ExcludeFromCodeCoverage]

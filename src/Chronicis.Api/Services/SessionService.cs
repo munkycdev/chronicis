@@ -25,6 +25,45 @@ public class SessionService : ISessionService
         _logger = logger;
     }
 
+    public async Task<ServiceResult<List<SessionTreeDto>>> GetSessionsByArcAsync(Guid arcId, Guid userId)
+    {
+        var arc = await _context.Arcs
+            .AsNoTracking()
+            .Include(a => a.Campaign)
+                .ThenInclude(c => c.World)
+                    .ThenInclude(w => w.Members)
+            .FirstOrDefaultAsync(a => a.Id == arcId);
+
+        if (arc == null)
+        {
+            return ServiceResult<List<SessionTreeDto>>.NotFound("Arc not found");
+        }
+
+        var membership = arc.Campaign.World.Members.FirstOrDefault(m => m.UserId == userId);
+        if (membership == null)
+        {
+            return ServiceResult<List<SessionTreeDto>>.NotFound("Arc not found or access denied");
+        }
+
+        var sessions = await _context.Sessions
+            .AsNoTracking()
+            .Where(s => s.ArcId == arcId)
+            .OrderBy(s => s.SessionDate ?? DateTime.MaxValue)
+            .ThenBy(s => s.Name)
+            .ThenBy(s => s.CreatedAt)
+            .Select(s => new SessionTreeDto
+            {
+                Id = s.Id,
+                ArcId = s.ArcId,
+                Name = s.Name,
+                SessionDate = s.SessionDate,
+                HasAiSummary = !string.IsNullOrWhiteSpace(s.AiSummary)
+            })
+            .ToListAsync();
+
+        return ServiceResult<List<SessionTreeDto>>.Success(sessions);
+    }
+
     public async Task<ServiceResult<SessionDto>> CreateSessionAsync(Guid arcId, SessionCreateDto dto, Guid userId, string? username)
     {
         if (dto == null)

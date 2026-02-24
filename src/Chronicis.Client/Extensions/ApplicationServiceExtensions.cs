@@ -35,6 +35,7 @@ public static class ApplicationServiceExtensions
         services.AddChronicisApiService<IWorldApiService, WorldApiService>();
         services.AddChronicisApiService<ICampaignApiService, CampaignApiService>();
         services.AddChronicisApiService<IArcApiService, ArcApiService>();
+        services.AddChronicisApiService<ISessionApiService, SessionApiService>();
         services.AddChronicisApiService<ILinkApiService, LinkApiService>();
         services.AddChronicisApiService<IArticleExternalLinkApiService, ArticleExternalLinkApiService>();
         services.AddChronicisApiService<IExternalLinkApiService, ExternalLinkApiService>();

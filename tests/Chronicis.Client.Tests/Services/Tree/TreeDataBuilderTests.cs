@@ -2,6 +2,7 @@ using Chronicis.Client.Models;
 using Chronicis.Client.Services;
 using Chronicis.Client.Services.Tree;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -18,11 +19,12 @@ public class TreeDataBuilderTests
         var worldApi = Substitute.For<IWorldApiService>();
         var campaignApi = Substitute.For<ICampaignApiService>();
         var arcApi = Substitute.For<IArcApiService>();
+        var sessionApi = Substitute.For<ISessionApiService>();
 
         worldApi.GetWorldsAsync().Returns(new List<WorldDto>());
         articleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>());
 
-        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, NullLogger.Instance);
+        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, NullLogger.Instance);
 
         var result = await sut.BuildTreeAsync();
 
@@ -62,12 +64,14 @@ public class TreeDataBuilderTests
 
         var campaignApi = Substitute.For<ICampaignApiService>();
         var arcApi = Substitute.For<IArcApiService>();
+        var sessionApi = Substitute.For<ISessionApiService>();
         arcApi.GetArcsByCampaignAsync(campaignId).Returns(new List<ArcDto>
         {
             new() { Id = arcId, CampaignId = campaignId, Name = "Arc", SortOrder = 0 }
         });
+        sessionApi.GetSessionsByArcAsync(arcId).Returns(new List<SessionTreeDto>());
 
-        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, NullLogger.Instance);
+        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, NullLogger.Instance);
 
         var result = await sut.BuildTreeAsync();
 
@@ -161,12 +165,14 @@ public class TreeDataBuilderTests
 
         var campaignApi = Substitute.For<ICampaignApiService>();
         var arcApi = Substitute.For<IArcApiService>();
+        var sessionApi = Substitute.For<ISessionApiService>();
         arcApi.GetArcsByCampaignAsync(campaignId).Returns(new List<ArcDto>
         {
             new() { Id = arcId, CampaignId = campaignId, Name = "Arc", SortOrder = 1 }
         });
+        sessionApi.GetSessionsByArcAsync(arcId).Returns(new List<SessionTreeDto>());
 
-        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, NullLogger.Instance);
+        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, NullLogger.Instance);
 
         var result = await sut.BuildTreeAsync();
 
@@ -213,9 +219,10 @@ public class TreeDataBuilderTests
 
         var campaignApi = Substitute.For<ICampaignApiService>();
         var arcApi = Substitute.For<IArcApiService>();
+        var sessionApi = Substitute.For<ISessionApiService>();
         arcApi.GetArcsByCampaignAsync(campaignId).Returns(new List<ArcDto>());
 
-        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, NullLogger.Instance);
+        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, NullLogger.Instance);
         var result = await sut.BuildTreeAsync();
 
         var worldRoot = Assert.Single(result.NodeIndex.RootNodes.Where(r => r.NodeType == TreeNodeType.World));

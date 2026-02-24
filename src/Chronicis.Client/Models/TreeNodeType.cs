@@ -28,6 +28,11 @@ public enum TreeNodeType
     Arc,
 
     /// <summary>
+    /// A Session entity within an Arc.
+    /// </summary>
+    Session,
+
+    /// <summary>
     /// An Article entity (WikiArticle, Character, Session, etc.).
     /// </summary>
     Article,
