@@ -37,6 +37,27 @@ public partial class ExportService
         return result;
     }
 
+    internal static string GetUniqueSiblingName(string desiredName, ISet<string> usedSiblingNames)
+    {
+        var baseName = SanitizeFileName(desiredName);
+        if (usedSiblingNames.Add(baseName))
+        {
+            return baseName;
+        }
+
+        var suffix = 2;
+        while (true)
+        {
+            var candidate = $"{baseName} ({suffix})";
+            if (usedSiblingNames.Add(candidate))
+            {
+                return candidate;
+            }
+
+            suffix++;
+        }
+    }
+
     internal static string EscapeYaml(string value)
     {
         if (string.IsNullOrEmpty(value))

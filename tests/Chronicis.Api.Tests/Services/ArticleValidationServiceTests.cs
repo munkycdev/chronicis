@@ -144,6 +144,26 @@ public class ArticleValidationServiceTests : IDisposable
         Assert.True(result.IsValid);
     }
 
+    [Fact]
+    public async Task ValidateCreateAsync_SessionArticleType_Fails()
+    {
+        var dto = new ArticleCreateDto
+        {
+            Title = "Legacy Session",
+            WorldId = TestHelpers.FixedIds.World1,
+            ArcId = TestHelpers.FixedIds.Arc1,
+            CampaignId = TestHelpers.FixedIds.Campaign1,
+            Type = ArticleType.Session,
+            Visibility = ArticleVisibility.Public
+        };
+
+        var result = await _service.ValidateCreateAsync(dto);
+
+        Assert.False(result.IsValid);
+        Assert.Contains("Type", result.Errors.Keys);
+        Assert.Contains("deprecated", result.Errors["Type"][0], StringComparison.OrdinalIgnoreCase);
+    }
+
     // ────────────────────────────────────────────────────────────────
     //  ValidateUpdateAsync
     // ────────────────────────────────────────────────────────────────

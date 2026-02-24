@@ -2,6 +2,7 @@ using Chronicis.Client.Abstractions;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Quests;
+using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Extensions;
 using MudBlazor;
@@ -17,7 +18,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
     private readonly IArcApiService _arcApi;
     private readonly ICampaignApiService _campaignApi;
     private readonly IWorldApiService _worldApi;
-    private readonly IArticleApiService _articleApi;
+    private readonly ISessionApiService _sessionApi;
     private readonly IQuestApiService _questApi;
     private readonly IAuthService _authService;
     private readonly ITreeStateService _treeState;
@@ -35,7 +36,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
     private bool _summaryExpanded;
     private ArcDto? _arc;
     private CampaignDto? _campaign;
-    private List<ArticleTreeDto> _sessions = new();
+    private List<SessionTreeDto> _sessions = new();
     private string _editName = string.Empty;
     private string _editDescription = string.Empty;
     private int _editSortOrder;
@@ -48,7 +49,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
         IArcApiService arcApi,
         ICampaignApiService campaignApi,
         IWorldApiService worldApi,
-        IArticleApiService articleApi,
+        ISessionApiService sessionApi,
         IQuestApiService questApi,
         IAuthService authService,
         ITreeStateService treeState,
@@ -62,7 +63,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
         _arcApi = arcApi;
         _campaignApi = campaignApi;
         _worldApi = worldApi;
-        _articleApi = articleApi;
+        _sessionApi = sessionApi;
         _questApi = questApi;
         _authService = authService;
         _treeState = treeState;
@@ -81,7 +82,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
     public bool SummaryExpanded { get => _summaryExpanded; set => SetField(ref _summaryExpanded, value); }
     public ArcDto? Arc { get => _arc; private set => SetField(ref _arc, value); }
     public CampaignDto? Campaign { get => _campaign; private set => SetField(ref _campaign, value); }
-    public List<ArticleTreeDto> Sessions { get => _sessions; private set => SetField(ref _sessions, value); }
+    public List<SessionTreeDto> Sessions { get => _sessions; private set => SetField(ref _sessions, value); }
     public List<BreadcrumbItem> Breadcrumbs { get => _breadcrumbs; private set => SetField(ref _breadcrumbs, value); }
     public QuestDto? SelectedQuest { get => _selectedQuest; private set => SetField(ref _selectedQuest, value); }
     public Guid CurrentUserId { get => _currentUserId; private set => SetField(ref _currentUserId, value); }
@@ -120,10 +121,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
             EditSortOrder = arc.SortOrder;
             HasUnsavedChanges = false;
 
-            var allArticles = await _articleApi.GetAllArticlesAsync();
-            Sessions = allArticles
-                .Where(a => a.ArcId == arcId && a.Type == ArticleType.Session)
-                .ToList();
+            Sessions = await _sessionApi.GetSessionsByArcAsync(arcId);
 
             var campaign = await _campaignApi.GetCampaignAsync(arc.CampaignId);
             Campaign = campaign;
@@ -282,27 +280,22 @@ public sealed class ArcDetailViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Creates a new session article under this arc and navigates to it.</summary>
+    /// <summary>Creates a new Session entity under this arc and navigates to it.</summary>
     public async Task CreateSessionAsync()
     {
         if (_arc == null || _campaign == null)
             return;
 
         var sessionNumber = Sessions.Count + 1;
-        var createDto = new ArticleCreateDto
+        var createDto = new SessionCreateDto
         {
-            Title = $"Session {sessionNumber}",
-            Body = string.Empty,
-            WorldId = _campaign.WorldId,
-            CampaignId = _campaign.Id,
-            ArcId = _arc.Id,
-            Type = ArticleType.Session,
-            EffectiveDate = DateTime.Now
+            Name = $"Session {sessionNumber}",
+            SessionDate = DateTime.Now
         };
 
         try
         {
-            var created = await _articleApi.CreateArticleAsync(createDto);
+            var created = await _sessionApi.CreateSessionAsync(_arc.Id, createDto);
             if (created == null)
             {
                 _notifier.Error("Failed to create session");
@@ -311,12 +304,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
 
             await _treeState.RefreshAsync();
             await LoadAsync(_arc.Id);
-
-            var path = created.Breadcrumbs.Any()
-                ? _breadcrumbService.BuildArticleUrl(created.Breadcrumbs)
-                : $"/article/{created.Slug}";
-
-            _navigator.NavigateTo(path);
+            _navigator.NavigateTo($"/session/{created.Id}");
             _notifier.Success("Session created");
         }
         catch (Exception ex)
@@ -326,27 +314,11 @@ public sealed class ArcDetailViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Navigates to a session by resolving its full article path.</summary>
-    public async Task NavigateToSessionAsync(ArticleTreeDto session)
+    /// <summary>Navigates to a Session entity.</summary>
+    public Task NavigateToSessionAsync(SessionTreeDto session)
     {
-        try
-        {
-            var article = await _articleApi.GetArticleDetailAsync(session.Id);
-            if (article != null && article.Breadcrumbs.Any())
-            {
-                var path = _breadcrumbService.BuildArticleUrl(article.Breadcrumbs);
-                _navigator.NavigateTo(path);
-            }
-            else
-            {
-                _navigator.NavigateTo($"/article/{session.Slug}");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogErrorSanitized(ex, "Error navigating to session {SessionId}", session.Id);
-            _notifier.Error("Failed to navigate to session");
-        }
+        _navigator.NavigateTo($"/session/{session.Id}");
+        return Task.CompletedTask;
     }
 
     /// <summary>Sets the currently selected quest for the editor panel.</summary>

@@ -1,5 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
@@ -16,6 +17,11 @@ public class ArticleValidationService : IArticleValidationService
     public async Task<ValidationResult> ValidateCreateAsync(ArticleCreateDto dto)
     {
         var result = new ValidationResult();
+
+        if (dto.Type == ArticleType.Session)
+        {
+            result.AddError("Type", "Session articles are deprecated. Create Session entities via /api/arcs/{arcId}/sessions.");
+        }
 
         // Parent must exist if specified
         if (dto.ParentId.HasValue)

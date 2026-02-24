@@ -1,3 +1,4 @@
+using Chronicis.Client.Models;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Quests;
@@ -12,7 +13,6 @@ namespace Chronicis.Client.Components.Quests;
 public partial class QuestDrawer : IAsyncDisposable
 {
     [Inject] private IArticleApiService ArticleApi { get; set; } = null!;
-
     private bool IsOpen { get; set; }
     private bool _isLoading;
     private bool _isSubmitting;
@@ -105,26 +105,57 @@ public partial class QuestDrawer : IAsyncDisposable
 
         try
         {
-            // Resolve Arc and Session from current article
-            var selectedArticle = await GetCurrentArticleAsync();
-
-            if (selectedArticle == null)
+            var selectedNodeId = TreeState.SelectedNodeId;
+            if (!selectedNodeId.HasValue)
             {
                 _emptyStateMessage = "No article selected. Navigate to a session to use quest tracking.";
                 return;
             }
 
-            // Store the world ID for autocomplete
-            _currentWorldId = selectedArticle.WorldId;
+            Guid? incomingArcId;
 
-            // Check if we're on a Session or SessionNote page
-            if (selectedArticle.Type != ArticleType.Session && selectedArticle.Type != ArticleType.SessionNote)
+            if (TreeState.TryGetNode(selectedNodeId.Value, out var selectedNode)
+                && selectedNode != null
+                && selectedNode.NodeType == TreeNodeType.Session)
             {
-                _emptyStateMessage = "Navigate to a session or session note to use quest tracking.";
-                return;
+                _currentWorldId = selectedNode.WorldId;
+                incomingArcId = selectedNode.ArcId;
+                _currentSessionId = selectedNode.Id;
+                _canAssociateSession = true;
             }
+            else
+            {
+                // Resolve Arc and Session from current article
+                var selectedArticle = await GetCurrentArticleAsync();
 
-            var incomingArcId = selectedArticle.ArcId;
+                if (selectedArticle == null)
+                {
+                    _emptyStateMessage = "No article selected. Navigate to a session to use quest tracking.";
+                    return;
+                }
+
+                // Store the world ID for autocomplete
+                _currentWorldId = selectedArticle.WorldId;
+
+                if (selectedArticle.Type != ArticleType.Session && selectedArticle.Type != ArticleType.SessionNote)
+                {
+                    _emptyStateMessage = "Navigate to a session or session note to use quest tracking.";
+                    return;
+                }
+
+                incomingArcId = selectedArticle.ArcId;
+                if (selectedArticle.Type == ArticleType.Session)
+                {
+                    // Legacy session article IDs were migrated to Session entity IDs 1:1 in Phase 1.
+                    _currentSessionId = selectedArticle.Id;
+                    _canAssociateSession = true;
+                }
+                else
+                {
+                    _currentSessionId = await ResolveSessionIdFromParentAsync(selectedArticle.Id);
+                    _canAssociateSession = _currentSessionId.HasValue;
+                }
+            }
 
             if (!incomingArcId.HasValue)
             {
@@ -143,18 +174,6 @@ public partial class QuestDrawer : IAsyncDisposable
             }
 
             _currentArcId = incomingArcId;
-
-            // Resolve SessionId
-            if (selectedArticle.Type == ArticleType.Session)
-            {
-                _currentSessionId = selectedArticle.Id;
-                _canAssociateSession = true;
-            }
-            else if (selectedArticle.Type == ArticleType.SessionNote)
-            {
-                _currentSessionId = await ResolveSessionIdFromParentAsync(selectedArticle.Id);
-                _canAssociateSession = _currentSessionId.HasValue;
-            }
 
             // Only load quests if we haven't already loaded for this arc (prevent duplicate fetches)
             if (!_questsLoadedForArc)
@@ -205,17 +224,7 @@ public partial class QuestDrawer : IAsyncDisposable
         try
         {
             var article = await ArticleApi.GetArticleDetailAsync(articleId);
-
-            while (article != null)
-            {
-                if (article.Type == ArticleType.Session)
-                    return article.Id;
-
-                if (!article.ParentId.HasValue)
-                    break;
-
-                article = await ArticleApi.GetArticleDetailAsync(article.ParentId.Value);
-            }
+            return article?.SessionId;
         }
         catch (Exception ex)
         {

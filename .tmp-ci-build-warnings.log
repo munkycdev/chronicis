@@ -1,0 +1,16 @@
+  Chronicis.Shared -> Z:\repos\chronicis\src\Chronicis.Shared\bin\Debug\net9.0\Chronicis.Shared.dll
+  Chronicis.Shared.Tests -> Z:\repos\chronicis\tests\Chronicis.Shared.Tests\bin\Debug\net9.0\Chronicis.Shared.Tests.dll
+  Chronicis.Client -> Z:\repos\chronicis\src\Chronicis.Client\bin\Debug\net9.0\Chronicis.Client.dll
+  Chronicis.Client (Blazor output) -> Z:\repos\chronicis\src\Chronicis.Client\bin\Debug\net9.0\wwwroot
+  Chronicis.Client.Tests -> Z:\repos\chronicis\tests\Chronicis.Client.Tests\bin\Debug\net9.0\Chronicis.Client.Tests.dll
+  Chronicis.Api -> Z:\repos\chronicis\src\Chronicis.Api\bin\Debug\net9.0\Chronicis.Api.dll
+  Chronicis.ResourceCompiler -> Z:\repos\chronicis\src\Chronicis.ResourceCompiler\bin\Debug\net9.0\Chronicis.ResourceCompiler.dll
+  Chronicis.Api.Tests -> Z:\repos\chronicis\tests\Chronicis.Api.Tests\bin\Debug\net9.0\Chronicis.Api.Tests.dll
+  Chronicis.ArchitecturalTests -> Z:\repos\chronicis\tests\Chronicis.ArchitecturalTests\bin\Debug\net9.0\Chronicis.ArchitecturalTests.dll
+  Chronicis.Client.Host -> Z:\repos\chronicis\src\Chronicis.Client.Host\bin\Debug\net9.0\Chronicis.Client.Host.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:03.11

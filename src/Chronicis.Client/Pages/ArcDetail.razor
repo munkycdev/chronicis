@@ -3,6 +3,7 @@
 @implements IDisposable
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.DTOs.Quests
+@using Chronicis.Shared.DTOs.Sessions
 @using Chronicis.Client.Components.Dialogs
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Client.Components.Quests
@@ -57,11 +58,11 @@ else if (ViewModel.Arc != null)
 
         @if (ViewModel.Sessions.Any())
         {
-            <MudList T="ArticleTreeDto" Dense="true" Class="mb-4">
-                @foreach (var session in ViewModel.Sessions.OrderBy(s => s.Title))
+            <MudList T="SessionTreeDto" Dense="true" Class="mb-4">
+                @foreach (var session in ViewModel.Sessions.OrderBy(s => s.Name))
                 {
                     <EntityListItem Icon="@Icons.Material.Filled.EventNote"
-                                    Title="@(string.IsNullOrEmpty(session.Title) ? "Untitled Session" : session.Title)"
+                                    Title="@(string.IsNullOrEmpty(session.Name) ? "Untitled Session" : session.Name)"
                                     OnClick="@(() => ViewModel.NavigateToSessionAsync(session))" />
                 }
             </MudList>

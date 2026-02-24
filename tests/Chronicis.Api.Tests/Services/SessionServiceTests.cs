@@ -1,0 +1,243 @@
+using System.Diagnostics.CodeAnalysis;
+using Chronicis.Api.Data;
+using Chronicis.Api.Models;
+using Chronicis.Api.Services;
+using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Sessions;
+using Chronicis.Shared.Enums;
+using Chronicis.Shared.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
+using Xunit;
+
+namespace Chronicis.Api.Tests;
+
+[ExcludeFromCodeCoverage]
+public class SessionServiceTests : IDisposable
+{
+    private readonly ChronicisDbContext _context;
+    private readonly ISummaryService _summaryService;
+    private readonly SessionService _service;
+
+    public SessionServiceTests()
+    {
+        var options = new DbContextOptionsBuilder<ChronicisDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        _context = new ChronicisDbContext(options);
+        _summaryService = Substitute.For<ISummaryService>();
+        _service = new SessionService(_context, _summaryService, NullLogger<SessionService>.Instance);
+
+        SeedTestData();
+    }
+
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _context.Dispose();
+        _disposed = true;
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
+    public async Task UpdateSessionNotesAsync_NonGm_ReturnsForbidden()
+    {
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            ArcId = TestHelpers.FixedIds.Arc1,
+            Name = "Session 1",
+            PublicNotes = "Before public",
+            PrivateNotes = "Before private",
+            CreatedBy = TestHelpers.FixedIds.User1,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Sessions.Add(session);
+        await _context.SaveChangesAsync();
+
+        var dto = new SessionUpdateDto
+        {
+            PublicNotes = "After public",
+            PrivateNotes = "After private"
+        };
+
+        var result = await _service.UpdateSessionNotesAsync(session.Id, dto, TestHelpers.FixedIds.User2);
+
+        Assert.Equal(ServiceStatus.Forbidden, result.Status);
+
+        var unchanged = await _context.Sessions.FindAsync(session.Id);
+        Assert.NotNull(unchanged);
+        Assert.Equal("Before public", unchanged!.PublicNotes);
+        Assert.Equal("Before private", unchanged.PrivateNotes);
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_CreatesExactlyOneDefaultPublicSessionNote()
+    {
+        var dto = new SessionCreateDto
+        {
+            Name = "The Dark Forest",
+            SessionDate = new DateTime(2026, 2, 24, 0, 0, 0, DateTimeKind.Utc)
+        };
+
+        var result = await _service.CreateSessionAsync(
+            TestHelpers.FixedIds.Arc1,
+            dto,
+            TestHelpers.FixedIds.User1,
+            "GM User");
+
+        Assert.Equal(ServiceStatus.Success, result.Status);
+        Assert.NotNull(result.Value);
+
+        var savedSession = await _context.Sessions.FindAsync(result.Value!.Id);
+        Assert.NotNull(savedSession);
+
+        var notes = await _context.Articles
+            .Where(a => a.SessionId == result.Value.Id)
+            .ToListAsync();
+
+        Assert.Single(notes);
+
+        var note = notes[0];
+        Assert.Equal(ArticleType.SessionNote, note.Type);
+        Assert.Equal(ArticleVisibility.Public, note.Visibility);
+        Assert.Equal(result.Value.Id, note.SessionId);
+        Assert.Equal("GM User's Notes", note.Title);
+    }
+
+    [Fact]
+    public async Task GenerateAiSummaryAsync_UsesOnlyPublicSessionSources()
+    {
+        var sessionId = Guid.NewGuid();
+        var session = new Session
+        {
+            Id = sessionId,
+            ArcId = TestHelpers.FixedIds.Arc1,
+            Name = "Session 7",
+            PublicNotes = "PUBLIC_SESSION_NOTES",
+            PrivateNotes = "PRIVATE_SESSION_NOTES",
+            CreatedBy = TestHelpers.FixedIds.User1,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Sessions.Add(session);
+
+        var publicNote = TestHelpers.CreateArticle(
+            id: Guid.NewGuid(),
+            worldId: TestHelpers.FixedIds.World1,
+            createdBy: TestHelpers.FixedIds.User2,
+            title: "Public Player Notes",
+            slug: "public-player-notes",
+            body: "PUBLIC_NOTE_BODY",
+            type: ArticleType.SessionNote,
+            visibility: ArticleVisibility.Public,
+            campaignId: TestHelpers.FixedIds.Campaign1,
+            arcId: TestHelpers.FixedIds.Arc1);
+        publicNote.SessionId = sessionId;
+
+        var membersOnlyNote = TestHelpers.CreateArticle(
+            id: Guid.NewGuid(),
+            worldId: TestHelpers.FixedIds.World1,
+            createdBy: TestHelpers.FixedIds.User2,
+            title: "Members Only Notes",
+            slug: "members-only-notes",
+            body: "MEMBERS_ONLY_NOTE_BODY",
+            type: ArticleType.SessionNote,
+            visibility: ArticleVisibility.MembersOnly,
+            campaignId: TestHelpers.FixedIds.Campaign1,
+            arcId: TestHelpers.FixedIds.Arc1);
+        membersOnlyNote.SessionId = sessionId;
+
+        var privateNote = TestHelpers.CreateArticle(
+            id: Guid.NewGuid(),
+            worldId: TestHelpers.FixedIds.World1,
+            createdBy: TestHelpers.FixedIds.User2,
+            title: "Private Notes",
+            slug: "private-notes",
+            body: "PRIVATE_NOTE_BODY",
+            type: ArticleType.SessionNote,
+            visibility: ArticleVisibility.Private,
+            campaignId: TestHelpers.FixedIds.Campaign1,
+            arcId: TestHelpers.FixedIds.Arc1);
+        privateNote.SessionId = sessionId;
+
+        _context.Articles.AddRange(publicNote, membersOnlyNote, privateNote);
+        await _context.SaveChangesAsync();
+
+        string? capturedSourceContent = null;
+        IReadOnlyList<SummarySourceDto>? capturedSources = null;
+
+        _summaryService
+            .GenerateSessionSummaryFromSourcesAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<SummarySourceDto>>(),
+                Arg.Any<int>())
+            .Returns(callInfo =>
+            {
+                capturedSourceContent = callInfo.ArgAt<string>(1);
+                capturedSources = callInfo.ArgAt<IReadOnlyList<SummarySourceDto>>(2);
+
+                return Task.FromResult(new SummaryGenerationDto
+                {
+                    Success = true,
+                    Summary = "Generated summary"
+                });
+            });
+
+        var result = await _service.GenerateAiSummaryAsync(sessionId, TestHelpers.FixedIds.User2);
+
+        Assert.Equal(ServiceStatus.Success, result.Status);
+        Assert.NotNull(result.Value);
+        Assert.NotNull(capturedSourceContent);
+        Assert.NotNull(capturedSources);
+
+        Assert.Contains("PUBLIC_SESSION_NOTES", capturedSourceContent);
+        Assert.Contains("PUBLIC_NOTE_BODY", capturedSourceContent);
+        Assert.DoesNotContain("PRIVATE_SESSION_NOTES", capturedSourceContent);
+        Assert.DoesNotContain("MEMBERS_ONLY_NOTE_BODY", capturedSourceContent);
+        Assert.DoesNotContain("PRIVATE_NOTE_BODY", capturedSourceContent);
+
+        Assert.Equal(2, capturedSources!.Count);
+        Assert.Contains(capturedSources, s => s.Type == "SessionPublicNotes");
+        Assert.Contains(capturedSources, s => s.Type == "SessionNote" && s.ArticleId == publicNote.Id);
+        Assert.DoesNotContain(capturedSources, s => s.ArticleId == membersOnlyNote.Id);
+        Assert.DoesNotContain(capturedSources, s => s.ArticleId == privateNote.Id);
+
+        var persisted = await _context.Sessions.FindAsync(sessionId);
+        Assert.NotNull(persisted);
+        Assert.Equal("Generated summary", persisted!.AiSummary);
+        Assert.Equal(TestHelpers.FixedIds.User2, persisted.AiSummaryGeneratedByUserId);
+        Assert.NotNull(persisted.AiSummaryGeneratedAt);
+    }
+
+    private void SeedTestData()
+    {
+        var (world, gm, player) = TestHelpers.SeedBasicWorld(_context);
+
+        var campaign = TestHelpers.CreateCampaign(
+            id: TestHelpers.FixedIds.Campaign1,
+            worldId: world.Id,
+            name: "Test Campaign");
+        campaign.OwnerId = gm.Id;
+        campaign.Owner = gm;
+        _context.Campaigns.Add(campaign);
+
+        var arc = TestHelpers.CreateArc(
+            id: TestHelpers.FixedIds.Arc1,
+            campaignId: campaign.Id,
+            name: "Act 1");
+        arc.CreatedBy = gm.Id;
+        arc.Creator = gm;
+        _context.Arcs.Add(arc);
+
+        _context.SaveChanges();
+    }
+}

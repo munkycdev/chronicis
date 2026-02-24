@@ -2,6 +2,7 @@ using Chronicis.Client.Models;
 using Chronicis.Client.Services;
 using Chronicis.Client.Services.Tree;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -18,11 +19,12 @@ public class TreeDataBuilderTests
         var worldApi = Substitute.For<IWorldApiService>();
         var campaignApi = Substitute.For<ICampaignApiService>();
         var arcApi = Substitute.For<IArcApiService>();
+        var sessionApi = Substitute.For<ISessionApiService>();
 
         worldApi.GetWorldsAsync().Returns(new List<WorldDto>());
         articleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>());
 
-        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, NullLogger.Instance);
+        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, NullLogger.Instance);
 
         var result = await sut.BuildTreeAsync();
 
@@ -62,12 +64,14 @@ public class TreeDataBuilderTests
 
         var campaignApi = Substitute.For<ICampaignApiService>();
         var arcApi = Substitute.For<IArcApiService>();
+        var sessionApi = Substitute.For<ISessionApiService>();
         arcApi.GetArcsByCampaignAsync(campaignId).Returns(new List<ArcDto>
         {
             new() { Id = arcId, CampaignId = campaignId, Name = "Arc", SortOrder = 0 }
         });
+        sessionApi.GetSessionsByArcAsync(arcId).Returns(new List<SessionTreeDto>());
 
-        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, NullLogger.Instance);
+        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, NullLogger.Instance);
 
         var result = await sut.BuildTreeAsync();
 
@@ -152,8 +156,7 @@ public class TreeDataBuilderTests
         var articleApi = Substitute.For<IArticleApiService>();
         articleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>
         {
-            new() { Id = sessionId, Title = "Session", Slug = "session", WorldId = world1Id, ArcId = arcId, Type = ArticleType.Session },
-            new() { Id = sessionChildId, Title = "Session Child", Slug = "session-child", WorldId = world1Id, ParentId = sessionId, Type = ArticleType.SessionNote },
+            new() { Id = sessionChildId, Title = "Session Child", Slug = "session-child", WorldId = world1Id, ArcId = arcId, Type = ArticleType.SessionNote, SessionId = sessionId },
             new() { Id = wikiId, Title = "Wiki Root", Slug = "wiki", WorldId = world1Id, Type = ArticleType.WikiArticle },
             new() { Id = characterId, Title = "Char Root", Slug = "char", WorldId = world1Id, Type = ArticleType.Character },
             new() { Id = legacyId, Title = "Legacy Root", Slug = "legacy", WorldId = world1Id, Type = ArticleType.Legacy }
@@ -161,12 +164,17 @@ public class TreeDataBuilderTests
 
         var campaignApi = Substitute.For<ICampaignApiService>();
         var arcApi = Substitute.For<IArcApiService>();
+        var sessionApi = Substitute.For<ISessionApiService>();
         arcApi.GetArcsByCampaignAsync(campaignId).Returns(new List<ArcDto>
         {
             new() { Id = arcId, CampaignId = campaignId, Name = "Arc", SortOrder = 1 }
         });
+        sessionApi.GetSessionsByArcAsync(arcId).Returns(new List<SessionTreeDto>
+        {
+            new() { Id = sessionId, ArcId = arcId, Name = "Session" }
+        });
 
-        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, NullLogger.Instance);
+        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, NullLogger.Instance);
 
         var result = await sut.BuildTreeAsync();
 
@@ -177,6 +185,7 @@ public class TreeDataBuilderTests
         Assert.Contains(worldRoot.Children, c => c.VirtualGroupType == VirtualGroupType.Uncategorized);
         Assert.DoesNotContain(worldRoot.Children, c => c.VirtualGroupType == VirtualGroupType.Links);
         Assert.True(result.NodeIndex.ContainsNode(sessionChildId));
+        Assert.True(result.NodeIndex.ContainsNode(sessionId));
     }
 
     [Fact]
@@ -213,9 +222,10 @@ public class TreeDataBuilderTests
 
         var campaignApi = Substitute.For<ICampaignApiService>();
         var arcApi = Substitute.For<IArcApiService>();
+        var sessionApi = Substitute.For<ISessionApiService>();
         arcApi.GetArcsByCampaignAsync(campaignId).Returns(new List<ArcDto>());
 
-        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, NullLogger.Instance);
+        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, NullLogger.Instance);
         var result = await sut.BuildTreeAsync();
 
         var worldRoot = Assert.Single(result.NodeIndex.RootNodes.Where(r => r.NodeType == TreeNodeType.World));
@@ -224,6 +234,48 @@ public class TreeDataBuilderTests
         Assert.Contains(worldRoot.Children, c => c.VirtualGroupType == VirtualGroupType.Uncategorized);
         Assert.True(result.NodeIndex.ContainsNode(childAId));
         Assert.True(result.NodeIndex.ContainsNode(childBId));
+    }
+
+    [Fact]
+    public async Task BuildTreeAsync_DoesNotUseLegacySessionArticleFallback_WhenSessionApiReturnsEmpty()
+    {
+        var worldId = Guid.NewGuid();
+        var campaignId = Guid.NewGuid();
+        var arcId = Guid.NewGuid();
+        var legacySessionArticleId = Guid.NewGuid();
+
+        var worldApi = Substitute.For<IWorldApiService>();
+        worldApi.GetWorldsAsync().Returns(new List<WorldDto> { new() { Id = worldId, Name = "World" } });
+        worldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto
+        {
+            Id = worldId,
+            Name = "World",
+            Campaigns = new List<CampaignDto> { new() { Id = campaignId, Name = "Campaign", WorldId = worldId } }
+        });
+        worldApi.GetWorldLinksAsync(worldId).Returns(new List<WorldLinkDto>());
+        worldApi.GetWorldDocumentsAsync(worldId).Returns(new List<WorldDocumentDto>());
+
+        var articleApi = Substitute.For<IArticleApiService>();
+        articleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>
+        {
+            new() { Id = legacySessionArticleId, Title = "Legacy Session", Slug = "legacy-session", WorldId = worldId, ArcId = arcId, Type = ArticleType.Session }
+        });
+
+        var campaignApi = Substitute.For<ICampaignApiService>();
+        var arcApi = Substitute.For<IArcApiService>();
+        arcApi.GetArcsByCampaignAsync(campaignId).Returns(new List<ArcDto>
+        {
+            new() { Id = arcId, CampaignId = campaignId, Name = "Arc", SortOrder = 0 }
+        });
+
+        var sessionApi = Substitute.For<ISessionApiService>();
+        sessionApi.GetSessionsByArcAsync(arcId).Returns(new List<SessionTreeDto>());
+
+        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, NullLogger.Instance);
+
+        var result = await sut.BuildTreeAsync();
+
+        Assert.False(result.NodeIndex.ContainsNode(legacySessionArticleId));
     }
 }
 

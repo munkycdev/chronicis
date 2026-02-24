@@ -25,6 +25,16 @@ public class AISummarySectionTests : MudBlazorTestContext
         ]);
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _snackbar.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
     private IRenderedComponent<AISummarySection> RenderSut(Action<ComponentParameterCollectionBuilder<AISummarySection>>? configure = null)
     {
         RenderComponent<MudPopoverProvider>();

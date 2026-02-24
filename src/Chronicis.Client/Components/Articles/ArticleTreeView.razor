@@ -142,6 +142,11 @@
             case TreeNodeType.Arc:
                 Navigation.NavigateTo($"/arc/{nodeId}");
                 break;
+
+            case TreeNodeType.Session:
+                TreeState.ExpandPathToAndSelect(nodeId);
+                Navigation.NavigateTo($"/session/{nodeId}");
+                break;
                 
             case TreeNodeType.VirtualGroup:
                 // Virtual groups just expand/collapse, don't navigate

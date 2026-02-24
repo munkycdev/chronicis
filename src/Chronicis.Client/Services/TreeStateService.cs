@@ -35,6 +35,7 @@ public class TreeStateService : ITreeStateService
         IWorldApiService worldApi,
         ICampaignApiService campaignApi,
         IArcApiService arcApi,
+        ISessionApiService sessionApi,
         IAppContextService appContext,
         ILocalStorageService localStorage,
         ILogger<TreeStateService> logger)
@@ -42,7 +43,7 @@ public class TreeStateService : ITreeStateService
         _logger = logger;
 
         // Create internal components
-        _dataBuilder = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, logger);
+        _dataBuilder = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, logger);
         _uiState = new TreeUiState(localStorage, logger);
         _mutations = new TreeMutations(articleApi, appContext, logger);
 

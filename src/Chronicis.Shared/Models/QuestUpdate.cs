@@ -20,8 +20,8 @@ public class QuestUpdate
     public Guid QuestId { get; set; }
 
     /// <summary>
-    /// Optional reference to the session where this update occurred.
-    /// Must be an Article with Type=Session and same ArcId as the quest.
+    /// Optional reference to the Session entity where this update occurred.
+    /// Must be a Session in the same Arc as the quest.
     /// </summary>
     public Guid? SessionId { get; set; }
 
@@ -48,9 +48,9 @@ public class QuestUpdate
     public Quest Quest { get; set; } = null!;
 
     /// <summary>
-    /// The session article where this update occurred (if any).
+    /// The Session entity where this update occurred (if any).
     /// </summary>
-    public Article? Session { get; set; }
+    public Session? Session { get; set; }
 
     /// <summary>
     /// User who created this update.

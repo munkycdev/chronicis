@@ -416,6 +416,7 @@ public class PublicWorldService : IPublicWorldService
                 WorldId = a.WorldId,
                 CampaignId = a.CampaignId,
                 ArcId = a.ArcId,
+                SessionId = a.SessionId,
                 Body = a.Body ?? string.Empty,
                 Type = a.Type,
                 Visibility = a.Visibility,

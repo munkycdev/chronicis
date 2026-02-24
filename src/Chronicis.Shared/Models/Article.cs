@@ -107,6 +107,13 @@ public class Article
     /// </summary>
     public string? InGameDate { get; set; }
 
+    /// <summary>
+    /// FK to the Session entity this article belongs to.
+    /// Set for ArticleType.SessionNote articles migrated to the new Session entity model.
+    /// Null for legacy session-note articles not yet migrated, and for all other article types.
+    /// </summary>
+    public Guid? SessionId { get; set; }
+
     // ===== Character-Specific Fields =====
 
     /// <summary>
@@ -174,6 +181,12 @@ public class Article
     /// Arc this article belongs to (for Session articles).
     /// </summary>
     public Arc? Arc { get; set; }
+
+    /// <summary>
+    /// Session entity this article (SessionNote) belongs to.
+    /// Null for non-SessionNote articles or unmigrated legacy notes.
+    /// </summary>
+    public Session? Session { get; set; }
 
     /// <summary>
     /// Template used for AI summary generation.

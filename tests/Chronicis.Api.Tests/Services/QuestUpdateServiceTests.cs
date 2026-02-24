@@ -263,13 +263,15 @@ public class QuestUpdateServiceTests : IDisposable
     [Fact]
     public async Task CreateQuestUpdateAsync_WithSession_ValidatesSession()
     {
-        // Create a session article
-        var session = TestHelpers.CreateArticle(
-            worldId: TestHelpers.FixedIds.World1,
-            createdBy: TestHelpers.FixedIds.User1,
-            type: ArticleType.Session,
-            arcId: TestHelpers.FixedIds.Arc1);
-        _context.Articles.Add(session);
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            ArcId = TestHelpers.FixedIds.Arc1,
+            Name = "Session 1",
+            CreatedBy = TestHelpers.FixedIds.User1,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Sessions.Add(session);
         await _context.SaveChangesAsync();
 
         var dto = new QuestUpdateCreateDto
@@ -285,26 +287,18 @@ public class QuestUpdateServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateQuestUpdateAsync_InvalidSessionType_ReturnsValidationError()
+    public async Task CreateQuestUpdateAsync_UnknownSession_ReturnsValidationError()
     {
-        // Create a non-session article
-        var article = TestHelpers.CreateArticle(
-            worldId: TestHelpers.FixedIds.World1,
-            createdBy: TestHelpers.FixedIds.User1,
-            type: ArticleType.WikiArticle);
-        _context.Articles.Add(article);
-        await _context.SaveChangesAsync();
-
         var dto = new QuestUpdateCreateDto
         {
             Body = "Progress",
-            SessionId = article.Id
+            SessionId = Guid.NewGuid()
         };
 
         var result = await _service.CreateQuestUpdateAsync(_questId, dto, TestHelpers.FixedIds.User1);
 
         Assert.Equal(ServiceStatus.ValidationError, result.Status);
-        Assert.Contains("not a Session", result.ErrorMessage!);
+        Assert.Contains("Session not found", result.ErrorMessage!);
     }
 
     // ────────────────────────────────────────────────────────────────

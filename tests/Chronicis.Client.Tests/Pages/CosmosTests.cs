@@ -63,7 +63,7 @@ public class CosmosTests : MudBlazorTestContext
             _ => new ArticleDetailStub());
 
         // MudTooltip requires MudPopoverProvider; stub it to render child content only.
-        ComponentFactories.AddStub<MudTooltip>(ps => ps.Get(p => p.ChildContent));
+        ComponentFactories.AddStub<MudTooltip>(ps => ps.Get(p => p.ChildContent) ?? (_ => { }));
 
         return RenderComponent<Cosmos>();
     }

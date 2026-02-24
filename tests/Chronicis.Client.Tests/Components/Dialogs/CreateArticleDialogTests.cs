@@ -29,7 +29,8 @@ public class CreateArticleDialogTests : MudBlazorTestContext
     [InlineData((ArticleType)999, "New Article", "Title")]
     public void TypeHelpers_ReturnExpectedValues(ArticleType type, string expectedTitle, string expectedLabel)
     {
-        var component = new CreateArticleDialog { ArticleType = type };
+        var component = new CreateArticleDialog();
+        SetProperty(component, nameof(CreateArticleDialog.ArticleType), type);
         Assert.Equal(expectedTitle, InvokePrivate<string>(component, "GetTitle"));
         Assert.Equal(expectedLabel, InvokePrivate<string>(component, "GetTitleLabel"));
         Assert.False(string.IsNullOrWhiteSpace(InvokePrivate<string>(component, "GetIcon")));
@@ -240,6 +241,13 @@ public class CreateArticleDialogTests : MudBlazorTestContext
         var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.NotNull(field);
         field!.SetValue(target, value);
+    }
+
+    private static void SetProperty(object target, string propertyName, object? value)
+    {
+        var property = target.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        Assert.NotNull(property);
+        property!.SetValue(target, value);
     }
 
     private static T GetField<T>(object target, string fieldName)

@@ -112,4 +112,9 @@ public class User
     /// All quest updates created by this user.
     /// </summary>
     public ICollection<QuestUpdate> CreatedQuestUpdates { get; set; } = new List<QuestUpdate>();
+
+    /// <summary>
+    /// All sessions created by this user.
+    /// </summary>
+    public ICollection<Session> CreatedSessions { get; set; } = new List<Session>();
 }

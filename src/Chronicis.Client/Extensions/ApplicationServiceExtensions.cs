@@ -35,6 +35,7 @@ public static class ApplicationServiceExtensions
         services.AddChronicisApiService<IWorldApiService, WorldApiService>();
         services.AddChronicisApiService<ICampaignApiService, CampaignApiService>();
         services.AddChronicisApiService<IArcApiService, ArcApiService>();
+        services.AddChronicisApiService<ISessionApiService, SessionApiService>();
         services.AddChronicisApiService<ILinkApiService, LinkApiService>();
         services.AddChronicisApiService<IArticleExternalLinkApiService, ArticleExternalLinkApiService>();
         services.AddChronicisApiService<IExternalLinkApiService, ExternalLinkApiService>();
@@ -75,6 +76,7 @@ public static class ApplicationServiceExtensions
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<CampaignDetailViewModel>();
         services.AddTransient<ArcDetailViewModel>();
+        services.AddTransient<SessionDetailViewModel>();
         services.AddTransient<WorldDetailViewModel>();
         services.AddTransient<WorldLinksViewModel>();
         services.AddTransient<WorldDocumentsViewModel>();

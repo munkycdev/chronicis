@@ -181,16 +181,18 @@ public class PublicBreadcrumbBuilderTests
         Guid? campaignId = null,
         Guid? arcId = null)
     {
-        return new ArticleDto
+        var article = new ArticleDto
         {
             Id = ArticleId,
             Title = "Test Article",
             Slug = "test-article",
             Type = ArticleType.WikiArticle,
             Visibility = ArticleVisibility.Public,
-            Breadcrumbs = breadcrumbs,
+            Breadcrumbs = breadcrumbs ?? null!,
             CampaignId = campaignId,
             ArcId = arcId
         };
+
+        return article;
     }
 }

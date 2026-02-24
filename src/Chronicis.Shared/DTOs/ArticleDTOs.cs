@@ -17,6 +17,7 @@ public class ArticleDto
     public Guid? WorldId { get; set; }
     public Guid? CampaignId { get; set; }
     public Guid? ArcId { get; set; }
+    public Guid? SessionId { get; set; }
     public string Body { get; set; } = string.Empty;
     public ArticleType Type { get; set; }
     public ArticleVisibility Visibility { get; set; }
@@ -66,6 +67,7 @@ public class ArticleTreeDto
     public Guid? WorldId { get; set; }
     public Guid? CampaignId { get; set; }
     public Guid? ArcId { get; set; }
+    public Guid? SessionId { get; set; }
     public ArticleType Type { get; set; }
     public ArticleVisibility Visibility { get; set; }
     public bool HasChildren { get; set; }

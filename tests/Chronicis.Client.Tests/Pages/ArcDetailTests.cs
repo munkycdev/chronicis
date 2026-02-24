@@ -6,6 +6,7 @@ using Chronicis.Client.Services;
 using Chronicis.Client.Tests.Components;
 using Chronicis.Client.ViewModels;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Sessions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
@@ -25,7 +26,7 @@ public class ArcDetailTests : MudBlazorTestContext
         IArcApiService? arcApi = null,
         ICampaignApiService? campaignApi = null,
         IWorldApiService? worldApi = null,
-        IArticleApiService? articleApi = null,
+        ISessionApiService? sessionApi = null,
         IQuestApiService? questApi = null,
         IAuthService? authService = null,
         ITreeStateService? treeState = null,
@@ -38,7 +39,7 @@ public class ArcDetailTests : MudBlazorTestContext
         arcApi ??= Substitute.For<IArcApiService>();
         campaignApi ??= Substitute.For<ICampaignApiService>();
         worldApi ??= Substitute.For<IWorldApiService>();
-        articleApi ??= Substitute.For<IArticleApiService>();
+        sessionApi ??= Substitute.For<ISessionApiService>();
         questApi ??= Substitute.For<IQuestApiService>();
         authService ??= Substitute.For<IAuthService>();
         treeState ??= Substitute.For<ITreeStateService>();
@@ -50,7 +51,7 @@ public class ArcDetailTests : MudBlazorTestContext
         var logger = Substitute.For<ILogger<ArcDetailViewModel>>();
 
         return new ArcDetailViewModel(
-            arcApi, campaignApi, worldApi, articleApi, questApi, authService,
+            arcApi, campaignApi, worldApi, sessionApi, questApi, authService,
             treeState, breadcrumbs, navigator, notifier, titleService, confirmation, logger);
     }
 
@@ -105,8 +106,8 @@ public class ArcDetailTests : MudBlazorTestContext
         var worldApi = Substitute.For<IWorldApiService>();
         worldApi.GetWorldAsync(worldId).Returns(world);
 
-        var articleApi = Substitute.For<IArticleApiService>();
-        articleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>());
+        var sessionApi = Substitute.For<ISessionApiService>();
+        sessionApi.GetSessionsByArcAsync(arcId).Returns(new List<SessionTreeDto>());
 
         var authService = Substitute.For<IAuthService>();
         authService.GetCurrentUserAsync().Returns((UserInfo?)null);
@@ -116,7 +117,7 @@ public class ArcDetailTests : MudBlazorTestContext
             .Returns(new List<BreadcrumbItem>());
 
         var vm = CreateViewModel(arcApi: arcApi, campaignApi: campaignApi, worldApi: worldApi,
-            articleApi: articleApi, authService: authService, breadcrumbs: breadcrumbs);
+            sessionApi: sessionApi, authService: authService, breadcrumbs: breadcrumbs);
         var cut = RenderWithViewModel(vm, arcId);
 
         cut.WaitForAssertion(() =>
@@ -142,8 +143,8 @@ public class ArcDetailTests : MudBlazorTestContext
         var worldApi = Substitute.For<IWorldApiService>();
         worldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto { Id = worldId });
 
-        var articleApi = Substitute.For<IArticleApiService>();
-        articleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>());
+        var sessionApi = Substitute.For<ISessionApiService>();
+        sessionApi.GetSessionsByArcAsync(arcId).Returns(new List<SessionTreeDto>());
 
         var authService = Substitute.For<IAuthService>();
         authService.GetCurrentUserAsync().Returns((UserInfo?)null);
@@ -153,7 +154,7 @@ public class ArcDetailTests : MudBlazorTestContext
             .Returns(new List<BreadcrumbItem>());
 
         var vm = CreateViewModel(arcApi: arcApi, campaignApi: campaignApi, worldApi: worldApi,
-            articleApi: articleApi, authService: authService, breadcrumbs: breadcrumbs);
+            sessionApi: sessionApi, authService: authService, breadcrumbs: breadcrumbs);
         var cut = RenderWithViewModel(vm, arcId);
 
         cut.WaitForAssertion(() =>

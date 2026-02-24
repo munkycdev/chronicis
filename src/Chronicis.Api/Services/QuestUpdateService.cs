@@ -85,7 +85,7 @@ public class QuestUpdateService : IQuestUpdateService
                 QuestId = qu.QuestId,
                 Body = qu.Body,
                 SessionId = qu.SessionId,
-                SessionTitle = qu.Session != null ? qu.Session.Title : null,
+                SessionTitle = qu.Session != null ? qu.Session.Name : null,
                 CreatedBy = qu.CreatedBy,
                 CreatedByName = qu.Creator.DisplayName,
                 CreatedByAvatarUrl = qu.Creator.AvatarUrl,
@@ -150,22 +150,17 @@ public class QuestUpdateService : IQuestUpdateService
             return ServiceResult<QuestUpdateEntryDto>.NotFound("Quest not found");
         }
 
-        // Validate SessionId if provided
-        Article? session = null;
+        // Validate SessionId if provided (Session entity FK)
+        Session? session = null;
         if (dto.SessionId.HasValue)
         {
-            session = await _context.Articles
+            session = await _context.Sessions
                 .AsNoTracking()
-                .FirstOrDefaultAsync(a => a.Id == dto.SessionId.Value);
+                .FirstOrDefaultAsync(s => s.Id == dto.SessionId.Value);
 
             if (session == null)
             {
                 return ServiceResult<QuestUpdateEntryDto>.ValidationError("Session not found");
-            }
-
-            if (session.Type != ArticleType.Session)
-            {
-                return ServiceResult<QuestUpdateEntryDto>.ValidationError("Referenced article is not a Session");
             }
 
             if (session.ArcId != quest.ArcId)
@@ -204,7 +199,7 @@ public class QuestUpdateService : IQuestUpdateService
             QuestId = questUpdate.QuestId,
             Body = questUpdate.Body,
             SessionId = questUpdate.SessionId,
-            SessionTitle = session?.Title,
+            SessionTitle = session?.Name,
             CreatedBy = questUpdate.CreatedBy,
             CreatedByName = creator?.DisplayName ?? "Unknown",
             CreatedByAvatarUrl = creator?.AvatarUrl,

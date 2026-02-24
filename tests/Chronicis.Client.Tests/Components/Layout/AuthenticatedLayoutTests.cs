@@ -60,6 +60,16 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
         Services.AddSingleton(new MudTheme());
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _snackbar.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
     [Fact]
     public void Component_ImplementsAsyncDisposable()
     {
@@ -587,7 +597,7 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
     }
 
     [Fact]
-    public async Task OnAuthenticationStateChanged_WhenRaised_RefreshesCurrentUser()
+    public void OnAuthenticationStateChanged_WhenRaised_RefreshesCurrentUser()
     {
         var provider = (TestAuthStateProvider)_authStateProvider;
         _authService.GetCurrentUserAsync().Returns(

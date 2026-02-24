@@ -544,8 +544,12 @@ else
                 endIndex = m.EndIndex
             }).ToArray();
 
-            await JSRuntime.InvokeVoidAsync("insertWikiLinksAtPositions", $"tiptap-editor-{_article.Id}", jsMatches);
-            var updatedBody = await JSRuntime.InvokeAsync<string>("getTipTapContent", $"tiptap-editor-{_article.Id}");
+            if (_article is null)
+                return;
+
+            var editorElementId = $"tiptap-editor-{_article.Id}";
+            await JSRuntime.InvokeVoidAsync("insertWikiLinksAtPositions", editorElementId, jsMatches);
+            var updatedBody = await JSRuntime.InvokeAsync<string>("getTipTapContent", editorElementId);
             _editBody = updatedBody;
 
             await ViewModel.CommitAutoLinkAsync(updatedBody, result.LinksFound);

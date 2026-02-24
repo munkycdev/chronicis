@@ -69,7 +69,7 @@ public class GettingStartedTests : MudBlazorTestContext
     }
 
     [Fact]
-    public async Task GettingStarted_ReturningUser_StepZero_RendersQuickStartGuide()
+    public void GettingStarted_ReturningUser_StepZero_RendersQuickStartGuide()
     {
         var userApi = Substitute.For<IUserApiService>();
         userApi.GetUserProfileAsync().Returns(new UserProfileDto { HasCompletedOnboarding = true });

@@ -446,24 +446,20 @@ public class SummaryService : ISummaryService
 
     private async Task<List<SourceContent>> GetCampaignSourcesAsync(Guid campaignId)
     {
-        // Get all public session articles in this campaign
-        var sessions = await _context.Articles
+        var sessions = await _context.Sessions
             .AsNoTracking()
-            .Where(a => a.CampaignId == campaignId
-                && a.Type == ArticleType.Session
-                && a.Visibility == ArticleVisibility.Public
-                && !string.IsNullOrEmpty(a.Body))
-            .OrderBy(a => a.SessionDate ?? a.CreatedAt)
-            .Select(a => new SourceContent
+            .Where(s => s.Arc.CampaignId == campaignId)
+            .OrderBy(s => s.SessionDate ?? s.CreatedAt)
+            .ThenBy(s => s.Name)
+            .Select(s => new SessionSourceSeed
             {
-                Type = "Session",
-                Title = a.Title,
-                Content = a.Body!,
-                ArticleId = a.Id
+                Id = s.Id,
+                Name = s.Name,
+                PublicNotes = s.PublicNotes
             })
             .ToListAsync();
 
-        return sessions;
+        return await BuildSessionSourcesAsync(sessions);
     }
 
     #endregion
@@ -621,24 +617,73 @@ public class SummaryService : ISummaryService
 
     private async Task<List<SourceContent>> GetArcSourcesAsync(Guid arcId)
     {
-        // Get all public session articles in this arc
-        var sessions = await _context.Articles
+        var sessions = await _context.Sessions
             .AsNoTracking()
-            .Where(a => a.ArcId == arcId
-                && a.Type == ArticleType.Session
-                && a.Visibility == ArticleVisibility.Public
-                && !string.IsNullOrEmpty(a.Body))
-            .OrderBy(a => a.SessionDate ?? a.CreatedAt)
-            .Select(a => new SourceContent
+            .Where(s => s.ArcId == arcId)
+            .OrderBy(s => s.SessionDate ?? s.CreatedAt)
+            .ThenBy(s => s.Name)
+            .Select(s => new SessionSourceSeed
             {
-                Type = "Session",
-                Title = a.Title,
-                Content = a.Body!,
-                ArticleId = a.Id
+                Id = s.Id,
+                Name = s.Name,
+                PublicNotes = s.PublicNotes
             })
             .ToListAsync();
 
-        return sessions;
+        return await BuildSessionSourcesAsync(sessions);
+    }
+
+    #endregion
+
+    #region Session Summary
+
+    public async Task<SummaryGenerationDto> GenerateSessionSummaryFromSourcesAsync(
+        string sessionName,
+        string sourceContent,
+        IReadOnlyList<SummarySourceDto> sources,
+        int maxOutputTokens = 1500)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(sourceContent))
+            {
+                return new SummaryGenerationDto
+                {
+                    Success = false,
+                    ErrorMessage = "No public content available for this session."
+                };
+            }
+
+            var promptTemplate = await GetEffectivePromptAsync(null, null, CampaignRecapTemplateId);
+            var webContent = "";
+
+            var internalSources = sources
+                .Select(s => new SourceContent
+                {
+                    Type = s.Type,
+                    Title = s.Title,
+                    Content = string.Empty,
+                    ArticleId = s.ArticleId
+                })
+                .ToList();
+
+            return await GenerateSummaryInternalAsync(
+                sessionName,
+                promptTemplate,
+                sourceContent,
+                webContent,
+                internalSources,
+                maxOutputTokens);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating AI summary for session '{SessionName}'", sessionName);
+            return new SummaryGenerationDto
+            {
+                Success = false,
+                ErrorMessage = $"Error generating summary: {ex.Message}"
+            };
+        }
     }
 
     #endregion
@@ -720,6 +765,73 @@ Based on the source materials above and following the custom instructions, provi
         return string.Join("\n\n", parts);
     }
 
+    private async Task<List<SourceContent>> BuildSessionSourcesAsync(
+        IReadOnlyList<SessionSourceSeed> sessions)
+    {
+        if (sessions.Count == 0)
+        {
+            return new List<SourceContent>();
+        }
+
+        var sessionIds = sessions.Select(s => s.Id).ToList();
+
+        var publicSessionNotes = await _context.Articles
+            .AsNoTracking()
+            .Where(a => a.Type == ArticleType.SessionNote
+                && a.Visibility == ArticleVisibility.Public
+                && a.SessionId.HasValue
+                && sessionIds.Contains(a.SessionId.Value)
+                && !string.IsNullOrWhiteSpace(a.Body))
+            .OrderBy(a => a.CreatedAt)
+            .ThenBy(a => a.Title)
+            .Select(a => new
+            {
+                a.Id,
+                a.Title,
+                a.Body,
+                a.SessionId
+            })
+            .ToListAsync();
+
+        var notesBySession = publicSessionNotes
+            .Where(n => n.SessionId.HasValue)
+            .GroupBy(n => n.SessionId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var sources = new List<SourceContent>();
+
+        foreach (var session in sessions)
+        {
+            if (!string.IsNullOrWhiteSpace(session.PublicNotes))
+            {
+                sources.Add(new SourceContent
+                {
+                    Type = "SessionPublicNotes",
+                    Title = $"{session.Name} (Public Notes)",
+                    Content = session.PublicNotes
+                });
+            }
+
+            if (!notesBySession.TryGetValue(session.Id, out var notes))
+            {
+                continue;
+            }
+
+            foreach (var note in notes)
+            {
+                sources.Add(new SourceContent
+                {
+                    Type = "SessionNote",
+                    Title = note.Title,
+                    Content = note.Body!,
+                    ArticleId = note.Id
+                });
+            }
+        }
+
+        return sources;
+    }
+
 
     private async Task<SummaryGenerationDto> GenerateSummaryInternalAsync(
         string entityName,
@@ -789,4 +901,11 @@ internal class SourceContent
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public Guid? ArticleId { get; set; }
+}
+
+internal sealed class SessionSourceSeed
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? PublicNotes { get; set; }
 }

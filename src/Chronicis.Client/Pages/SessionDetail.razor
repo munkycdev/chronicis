@@ -1,0 +1,215 @@
+@page "/session/{SessionId:guid}"
+@attribute [Authorize]
+@implements IDisposable
+@using System.ComponentModel
+@using Chronicis.Client.Components.Shared
+@using Chronicis.Shared.DTOs
+@using Chronicis.Shared.Enums
+@using Microsoft.AspNetCore.Authorization
+@inject SessionDetailViewModel ViewModel
+
+@if (ViewModel.IsLoading)
+{
+    <LoadingSkeleton />
+}
+else if (ViewModel.Session == null)
+{
+    <NotFoundAlert EntityType="Session" />
+}
+else
+{
+    <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
+        <ChroniclsBreadcrumbs Items="ViewModel.Breadcrumbs" Class="mb-2" />
+
+        <div class="d-flex align-center mb-3">
+            <MudIcon Icon="@Icons.Material.Filled.EventNote"
+                     Size="Size.Large"
+                     Class="mr-3 generic-container-icon"
+                     Style="color: var(--chronicis-beige-gold); font-size: 2.5rem;" />
+            <div class="flex-grow-1">
+                <MudText Typo="Typo.h4" Style="font-family: var(--chronicis-font-heading);">
+                    @ViewModel.Session.Name
+                </MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Session Date: @FormatSessionDate(ViewModel.Session.SessionDate)
+                </MudText>
+            </div>
+            @if (ViewModel.IsCurrentUserGM)
+            {
+                <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Size="Size.Small">
+                    GM
+                </MudChip>
+            }
+        </div>
+
+        <div class="chronicis-rune-divider mb-4"></div>
+
+        <MudText Typo="Typo.h6" Class="mb-2" Style="color: var(--chronicis-beige-gold);">
+            <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Small" Class="mr-2" />
+            Public Notes
+        </MudText>
+
+        @if (ViewModel.IsCurrentUserGM)
+        {
+            <MudTextField Value="@ViewModel.EditPublicNotes"
+                          ValueChanged="@((string v) => ViewModel.EditPublicNotes = v)"
+                          Label="Public Notes (HTML)"
+                          Variant="Variant.Outlined"
+                          Lines="10"
+                          Immediate="true"
+                          Class="mb-4" />
+        }
+        else if (!string.IsNullOrWhiteSpace(ViewModel.Session.PublicNotes))
+        {
+            <MudPaper Outlined="true" Class="pa-4 mb-4">
+                @((MarkupString)ViewModel.Session.PublicNotes)
+            </MudPaper>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">
+                No public notes yet.
+            </MudAlert>
+        }
+
+        <MudText Typo="Typo.h6" Class="mb-2" Style="color: var(--chronicis-beige-gold);">
+            <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Class="mr-2" />
+            Private Notes
+        </MudText>
+
+        @if (ViewModel.IsCurrentUserGM)
+        {
+            <MudTextField Value="@ViewModel.EditPrivateNotes"
+                          ValueChanged="@((string v) => ViewModel.EditPrivateNotes = v)"
+                          Label="Private Notes (GM only, HTML)"
+                          Variant="Variant.Outlined"
+                          Lines="10"
+                          Immediate="true"
+                          Class="mb-4" />
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">
+                Private notes are visible to GMs only.
+            </MudAlert>
+        }
+
+        @if (ViewModel.IsCurrentUserGM)
+        {
+            <div class="chronicis-flex-between mb-4">
+                <SaveStatusIndicator IsSaving="ViewModel.IsSavingNotes" HasUnsavedChanges="ViewModel.HasUnsavedChanges" />
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="@ViewModel.SaveNotesAsync"
+                           Disabled="@(ViewModel.IsSavingNotes || !ViewModel.HasUnsavedChanges)"
+                           StartIcon="@Icons.Material.Filled.Save">
+                    Save Notes
+                </MudButton>
+            </div>
+        }
+
+        <MudDivider Class="my-4" />
+
+        <div class="d-flex align-center justify-space-between mb-2">
+            <MudText Typo="Typo.h6" Style="color: var(--chronicis-beige-gold);">
+                <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Small" Class="mr-2" />
+                AI Summary
+            </MudText>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Secondary"
+                       OnClick="@ViewModel.GenerateAiSummaryAsync"
+                       Disabled="@ViewModel.IsGeneratingSummary"
+                       StartIcon="@Icons.Material.Filled.AutoAwesome">
+                @(ViewModel.IsGeneratingSummary ? "Generating..." : "Generate")
+            </MudButton>
+        </div>
+
+        @if (ViewModel.IsGeneratingSummary)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
+
+        @if (!string.IsNullOrWhiteSpace(ViewModel.Session.AiSummary))
+        {
+            <MudPaper Outlined="true" Class="pa-4 mb-2">
+                <MudText Typo="Typo.body1" Style="white-space: pre-wrap;">@ViewModel.Session.AiSummary</MudText>
+            </MudPaper>
+            @if (ViewModel.Session.AiSummaryGeneratedAt.HasValue)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-4">
+                    Generated @ViewModel.Session.AiSummaryGeneratedAt.Value.ToLocalTime().ToString("g")
+                </MudText>
+            }
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">
+                No AI summary yet.
+            </MudAlert>
+        }
+
+        <MudDivider Class="my-4" />
+
+        <MudText Typo="Typo.h6" Class="mb-2" Style="color: var(--chronicis-beige-gold);">
+            <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Class="mr-2" />
+            Session Notes
+        </MudText>
+
+        @if (ViewModel.SessionNotes.Any())
+        {
+            <MudList T="ArticleTreeDto" Dense="true">
+                @foreach (var note in ViewModel.SessionNotes)
+                {
+                    <EntityListItem Icon="@Icons.Material.Filled.Description"
+                                    Title="@(string.IsNullOrWhiteSpace(note.Title) ? "Untitled Session Note" : note.Title)"
+                                    OnClick="@(() => ViewModel.OpenSessionNoteAsync(note))">
+                        <MudChip T="string"
+                                 Size="Size.Small"
+                                 Variant="Variant.Outlined"
+                                 Color="@GetVisibilityColor(note.Visibility)">
+                            @note.Visibility
+                        </MudChip>
+                    </EntityListItem>
+                }
+            </MudList>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">
+                No attached SessionNote articles found.
+            </MudAlert>
+        }
+    </MudPaper>
+}
+
+@code {
+    [Parameter]
+    public Guid SessionId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        ViewModel.PropertyChanged -= OnViewModelChanged;
+        ViewModel.PropertyChanged += OnViewModelChanged;
+        await ViewModel.LoadAsync(SessionId);
+    }
+
+    private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
+        => InvokeAsync(StateHasChanged);
+
+    private static string FormatSessionDate(DateTime? sessionDate)
+        => sessionDate?.ToLocalTime().ToString("MMMM d, yyyy") ?? "Not set";
+
+    private static Color GetVisibilityColor(ArticleVisibility visibility) => visibility switch
+    {
+        ArticleVisibility.Public => Color.Success,
+        ArticleVisibility.MembersOnly => Color.Warning,
+        ArticleVisibility.Private => Color.Error,
+        _ => Color.Default
+    };
+
+    public void Dispose()
+    {
+        ViewModel.PropertyChanged -= OnViewModelChanged;
+    }
+}

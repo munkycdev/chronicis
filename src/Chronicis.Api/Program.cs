@@ -210,6 +210,7 @@ internal class Program
             builder.Services.AddScoped<IWorldPublicSharingService, WorldPublicSharingService>();
             builder.Services.AddScoped<ICampaignService, CampaignService>();
             builder.Services.AddScoped<IArcService, ArcService>();
+            builder.Services.AddScoped<ISessionService, SessionService>();
             builder.Services.AddScoped<ILinkParser, Chronicis.Api.Services.LinkParser>();
             builder.Services.AddScoped<ILinkSyncService, LinkSyncService>();
             builder.Services.AddScoped<IAutoLinkService, AutoLinkService>();
