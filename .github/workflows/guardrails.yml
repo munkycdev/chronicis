@@ -72,7 +72,8 @@ jobs:
             --results-directory "$resultsDir"
 
           # Find all coverage files produced by the collector
-          $coberturaFiles = Get-ChildItem -Recurse -Path $resultsDir -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue
+          $coberturaFiles = Get-ChildItem -Recurse -Path $resultsDir -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue `
+            | Where-Object { $_.FullName -notmatch '[\\/]+Chronicis\.ArchitecturalTests[\\/]' }
           if (-not $coberturaFiles -or $coberturaFiles.Count -eq 0) {
             Write-Host "No coverage.cobertura.xml files found under: $resultsDir"
             if (Test-Path $resultsDir) {
@@ -100,6 +101,7 @@ jobs:
 
           # Collect all cobertura files and build a sorted, semicolon-separated list
           $reports = Get-ChildItem -Recurse -Path $resultsDir -Filter "coverage.cobertura.xml" `
+            | Where-Object { $_.FullName -notmatch '[\\/]+Chronicis\.ArchitecturalTests[\\/]' } `
             | Sort-Object FullName `
             | Select-Object -ExpandProperty FullName
 

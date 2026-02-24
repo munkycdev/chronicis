@@ -79,7 +79,8 @@ try {
     # Find all coverage files
     Write-Host ""
     Write-Host "Collecting coverage files..." -ForegroundColor Yellow
-    $coverageFiles = Get-ChildItem -Path "tests/TestResults" -Filter "coverage.cobertura.xml" -Recurse
+    $coverageFiles = Get-ChildItem -Path "tests/TestResults" -Filter "coverage.cobertura.xml" -Recurse `
+        | Where-Object { $_.FullName -notmatch '[\\/]+Chronicis\.ArchitecturalTests[\\/]' }
     
     if ($coverageFiles.Count -eq 0) {
         Write-Warning "No coverage files found. Make sure tests ran successfully."

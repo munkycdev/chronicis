@@ -80,6 +80,9 @@ public static class ApplicationServiceExtensions
         services.AddTransient<WorldDocumentsViewModel>();
         services.AddTransient<WorldSharingViewModel>();
         services.AddTransient<ArticleDetailViewModel>();
+        services.AddTransient<CosmosViewModel>();
+        services.AddTransient<GettingStartedViewModel>();
+        services.AddTransient<PublicWorldPageViewModel>();
 
         // State & coordination services
         services.AddScoped<ITreeStateService, TreeStateService>();

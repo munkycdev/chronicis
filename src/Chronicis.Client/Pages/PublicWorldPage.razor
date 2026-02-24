@@ -5,23 +5,22 @@
 @using Chronicis.Shared.Enums
 @using Chronicis.Client.Components.Shared
 @using Microsoft.JSInterop
-@inject IPublicApiService PublicApi
+@inject PublicWorldPageViewModel VM
 @inject IMarkdownService MarkdownService
-@inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
-@implements IDisposable
+@implements IAsyncDisposable
 
-<PageTitle>@GetPageTitle()</PageTitle>
+<PageTitle>@VM.GetPageTitle()</PageTitle>
 
-@if (_isLoading)
+@if (VM.IsLoading)
 {
     <div class="public-world-loading">
         <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
         <MudText Typo="Typo.body1" Class="mt-3">Loading world...</MudText>
     </div>
 }
-else if (_world == null)
+else if (VM.World == null)
 {
     <div class="public-world-not-found">
         <MudPaper Elevation="2" Class="pa-6 text-center">
@@ -48,14 +47,14 @@ else
             <div class="public-world-sidebar-header">
                 <a href="/w/@PublicSlug" class="public-world-title-link">
                     <MudText Typo="Typo.subtitle1" Style="color: var(--chronicis-beige-gold); font-weight: 600;">
-                        @_world.Name
+                        @VM.World.Name
                     </MudText>
                 </a>
             </div>
 
             <MudDivider Class="my-2" Style="opacity: 0.3;" />
 
-            @if (_articleTree.Count == 0)
+            @if (VM.ArticleTree.Count == 0)
             {
                 <div class="pa-3">
                     <MudText Typo="Typo.body2" Class="mud-text-secondary">
@@ -66,12 +65,12 @@ else
             else
             {
                 <div class="public-article-tree">
-                    @foreach (var article in _articleTree)
+                    @foreach (var article in VM.ArticleTree)
                     {
                         <PublicArticleTreeItem Article="@article" 
                                                PublicSlug="@PublicSlug"
                                                CurrentPath="@ArticlePath"
-                                               OnArticleSelected="NavigateToArticle" />
+                                               OnArticleSelected="@(path => VM.NavigateToArticle(PublicSlug, path))" />
                     }
                 </div>
             }
@@ -86,19 +85,19 @@ else
                     <div class="public-world-hero">
                         <MudIcon Icon="@Icons.Material.Filled.Public" 
                                  Style="font-size: 48px; color: var(--chronicis-beige-gold);" />
-                        <MudText Typo="Typo.h4" Class="mt-3">@_world.Name</MudText>
-                        @if (!string.IsNullOrEmpty(_world.Description))
+                        <MudText Typo="Typo.h4" Class="mt-3">@VM.World.Name</MudText>
+                        @if (!string.IsNullOrEmpty(VM.World.Description))
                         {
                             <MudText Typo="Typo.body1" Class="mud-text-secondary mt-2">
-                                @_world.Description
+                                @VM.World.Description
                             </MudText>
                         }
                         <MudText Typo="Typo.caption" Class="mud-text-secondary mt-3">
-                            Created by @_world.OwnerName
+                            Created by @VM.World.OwnerName
                         </MudText>
                     </div>
 
-                    @if (_articleTree.Count > 0)
+                    @if (VM.ArticleTree.Count > 0)
                     {
                         <MudDivider Class="my-4" />
                         <MudText Typo="Typo.body2" Class="mud-text-secondary">
@@ -107,7 +106,7 @@ else
                     }
                 </MudPaper>
             }
-            else if (_currentArticle == null && !_isLoadingArticle)
+            else if (VM.CurrentArticle == null && !VM.IsLoadingArticle)
             {
                 <!-- Article not found -->
                 <MudPaper Elevation="2" Class="pa-6 text-center">
@@ -120,12 +119,12 @@ else
                     <MudButton Variant="Variant.Text" 
                                Color="Color.Primary" 
                                Class="mt-3"
-                               OnClick="() => NavigateToArticle(string.Empty)">
+                               OnClick="() => VM.NavigateToArticle(PublicSlug, string.Empty)">
                         Back to World Overview
                     </MudButton>
                 </MudPaper>
             }
-            else if (_isLoadingArticle)
+            else if (VM.IsLoadingArticle)
             {
                 <MudPaper Elevation="2" Class="pa-6">
                     <MudSkeleton Width="60%" Height="32px" />
@@ -139,42 +138,42 @@ else
                 <!-- Article view -->
                 <MudPaper Elevation="2" Class="pa-6">
                     <!-- Breadcrumbs -->
-                    @if (_currentArticle!.Breadcrumbs?.Any() == true)
+                    @if (VM.CurrentArticle!.Breadcrumbs?.Any() == true)
                     {
-                        <ChroniclsBreadcrumbs Items="@GetBreadcrumbItems()" UseCustomLinks="true" Class="mb-3 pa-0" />
+                        <ChroniclsBreadcrumbs Items="@VM.GetBreadcrumbItems(PublicSlug)" UseCustomLinks="true" Class="mb-3 pa-0" />
                     }
 
                     <!-- Article header -->
                     <div class="d-flex align-center gap-3 mb-4">
-                        @if (!string.IsNullOrEmpty(_currentArticle.IconEmoji))
+                        @if (!string.IsNullOrEmpty(VM.CurrentArticle.IconEmoji))
                         {
-                            <IconDisplay Icon="@_currentArticle.IconEmoji" DefaultIcon="" Style="font-size: 2rem;" />
+                            <IconDisplay Icon="@VM.CurrentArticle.IconEmoji" DefaultIcon="" Style="font-size: 2rem;" />
                         }
                         <div>
-                            <MudText Typo="Typo.h4">@_currentArticle.Title</MudText>
+                            <MudText Typo="Typo.h4">@VM.CurrentArticle.Title</MudText>
                             <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                @GetArticleTypeLabel(_currentArticle.Type)
-                                @if (_currentArticle.ModifiedAt.HasValue)
+                                @PublicWorldPageViewModel.GetArticleTypeLabel(VM.CurrentArticle.Type)
+                                @if (VM.CurrentArticle.ModifiedAt.HasValue)
                                 {
-                                    <text> · Updated @_currentArticle.ModifiedAt.Value.ToString("MMM d, yyyy")</text>
+                                    <text> · Updated @VM.CurrentArticle.ModifiedAt.Value.ToString("MMM d, yyyy")</text>
                                 }
                             </MudText>
                         </div>
                     </div>
 
                     <!-- AI Summary (if available) -->
-                    @if (!string.IsNullOrEmpty(_currentArticle.AISummary))
+                    @if (!string.IsNullOrEmpty(VM.CurrentArticle.AISummary))
                     {
                         <MudAlert Severity="Severity.Info" Class="mb-4 summary-text" Dense="true">
-                            <strong>AI Summary:</strong> @_currentArticle.AISummary
+                            <strong>AI Summary:</strong> @VM.CurrentArticle.AISummary
                         </MudAlert>
                     }
 
                     <!-- Article body -->
                     <div id="public-article-body" class="public-article-body chronicis-editor-content">
-                        @if (!string.IsNullOrEmpty(_currentArticle.Body))
+                        @if (!string.IsNullOrEmpty(VM.CurrentArticle.Body))
                         {
-                            @((MarkupString)MarkdownService.EnsureHtml(_currentArticle.Body))
+                            @((MarkupString)MarkdownService.EnsureHtml(VM.CurrentArticle.Body))
                         }
                         else
                         {
@@ -196,143 +195,34 @@ else
     [Parameter]
     public string? ArticlePath { get; set; }
 
-    private WorldDetailDto? _world;
-    private List<ArticleTreeDto> _articleTree = new();
-    private ArticleDto? _currentArticle;
-    private bool _isLoading = true;
-    private bool _isLoadingArticle = false;
-    private DotNetObjectReference<PublicWorldPage>? _dotNetHelper;
-    private bool _wikiLinksInitialized = false;
+    protected override void OnInitialized()
+    {
+        VM.PropertyChanged += OnVmPropertyChanged;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
-        // Reset wiki links state when navigating between articles
-        _wikiLinksInitialized = false;
-        await LoadWorldAsync();
+        await VM.LoadWorldAsync(PublicSlug, ArticlePath);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Initialize wiki link click handlers after the article body is rendered
-        if (_currentArticle != null && !string.IsNullOrEmpty(_currentArticle.Body) && !_wikiLinksInitialized)
+        if (VM.CurrentArticle != null
+            && !string.IsNullOrEmpty(VM.CurrentArticle.Body)
+            && !VM.WikiLinksInitialized)
         {
-            _dotNetHelper ??= DotNetObjectReference.Create(this);
-            try
-            {
-                await JSRuntime.InvokeVoidAsync("initializePublicWikiLinks", "public-article-body", _dotNetHelper);
-                _wikiLinksInitialized = true;
-            }
-            catch (Exception)
-            {
-                // JS interop may fail during prerendering or if component is disposed
-            }
+            await VM.InitializeWikiLinksAsync(JSRuntime);
         }
     }
 
-    public void Dispose()
+    private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        _dotNetHelper?.Dispose();
+        InvokeAsync(StateHasChanged);
     }
 
-    [JSInvokable]
-    public async Task OnPublicWikiLinkClicked(string targetArticleId)
+    public async ValueTask DisposeAsync()
     {
-        if (!Guid.TryParse(targetArticleId, out var articleId)) return;
-
-        try
-        {
-            var path = await PublicApi.ResolvePublicArticlePathAsync(PublicSlug, articleId);
-            if (!string.IsNullOrEmpty(path))
-            {
-                Navigation.NavigateTo($"/w/{PublicSlug}/{path}");
-            }
-        }
-        catch (Exception)
-        {
-            // Silently fail - link may not be public or may not exist
-        }
-    }
-
-    private async Task LoadWorldAsync()
-    {
-        _isLoading = true;
-        StateHasChanged();
-
-        try
-        {
-            // Load world info
-            _world = await PublicApi.GetPublicWorldAsync(PublicSlug);
-            
-            if (_world != null)
-            {
-                // Load article tree
-                _articleTree = await PublicApi.GetPublicArticleTreeAsync(PublicSlug);
-
-                // Load specific article if path provided
-                if (!string.IsNullOrEmpty(ArticlePath))
-                {
-                    await LoadArticleAsync();
-                }
-            }
-        }
-        finally
-        {
-            _isLoading = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task LoadArticleAsync()
-    {
-        if (string.IsNullOrEmpty(ArticlePath)) return;
-
-        _isLoadingArticle = true;
-        StateHasChanged();
-
-        try
-        {
-            _currentArticle = await PublicApi.GetPublicArticleAsync(PublicSlug, ArticlePath);
-        }
-        finally
-        {
-            _isLoadingArticle = false;
-            StateHasChanged();
-        }
-    }
-
-    private void NavigateToArticle(string articlePath)
-    {
-        if (string.IsNullOrEmpty(articlePath))
-        {
-            Navigation.NavigateTo($"/w/{PublicSlug}");
-        }
-        else
-        {
-            Navigation.NavigateTo($"/w/{PublicSlug}/{articlePath}");
-        }
-    }
-
-    private List<BreadcrumbItem> GetBreadcrumbItems()
-    {
-        return _currentArticle == null
-            ? new List<BreadcrumbItem>()
-            : PublicBreadcrumbBuilder.Build(PublicSlug, _currentArticle);
-    }
-
-    private static string GetArticleTypeLabel(ArticleType type) => type switch
-    {
-        ArticleType.WikiArticle => "Wiki Article",
-        ArticleType.Character => "Character",
-        ArticleType.CharacterNote => "Character Note",
-        ArticleType.Session => "Session",
-        ArticleType.SessionNote => "Session Note",
-        ArticleType.Legacy => "Article",
-        _ => "Article"
-    };
-
-    private string GetPageTitle()
-    {
-        var worldName = string.IsNullOrWhiteSpace(_world?.Name) ? "World" : _world.Name;
-        return $"{worldName} — Chronicis";
+        VM.PropertyChanged -= OnVmPropertyChanged;
+        await VM.DisposeAsync();
     }
 }
