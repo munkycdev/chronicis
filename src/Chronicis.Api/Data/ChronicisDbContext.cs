@@ -788,19 +788,13 @@ public class ChronicisDbContext : DbContext
                 .HasForeignKey(qu => qu.QuestId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // QuestUpdate -> Session (Article) (SET NULL - when session is deleted, preserve the update but clear the reference)
-            entity.HasOne(qu => qu.Session)
-                .WithMany()
-                .HasForeignKey(qu => qu.SessionId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            // QuestUpdate -> Session entity (NO ACTION - bridge FK; becomes canonical in Phase 7)
+            // QuestUpdate -> Session entity (NO ACTION)
             // SQL Server disallows SET NULL here due to multiple cascade paths through
-            // Quest → Arc → Campaign → World. SessionEntityId must be nulled manually
+            // Quest → Arc → Campaign → World. SessionId must be nulled manually
             // in application code if a Session is ever deleted.
-            entity.HasOne(qu => qu.SessionEntity)
+            entity.HasOne(qu => qu.Session)
                 .WithMany(s => s.QuestUpdates)
-                .HasForeignKey(qu => qu.SessionEntityId)
+                .HasForeignKey(qu => qu.SessionId)
                 .OnDelete(DeleteBehavior.NoAction);
 
             // QuestUpdate -> Creator (User) (RESTRICT - don't allow user deletion if they created updates)
@@ -814,11 +808,8 @@ public class ChronicisDbContext : DbContext
                 .HasDatabaseName("IX_QuestUpdate_QuestId_CreatedAt");
 
             entity.HasIndex(qu => qu.SessionId)
-                .HasDatabaseName("IX_QuestUpdate_SessionId");
-
-            entity.HasIndex(qu => qu.SessionEntityId)
-                .HasDatabaseName("IX_QuestUpdate_SessionEntityId")
-                .HasFilter("[SessionEntityId] IS NOT NULL");
+                .HasDatabaseName("IX_QuestUpdate_SessionId")
+                .HasFilter("[SessionId] IS NOT NULL");
         });
     }
 

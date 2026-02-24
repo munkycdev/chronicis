@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## 2026 Q1 Session Entity Refactor (Phase 7)
+
+- Finalized quest session FK cutover to Session entities and removed the legacy quest article-session FK bridge column
+- Arc detail session creation/list/navigation now uses Session entity APIs and `/session/{id}` routes
+- Removed tree fallback that built Arc sessions from legacy `ArticleType.Session` articles when Session API results are empty
+- Campaign/arc summaries and dashboard session counts now query Session entities instead of legacy session articles
+- Generic article creation validation now rejects new `ArticleType.Session` articles (Session entities must be created via the Sessions API)
+
+---
+
 ## 2026 Q1 Internal Architecture Consolidation
 
 - Centralized article hierarchy logic

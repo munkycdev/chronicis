@@ -3,6 +3,7 @@ using Chronicis.Client.Services;
 using Chronicis.Client.ViewModels;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Quests;
+using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -17,7 +18,7 @@ public class ArcDetailViewModelTests
         IArcApiService ArcApi,
         ICampaignApiService CampaignApi,
         IWorldApiService WorldApi,
-        IArticleApiService ArticleApi,
+        ISessionApiService SessionApi,
         IQuestApiService QuestApi,
         IAuthService AuthService,
         ITreeStateService TreeState,
@@ -32,7 +33,7 @@ public class ArcDetailViewModelTests
         var arcApi = Substitute.For<IArcApiService>();
         var campaignApi = Substitute.For<ICampaignApiService>();
         var worldApi = Substitute.For<IWorldApiService>();
-        var articleApi = Substitute.For<IArticleApiService>();
+        var sessionApi = Substitute.For<ISessionApiService>();
         var questApi = Substitute.For<IQuestApiService>();
         var authService = Substitute.For<IAuthService>();
         var treeState = Substitute.For<ITreeStateService>();
@@ -44,10 +45,10 @@ public class ArcDetailViewModelTests
         var logger = Substitute.For<ILogger<ArcDetailViewModel>>();
 
         var vm = new ArcDetailViewModel(
-            arcApi, campaignApi, worldApi, articleApi, questApi, authService,
+            arcApi, campaignApi, worldApi, sessionApi, questApi, authService,
             treeState, breadcrumbs, navigator, notifier, titleService, confirmation, logger);
 
-        return new Sut(vm, arcApi, campaignApi, worldApi, articleApi, questApi,
+        return new Sut(vm, arcApi, campaignApi, worldApi, sessionApi, questApi,
             authService, treeState, breadcrumbs, navigator, notifier, titleService, confirmation);
     }
 
@@ -82,7 +83,7 @@ public class ArcDetailViewModelTests
         });
         c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(world);
         c.WorldApi.GetWorldAsync(world.Id).Returns(world);
-        c.ArticleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>());
+        c.SessionApi.GetSessionsByArcAsync(arc.Id).Returns(new List<SessionTreeDto>());
         c.AuthService.GetCurrentUserAsync().Returns((UserInfo?)null);
     }
 
@@ -121,17 +122,15 @@ public class ArcDetailViewModelTests
     }
 
     [Fact]
-    public async Task LoadAsync_FiltersSessions_ByArcIdAndSessionType()
+    public async Task LoadAsync_LoadsSessionsFromSessionApi()
     {
         var c = CreateSut();
         var arc = MakeArc();
         var campaign = MakeCampaign(id: arc.CampaignId);
         SetupHappyPath(c, arc, campaign);
 
-        var sessionInArc = new ArticleTreeDto { Id = Guid.NewGuid(), ArcId = arc.Id, Type = ArticleType.Session };
-        var sessionOtherArc = new ArticleTreeDto { Id = Guid.NewGuid(), ArcId = Guid.NewGuid(), Type = ArticleType.Session };
-        var noteInArc = new ArticleTreeDto { Id = Guid.NewGuid(), ArcId = arc.Id, Type = ArticleType.WikiArticle };
-        c.ArticleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto> { sessionInArc, sessionOtherArc, noteInArc });
+        var sessionInArc = new SessionTreeDto { Id = Guid.NewGuid(), ArcId = arc.Id, Name = "Session 1" };
+        c.SessionApi.GetSessionsByArcAsync(arc.Id).Returns(new List<SessionTreeDto> { sessionInArc });
 
         await c.Vm.LoadAsync(arc.Id);
 
@@ -344,9 +343,9 @@ public class ArcDetailViewModelTests
         var c = CreateSut();
         var arc = MakeArc();
         SetupHappyPath(c, arc, MakeCampaign(id: arc.CampaignId));
-        c.ArticleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>
+        c.SessionApi.GetSessionsByArcAsync(arc.Id).Returns(new List<SessionTreeDto>
         {
-            new() { ArcId = arc.Id, Type = ArticleType.Session }
+            new() { ArcId = arc.Id, Name = "Session 1" }
         });
         await c.Vm.LoadAsync(arc.Id);
 
@@ -379,29 +378,11 @@ public class ArcDetailViewModelTests
     public async Task NavigateToSessionAsync_WhenBreadcrumbsExist_NavigatesWithPath()
     {
         var c = CreateSut();
-        var session = new ArticleTreeDto { Id = Guid.NewGuid(), Slug = "session-1" };
-        var article = new ArticleDto
-        {
-            Breadcrumbs = new List<BreadcrumbDto> { new() { Slug = "world" }, new() { Slug = "session-1" } }
-        };
-        c.ArticleApi.GetArticleDetailAsync(session.Id).Returns(article);
-        c.BreadcrumbService.BuildArticleUrl(article.Breadcrumbs).Returns("/article/world/session-1");
+        var session = new SessionTreeDto { Id = Guid.NewGuid(), Name = "Session 1" };
 
         await c.Vm.NavigateToSessionAsync(session);
 
-        c.Navigator.Received(1).NavigateTo("/article/world/session-1");
-    }
-
-    [Fact]
-    public async Task NavigateToSessionAsync_WhenNoBreadcrumbs_UsesSlugFallback()
-    {
-        var c = CreateSut();
-        var session = new ArticleTreeDto { Id = Guid.NewGuid(), Slug = "session-2" };
-        c.ArticleApi.GetArticleDetailAsync(session.Id).Returns(new ArticleDto { Breadcrumbs = new() });
-
-        await c.Vm.NavigateToSessionAsync(session);
-
-        c.Navigator.Received(1).NavigateTo("/article/session-2");
+        c.Navigator.Received(1).NavigateTo($"/session/{session.Id}");
     }
 
     // -----------------------------------------------------------------------

@@ -99,7 +99,9 @@ public class DashboardController : ControllerBase
             {
                 foreach (var campaign in world.Campaigns.OrderByDescending(c => c.IsActive).ThenBy(c => c.Name))
                 {
-                    var sessionCount = world.Articles?.Count(a => a.CampaignId == campaign.Id && a.Type == ArticleType.Session) ?? 0;
+                    var sessionCount = await _context.Sessions
+                        .AsNoTracking()
+                        .CountAsync(s => s.Arc.CampaignId == campaign.Id);
 
                     var dashboardCampaign = new DashboardCampaignDto
                     {
@@ -121,11 +123,14 @@ public class DashboardController : ControllerBase
 
                     if (activeArc != null)
                     {
-                        var arcSessionCount = world.Articles?.Count(a => a.ArcId == activeArc.Id && a.Type == ArticleType.Session) ?? 0;
-                        var latestSession = world.Articles?
-                            .Where(a => a.ArcId == activeArc.Id && a.Type == ArticleType.Session)
-                            .OrderByDescending(a => a.SessionDate ?? a.CreatedAt)
-                            .FirstOrDefault();
+                        var arcSessionCount = await _context.Sessions
+                            .AsNoTracking()
+                            .CountAsync(s => s.ArcId == activeArc.Id);
+                        var latestSession = await _context.Sessions
+                            .AsNoTracking()
+                            .Where(s => s.ArcId == activeArc.Id)
+                            .OrderByDescending(s => s.SessionDate ?? s.CreatedAt)
+                            .FirstOrDefaultAsync();
 
                         dashboardCampaign.CurrentArc = new DashboardArcDto
                         {

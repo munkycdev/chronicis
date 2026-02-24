@@ -14,6 +14,11 @@ public interface ISessionApiService
     Task<List<SessionTreeDto>> GetSessionsByArcAsync(Guid arcId);
 
     /// <summary>
+    /// Create a Session entity under an Arc.
+    /// </summary>
+    Task<SessionDto?> CreateSessionAsync(Guid arcId, SessionCreateDto dto);
+
+    /// <summary>
     /// Get a Session entity by id.
     /// </summary>
     Task<SessionDto?> GetSessionAsync(Guid sessionId);

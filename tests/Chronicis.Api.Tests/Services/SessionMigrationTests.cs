@@ -101,20 +101,9 @@ public class SessionMigrationTests : IDisposable
 
         await _context.SaveChangesAsync();
 
-        // Step 3: backfill QuestUpdate.SessionEntityId
-        var questUpdates = await _context.QuestUpdates
-            .Where(qu => qu.SessionId != null)
-            .ToListAsync();
-
-        foreach (var qu in questUpdates)
-        {
-            if (qu.SessionId.HasValue && mapping.ContainsKey(qu.SessionId.Value))
-            {
-                qu.SessionEntityId = qu.SessionId.Value;
-            }
-        }
-
-        await _context.SaveChangesAsync();
+        // Step 3 (Phase 1 bridge backfill) is removed in Phase 7 because QuestUpdate.SessionId
+        // is now the canonical Session FK. The simulated migration helper keeps the legacy mapping
+        // assertions focused on the SessionId value itself.
 
         return mapping;
     }
@@ -361,13 +350,11 @@ public class SessionMigrationTests : IDisposable
         await RunSessionBackfillAsync();
 
         var updated = await _context.QuestUpdates.FindAsync(update.Id);
-        Assert.Equal(sessionArticle.Id, updated!.SessionEntityId);
-        // Legacy SessionId must remain untouched (guardrail)
         Assert.Equal(sessionArticle.Id, updated.SessionId);
     }
 
     [Fact]
-    public async Task Backfill_QuestUpdateWithNullSessionId_LeavesSessionEntityIdNull()
+    public async Task Backfill_QuestUpdateWithNullSessionId_LeavesSessionIdNull()
     {
         var (gm, arc, _) = SeedArcWithUser();
 
@@ -399,7 +386,7 @@ public class SessionMigrationTests : IDisposable
         await RunSessionBackfillAsync();
 
         var updated = await _context.QuestUpdates.FindAsync(update.Id);
-        Assert.Null(updated!.SessionEntityId);
+        Assert.Null(updated!.SessionId);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -404,20 +404,6 @@ internal sealed class TreeDataBuilder
                 arcNode.Children.Add(sessionNode);
             }
         }
-        else
-        {
-            // Legacy fallback: keep session-article tree support until Phase 7 cleanup.
-            var sessionArticles = worldArticles
-                .Where(a => a.ArcId == arc.Id && a.Type == ArticleType.Session)
-                .OrderBy(a => a.Title)
-                .ToList();
-
-            foreach (var article in sessionArticles)
-            {
-                var articleNode = BuildArticleNodeWithChildren(article, worldArticles, articleIndex, nodeIndex);
-                arcNode.Children.Add(articleNode);
-            }
-        }
 
         arcNode.ChildCount = arcNode.Children.Count;
 

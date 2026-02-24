@@ -166,12 +166,8 @@ public class QuestDrawerTests : MudBlazorTestContext
         {
             Id = noteId,
             Type = ArticleType.SessionNote,
-            ParentId = sessionId
-        });
-        rendered.ArticleApi.GetArticleDetailAsync(sessionId).Returns(new ArticleDto
-        {
-            Id = sessionId,
-            Type = ArticleType.Session
+            ParentId = Guid.NewGuid(),
+            SessionId = sessionId
         });
 
         var result = await InvokePrivateOnRendererAsync<Guid?>(rendered.Cut, "ResolveSessionIdFromParentAsync", noteId);

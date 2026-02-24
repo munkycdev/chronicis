@@ -26,6 +26,15 @@ public class SessionApiService : ISessionApiService
             $"sessions for arc {arcId}");
     }
 
+    public async Task<SessionDto?> CreateSessionAsync(Guid arcId, SessionCreateDto dto)
+    {
+        return await _http.PostEntityAsync<SessionDto>(
+            $"arcs/{arcId}/sessions",
+            dto,
+            _logger,
+            $"session in arc {arcId}");
+    }
+
     public async Task<SessionDto?> GetSessionAsync(Guid sessionId)
     {
         return await _http.GetEntityAsync<SessionDto>(
