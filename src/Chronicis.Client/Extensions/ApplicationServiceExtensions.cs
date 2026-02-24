@@ -76,6 +76,7 @@ public static class ApplicationServiceExtensions
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<CampaignDetailViewModel>();
         services.AddTransient<ArcDetailViewModel>();
+        services.AddTransient<SessionDetailViewModel>();
         services.AddTransient<WorldDetailViewModel>();
         services.AddTransient<WorldLinksViewModel>();
         services.AddTransient<WorldDocumentsViewModel>();

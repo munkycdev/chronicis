@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Sessions;
 
 namespace Chronicis.Client.Services;
@@ -22,5 +24,57 @@ public class SessionApiService : ISessionApiService
             $"arcs/{arcId}/sessions",
             _logger,
             $"sessions for arc {arcId}");
+    }
+
+    public async Task<SessionDto?> GetSessionAsync(Guid sessionId)
+    {
+        return await _http.GetEntityAsync<SessionDto>(
+            $"sessions/{sessionId}",
+            _logger,
+            $"session {sessionId}");
+    }
+
+    public async Task<SessionDto?> UpdateSessionNotesAsync(Guid sessionId, SessionUpdateDto dto)
+    {
+        try
+        {
+            var response = await _http.PatchAsJsonAsync($"sessions/{sessionId}", dto);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<SessionDto>();
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogWarning("Failed to update session notes for {SessionId}: {StatusCode} - {Error}",
+                sessionId, response.StatusCode, errorContent);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating session notes for {SessionId}", sessionId);
+            return null;
+        }
+    }
+
+    public async Task<SummaryGenerationDto?> GenerateAiSummaryAsync(Guid sessionId)
+    {
+        try
+        {
+            var response = await _http.PostAsJsonAsync($"sessions/{sessionId}/ai-summary/generate", new { });
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<SummaryGenerationDto>();
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogWarning("Failed to generate session AI summary for {SessionId}: {StatusCode} - {Error}",
+                sessionId, response.StatusCode, errorContent);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating session AI summary for {SessionId}", sessionId);
+            return null;
+        }
     }
 }

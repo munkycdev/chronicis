@@ -51,6 +51,26 @@ public class SessionsController : ControllerBase
     }
 
     /// <summary>
+    /// GET /api/sessions/{sessionId} - Get a Session entity by id.
+    /// </summary>
+    [HttpGet("sessions/{sessionId:guid}")]
+    public async Task<ActionResult<SessionDto>> GetSession(Guid sessionId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        var result = await _sessionService.GetSessionAsync(sessionId, user.Id);
+
+        return result.Status switch
+        {
+            ServiceStatus.Success => Ok(result.Value),
+            ServiceStatus.NotFound => NotFound(new { error = result.ErrorMessage }),
+            ServiceStatus.Forbidden => StatusCode(403, new { error = result.ErrorMessage }),
+            ServiceStatus.ValidationError => BadRequest(new { error = result.ErrorMessage }),
+            _ => StatusCode(500, new { error = "An unexpected error occurred" })
+        };
+    }
+
+    /// <summary>
     /// POST /api/arcs/{arcId}/sessions - Create a session and one default public SessionNote.
     /// </summary>
     [HttpPost("arcs/{arcId:guid}/sessions")]

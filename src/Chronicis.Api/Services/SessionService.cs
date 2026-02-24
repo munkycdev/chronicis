@@ -64,6 +64,38 @@ public class SessionService : ISessionService
         return ServiceResult<List<SessionTreeDto>>.Success(sessions);
     }
 
+    public async Task<ServiceResult<SessionDto>> GetSessionAsync(Guid sessionId, Guid userId)
+    {
+        var session = await _context.Sessions
+            .AsNoTracking()
+            .Include(s => s.Arc)
+                .ThenInclude(a => a.Campaign)
+                    .ThenInclude(c => c.World)
+                        .ThenInclude(w => w.Members)
+            .FirstOrDefaultAsync(s => s.Id == sessionId);
+
+        if (session == null)
+        {
+            return ServiceResult<SessionDto>.NotFound("Session not found");
+        }
+
+        var membership = session.Arc.Campaign.World.Members.FirstOrDefault(m => m.UserId == userId);
+        if (membership == null)
+        {
+            return ServiceResult<SessionDto>.NotFound("Session not found or access denied");
+        }
+
+        var dto = MapDto(session);
+
+        // Server remains the source of truth for GM-only private notes visibility/editability.
+        if (membership.Role != WorldRole.GM)
+        {
+            dto.PrivateNotes = null;
+        }
+
+        return ServiceResult<SessionDto>.Success(dto);
+    }
+
     public async Task<ServiceResult<SessionDto>> CreateSessionAsync(Guid arcId, SessionCreateDto dto, Guid userId, string? username)
     {
         if (dto == null)

@@ -144,8 +144,8 @@
                 break;
 
             case TreeNodeType.Session:
-                // Session detail page arrives in Phase 6. For Phase 5, preserve tree selection/expand behavior.
                 TreeState.ExpandPathToAndSelect(nodeId);
+                Navigation.NavigateTo($"/session/{nodeId}");
                 break;
                 
             case TreeNodeType.VirtualGroup:
