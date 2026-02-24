@@ -140,7 +140,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
                     new(arc?.Name ?? "Arc", href: null, disabled: true)
                 };
 
-            await _titleService.SetTitleAsync(arc.Name);
+            await _titleService.SetTitleAsync(arc?.Name ?? "Arc");
             _treeState.ExpandPathToAndSelect(arcId);
 
             // Resolve GM status

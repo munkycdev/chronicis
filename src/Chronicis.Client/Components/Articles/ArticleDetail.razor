@@ -26,6 +26,7 @@
 @inject IMetadataDrawerService MetadataDrawerService
 @inject IKeyboardShortcutService KeyboardShortcutService
 @inject IWorldApiService WorldApi
+@inject Chronicis.Client.ViewModels.ArticleDetailViewModel ViewModel
 
 @implements IDisposable
 
@@ -377,41 +378,27 @@ else
 
     private async Task LoadArticleAsync(Guid articleId)
     {
-        _isLoading = true;
         _externalPreviewOpen = false;
         StateHasChanged();
 
-        try
+        await ViewModel.LoadArticleAsync(articleId);
+
+        _article    = ViewModel.Article;
+        _editTitle  = ViewModel.EditTitle;
+        _editBody   = ViewModel.EditBody;
+        _isLoading  = ViewModel.IsLoading;
+        _hasUnsavedChanges = ViewModel.HasUnsavedChanges;
+        _breadcrumbs = ViewModel.Breadcrumbs;
+
+        if (string.IsNullOrEmpty(_editTitle) || TreeState.ShouldFocusTitle)
         {
-            _article = await ArticleApi.GetArticleAsync(articleId);
-            _editTitle = _article?.Title ?? string.Empty;
-            _editBody = _article?.Body ?? string.Empty;
-            _hasUnsavedChanges = false;
+            _shouldFocusTitle = true;
+            TreeState.ShouldFocusTitle = false;
+            StateHasChanged();
+        }
 
-            if (_article != null)
-            {
-                ArticleCache.CacheArticle(_article);
-            }
-
-            LoadBreadcrumbs();
-            await UpdatePageTitle();
+        if (_article != null)
             await SaveLastArticlePath();
-
-            if (string.IsNullOrEmpty(_editTitle) || TreeState.ShouldFocusTitle)
-            {
-                _shouldFocusTitle = true;
-                TreeState.ShouldFocusTitle = false;
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to load article: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isLoading = false;
-        }
     }
 
     private void LoadBreadcrumbs()
@@ -507,139 +494,48 @@ else
 
     private async Task SaveArticle()
     {
-        if (_article == null || _isSaving) return;
+        var result = await ViewModel.SaveArticleAsync(_editBody);
 
-        _isSaving = true;
+        _isSaving  = ViewModel.IsSaving;
+        _article   = ViewModel.Article;
+        _hasUnsavedChanges = ViewModel.HasUnsavedChanges;
+        _lastSaveTime = ViewModel.LastSaveTime;
+        _breadcrumbs  = ViewModel.Breadcrumbs;
+
+        if (result.Kind == SaveArticleResult.ResultKind.Navigate && result.NavigationPath != null)
+            Navigation.NavigateTo(result.NavigationPath, replace: true);
+
         StateHasChanged();
-
-        try
-        {
-            var originalTitle = _article.Title;
-            var newTitle = _editTitle?.Trim() ?? string.Empty;
-            var titleChanged = originalTitle != newTitle;
-            string? newSlug = null;
-            
-            if (titleChanged)
-            {
-                var suggestedSlug = SlugGenerator.GenerateSlug(newTitle);
-                if (suggestedSlug != _article.Slug)
-                    newSlug = suggestedSlug;
-            }
-
-            var updateDto = new ArticleUpdateDto
-            {
-                Title = newTitle,
-                Slug = newSlug,
-                Body = _editBody,
-                EffectiveDate = _article.EffectiveDate,
-                IconEmoji = _article.IconEmoji
-            };
-
-            await ArticleApi.UpdateArticleAsync(_article.Id, updateDto);
-            ArticleCache.InvalidateCache();
-
-            _article.Title = newTitle;
-            _article.Body = _editBody;
-            _article.ModifiedAt = DateTime.Now;
-            _hasUnsavedChanges = false;
-            _lastSaveTime = "just now";
-
-            if (newSlug != null || titleChanged)
-            {
-                await UpdatePageTitle();
-                TreeState.UpdateNodeDisplay(_article.Id, newTitle, _article.IconEmoji);
-            }
-
-            if (newSlug != null)
-            {
-                TreeState.ExpandPathToAndSelect(_article.Id);
-                _article = await ArticleApi.GetArticleAsync(_article.Id);
-                
-                if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
-                {
-                    var path = BreadcrumbService.BuildArticleUrl(_article.Breadcrumbs);
-                    Navigation.NavigateTo(path, replace: true);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to save: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isSaving = false;
-            StateHasChanged();
-            // Only refresh panels if the metadata drawer is open
-            if (_metadataDrawer != null && _openMetadata)
-                await _metadataDrawer.RefreshPanelsAsync();
-        }
+        if (_metadataDrawer != null && _openMetadata)
+            await _metadataDrawer.RefreshPanelsAsync();
     }
 
     private async Task DeleteArticle()
     {
         if (_article == null) return;
 
-        var message = $"Are you sure you want to delete '{_article.Title}'?";
-        if (_article.ChildCount > 0)
-        {
-            var childText = _article.ChildCount == 1 ? "1 child article" : $"{_article.ChildCount} child articles";
-            message = $"Are you sure you want to delete '{_article.Title}'?\n\n⚠️ WARNING: This will also delete {childText} and all their descendants.";
-        }
-        message += "\n\nThis action cannot be undone.";
-
+        var message = ViewModel.GetDeleteConfirmationMessage();
         if (!await JSRuntime.InvokeAsync<bool>("confirm", message)) return;
 
-        try
-        {
-            var success = await ArticleApi.DeleteArticleAsync(_article.Id);
-            if (success)
-            {
-                ArticleCache.InvalidateCache();
-                Snackbar.Add("Article deleted successfully", Severity.Success);
-                await TreeState.RefreshAsync();
-                _article = null;
-            }
-            else
-            {
-                Snackbar.Add("Failed to delete article. You may not have permission.", Severity.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to delete: {ex.Message}", Severity.Error);
-        }
+        await ViewModel.DeleteArticleAsync();
+        _article = ViewModel.Article;
+        StateHasChanged();
     }
 
     private async Task AutoLinkArticle()
     {
-        if (_article == null || _isAutoLinking) return;
+        var result = await ViewModel.FetchAutoLinkSuggestionsAsync(_editBody);
+        if (result == null) return;
 
-        _isAutoLinking = true;
+        _isAutoLinking = ViewModel.IsAutoLinking;
         StateHasChanged();
 
         try
         {
-            var result = await LinkApiService.AutoLinkAsync(_article.Id, _editBody);
-
-            if (result == null)
-            {
-                Snackbar.Add("Failed to scan for links", Severity.Error);
-                return;
-            }
-
-            if (result.LinksFound == 0)
-            {
-                Snackbar.Add("No linkable content found", Severity.Info);
-                return;
-            }
-
             var matchList = string.Join("\n", result.Matches.Select(m => $"• \"{m.MatchedText}\" → {m.ArticleTitle}"));
             if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Found {result.LinksFound} potential link(s):\n\n{matchList}\n\nApply these links?"))
                 return;
 
-            // Convert matches to JS-friendly format and insert via TipTap
-            // For alias matches, format as "Alias → Title", otherwise just use matched text
             var jsMatches = result.Matches.Select(m => new
             {
                 articleId = m.ArticleId.ToString(),
@@ -649,21 +545,15 @@ else
             }).ToArray();
 
             await JSRuntime.InvokeVoidAsync("insertWikiLinksAtPositions", $"tiptap-editor-{_article.Id}", jsMatches);
-            
-            // Get the updated content from the editor
-            _editBody = await JSRuntime.InvokeAsync<string>("getTipTapContent", $"tiptap-editor-{_article.Id}");
-            _hasUnsavedChanges = true;
-            await SaveArticle();
-            Snackbar.Add($"Added {result.LinksFound} link(s)", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error auto-linking article {ArticleId}", _article.Id);
-            Snackbar.Add($"Failed to auto-link: {ex.Message}", Severity.Error);
+            var updatedBody = await JSRuntime.InvokeAsync<string>("getTipTapContent", $"tiptap-editor-{_article.Id}");
+            _editBody = updatedBody;
+
+            await ViewModel.CommitAutoLinkAsync(updatedBody, result.LinksFound);
+            _hasUnsavedChanges = ViewModel.HasUnsavedChanges;
         }
         finally
         {
-            _isAutoLinking = false;
+            _isAutoLinking = ViewModel.IsAutoLinking;
             StateHasChanged();
         }
     }
@@ -674,136 +564,23 @@ else
 
     private async Task CreateRootArticle()
     {
-        var worldId = AppContext.CurrentWorldId;
-        if (!worldId.HasValue || worldId == Guid.Empty)
-        {
-            Snackbar.Add("Please select a World first", Severity.Warning);
-            return;
-        }
-
-        try
-        {
-            var createDto = new ArticleCreateDto
-            {
-                Title = "Untitled",
-                Body = string.Empty,
-                ParentId = null,
-                EffectiveDate = DateTime.Now,
-                WorldId = worldId.Value
-            };
-
-            await ArticleApi.CreateArticleAsync(createDto);
-            await TreeState.RefreshAsync();
-            Snackbar.Add("Article created", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
-        }
+        await ViewModel.CreateRootArticleAsync();
     }
 
     private async Task CreateSiblingArticle()
     {
-        if (_article == null) return;
-
-        try
-        {
-            var createDto = new ArticleCreateDto
-            {
-                Title = string.Empty,
-                Body = string.Empty,
-                ParentId = _article.ParentId,
-                EffectiveDate = DateTime.Now,
-                WorldId = _article.WorldId,
-                CampaignId = _article.CampaignId
-            };
-
-            var created = await ArticleApi.CreateArticleAsync(createDto);
-            if (created == null)
-            {
-                Snackbar.Add("Failed to create article", Severity.Error);
-                return;
-            }
-            
-            await TreeState.RefreshAsync();
-            TreeState.ExpandPathToAndSelect(created.Id);
-            
-            // Fetch the full article to get breadcrumbs for navigation
-            var articleDetail = await ArticleApi.GetArticleDetailAsync(created.Id);
-            if (articleDetail != null && articleDetail.Breadcrumbs.Any())
-            {
-                var path = BreadcrumbService.BuildArticleUrl(articleDetail.Breadcrumbs);
-                Navigation.NavigateTo(path);
-            }
-            else
-            {
-                // Fallback to slug-only path
-                Navigation.NavigateTo($"/article/{created.Slug}");
-            }
-            
-            Snackbar.Add("New article created", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
-        }
+        var path = await ViewModel.CreateSiblingArticleAsync();
+        if (path != null)
+            Navigation.NavigateTo(path);
     }
 
     private async Task CreateChildArticle()
     {
-        if (_article == null || _isCreatingChild) return;
-
-        _isCreatingChild = true;
+        var path = await ViewModel.CreateChildArticleAsync();
+        _isCreatingChild = ViewModel.IsCreatingChild;
+        if (path != null)
+            Navigation.NavigateTo(path);
         StateHasChanged();
-
-        try
-        {
-            var createDto = new ArticleCreateDto
-            {
-                Title = string.Empty,
-                Body = string.Empty,
-                ParentId = _article.Id, // Current article becomes the parent
-                EffectiveDate = DateTime.Now,
-                WorldId = _article.WorldId,
-                CampaignId = _article.CampaignId
-            };
-
-            var created = await ArticleApi.CreateArticleAsync(createDto);
-            if (created == null)
-            {
-                Snackbar.Add("Failed to create child article", Severity.Error);
-                return;
-            }
-            
-            await TreeState.RefreshAsync();
-            TreeState.ExpandPathToAndSelect(created.Id);
-            TreeState.ShouldFocusTitle = true;
-            
-            // Fetch the full article to get breadcrumbs for navigation
-            var articleDetail = await ArticleApi.GetArticleDetailAsync(created.Id);
-            if (articleDetail != null && articleDetail.Breadcrumbs.Any())
-            {
-                var path = BreadcrumbService.BuildArticleUrl(articleDetail.Breadcrumbs);
-                Navigation.NavigateTo(path);
-            }
-            else
-            {
-                // Fallback to slug-only path
-                Navigation.NavigateTo($"/article/{created.Slug}");
-            }
-            
-            Snackbar.Add("Child article created", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error creating child article under {ParentId}", _article.Id);
-            Snackbar.Add($"Failed to create child article: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _isCreatingChild = false;
-            StateHasChanged();
-        }
     }
 
     #endregion

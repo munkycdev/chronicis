@@ -236,7 +236,7 @@ public sealed class WorldLinksViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.LogErrorSanitized(ex, "Error updating link {LinkId}", EditingLinkId.Value);
+            _logger.LogErrorSanitized(ex, "Error updating link {LinkId}", EditingLinkId!.Value);
             _notifier.Error($"Failed to update link: {ex.Message}");
         }
         finally
