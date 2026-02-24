@@ -151,4 +151,52 @@ public class DashboardTests : MudBlazorTestContext
         cut.WaitForAssertion(() =>
             Assert.Contains("Begin Your Chronicle", cut.Markup, StringComparison.OrdinalIgnoreCase));
     }
+
+    [Fact]
+    public void Dashboard_WhenQuoteAndPromptsPresent_RendersHeroQuoteAndPromptVariants()
+    {
+        var userApi = Substitute.For<IUserApiService>();
+        userApi.GetUserProfileAsync().Returns(new UserProfileDto { HasCompletedOnboarding = true });
+
+        var dashboardApi = Substitute.For<IDashboardApiService>();
+        dashboardApi.GetDashboardAsync().Returns(new DashboardDto
+        {
+            UserDisplayName = "Bilbo",
+            Worlds = new(),
+            ClaimedCharacters = new(),
+            Prompts = new()
+            {
+                new PromptDto
+                {
+                    Title = "Add a village",
+                    Message = "Your world needs a hometown.",
+                    ActionUrl = "/world/shire",
+                    Category = PromptCategory.MissingFundamental,
+                    Icon = "🏘️"
+                },
+                new PromptDto
+                {
+                    Title = "Review notes",
+                    Message = "Summarize last session.",
+                    ActionUrl = null,
+                    Category = PromptCategory.Suggestion,
+                    Icon = "📝"
+                }
+            }
+        });
+
+        var quoteService = Substitute.For<IQuoteService>();
+        quoteService.GetRandomQuoteAsync().Returns(new Quote { Content = "Not all those who wander are lost", Author = "Tolkien" });
+
+        var vm = CreateViewModel(dashboardApi: dashboardApi, userApi: userApi, quoteService: quoteService);
+        var cut = RenderWithViewModel(vm);
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Tolkien", cut.Markup, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("Add a village", cut.Markup, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("Review notes", cut.Markup, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("prompt-arrow", cut.Markup, StringComparison.OrdinalIgnoreCase);
+        });
+    }
 }

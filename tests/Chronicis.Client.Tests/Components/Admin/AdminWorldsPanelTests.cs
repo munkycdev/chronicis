@@ -90,4 +90,24 @@ public class AdminWorldsPanelTests : MudBlazorTestContext
 
         Assert.Contains("Failed to load worlds", cut.Markup, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public async Task OpenDeleteDialogAsync_WhenCanceled_DoesNotDeleteWorld_AndCoversDialogOptions()
+    {
+        var world = new AdminWorldSummaryDto { Id = Guid.NewGuid(), Name = "Faerun" };
+        var adminApi = SetupAdminApi(new List<AdminWorldSummaryDto> { world });
+
+        var dialogService = Substitute.For<IDialogService>();
+        var dialogRef = Substitute.For<IDialogReference>();
+        dialogRef.Result.Returns(Task.FromResult<DialogResult?>(DialogResult.Cancel()));
+        dialogService.ShowAsync<DeleteWorldDialog>(Arg.Any<string>(), Arg.Any<DialogParameters<DeleteWorldDialog>>(), Arg.Any<DialogOptions>())
+            .Returns(dialogRef);
+        Services.AddSingleton(dialogService);
+        RenderComponent<MudPopoverProvider>();
+
+        var cut = RenderComponent<AdminWorldsPanel>();
+        await cut.Instance.OpenDeleteDialogAsync(world);
+
+        await adminApi.DidNotReceive().DeleteWorldAsync(Arg.Any<Guid>());
+    }
 }

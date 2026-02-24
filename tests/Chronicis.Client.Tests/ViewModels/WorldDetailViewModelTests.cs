@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Security.Claims;
 using Chronicis.Client.Abstractions;
 using Chronicis.Client.Services;
@@ -125,6 +126,7 @@ public class WorldDetailViewModelTests
         await c.Vm.LoadAsync(world.Id, c.SharingVm, c.LinksVm, c.DocumentsVm);
 
         Assert.True(c.Vm.IsCurrentUserGm);
+        Assert.NotEqual(Guid.Empty, c.Vm.CurrentUserId);
     }
 
     [Fact]
@@ -272,5 +274,62 @@ public class WorldDetailViewModelTests
         var c = CreateSut();
         await c.Vm.OnMembersChangedAsync(); // World is null, no exception
         await c.WorldApi.DidNotReceive().GetWorldAsync(Arg.Any<Guid>());
+    }
+
+    // ---------------------------------------------------------------------------
+    // NavigateToArticle (private helper)
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public void NavigateToArticle_WhenBreadcrumbsPresent_UsesBreadcrumbPath()
+    {
+        var c = CreateSut();
+        var article = new ArticleDto
+        {
+            Slug = "fallback-slug",
+            Breadcrumbs = new List<BreadcrumbDto> { new() { Title = "World", Slug = "world" } }
+        };
+        c.BreadcrumbService.BuildArticleUrl(article.Breadcrumbs).Returns("/article/world");
+
+        InvokePrivate(c.Vm, "NavigateToArticle", article);
+
+        c.Navigator.Received(1).NavigateTo("/article/world");
+    }
+
+    [Fact]
+    public void NavigateToArticle_WhenBreadcrumbsEmpty_UsesSlugFallback()
+    {
+        var c = CreateSut();
+        var article = new ArticleDto
+        {
+            Slug = "fallback-slug",
+            Breadcrumbs = new List<BreadcrumbDto>()
+        };
+
+        InvokePrivate(c.Vm, "NavigateToArticle", article);
+
+        c.Navigator.Received(1).NavigateTo("/article/fallback-slug");
+    }
+
+    [Fact]
+    public void NavigateToArticle_WhenBreadcrumbsNull_UsesSlugFallback()
+    {
+        var c = CreateSut();
+        var article = new ArticleDto
+        {
+            Slug = "fallback-slug",
+            Breadcrumbs = null
+        };
+
+        InvokePrivate(c.Vm, "NavigateToArticle", article);
+
+        c.Navigator.Received(1).NavigateTo("/article/fallback-slug");
+    }
+
+    private static object? InvokePrivate(object target, string methodName, params object[] args)
+    {
+        var method = target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+        return method!.Invoke(target, args);
     }
 }

@@ -196,6 +196,16 @@ public class ArticleDetailViewModelTests
         Assert.True(c.Vm.HasUnsavedChanges);
     }
 
+    [Fact]
+    public void IsSummaryExpanded_CanBeSet()
+    {
+        var c = CreateSut();
+
+        c.Vm.IsSummaryExpanded = true;
+
+        Assert.True(c.Vm.IsSummaryExpanded);
+    }
+
     // ---------------------------------------------------------------------------
     // SaveArticleAsync
     // ---------------------------------------------------------------------------

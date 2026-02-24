@@ -203,4 +203,42 @@ public class PublicWorldPageTests : MudBlazorTestContext
 
         Assert.Contains("Magic", cut.Markup, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void PublicWorldPage_WhenArticleTreeHasItems_RendersSidebarTreeItems()
+    {
+        var publicApi = Substitute.For<IPublicApiService>();
+        publicApi.GetPublicWorldAsync("tree-world").Returns(new WorldDetailDto { Name = "Tree World" });
+        publicApi.GetPublicArticleTreeAsync("tree-world").Returns(new List<ArticleTreeDto>
+        {
+            new() { Id = Guid.NewGuid(), Title = "Lore", Slug = "lore", Children = new List<ArticleTreeDto>() }
+        });
+
+        var vm = CreateViewModel(publicApi: publicApi);
+        var cut = RenderWithViewModel(vm, "tree-world");
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("public-article-tree", cut.Markup, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("Lore", cut.Markup, StringComparison.OrdinalIgnoreCase);
+        });
+    }
+
+    [Fact]
+    public void PublicWorldPage_WhenArticleIsLoading_RendersSkeletonState()
+    {
+        var publicApi = Substitute.For<IPublicApiService>();
+        publicApi.GetPublicWorldAsync("test-world").Returns(new WorldDetailDto { Name = "Test World" });
+        publicApi.GetPublicArticleTreeAsync("test-world").Returns(new List<ArticleTreeDto>());
+        var articleTcs = new TaskCompletionSource<ArticleDto?>();
+        publicApi.GetPublicArticleAsync("test-world", "lore/magic").Returns(articleTcs.Task);
+
+        var vm = CreateViewModel(publicApi: publicApi);
+        var cut = RenderWithViewModel(vm, "test-world", "lore/magic");
+
+        cut.WaitForAssertion(() =>
+            Assert.Contains("mud-skeleton", cut.Markup, StringComparison.OrdinalIgnoreCase));
+
+        articleTcs.SetResult(null);
+    }
 }

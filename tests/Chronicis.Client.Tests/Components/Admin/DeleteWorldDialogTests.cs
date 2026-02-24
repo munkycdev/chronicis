@@ -109,6 +109,18 @@ public class DeleteWorldDialogTests : MudBlazorTestContext
             Assert.DoesNotContain("Delete Forever", provider.Markup, StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task Dialog_CancelAndConfirm_WithNoMudDialogInstance_DoNotThrow()
+    {
+        var cut = RenderComponent<DeleteWorldDialog>(p => p.Add(x => x.WorldName, "Standalone"));
+
+        var cancelEx = await Record.ExceptionAsync(() => cut.InvokeAsync(() => InvokePrivate(cut.Instance, "Cancel")));
+        var confirmEx = await Record.ExceptionAsync(() => cut.InvokeAsync(() => InvokePrivate(cut.Instance, "Confirm")));
+
+        Assert.Null(cancelEx);
+        Assert.Null(confirmEx);
+    }
+
     private static void SetField(object target, string fieldName, object? value)
     {
         var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);

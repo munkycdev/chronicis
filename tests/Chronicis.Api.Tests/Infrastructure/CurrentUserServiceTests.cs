@@ -546,7 +546,7 @@ public class CurrentUserServiceTests
 
         _userService.GetOrCreateUserAsync(Arg.Any<string>(), Arg.Any<string>(),
             Arg.Any<string>(), Arg.Any<string?>())
-            .Returns((User?)testUser);
+            .Returns(testUser);
 
         _sysAdminChecker.IsSysAdmin("auth0|sysadmin", testUser.Email).Returns(true);
 
@@ -579,7 +579,7 @@ public class CurrentUserServiceTests
 
         _userService.GetOrCreateUserAsync(Arg.Any<string>(), Arg.Any<string>(),
             Arg.Any<string>(), Arg.Any<string?>())
-            .Returns((User?)null);
+            .Returns((User)null!);
 
         _sysAdminChecker.IsSysAdmin("auth0|ghost", null).Returns(false);
 

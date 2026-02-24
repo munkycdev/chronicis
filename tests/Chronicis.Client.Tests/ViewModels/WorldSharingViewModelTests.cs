@@ -99,6 +99,33 @@ public class WorldSharingViewModelTests
         Assert.Equal("existing-slug", c.Vm.PublicSlug);
     }
 
+    [Fact]
+    public void OnPublicToggleChanged_WhenPublicAndSlugEmpty_AndWorldNull_UsesEmptyFallbacks()
+    {
+        var c = CreateSut();
+        c.Vm.IsPublic = true;
+        c.Vm.PublicSlug = string.Empty;
+
+        c.Vm.OnPublicToggleChanged(null);
+
+        Assert.Equal(string.Empty, c.Vm.PublicSlug);
+    }
+
+    [Fact]
+    public void OnPublicToggleChanged_WhenWorldNameNull_GeneratesFromEmptyName()
+    {
+        var c = CreateSut();
+        c.Vm.IsPublic = true;
+        c.Vm.PublicSlug = string.Empty;
+        c.WorldApi.CheckPublicSlugAsync(Arg.Any<Guid>(), Arg.Any<string>()).Returns(new PublicSlugCheckResultDto { IsAvailable = true });
+
+        var world = new WorldDetailDto { Id = Guid.NewGuid(), Name = null! };
+
+        c.Vm.OnPublicToggleChanged(world);
+
+        Assert.Equal(string.Empty, c.Vm.PublicSlug);
+    }
+
     // ---------------------------------------------------------------------------
     // CheckSlugAvailabilityAsync
     // ---------------------------------------------------------------------------

@@ -110,7 +110,11 @@ public sealed class PublicWorldPageViewModel : ViewModelBase, IAsyncDisposable
                 ArticleTree = await _publicApi.GetPublicArticleTreeAsync(publicSlug);
 
                 if (!string.IsNullOrEmpty(articlePath))
+                {
+                    // Switch from page-level loading to article-level skeleton state.
+                    IsLoading = false;
                     await LoadArticleAsync(publicSlug, articlePath);
+                }
                 else
                     CurrentArticle = null;
             }

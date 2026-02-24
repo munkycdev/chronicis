@@ -93,11 +93,12 @@ public class WorldDocumentServiceTests
     [Fact]
     public void Validate_PassesWithNullContentType()
     {
+        string nullContentType = null!;
         _sut.ValidateFileUpload(new WorldDocumentUploadRequestDto
         {
             FileSizeBytes = 1024,
             FileName = "notes.txt",
-            ContentType = default
+            ContentType = nullContentType
         });
     }
 

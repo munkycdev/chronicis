@@ -284,4 +284,16 @@ public class DashboardViewModelActionsTests
 
         Assert.False(raised);
     }
+
+    [Fact]
+    public void TreeStateChanged_BeforeDispose_RaisesPropertyChangedForOrderedWorlds()
+    {
+        var c = CreateSut();
+        string? propertyName = null;
+        c.Sut.PropertyChanged += (_, e) => propertyName = e.PropertyName;
+
+        c.TreeState.OnStateChanged += Raise.Event<Action>();
+
+        Assert.Equal(nameof(DashboardViewModel.OrderedWorlds), propertyName);
+    }
 }
