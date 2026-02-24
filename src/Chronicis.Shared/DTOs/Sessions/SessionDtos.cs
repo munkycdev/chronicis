@@ -47,11 +47,14 @@ public class SessionCreateDto
 }
 
 /// <summary>
-/// Request DTO for updating Session notes (GM only).
+/// Request DTO for updating editable Session fields (GM only).
 /// </summary>
 [ExcludeFromCodeCoverage]
 public class SessionUpdateDto
 {
+    public string? Name { get; set; }
+    public DateTime? SessionDate { get; set; }
+    public bool ClearSessionDate { get; set; }
     public string? PublicNotes { get; set; }
     public string? PrivateNotes { get; set; }
 }
