@@ -185,6 +185,26 @@ public class SessionService : ISessionService
             return ServiceResult<SessionDto>.ValidationError("Request body is required");
         }
 
+        if (dto.ClearSessionDate && dto.SessionDate.HasValue)
+        {
+            return ServiceResult<SessionDto>.ValidationError("Session date and ClearSessionDate cannot both be set");
+        }
+
+        string? trimmedName = null;
+        if (dto.Name != null)
+        {
+            trimmedName = dto.Name.Trim();
+            if (string.IsNullOrWhiteSpace(trimmedName))
+            {
+                return ServiceResult<SessionDto>.ValidationError("Session name is required");
+            }
+
+            if (trimmedName.Length > 500)
+            {
+                return ServiceResult<SessionDto>.ValidationError("Session name must be 500 characters or fewer");
+            }
+        }
+
         var session = await _context.Sessions
             .Include(s => s.Arc)
                 .ThenInclude(a => a.Campaign)
@@ -208,13 +228,27 @@ public class SessionService : ISessionService
             return ServiceResult<SessionDto>.Forbidden("Only GMs can update session notes");
         }
 
+        if (trimmedName != null)
+        {
+            session.Name = trimmedName;
+        }
+
+        if (dto.ClearSessionDate)
+        {
+            session.SessionDate = null;
+        }
+        else if (dto.SessionDate.HasValue)
+        {
+            session.SessionDate = dto.SessionDate;
+        }
+
         session.PublicNotes = dto.PublicNotes;
         session.PrivateNotes = dto.PrivateNotes;
         session.ModifiedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Updated session notes for session {SessionId}", sessionId);
+        _logger.LogDebug("Updated session {SessionId}", sessionId);
 
         return ServiceResult<SessionDto>.Success(MapDto(session));
     }

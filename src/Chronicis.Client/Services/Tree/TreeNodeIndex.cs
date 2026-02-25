@@ -99,13 +99,34 @@ internal sealed class TreeNodeIndex
     /// </summary>
     public TreeNode? FindParentNode(TreeNode child)
     {
-        foreach (var node in _nodes.Values)
+        foreach (var root in _rootNodes)
         {
-            if (node.Children.Contains(child))
+            var parent = FindParentNodeRecursive(root, child);
+            if (parent != null)
             {
-                return node;
+                return parent;
             }
         }
+
+        return null;
+    }
+
+    private static TreeNode? FindParentNodeRecursive(TreeNode current, TreeNode child)
+    {
+        if (current.Children.Contains(child))
+        {
+            return current;
+        }
+
+        foreach (var descendant in current.Children)
+        {
+            var parent = FindParentNodeRecursive(descendant, child);
+            if (parent != null)
+            {
+                return parent;
+            }
+        }
+
         return null;
     }
 }

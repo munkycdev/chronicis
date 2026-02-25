@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Chronicis.Api.Controllers;
 
 /// <summary>
-/// API endpoints for Session entity creation and note updates.
+/// API endpoints for Session entity creation and updates.
 /// </summary>
 [ApiController]
 [Authorize]
@@ -99,7 +99,7 @@ public class SessionsController : ControllerBase
     }
 
     /// <summary>
-    /// PATCH /api/sessions/{sessionId} - Update Session.PublicNotes and Session.PrivateNotes (GM only).
+    /// PATCH /api/sessions/{sessionId} - Update editable Session fields (GM only).
     /// </summary>
     [HttpPatch("sessions/{sessionId:guid}")]
     public async Task<ActionResult<SessionDto>> UpdateSessionNotes(Guid sessionId, [FromBody] SessionUpdateDto dto)
@@ -111,7 +111,7 @@ public class SessionsController : ControllerBase
             return BadRequest(new { error = "Request body is required" });
         }
 
-        _logger.LogDebug("Updating session notes for session {SessionId} by user {UserId}", sessionId, user.Id);
+        _logger.LogDebug("Updating session {SessionId} by user {UserId}", sessionId, user.Id);
 
         var result = await _sessionService.UpdateSessionNotesAsync(sessionId, dto, user.Id);
 

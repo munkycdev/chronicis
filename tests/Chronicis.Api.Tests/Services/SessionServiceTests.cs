@@ -80,6 +80,62 @@ public class SessionServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task UpdateSessionNotesAsync_Gm_CanUpdateSessionNameAndDate()
+    {
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            ArcId = TestHelpers.FixedIds.Arc1,
+            Name = "Original Session",
+            SessionDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+            PublicNotes = "Public",
+            PrivateNotes = "Private",
+            CreatedBy = TestHelpers.FixedIds.User1,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Sessions.Add(session);
+        await _context.SaveChangesAsync();
+
+        var updatedDate = new DateTime(2026, 2, 24, 0, 0, 0, DateTimeKind.Utc);
+        var updateDto = new SessionUpdateDto
+        {
+            Name = "  Session Renamed  ",
+            SessionDate = updatedDate,
+            PublicNotes = "Public Updated",
+            PrivateNotes = "Private Updated"
+        };
+
+        var updateResult = await _service.UpdateSessionNotesAsync(session.Id, updateDto, TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.Success, updateResult.Status);
+        Assert.NotNull(updateResult.Value);
+        Assert.Equal("Session Renamed", updateResult.Value!.Name);
+        Assert.Equal(updatedDate, updateResult.Value.SessionDate);
+
+        var clearDateDto = new SessionUpdateDto
+        {
+            Name = "Session Renamed",
+            ClearSessionDate = true,
+            PublicNotes = "Public Updated",
+            PrivateNotes = "Private Updated"
+        };
+
+        var clearDateResult = await _service.UpdateSessionNotesAsync(session.Id, clearDateDto, TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.Success, clearDateResult.Status);
+        Assert.NotNull(clearDateResult.Value);
+        Assert.Null(clearDateResult.Value!.SessionDate);
+
+        var persisted = await _context.Sessions.FindAsync(session.Id);
+        Assert.NotNull(persisted);
+        Assert.Equal("Session Renamed", persisted!.Name);
+        Assert.Null(persisted.SessionDate);
+        Assert.Equal("Public Updated", persisted.PublicNotes);
+        Assert.Equal("Private Updated", persisted.PrivateNotes);
+        Assert.NotNull(persisted.ModifiedAt);
+    }
+
+    [Fact]
     public async Task CreateSessionAsync_CreatesExactlyOneDefaultPublicSessionNote()
     {
         var dto = new SessionCreateDto

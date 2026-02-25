@@ -187,6 +187,12 @@ public class ArticleMoveDto
     /// The new parent article ID. Set to null to move the article to root level.
     /// </summary>
     public Guid? NewParentId { get; set; }
+
+    /// <summary>
+    /// Optional target Session entity for SessionNote moves.
+    /// When set, the moved article is attached to this session.
+    /// </summary>
+    public Guid? NewSessionId { get; set; }
 }
 
 /// <summary>

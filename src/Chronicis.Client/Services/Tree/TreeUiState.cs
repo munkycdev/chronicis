@@ -256,20 +256,35 @@ internal sealed class TreeUiState
     {
         var path = new List<TreeNode>();
         var current = targetNode;
+        var visitedNodes = new HashSet<TreeNode>();
 
         while (current != null)
         {
+            if (!visitedNodes.Add(current))
+            {
+                _logger.LogWarning(
+                    "Detected cycle while building tree path for node {NodeId}. This can happen when legacy Session and Article nodes share an ID.",
+                    targetNode.Id);
+                break;
+            }
+
             path.Insert(0, current);
 
-            if (current.ParentId.HasValue && _nodeIndex.TryGetNode(current.ParentId.Value, out var parent) && parent != null)
+            TreeNode? next = null;
+
+            if (current.ParentId.HasValue &&
+                _nodeIndex.TryGetNode(current.ParentId.Value, out var parent) &&
+                parent != null &&
+                !ReferenceEquals(parent, current))
             {
-                current = parent;
+                next = parent;
             }
-            else
-            {
-                // Check if this node is a child of a world/group node
-                current = _nodeIndex.FindParentNode(current);
-            }
+
+            // Duplicate IDs (legacy Session article + Session entity) can cause the index lookup
+            // to return the current node instead of its structural parent. Fall back to tree traversal.
+            next ??= _nodeIndex.FindParentNode(current);
+
+            current = next;
         }
 
         return path;

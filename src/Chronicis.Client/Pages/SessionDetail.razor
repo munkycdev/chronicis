@@ -5,6 +5,7 @@
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.Enums
+@using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Authorization
 @inject SessionDetailViewModel ViewModel
 
@@ -27,12 +28,40 @@ else
                      Class="mr-3 generic-container-icon"
                      Style="color: var(--chronicis-beige-gold); font-size: 2.5rem;" />
             <div class="flex-grow-1">
-                <MudText Typo="Typo.h4" Style="font-family: var(--chronicis-font-heading);">
-                    @ViewModel.Session.Name
-                </MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    Session Date: @FormatSessionDate(ViewModel.Session.SessionDate)
-                </MudText>
+                @if (ViewModel.IsCurrentUserGM)
+                {
+                    <MudTextField @bind-Value="ViewModel.EditName"
+                                  Variant="Variant.Text"
+                                  Placeholder="Untitled Session"
+                                  Immediate="true"
+                                  Underline="false"
+                                  Class="flex-grow-1"
+                                  Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
+                                  @onkeydown="OnSessionTitleKeyDown" />
+                    <div class="d-flex align-center flex-wrap">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mr-2">
+                            Session Date:
+                        </MudText>
+                        <MudDatePicker Date="@ViewModel.EditSessionDate"
+                                       DateChanged="OnSessionDateChanged"
+                                       DateFormat="MMMM d, yyyy"
+                                       Variant="Variant.Text"
+                                       Margin="Margin.Dense"
+                                       Underline="false"
+                                       Clearable="true"
+                                       Editable="true"
+                                       Class="mt-0" />
+                    </div>
+                }
+                else
+                {
+                    <MudText Typo="Typo.h4" Style="font-family: var(--chronicis-font-heading);">
+                        @ViewModel.Session.Name
+                    </MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Session Date: @FormatSessionDate(ViewModel.Session.SessionDate)
+                    </MudText>
+                }
             </div>
             @if (ViewModel.IsCurrentUserGM)
             {
@@ -104,7 +133,7 @@ else
                            OnClick="@ViewModel.SaveNotesAsync"
                            Disabled="@(ViewModel.IsSavingNotes || !ViewModel.HasUnsavedChanges)"
                            StartIcon="@Icons.Material.Filled.Save">
-                    Save Notes
+                    Save Changes
                 </MudButton>
             </div>
         }
@@ -151,10 +180,24 @@ else
 
         <MudDivider Class="my-4" />
 
-        <MudText Typo="Typo.h6" Class="mb-2" Style="color: var(--chronicis-beige-gold);">
-            <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Class="mr-2" />
-            Session Notes
-        </MudText>
+        <div class="d-flex align-center justify-space-between flex-wrap mb-2">
+            <MudText Typo="Typo.h6" Style="color: var(--chronicis-beige-gold);">
+                <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Class="mr-2" />
+                Session Notes
+            </MudText>
+
+            @if (ViewModel.CanCreateSessionNote)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           Size="Size.Small"
+                           OnClick="@ViewModel.CreateSessionNoteAsync"
+                           Disabled="@ViewModel.IsCreatingSessionNote"
+                           StartIcon="@Icons.Material.Filled.NoteAdd">
+                    @(ViewModel.IsCreatingSessionNote ? "Adding..." : "Add Session Note")
+                </MudButton>
+            }
+        </div>
 
         @if (ViewModel.SessionNotes.Any())
         {
@@ -196,6 +239,19 @@ else
 
     private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
         => InvokeAsync(StateHasChanged);
+
+    private async Task OnSessionTitleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && ViewModel.IsCurrentUserGM)
+        {
+            await ViewModel.SaveNotesAsync();
+        }
+    }
+
+    private void OnSessionDateChanged(DateTime? value)
+    {
+        ViewModel.EditSessionDate = value?.Date;
+    }
 
     private static string FormatSessionDate(DateTime? sessionDate)
         => sessionDate?.ToLocalTime().ToString("MMMM d, yyyy") ?? "Not set";

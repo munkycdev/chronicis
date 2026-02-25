@@ -24,7 +24,7 @@ public interface ISessionApiService
     Task<SessionDto?> GetSessionAsync(Guid sessionId);
 
     /// <summary>
-    /// Update Session public/private notes.
+    /// Update editable Session fields (notes and metadata).
     /// </summary>
     Task<SessionDto?> UpdateSessionNotesAsync(Guid sessionId, SessionUpdateDto dto);
 

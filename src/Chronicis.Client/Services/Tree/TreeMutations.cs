@@ -237,6 +237,12 @@ internal sealed class TreeMutations
             return await MoveToVirtualGroupAsync(articleId, node, targetNode);
         }
 
+        // Handle drop onto a Session entity (attach SessionNote to session root)
+        if (targetNode?.NodeType == TreeNodeType.Session)
+        {
+            return await MoveToSessionAsync(articleId, node, targetNode);
+        }
+
         // Regular move to another article or root
         return await MoveToArticleOrRootAsync(articleId, node, newParentId, targetNode);
     }
@@ -359,6 +365,35 @@ internal sealed class TreeMutations
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to move article {ArticleId}", articleId);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Handles moving a SessionNote article onto a Session entity node.
+    /// </summary>
+    private async Task<bool> MoveToSessionAsync(Guid articleId, TreeNode node, TreeNode targetSessionNode)
+    {
+        if (node.ArticleType != ArticleType.SessionNote)
+        {
+            _logger.LogWarning("Only SessionNote articles can be dropped onto a Session node");
+            return false;
+        }
+
+        try
+        {
+            var success = await _articleApi.MoveArticleAsync(articleId, null, targetSessionNode.Id);
+
+            if (success && _refreshCallback != null)
+            {
+                await _refreshCallback();
+            }
+
+            return success;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to move SessionNote {ArticleId} to session {SessionId}", articleId, targetSessionNode.Id);
             return false;
         }
     }

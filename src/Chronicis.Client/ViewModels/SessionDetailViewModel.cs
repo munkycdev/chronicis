@@ -29,6 +29,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
     private bool _isLoading = true;
     private bool _isSavingNotes;
     private bool _isGeneratingSummary;
+    private bool _isCreatingSessionNote;
     private bool _hasUnsavedChanges;
     private SessionDto? _session;
     private ArcDto? _arc;
@@ -38,6 +39,8 @@ public sealed class SessionDetailViewModel : ViewModelBase
     private List<BreadcrumbItem> _breadcrumbs = new();
     private bool _isCurrentUserGm;
     private Guid _currentUserId;
+    private string _editName = string.Empty;
+    private DateTime? _editSessionDate;
     private string _editPublicNotes = string.Empty;
     private string _editPrivateNotes = string.Empty;
 
@@ -72,6 +75,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
     public bool IsLoading { get => _isLoading; private set => SetField(ref _isLoading, value); }
     public bool IsSavingNotes { get => _isSavingNotes; private set => SetField(ref _isSavingNotes, value); }
     public bool IsGeneratingSummary { get => _isGeneratingSummary; private set => SetField(ref _isGeneratingSummary, value); }
+    public bool IsCreatingSessionNote { get => _isCreatingSessionNote; private set => SetField(ref _isCreatingSessionNote, value); }
     public bool HasUnsavedChanges { get => _hasUnsavedChanges; private set => SetField(ref _hasUnsavedChanges, value); }
     public SessionDto? Session { get => _session; private set => SetField(ref _session, value); }
     public ArcDto? Arc { get => _arc; private set => SetField(ref _arc, value); }
@@ -81,6 +85,35 @@ public sealed class SessionDetailViewModel : ViewModelBase
     public List<BreadcrumbItem> Breadcrumbs { get => _breadcrumbs; private set => SetField(ref _breadcrumbs, value); }
     public bool IsCurrentUserGM { get => _isCurrentUserGm; private set => SetField(ref _isCurrentUserGm, value); }
     public Guid CurrentUserId { get => _currentUserId; private set => SetField(ref _currentUserId, value); }
+    public bool CanCreateSessionNote => Session != null
+        && Arc != null
+        && Campaign != null
+        && World != null
+        && CurrentUserId != Guid.Empty;
+
+    public string EditName
+    {
+        get => _editName;
+        set
+        {
+            if (SetField(ref _editName, value) && Session != null && IsCurrentUserGM)
+            {
+                UpdateDirtyState();
+            }
+        }
+    }
+
+    public DateTime? EditSessionDate
+    {
+        get => _editSessionDate;
+        set
+        {
+            if (SetField(ref _editSessionDate, value) && Session != null && IsCurrentUserGM)
+            {
+                UpdateDirtyState();
+            }
+        }
+    }
 
     public string EditPublicNotes
     {
@@ -120,6 +153,8 @@ public sealed class SessionDetailViewModel : ViewModelBase
             }
 
             Session = session;
+            EditName = session.Name;
+            EditSessionDate = session.SessionDate?.Date;
             EditPublicNotes = session.PublicNotes ?? string.Empty;
             EditPrivateNotes = session.PrivateNotes ?? string.Empty;
             HasUnsavedChanges = false;
@@ -159,12 +194,31 @@ public sealed class SessionDetailViewModel : ViewModelBase
             return;
         }
 
+        var trimmedName = (EditName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(trimmedName))
+        {
+            _notifier.Error("Session title is required");
+            return;
+        }
+
+        if (trimmedName.Length > 500)
+        {
+            _notifier.Error("Session title must be 500 characters or fewer");
+            return;
+        }
+
+        var editedSessionDate = EditSessionDate?.Date;
+        var shouldClearSessionDate = Session.SessionDate.HasValue && !editedSessionDate.HasValue;
+
         IsSavingNotes = true;
 
         try
         {
             var updated = await _sessionApi.UpdateSessionNotesAsync(Session.Id, new SessionUpdateDto
             {
+                Name = trimmedName,
+                SessionDate = editedSessionDate,
+                ClearSessionDate = shouldClearSessionDate,
                 PublicNotes = string.IsNullOrWhiteSpace(EditPublicNotes) ? null : EditPublicNotes,
                 PrivateNotes = string.IsNullOrWhiteSpace(EditPrivateNotes) ? null : EditPrivateNotes
             });
@@ -176,15 +230,20 @@ public sealed class SessionDetailViewModel : ViewModelBase
             }
 
             Session = updated;
+            EditName = updated.Name;
+            EditSessionDate = updated.SessionDate?.Date;
             EditPublicNotes = updated.PublicNotes ?? string.Empty;
             EditPrivateNotes = updated.PrivateNotes ?? string.Empty;
+            Breadcrumbs = BuildBreadcrumbs();
+            await _titleService.SetTitleAsync(updated.Name);
+            await _treeState.RefreshAsync();
             HasUnsavedChanges = false;
-            _notifier.Success("Session notes saved");
+            _notifier.Success("Session saved");
         }
         catch (Exception ex)
         {
-            _logger.LogErrorSanitized(ex, "Error saving session notes for {SessionId}", Session.Id);
-            _notifier.Error($"Failed to save session notes: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Error saving session {SessionId}", Session.Id);
+            _notifier.Error($"Failed to save session: {ex.Message}");
         }
         finally
         {
@@ -227,6 +286,89 @@ public sealed class SessionDetailViewModel : ViewModelBase
         }
     }
 
+    public async Task CreateSessionNoteAsync()
+    {
+        if (!CanCreateSessionNote || Session == null || Arc == null || Campaign == null || World == null || IsCreatingSessionNote)
+        {
+            return;
+        }
+
+        IsCreatingSessionNote = true;
+        ArticleDto? createdNote = null;
+        var attachedToSession = false;
+
+        try
+        {
+            var user = await _authService.GetCurrentUserAsync();
+            var title = BuildDefaultSessionNoteTitle(user?.DisplayName);
+
+            createdNote = await _articleApi.CreateArticleAsync(new ArticleCreateDto
+            {
+                Title = title,
+                WorldId = World.Id,
+                CampaignId = Campaign.Id,
+                ArcId = Arc.Id,
+                Type = ArticleType.SessionNote,
+                Visibility = ArticleVisibility.Public
+            });
+
+            if (createdNote == null)
+            {
+                _notifier.Error("Failed to create session note");
+                return;
+            }
+
+            attachedToSession = await _articleApi.MoveArticleAsync(createdNote.Id, newParentId: null, newSessionId: Session.Id);
+            if (!attachedToSession)
+            {
+                var deleted = await _articleApi.DeleteArticleAsync(createdNote.Id);
+                if (!deleted)
+                {
+                    _logger.LogWarning(
+                        "Failed to delete orphan session note {ArticleId} after attach failure for session {SessionId}",
+                        createdNote.Id,
+                        Session.Id);
+                }
+
+                _notifier.Error("Failed to attach session note to this session");
+                return;
+            }
+
+            await _treeState.RefreshAsync();
+            await LoadSessionNotesAsync(Session.Id);
+            _notifier.Success("Session note added");
+
+            await OpenSessionNoteAsync(new ArticleTreeDto
+            {
+                Id = createdNote.Id,
+                Slug = createdNote.Slug,
+                Title = createdNote.Title
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorSanitized(ex, "Error creating session note for session {SessionId}", Session.Id);
+
+            if (createdNote != null && !attachedToSession)
+            {
+                try
+                {
+                    await _articleApi.DeleteArticleAsync(createdNote.Id);
+                }
+                catch (Exception cleanupEx)
+                {
+                    _logger.LogWarning(cleanupEx, "Cleanup failed for created session note {ArticleId}", createdNote.Id);
+                }
+            }
+
+            _notifier.Error($"Failed to create session note: {ex.Message}");
+        }
+        finally
+        {
+            IsCreatingSessionNote = false;
+        }
+    }
+
     public async Task OpenSessionNoteAsync(ArticleTreeDto note)
     {
         try
@@ -265,9 +407,11 @@ public sealed class SessionDetailViewModel : ViewModelBase
             return;
         }
 
+        var nameChanged = !string.Equals(Session.Name ?? string.Empty, EditName ?? string.Empty, StringComparison.Ordinal);
+        var dateChanged = !AreSameDate(Session.SessionDate, EditSessionDate);
         var publicChanged = !string.Equals(Session.PublicNotes ?? string.Empty, EditPublicNotes ?? string.Empty, StringComparison.Ordinal);
         var privateChanged = !string.Equals(Session.PrivateNotes ?? string.Empty, EditPrivateNotes ?? string.Empty, StringComparison.Ordinal);
-        HasUnsavedChanges = publicChanged || privateChanged;
+        HasUnsavedChanges = nameChanged || dateChanged || publicChanged || privateChanged;
     }
 
     private async Task ResolveCurrentUserRoleAsync()
@@ -317,5 +461,18 @@ public sealed class SessionDetailViewModel : ViewModelBase
             new("Dashboard", href: "/dashboard"),
             new(Session.Name, href: null, disabled: true)
         };
+    }
+
+    private static bool AreSameDate(DateTime? left, DateTime? right)
+        => left?.Date == right?.Date;
+
+    private static string BuildDefaultSessionNoteTitle(string? displayName)
+    {
+        var trimmed = displayName?.Trim();
+        var title = string.IsNullOrWhiteSpace(trimmed)
+            ? "My Notes"
+            : $"{trimmed}'s Notes";
+
+        return title.Length <= 500 ? title : title[..500];
     }
 }
