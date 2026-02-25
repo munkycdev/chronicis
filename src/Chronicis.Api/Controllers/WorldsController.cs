@@ -2,6 +2,7 @@ using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -359,6 +360,7 @@ public class WorldsController : ControllerBase
         // Search articles by title match
         var titleMatches = await _context.Articles
             .Where(a => a.WorldId == id)
+            .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
             .Where(a => a.Title != null && a.Title.ToLower().Contains(normalizedQuery))
             .OrderBy(a => a.Title)
             .Take(20)
@@ -379,6 +381,7 @@ public class WorldsController : ControllerBase
         var aliasMatches = await _context.ArticleAliases
             .Include(aa => aa.Article)
             .Where(aa => aa.Article.WorldId == id)
+            .Where(aa => aa.Article.Type != ArticleType.Tutorial && aa.Article.WorldId != Guid.Empty)
             .Where(aa => aa.AliasText.ToLower().Contains(normalizedQuery))
             .Where(aa => !titleMatchIds.Contains(aa.ArticleId))
             .OrderBy(aa => aa.AliasText)

@@ -223,6 +223,7 @@ internal class Program
             builder.Services.AddScoped<IQuestService, QuestService>();
             builder.Services.AddScoped<IQuestUpdateService, QuestUpdateService>();
             builder.Services.AddScoped<IAdminService, AdminService>();
+            builder.Services.AddScoped<ITutorialService, TutorialService>();
 
             // Health check services
             builder.Services.AddScoped<DatabaseHealthCheckService>();

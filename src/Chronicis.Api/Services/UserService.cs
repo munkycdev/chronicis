@@ -532,18 +532,30 @@ public class UserService : IUserService
         };
 
         _context.Worlds.Add(clonedWorld);
-        if (clonedSummaryTemplates.Count > 0) _context.SummaryTemplates.AddRange(clonedSummaryTemplates);
-        if (clonedCampaigns.Count > 0) _context.Campaigns.AddRange(clonedCampaigns);
-        if (clonedArcs.Count > 0) _context.Arcs.AddRange(clonedArcs);
-        if (clonedSessions.Count > 0) _context.Sessions.AddRange(clonedSessions);
-        if (clonedQuests.Count > 0) _context.Quests.AddRange(clonedQuests);
-        if (clonedQuestUpdates.Count > 0) _context.QuestUpdates.AddRange(clonedQuestUpdates);
-        if (clonedArticles.Count > 0) _context.Articles.AddRange(clonedArticles);
-        if (clonedArticleAliases.Count > 0) _context.ArticleAliases.AddRange(clonedArticleAliases);
-        if (clonedArticleExternalLinks.Count > 0) _context.ArticleExternalLinks.AddRange(clonedArticleExternalLinks);
-        if (clonedArticleLinks.Count > 0) _context.ArticleLinks.AddRange(clonedArticleLinks);
-        if (clonedWorldLinks.Count > 0) _context.WorldLinks.AddRange(clonedWorldLinks);
-        if (clonedWorldResourceProviders.Count > 0) _context.WorldResourceProviders.AddRange(clonedWorldResourceProviders);
+        if (clonedSummaryTemplates.Count > 0)
+            _context.SummaryTemplates.AddRange(clonedSummaryTemplates);
+        if (clonedCampaigns.Count > 0)
+            _context.Campaigns.AddRange(clonedCampaigns);
+        if (clonedArcs.Count > 0)
+            _context.Arcs.AddRange(clonedArcs);
+        if (clonedSessions.Count > 0)
+            _context.Sessions.AddRange(clonedSessions);
+        if (clonedQuests.Count > 0)
+            _context.Quests.AddRange(clonedQuests);
+        if (clonedQuestUpdates.Count > 0)
+            _context.QuestUpdates.AddRange(clonedQuestUpdates);
+        if (clonedArticles.Count > 0)
+            _context.Articles.AddRange(clonedArticles);
+        if (clonedArticleAliases.Count > 0)
+            _context.ArticleAliases.AddRange(clonedArticleAliases);
+        if (clonedArticleExternalLinks.Count > 0)
+            _context.ArticleExternalLinks.AddRange(clonedArticleExternalLinks);
+        if (clonedArticleLinks.Count > 0)
+            _context.ArticleLinks.AddRange(clonedArticleLinks);
+        if (clonedWorldLinks.Count > 0)
+            _context.WorldLinks.AddRange(clonedWorldLinks);
+        if (clonedWorldResourceProviders.Count > 0)
+            _context.WorldResourceProviders.AddRange(clonedWorldResourceProviders);
         _context.WorldMembers.Add(ownerMembership);
 
         await _context.SaveChangesAsync();

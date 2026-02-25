@@ -3,6 +3,7 @@ using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -74,6 +75,7 @@ public class SearchController : ControllerBase
         // Title matches
         var titleMatches = await _context.Articles
             .Where(a => a.WorldId.HasValue && accessibleWorldIds.Contains(a.WorldId.Value))
+            .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
             .Where(a => a.Title != null && a.Title.ToLower().Contains(normalizedQuery))
             .OrderBy(a => a.Title)
             .Take(20)
@@ -92,6 +94,7 @@ public class SearchController : ControllerBase
         // Body content matches
         var bodyMatches = await _context.Articles
             .Where(a => a.WorldId.HasValue && accessibleWorldIds.Contains(a.WorldId.Value))
+            .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
             .Where(a => a.Body != null && a.Body.ToLower().Contains(normalizedQuery))
             .OrderByDescending(a => a.ModifiedAt ?? a.CreatedAt)
             .Take(20)
@@ -121,6 +124,7 @@ public class SearchController : ControllerBase
         var hashtagQuery = $"#{query}";
         var hashtagMatches = await _context.Articles
             .Where(a => a.WorldId.HasValue && accessibleWorldIds.Contains(a.WorldId.Value))
+            .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
             .Where(a => a.Body != null && a.Body.Contains(hashtagQuery))
             .OrderByDescending(a => a.ModifiedAt ?? a.CreatedAt)
             .Take(20)

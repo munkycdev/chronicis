@@ -14,6 +14,8 @@ namespace Chronicis.Api.Tests;
 [ExcludeFromCodeCoverage]
 public class ArticleServiceTests : IDisposable
 {
+    private static readonly Guid TutorialArticleId = Guid.Parse("10000000-0000-0000-0000-000000000099");
+
     private readonly ChronicisDbContext _context;
     private readonly ArticleService _service;
     private readonly IArticleHierarchyService _hierarchyService;
@@ -87,6 +89,16 @@ public class ArticleServiceTests : IDisposable
             createdBy: member.Id,
             title: "Member Article",
             slug: "member-article",
+            visibility: ArticleVisibility.Public));
+
+        // Global tutorial article (readable without world membership).
+        _context.Articles.Add(TestHelpers.CreateArticle(
+            id: TutorialArticleId,
+            worldId: Guid.Empty,
+            createdBy: owner.Id,
+            title: "Tutorial Article",
+            slug: "tutorial-article",
+            type: ArticleType.Tutorial,
             visibility: ArticleVisibility.Public));
 
         _context.SaveChanges();
@@ -192,6 +204,20 @@ public class ArticleServiceTests : IDisposable
         Assert.All(articles, a => Assert.Equal(TestHelpers.FixedIds.World1, a.WorldId));
     }
 
+    [Fact]
+    public async Task GetAllArticlesAsync_ExcludesTutorialArticles_EvenIfUserIsMemberOfSentinelWorld()
+    {
+        var tutorialWorld = TestHelpers.CreateWorld(id: Guid.Empty, ownerId: TestHelpers.FixedIds.User1, name: "System");
+        _context.Worlds.Add(tutorialWorld);
+        _context.WorldMembers.Add(TestHelpers.CreateWorldMember(worldId: Guid.Empty, userId: TestHelpers.FixedIds.User1));
+        await _context.SaveChangesAsync();
+
+        var articles = await _service.GetAllArticlesAsync(TestHelpers.FixedIds.User1);
+
+        Assert.DoesNotContain(articles, a => a.Id == TutorialArticleId);
+        Assert.DoesNotContain(articles, a => a.Type == ArticleType.Tutorial);
+    }
+
     // ────────────────────────────────────────────────────────────────
     //  GetChildrenAsync
     // ────────────────────────────────────────────────────────────────
@@ -276,6 +302,19 @@ public class ArticleServiceTests : IDisposable
         var article = await _service.GetArticleDetailAsync(Guid.NewGuid(), TestHelpers.FixedIds.User1);
 
         Assert.Null(article);
+    }
+
+    [Fact]
+    public async Task GetArticleDetailAsync_TutorialArticle_NonMemberCanSee()
+    {
+        _hierarchyService.BuildBreadcrumbsAsync(Arg.Any<Guid>(), Arg.Any<HierarchyWalkOptions>())
+            .Returns(new List<BreadcrumbDto>());
+
+        var article = await _service.GetArticleDetailAsync(TutorialArticleId, TestHelpers.FixedIds.User3);
+
+        Assert.NotNull(article);
+        Assert.Equal(ArticleType.Tutorial, article!.Type);
+        Assert.Equal(Guid.Empty, article.WorldId);
     }
 
     // ────────────────────────────────────────────────────────────────

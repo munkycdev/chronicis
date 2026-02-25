@@ -22,18 +22,32 @@ namespace Chronicis.Api.Services
         }
 
         /// <summary>
-        /// Get all articles the user has access to via WorldMembers.
+        /// Gets world-scoped articles the user can access via WorldMembers.
+        /// Tutorial/system articles are explicitly excluded from this query.
         /// Private articles are only visible to their creator.
-        /// This is the base query for all article access - use this instead of filtering by CreatedBy.
         /// </summary>
         private IQueryable<Article> GetAccessibleArticles(Guid userId)
         {
             return from a in _context.Articles
                    join wm in _context.WorldMembers on a.WorldId equals wm.WorldId
                    where wm.UserId == userId
+                   where a.Type != ArticleType.Tutorial
+                   where a.WorldId != Guid.Empty
                    // Private articles only visible to creator
                    where a.Visibility != ArticleVisibility.Private || a.CreatedBy == userId
                    select a;
+        }
+
+        /// <summary>
+        /// Gets articles readable by an authenticated user, including global tutorial articles.
+        /// </summary>
+        private IQueryable<Article> GetReadableArticles(Guid userId)
+        {
+            var worldScoped = GetAccessibleArticles(userId);
+            var tutorials = _context.Articles
+                .Where(a => a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty);
+
+            return worldScoped.Concat(tutorials);
         }
 
         /// <summary>
@@ -164,7 +178,7 @@ namespace Chronicis.Api.Services
         /// </summary>
         public async Task<ArticleDto?> GetArticleDetailAsync(Guid id, Guid userId)
         {
-            var article = await GetAccessibleArticles(userId)
+            var article = await GetReadableArticles(userId)
                 .AsNoTracking()
                 .Where(a => a.Id == id)
                 .Select(a => new ArticleDto

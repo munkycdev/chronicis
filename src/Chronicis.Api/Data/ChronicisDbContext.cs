@@ -18,6 +18,7 @@ public class ChronicisDbContext : DbContext
     public DbSet<Campaign> Campaigns { get; set; } = null!;
     public DbSet<Arc> Arcs { get; set; } = null!;
     public DbSet<Article> Articles { get; set; } = null!;
+    public DbSet<TutorialPage> TutorialPages { get; set; } = null!;
     public DbSet<ArticleAlias> ArticleAliases { get; set; } = null!;
     public DbSet<ArticleLink> ArticleLinks { get; set; } = null!;
     public DbSet<ArticleExternalLink> ArticleExternalLinks { get; set; } = null!;
@@ -45,6 +46,7 @@ public class ChronicisDbContext : DbContext
         ConfigureCampaign(modelBuilder);
         ConfigureArc(modelBuilder);
         ConfigureArticle(modelBuilder);
+        ConfigureTutorialPage(modelBuilder);
         ConfigureArticleAlias(modelBuilder);
         ConfigureArticleLink(modelBuilder);
         ConfigureArticleExternalLink(modelBuilder);
@@ -348,6 +350,38 @@ public class ChronicisDbContext : DbContext
                 .IsUnique()
                 .HasFilter("[ParentId] IS NOT NULL")
                 .HasDatabaseName("IX_Articles_ParentId_Slug");
+        });
+    }
+
+    private static void ConfigureTutorialPage(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<TutorialPage>(entity =>
+        {
+            entity.HasKey(tp => tp.Id);
+
+            entity.Property(tp => tp.PageType)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(tp => tp.PageTypeName)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(tp => tp.CreatedAt)
+                .IsRequired();
+
+            entity.Property(tp => tp.ModifiedAt)
+                .IsRequired();
+
+            entity.HasOne(tp => tp.Article)
+                .WithMany()
+                .HasForeignKey(tp => tp.ArticleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(tp => tp.PageType)
+                .IsUnique();
+
+            entity.HasIndex(tp => tp.ArticleId);
         });
     }
 

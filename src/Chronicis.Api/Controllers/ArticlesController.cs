@@ -3,6 +3,7 @@ using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Api.Services.Articles;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
@@ -188,6 +189,15 @@ public class ArticlesController : ControllerBase
                 return BadRequest(new { errors = validationResult.Errors });
             }
 
+            if (dto.Type == ArticleType.Tutorial && !await _currentUserService.IsSysAdminAsync())
+            {
+                return Forbid();
+            }
+
+            var normalizedWorldId = dto.Type == ArticleType.Tutorial
+                ? Guid.Empty
+                : dto.WorldId;
+
             // Generate slug
             string slug;
             if (!string.IsNullOrWhiteSpace(dto.Slug))
@@ -197,7 +207,11 @@ public class ArticlesController : ControllerBase
                     return BadRequest("Slug must contain only lowercase letters, numbers, and hyphens");
                 }
 
-                if (!await _articleService.IsSlugUniqueAsync(dto.Slug, dto.ParentId, dto.WorldId, user.Id))
+                var isSlugUnique = dto.Type == ArticleType.Tutorial
+                    ? await IsTutorialSlugUniqueAsync(dto.Slug, dto.ParentId)
+                    : await _articleService.IsSlugUniqueAsync(dto.Slug, dto.ParentId, normalizedWorldId, user.Id);
+
+                if (!isSlugUnique)
                 {
                     return Conflict($"An article with slug '{dto.Slug}' already exists in this location");
                 }
@@ -206,7 +220,9 @@ public class ArticlesController : ControllerBase
             }
             else
             {
-                slug = await _articleService.GenerateUniqueSlugAsync(dto.Title, dto.ParentId, dto.WorldId, user.Id);
+                slug = dto.Type == ArticleType.Tutorial
+                    ? await GenerateTutorialSlugAsync(dto.Title, dto.ParentId)
+                    : await _articleService.GenerateUniqueSlugAsync(dto.Title, dto.ParentId, normalizedWorldId, user.Id);
             }
 
             var article = new Article
@@ -215,7 +231,7 @@ public class ArticlesController : ControllerBase
                 Title = dto.Title,
                 Slug = slug,
                 ParentId = dto.ParentId,
-                WorldId = dto.WorldId,
+                WorldId = normalizedWorldId,
                 CampaignId = dto.CampaignId,
                 ArcId = dto.ArcId,
                 Body = dto.Body,
@@ -289,15 +305,25 @@ public class ArticlesController : ControllerBase
                 return BadRequest(new { errors = validationResult.Errors });
             }
 
-            // Get article - check user has access via world membership
-            var article = await _context.Articles
-                .Where(a => a.Id == id)
-                .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == user.Id))
-                .FirstOrDefaultAsync();
+            var article = await FindReadableArticleAsync(id, user.Id);
 
             if (article == null)
             {
                 return NotFound($"Article {id} not found");
+            }
+
+            var isTutorialArticle = article.Type == ArticleType.Tutorial;
+            var targetType = dto.Type ?? article.Type;
+            var targetIsTutorial = targetType == ArticleType.Tutorial;
+
+            if ((isTutorialArticle || targetIsTutorial) && !await _currentUserService.IsSysAdminAsync())
+            {
+                return Forbid();
+            }
+
+            if (isTutorialArticle && dto.Type.HasValue && dto.Type.Value != ArticleType.Tutorial)
+            {
+                return BadRequest("Tutorial articles cannot be recategorized.");
             }
 
             // Handle slug update if provided
@@ -308,7 +334,11 @@ public class ArticlesController : ControllerBase
                     return BadRequest("Slug must contain only lowercase letters, numbers, and hyphens");
                 }
 
-                if (!await _articleService.IsSlugUniqueAsync(dto.Slug, article.ParentId, article.WorldId, user.Id, id))
+                var isSlugUnique = targetIsTutorial
+                    ? await IsTutorialSlugUniqueAsync(dto.Slug, article.ParentId, id)
+                    : await _articleService.IsSlugUniqueAsync(dto.Slug, article.ParentId, article.WorldId, user.Id, id);
+
+                if (!isSlugUnique)
                 {
                     return Conflict($"An article with slug '{dto.Slug}' already exists in this location");
                 }
@@ -333,6 +363,18 @@ public class ArticlesController : ControllerBase
                 article.Visibility = dto.Visibility.Value;
             if (dto.Type.HasValue)
                 article.Type = dto.Type.Value;
+
+            if (targetIsTutorial)
+            {
+                article.WorldId = Guid.Empty;
+                article.CampaignId = null;
+                article.ArcId = null;
+                article.SessionId = null;
+                if (!isTutorialArticle)
+                {
+                    article.ParentId = null;
+                }
+            }
 
             article.ModifiedAt = DateTime.UtcNow;
             article.LastModifiedBy = user.Id;
@@ -369,15 +411,16 @@ public class ArticlesController : ControllerBase
 
         try
         {
-            // Get article - check user has access via world membership
-            var article = await _context.Articles
-                .Where(a => a.Id == id)
-                .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == user.Id))
-                .FirstOrDefaultAsync();
+            var article = await FindReadableArticleAsync(id, user.Id);
 
             if (article == null)
             {
                 return NotFound($"Article {id} not found");
+            }
+
+            if (article.Type == ArticleType.Tutorial && !await _currentUserService.IsSysAdminAsync())
+            {
+                return Forbid();
             }
 
             // Delete all descendants recursively
@@ -443,16 +486,21 @@ public class ArticlesController : ControllerBase
                 return BadRequest("Invalid request body");
             }
 
-            // Get article with existing aliases - check user has access via world membership
             var article = await _context.Articles
                 .Include(a => a.Aliases)
                 .Where(a => a.Id == id)
-                .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == user.Id))
+                .Where(a => (a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty) ||
+                            (a.World != null && a.World.Members.Any(m => m.UserId == user.Id)))
                 .FirstOrDefaultAsync();
 
             if (article == null)
             {
                 return NotFound($"Article {id} not found");
+            }
+
+            if (article.Type == ArticleType.Tutorial && !await _currentUserService.IsSysAdminAsync())
+            {
+                return Forbid();
             }
 
             // Parse the comma-delimited aliases
@@ -542,11 +590,7 @@ public class ArticlesController : ControllerBase
         var user = await _currentUserService.GetRequiredUserAsync();
         _logger.LogDebug("Getting backlinks for article {ArticleId}", id);
 
-        // Verify article exists and user has access
-        var article = await _context.Articles
-            .Where(a => a.Id == id)
-            .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == user.Id))
-            .FirstOrDefaultAsync();
+        var article = await FindReadableArticleAsync(id, user.Id);
 
         if (article == null)
         {
@@ -585,11 +629,7 @@ public class ArticlesController : ControllerBase
         var user = await _currentUserService.GetRequiredUserAsync();
         _logger.LogDebug("Getting outgoing links for article {ArticleId}", id);
 
-        // Verify article exists and user has access
-        var article = await _context.Articles
-            .Where(a => a.Id == id)
-            .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == user.Id))
-            .FirstOrDefaultAsync();
+        var article = await FindReadableArticleAsync(id, user.Id);
 
         if (article == null)
         {
@@ -635,9 +675,8 @@ public class ArticlesController : ControllerBase
         _logger.LogDebug("Resolving {Count} article links", request.ArticleIds.Count);
 
         // Get all requested articles that the user has access to
-        var articles = await _context.Articles
+        var articles = await GetReadableArticlesQuery(user.Id)
             .Where(a => request.ArticleIds.Contains(a.Id))
-            .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == user.Id))
             .Select(a => new ResolvedLinkDto
             {
                 ArticleId = a.Id,
@@ -693,9 +732,8 @@ public class ArticlesController : ControllerBase
         _logger.LogDebug("Auto-linking article {ArticleId}", id);
 
         // Get article and verify access
-        var article = await _context.Articles
+        var article = await GetReadableArticlesQuery(user.Id)
             .Where(a => a.Id == id)
-            .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == user.Id))
             .Select(a => new { a.Id, a.WorldId })
             .FirstOrDefaultAsync();
 
@@ -721,6 +759,77 @@ public class ArticlesController : ControllerBase
     #endregion
 
     #region Private Helpers
+
+    private IQueryable<Article> GetReadableArticlesQuery(Guid userId)
+    {
+        var worldScoped = _context.Articles
+            .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
+            .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == userId));
+
+        var tutorials = _context.Articles
+            .Where(a => a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty);
+
+        return worldScoped.Concat(tutorials);
+    }
+
+    private async Task<Article?> FindReadableArticleAsync(Guid articleId, Guid userId)
+    {
+        return await GetReadableArticlesQuery(userId)
+            .Where(a => a.Id == articleId)
+            .FirstOrDefaultAsync();
+    }
+
+    private async Task<bool> IsTutorialSlugUniqueAsync(string slug, Guid? parentId, Guid? excludeArticleId = null)
+    {
+        var query = _context.Articles
+            .AsNoTracking()
+            .Where(a => a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty && a.Slug == slug);
+
+        if (parentId.HasValue)
+        {
+            query = query.Where(a => a.ParentId == parentId.Value);
+        }
+        else
+        {
+            query = query.Where(a => a.ParentId == null);
+        }
+
+        if (excludeArticleId.HasValue)
+        {
+            query = query.Where(a => a.Id != excludeArticleId.Value);
+        }
+
+        return !await query.AnyAsync();
+    }
+
+    private async Task<string> GenerateTutorialSlugAsync(string title, Guid? parentId, Guid? excludeArticleId = null)
+    {
+        var baseSlug = SlugGenerator.GenerateSlug(title);
+
+        var query = _context.Articles
+            .AsNoTracking()
+            .Where(a => a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty);
+
+        if (parentId.HasValue)
+        {
+            query = query.Where(a => a.ParentId == parentId.Value);
+        }
+        else
+        {
+            query = query.Where(a => a.ParentId == null);
+        }
+
+        if (excludeArticleId.HasValue)
+        {
+            query = query.Where(a => a.Id != excludeArticleId.Value);
+        }
+
+        var existingSlugs = await query
+            .Select(a => a.Slug)
+            .ToHashSetAsync();
+
+        return SlugGenerator.GenerateUniqueSlug(baseSlug, existingSlugs);
+    }
 
     /// <summary>
     /// Recursively deletes an article and all its descendants.

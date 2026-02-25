@@ -42,5 +42,13 @@ public enum ArticleType
     /// Articles migrated from old schema that haven't been categorized yet.
     /// Users can change these to appropriate types via the UI.
     /// </summary>
-    Legacy = 99
+    Legacy = 99,
+
+    // ===== System Content =====
+
+    /// <summary>
+    /// Global tutorial content used by the tutorial sidebar.
+    /// Stored with WorldId = Guid.Empty (system/tutorial sentinel world).
+    /// </summary>
+    Tutorial = 100
 }
