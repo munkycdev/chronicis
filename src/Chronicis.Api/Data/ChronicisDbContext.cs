@@ -103,6 +103,9 @@ public class ChronicisDbContext : DbContext
             entity.Property(w => w.Description)
                 .HasMaxLength(1000);
 
+            entity.Property(w => w.IsTutorial)
+                .HasDefaultValue(false);
+
             // Public access fields
             entity.Property(w => w.IsPublic)
                 .HasDefaultValue(false);

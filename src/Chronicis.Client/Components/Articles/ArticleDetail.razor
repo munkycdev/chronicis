@@ -24,6 +24,7 @@
 @inject ILogger<ArticleDetail> Logger
 @inject IArticleCacheService ArticleCache
 @inject IMetadataDrawerService MetadataDrawerService
+@inject IQuestDrawerService QuestDrawerService
 @inject IKeyboardShortcutService KeyboardShortcutService
 @inject IWorldApiService WorldApi
 @inject Chronicis.Client.ViewModels.ArticleDetailViewModel ViewModel
@@ -74,6 +75,7 @@ else
                        OnTitleEdited="HandleTitleEdited"
                        OnEnterPressed="SaveArticle"
                        OnMetadataToggle="ToggleMetadata"
+                       OnQuestsToggle="ToggleQuests"
                        ShouldFocusTitle="_shouldFocusTitle"
                        ShouldFocusTitleChanged="HandleFocusTitleChanged" />
 
@@ -316,6 +318,8 @@ else
     private void HandleFocusTitleChanged(bool value) => _shouldFocusTitle = value;
 
     private void ToggleMetadata() => _openMetadata = !_openMetadata;
+
+    private void ToggleQuests() => QuestDrawerService.Toggle();
 
     #endregion
 

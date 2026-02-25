@@ -43,6 +43,11 @@ public class World
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// Whether this world is a tutorial/onboarding clone provisioned from the template world.
+    /// </summary>
+    public bool IsTutorial { get; set; } = false;
+
     // ===== Public Access =====
 
     /// <summary>
