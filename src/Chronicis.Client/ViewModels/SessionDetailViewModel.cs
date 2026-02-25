@@ -38,6 +38,8 @@ public sealed class SessionDetailViewModel : ViewModelBase
     private List<BreadcrumbItem> _breadcrumbs = new();
     private bool _isCurrentUserGm;
     private Guid _currentUserId;
+    private string _editName = string.Empty;
+    private DateTime? _editSessionDate;
     private string _editPublicNotes = string.Empty;
     private string _editPrivateNotes = string.Empty;
 
@@ -82,6 +84,30 @@ public sealed class SessionDetailViewModel : ViewModelBase
     public bool IsCurrentUserGM { get => _isCurrentUserGm; private set => SetField(ref _isCurrentUserGm, value); }
     public Guid CurrentUserId { get => _currentUserId; private set => SetField(ref _currentUserId, value); }
 
+    public string EditName
+    {
+        get => _editName;
+        set
+        {
+            if (SetField(ref _editName, value) && Session != null && IsCurrentUserGM)
+            {
+                UpdateDirtyState();
+            }
+        }
+    }
+
+    public DateTime? EditSessionDate
+    {
+        get => _editSessionDate;
+        set
+        {
+            if (SetField(ref _editSessionDate, value) && Session != null && IsCurrentUserGM)
+            {
+                UpdateDirtyState();
+            }
+        }
+    }
+
     public string EditPublicNotes
     {
         get => _editPublicNotes;
@@ -120,6 +146,8 @@ public sealed class SessionDetailViewModel : ViewModelBase
             }
 
             Session = session;
+            EditName = session.Name;
+            EditSessionDate = session.SessionDate?.Date;
             EditPublicNotes = session.PublicNotes ?? string.Empty;
             EditPrivateNotes = session.PrivateNotes ?? string.Empty;
             HasUnsavedChanges = false;
@@ -159,12 +187,31 @@ public sealed class SessionDetailViewModel : ViewModelBase
             return;
         }
 
+        var trimmedName = (EditName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(trimmedName))
+        {
+            _notifier.Error("Session title is required");
+            return;
+        }
+
+        if (trimmedName.Length > 500)
+        {
+            _notifier.Error("Session title must be 500 characters or fewer");
+            return;
+        }
+
+        var editedSessionDate = EditSessionDate?.Date;
+        var shouldClearSessionDate = Session.SessionDate.HasValue && !editedSessionDate.HasValue;
+
         IsSavingNotes = true;
 
         try
         {
             var updated = await _sessionApi.UpdateSessionNotesAsync(Session.Id, new SessionUpdateDto
             {
+                Name = trimmedName,
+                SessionDate = editedSessionDate,
+                ClearSessionDate = shouldClearSessionDate,
                 PublicNotes = string.IsNullOrWhiteSpace(EditPublicNotes) ? null : EditPublicNotes,
                 PrivateNotes = string.IsNullOrWhiteSpace(EditPrivateNotes) ? null : EditPrivateNotes
             });
@@ -176,15 +223,20 @@ public sealed class SessionDetailViewModel : ViewModelBase
             }
 
             Session = updated;
+            EditName = updated.Name;
+            EditSessionDate = updated.SessionDate?.Date;
             EditPublicNotes = updated.PublicNotes ?? string.Empty;
             EditPrivateNotes = updated.PrivateNotes ?? string.Empty;
+            Breadcrumbs = BuildBreadcrumbs();
+            await _titleService.SetTitleAsync(updated.Name);
+            await _treeState.RefreshAsync();
             HasUnsavedChanges = false;
-            _notifier.Success("Session notes saved");
+            _notifier.Success("Session saved");
         }
         catch (Exception ex)
         {
-            _logger.LogErrorSanitized(ex, "Error saving session notes for {SessionId}", Session.Id);
-            _notifier.Error($"Failed to save session notes: {ex.Message}");
+            _logger.LogErrorSanitized(ex, "Error saving session {SessionId}", Session.Id);
+            _notifier.Error($"Failed to save session: {ex.Message}");
         }
         finally
         {
@@ -265,9 +317,11 @@ public sealed class SessionDetailViewModel : ViewModelBase
             return;
         }
 
+        var nameChanged = !string.Equals(Session.Name ?? string.Empty, EditName ?? string.Empty, StringComparison.Ordinal);
+        var dateChanged = !AreSameDate(Session.SessionDate, EditSessionDate);
         var publicChanged = !string.Equals(Session.PublicNotes ?? string.Empty, EditPublicNotes ?? string.Empty, StringComparison.Ordinal);
         var privateChanged = !string.Equals(Session.PrivateNotes ?? string.Empty, EditPrivateNotes ?? string.Empty, StringComparison.Ordinal);
-        HasUnsavedChanges = publicChanged || privateChanged;
+        HasUnsavedChanges = nameChanged || dateChanged || publicChanged || privateChanged;
     }
 
     private async Task ResolveCurrentUserRoleAsync()
@@ -318,4 +372,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
             new(Session.Name, href: null, disabled: true)
         };
     }
+
+    private static bool AreSameDate(DateTime? left, DateTime? right)
+        => left?.Date == right?.Date;
 }

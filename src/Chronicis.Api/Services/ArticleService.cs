@@ -218,7 +218,7 @@ namespace Chronicis.Api.Services
         /// <summary>
         /// Move an article to a new parent (or to root if newParentId is null).
         /// </summary>
-        public async Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(Guid articleId, Guid? newParentId, Guid userId)
+        public async Task<(bool Success, string? ErrorMessage)> MoveArticleAsync(Guid articleId, Guid? newParentId, Guid? newSessionId, Guid userId)
         {
             // 1. Get the article to move (must be in a world user has access to)
             var article = await GetAccessibleArticles(userId)
@@ -230,17 +230,20 @@ namespace Chronicis.Api.Services
                 return (false, "Article not found");
             }
 
-            // 2. If moving to same parent, nothing to do
-            if (article.ParentId == newParentId)
+            var sessionChangeRequested = newSessionId.HasValue;
+
+            // 2. If moving to same parent (and same session when requested), nothing to do
+            if (article.ParentId == newParentId &&
+                (!sessionChangeRequested || article.SessionId == newSessionId))
             {
                 return (true, null);
             }
 
             // 3. If newParentId is specified, validate the target exists and user has access
+            Article? targetParent = null;
             if (newParentId.HasValue)
             {
-                var targetParent = await GetAccessibleArticles(userId)
-                    .AsNoTracking()
+                targetParent = await GetAccessibleArticles(userId)
                     .FirstOrDefaultAsync(a => a.Id == newParentId.Value);
 
                 if (targetParent == null)
@@ -258,8 +261,54 @@ namespace Chronicis.Api.Services
                 }
             }
 
+            Session? targetSession = null;
+            if (sessionChangeRequested)
+            {
+                if (article.Type != ArticleType.SessionNote)
+                {
+                    return (false, "Only SessionNote articles can be attached to sessions");
+                }
+
+                targetSession = await _context.Sessions
+                    .Include(s => s.Arc)
+                        .ThenInclude(a => a.Campaign)
+                            .ThenInclude(c => c.World)
+                                .ThenInclude(w => w.Members)
+                    .FirstOrDefaultAsync(s => s.Id == newSessionId!.Value);
+
+                if (targetSession == null)
+                {
+                    return (false, "Target session not found");
+                }
+
+                if (!targetSession.Arc.Campaign.World.Members.Any(m => m.UserId == userId))
+                {
+                    return (false, "Target session not found or access denied");
+                }
+
+                if (article.WorldId != targetSession.Arc.Campaign.WorldId)
+                {
+                    return (false, "Cannot move articles between different worlds");
+                }
+
+                if (targetParent != null && targetParent.SessionId != targetSession.Id)
+                {
+                    return (false, "Target parent must belong to the selected session");
+                }
+            }
+
             // 5. Perform the move
             article.ParentId = newParentId;
+
+            if (targetSession != null)
+            {
+                await ReassignSessionContextForSubtreeAsync(
+                    articleId,
+                    targetSession.Id,
+                    targetSession.ArcId,
+                    targetSession.Arc.CampaignId);
+            }
+
             article.ModifiedAt = DateTime.UtcNow;
             article.LastModifiedBy = userId;
 
@@ -310,6 +359,52 @@ namespace Chronicis.Api.Services
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Reassigns Session/Acr/Campaign context for a SessionNote subtree when moving between sessions.
+        /// </summary>
+        private async Task ReassignSessionContextForSubtreeAsync(
+            Guid rootArticleId,
+            Guid targetSessionId,
+            Guid targetArcId,
+            Guid targetCampaignId)
+        {
+            var queue = new Queue<Guid>();
+            var visited = new HashSet<Guid>();
+            queue.Enqueue(rootArticleId);
+
+            while (queue.Count > 0)
+            {
+                var currentId = queue.Dequeue();
+                if (!visited.Add(currentId))
+                {
+                    continue;
+                }
+
+                var current = await _context.Articles.FirstOrDefaultAsync(a => a.Id == currentId);
+                if (current == null)
+                {
+                    continue;
+                }
+
+                if (current.Type == ArticleType.SessionNote)
+                {
+                    current.SessionId = targetSessionId;
+                    current.ArcId = targetArcId;
+                    current.CampaignId = targetCampaignId;
+                }
+
+                var childIds = await _context.Articles
+                    .Where(a => a.ParentId == currentId)
+                    .Select(a => a.Id)
+                    .ToListAsync();
+
+                foreach (var childId in childIds)
+                {
+                    queue.Enqueue(childId);
+                }
+            }
         }
 
 

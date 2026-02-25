@@ -89,9 +89,13 @@ public class ArticleApiService : IArticleApiService
             $"article {id}");
     }
 
-    public async Task<bool> MoveArticleAsync(Guid articleId, Guid? newParentId)
+    public async Task<bool> MoveArticleAsync(Guid articleId, Guid? newParentId, Guid? newSessionId = null)
     {
-        var moveDto = new ArticleMoveDto { NewParentId = newParentId };
+        var moveDto = new ArticleMoveDto
+        {
+            NewParentId = newParentId,
+            NewSessionId = newSessionId
+        };
 
         return await _http.PutBoolAsync(
             $"articles/{articleId}/move",

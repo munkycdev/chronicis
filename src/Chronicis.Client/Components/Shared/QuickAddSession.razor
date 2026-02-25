@@ -115,7 +115,7 @@
                 WorldId = _worldId,
                 CampaignId = _activeContext.CampaignId,
                 ArcId = _activeContext.ArcId,
-                Type = ArticleType.Session
+                Type = ArticleType.SessionNote
             };
 
             var newArticle = await ArticleApi.CreateArticleAsync(createDto);

@@ -175,6 +175,7 @@ public class TreeNode
     public bool IsDropTarget => NodeType switch
     {
         TreeNodeType.Article => true,
+        TreeNodeType.Session => true,
         TreeNodeType.VirtualGroup => VirtualGroupType switch
         {
             // Campaigns group holds Campaign entities, not articles

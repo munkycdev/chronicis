@@ -54,13 +54,13 @@ public class SessionApiService : ISessionApiService
             }
 
             var errorContent = await response.Content.ReadAsStringAsync();
-            _logger.LogWarning("Failed to update session notes for {SessionId}: {StatusCode} - {Error}",
+            _logger.LogWarning("Failed to update session for {SessionId}: {StatusCode} - {Error}",
                 sessionId, response.StatusCode, errorContent);
             return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating session notes for {SessionId}", sessionId);
+            _logger.LogError(ex, "Error updating session for {SessionId}", sessionId);
             return null;
         }
     }

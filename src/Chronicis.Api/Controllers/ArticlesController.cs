@@ -407,7 +407,7 @@ public class ArticlesController : ControllerBase
                 return BadRequest("Invalid request body");
             }
 
-            var (success, errorMessage) = await _articleService.MoveArticleAsync(id, dto.NewParentId, user.Id);
+            var (success, errorMessage) = await _articleService.MoveArticleAsync(id, dto.NewParentId, dto.NewSessionId, user.Id);
 
             if (!success)
             {

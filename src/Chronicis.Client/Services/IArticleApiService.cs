@@ -55,8 +55,9 @@ public interface IArticleApiService
 
     /// <summary>
     /// Move an article to a new parent (or to root if newParentId is null).
+    /// Optionally attach a SessionNote to a Session entity.
     /// </summary>
-    Task<bool> MoveArticleAsync(Guid articleId, Guid? newParentId);
+    Task<bool> MoveArticleAsync(Guid articleId, Guid? newParentId, Guid? newSessionId = null);
 
     /// <summary>
     /// Search articles across title, body, and hashtags.
