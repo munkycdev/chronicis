@@ -218,8 +218,8 @@ jobs:
         run: |
           "" | Add-Content $env:GITHUB_STEP_SUMMARY
           "### Exact Aggregated Coverage (per-assembly staged Cobertura)" | Add-Content $env:GITHUB_STEP_SUMMARY
-          "- Line coverage: `${{ steps.rates.outputs.linePct }}%`" | Add-Content $env:GITHUB_STEP_SUMMARY
-          "- Branch coverage: `${{ steps.rates.outputs.branchPct }}%`" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "- Line coverage: ${{ steps.rates.outputs.linePct }}%" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "- Branch coverage: ${{ steps.rates.outputs.branchPct }}%" | Add-Content $env:GITHUB_STEP_SUMMARY
 
       # ------------------------------------------------------------
       # Update coverage history branch
