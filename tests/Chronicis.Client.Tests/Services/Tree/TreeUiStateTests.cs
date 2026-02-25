@@ -436,6 +436,21 @@ public class TreeUiStateTests
         Assert.False(result);
     }
 
+    [Fact]
+    public void ExpandPathToAndSelect_WhenCycleDetected_DoesNotLoopForever()
+    {
+        var index = new TreeNodeIndex();
+        var cyclic = CreateArticleNode(Guid.NewGuid(), "Cyclic");
+        cyclic.Children.Add(cyclic); // malformed graph to exercise cycle guard in path traversal
+        index.AddNode(cyclic);
+        _uiState.SetNodeIndex(index);
+
+        var result = _uiState.ExpandPathToAndSelect(cyclic.Id, isInitialized: true);
+
+        Assert.True(result);
+        Assert.True(cyclic.IsSelected);
+    }
+
     // ============================================
     // Search Tests
     // ============================================

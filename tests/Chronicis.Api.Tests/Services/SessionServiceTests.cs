@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Chronicis.Api.Data;
 using Chronicis.Api.Models;
 using Chronicis.Api.Services;
@@ -419,6 +420,24 @@ public class SessionServiceTests : IDisposable
 
         await _worldDocumentService.Received(1).DeleteArticleImagesAsync(rootNoteId);
         await _worldDocumentService.Received(1).DeleteArticleImagesAsync(childArticleId);
+    }
+
+    [Fact]
+    public void BuildDefaultNoteTitle_PrivateHelper_CoversWhitespaceAndTruncation()
+    {
+        var method = typeof(SessionService).GetMethod("BuildDefaultNoteTitle", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var defaultTitle = (string)method!.Invoke(null, new object?[] { "   " })!;
+        Assert.Equal("My Notes", defaultTitle);
+
+        var nullTitle = (string)method.Invoke(null, new object?[] { null })!;
+        Assert.Equal("My Notes", nullTitle);
+
+        var longUser = new string('a', 600);
+        var longTitle = (string)method.Invoke(null, new object?[] { longUser })!;
+        Assert.True(longTitle.Length <= 500);
+        Assert.StartsWith("a", longTitle, StringComparison.Ordinal);
     }
 
     private void SeedTestData()

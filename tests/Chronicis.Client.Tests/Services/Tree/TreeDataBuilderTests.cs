@@ -1,3 +1,4 @@
+using System.Reflection;
 using Chronicis.Client.Models;
 using Chronicis.Client.Services;
 using Chronicis.Client.Services.Tree;
@@ -276,6 +277,84 @@ public class TreeDataBuilderTests
         var result = await sut.BuildTreeAsync();
 
         Assert.False(result.NodeIndex.ContainsNode(legacySessionArticleId));
+    }
+
+    [Fact]
+    public async Task BuildTreeAsync_CreatesSessionNode_WithZeroChildren_WhenArcSessionHasNoSessionNotes()
+    {
+        var worldId = Guid.NewGuid();
+        var campaignId = Guid.NewGuid();
+        var arcId = Guid.NewGuid();
+        var sessionId = Guid.NewGuid();
+
+        var worldApi = Substitute.For<IWorldApiService>();
+        worldApi.GetWorldsAsync().Returns(new List<WorldDto> { new() { Id = worldId, Name = "World" } });
+        worldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto
+        {
+            Id = worldId,
+            Name = "World",
+            Campaigns = new List<CampaignDto> { new() { Id = campaignId, Name = "Campaign", WorldId = worldId } }
+        });
+        worldApi.GetWorldLinksAsync(worldId).Returns(new List<WorldLinkDto>());
+        worldApi.GetWorldDocumentsAsync(worldId).Returns(new List<WorldDocumentDto>());
+
+        var articleApi = Substitute.For<IArticleApiService>();
+        articleApi.GetAllArticlesAsync().Returns(new List<ArticleTreeDto>
+        {
+            new() { Id = Guid.NewGuid(), WorldId = worldId, Title = "Wiki Root", Slug = "wiki", Type = ArticleType.WikiArticle }
+        });
+
+        var campaignApi = Substitute.For<ICampaignApiService>();
+        var arcApi = Substitute.For<IArcApiService>();
+        arcApi.GetArcsByCampaignAsync(campaignId).Returns(new List<ArcDto>
+        {
+            new() { Id = arcId, CampaignId = campaignId, Name = "Arc", SortOrder = 0 }
+        });
+
+        var sessionApi = Substitute.For<ISessionApiService>();
+        sessionApi.GetSessionsByArcAsync(arcId).Returns(new List<SessionTreeDto>
+        {
+            new() { Id = sessionId, ArcId = arcId, Name = "Session Without Notes" }
+        });
+
+        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, NullLogger.Instance);
+
+        var result = await sut.BuildTreeAsync();
+
+        Assert.True(result.NodeIndex.TryGetNode(sessionId, out var sessionNode));
+        Assert.NotNull(sessionNode);
+        Assert.Equal(TreeNodeType.Session, sessionNode!.NodeType);
+        Assert.Equal(0, sessionNode.ChildCount);
+        Assert.Empty(sessionNode.Children);
+    }
+
+    [Fact]
+    public void BuildArcNode_WhenSessionsLookupMissing_UsesEmptyListBranch()
+    {
+        var articleApi = Substitute.For<IArticleApiService>();
+        var worldApi = Substitute.For<IWorldApiService>();
+        var campaignApi = Substitute.For<ICampaignApiService>();
+        var arcApi = Substitute.For<IArcApiService>();
+        var sessionApi = Substitute.For<ISessionApiService>();
+        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, NullLogger.Instance);
+
+        var method = typeof(TreeDataBuilder).GetMethod("BuildArcNode", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var arc = new ArcDto { Id = Guid.NewGuid(), CampaignId = Guid.NewGuid(), Name = "Arc" };
+        var result = method!.Invoke(sut, new object?[]
+        {
+            arc,
+            new List<ArticleTreeDto>(),
+            new Dictionary<Guid, ArticleTreeDto>(),
+            new Dictionary<Guid, List<SessionTreeDto>>(), // missing key exercises TryGetValue false branch
+            new TreeNodeIndex()
+        });
+
+        var arcNode = Assert.IsType<TreeNode>(result);
+        Assert.Equal(TreeNodeType.Arc, arcNode.NodeType);
+        Assert.Empty(arcNode.Children);
+        Assert.Equal(0, arcNode.ChildCount);
     }
 }
 

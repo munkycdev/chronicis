@@ -2,15 +2,28 @@
 @attribute [Authorize]
 @implements IDisposable
 @using System.ComponentModel
+@using Chronicis.Client.Components.Articles
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Client.Services
+@using ArticleWikiLinkAutocompleteItem = Chronicis.Client.Components.Articles.WikiLinkAutocompleteItem
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.Enums
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.JSInterop
 @inject SessionDetailViewModel ViewModel
 @inject IDialogService DialogService
 @inject IKeyboardShortcutService KeyboardShortcutService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject ILogger<SessionDetail> Logger
+@inject ILinkApiService LinkApiService
+@inject IExternalLinkApiService ExternalLinkApiService
+@inject IWikiLinkService WikiLinkService
+@inject IAppContextService AppContext
+@inject IArticleCacheService ArticleCache
+@inject IAISummaryApiService SummaryApi
 
 @if (ViewModel.IsLoading)
 {
@@ -83,13 +96,10 @@ else
 
         @if (ViewModel.IsCurrentUserGM)
         {
-            <MudTextField Value="@ViewModel.EditPublicNotes"
-                          ValueChanged="@((string v) => ViewModel.EditPublicNotes = v)"
-                          Label="Public Notes (HTML)"
-                          Variant="Variant.Outlined"
-                          Lines="10"
-                          Immediate="true"
-                          Class="mb-4" />
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">
+                Public Notes
+            </MudText>
+            <div id="@PublicEditorElementId" class="chronicis-editor-container mb-4"></div>
         }
         else if (!string.IsNullOrWhiteSpace(ViewModel.Session.PublicNotes))
         {
@@ -111,13 +121,10 @@ else
 
         @if (ViewModel.IsCurrentUserGM)
         {
-            <MudTextField Value="@ViewModel.EditPrivateNotes"
-                          ValueChanged="@((string v) => ViewModel.EditPrivateNotes = v)"
-                          Label="Private Notes (GM only, HTML)"
-                          Variant="Variant.Outlined"
-                          Lines="10"
-                          Immediate="true"
-                          Class="mb-4" />
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">
+                Private Notes (GM only)
+            </MudText>
+            <div id="@PrivateEditorElementId" class="chronicis-editor-container mb-4"></div>
         }
         else
         {
@@ -134,7 +141,7 @@ else
                 <div class="d-flex align-center">
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
-                               OnClick="@ViewModel.SaveNotesAsync"
+                               OnClick="SaveSessionNotesAsync"
                                Disabled="@(ViewModel.IsSavingNotes || ViewModel.IsDeleting || !ViewModel.HasUnsavedChanges)"
                                StartIcon="@Icons.Material.Filled.Save">
                         Save Changes
@@ -257,6 +264,62 @@ else
                 No attached SessionNote articles found.
             </MudAlert>
         }
+
+        @if (ViewModel.IsCurrentUserGM)
+        {
+            <MudDrawer @bind-Open="_externalPreviewOpen"
+                       Anchor="Anchor.End"
+                       Variant="@DrawerVariant.Temporary"
+                       Elevation="9999"
+                       Class="external-link-preview-drawer">
+                <MudDrawerHeader>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseExternalPreview" />
+                </MudDrawerHeader>
+                <MudDrawerContainer>
+                    <div class="external-link-preview-header">
+                        @if (!string.IsNullOrWhiteSpace(_externalPreviewSource))
+                        {
+                            <span class="external-link-preview-source">@_externalPreviewSource.ToUpperInvariant()</span>
+                        }
+                        <MudText Typo="Typo.h6">@(_externalPreviewTitle ?? "External Link")</MudText>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(_externalPreviewContent?.Kind))
+                    {
+                        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                            @_externalPreviewContent.Kind
+                        </MudText>
+                    }
+                    @if (_externalPreviewLoading)
+                    {
+                        <div class="d-flex justify-center align-center" style="padding: 24px;">
+                            <MudProgressCircular Indeterminate="true" />
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(_externalPreviewError))
+                    {
+                        <MudAlert Severity="Severity.Error">@_externalPreviewError</MudAlert>
+                    }
+                    else if (_externalPreviewContent != null)
+                    {
+                        <ExternalLinkDetailPanel Content="_externalPreviewContent" />
+                    }
+                </MudDrawerContainer>
+            </MudDrawer>
+
+            @if (_showAutocomplete)
+            {
+                <ArticleDetailWikiLinkAutocomplete Suggestions="@_autocompleteSuggestions"
+                                                   Loading="@_autocompleteLoading"
+                                                   SelectedIndex="@_autocompleteSelectedIndex"
+                                                   SelectedIndexChanged="OnAutocompleteIndexChanged"
+                                                   OnSelect="OnAutocompleteSelect"
+                                                   OnCreate="OnAutocompleteCreate"
+                                                   Position="@_autocompletePosition"
+                                                   Query="@_autocompleteQuery"
+                                                   IsExternalQuery="@_autocompleteIsExternalQuery" />
+            }
+        }
     </MudPaper>
 }
 
@@ -271,16 +334,119 @@ else
     [Parameter]
     public Guid SessionId { get; set; }
 
+    private enum SessionEditorKind
+    {
+        Public,
+        Private
+    }
+
+    private sealed class SessionEditorInteropBridge
+    {
+        private readonly SessionDetail _parent;
+        private readonly SessionEditorKind _editorKind;
+
+        public SessionEditorInteropBridge(SessionDetail parent, SessionEditorKind editorKind)
+        {
+            _parent = parent;
+            _editorKind = editorKind;
+        }
+
+        [JSInvokable]
+        public Task OnEditorUpdate(string html) => _parent.HandleEditorUpdateAsync(_editorKind, html);
+
+        [JSInvokable]
+        public Task OnAutocompleteTriggered(string query, double x, double y)
+            => _parent.HandleAutocompleteTriggeredAsync(_editorKind, query, x, y);
+
+        [JSInvokable]
+        public Task OnAutocompleteHidden() => _parent.HandleAutocompleteHiddenAsync(_editorKind);
+
+        [JSInvokable]
+        public Task OnAutocompleteArrowDown() => _parent.HandleAutocompleteArrowDownAsync(_editorKind);
+
+        [JSInvokable]
+        public Task OnAutocompleteArrowUp() => _parent.HandleAutocompleteArrowUpAsync(_editorKind);
+
+        [JSInvokable]
+        public Task OnAutocompleteEnter() => _parent.HandleAutocompleteEnterAsync(_editorKind);
+
+        [JSInvokable]
+        public Task OnWikiLinkClicked(string targetArticleId) => _parent.OnWikiLinkClicked(targetArticleId);
+
+        [JSInvokable]
+        public Task OnBrokenLinkClicked(string targetArticleId) => _parent.OnBrokenLinkClicked(targetArticleId);
+
+        [JSInvokable]
+        public Task OnExternalLinkClicked(string source, string id, string title)
+            => _parent.OnExternalLinkClicked(source, id, title);
+
+        [JSInvokable]
+        public Task<string?> GetArticlePath(string targetArticleId) => _parent.GetArticlePath(targetArticleId);
+
+        [JSInvokable]
+        public Task<object?> GetArticleSummaryPreview(string targetArticleId)
+            => _parent.GetArticleSummaryPreview(targetArticleId);
+    }
+
+    private SessionEditorInteropBridge? _publicEditorBridge;
+    private SessionEditorInteropBridge? _privateEditorBridge;
+    private DotNetObjectReference<SessionEditorInteropBridge>? _publicEditorBridgeRef;
+    private DotNetObjectReference<SessionEditorInteropBridge>? _privateEditorBridgeRef;
+    private bool _publicEditorInitialized;
+    private bool _privateEditorInitialized;
+    private bool _editorsInitializing;
+    private SessionEditorKind _activeEditorKind = SessionEditorKind.Public;
+
+    private bool _showAutocomplete;
+    private bool _autocompleteLoading;
+    private List<ArticleWikiLinkAutocompleteItem> _autocompleteSuggestions = new();
+    private int _autocompleteSelectedIndex;
+    private (double X, double Y) _autocompletePosition = (0, 0);
+    private string _autocompleteQuery = string.Empty;
+    private bool _autocompleteIsExternalQuery;
+    private string? _autocompleteExternalSourceKey;
+
+    private bool _externalPreviewOpen;
+    private bool _externalPreviewLoading;
+    private string? _externalPreviewError;
+    private ExternalLinkContentDto? _externalPreviewContent;
+    private string? _externalPreviewSource;
+    private string? _externalPreviewTitle;
+    private readonly Dictionary<string, ExternalLinkContentDto> _externalLinkCache = new(StringComparer.OrdinalIgnoreCase);
+
+    private string PublicEditorElementId => $"session-public-editor-{SessionId}";
+    private string PrivateEditorElementId => $"session-private-editor-{SessionId}";
+
     protected override void OnInitialized()
     {
         KeyboardShortcutService.OnSaveRequested += HandleSaveShortcut;
+        _publicEditorBridge = new SessionEditorInteropBridge(this, SessionEditorKind.Public);
+        _privateEditorBridge = new SessionEditorInteropBridge(this, SessionEditorKind.Private);
+        _publicEditorBridgeRef = DotNetObjectReference.Create(_publicEditorBridge);
+        _privateEditorBridgeRef = DotNetObjectReference.Create(_privateEditorBridge);
     }
 
     protected override async Task OnParametersSetAsync()
     {
+        await DestroyEditorsAsync();
         ViewModel.PropertyChanged -= OnViewModelChanged;
         ViewModel.PropertyChanged += OnViewModelChanged;
         await ViewModel.LoadAsync(SessionId);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ViewModel.IsLoading || !ViewModel.IsCurrentUserGM || ViewModel.Session == null || ViewModel.Session.Id != SessionId)
+        {
+            return;
+        }
+
+        if (_editorsInitializing || (_publicEditorInitialized && _privateEditorInitialized))
+        {
+            return;
+        }
+
+        await InitializeEditorsAsync();
     }
 
     private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
@@ -290,7 +456,7 @@ else
     {
         if (e.Key == "Enter" && ViewModel.IsCurrentUserGM)
         {
-            await ViewModel.SaveNotesAsync();
+            await SaveSessionNotesAsync();
         }
     }
 
@@ -301,7 +467,7 @@ else
             return;
         }
 
-        await InvokeAsync(ViewModel.SaveNotesAsync);
+        await InvokeAsync(SaveSessionNotesAsync);
     }
 
     private void OnSessionDateChanged(DateTime? value)
@@ -346,5 +512,485 @@ else
     {
         KeyboardShortcutService.OnSaveRequested -= HandleSaveShortcut;
         ViewModel.PropertyChanged -= OnViewModelChanged;
+        _publicEditorBridgeRef?.Dispose();
+        _privateEditorBridgeRef?.Dispose();
+    }
+
+    private async Task InitializeEditorsAsync()
+    {
+        if (ViewModel.Session == null || !ViewModel.IsCurrentUserGM || _publicEditorBridgeRef == null || _privateEditorBridgeRef == null)
+        {
+            return;
+        }
+
+        _editorsInitializing = true;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("initializeTipTapEditor", PublicEditorElementId, ViewModel.EditPublicNotes, _publicEditorBridgeRef);
+            await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", PublicEditorElementId, _publicEditorBridgeRef);
+            _publicEditorInitialized = true;
+
+            await JSRuntime.InvokeVoidAsync("initializeTipTapEditor", PrivateEditorElementId, ViewModel.EditPrivateNotes, _privateEditorBridgeRef);
+            await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", PrivateEditorElementId, _privateEditorBridgeRef);
+            _privateEditorInitialized = true;
+        }
+        catch (JSDisconnectedException)
+        {
+            // Navigation/disposal race.
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize session note editors for {SessionId}", SessionId);
+            Snackbar.Add("Failed to initialize session editors", Severity.Warning);
+        }
+        finally
+        {
+            _editorsInitializing = false;
+        }
+    }
+
+    private async Task DestroyEditorsAsync()
+    {
+        try
+        {
+            if (_publicEditorInitialized)
+            {
+                await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", PublicEditorElementId);
+            }
+
+            if (_privateEditorInitialized)
+            {
+                await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", PrivateEditorElementId);
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Ignore during navigation/disposal.
+        }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "Failed to destroy session editors");
+        }
+        finally
+        {
+            _publicEditorInitialized = false;
+            _privateEditorInitialized = false;
+            _showAutocomplete = false;
+            _autocompleteSuggestions = new();
+        }
+    }
+
+    private async Task SaveSessionNotesAsync()
+    {
+        await SyncEditorsToViewModelAsync();
+        await ViewModel.SaveNotesAsync();
+    }
+
+    private async Task SyncEditorsToViewModelAsync()
+    {
+        if (!ViewModel.IsCurrentUserGM)
+        {
+            return;
+        }
+
+        try
+        {
+            if (_publicEditorInitialized)
+            {
+                ViewModel.EditPublicNotes = await JSRuntime.InvokeAsync<string>("getTipTapContent", PublicEditorElementId);
+            }
+
+            if (_privateEditorInitialized)
+            {
+                ViewModel.EditPrivateNotes = await JSRuntime.InvokeAsync<string>("getTipTapContent", PrivateEditorElementId);
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Ignore during navigation/disposal.
+        }
+    }
+
+    private Task HandleEditorUpdateAsync(SessionEditorKind editorKind, string html)
+    {
+        if (!ViewModel.IsCurrentUserGM)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (editorKind == SessionEditorKind.Public)
+        {
+            ViewModel.EditPublicNotes = html;
+        }
+        else
+        {
+            ViewModel.EditPrivateNotes = html;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleAutocompleteTriggeredAsync(SessionEditorKind editorKind, string query, double x, double y)
+    {
+        _activeEditorKind = editorKind;
+        _autocompletePosition = (x, y);
+        _showAutocomplete = true;
+        _autocompleteSelectedIndex = 0;
+
+        _autocompleteIsExternalQuery = TryParseExternalAutocompleteQuery(query, out var sourceKey, out var remainder);
+        _autocompleteExternalSourceKey = _autocompleteIsExternalQuery ? sourceKey : null;
+        _autocompleteQuery = _autocompleteIsExternalQuery ? remainder : query;
+
+        var minLength = _autocompleteIsExternalQuery ? 0 : 3;
+        if (_autocompleteQuery.Length < minLength)
+        {
+            _autocompleteSuggestions = new();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        _autocompleteLoading = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var worldId = AppContext.CurrentWorldId ?? ViewModel.World?.Id ?? Guid.Empty;
+
+            if (_autocompleteIsExternalQuery)
+            {
+                var externalSuggestions = await ExternalLinkApiService.GetSuggestionsAsync(
+                    worldId,
+                    _autocompleteExternalSourceKey ?? string.Empty,
+                    _autocompleteQuery,
+                    CancellationToken.None);
+
+                _autocompleteSuggestions = externalSuggestions.Select(ArticleWikiLinkAutocompleteItem.FromExternal).ToList();
+            }
+            else
+            {
+                var internalSuggestions = await LinkApiService.GetSuggestionsAsync(worldId, _autocompleteQuery);
+                _autocompleteSuggestions = internalSuggestions.Select(ArticleWikiLinkAutocompleteItem.FromInternal).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting session editor autocomplete suggestions");
+            _autocompleteSuggestions = new();
+        }
+        finally
+        {
+            _autocompleteLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private Task HandleAutocompleteHiddenAsync(SessionEditorKind editorKind)
+    {
+        if (_activeEditorKind != editorKind)
+        {
+            return Task.CompletedTask;
+        }
+
+        _showAutocomplete = false;
+        _autocompleteSuggestions = new();
+        _autocompleteIsExternalQuery = false;
+        _autocompleteExternalSourceKey = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task HandleAutocompleteArrowDownAsync(SessionEditorKind editorKind)
+    {
+        _activeEditorKind = editorKind;
+
+        if (_autocompleteSuggestions.Any())
+        {
+            _autocompleteSelectedIndex = (_autocompleteSelectedIndex + 1) % _autocompleteSuggestions.Count;
+            return InvokeAsync(StateHasChanged);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleAutocompleteArrowUpAsync(SessionEditorKind editorKind)
+    {
+        _activeEditorKind = editorKind;
+
+        if (_autocompleteSuggestions.Any())
+        {
+            _autocompleteSelectedIndex = (_autocompleteSelectedIndex - 1 + _autocompleteSuggestions.Count) % _autocompleteSuggestions.Count;
+            return InvokeAsync(StateHasChanged);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleAutocompleteEnterAsync(SessionEditorKind editorKind)
+    {
+        _activeEditorKind = editorKind;
+
+        if (_autocompleteSuggestions.Any() && _autocompleteSelectedIndex < _autocompleteSuggestions.Count)
+        {
+            await OnAutocompleteSelect(_autocompleteSuggestions[_autocompleteSelectedIndex]);
+        }
+    }
+
+    private Task OnAutocompleteIndexChanged(int index)
+    {
+        _autocompleteSelectedIndex = index;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task OnAutocompleteSelect(ArticleWikiLinkAutocompleteItem suggestion)
+    {
+        if (!ViewModel.IsCurrentUserGM)
+        {
+            return;
+        }
+
+        var editorElementId = _activeEditorKind == SessionEditorKind.Public ? PublicEditorElementId : PrivateEditorElementId;
+
+        try
+        {
+            if (suggestion.IsCategory && !string.IsNullOrEmpty(suggestion.CategoryKey))
+            {
+                await JSRuntime.InvokeVoidAsync("updateAutocompleteText", editorElementId, $"{suggestion.Source}/{suggestion.CategoryKey}/");
+                return;
+            }
+
+            if (suggestion.IsExternal)
+            {
+                if (string.IsNullOrWhiteSpace(suggestion.Source) || string.IsNullOrWhiteSpace(suggestion.ExternalId))
+                {
+                    Logger.LogWarning("External suggestion missing source or id");
+                    return;
+                }
+
+                await JSRuntime.InvokeVoidAsync(
+                    "insertExternalLinkToken",
+                    editorElementId,
+                    suggestion.Source,
+                    suggestion.ExternalId,
+                    suggestion.Title);
+            }
+            else
+            {
+                if (!suggestion.ArticleId.HasValue)
+                {
+                    Logger.LogWarning("Internal suggestion missing article id");
+                    return;
+                }
+
+                var displayText = !string.IsNullOrWhiteSpace(suggestion.MatchedAlias)
+                    ? $"{suggestion.MatchedAlias} → {suggestion.Title}"
+                    : suggestion.Title;
+
+                await JSRuntime.InvokeVoidAsync("insertWikiLink", editorElementId, suggestion.ArticleId.Value.ToString(), displayText);
+            }
+
+            _showAutocomplete = false;
+            _autocompleteSuggestions = new();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error inserting session editor link");
+            Snackbar.Add("Failed to insert link", Severity.Error);
+        }
+    }
+
+    private async Task OnAutocompleteCreate(string articleName)
+    {
+        if (_autocompleteIsExternalQuery || string.IsNullOrWhiteSpace(articleName))
+        {
+            return;
+        }
+
+        var worldId = AppContext.CurrentWorldId ?? ViewModel.World?.Id ?? Guid.Empty;
+        if (worldId == Guid.Empty)
+        {
+            Snackbar.Add("Unable to determine world for new article", Severity.Warning);
+            return;
+        }
+
+        var editorElementId = _activeEditorKind == SessionEditorKind.Public ? PublicEditorElementId : PrivateEditorElementId;
+
+        try
+        {
+            var created = await WikiLinkService.CreateArticleFromAutocompleteAsync(articleName, worldId);
+            if (created == null)
+            {
+                Snackbar.Add("Failed to create article", Severity.Error);
+                return;
+            }
+
+            await JSRuntime.InvokeVoidAsync("insertWikiLink", editorElementId, created.Id.ToString(), created.Title);
+            _showAutocomplete = false;
+            _autocompleteSuggestions = new();
+            StateHasChanged();
+            Snackbar.Add($"Created and linked '{articleName}'", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error creating article from session editor autocomplete");
+            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private static bool TryParseExternalAutocompleteQuery(string query, out string sourceKey, out string remainder)
+    {
+        sourceKey = string.Empty;
+        remainder = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return false;
+        }
+
+        var slashIndex = query.IndexOf('/');
+        if (slashIndex <= 0)
+        {
+            return false;
+        }
+
+        sourceKey = query.Substring(0, slashIndex).Trim().ToLowerInvariant();
+        remainder = query.Substring(slashIndex + 1);
+        return !string.IsNullOrWhiteSpace(sourceKey);
+    }
+
+    private async Task OnWikiLinkClicked(string targetArticleId)
+    {
+        if (!Guid.TryParse(targetArticleId, out var articleId))
+        {
+            return;
+        }
+
+        try
+        {
+            var path = await ArticleCache.GetNavigationPathAsync(articleId);
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                Navigation.NavigateTo($"/article/{path}");
+            }
+            else
+            {
+                Snackbar.Add("Article not found", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error navigating to wiki link {ArticleId}", targetArticleId);
+            Snackbar.Add("Failed to navigate to article", Severity.Error);
+        }
+    }
+
+    private Task OnBrokenLinkClicked(string targetArticleId)
+    {
+        Snackbar.Add("This link points to a missing article", Severity.Warning);
+        return Task.CompletedTask;
+    }
+
+    private async Task<string?> GetArticlePath(string targetArticleId)
+    {
+        if (!Guid.TryParse(targetArticleId, out var articleId))
+        {
+            return null;
+        }
+
+        try
+        {
+            return await ArticleCache.GetArticlePathAsync(articleId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting article path {ArticleId}", targetArticleId);
+            return null;
+        }
+    }
+
+    private async Task<object?> GetArticleSummaryPreview(string targetArticleId)
+    {
+        if (!Guid.TryParse(targetArticleId, out var articleId))
+        {
+            return null;
+        }
+
+        try
+        {
+            var preview = await SummaryApi.GetSummaryPreviewAsync(articleId);
+            if (preview == null || !preview.HasSummary)
+            {
+                return null;
+            }
+
+            return new
+            {
+                title = preview.Title,
+                summary = preview.Summary,
+                templateName = preview.TemplateName
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting article summary preview {ArticleId}", targetArticleId);
+            return null;
+        }
+    }
+
+    private async Task OnExternalLinkClicked(string source, string id, string title)
+    {
+        if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(id))
+        {
+            return;
+        }
+
+        _externalPreviewOpen = true;
+        _externalPreviewLoading = true;
+        _externalPreviewError = null;
+        _externalPreviewSource = source;
+        _externalPreviewTitle = string.IsNullOrWhiteSpace(title) ? "External Link" : title;
+        _externalPreviewContent = null;
+        StateHasChanged();
+
+        var cacheKey = $"{source}:{id}".ToLowerInvariant();
+        if (_externalLinkCache.TryGetValue(cacheKey, out var cached))
+        {
+            _externalPreviewContent = cached;
+            _externalPreviewLoading = false;
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            var content = await ExternalLinkApiService.GetContentAsync(source, id, CancellationToken.None);
+
+            if (content == null || string.IsNullOrWhiteSpace(content.Markdown))
+            {
+                _externalPreviewError = "No content available.";
+            }
+            else
+            {
+                _externalPreviewContent = content;
+                _externalLinkCache[cacheKey] = content;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading external link preview for {Source} {Id}", source, id);
+            _externalPreviewError = "Failed to load external content.";
+        }
+        finally
+        {
+            _externalPreviewLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseExternalPreview()
+    {
+        _externalPreviewOpen = false;
+        StateHasChanged();
     }
 }

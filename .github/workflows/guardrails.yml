@@ -54,28 +54,55 @@ jobs:
       # instrumentation of referenced assemblies works correctly via the
       # Include filter in coverlet.runsettings.
       # ------------------------------------------------------------
-      - name: Test with coverage (XPlat Code Coverage)
+      - name: Test unit projects with coverage (XPlat Code Coverage)
         shell: pwsh
         run: |
           $workspace = $env:GITHUB_WORKSPACE
           $resultsDir = Join-Path $workspace "TestResults"
+          $unitCoverageDir = Join-Path $resultsDir "unit-coverage"
 
           # Clean previous results
           if (Test-Path $resultsDir) { Remove-Item -Recurse -Force $resultsDir }
+          New-Item -ItemType Directory -Force -Path $unitCoverageDir | Out-Null
 
-          dotnet test "${{ env.SOLUTION_PATH }}" `
+          $coverageRuns = @(
+            @{ Name = "Shared"; Project = "tests/Chronicis.Shared.Tests/Chronicis.Shared.Tests.csproj"; ResultsSubdir = "shared" },
+            @{ Name = "Api";    Project = "tests/Chronicis.Api.Tests/Chronicis.Api.Tests.csproj";       ResultsSubdir = "api" },
+            @{ Name = "Client"; Project = "tests/Chronicis.Client.Tests/Chronicis.Client.Tests.csproj"; ResultsSubdir = "client" }
+          )
+
+          foreach ($run in $coverageRuns) {
+            $projectResultsDir = Join-Path $unitCoverageDir $run.ResultsSubdir
+            Write-Host "Running coverage for $($run.Name): $($run.Project)"
+
+            dotnet test $run.Project `
+              --configuration Release `
+              --no-build `
+              --verbosity normal `
+              --collect:"XPlat Code Coverage" `
+              --settings coverlet.runsettings `
+              --results-directory "$projectResultsDir"
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "Coverage test run failed for $($run.Project)"
+            }
+          }
+
+      - name: Test architectural project (no coverage)
+        shell: pwsh
+        run: |
+          dotnet test "tests/Chronicis.ArchitecturalTests/Chronicis.ArchitecturalTests.csproj" `
             --configuration Release `
             --no-build `
-            --verbosity normal `
-            --collect:"XPlat Code Coverage" `
-            --settings coverlet.runsettings `
-            --results-directory "$resultsDir"
+            --verbosity normal
 
           # Find all coverage files produced by the collector
-          $coberturaFiles = Get-ChildItem -Recurse -Path $resultsDir -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue `
-            | Where-Object { $_.FullName -notmatch '[\\/]+Chronicis\.ArchitecturalTests[\\/]' }
+          $workspace = $env:GITHUB_WORKSPACE
+          $resultsDir = Join-Path $workspace "TestResults"
+          $unitCoverageDir = Join-Path $resultsDir "unit-coverage"
+          $coberturaFiles = Get-ChildItem -Recurse -Path $unitCoverageDir -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue
           if (-not $coberturaFiles -or $coberturaFiles.Count -eq 0) {
-            Write-Host "No coverage.cobertura.xml files found under: $resultsDir"
+            Write-Host "No coverage.cobertura.xml files found under: $unitCoverageDir"
             if (Test-Path $resultsDir) {
               Get-ChildItem -Recurse $resultsDir | Select-Object -First 300 | ForEach-Object { Write-Host $_.FullName }
             }
@@ -94,25 +121,53 @@ jobs:
         run: |
           $workspace = $env:GITHUB_WORKSPACE
           $resultsDir = Join-Path $workspace "TestResults"
+          $unitCoverageDir = Join-Path $resultsDir "unit-coverage"
           $reportDir  = Join-Path $workspace "${{ env.REPORT_DIR_REL }}"
+          $stagingDir = Join-Path $workspace "coverage-staging"
 
           if (Test-Path $reportDir) { Remove-Item -Recurse -Force $reportDir }
           New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
+          if (Test-Path $stagingDir) { Remove-Item -Recurse -Force $stagingDir }
+          New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
 
-          # Collect all cobertura files and build a sorted, semicolon-separated list
-          $reports = Get-ChildItem -Recurse -Path $resultsDir -Filter "coverage.cobertura.xml" `
-            | Where-Object { $_.FullName -notmatch '[\\/]+Chronicis\.ArchitecturalTests[\\/]' } `
-            | Sort-Object FullName `
-            | Select-Object -ExpandProperty FullName
+          $sharedCoverage = Get-ChildItem -Recurse -Path (Join-Path $unitCoverageDir "shared") -Filter "coverage.cobertura.xml" | Select-Object -First 1 -ExpandProperty FullName
+          $apiCoverage    = Get-ChildItem -Recurse -Path (Join-Path $unitCoverageDir "api")    -Filter "coverage.cobertura.xml" | Select-Object -First 1 -ExpandProperty FullName
+          $clientCoverage = Get-ChildItem -Recurse -Path (Join-Path $unitCoverageDir "client") -Filter "coverage.cobertura.xml" | Select-Object -First 1 -ExpandProperty FullName
 
-          if (-not $reports -or $reports.Count -eq 0) {
-            throw "No cobertura files to merge."
+          if (-not $sharedCoverage -or -not $apiCoverage -or -not $clientCoverage) {
+            throw "Missing one or more unit coverage inputs (shared/api/client)."
           }
 
-          $reportArg = ($reports -join ';')
+          $inputs = @(
+            @{ Name = "shared"; Assembly = "Chronicis.Shared"; Source = $sharedCoverage },
+            @{ Name = "api";    Assembly = "Chronicis.Api";    Source = $apiCoverage },
+            @{ Name = "client"; Assembly = "Chronicis.Client"; Source = $clientCoverage }
+          )
 
-          Write-Host "ReportGenerator inputs ($($reports.Count) files):"
-          $reports | ForEach-Object { Write-Host "  $_" }
+          $stagedCoberturas = @()
+          foreach ($input in $inputs) {
+            $target = Join-Path $stagingDir $input.Name
+            New-Item -ItemType Directory -Force -Path $target | Out-Null
+            Write-Host "Staging filtered coverage for $($input.Assembly) from $($input.Source)"
+
+            reportgenerator `
+              -reports:"$($input.Source)" `
+              -targetdir:"$target" `
+              -assemblyfilters:"+$($input.Assembly)" `
+              -reporttypes:"Cobertura"
+
+            $staged = Join-Path $target "Cobertura.xml"
+            if (-not (Test-Path $staged)) {
+              throw "Failed to generate staged Cobertura for $($input.Assembly)"
+            }
+
+            $stagedCoberturas += $staged
+          }
+
+          $reportArg = ($stagedCoberturas -join ';')
+
+          Write-Host "Final ReportGenerator inputs ($($stagedCoberturas.Count) files):"
+          $stagedCoberturas | ForEach-Object { Write-Host "  $_" }
 
           reportgenerator `
             -reports:"$reportArg" `
@@ -136,24 +191,35 @@ jobs:
         id: rates
         shell: pwsh
         run: |
-          $reportDir = Join-Path $env:GITHUB_WORKSPACE "${{ env.REPORT_DIR_REL }}"
-          $merged = Join-Path $reportDir "Cobertura.xml"
+          $workspace = $env:GITHUB_WORKSPACE
+          $stagingDir = Join-Path $workspace "coverage-staging"
+          $shared = Join-Path $stagingDir "shared/Cobertura.xml"
+          $api = Join-Path $stagingDir "api/Cobertura.xml"
+          $client = Join-Path $stagingDir "client/Cobertura.xml"
 
-          if (-not (Test-Path $merged)) {
-            $found = Get-ChildItem -Path $reportDir -Filter *Cobertura*.xml -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($found) { $merged = $found.FullName }
+          foreach ($path in @($shared, $api, $client)) {
+            if (-not (Test-Path $path)) {
+              throw "Staged Cobertura not found: $path"
+            }
           }
 
-          if (-not (Test-Path $merged)) {
-            throw "Merged Cobertura.xml not found."
-          }
-
-          Write-Host "Using merged Cobertura file: $merged"
-          python3 ci/coverage/extract_rates.py $merged | Out-File -Encoding utf8 rates.json
+          Write-Host "Using staged Cobertura inputs:"
+          Write-Host "  $shared"
+          Write-Host "  $api"
+          Write-Host "  $client"
+          python3 ci/coverage/extract_rates.py $shared $api $client | Out-File -Encoding utf8 rates.json
 
           $rates = Get-Content rates.json | ConvertFrom-Json
           "linePct=$($rates.linePct)"     | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
           "branchPct=$($rates.branchPct)" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+
+      - name: Append exact aggregated coverage rates
+        shell: pwsh
+        run: |
+          "" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "### Exact Aggregated Coverage (per-assembly staged Cobertura)" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "- Line coverage: `${{ steps.rates.outputs.linePct }}%`" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "- Branch coverage: `${{ steps.rates.outputs.branchPct }}%`" | Add-Content $env:GITHUB_STEP_SUMMARY
 
       # ------------------------------------------------------------
       # Update coverage history branch

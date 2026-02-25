@@ -143,6 +143,28 @@ public class ExportServiceTests
         Assert.DoesNotContain("desc", result);
     }
 
+    [Fact]
+    public void BuildSessionMarkdown_IncludesModifiedAndAiSummaryTimestamp()
+    {
+        var session = new Session
+        {
+            Name = "Session X",
+            CreatedAt = DateTime.UtcNow.AddHours(-1),
+            ModifiedAt = DateTime.UtcNow,
+            SessionDate = DateTime.UtcNow.Date,
+            PublicNotes = "<p>Body</p>",
+            AiSummary = "summary",
+            AiSummaryGeneratedAt = DateTime.UtcNow
+        };
+
+        var result = _sut.BuildSessionMarkdown(session);
+
+        Assert.Contains("modified:", result);
+        Assert.Contains("session_date:", result);
+        Assert.Contains("## AI Summary", result);
+        Assert.Contains("*Generated:", result);
+    }
+
     // ── SanitizeFileName ────────────────────────────────────
 
     [Fact]
@@ -172,6 +194,20 @@ public class ExportServiceTests
     public void SanitizeFileName_PreservesValidNames()
     {
         Assert.Equal("valid name", ExportService.SanitizeFileName("valid name"));
+    }
+
+    [Fact]
+    public void GetUniqueSiblingName_SkipsExistingSuffixes_UntilFreeName()
+    {
+        var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Name",
+            "Name (2)"
+        };
+
+        var actual = ExportService.GetUniqueSiblingName("Name", used);
+
+        Assert.Equal("Name (3)", actual);
     }
 
     // ── EscapeYaml ──────────────────────────────────────────
