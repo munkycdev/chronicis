@@ -167,4 +167,26 @@ public class SessionsController : ControllerBase
             _ => StatusCode(500, new { error = "An unexpected error occurred" })
         };
     }
+
+    /// <summary>
+    /// DELETE /api/sessions/{sessionId}/ai-summary - Clear a session AI summary.
+    /// </summary>
+    [HttpDelete("sessions/{sessionId:guid}/ai-summary")]
+    public async Task<IActionResult> ClearAiSummary(Guid sessionId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        _logger.LogDebug("Clearing AI summary for session {SessionId} by user {UserId}", sessionId, user.Id);
+
+        var result = await _sessionService.ClearAiSummaryAsync(sessionId, user.Id);
+
+        return result.Status switch
+        {
+            ServiceStatus.Success => NoContent(),
+            ServiceStatus.NotFound => NotFound(new { error = result.ErrorMessage }),
+            ServiceStatus.Forbidden => StatusCode(403, new { error = result.ErrorMessage }),
+            ServiceStatus.ValidationError => BadRequest(new { error = result.ErrorMessage }),
+            _ => StatusCode(500, new { error = "An unexpected error occurred" })
+        };
+    }
 }

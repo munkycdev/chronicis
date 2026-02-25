@@ -3,12 +3,14 @@
 @implements IDisposable
 @using System.ComponentModel
 @using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Services
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.Enums
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Authorization
 @inject SessionDetailViewModel ViewModel
 @inject IDialogService DialogService
+@inject IKeyboardShortcutService KeyboardShortcutService
 
 @if (ViewModel.IsLoading)
 {
@@ -157,16 +159,36 @@ else
                 <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Small" Class="mr-2" />
                 AI Summary
             </MudText>
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Secondary"
-                       OnClick="@ViewModel.GenerateAiSummaryAsync"
-                       Disabled="@(ViewModel.IsGeneratingSummary || ViewModel.IsDeleting)"
-                       StartIcon="@Icons.Material.Filled.AutoAwesome">
-                @(ViewModel.IsGeneratingSummary ? "Generating..." : "Generate")
-            </MudButton>
+            <div class="d-flex align-center">
+                @if (!string.IsNullOrWhiteSpace(ViewModel.Session.AiSummary))
+                {
+                    <MudTooltip Text="Refresh summary">
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                                       Color="Color.Secondary"
+                                       Disabled="@(ViewModel.IsGeneratingSummary || ViewModel.IsDeletingSummary || ViewModel.IsDeleting)"
+                                       OnClick="@ViewModel.GenerateAiSummaryAsync" />
+                    </MudTooltip>
+                    <MudTooltip Text="Delete summary">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
+                                       Disabled="@(ViewModel.IsGeneratingSummary || ViewModel.IsDeletingSummary || ViewModel.IsDeleting)"
+                                       OnClick="@ViewModel.ClearAiSummaryAsync" />
+                    </MudTooltip>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Secondary"
+                               OnClick="@ViewModel.GenerateAiSummaryAsync"
+                               Disabled="@(ViewModel.IsGeneratingSummary || ViewModel.IsDeleting)"
+                               StartIcon="@Icons.Material.Filled.AutoAwesome">
+                        @(ViewModel.IsGeneratingSummary ? "Generating..." : "Generate")
+                    </MudButton>
+                }
+            </div>
         </div>
 
-        @if (ViewModel.IsGeneratingSummary)
+        @if (ViewModel.IsGeneratingSummary || ViewModel.IsDeletingSummary)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
@@ -249,6 +271,11 @@ else
     [Parameter]
     public Guid SessionId { get; set; }
 
+    protected override void OnInitialized()
+    {
+        KeyboardShortcutService.OnSaveRequested += HandleSaveShortcut;
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         ViewModel.PropertyChanged -= OnViewModelChanged;
@@ -265,6 +292,16 @@ else
         {
             await ViewModel.SaveNotesAsync();
         }
+    }
+
+    private async void HandleSaveShortcut()
+    {
+        if (!ViewModel.IsCurrentUserGM || ViewModel.Session == null)
+        {
+            return;
+        }
+
+        await InvokeAsync(ViewModel.SaveNotesAsync);
     }
 
     private void OnSessionDateChanged(DateTime? value)
@@ -307,6 +344,7 @@ else
 
     public void Dispose()
     {
+        KeyboardShortcutService.OnSaveRequested -= HandleSaveShortcut;
         ViewModel.PropertyChanged -= OnViewModelChanged;
     }
 }

@@ -12,4 +12,5 @@ public interface ISessionService
     Task<ServiceResult<SessionDto>> UpdateSessionNotesAsync(Guid sessionId, SessionUpdateDto dto, Guid userId);
     Task<ServiceResult<bool>> DeleteSessionAsync(Guid sessionId, Guid userId);
     Task<ServiceResult<SummaryGenerationDto>> GenerateAiSummaryAsync(Guid sessionId, Guid userId);
+    Task<ServiceResult<bool>> ClearAiSummaryAsync(Guid sessionId, Guid userId);
 }

@@ -29,6 +29,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
     private bool _isLoading = true;
     private bool _isSavingNotes;
     private bool _isGeneratingSummary;
+    private bool _isDeletingSummary;
     private bool _isCreatingSessionNote;
     private bool _isDeleting;
     private bool _hasUnsavedChanges;
@@ -76,6 +77,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
     public bool IsLoading { get => _isLoading; private set => SetField(ref _isLoading, value); }
     public bool IsSavingNotes { get => _isSavingNotes; private set => SetField(ref _isSavingNotes, value); }
     public bool IsGeneratingSummary { get => _isGeneratingSummary; private set => SetField(ref _isGeneratingSummary, value); }
+    public bool IsDeletingSummary { get => _isDeletingSummary; private set => SetField(ref _isDeletingSummary, value); }
     public bool IsCreatingSessionNote { get => _isCreatingSessionNote; private set => SetField(ref _isCreatingSessionNote, value); }
     public bool IsDeleting { get => _isDeleting; private set => SetField(ref _isDeleting, value); }
     public bool HasUnsavedChanges { get => _hasUnsavedChanges; private set => SetField(ref _hasUnsavedChanges, value); }
@@ -260,6 +262,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
             return;
         }
 
+        var hadSummary = !string.IsNullOrWhiteSpace(Session.AiSummary);
         IsGeneratingSummary = true;
 
         try
@@ -275,7 +278,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
             Session.AiSummaryGeneratedAt = result.GeneratedDate;
             RaisePropertyChanged(nameof(Session));
 
-            _notifier.Success("AI summary generated");
+            _notifier.Success(hadSummary ? "AI summary refreshed" : "AI summary generated");
         }
         catch (Exception ex)
         {
@@ -285,6 +288,42 @@ public sealed class SessionDetailViewModel : ViewModelBase
         finally
         {
             IsGeneratingSummary = false;
+        }
+    }
+
+    public async Task ClearAiSummaryAsync()
+    {
+        if (Session == null || IsDeletingSummary || string.IsNullOrWhiteSpace(Session.AiSummary))
+        {
+            return;
+        }
+
+        IsDeletingSummary = true;
+
+        try
+        {
+            var cleared = await _sessionApi.ClearAiSummaryAsync(Session.Id);
+            if (!cleared)
+            {
+                _notifier.Error("Failed to delete AI summary");
+                return;
+            }
+
+            Session.AiSummary = null;
+            Session.AiSummaryGeneratedAt = null;
+            Session.AiSummaryGeneratedByUserId = null;
+            RaisePropertyChanged(nameof(Session));
+
+            _notifier.Success("AI summary deleted");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorSanitized(ex, "Error clearing AI summary for session {SessionId}", Session.Id);
+            _notifier.Error($"Failed to delete AI summary: {ex.Message}");
+        }
+        finally
+        {
+            IsDeletingSummary = false;
         }
     }
 

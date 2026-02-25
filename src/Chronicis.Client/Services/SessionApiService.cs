@@ -94,4 +94,12 @@ public class SessionApiService : ISessionApiService
             return null;
         }
     }
+
+    public async Task<bool> ClearAiSummaryAsync(Guid sessionId)
+    {
+        return await _http.DeleteEntityAsync(
+            $"sessions/{sessionId}/ai-summary",
+            _logger,
+            $"session AI summary for {sessionId}");
+    }
 }

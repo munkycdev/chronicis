@@ -23,6 +23,7 @@ public class SummaryService : ISummaryService
     private const decimal InputTokenCostPer1K = 0.00040m;
     private const decimal OutputTokenCostPer1K = 0.00176m;
     private const int CharsPerToken = 4;
+    private const string SessionSummaryPromptConfigKey = "AzureOpenAI:SessionSummaryPromptTemplate";
 
     // Well-known template IDs (from seed data)
     private static readonly Guid DefaultTemplateId = Guid.Parse("00000000-0000-0000-0000-000000000001");
@@ -654,7 +655,7 @@ public class SummaryService : ISummaryService
                 };
             }
 
-            var promptTemplate = await GetEffectivePromptAsync(null, null, CampaignRecapTemplateId);
+            var promptTemplate = await GetSessionPromptTemplateAsync();
             var webContent = "";
 
             var internalSources = sources
@@ -728,6 +729,17 @@ Based on the source materials above and following the custom instructions, provi
             .FirstOrDefaultAsync(t => t.Id == defaultTemplateId);
 
         return template?.PromptTemplate ?? throw new InvalidOperationException("Default template not found");
+    }
+
+    private async Task<string> GetSessionPromptTemplateAsync()
+    {
+        var configuredTemplate = _configuration[SessionSummaryPromptConfigKey];
+        if (!string.IsNullOrWhiteSpace(configuredTemplate))
+        {
+            return configuredTemplate;
+        }
+
+        return await GetEffectivePromptAsync(null, null, CampaignRecapTemplateId);
     }
 
     private static string BuildPrompt(string template, string entityName, string sourceContent, string webContent)

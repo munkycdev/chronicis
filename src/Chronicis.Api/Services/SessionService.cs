@@ -416,6 +416,37 @@ public class SessionService : ISessionService
         return ServiceResult<SummaryGenerationDto>.Success(generation);
     }
 
+    public async Task<ServiceResult<bool>> ClearAiSummaryAsync(Guid sessionId, Guid userId)
+    {
+        var session = await _context.Sessions
+            .Include(s => s.Arc)
+                .ThenInclude(a => a.Campaign)
+                    .ThenInclude(c => c.World)
+                        .ThenInclude(w => w.Members)
+            .FirstOrDefaultAsync(s => s.Id == sessionId);
+
+        if (session == null)
+        {
+            return ServiceResult<bool>.NotFound("Session not found");
+        }
+
+        var membership = session.Arc.Campaign.World.Members.FirstOrDefault(m => m.UserId == userId);
+        if (membership == null)
+        {
+            return ServiceResult<bool>.NotFound("Session not found or access denied");
+        }
+
+        session.AiSummary = null;
+        session.AiSummaryGeneratedAt = null;
+        session.AiSummaryGeneratedByUserId = null;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogDebug("Cleared AI summary for session {SessionId}", sessionId);
+
+        return ServiceResult<bool>.Success(true);
+    }
+
     private async Task DeleteArticleAndDescendantsAsync(Guid articleId)
     {
         var childIds = await _context.Articles

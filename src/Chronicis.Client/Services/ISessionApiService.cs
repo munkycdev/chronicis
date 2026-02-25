@@ -37,4 +37,9 @@ public interface ISessionApiService
     /// Generate AI summary for a Session.
     /// </summary>
     Task<SummaryGenerationDto?> GenerateAiSummaryAsync(Guid sessionId);
+
+    /// <summary>
+    /// Clear AI summary for a Session.
+    /// </summary>
+    Task<bool> ClearAiSummaryAsync(Guid sessionId);
 }
