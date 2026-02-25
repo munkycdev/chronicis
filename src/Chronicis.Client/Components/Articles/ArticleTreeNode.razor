@@ -138,7 +138,7 @@
     public TreeNode Node { get; set; } = null!;
     
     [Parameter]
-    public EventCallback<Guid> OnSelect { get; set; }
+    public EventCallback<TreeNode> OnSelect { get; set; }
     
     [Parameter]
     public EventCallback<Guid> OnToggle { get; set; }
@@ -288,11 +288,11 @@
                 break;
 
             case TreeNodeType.Session:
-                await OnSelect.InvokeAsync(Node.Id);
+                await OnSelect.InvokeAsync(Node);
                 break;
                 
             case TreeNodeType.Article:
-                await OnSelect.InvokeAsync(Node.Id);
+                await OnSelect.InvokeAsync(Node);
                 break;
                 
             case TreeNodeType.ExternalLink:

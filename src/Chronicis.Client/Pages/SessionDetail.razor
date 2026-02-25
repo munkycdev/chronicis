@@ -180,10 +180,24 @@ else
 
         <MudDivider Class="my-4" />
 
-        <MudText Typo="Typo.h6" Class="mb-2" Style="color: var(--chronicis-beige-gold);">
-            <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Class="mr-2" />
-            Session Notes
-        </MudText>
+        <div class="d-flex align-center justify-space-between flex-wrap mb-2">
+            <MudText Typo="Typo.h6" Style="color: var(--chronicis-beige-gold);">
+                <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Class="mr-2" />
+                Session Notes
+            </MudText>
+
+            @if (ViewModel.CanCreateSessionNote)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           Size="Size.Small"
+                           OnClick="@ViewModel.CreateSessionNoteAsync"
+                           Disabled="@ViewModel.IsCreatingSessionNote"
+                           StartIcon="@Icons.Material.Filled.NoteAdd">
+                    @(ViewModel.IsCreatingSessionNote ? "Adding..." : "Add Session Note")
+                </MudButton>
+            }
+        </div>
 
         @if (ViewModel.SessionNotes.Any())
         {

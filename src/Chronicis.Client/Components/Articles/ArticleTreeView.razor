@@ -119,14 +119,10 @@
         return TreeState.RootNodes.Any(n => n.IsVisible);
     }
     
-    private async Task HandleSelect(Guid nodeId)
+    private async Task HandleSelect(TreeNode node)
     {
-        // Get the node to determine its type
-        var node = TreeState.RootNodes
-            .SelectMany(GetAllNodes)
-            .FirstOrDefault(n => n.Id == nodeId);
-        
         if (node == null) return;
+        var nodeId = node.Id;
         
         // Route based on node type
         switch (node.NodeType)
