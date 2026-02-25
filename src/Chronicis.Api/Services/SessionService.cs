@@ -13,15 +13,18 @@ public class SessionService : ISessionService
 {
     private readonly ChronicisDbContext _context;
     private readonly ISummaryService _summaryService;
+    private readonly IWorldDocumentService _worldDocumentService;
     private readonly ILogger<SessionService> _logger;
 
     public SessionService(
         ChronicisDbContext context,
         ISummaryService summaryService,
+        IWorldDocumentService worldDocumentService,
         ILogger<SessionService> logger)
     {
         _context = context;
         _summaryService = summaryService;
+        _worldDocumentService = worldDocumentService;
         _logger = logger;
     }
 
@@ -253,6 +256,75 @@ public class SessionService : ISessionService
         return ServiceResult<SessionDto>.Success(MapDto(session));
     }
 
+    public async Task<ServiceResult<bool>> DeleteSessionAsync(Guid sessionId, Guid userId)
+    {
+        var session = await _context.Sessions
+            .Include(s => s.Arc)
+                .ThenInclude(a => a.Campaign)
+                    .ThenInclude(c => c.World)
+                        .ThenInclude(w => w.Members)
+            .FirstOrDefaultAsync(s => s.Id == sessionId);
+
+        if (session == null)
+        {
+            return ServiceResult<bool>.NotFound("Session not found");
+        }
+
+        var membership = session.Arc.Campaign.World.Members.FirstOrDefault(m => m.UserId == userId);
+        if (membership == null)
+        {
+            return ServiceResult<bool>.NotFound("Session not found or access denied");
+        }
+
+        if (membership.Role != WorldRole.GM)
+        {
+            return ServiceResult<bool>.Forbidden("Only GMs can delete sessions");
+        }
+
+        // QuestUpdate.SessionId uses NO ACTION, so session-linked updates must be removed first.
+        var sessionQuestUpdates = await _context.QuestUpdates
+            .Where(qu => qu.SessionId == sessionId)
+            .ToListAsync();
+
+        if (sessionQuestUpdates.Count > 0)
+        {
+            _context.QuestUpdates.RemoveRange(sessionQuestUpdates);
+            await _context.SaveChangesAsync();
+        }
+
+        // Article.SessionId is SetNull, but product behavior expects session-linked notes to be deleted.
+        // Delete root attached article trees (and descendants) explicitly to preserve article-delete cleanup.
+        var attachedArticles = await _context.Articles
+            .Where(a => a.SessionId == sessionId)
+            .Select(a => new { a.Id, a.ParentId })
+            .ToListAsync();
+
+        if (attachedArticles.Count > 0)
+        {
+            var attachedIds = attachedArticles.Select(a => a.Id).ToHashSet();
+            var rootAttachedArticleIds = attachedArticles
+                .Where(a => !a.ParentId.HasValue || !attachedIds.Contains(a.ParentId.Value))
+                .Select(a => a.Id)
+                .ToList();
+
+            foreach (var articleId in rootAttachedArticleIds)
+            {
+                await DeleteArticleAndDescendantsAsync(articleId);
+            }
+        }
+
+        _context.Sessions.Remove(session);
+        await _context.SaveChangesAsync();
+
+        _logger.LogDebug(
+            "Deleted session {SessionId} with {QuestUpdateCount} quest updates and {AttachedArticleCount} attached session articles",
+            sessionId,
+            sessionQuestUpdates.Count,
+            attachedArticles.Count);
+
+        return ServiceResult<bool>.Success(true);
+    }
+
     public async Task<ServiceResult<SummaryGenerationDto>> GenerateAiSummaryAsync(Guid sessionId, Guid userId)
     {
         var session = await _context.Sessions
@@ -342,6 +414,34 @@ public class SessionService : ISessionService
         _logger.LogDebug("Generated AI summary for session {SessionId}", sessionId);
 
         return ServiceResult<SummaryGenerationDto>.Success(generation);
+    }
+
+    private async Task DeleteArticleAndDescendantsAsync(Guid articleId)
+    {
+        var childIds = await _context.Articles
+            .Where(a => a.ParentId == articleId)
+            .Select(a => a.Id)
+            .ToListAsync();
+
+        foreach (var childId in childIds)
+        {
+            await DeleteArticleAndDescendantsAsync(childId);
+        }
+
+        var linksToDelete = await _context.ArticleLinks
+            .Where(l => l.SourceArticleId == articleId || l.TargetArticleId == articleId)
+            .ToListAsync();
+        _context.ArticleLinks.RemoveRange(linksToDelete);
+
+        await _worldDocumentService.DeleteArticleImagesAsync(articleId);
+
+        var article = await _context.Articles.FindAsync(articleId);
+        if (article != null)
+        {
+            _context.Articles.Remove(article);
+        }
+
+        await _context.SaveChangesAsync();
     }
 
     private async Task<string> GenerateUniqueRootSlugAsync(string title, Guid worldId)

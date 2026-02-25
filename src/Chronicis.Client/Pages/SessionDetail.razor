@@ -8,6 +8,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Authorization
 @inject SessionDetailViewModel ViewModel
+@inject IDialogService DialogService
 
 @if (ViewModel.IsLoading)
 {
@@ -128,13 +129,24 @@ else
             <div class="chronicis-flex-between mb-4">
                 <SaveStatusIndicator IsSaving="ViewModel.IsSavingNotes" HasUnsavedChanges="ViewModel.HasUnsavedChanges" />
 
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           OnClick="@ViewModel.SaveNotesAsync"
-                           Disabled="@(ViewModel.IsSavingNotes || !ViewModel.HasUnsavedChanges)"
-                           StartIcon="@Icons.Material.Filled.Save">
-                    Save Changes
-                </MudButton>
+                <div class="d-flex align-center">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="@ViewModel.SaveNotesAsync"
+                               Disabled="@(ViewModel.IsSavingNotes || ViewModel.IsDeleting || !ViewModel.HasUnsavedChanges)"
+                               StartIcon="@Icons.Material.Filled.Save">
+                        Save Changes
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Error"
+                               OnClick="OpenDeleteDialogAsync"
+                               Disabled="@ViewModel.IsDeleting"
+                               StartIcon="@Icons.Material.Filled.DeleteForever"
+                               Class="ml-2">
+                        @(ViewModel.IsDeleting ? "Deleting..." : "Delete Session")
+                    </MudButton>
+                </div>
             </div>
         }
 
@@ -148,7 +160,7 @@ else
             <MudButton Variant="Variant.Filled"
                        Color="Color.Secondary"
                        OnClick="@ViewModel.GenerateAiSummaryAsync"
-                       Disabled="@ViewModel.IsGeneratingSummary"
+                       Disabled="@(ViewModel.IsGeneratingSummary || ViewModel.IsDeleting)"
                        StartIcon="@Icons.Material.Filled.AutoAwesome">
                 @(ViewModel.IsGeneratingSummary ? "Generating..." : "Generate")
             </MudButton>
@@ -192,7 +204,7 @@ else
                            Color="Color.Primary"
                            Size="Size.Small"
                            OnClick="@ViewModel.CreateSessionNoteAsync"
-                           Disabled="@ViewModel.IsCreatingSessionNote"
+                           Disabled="@(ViewModel.IsCreatingSessionNote || ViewModel.IsDeleting)"
                            StartIcon="@Icons.Material.Filled.NoteAdd">
                     @(ViewModel.IsCreatingSessionNote ? "Adding..." : "Add Session Note")
                 </MudButton>
@@ -227,6 +239,13 @@ else
 }
 
 @code {
+    private static readonly DialogOptions _deleteDialogOptions = new()
+    {
+        CloseOnEscapeKey = true,
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+    };
+
     [Parameter]
     public Guid SessionId { get; set; }
 
@@ -251,6 +270,28 @@ else
     private void OnSessionDateChanged(DateTime? value)
     {
         ViewModel.EditSessionDate = value?.Date;
+    }
+
+    private async Task OpenDeleteDialogAsync()
+    {
+        if (!ViewModel.IsCurrentUserGM || ViewModel.Session == null || ViewModel.IsDeleting)
+        {
+            return;
+        }
+
+        var parameters = new DialogParameters<DeleteSessionDialog>
+        {
+            { x => x.SessionName, ViewModel.Session.Name }
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteSessionDialog>(
+            $"Delete \"{ViewModel.Session.Name}\"", parameters, _deleteDialogOptions);
+
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            await ViewModel.DeleteSessionAsync();
+        }
     }
 
     private static string FormatSessionDate(DateTime? sessionDate)

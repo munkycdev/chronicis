@@ -29,6 +29,11 @@ public interface ISessionApiService
     Task<SessionDto?> UpdateSessionNotesAsync(Guid sessionId, SessionUpdateDto dto);
 
     /// <summary>
+    /// Delete a Session and its session-linked child content.
+    /// </summary>
+    Task<bool> DeleteSessionAsync(Guid sessionId);
+
+    /// <summary>
     /// Generate AI summary for a Session.
     /// </summary>
     Task<SummaryGenerationDto?> GenerateAiSummaryAsync(Guid sessionId);

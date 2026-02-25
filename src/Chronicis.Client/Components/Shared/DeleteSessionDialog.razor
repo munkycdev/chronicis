@@ -1,0 +1,49 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Color="Color.Error">
+            <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
+            Delete Session
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Class="mb-3">
+            This will <strong>permanently delete</strong> <em>@SessionName</em> and all
+            associated session notes, session-linked quest updates, and child content.
+            This cannot be undone.
+        </MudText>
+        <MudText Class="mb-2">
+            Type <strong>@SessionName</strong> to confirm:
+        </MudText>
+        <MudTextField @bind-Value="_confirmText"
+                      Label="Session name"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      AutoFocus="true" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error"
+                   Variant="Variant.Filled"
+                   OnClick="Confirm"
+                   Disabled="@(!CanConfirm)"
+                   StartIcon="@Icons.Material.Filled.DeleteForever">
+            Delete Forever
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? MudDialog { get; set; }
+
+    [Parameter] public string SessionName { get; set; } = string.Empty;
+
+    private string _confirmText = string.Empty;
+
+    private bool CanConfirm =>
+        string.Equals(_confirmText, SessionName, StringComparison.Ordinal);
+
+    private void Cancel() => MudDialog?.Cancel();
+    private void Confirm() => MudDialog?.Close(DialogResult.Ok(true));
+}

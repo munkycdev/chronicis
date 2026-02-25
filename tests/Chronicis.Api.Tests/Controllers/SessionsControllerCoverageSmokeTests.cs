@@ -54,4 +54,21 @@ public class SessionsControllerCoverageSmokeTests
 
         Assert.IsType<OkObjectResult>(result.Result);
     }
+
+    [Fact]
+    public async Task SessionsController_DeleteSession_ReturnsNoContent_OnSuccess()
+    {
+        var user = ControllerCoverageTestFixtures.CreateCurrentUserService();
+        var sessionService = Substitute.For<ISessionService>();
+        var sessionId = Guid.NewGuid();
+
+        sessionService.DeleteSessionAsync(sessionId, Arg.Any<Guid>())
+            .Returns(ServiceResult<bool>.Success(true));
+
+        var sut = new SessionsController(sessionService, user, NullLogger<SessionsController>.Instance);
+
+        var result = await sut.DeleteSession(sessionId);
+
+        Assert.IsType<NoContentResult>(result);
+    }
 }

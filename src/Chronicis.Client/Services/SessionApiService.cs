@@ -65,6 +65,14 @@ public class SessionApiService : ISessionApiService
         }
     }
 
+    public async Task<bool> DeleteSessionAsync(Guid sessionId)
+    {
+        return await _http.DeleteEntityAsync(
+            $"sessions/{sessionId}",
+            _logger,
+            $"session {sessionId}");
+    }
+
     public async Task<SummaryGenerationDto?> GenerateAiSummaryAsync(Guid sessionId)
     {
         try

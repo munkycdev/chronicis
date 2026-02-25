@@ -288,6 +288,7 @@ public class ArticleServiceTests : IDisposable
         var result = await _service.MoveArticleAsync(
             TestHelpers.FixedIds.Article3,
             TestHelpers.FixedIds.Article1,
+            null,
             TestHelpers.FixedIds.User1);
 
         Assert.True(result.Success);
@@ -302,6 +303,7 @@ public class ArticleServiceTests : IDisposable
     {
         var result = await _service.MoveArticleAsync(
             TestHelpers.FixedIds.Article2,
+            null,
             null,
             TestHelpers.FixedIds.User1);
 
@@ -319,6 +321,7 @@ public class ArticleServiceTests : IDisposable
         var result = await _service.MoveArticleAsync(
             TestHelpers.FixedIds.Article2,
             TestHelpers.FixedIds.Article1,
+            null,
             TestHelpers.FixedIds.User1);
 
         Assert.True(result.Success);
@@ -333,6 +336,7 @@ public class ArticleServiceTests : IDisposable
         var result = await _service.MoveArticleAsync(
             TestHelpers.FixedIds.Article2,
             Guid.NewGuid(),
+            null,
             TestHelpers.FixedIds.User1);
 
         Assert.False(result.Success);
@@ -346,6 +350,7 @@ public class ArticleServiceTests : IDisposable
         var result = await _service.MoveArticleAsync(
             TestHelpers.FixedIds.Article1,
             TestHelpers.FixedIds.Article3,
+            null,
             TestHelpers.FixedIds.User1);
 
         Assert.False(result.Success);
@@ -358,6 +363,7 @@ public class ArticleServiceTests : IDisposable
         var result = await _service.MoveArticleAsync(
             TestHelpers.FixedIds.Article1,
             TestHelpers.FixedIds.Article1,
+            null,
             TestHelpers.FixedIds.User1);
 
         Assert.False(result.Success);
@@ -370,6 +376,7 @@ public class ArticleServiceTests : IDisposable
         var result = await _service.MoveArticleAsync(
             TestHelpers.FixedIds.Article2,
             null,
+            null,
             TestHelpers.FixedIds.User3);
 
         Assert.False(result.Success);
@@ -380,6 +387,7 @@ public class ArticleServiceTests : IDisposable
     {
         var result = await _service.MoveArticleAsync(
             TestHelpers.FixedIds.Article3,
+            null,
             null,
             TestHelpers.FixedIds.User1);
 

@@ -108,6 +108,16 @@ internal sealed class TreeNodeIndex
             }
         }
 
+        // Fallback for tests and partial tree states where root nodes are not populated
+        // but structural parent-child relationships still exist on indexed nodes.
+        foreach (var node in _nodes.Values)
+        {
+            if (node.Children.Contains(child))
+            {
+                return node;
+            }
+        }
+
         return null;
     }
 

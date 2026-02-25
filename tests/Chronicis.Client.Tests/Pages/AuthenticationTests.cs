@@ -1,6 +1,6 @@
+using System.Reflection;
 using Chronicis.Client.Pages;
 using Chronicis.Client.Tests.Components;
-using System.Reflection;
 using Xunit;
 
 namespace Chronicis.Client.Tests.Pages;

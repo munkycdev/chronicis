@@ -126,6 +126,27 @@ public class SessionsController : ControllerBase
     }
 
     /// <summary>
+    /// DELETE /api/sessions/{sessionId} - Delete a Session and all session-linked child content (GM only).
+    /// </summary>
+    [HttpDelete("sessions/{sessionId:guid}")]
+    public async Task<IActionResult> DeleteSession(Guid sessionId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        _logger.LogDebug("Deleting session {SessionId} by user {UserId}", sessionId, user.Id);
+
+        var result = await _sessionService.DeleteSessionAsync(sessionId, user.Id);
+
+        return result.Status switch
+        {
+            ServiceStatus.Success => NoContent(),
+            ServiceStatus.NotFound => NotFound(new { error = result.ErrorMessage }),
+            ServiceStatus.Forbidden => StatusCode(403, new { error = result.ErrorMessage }),
+            _ => StatusCode(500, new { error = "An unexpected error occurred" })
+        };
+    }
+
+    /// <summary>
     /// POST /api/sessions/{sessionId}/ai-summary/generate - Generate a public-safe AI summary for a session.
     /// </summary>
     [HttpPost("sessions/{sessionId:guid}/ai-summary/generate")]

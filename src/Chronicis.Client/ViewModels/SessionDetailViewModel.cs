@@ -30,6 +30,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
     private bool _isSavingNotes;
     private bool _isGeneratingSummary;
     private bool _isCreatingSessionNote;
+    private bool _isDeleting;
     private bool _hasUnsavedChanges;
     private SessionDto? _session;
     private ArcDto? _arc;
@@ -76,6 +77,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
     public bool IsSavingNotes { get => _isSavingNotes; private set => SetField(ref _isSavingNotes, value); }
     public bool IsGeneratingSummary { get => _isGeneratingSummary; private set => SetField(ref _isGeneratingSummary, value); }
     public bool IsCreatingSessionNote { get => _isCreatingSessionNote; private set => SetField(ref _isCreatingSessionNote, value); }
+    public bool IsDeleting { get => _isDeleting; private set => SetField(ref _isDeleting, value); }
     public bool HasUnsavedChanges { get => _hasUnsavedChanges; private set => SetField(ref _hasUnsavedChanges, value); }
     public SessionDto? Session { get => _session; private set => SetField(ref _session, value); }
     public ArcDto? Arc { get => _arc; private set => SetField(ref _arc, value); }
@@ -283,6 +285,43 @@ public sealed class SessionDetailViewModel : ViewModelBase
         finally
         {
             IsGeneratingSummary = false;
+        }
+    }
+
+    public async Task DeleteSessionAsync()
+    {
+        if (Session == null || !IsCurrentUserGM || IsDeleting)
+        {
+            return;
+        }
+
+        IsDeleting = true;
+
+        var sessionId = Session.Id;
+        var sessionName = Session.Name;
+        var arcId = Arc?.Id ?? Session.ArcId;
+
+        try
+        {
+            var deleted = await _sessionApi.DeleteSessionAsync(sessionId);
+            if (!deleted)
+            {
+                _notifier.Error("Failed to delete session");
+                return;
+            }
+
+            await _treeState.RefreshAsync();
+            _notifier.Success("Session deleted");
+            _navigator.NavigateTo($"/arc/{arcId}", replace: true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorSanitized(ex, "Error deleting session {SessionId}", sessionId);
+            _notifier.Error($"Failed to delete session '{sessionName}': {ex.Message}");
+        }
+        finally
+        {
+            IsDeleting = false;
         }
     }
 
