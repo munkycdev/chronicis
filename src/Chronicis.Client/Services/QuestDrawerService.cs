@@ -1,15 +1,13 @@
 namespace Chronicis.Client.Services;
 
 /// <summary>
-/// Service for coordinating quest drawer toggle events and mutual exclusivity with metadata drawer.
-/// Ensures only one drawer is open at a time.
-/// Implements IDisposable to properly clean up event subscriptions.
+/// Service for coordinating quest drawer toggle events.
+/// Wraps the shared drawer coordinator and preserves the existing event-based API.
 /// </summary>
 public class QuestDrawerService : IQuestDrawerService, IDisposable
 {
-    private readonly IMetadataDrawerService _metadataDrawerService;
+    private readonly IDrawerCoordinator _drawerCoordinator;
     private bool _isOpen;
-    private bool _isProcessingMutualExclusivity;
     private bool _disposed;
 
     public event Action? OnOpen;
@@ -17,29 +15,19 @@ public class QuestDrawerService : IQuestDrawerService, IDisposable
 
     public bool IsOpen => _isOpen;
 
-    public QuestDrawerService(IMetadataDrawerService metadataDrawerService)
+    public QuestDrawerService(IDrawerCoordinator drawerCoordinator)
     {
-        _metadataDrawerService = metadataDrawerService;
-
-        // Subscribe to metadata drawer toggle to ensure mutual exclusivity
-        _metadataDrawerService.OnToggle += OnMetadataDrawerToggled;
+        _drawerCoordinator = drawerCoordinator;
+        _isOpen = _drawerCoordinator.Current == DrawerType.Quests;
+        _drawerCoordinator.OnChanged += OnDrawerCoordinatorChanged;
     }
 
     public void Open()
     {
-        if (_disposed || _isOpen || _isProcessingMutualExclusivity)
+        if (_disposed)
             return;
 
-        _isProcessingMutualExclusivity = true;
-        try
-        {
-            _isOpen = true;
-            OnOpen?.Invoke();
-        }
-        finally
-        {
-            _isProcessingMutualExclusivity = false;
-        }
+        _drawerCoordinator.Open(DrawerType.Quests);
     }
 
     public void Close()
@@ -47,8 +35,7 @@ public class QuestDrawerService : IQuestDrawerService, IDisposable
         if (_disposed || !_isOpen)
             return;
 
-        _isOpen = false;
-        OnClose?.Invoke();
+        _drawerCoordinator.Close();
     }
 
     public void Toggle()
@@ -56,19 +43,29 @@ public class QuestDrawerService : IQuestDrawerService, IDisposable
         if (_disposed)
             return;
 
-        if (_isOpen)
-            Close();
-        else
-            Open();
+        _drawerCoordinator.Toggle(DrawerType.Quests);
     }
 
-    private void OnMetadataDrawerToggled()
+    private void OnDrawerCoordinatorChanged()
     {
-        // If metadata drawer is toggled while quest drawer is open, close quest drawer
-        // to ensure mutual exclusivity
-        if (_isOpen && !_isProcessingMutualExclusivity && !_disposed)
+        if (_disposed)
         {
-            _isOpen = false;
+            return;
+        }
+
+        var isOpenNow = _drawerCoordinator.Current == DrawerType.Quests;
+        if (_isOpen == isOpenNow)
+        {
+            return;
+        }
+
+        _isOpen = isOpenNow;
+        if (_isOpen)
+        {
+            OnOpen?.Invoke();
+        }
+        else
+        {
             OnClose?.Invoke();
         }
     }
@@ -79,11 +76,7 @@ public class QuestDrawerService : IQuestDrawerService, IDisposable
             return;
 
         _disposed = true;
-
-        // Unsubscribe from metadata drawer events to prevent memory leaks
-        _metadataDrawerService.OnToggle -= OnMetadataDrawerToggled;
-
-        // Clear event handlers
+        _drawerCoordinator.OnChanged -= OnDrawerCoordinatorChanged;
         OnOpen = null;
         OnClose = null;
 

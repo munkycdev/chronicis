@@ -5,7 +5,18 @@ namespace Chronicis.Client.Services;
 /// </summary>
 public class MetadataDrawerService : IMetadataDrawerService
 {
+    private readonly IDrawerCoordinator _drawerCoordinator;
+
+    public MetadataDrawerService(IDrawerCoordinator drawerCoordinator)
+    {
+        _drawerCoordinator = drawerCoordinator;
+    }
+
     public event Action? OnToggle;
 
-    public void Toggle() => OnToggle?.Invoke();
+    public void Toggle()
+    {
+        _drawerCoordinator.Toggle(DrawerType.Metadata);
+        OnToggle?.Invoke();
+    }
 }

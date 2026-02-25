@@ -1,0 +1,153 @@
+@using Chronicis.Client.Components.Articles
+@using Chronicis.Client.Components.Quests
+@using Chronicis.Client.Components.Tutorials
+@using Chronicis.Client.Services
+@using Chronicis.Shared.DTOs
+@using System.Diagnostics.CodeAnalysis
+@attribute [ExcludeFromCodeCoverage]
+@inject IDrawerCoordinator DrawerCoordinator
+@implements IDisposable
+
+<style>
+    .drawer-host.mud-drawer-persistent {
+        height: auto !important;
+    }
+
+    .drawer-host .mud-drawer-content {
+        padding: 8px;
+        background-color: var(--chronicis-soft-off-white);
+        border-right-color: transparent;
+    }
+
+    .drawer-host-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 16px;
+    }
+
+    .drawer-host-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.125rem !important;
+        font-weight: 600;
+    }
+    
+    .drawer-host-title .mud-icon-root {
+        color: var(--chronicis-beige-gold);
+    }
+
+    .drawer-host-pane {
+        display: none;
+    }
+
+    .drawer-host-pane.active {
+        display: block;
+    }
+</style>
+
+<MudDrawer Open="@IsAnyDrawerOpen"
+           Fixed="true"
+           Anchor="Anchor.End"
+           Elevation="9999"
+           Variant="@DrawerVariant.Persistent"
+           ClipMode="@DrawerClipMode.Always"
+           Class="drawer-host">
+    <MudDrawerHeader Class="drawer-host-header">
+        <MudText Typo="Typo.h6" Class="drawer-host-title">
+            <MudIcon Icon="@CurrentDrawerIcon" Size="Size.Small" />
+            @CurrentDrawerTitle
+        </MudText>
+        <MudSpacer />
+        @if (CanCloseCurrentDrawer)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                           Size="Size.Small"
+                           OnClick="CloseCurrentDrawer" />
+        }
+    </MudDrawerHeader>
+
+    <div class="drawer-host-pane @(IsMetadataOpen ? "active" : "")">
+        @if (Article != null)
+        {
+            <ArticleMetadataDrawer @ref="_metadataDrawer"
+                                   Article="Article"
+                                   IsOpen="IsMetadataOpen" />
+        }
+        else
+        {
+            <div class="pa-4">
+                <MudText Typo="Typo.body2">Select an article to view metadata.</MudText>
+            </div>
+        }
+    </div>
+
+    <div class="drawer-host-pane @(IsQuestsOpen ? "active" : "")">
+        <QuestDrawer IsOpen="IsQuestsOpen" />
+    </div>
+
+    <div class="drawer-host-pane @(IsTutorialOpen ? "active" : "")">
+        <TutorialDrawer IsOpen="IsTutorialOpen"
+                       IsForcedOpen="IsTutorialForcedOpen"
+                       Article="Article" />
+    </div>
+</MudDrawer>
+
+@code {
+    private ArticleMetadataDrawer? _metadataDrawer;
+
+    [Parameter]
+    public ArticleDto? Article { get; set; }
+
+    public async Task RefreshMetadataAsync()
+    {
+        if (_metadataDrawer != null && IsMetadataOpen)
+        {
+            await _metadataDrawer.RefreshPanelsAsync();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        DrawerCoordinator.OnChanged += HandleDrawerCoordinatorChanged;
+    }
+
+    private bool IsAnyDrawerOpen => DrawerCoordinator.Current != DrawerType.None;
+    private bool IsTutorialOpen => DrawerCoordinator.Current == DrawerType.Tutorial;
+    private bool IsQuestsOpen => DrawerCoordinator.Current == DrawerType.Quests;
+    private bool IsMetadataOpen => DrawerCoordinator.Current == DrawerType.Metadata;
+    private bool IsTutorialForcedOpen => DrawerCoordinator.IsForcedOpen && IsTutorialOpen;
+    private bool CanCloseCurrentDrawer => IsAnyDrawerOpen && !IsTutorialForcedOpen;
+
+    private string CurrentDrawerTitle => DrawerCoordinator.Current switch
+    {
+        DrawerType.Tutorial => "Tutorial",
+        DrawerType.Quests => "Quests",
+        DrawerType.Metadata => "Metadata",
+        _ => string.Empty
+    };
+
+    private string CurrentDrawerIcon => DrawerCoordinator.Current switch
+    {
+        DrawerType.Tutorial => Icons.Material.Filled.School,
+        DrawerType.Quests => Icons.Material.Filled.Assignment,
+        DrawerType.Metadata => Icons.Material.Filled.IntegrationInstructions,
+        _ => Icons.Material.Filled.HelpOutline
+    };
+
+    private void CloseCurrentDrawer()
+    {
+        DrawerCoordinator.Close();
+    }
+
+    private async void HandleDrawerCoordinatorChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        DrawerCoordinator.OnChanged -= HandleDrawerCoordinatorChanged;
+    }
+}

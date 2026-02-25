@@ -13,7 +13,10 @@ namespace Chronicis.Client.Components.Quests;
 public partial class QuestDrawer : IAsyncDisposable
 {
     [Inject] private IArticleApiService ArticleApi { get; set; } = null!;
-    private bool IsOpen { get; set; }
+
+    [Parameter]
+    public bool IsOpen { get; set; }
+
     private bool _isLoading;
     private bool _isSubmitting;
     private bool _loadingUpdates;
@@ -38,11 +41,25 @@ public partial class QuestDrawer : IAsyncDisposable
     private bool _disposed;
     private bool _questsLoadedForArc;
     private bool _needsEditorInit; // Flag to trigger editor init after render
+    private bool _lastIsOpen;
 
-    protected override void OnInitialized()
+    protected override async Task OnParametersSetAsync()
     {
-        QuestDrawerService.OnOpen += HandleOpen;
-        QuestDrawerService.OnClose += HandleClose;
+        if (IsOpen == _lastIsOpen)
+        {
+            return;
+        }
+
+        _lastIsOpen = IsOpen;
+
+        if (IsOpen)
+        {
+            await HandleOpenAsync();
+        }
+        else
+        {
+            await HandleCloseAsync();
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -55,44 +72,36 @@ public partial class QuestDrawer : IAsyncDisposable
         }
     }
 
-    private async void HandleOpen()
+    private async Task HandleOpenAsync()
     {
-        IsOpen = true;
-        await InvokeAsync(async () =>
-        {
-            await LoadQuestsAsync();
-            StateHasChanged();
+        await LoadQuestsAsync();
+        StateHasChanged();
 
-            // Focus the first quest selector after render
-            if (_quests?.Any() == true)
-            {
-                await Task.Delay(100);
-                await FocusFirstQuestAsync();
-            }
-        });
+        // Focus the first quest selector after render
+        if (_quests?.Any() == true)
+        {
+            await Task.Delay(100);
+            await FocusFirstQuestAsync();
+        }
     }
 
-    private async void HandleClose()
+    private async Task HandleCloseAsync()
     {
-        IsOpen = false;
-        await InvokeAsync(async () =>
-        {
-            await DisposeEditorAsync();
-            _selectedQuestId = null;
-            _selectedQuest = null;
-            _recentUpdates = null;
-            _validationError = null;
-            _questsLoadedForArc = false;
-            _quests = null;
-            StateHasChanged();
-        });
+        await DisposeEditorAsync();
+        _selectedQuestId = null;
+        _selectedQuest = null;
+        _recentUpdates = null;
+        _validationError = null;
+        _questsLoadedForArc = false;
+        _quests = null;
+        StateHasChanged();
     }
 
     private async Task CloseDrawer()
     {
         QuestDrawerService.Close();
 
-        // Give drawer time to close, then return focus to main content
+        // Give the drawer host time to animate closed, then return focus to main content.
         await Task.Delay(200);
         await RestoreFocusAsync();
     }
@@ -532,9 +541,6 @@ public partial class QuestDrawer : IAsyncDisposable
             return;
 
         _disposed = true;
-
-        QuestDrawerService.OnOpen -= HandleOpen;
-        QuestDrawerService.OnClose -= HandleClose;
 
         // Properly dispose TipTap editor
         await DisposeEditorAsync();

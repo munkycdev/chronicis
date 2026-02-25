@@ -11,7 +11,7 @@ public class MetadataDrawerServiceTests
     public void Toggle_RaisesOnToggleEvent()
     {
         // Arrange
-        var sut = new MetadataDrawerService();
+        var sut = new MetadataDrawerService(new DrawerCoordinator());
         var eventRaised = false;
         sut.OnToggle += () => eventRaised = true;
 
@@ -26,7 +26,7 @@ public class MetadataDrawerServiceTests
     public void Toggle_WithNoSubscribers_DoesNotThrow()
     {
         // Arrange
-        var sut = new MetadataDrawerService();
+        var sut = new MetadataDrawerService(new DrawerCoordinator());
 
         // Act & Assert - Should not throw
         sut.Toggle();
@@ -36,7 +36,7 @@ public class MetadataDrawerServiceTests
     public void Toggle_CalledMultipleTimes_RaisesEventEachTime()
     {
         // Arrange
-        var sut = new MetadataDrawerService();
+        var sut = new MetadataDrawerService(new DrawerCoordinator());
         var eventCount = 0;
         sut.OnToggle += () => eventCount++;
 

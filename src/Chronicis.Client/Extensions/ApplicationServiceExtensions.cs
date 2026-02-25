@@ -44,6 +44,7 @@ public static class ApplicationServiceExtensions
         services.AddChronicisApiService<IDashboardApiService, DashboardApiService>();
         services.AddChronicisApiService<IResourceProviderApiService, ResourceProviderApiService>();
         services.AddChronicisApiService<IAdminApiService, AdminApiService>();
+        services.AddChronicisApiService<ITutorialApiService, TutorialApiService>();
 
         // API services with special dependencies
         services.AddChronicisApiServiceWithSnackbar<IQuestApiService, QuestApiService>();
@@ -91,9 +92,11 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAdminAuthService, AdminAuthService>();
         services.AddScoped<IAppContextService, AppContextService>();
+        services.AddScoped<IDrawerCoordinator, DrawerCoordinator>();
         services.AddScoped<IMetadataDrawerService, MetadataDrawerService>();
         services.AddScoped<IQuestDrawerService, QuestDrawerService>();
         services.AddScoped<IKeyboardShortcutService, KeyboardShortcutService>();
+        services.AddScoped<TutorialPageTypeResolver>();
 
         // Domain services
         services.AddScoped<IArticleCacheService, ArticleCacheService>();

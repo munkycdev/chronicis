@@ -341,6 +341,7 @@ public class WorldService : IWorldService
             CampaignCount = world.Campaigns?.Count ?? 0,
             MemberCount = world.Members?.Count ?? 0,
             IsPublic = world.IsPublic,
+            IsTutorial = world.IsTutorial,
             PublicSlug = world.PublicSlug
         };
     }
@@ -359,6 +360,7 @@ public class WorldService : IWorldService
             CampaignCount = world.Campaigns?.Count ?? 0,
             MemberCount = world.Members?.Count ?? 0,
             IsPublic = world.IsPublic,
+            IsTutorial = world.IsTutorial,
             PublicSlug = world.PublicSlug,
             Campaigns = world.Campaigns?.Select(c => new CampaignDto
             {

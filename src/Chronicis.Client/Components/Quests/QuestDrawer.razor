@@ -247,21 +247,8 @@
     }
 </style>
 
-<MudDrawer @bind-Open="IsOpen"
-           Fixed="true"
-           Anchor="Anchor.End"
-           Elevation="9999"
-           Variant="@DrawerVariant.Persistent"
-           ClipMode="@DrawerClipMode.Always"
-           Class="quest-drawer">
-    <MudDrawerHeader Class="quest-drawer-header">
-        <MudText Typo="Typo.h5">
-            <MudIcon Icon="@Icons.Material.Filled.Assignment" />
-            Quests
-        </MudText>
-    </MudDrawerHeader>
-    <MudDrawerContainer Class="quest-drawer-scrollable chronicis-scrollbar-light">
-        
+<MudDrawerContainer Class="quest-drawer-scrollable chronicis-scrollbar-light">
+    
         @if (_emptyStateMessage != null)
         {
             <!-- Empty State -->
@@ -472,8 +459,7 @@
             </div>
         }
         
-    </MudDrawerContainer>
-</MudDrawer>
+</MudDrawerContainer>
 
 @* Wiki Link Autocomplete Component *@
 <WikiLinkAutocomplete EditorId="quest-update-editor" 

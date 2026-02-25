@@ -58,6 +58,7 @@ public class PublicWorldService : IPublicWorldService
             CreatedAt = world.CreatedAt,
             CampaignCount = world.Campaigns?.Count ?? 0,
             IsPublic = world.IsPublic,
+            IsTutorial = world.IsTutorial,
             PublicSlug = world.PublicSlug,
             // Include public campaigns
             Campaigns = world.Campaigns?.Select(c => new CampaignDto

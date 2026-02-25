@@ -1,0 +1,226 @@
+@using Chronicis.Shared.DTOs
+@using Microsoft.AspNetCore.Components.Routing
+@using System.Diagnostics.CodeAnalysis
+@attribute [ExcludeFromCodeCoverage]
+@inject NavigationManager Navigation
+@inject ITutorialApiService TutorialApi
+@inject TutorialPageTypeResolver PageTypeResolver
+@inject IMarkdownService MarkdownService
+@inject ILogger<TutorialDrawer> Logger
+@implements IDisposable
+
+<div class="tutorial-drawer-content chronicis-scrollbar-light">
+    @if (_isLoading)
+    {
+        <div class="tutorial-drawer-state">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+            <MudText Typo="Typo.body2" Class="mt-3">Loading tutorial...</MudText>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" Class="ma-2">
+            @_errorMessage
+        </MudAlert>
+    }
+    else if (_tutorial == null)
+    {
+        <div class="tutorial-drawer-state">
+            <MudIcon Icon="@Icons.Material.Filled.School"
+                     Size="Size.Large"
+                     Style="font-size: 3rem; opacity: 0.35; color: var(--chronicis-beige-gold);" />
+            <MudText Typo="Typo.body1" Align="Align.Center" Class="mt-3">
+                No tutorial content is available for this page yet.
+            </MudText>
+        </div>
+    }
+    else
+    {
+        <div class="tutorial-drawer-panel">
+            <MudText Typo="Typo.h6" Class="tutorial-drawer-title">@_tutorial.Title</MudText>
+
+            @if (_tutorial.ModifiedAt != default)
+            {
+                <MudText Typo="Typo.caption" Class="tutorial-drawer-caption">
+                    Updated @_tutorial.ModifiedAt.ToLocalTime().ToString("g")
+                </MudText>
+            }
+
+            @if (IsForcedOpen)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-3">
+                    Tutorial is required in this context.
+                </MudAlert>
+            }
+
+            <div class="tutorial-drawer-body">
+                @((MarkupString)MarkdownService.EnsureHtml(_tutorial.Body))
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private TutorialDto? _tutorial;
+    private bool _isLoading;
+    private string? _errorMessage;
+    private string _resolvedPageType = string.Empty;
+    private bool _lastIsOpen;
+    private int _loadVersion;
+
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public bool IsForcedOpen { get; set; }
+
+    [Parameter]
+    public ArticleDto? Article { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += HandleLocationChanged;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var pageType = ResolveCurrentPageType();
+        var drawerJustOpened = IsOpen && !_lastIsOpen;
+        var pageTypeChanged = !string.Equals(pageType, _resolvedPageType, StringComparison.Ordinal);
+
+        _resolvedPageType = pageType;
+
+        if (IsOpen && (drawerJustOpened || pageTypeChanged))
+        {
+            await LoadTutorialAsync(pageType);
+        }
+
+        _lastIsOpen = IsOpen;
+    }
+
+    private string ResolveCurrentPageType()
+        => PageTypeResolver.Resolve(Navigation.Uri, Article?.Type);
+
+    private async Task LoadTutorialAsync(string pageType)
+    {
+        if (!IsOpen || string.IsNullOrWhiteSpace(pageType))
+        {
+            return;
+        }
+
+        var requestVersion = ++_loadVersion;
+        _isLoading = true;
+        _errorMessage = null;
+        _tutorial = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var tutorial = await TutorialApi.ResolveAsync(pageType);
+            if (requestVersion != _loadVersion)
+            {
+                return;
+            }
+
+            _tutorial = tutorial;
+        }
+        catch (Exception ex)
+        {
+            if (requestVersion != _loadVersion)
+            {
+                return;
+            }
+
+            Logger.LogError(ex, "Failed to resolve tutorial for page type {PageType}", pageType);
+            _errorMessage = "Failed to load tutorial content.";
+        }
+        finally
+        {
+            if (requestVersion == _loadVersion)
+            {
+                _isLoading = false;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        if (!IsOpen)
+        {
+            return;
+        }
+
+        _ = InvokeAsync(async () =>
+        {
+            var pageType = ResolveCurrentPageType();
+            _resolvedPageType = pageType;
+            await LoadTutorialAsync(pageType);
+        });
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= HandleLocationChanged;
+    }
+}
+
+<style>
+    .tutorial-drawer-content {
+        height: calc(100vh - 180px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 12px;
+    }
+
+    .tutorial-drawer-state {
+        display: flex;
+        min-height: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        text-align: center;
+    }
+
+    .tutorial-drawer-panel {
+        padding: 4px;
+    }
+
+    .tutorial-drawer-title {
+        color: var(--chronicis-beige-gold);
+        line-height: 1.3;
+    }
+
+    .tutorial-drawer-caption {
+        display: block;
+        margin-top: 4px;
+        color: var(--mud-palette-text-secondary);
+    }
+
+    .tutorial-drawer-body {
+        margin-top: 12px;
+        padding: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.7);
+    }
+
+    .tutorial-drawer-body :is(h1, h2, h3, h4, h5, h6) {
+        margin-top: 0.9rem;
+        color: var(--chronicis-beige-gold);
+    }
+
+    .tutorial-drawer-body :is(p, ul, ol) {
+        margin-bottom: 0.75rem;
+    }
+
+    .tutorial-drawer-body img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .tutorial-drawer-body pre {
+        overflow-x: auto;
+    }
+ </style>

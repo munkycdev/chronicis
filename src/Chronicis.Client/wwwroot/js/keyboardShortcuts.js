@@ -79,6 +79,15 @@ window.chronicisKeyboardShortcuts = {
             }
             return;
         }
+
+        // Ctrl+T - Toggle tutorial drawer (works everywhere, including editors).
+        // Do not preventDefault so browser/platform-reserved Ctrl+T can still win gracefully.
+        if (e.ctrlKey && e.key && e.key.toLowerCase() === 't') {
+            if (this.dotNetHelper) {
+                this.dotNetHelper.invokeMethodAsync('OnCtrlT');
+            }
+            return;
+        }
         
         // Skip other shortcuts if in input
         if (isInInput) {

@@ -94,6 +94,7 @@ public class WorldPublicSharingService : IWorldPublicSharingService
             CampaignCount = world.Campaigns?.Count ?? 0,
             MemberCount = world.Members?.Count ?? 0,
             IsPublic = world.IsPublic,
+            IsTutorial = world.IsTutorial,
             PublicSlug = world.PublicSlug
         };
     }

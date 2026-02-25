@@ -29,6 +29,11 @@ public class WorldDto
     public bool IsPublic { get; set; }
 
     /// <summary>
+    /// Whether this world is a tutorial/onboarding world.
+    /// </summary>
+    public bool IsTutorial { get; set; }
+
+    /// <summary>
     /// Globally unique slug for public access. Null if world is not public.
     /// </summary>
     public string? PublicSlug { get; set; }

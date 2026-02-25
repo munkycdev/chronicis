@@ -15,13 +15,7 @@
 @inject ISnackbar Snackbar
 
 <style>
-    .metadata-drawer .mud-drawer-content {
-        padding: 8px;
-    }
-    .metadata-drawer.mud-drawer-persistent {
-        height: auto !important;
-    }
-    .metadata-drawer p {
+    .metadata-drawer-content p {
         font-size: 0.8rem;
     }
 
@@ -97,22 +91,9 @@
     }
 </style>
 
-<MudDrawer @bind-Open="IsOpen"
-           @bind-Open:after="OnOpenChangedInternal"
-           Fixed="true"
-           Anchor="Anchor.End"
-           Elevation="9999"
-           Variant="@DrawerVariant.Persistent"
-           ClipMode="@DrawerClipMode.Always"
-           Class="metadata-drawer">
-    <MudDrawerHeader Class="backlinks-header">
-        <MudText Typo="Typo.h6" Class="backlinks-title">
-            <MudIcon Icon="@Icons.Material.Filled.IntegrationInstructions" Size="Size.Small" />
-            Metadata
-        </MudText>
-    </MudDrawerHeader>
+<div class="metadata-drawer-content">
     <MudDrawerContainer Class="metadata-drawer-scrollable chronicis-scrollbar-light">
-        
+    
         <!-- ========================================= -->
         <!-- SECTION 1: LINKS & CONNECTIONS           -->
         <!-- ========================================= -->
@@ -326,7 +307,7 @@
         }
         
     </MudDrawerContainer>
-</MudDrawer>
+</div>
 
 @code {
     // Link panel state - managed by THIS component
@@ -349,15 +330,13 @@
     private string _aliasesText = string.Empty;
     private string _originalAliasesText = string.Empty;
     private bool _isSavingAliases;
+    private bool _lastIsOpen;
 
     [Parameter]
     public ArticleDto Article { get; set; } = null!;
 
     [Parameter]
     public bool IsOpen { get; set; }
-
-    [Parameter]
-    public EventCallback<bool> IsOpenChanged { get; set; }
 
     [Parameter]
     public EventCallback OnArticleVisibilityChanged { get; set; }
@@ -385,25 +364,24 @@
             _originalAliasesText = newAliasesText;
         }
         
-        // Load links when article changes
+        // Load links when article changes (or when the drawer is opened after being closed)
         var articleChanged = Article.Id != _lastArticleId;
+        var drawerJustOpened = IsOpen && !_lastIsOpen;
+
         if (articleChanged)
         {
             _lastArticleId = Article.Id;
             _backlinks = new();
             _outgoingLinks = new();
             _externalLinks = new();
-            
-            // Only load if drawer is already open
-            if (IsOpen)
-            {
-                await Task.WhenAll(
-                    LoadBacklinksAsync(),
-                    LoadOutgoingLinksAsync(),
-                    LoadExternalLinksAsync()
-                );
-            }
         }
+
+        if (IsOpen && (articleChanged || drawerJustOpened))
+        {
+            await EnsurePanelDataLoadedAsync();
+        }
+
+        _lastIsOpen = IsOpen;
     }
 
     private async Task HandleVisibilityChanged(ArticleVisibility newVisibility)
@@ -562,27 +540,21 @@
         );
     }
 
-    private async Task OnOpenChangedInternal()
+    private async Task EnsurePanelDataLoadedAsync()
     {
-        await IsOpenChanged.InvokeAsync(IsOpen);
-        
-        // Load links when drawer opens (if not already loaded)
-        if (IsOpen)
-        {
-            var tasks = new List<Task>();
-            
-            if (!_backlinks.Any() && !_loadingBacklinks)
-                tasks.Add(LoadBacklinksAsync());
-                
-            if (!_outgoingLinks.Any() && !_loadingOutgoingLinks)
-                tasks.Add(LoadOutgoingLinksAsync());
-                
-            if (!_externalLinks.Any() && !_loadingExternalLinks)
-                tasks.Add(LoadExternalLinksAsync());
-            
-            if (tasks.Any())
-                await Task.WhenAll(tasks);
-        }
+        var tasks = new List<Task>();
+
+        if (!_backlinks.Any() && !_loadingBacklinks)
+            tasks.Add(LoadBacklinksAsync());
+
+        if (!_outgoingLinks.Any() && !_loadingOutgoingLinks)
+            tasks.Add(LoadOutgoingLinksAsync());
+
+        if (!_externalLinks.Any() && !_loadingExternalLinks)
+            tasks.Add(LoadExternalLinksAsync());
+
+        if (tasks.Any())
+            await Task.WhenAll(tasks);
     }
 
     private async Task LoadBacklinksAsync()

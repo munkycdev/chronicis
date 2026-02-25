@@ -1,7 +1,8 @@
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Microsoft.AspNetCore.Components.Routing
+@using Chronicis.Client.Components.Drawers
 @using Chronicis.Client.Models
 @using Chronicis.Shared.DTOs
-@using Chronicis.Client.Components.Quests
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
 @inject ITreeStateService TreeState
@@ -14,7 +15,10 @@
 @inject IMetadataDrawerService MetadataDrawerService
 @inject IQuestDrawerService QuestDrawerService
 @inject IKeyboardShortcutService KeyboardShortcutService
+@inject IDrawerCoordinator DrawerCoordinator
 @inject IAdminAuthService AdminAuthService
+@inject IUserApiService UserApi
+@inject IAppContextService AppContext
 @inject ILogger<AuthenticatedLayout> Logger
 @implements IAsyncDisposable
 
@@ -47,6 +51,12 @@
                       Class="global-search-input"
                       Immediate="true"
                       @onkeydown="OnGlobalSearchKeyDown" />
+
+        <MudTooltip Text="Tutorial (Ctrl+T)">
+            <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
+                           Color="Color.Inherit"
+                           OnClick="ToggleTutorialDrawer" />
+        </MudTooltip>
 
         <MudTooltip Text="Quick Start Guide">
             <MudIconButton Icon="@Icons.Material.Filled.Help"
@@ -151,9 +161,11 @@
             <PublicFooter />
         </div>
     </MudMainContent>
-    
-    <!-- Quest Drawer (right side, Session/SessionNote pages only) -->
-    <QuestDrawer />
+
+    @if (ShouldRenderGlobalDrawerHost)
+    {
+        <DrawerHost />
+    }
 </MudLayout>
 
 @code {
@@ -161,14 +173,20 @@
     private string? _treeSearch;
     private string _globalSearchQuery = string.Empty;
     private UserInfo? _currentUser;
+    private UserProfileDto? _currentUserProfile;
     private bool _isSysAdmin;
+    private bool _hasAutoOpenedTutorialForOnboarding;
     private DotNetObjectReference<AuthenticatedLayout>? _dotNetRef;
 
     protected override async Task OnInitializedAsync()
     {
         _currentUser = await AuthService.GetCurrentUserAsync();
+        _currentUserProfile = await UserApi.GetUserProfileAsync();
         _isSysAdmin = await AdminAuthService.IsSysAdminAsync();
         AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+        Navigation.LocationChanged += HandleLocationChanged;
+        AppContext.OnContextChanged += HandleAppContextChanged;
+        await EvaluateTutorialDrawerStateAsync(allowOnboardingAutoOpen: true);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -184,6 +202,12 @@
     public void OnCtrlM()
     {
         MetadataDrawerService.Toggle();
+    }
+
+    [JSInvokable]
+    public void OnCtrlT()
+    {
+        DrawerCoordinator.Toggle(DrawerType.Tutorial);
     }
 
     [JSInvokable]
@@ -298,12 +322,78 @@
     private async void OnAuthenticationStateChanged(Task<AuthenticationState> task)
     {
         _currentUser = await AuthService.GetCurrentUserAsync();
+        _currentUserProfile = await UserApi.GetUserProfileAsync();
+        _isSysAdmin = await AdminAuthService.IsSysAdminAsync();
+        _hasAutoOpenedTutorialForOnboarding = false;
+        await EvaluateTutorialDrawerStateAsync(allowOnboardingAutoOpen: true);
         await InvokeAsync(StateHasChanged);
     }
 
     private void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    private void ToggleTutorialDrawer()
+    {
+        DrawerCoordinator.Toggle(DrawerType.Tutorial);
+    }
+
+    private bool ShouldRenderGlobalDrawerHost => !IsArticleRoute();
+
+    private bool IsArticleRoute()
+    {
+        var pathOnly = GetCurrentPathOnly();
+
+        return pathOnly.Equals("article", StringComparison.OrdinalIgnoreCase)
+            || pathOnly.StartsWith("article/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _ = InvokeAsync(() => EvaluateTutorialDrawerStateAsync(allowOnboardingAutoOpen: true));
+    }
+
+    private void HandleAppContextChanged()
+    {
+        _ = InvokeAsync(() => EvaluateTutorialDrawerStateAsync(allowOnboardingAutoOpen: true));
+    }
+
+    private async Task EvaluateTutorialDrawerStateAsync(bool allowOnboardingAutoOpen)
+    {
+        var isTutorialWorld = AppContext.CurrentWorld?.IsTutorial == true;
+        DrawerCoordinator.IsForcedOpen = isTutorialWorld;
+
+        if (isTutorialWorld)
+        {
+            DrawerCoordinator.Open(DrawerType.Tutorial);
+            return;
+        }
+
+        if (!allowOnboardingAutoOpen
+            || _hasAutoOpenedTutorialForOnboarding
+            || _currentUserProfile?.HasCompletedOnboarding != false
+            || !IsEligibleForOnboardingTutorialAutoOpen())
+        {
+            return;
+        }
+
+        DrawerCoordinator.Open(DrawerType.Tutorial);
+        _hasAutoOpenedTutorialForOnboarding = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private bool IsEligibleForOnboardingTutorialAutoOpen()
+    {
+        var pathOnly = GetCurrentPathOnly();
+
+        return !pathOnly.StartsWith("authentication/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private string GetCurrentPathOnly()
+    {
+        var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri);
+        return relativePath.Split('?', '#')[0];
     }
 
     private void OnTreeSearchChanged()
@@ -349,6 +439,8 @@
     public async ValueTask DisposeAsync()
     {
         AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+        Navigation.LocationChanged -= HandleLocationChanged;
+        AppContext.OnContextChanged -= HandleAppContextChanged;
         
         if (_dotNetRef != null)
         {

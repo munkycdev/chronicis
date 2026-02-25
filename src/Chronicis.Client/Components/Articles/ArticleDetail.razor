@@ -1,5 +1,7 @@
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Client.Components.Characters
+@using Chronicis.Client.Components.Drawers
+@using Chronicis.Client.Services
 @using Chronicis.Client.Utilities
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.Enums
@@ -23,8 +25,7 @@
 @inject ILocalStorageService LocalStorage
 @inject ILogger<ArticleDetail> Logger
 @inject IArticleCacheService ArticleCache
-@inject IMetadataDrawerService MetadataDrawerService
-@inject IQuestDrawerService QuestDrawerService
+@inject IDrawerCoordinator DrawerCoordinator
 @inject IKeyboardShortcutService KeyboardShortcutService
 @inject IWorldApiService WorldApi
 @inject Chronicis.Client.ViewModels.ArticleDetailViewModel ViewModel
@@ -119,10 +120,9 @@ else
                           OnCreateChild="CreateChildArticle" />
     </MudPaper>
 
-    <!-- Metadata Drawer -->
-    <ArticleMetadataDrawer @ref="_metadataDrawer"
-                           Article="_article"
-                           @bind-IsOpen="_openMetadata" />
+    <!-- Unified Right Drawer Host (Tutorial / Quests / Metadata) -->
+    <DrawerHost @ref="_drawerHost"
+                Article="_article" />
 
     <!-- External Link Preview Drawer -->
     <MudDrawer @bind-Open="_externalPreviewOpen"
@@ -196,14 +196,13 @@ else
     private bool _hasUnsavedChanges = false;
     private bool _editorInitialized = false;
     private string _lastSaveTime = "just now";
-    private bool _openMetadata = false;
     private bool _isSummaryExpanded = false;
     private bool _shouldFocusTitle = false;
     
     // Timer and references
     private Timer? _autoSaveTimer;
     private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
-    private ArticleMetadataDrawer? _metadataDrawer;
+    private DrawerHost? _drawerHost;
     private bool _disposed = false;
     
     // Autocomplete state
@@ -233,7 +232,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         TreeState.OnStateChanged += OnTreeStateChanged;
-        MetadataDrawerService.OnToggle += OnMetadataDrawerToggle;
         KeyboardShortcutService.OnSaveRequested += HandleSaveShortcut;
         _dotNetHelper = DotNetObjectReference.Create(this);
         await Task.CompletedTask;
@@ -260,7 +258,6 @@ else
     {
         _disposed = true;
         TreeState.OnStateChanged -= OnTreeStateChanged;
-        MetadataDrawerService.OnToggle -= OnMetadataDrawerToggle;
         KeyboardShortcutService.OnSaveRequested -= HandleSaveShortcut;
         OnCtrlNPressed -= HandleCtrlNInstance;
         _autoSaveTimer?.Dispose();
@@ -317,9 +314,9 @@ else
 
     private void HandleFocusTitleChanged(bool value) => _shouldFocusTitle = value;
 
-    private void ToggleMetadata() => _openMetadata = !_openMetadata;
+    private void ToggleMetadata() => DrawerCoordinator.Toggle(DrawerType.Metadata);
 
-    private void ToggleQuests() => QuestDrawerService.Toggle();
+    private void ToggleQuests() => DrawerCoordinator.Toggle(DrawerType.Quests);
 
     #endregion
 
@@ -510,8 +507,8 @@ else
             Navigation.NavigateTo(result.NavigationPath, replace: true);
 
         StateHasChanged();
-        if (_metadataDrawer != null && _openMetadata)
-            await _metadataDrawer.RefreshPanelsAsync();
+        if (_drawerHost != null)
+            await _drawerHost.RefreshMetadataAsync();
     }
 
     private async Task DeleteArticle()
@@ -594,12 +591,6 @@ else
     #endregion
 
     #region Keyboard Shortcuts
-
-    private void OnMetadataDrawerToggle()
-    {
-        _openMetadata = !_openMetadata;
-        InvokeAsync(StateHasChanged);
-    }
 
     private async void HandleSaveShortcut()
     {

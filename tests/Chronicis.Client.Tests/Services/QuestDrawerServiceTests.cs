@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Chronicis.Client.Services;
-using NSubstitute;
 using Xunit;
 
 namespace Chronicis.Client.Tests.Services;
@@ -8,13 +7,13 @@ namespace Chronicis.Client.Tests.Services;
 [ExcludeFromCodeCoverage]
 public class QuestDrawerServiceTests : IDisposable
 {
-    private readonly IMetadataDrawerService _metadataDrawerService;
+    private readonly IDrawerCoordinator _drawerCoordinator;
     private readonly QuestDrawerService _sut;
 
     public QuestDrawerServiceTests()
     {
-        _metadataDrawerService = Substitute.For<IMetadataDrawerService>();
-        _sut = new QuestDrawerService(_metadataDrawerService);
+        _drawerCoordinator = new DrawerCoordinator();
+        _sut = new QuestDrawerService(_drawerCoordinator);
     }
 
     public void Dispose()
@@ -133,15 +132,15 @@ public class QuestDrawerServiceTests : IDisposable
     // ════════════════════════════════════════════════════════════════
 
     [Fact]
-    public void MetadataDrawerToggle_WhenQuestDrawerOpen_ClosesQuestDrawer()
+    public void MetadataDrawerOpen_WhenQuestDrawerOpen_ClosesQuestDrawer()
     {
         // Arrange
         _sut.Open();
         var closeEventRaised = false;
         _sut.OnClose += () => closeEventRaised = true;
 
-        // Act - Simulate metadata drawer being toggled
-        _metadataDrawerService.OnToggle += Raise.Event<Action>();
+        // Act - Opening another drawer should close quests
+        _drawerCoordinator.Open(DrawerType.Metadata);
 
         // Assert
         Assert.False(_sut.IsOpen);
@@ -149,24 +148,24 @@ public class QuestDrawerServiceTests : IDisposable
     }
 
     [Fact]
-    public void MetadataDrawerToggle_WhenQuestDrawerOpen_WithoutCloseSubscriber_StillCloses()
+    public void MetadataDrawerOpen_WhenQuestDrawerOpen_WithoutCloseSubscriber_StillCloses()
     {
         _sut.Open();
 
-        _metadataDrawerService.OnToggle += Raise.Event<Action>();
+        _drawerCoordinator.Open(DrawerType.Metadata);
 
         Assert.False(_sut.IsOpen);
     }
 
     [Fact]
-    public void MetadataDrawerToggle_WhenQuestDrawerClosed_DoesNothing()
+    public void MetadataDrawerOpen_WhenQuestDrawerClosed_DoesNothing()
     {
         // Arrange
         var closeEventRaised = false;
         _sut.OnClose += () => closeEventRaised = true;
 
-        // Act - Simulate metadata drawer being toggled
-        _metadataDrawerService.OnToggle += Raise.Event<Action>();
+        // Act - Opening metadata while quests are closed should not raise quest close
+        _drawerCoordinator.Open(DrawerType.Metadata);
 
         // Assert
         Assert.False(_sut.IsOpen);
@@ -178,7 +177,7 @@ public class QuestDrawerServiceTests : IDisposable
     // ════════════════════════════════════════════════════════════════
 
     [Fact]
-    public void Dispose_UnsubscribesFromMetadataDrawerEvents()
+    public void Dispose_UnsubscribesFromDrawerCoordinatorEvents()
     {
         // Arrange
         _sut.Open();
@@ -187,11 +186,11 @@ public class QuestDrawerServiceTests : IDisposable
         _sut.Dispose();
 
         // This test verifies that after disposal, the quest drawer doesn't respond
-        // to metadata drawer toggles (it has unsubscribed)
+        // to coordinator state changes (it has unsubscribed)
         var closeEventRaised = false;
         _sut.OnClose += () => closeEventRaised = true;
 
-        _metadataDrawerService.OnToggle += Raise.Event<Action>();
+        _drawerCoordinator.Open(DrawerType.Metadata);
 
         // Assert
         Assert.False(closeEventRaised);

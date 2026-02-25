@@ -875,7 +875,7 @@ public class QuestDrawerTests : MudBlazorTestContext
             TotalCount = 0
         });
 
-        rendered.QuestDrawerService.OnOpen += Raise.Event<Action>();
+        rendered.Cut.SetParametersAndRender(p => p.Add(x => x.IsOpen, true));
 
         rendered.Cut.WaitForAssertion(() =>
         {
@@ -892,7 +892,8 @@ public class QuestDrawerTests : MudBlazorTestContext
         SetPrivateField(rendered.Cut.Instance, "_validationError", "bad");
         SetPrivateField(rendered.Cut.Instance, "_recentUpdates", new List<QuestUpdateEntryDto> { new() });
 
-        rendered.QuestDrawerService.OnClose += Raise.Event<Action>();
+        rendered.Cut.SetParametersAndRender(p => p.Add(x => x.IsOpen, true));
+        rendered.Cut.SetParametersAndRender(p => p.Add(x => x.IsOpen, false));
 
         rendered.Cut.WaitForAssertion(() =>
         {
@@ -931,7 +932,7 @@ public class QuestDrawerTests : MudBlazorTestContext
         });
         rendered.QuestApi.GetArcQuestsAsync(arcId).Returns(new List<QuestDto>());
 
-        rendered.QuestDrawerService.OnOpen += Raise.Event<Action>();
+        rendered.Cut.SetParametersAndRender(p => p.Add(x => x.IsOpen, true));
 
         rendered.Cut.WaitForAssertion(() =>
         {
@@ -957,7 +958,7 @@ public class QuestDrawerTests : MudBlazorTestContext
         });
         rendered.QuestApi.GetArcQuestsAsync(arcId).Returns(new List<QuestDto>());
 
-        var ex = Record.Exception(() => rendered.QuestDrawerService.OnOpen += Raise.Event<Action>());
+        var ex = Record.Exception(() => rendered.Cut.SetParametersAndRender(p => p.Add(x => x.IsOpen, true)));
 
         Assert.Null(ex);
     }
@@ -981,7 +982,7 @@ public class QuestDrawerTests : MudBlazorTestContext
         rendered.QuestApi.GetArcQuestsAsync(arcId)
             .Returns(_ => Task.FromException<List<QuestDto>>(new InvalidOperationException("load fail")));
 
-        var ex = Record.Exception(() => rendered.QuestDrawerService.OnOpen += Raise.Event<Action>());
+        var ex = Record.Exception(() => rendered.Cut.SetParametersAndRender(p => p.Add(x => x.IsOpen, true)));
 
         Assert.Null(ex);
         Assert.Null(GetPrivateField<List<QuestDto>?>(rendered.Cut.Instance, "_quests"));
