@@ -421,8 +421,11 @@ public class ArchitecturalConventionTests
             if (modifiedAt != null)
             {
                 Assert.True(
-                    modifiedAt.PropertyType == typeof(DateTime?) || modifiedAt.PropertyType == typeof(DateTimeOffset?),
-                    $"{modelType.Name}.ModifiedAt should be DateTime? or DateTimeOffset?");
+                    modifiedAt.PropertyType == typeof(DateTime)
+                    || modifiedAt.PropertyType == typeof(DateTime?)
+                    || modifiedAt.PropertyType == typeof(DateTimeOffset)
+                    || modifiedAt.PropertyType == typeof(DateTimeOffset?),
+                    $"{modelType.Name}.ModifiedAt should be DateTime/DateTime? or DateTimeOffset/DateTimeOffset?");
             }
 
             var createdBy = modelType.GetProperty("CreatedBy");

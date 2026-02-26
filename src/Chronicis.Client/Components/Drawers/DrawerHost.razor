@@ -9,14 +9,21 @@
 @implements IDisposable
 
 <style>
+    .drawer-host .mud-drawer-paper {
+        background-color: var(--chronicis-background-light) !important;
+        border-left: 1px solid var(--chronicis-primary);
+        border-right-color: transparent;
+    }
+
     .drawer-host.mud-drawer-persistent {
         height: auto !important;
     }
 
     .drawer-host .mud-drawer-content {
         padding: 8px;
-        background-color: var(--chronicis-soft-off-white);
+        background-color: var(--chronicis-background-light);
         border-right-color: transparent;
+        color: var(--chronicis-primary);
     }
 
     .drawer-host-header {
@@ -24,6 +31,7 @@
         align-items: center;
         gap: 8px;
         padding: 16px;
+        color: var(--chronicis-primary);
     }
 
     .drawer-host-title {
@@ -35,7 +43,11 @@
     }
     
     .drawer-host-title .mud-icon-root {
-        color: var(--chronicis-beige-gold);
+        color: var(--chronicis-primary);
+    }
+
+    .drawer-host .mud-icon-button-root {
+        color: var(--chronicis-primary);
     }
 
     .drawer-host-pane {

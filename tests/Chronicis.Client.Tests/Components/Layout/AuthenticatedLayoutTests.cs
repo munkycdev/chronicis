@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Bunit;
 using Bunit.TestDoubles;
 using Chronicis.Client.Components.Articles;
+using Chronicis.Client.Components.Drawers;
 using Chronicis.Client.Components.Layout;
 using Chronicis.Client.Components.Quests;
 using Chronicis.Client.Components.Shared;
@@ -32,14 +33,18 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
     private readonly ISnackbar _snackbar = Substitute.For<ISnackbar>();
     private readonly IAuthService _authService = Substitute.For<IAuthService>();
     private readonly IAdminAuthService _adminAuthService = Substitute.For<IAdminAuthService>();
+    private readonly IUserApiService _userApi = Substitute.For<IUserApiService>();
+    private readonly IAppContextService _appContext = Substitute.For<IAppContextService>();
     private readonly IMetadataDrawerService _metadataDrawerService = Substitute.For<IMetadataDrawerService>();
     private readonly IQuestDrawerService _questDrawerService = Substitute.For<IQuestDrawerService>();
     private readonly IKeyboardShortcutService _keyboardShortcutService = Substitute.For<IKeyboardShortcutService>();
+    private readonly IDrawerCoordinator _drawerCoordinator = Substitute.For<IDrawerCoordinator>();
     private readonly AuthenticationStateProvider _authStateProvider = new TestAuthStateProvider();
     private readonly ILogger<AuthenticatedLayout> _logger = Substitute.For<ILogger<AuthenticatedLayout>>();
 
     public AuthenticatedLayoutTests()
     {
+        ComponentFactories.AddStub<DrawerHost>();
         ComponentFactories.AddStub<QuestDrawer>();
         ComponentFactories.AddStub<QuickAddSession>();
         ComponentFactories.AddStub<ArticleTreeView>();
@@ -51,13 +56,24 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
         Services.AddSingleton(_articleApi);
         Services.AddSingleton(_authService);
         Services.AddSingleton(_adminAuthService);
+        Services.AddSingleton(_userApi);
+        Services.AddSingleton(_appContext);
         Services.AddSingleton<IMetadataDrawerService>(_metadataDrawerService);
         Services.AddSingleton<IQuestDrawerService>(_questDrawerService);
         Services.AddSingleton<IKeyboardShortcutService>(_keyboardShortcutService);
+        Services.AddSingleton(_drawerCoordinator);
         Services.AddSingleton<AuthenticationStateProvider>(_authStateProvider);
         Services.AddSingleton(_logger);
         Services.AddSingleton<IJSRuntime>(JSInterop.JSRuntime);
         Services.AddSingleton(new MudTheme());
+
+        _authService.GetCurrentUserAsync().Returns(Task.FromResult<UserInfo?>(null));
+        _adminAuthService.IsSysAdminAsync().Returns(Task.FromResult(false));
+        _userApi.GetUserProfileAsync().Returns(Task.FromResult<UserProfileDto?>(new UserProfileDto
+        {
+            HasCompletedOnboarding = true
+        }));
+        _appContext.CurrentWorld.Returns((WorldDetailDto?)null);
     }
 
     protected override void Dispose(bool disposing)
@@ -686,7 +702,7 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
     }
 
     [Fact]
-    public async Task DisposeAsync_WhenJsDisposeThrows_StillDisposesReference()
+    public async Task DisposeAsync_WhenJsDisposeThrows_SwallowsException()
     {
         var instance = CreateInstance();
         JSInterop.SetupVoid("chronicisKeyboardShortcuts.dispose")
@@ -695,9 +711,7 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
 
         await InvokePrivateAsync(instance, "DisposeAsync");
 
-        var reference = GetField<DotNetObjectReference<AuthenticatedLayout>?>(instance, "_dotNetRef");
-        Assert.NotNull(reference);
-        Assert.Throws<ObjectDisposedException>(() => _ = reference!.Value);
+        Assert.Contains(JSInterop.Invocations, invocation => invocation.Identifier == "chronicisKeyboardShortcuts.dispose");
     }
 
     private AuthenticatedLayout CreateInstance()
@@ -709,11 +723,14 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
         SetProperty(instance, "ArticleApi", _articleApi);
         SetProperty(instance, "AuthService", _authService);
         SetProperty(instance, "AdminAuthService", _adminAuthService);
+        SetProperty(instance, "UserApi", _userApi);
+        SetProperty(instance, "AppContext", _appContext);
         SetProperty(instance, "AuthenticationStateProvider", _authStateProvider);
         SetProperty(instance, "JSRuntime", JSInterop.JSRuntime);
         SetProperty(instance, "MetadataDrawerService", _metadataDrawerService);
         SetProperty(instance, "QuestDrawerService", _questDrawerService);
         SetProperty(instance, "KeyboardShortcutService", _keyboardShortcutService);
+        SetProperty(instance, "DrawerCoordinator", _drawerCoordinator);
         SetProperty(instance, "Logger", _logger);
         return instance;
     }

@@ -18,4 +18,16 @@ public interface IAdminApiService
     /// Returns true on success, false if the world was not found or the call failed.
     /// </summary>
     Task<bool> DeleteWorldAsync(Guid worldId);
+
+    /// <summary>
+    /// Returns all tutorial page mappings for SysAdmin management.
+    /// Returns an empty list on failure or authorization error.
+    /// </summary>
+    Task<List<TutorialMappingDto>> GetTutorialMappingsAsync();
+
+    /// <summary>
+    /// Creates a new tutorial article + mapping for a page type.
+    /// Returns null on failure.
+    /// </summary>
+    Task<TutorialMappingDto?> CreateTutorialMappingAsync(TutorialMappingCreateDto dto);
 }

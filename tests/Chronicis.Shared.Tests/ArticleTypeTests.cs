@@ -52,17 +52,25 @@ public class ArticleTypeTests
     }
 
     [Fact]
+    public void ArticleType_HasTutorial()
+    {
+        var value = ArticleType.Tutorial;
+        Assert.Equal(100, (int)value);
+    }
+
+    [Fact]
     public void ArticleType_GetValues_ReturnsAllExpectedValues()
     {
         var values = Enum.GetValues<ArticleType>();
 
-        Assert.Equal(6, values.Length);
+        Assert.Equal(7, values.Length);
         Assert.Contains(ArticleType.WikiArticle, values);
         Assert.Contains(ArticleType.Character, values);
         Assert.Contains(ArticleType.CharacterNote, values);
         Assert.Contains(ArticleType.Session, values);
         Assert.Contains(ArticleType.SessionNote, values);
         Assert.Contains(ArticleType.Legacy, values);
+        Assert.Contains(ArticleType.Tutorial, values);
     }
 
     [Fact]
@@ -70,13 +78,14 @@ public class ArticleTypeTests
     {
         var names = Enum.GetNames<ArticleType>();
 
-        Assert.Equal(6, names.Length);
+        Assert.Equal(7, names.Length);
         Assert.Contains("WikiArticle", names);
         Assert.Contains("Character", names);
         Assert.Contains("CharacterNote", names);
         Assert.Contains("Session", names);
         Assert.Contains("SessionNote", names);
         Assert.Contains("Legacy", names);
+        Assert.Contains("Tutorial", names);
     }
 
     [Theory]
@@ -86,6 +95,7 @@ public class ArticleTypeTests
     [InlineData("Session", ArticleType.Session)]
     [InlineData("SessionNote", ArticleType.SessionNote)]
     [InlineData("Legacy", ArticleType.Legacy)]
+    [InlineData("Tutorial", ArticleType.Tutorial)]
     public void ArticleType_Parse_ParsesCorrectly(string name, ArticleType expected)
     {
         var result = Enum.Parse<ArticleType>(name);
@@ -115,6 +125,7 @@ public class ArticleTypeTests
     [InlineData(ArticleType.Session, "Session")]
     [InlineData(ArticleType.SessionNote, "SessionNote")]
     [InlineData(ArticleType.Legacy, "Legacy")]
+    [InlineData(ArticleType.Tutorial, "Tutorial")]
     public void ArticleType_ToString_ReturnsCorrectName(ArticleType value, string expected)
     {
         Assert.Equal(expected, value.ToString());
@@ -127,6 +138,7 @@ public class ArticleTypeTests
     [InlineData(10, ArticleType.Session)]
     [InlineData(11, ArticleType.SessionNote)]
     [InlineData(99, ArticleType.Legacy)]
+    [InlineData(100, ArticleType.Tutorial)]
     public void ArticleType_CastFromInt_Works(int value, ArticleType expected)
     {
         var result = (ArticleType)value;
@@ -142,6 +154,7 @@ public class ArticleTypeTests
         Assert.True(Enum.IsDefined(typeof(ArticleType), ArticleType.Session));
         Assert.True(Enum.IsDefined(typeof(ArticleType), ArticleType.SessionNote));
         Assert.True(Enum.IsDefined(typeof(ArticleType), ArticleType.Legacy));
+        Assert.True(Enum.IsDefined(typeof(ArticleType), ArticleType.Tutorial));
     }
 
     [Fact]
@@ -149,7 +162,7 @@ public class ArticleTypeTests
     {
         Assert.False(Enum.IsDefined(typeof(ArticleType), 0));
         Assert.False(Enum.IsDefined(typeof(ArticleType), 5));
-        Assert.False(Enum.IsDefined(typeof(ArticleType), 100));
+        Assert.False(Enum.IsDefined(typeof(ArticleType), 101));
     }
 
     [Fact]
@@ -174,6 +187,7 @@ public class ArticleTypeTests
     [Theory]
     [InlineData("WikiArticle", true)]
     [InlineData("Session", true)]
+    [InlineData("Tutorial", true)]
     [InlineData("InvalidType", false)]
     [InlineData("", false)]
     public void ArticleType_TryParse_WorksCorrectly(string name, bool shouldSucceed)

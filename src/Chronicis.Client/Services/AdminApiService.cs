@@ -23,4 +23,19 @@ public class AdminApiService : IAdminApiService
     /// <inheritdoc/>
     public Task<bool> DeleteWorldAsync(Guid worldId)
         => _http.DeleteEntityAsync($"admin/worlds/{worldId}", _logger, "World");
+
+    /// <inheritdoc/>
+    public Task<List<TutorialMappingDto>> GetTutorialMappingsAsync()
+        => _http.GetListAsync<TutorialMappingDto>(
+            "sysadmin/tutorials",
+            _logger,
+            "tutorial mappings");
+
+    /// <inheritdoc/>
+    public Task<TutorialMappingDto?> CreateTutorialMappingAsync(TutorialMappingCreateDto dto)
+        => _http.PostEntityAsync<TutorialMappingDto>(
+            "sysadmin/tutorials",
+            dto,
+            _logger,
+            "tutorial mapping");
 }

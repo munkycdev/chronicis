@@ -206,14 +206,7 @@ namespace Chronicis.Api.Services
                     AISummary = a.AISummary,
                     AISummaryGeneratedAt = a.AISummaryGeneratedAt,
                     Breadcrumbs = new List<BreadcrumbDto>(),  // Will populate separately
-                    Aliases = a.Aliases.Select(al => new ArticleAliasDto
-                    {
-                        Id = al.Id,
-                        AliasText = al.AliasText,
-                        AliasType = al.AliasType,
-                        EffectiveDate = al.EffectiveDate,
-                        CreatedAt = al.CreatedAt
-                    }).ToList()
+                    Aliases = new List<ArticleAliasDto>()
                 })
                 .FirstOrDefaultAsync();
 
@@ -222,6 +215,19 @@ namespace Chronicis.Api.Services
                 _logger.LogWarning("Article {ArticleId} not found", id);
                 return null;
             }
+
+            article.Aliases = await _context.ArticleAliases
+                .AsNoTracking()
+                .Where(al => al.ArticleId == id)
+                .Select(al => new ArticleAliasDto
+                {
+                    Id = al.Id,
+                    AliasText = al.AliasText,
+                    AliasType = al.AliasType,
+                    EffectiveDate = al.EffectiveDate,
+                    CreatedAt = al.CreatedAt
+                })
+                .ToListAsync();
 
             // Build breadcrumb path using centralised hierarchy service
             article.Breadcrumbs = await _hierarchyService.BuildBreadcrumbsAsync(id);

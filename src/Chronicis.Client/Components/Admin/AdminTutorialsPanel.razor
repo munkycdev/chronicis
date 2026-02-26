@@ -1,0 +1,109 @@
+@using Chronicis.Shared.DTOs
+
+<div class="atp-container">
+    <MudText Typo="Typo.h5" Class="mb-2">Tutorial Mappings</MudText>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+        Create contextual tutorial mappings and open tutorial articles in the normal editor.
+    </MudText>
+
+    <MudPaper Elevation="1" Class="pa-4 mb-4">
+        <MudText Typo="Typo.subtitle1" Class="mb-3">Create Tutorial</MudText>
+
+        <MudGrid Spacing="2">
+            <MudItem xs="12" md="5">
+                <MudSelect T="string"
+                           Label="Page Type"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Value="_selectedPageType"
+                           ValueChanged="OnPageTypeChanged">
+                    @foreach (var option in _pageTypeOptions)
+                    {
+                        <MudSelectItem T="string" Value="@option.PageType">@option.DisplayLabel</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" md="4">
+                <MudTextField T="string"
+                              @bind-Value="_pageTypeName"
+                              Label="Page Type Name"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+            </MudItem>
+
+            <MudItem xs="12" md="3">
+                <MudTextField T="string"
+                              @bind-Value="_tutorialTitle"
+                              Label="Tutorial Article Title"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+            </MudItem>
+        </MudGrid>
+
+        <div class="d-flex align-center gap-3 mt-2">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Disabled="@(_isCreating || _isLoading)"
+                       OnClick="CreateTutorialAsync">
+                Create Tutorial
+            </MudButton>
+
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                Creates a new <code>ArticleType.Tutorial</code> article and mapping, then opens the article editor.
+            </MudText>
+        </div>
+    </MudPaper>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+    }
+    else if (!string.IsNullOrWhiteSpace(_loadError))
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_loadError</MudAlert>
+    }
+
+    <MudTable Items="_mappings"
+              Dense="true"
+              Hover="true"
+              Striped="true"
+              Loading="_isLoading">
+        <ToolBarContent>
+            <MudText Typo="Typo.subtitle1">@_mappings.Count tutorial mapping(s)</MudText>
+            <MudSpacer />
+            <MudTooltip Text="Refresh">
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                               Color="Color.Default"
+                               OnClick="LoadMappingsAsync" />
+            </MudTooltip>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Page Type</MudTh>
+            <MudTh>Page Type Name</MudTh>
+            <MudTh>Title</MudTh>
+            <MudTh>Last Modified</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Page Type">
+                <MudText Typo="Typo.body2" Style="font-weight:600;">@context.PageType</MudText>
+            </MudTd>
+            <MudTd DataLabel="Page Type Name">@context.PageTypeName</MudTd>
+            <MudTd DataLabel="Title">@context.Title</MudTd>
+            <MudTd DataLabel="Last Modified">@context.ModifiedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudTd>
+            <MudTd>
+                <MudTooltip Text="Open tutorial article in editor">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   OnClick="@(() => OpenTutorialEditorAsync(context))" />
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="pa-4 mud-text-secondary">No tutorial mappings found.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</div>
