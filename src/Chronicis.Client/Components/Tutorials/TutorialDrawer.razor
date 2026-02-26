@@ -37,15 +37,6 @@
     else
     {
         <div class="tutorial-drawer-panel">
-            <MudText Typo="Typo.h6" Class="tutorial-drawer-title">@_tutorial.Title</MudText>
-
-            @if (_tutorial.ModifiedAt != default)
-            {
-                <MudText Typo="Typo.caption" Class="tutorial-drawer-caption">
-                    Updated @_tutorial.ModifiedAt.ToLocalTime().ToString("g")
-                </MudText>
-            }
-
             @if (IsForcedOpen)
             {
                 <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-3">
@@ -202,6 +193,7 @@
 
     .tutorial-drawer-body {
         margin-top: 8px;
+        margin-bottom: 8px;
         padding: 10px;
         border: 1px solid rgba(0, 0, 0, 0.08);
         border-radius: 8px;
@@ -214,8 +206,13 @@
         color: var(--chronicis-primary);
     }
 
+    .tutorial-drawer-body h1 {
+        font-size: 1.4rem;
+        line-height: 1.3;
+    }
+
     .tutorial-drawer-body :is(p, ul, ol) {
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.5rem;
     }
 
     .tutorial-drawer-body img {
