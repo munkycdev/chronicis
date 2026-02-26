@@ -224,6 +224,13 @@
     margin: var(--chronicis-space-lg) 0;
 }
 
+/* Last card sits centred when count is odd */
+.tips-grid .tip-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    max-width: 50%;
+    margin: 0 auto;
+}
+
 .tip-card {
     padding: var(--chronicis-space-md);
     background: var(--chronicis-background-light);

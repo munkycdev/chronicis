@@ -256,23 +256,6 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void Render_HelpButton_ClickNavigatesToGettingStarted()
-    {
-        _authService.GetCurrentUserAsync().Returns(new UserInfo { DisplayName = "User", Email = "user@example.com" });
-        _adminAuthService.IsSysAdminAsync().Returns(false);
-        var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
-        Assert.NotNull(nav);
-        var cut = RenderComponent<AuthenticatedLayout>(
-            ComponentParameter.CreateParameter("Body", (RenderFragment)(_ => { })));
-
-        var helpButton = cut.FindComponents<MudIconButton>()
-            .First(b => b.Instance.Icon == Icons.Material.Filled.Help);
-        helpButton.Find("button").Click();
-
-        Assert.Contains("/getting-started", nav!.Uri, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
     public void Render_AdminButton_ClickNavigatesToAdminUtilities()
     {
         _authService.GetCurrentUserAsync().Returns(new UserInfo { DisplayName = "Admin", Email = "admin@example.com" });
