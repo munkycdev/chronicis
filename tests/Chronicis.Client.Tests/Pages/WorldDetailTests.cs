@@ -53,6 +53,7 @@ public class WorldDetailTests : Bunit.TestContext
         Services.AddSingleton(_titleService);
         Services.AddSingleton(_dialogService);
         Services.AddSingleton(_authProvider);
+        Services.AddSingleton(Substitute.For<IAppContextService>());
         Services.AddSingleton(Substitute.For<ICampaignApiService>());
         Services.AddSingleton(Substitute.For<ILogger<WorldDetailViewModel>>());
         Services.AddSingleton(Substitute.For<ILogger<WorldLinksViewModel>>());

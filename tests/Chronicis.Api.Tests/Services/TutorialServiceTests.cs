@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
@@ -155,6 +156,28 @@ public class TutorialServiceTests : IDisposable
         var deleted = await _sut.DeleteMappingAsync(created.Id);
         Assert.True(deleted);
         Assert.Null(await _context.TutorialPages.FindAsync(created.Id));
+    }
+
+    [Fact]
+    public void NormalizeRequired_WhenValid_TrimsValue()
+    {
+        var method = typeof(TutorialService).GetMethod("NormalizeRequired", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = (string?)method!.Invoke(null, ["  value  ", "pageType"]);
+
+        Assert.Equal("value", result);
+    }
+
+    [Fact]
+    public void NormalizeRequired_WhenWhitespace_ThrowsArgumentException()
+    {
+        var method = typeof(TutorialService).GetMethod("NormalizeRequired", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var ex = Assert.Throws<TargetInvocationException>(() => method!.Invoke(null, ["   ", "pageType"]));
+        var inner = Assert.IsType<ArgumentException>(ex.InnerException);
+        Assert.Equal("pageType", inner.ParamName);
     }
 
     private Guid SeedTutorialMapping(string pageType, string title, string body)

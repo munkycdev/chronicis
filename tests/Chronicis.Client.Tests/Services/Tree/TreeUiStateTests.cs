@@ -437,6 +437,20 @@ public class TreeUiStateTests
     }
 
     [Fact]
+    public void ExpandPathToAndSelect_WhenNodeMissing_ClearsPreviousSelectedNodeFlag()
+    {
+        var index = CreateIndexWithSingleNode(out var selectedNode);
+        _uiState.SetNodeIndex(index);
+        _uiState.SelectNode(selectedNode.Id);
+        Assert.True(selectedNode.IsSelected);
+
+        var result = _uiState.ExpandPathToAndSelect(Guid.NewGuid(), isInitialized: true);
+
+        Assert.False(result);
+        Assert.False(selectedNode.IsSelected);
+    }
+
+    [Fact]
     public void ExpandPathToAndSelect_WhenCycleDetected_DoesNotLoopForever()
     {
         var index = new TreeNodeIndex();

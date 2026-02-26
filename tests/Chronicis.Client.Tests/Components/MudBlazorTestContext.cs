@@ -1,8 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using Bunit;
+using Chronicis.Client.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
+using NSubstitute;
 
 namespace Chronicis.Client.Tests.Components;
 
@@ -17,6 +19,7 @@ public class MudBlazorTestContext : TestContext
     {
         // Register MudBlazor services required for MudBlazor components
         Services.AddMudServices();
+        Services.AddSingleton(Substitute.For<IAppContextService>());
 
         // Allow rendering components that use constructor injection.
         ComponentFactories.Add(

@@ -668,6 +668,16 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
     }
 
     [Fact]
+    public void OnCtrlT_TogglesTutorialDrawerThroughCoordinator()
+    {
+        var instance = CreateInstance();
+
+        InvokePrivate(instance, "OnCtrlT");
+
+        _drawerCoordinator.Received(1).Toggle(DrawerType.Tutorial);
+    }
+
+    [Fact]
     public void OnCtrlS_RequestsSave()
     {
         var instance = CreateInstance();
@@ -675,6 +685,80 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
         InvokePrivate(instance, "OnCtrlS");
 
         _keyboardShortcutService.Received(1).RequestSave();
+    }
+
+    [Fact]
+    public void ToggleTutorialDrawer_UsesCoordinator()
+    {
+        var instance = CreateInstance();
+
+        InvokePrivate(instance, "ToggleTutorialDrawer");
+
+        _drawerCoordinator.Received(1).Toggle(DrawerType.Tutorial);
+    }
+
+    [Fact]
+    public void IsArticleRoute_WhenNestedArticlePath_ReturnsTrue()
+    {
+        var instance = CreateInstance();
+        var nav = (FakeNavigationManager)Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo("/article/world/alpha");
+
+        var isArticleRoute = (bool)InvokePrivate(instance, "IsArticleRoute")!;
+
+        Assert.True(isArticleRoute);
+    }
+
+    [Fact]
+    public void IsArticleRoute_WhenExactArticlePath_ReturnsTrue()
+    {
+        var instance = CreateInstance();
+        var nav = (FakeNavigationManager)Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo("/article");
+
+        var isArticleRoute = (bool)InvokePrivate(instance, "IsArticleRoute")!;
+
+        Assert.True(isArticleRoute);
+    }
+
+    [Fact]
+    public void IsArticleRoute_WhenNonArticlePath_ReturnsFalse()
+    {
+        var instance = CreateInstance();
+        var nav = (FakeNavigationManager)Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo("/dashboard");
+
+        var isArticleRoute = (bool)InvokePrivate(instance, "IsArticleRoute")!;
+
+        Assert.False(isArticleRoute);
+    }
+
+    [Fact]
+    public void IsEligibleForOnboardingTutorialAutoOpen_WhenAuthenticationRoute_ReturnsFalse()
+    {
+        var instance = CreateInstance();
+        var nav = (FakeNavigationManager)Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo("/authentication/login");
+
+        var eligible = (bool)InvokePrivate(instance, "IsEligibleForOnboardingTutorialAutoOpen")!;
+
+        Assert.False(eligible);
+    }
+
+    [Fact]
+    public void HandleAppContextChanged_SchedulesTutorialDrawerEvaluation()
+    {
+        _appContext.CurrentWorld.Returns(new WorldDetailDto { IsTutorial = true });
+        _userApi.GetUserProfileAsync().Returns(new UserProfileDto { HasCompletedOnboarding = true });
+        var cut = RenderComponent<AuthenticatedLayout>(
+            ComponentParameter.CreateParameter("Body", (RenderFragment)(_ => { })));
+
+        cut.InvokeAsync(() => InvokePrivate(cut.Instance, "HandleAppContextChanged"));
+
+        cut.WaitForAssertion(() =>
+        {
+            _drawerCoordinator.Received().IsForcedOpen = true;
+        });
     }
 
     [Fact]

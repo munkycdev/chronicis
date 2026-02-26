@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Chronicis.Client.Services;
 using Xunit;
 
@@ -278,5 +279,18 @@ public class QuestDrawerServiceTests : IDisposable
         // Assert
         Assert.Equal(0, openCount);
         Assert.Equal(0, closeCount);
+    }
+
+    [Fact]
+    public void DrawerCoordinatorChanged_AfterDispose_ReturnsImmediately()
+    {
+        _sut.Dispose();
+
+        var method = typeof(QuestDrawerService).GetMethod("OnDrawerCoordinatorChanged", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var ex = Record.Exception(() => method!.Invoke(_sut, null));
+
+        Assert.Null(ex);
     }
 }

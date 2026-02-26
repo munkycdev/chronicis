@@ -120,4 +120,58 @@ public class AdminApiServiceTests
 
         Assert.False(result);
     }
+
+    // ── Tutorial mappings ──────────────────────────────────────────
+
+    [Fact]
+    public async Task GetTutorialMappings_CallsCorrectRoute()
+    {
+        var calls = new List<string>();
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            calls.Add($"{req.Method} {req.RequestUri!.PathAndQuery.TrimStart('/')}");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]")
+            });
+        });
+        var sut = CreateSut(new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") });
+
+        await sut.GetTutorialMappingsAsync();
+
+        Assert.Single(calls, c => c == "GET sysadmin/tutorials");
+    }
+
+    [Fact]
+    public async Task CreateTutorialMapping_CallsCorrectRouteAndReturnsEntity()
+    {
+        var calls = new List<string>();
+        var body = JsonSerializer.Serialize(new TutorialMappingDto
+        {
+            Id = Guid.NewGuid(),
+            PageType = "Page:Dashboard",
+            PageTypeName = "Dashboard",
+            Title = "Dashboard Tutorial"
+        });
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            calls.Add($"{req.Method} {req.RequestUri!.PathAndQuery.TrimStart('/')}");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(body)
+            });
+        });
+        var sut = CreateSut(new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") });
+
+        var result = await sut.CreateTutorialMappingAsync(new TutorialMappingCreateDto
+        {
+            PageType = "Page:Dashboard",
+            PageTypeName = "Dashboard",
+            Title = "Dashboard Tutorial"
+        });
+
+        Assert.NotNull(result);
+        Assert.Equal("Page:Dashboard", result!.PageType);
+        Assert.Single(calls, c => c == "POST sysadmin/tutorials");
+    }
 }

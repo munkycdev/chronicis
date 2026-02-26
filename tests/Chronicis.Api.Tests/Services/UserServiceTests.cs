@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Chronicis.Api.Data;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
@@ -674,5 +675,32 @@ public class UserServiceTests : IDisposable
         var result = await _service.CompleteOnboardingAsync(Guid.NewGuid());
 
         Assert.False(result);
+    }
+
+    [Fact]
+    public void RemapArticleIdsInText_WhenTextIsNull_ReturnsNull()
+    {
+        var method = typeof(UserService).GetMethod("RemapArticleIdsInText", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var sourceId = Guid.NewGuid();
+        var destId = Guid.NewGuid();
+        var map = new Dictionary<Guid, Guid> { [sourceId] = destId };
+
+        var result = (string?)method!.Invoke(null, [null, map]);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void RemapArticleIdsInText_WhenMapEmpty_ReturnsOriginalText()
+    {
+        var method = typeof(UserService).GetMethod("RemapArticleIdsInText", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        const string text = "No replacements";
+        var result = (string?)method!.Invoke(null, [text, new Dictionary<Guid, Guid>()]);
+
+        Assert.Equal(text, result);
     }
 }
