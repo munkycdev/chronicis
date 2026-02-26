@@ -167,16 +167,16 @@ else
                                OnClick="SaveSessionNotesAsync"
                                Disabled="@(ViewModel.IsSavingNotes || ViewModel.IsDeleting || !ViewModel.HasUnsavedChanges)"
                                StartIcon="@Icons.Material.Filled.Save">
-                        Save Changes
+                        Save
                     </MudButton>
 
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Error"
                                OnClick="OpenDeleteDialogAsync"
                                Disabled="@ViewModel.IsDeleting"
-                               StartIcon="@Icons.Material.Filled.DeleteForever"
+                               StartIcon="@Icons.Material.Filled.Delete"
                                Class="ml-2">
-                        @(ViewModel.IsDeleting ? "Deleting..." : "Delete Session")
+                        @(ViewModel.IsDeleting ? "Deleting..." : "Delete")
                     </MudButton>
                 </div>
             </div>
