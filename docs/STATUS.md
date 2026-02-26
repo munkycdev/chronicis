@@ -1,13 +1,13 @@
 # Chronicis - Project Status
 
-**Last Updated:** February 13, 2026  
-**Project Phase:** Inline Article Images Complete
+**Last Updated:** February 26, 2026  
+**Project Phase:** 3.0 — Collaborative Sessions, Tutorial World, Contextual Onboarding & GM Private Notes
 
 ---
 
 ## Current State
 
-Chronicis is feature-complete for core world management functionality and has undergone a major internal consolidation effort to improve maintainability and clarity.
+Chronicis is feature-complete for core world management functionality and has undergone a major internal consolidation effort to improve maintainability and clarity. Version 3.0 adds collaborative session notes, a tutorial world for new users, a contextual help sidebar, and GM private planning notes across all major entity pages.
 
 ---
 
@@ -48,11 +48,35 @@ Net impact:
 
 **Entity Management:**
 - World → Campaign → Arc → Session hierarchy
+- Session is a first-class domain entity; SessionNote articles are per-player contributions to a session
 - Virtual groups for article organization (Characters, Wiki, Uncategorized)
-- Entity detail pages for Worlds, Campaigns, and Arcs
+- Entity detail pages for Worlds, Campaigns, Arcs, and Sessions
 - Creation dialogs for all entity types
-- Article type categorization (WikiArticle, Character, Session, etc.)
+- Article type categorization (WikiArticle, Character, SessionNote, etc.)
 - Character claiming system
+
+**Multi-Author Session Notes (v3.0):**
+- Default SessionNote auto-created for the session creator
+- Any world member can add their own SessionNote via "Add Session Note"
+- AI summary on Session Detail aggregates all SessionNotes for a complete multi-perspective view
+- Private session notes supported for individual planning or GM-only content
+
+**Tutorial World (v3.0):**
+- New users receive a cloned copy of the sysadmin-maintained canonical tutorial world on first login
+- Fully populated with articles, campaigns, arcs, and sessions demonstrating all major features
+- Sysadmin can update the canonical world; improvements apply to future new-user clones
+
+**Contextual Help Sidebar (v3.0):**
+- `TutorialDrawer` component resolves page-specific help content based on current URL and article type
+- Supported page types: world-detail, campaign-detail, arc-detail, session-detail, session-note, player-character, wiki
+- Tutorial content authored by sysadmins via Admin panel
+- Pinned open (non-closeable) when viewing the tutorial world
+- Existing GettingStarted wizard retained; final step references the sidebar
+
+**GM Private Planning Notes (v3.0):**
+- `PrivateNotes` field on World, Campaign, Arc, and Session entities
+- Private Notes tab on all four detail pages, visible to GMs only
+- GMs can also create private SessionNote articles for structured per-session planning
 
 **Multi-User Collaboration:**
 - World-level membership (all campaigns in a world share members)
@@ -60,7 +84,7 @@ Net impact:
 - Role-based access (GM, Player, Observer)
 - Member management UI (view, change roles, remove)
 - Join world flow from Dashboard
-- New users start with empty dashboard (no auto-created world)
+- New users receive a cloned tutorial world on first login (not an empty dashboard)
 - Private articles visible only to their creator
 
 **Private Articles:**

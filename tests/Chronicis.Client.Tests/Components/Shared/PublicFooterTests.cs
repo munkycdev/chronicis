@@ -1,6 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using Bunit;
 using Chronicis.Client.Components.Shared;
+using Chronicis.Client.Services;
+using Chronicis.Client.Tests.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using TestContext = Bunit.TestContext;
 
@@ -8,29 +13,35 @@ namespace Chronicis.Client.Tests.Components;
 
 /// <summary>
 /// Tests for the PublicFooter component.
-/// This component displays the footer with branding, navigation, and copyright.
+/// This component displays the footer with branding, navigation, copyright, and version badge.
 /// </summary>
 [ExcludeFromCodeCoverage]
 public class PublicFooterTests : TestContext
 {
+    private void RegisterVersionService(string version = "3.0.42", string sha = "abc1234")
+    {
+        var json = $$"""{"version":"{{version}}","buildNumber":"42","sha":"{{sha}}","buildDate":""}""";
+        Services.AddSingleton<IVersionService>(
+            new VersionService(
+                TestHttpMessageHandler.CreateClient(HttpStatusCode.OK, json),
+                NullLogger<VersionService>.Instance));
+    }
+
     [Fact]
     public void PublicFooter_Renders_FooterElement()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
-        var footer = cut.Find("footer");
-        Assert.NotNull(footer);
+        Assert.NotNull(cut.Find("footer"));
     }
 
     [Fact]
     public void PublicFooter_Renders_Logo()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
         var logo = cut.Find("img");
         Assert.Equal("/images/logo.png", logo.GetAttribute("src"));
         Assert.Equal("Chronicis", logo.GetAttribute("alt"));
@@ -39,31 +50,28 @@ public class PublicFooterTests : TestContext
     [Fact]
     public void PublicFooter_Renders_BrandName()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
         Assert.Contains("Chronicis", cut.Markup);
     }
 
     [Fact]
     public void PublicFooter_Renders_NavigationLinks()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
         var links = cut.FindAll("nav a");
-        Assert.True(links.Count >= 5); // Should have at least 5 nav links
+        Assert.True(links.Count >= 5);
     }
 
     [Fact]
     public void PublicFooter_HasHomeLink()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
         var homeLink = cut.Find("a[href='/']");
         Assert.Equal("Home", homeLink.TextContent);
     }
@@ -71,10 +79,9 @@ public class PublicFooterTests : TestContext
     [Fact]
     public void PublicFooter_HasAboutLink()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
         var aboutLink = cut.Find("a[href='/about']");
         Assert.Equal("About", aboutLink.TextContent);
     }
@@ -82,10 +89,9 @@ public class PublicFooterTests : TestContext
     [Fact]
     public void PublicFooter_HasPrivacyLink()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
         var privacyLink = cut.Find("a[href='/privacy']");
         Assert.Equal("Privacy Policy", privacyLink.TextContent);
     }
@@ -93,10 +99,9 @@ public class PublicFooterTests : TestContext
     [Fact]
     public void PublicFooter_HasTermsLink()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
         var termsLink = cut.Find("a[href='/terms-of-service']");
         Assert.Equal("Terms of Service", termsLink.TextContent);
     }
@@ -104,10 +109,9 @@ public class PublicFooterTests : TestContext
     [Fact]
     public void PublicFooter_Renders_CopyrightYear()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
         var currentYear = DateTimeOffset.Now.Year.ToString();
         Assert.Contains(currentYear, cut.Markup);
     }
@@ -115,10 +119,9 @@ public class PublicFooterTests : TestContext
     [Fact]
     public void PublicFooter_Renders_CopyrightText()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
         Assert.Contains("© ", cut.Markup);
         Assert.Contains("Chronicis", cut.Markup);
     }
@@ -126,10 +129,9 @@ public class PublicFooterTests : TestContext
     [Fact]
     public void PublicFooter_HasFooterClass()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
         var footer = cut.Find("footer");
         Assert.Contains("chronicis-footer", footer.ClassName);
     }
@@ -137,33 +139,55 @@ public class PublicFooterTests : TestContext
     [Fact]
     public void PublicFooter_HasNavElement()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
-        var nav = cut.Find("nav");
-        Assert.NotNull(nav);
+        Assert.NotNull(cut.Find("nav"));
     }
 
     [Fact]
     public void PublicFooter_HasChangeLogLink()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
-        var changeLogLink = cut.Find("a[href='/change-log']");
-        Assert.Equal("Change Log", changeLogLink.TextContent);
+        var link = cut.Find("a[href='/change-log']");
+        Assert.Equal("Change Log", link.TextContent);
     }
 
     [Fact]
     public void PublicFooter_HasLicensesLink()
     {
-        // Act
+        RegisterVersionService();
         var cut = RenderComponent<PublicFooter>();
 
-        // Assert
-        var licensesLink = cut.Find("a[href='/licenses']");
-        Assert.Equal("Licenses", licensesLink.TextContent);
+        var link = cut.Find("a[href='/licenses']");
+        Assert.Equal("Licenses", link.TextContent);
+    }
+
+    [Fact]
+    public void PublicFooter_ShowsVersionBadge_WhenVersionLoaded()
+    {
+        RegisterVersionService(version: "3.0.42", sha: "abc1234");
+        var cut = RenderComponent<PublicFooter>();
+
+        var badge = cut.Find(".footer-version");
+        Assert.Contains("3.0.42", badge.TextContent);
+        Assert.Contains("abc1234", badge.GetAttribute("title") ?? string.Empty);
+    }
+
+    [Fact]
+    public void PublicFooter_HidesVersionBadge_WhenVersionIsEmpty()
+    {
+        // Simulate fallback: VersionService returns empty string version
+        var json = """{"version":"","buildNumber":"0","sha":"","buildDate":""}""";
+        Services.AddSingleton<IVersionService>(
+            new VersionService(
+                TestHttpMessageHandler.CreateClient(HttpStatusCode.OK, json),
+                NullLogger<VersionService>.Instance));
+
+        var cut = RenderComponent<PublicFooter>();
+
+        Assert.Empty(cut.FindAll(".footer-version"));
     }
 }

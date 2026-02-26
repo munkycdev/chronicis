@@ -4,6 +4,46 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [3.0.0] - 2026-02-26
+
+### Collaborative Sessions, Tutorial World, Contextual Onboarding & GM Private Notes
+
+**Multi-Author Session Notes**
+
+- Session is a fully first-class domain entity under Arc
+- On session creation a default `SessionNote` is automatically created for the creator
+- Any world member can add their own `SessionNote` to a session via "Add Session Note"
+- AI summary generation on Session Detail aggregates content from all `SessionNote` records for that session
+- Players navigate to individual session notes via the Session Detail page note list
+
+**Tutorial World**
+
+- Sysadmin maintains a canonical tutorial world with rich pre-populated content
+- On first login, the tutorial world is cloned for the new user so they have a real world to explore immediately
+- Future improvements to the sysadmin world become the baseline for all subsequent new-user clones (existing users keep their current tutorial world)
+- Clone operation creates a full copy of the world including articles, campaigns, arcs, and sessions
+- `SysAdminTutorialsController` provides the endpoint for managing the canonical source world
+
+**Contextual Onboarding Sidebar (`TutorialDrawer`)**
+
+- New `TutorialDrawer` component renders as a right-side drawer alongside the metadata and quest drawers
+- Content is resolved by `TutorialPageTypeResolver` based on the current URL and article type
+- Supported page types: `world-detail`, `campaign-detail`, `arc-detail`, `session-detail`, `session-note`, `player-character`, `wiki`
+- Tutorial content is authored by sysadmins via the Admin panel and stored as `Tutorial` entities
+- When viewing the tutorial world, the drawer is pinned open (`IsForcedOpen = true`) and the close button is suppressed
+- The existing `GettingStarted` wizard is retained; its final step now references the tutorial sidebar
+- `ITutorialApiService` / `TutorialApiService` handle client-side content retrieval
+
+**GM Private Notes (World, Campaign, Arc, Session)**
+
+- `World`, `Campaign`, `Arc`, and `Session` entities each gain a `PrivateNotes` field (stored on the record)
+- A "Private Notes" tab is added to World Detail, Campaign Detail, Arc Detail, and Session Detail pages
+- The tab is only rendered for users with the GM role; non-GMs cannot see the tab or its content
+- GMs can also create private `SessionNote` articles (existing privacy toggle) for more structured per-session planning
+- No new migrations beyond the `PrivateNotes` column additions on the four entities
+
+---
+
 ## 2026 Q1 Session Entity Refactor (Phase 7)
 
 - Finalized quest session FK cutover to Session entities and removed the legacy quest article-session FK bridge column

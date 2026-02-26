@@ -2,12 +2,19 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
+ARG APP_VERSION=0.0.0-local
+ARG GIT_SHA=local
+
 # Copy repo (context should be repo root)
 COPY . .
 
 # Restore + publish ONLY the API project (avoid Windows-only projects)
 RUN dotnet restore ./src/Chronicis.Api/Chronicis.Api.csproj
-RUN dotnet publish ./src/Chronicis.Api/Chronicis.Api.csproj -c Release -o /out --no-restore
+RUN dotnet publish ./src/Chronicis.Api/Chronicis.Api.csproj \
+    -c Release \
+    -o /out \
+    --no-restore \
+    /p:InformationalVersion="${APP_VERSION}+${GIT_SHA}"
 
 # Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
@@ -40,6 +47,11 @@ COPY --from=datadog/serverless-init:latest /datadog-init /app/datadog-init
 COPY --from=build /out .
 
 ENV ASPNETCORE_URLS=http://+:8080
+# DD_VERSION is set here as a fallback; the CI workflow overrides it via
+# `az containerapp update --set-env-vars` so the running container always
+# reflects the real build version even across image rebuilds.
+ARG APP_VERSION=0.0.0-local
+ENV DD_VERSION=${APP_VERSION}
 EXPOSE 8080
 
 USER appuser

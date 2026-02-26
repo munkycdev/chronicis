@@ -1,4 +1,5 @@
 @* Shared footer component for both public and authenticated layouts *@
+@inject IVersionService VersionService
 
 <footer class="chronicis-footer">
     <div class="chronicis-footer-content">
@@ -17,5 +18,21 @@
         <p class="chronicis-footer-copy">
             © @DateTime.Now.Year Chronicis. Made by <i class="fa-solid fa-person"></i> and <i class="fa-solid fa-robot"></i> for people who <i class="fa-solid fa-heart"></i> <i class="fa-solid fa-dice-d20"></i>.
         </p>
+        @if (!string.IsNullOrEmpty(_version))
+        {
+            <span class="footer-version" title="Build @_sha">v@(_version)</span>
+        }
     </div>
 </footer>
+
+@code {
+    private string _version = string.Empty;
+    private string _sha = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var info = await VersionService.GetBuildInfoAsync();
+        _version = info.Version;
+        _sha = info.Sha;
+    }
+}

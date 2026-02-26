@@ -41,6 +41,7 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
     private readonly IDrawerCoordinator _drawerCoordinator = Substitute.For<IDrawerCoordinator>();
     private readonly AuthenticationStateProvider _authStateProvider = new TestAuthStateProvider();
     private readonly ILogger<AuthenticatedLayout> _logger = Substitute.For<ILogger<AuthenticatedLayout>>();
+    private readonly IVersionService _versionService = Substitute.For<IVersionService>();
 
     public AuthenticatedLayoutTests()
     {
@@ -64,6 +65,7 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
         Services.AddSingleton(_drawerCoordinator);
         Services.AddSingleton<AuthenticationStateProvider>(_authStateProvider);
         Services.AddSingleton(_logger);
+        Services.AddSingleton<IVersionService>(_versionService);
         Services.AddSingleton<IJSRuntime>(JSInterop.JSRuntime);
         Services.AddSingleton(new MudTheme());
 
@@ -74,6 +76,15 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
             HasCompletedOnboarding = true
         }));
         _appContext.CurrentWorld.Returns((WorldDetailDto?)null);
+        _versionService.GetBuildInfoAsync().Returns(Task.FromResult(new BuildInfo
+        {
+            Version = "3.0.0-test",
+            BuildNumber = "0",
+            Sha = "testsha",
+            BuildDate = string.Empty
+        }));
+        JSInterop.SetupVoid("chronicisKeyboardShortcuts.initialize", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("chronicisRum.setVersion", _ => true).SetVoidResult();
     }
 
     protected override void Dispose(bool disposing)
@@ -798,6 +809,19 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
         Assert.Contains(JSInterop.Invocations, invocation => invocation.Identifier == "chronicisKeyboardShortcuts.dispose");
     }
 
+    [Fact]
+    public async Task OnAfterRenderAsync_FirstRender_CallsRumSetVersion()
+    {
+        var instance = CreateInstance();
+
+        await InvokePrivateAsync(instance, "OnAfterRenderAsync", true);
+
+        await _versionService.Received(1).GetBuildInfoAsync();
+        Assert.Contains(
+            JSInterop.Invocations,
+            inv => inv.Identifier == "chronicisRum.setVersion");
+    }
+
     private AuthenticatedLayout CreateInstance()
     {
         var instance = new AuthenticatedLayout();
@@ -816,6 +840,7 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
         SetProperty(instance, "KeyboardShortcutService", _keyboardShortcutService);
         SetProperty(instance, "DrawerCoordinator", _drawerCoordinator);
         SetProperty(instance, "Logger", _logger);
+        SetProperty(instance, "VersionService", _versionService);
         return instance;
     }
 

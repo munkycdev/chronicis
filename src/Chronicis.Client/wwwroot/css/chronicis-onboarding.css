@@ -322,3 +322,30 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Help callout blurb on final onboarding step
+   ========================================================================== */
+
+.tip-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--chronicis-space-md, 12px);
+    margin-top: var(--chronicis-space-xl, 24px);
+    padding: var(--chronicis-space-md, 12px) var(--chronicis-space-lg, 20px);
+    background: rgba(196, 175, 142, 0.12);
+    border: 1px solid rgba(196, 175, 142, 0.35);
+    border-radius: 8px;
+}
+
+.tip-callout-icon {
+    font-size: 1.4rem;
+    line-height: 1.5;
+    flex-shrink: 0;
+}
+
+.tip-callout p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--chronicis-primary, #1F2A33);
+    line-height: 1.6;
+}

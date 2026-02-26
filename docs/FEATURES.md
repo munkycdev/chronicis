@@ -1,6 +1,6 @@
 # Chronicis - Feature Documentation
 
-**Last Updated:** February 13, 2026
+**Last Updated:** February 26, 2026
 
 > **Note on Terminology:** This document uses vocabulary terms defined in [Vocabulary.md](Vocabulary.md). Key concepts include **WikiLinks** (internal article-to-article references), **ExternalReferences** (embedded third-party D&D content), and **WorldBookmarks** (user-saved external URLs). See Vocabulary.md for complete definitions.
 
@@ -16,9 +16,10 @@ Articles can be nested infinitely deep to mirror campaign structure. Each articl
 - **WikiArticle** - General content (locations, NPCs, items, lore)
 - **Character** - Player or NPC character (top-level in Characters group)
 - **CharacterNote** - Notes nested under a Character
-- **Session** - Game session notes (must belong to an Arc)
-- **SessionNote** - Additional notes under a Session
+- **SessionNote** - A player or GM's notes for a specific Session (see [Multi-Author Session Notes](#multi-author-session-notes))
 - **Legacy** - Unmigrated content from old schema
+
+> **Note:** `Session` is a first-class domain entity (not an article type). Sessions belong to Arcs and contain `SessionNote` articles authored by individual players.
 
 **Virtual Groups in Tree:**
 - **Campaigns** - Campaign entities with their Arcs
@@ -153,6 +154,106 @@ The `srd14` and `srd24` providers use normalized JSON data stored in Azure Blob 
 - Additional providers can be added by implementing `IExternalLinkProvider`
 - Provider architecture supports future sources (Kobold Press, homebrew APIs, etc.)
 - Blob-backed pattern enables offline-capable reference data
+
+---
+
+### Multi-Author Session Notes
+
+Sessions are first-class domain entities belonging to Arcs. Each session contains one or more `SessionNote` articles authored by individual world members.
+
+**How It Works:**
+1. GM creates a session on the Arc Detail page
+2. A default `SessionNote` is automatically created for the creator
+3. Any world member navigates to the Session Detail page and clicks "Add Session Note" to contribute their own note
+4. Each note is its own article with the full TipTap editor, wiki links, external references, and privacy toggle
+5. The AI Summary on Session Detail aggregates content from all `SessionNote` records for that session to produce a multi-perspective summary
+
+**Features:**
+- Each player's perspective is captured independently in their own note
+- Private session notes are supported — GMs or players can mark their note private to keep planning or personal thoughts hidden
+- Notes list on Session Detail shows title, author, and visibility at a glance
+- AI summary combines all notes, giving the GM a single cohesive summary of everything recorded
+
+---
+
+### Tutorial World
+
+New users are immediately given a fully populated example world to explore rather than starting from scratch.
+
+**How It Works:**
+1. Sysadmin maintains a canonical tutorial world with rich pre-populated articles, campaigns, arcs, and sessions
+2. When a new user logs in for the first time, the canonical world is cloned for them
+3. The cloned world is private to that user and fully editable — it is their own copy to explore and modify
+4. Future improvements to the sysadmin canonical world become the baseline for all subsequent new-user clones; existing users keep their current tutorial world unchanged
+
+**Purpose:**
+- Demonstrates all major features in context (wiki articles, linked characters, session notes, quests, backlinks)
+- Gives new users something concrete to interact with before building their own content
+- Reduces the "blank page" problem for first-time DMs and players
+
+**Technical Details:**
+- Clone operation copies the full world hierarchy: world metadata, all articles, campaigns, arcs, sessions, and session notes
+- `SysAdminTutorialsController` provides the admin endpoint for managing the canonical source world
+- Clone is triggered on first login via user provisioning logic
+
+---
+
+### Contextual Help Sidebar
+
+A dedicated help panel that surfaces page-specific guidance wherever you are in the app.
+
+**How It Works:**
+1. The Tutorial Drawer sits alongside the metadata and quest drawers in the right panel area
+2. Open it via the help icon in the app bar or the drawer coordinator
+3. Content is resolved automatically based on the current page type and article type
+4. Sysadmins author and update tutorial content via the Admin panel; content is stored as `Tutorial` entities
+
+**Supported Page Types:**
+- `world-detail` — World overview, campaigns, and settings guidance
+- `campaign-detail` — Campaign management and arc organization
+- `arc-detail` — Arc structure, session creation, quest tracking
+- `session-detail` — Session workflow, adding notes, AI summary
+- `session-note` — Writing notes, wiki links, private vs. public content
+- `player-character` — Character articles, claiming, notes
+- `wiki` — Article hierarchy, linking, AI summaries
+
+**Tutorial World Behavior:**
+- When the user is viewing content from the tutorial world, the drawer is pinned open (`IsForcedOpen = true`) and the close button is suppressed
+- This ensures new users always have guidance visible while exploring the example content
+
+**Relationship to GettingStarted Wizard:**
+- The existing `/getting-started` wizard is retained as a high-level orientation to Chronicis's organizational structure
+- The final step of the wizard now mentions the tutorial sidebar so users know it exists
+- The sidebar provides the deeper, context-specific guidance the wizard does not
+
+**Technical Details:**
+- `TutorialDrawer` component resolves content via `TutorialPageTypeResolver` on every navigation event
+- `ITutorialApiService` / `TutorialApiService` handle client-side content retrieval
+- `DrawerCoordinator` manages open/close state across all right-side drawers
+
+---
+
+### GM Private Planning Notes
+
+DMs and GMs have a dedicated private notes area on every major entity page for session prep and planning content that players should never see.
+
+**Where Available:**
+- World Detail page
+- Campaign Detail page
+- Arc Detail page
+- Session Detail page
+
+**How It Works:**
+- Each of the above entities has a `PrivateNotes` field stored directly on the record
+- A "Private Notes" tab is rendered on the detail page, but only for users with the GM role
+- Non-GM world members cannot see the tab or its contents — the tab is not rendered at all for them
+- GMs can additionally create private `SessionNote` articles (using the existing article privacy toggle) for more structured per-session planning documents
+
+**Use Cases:**
+- Pre-session encounter prep hidden from players
+- Secret NPC motivations and plot twists at the campaign or arc level
+- World-level lore that hasn't been revealed yet
+- Quick reminders and to-do lists for the GM within the session workflow
 
 ---
 

@@ -13,7 +13,7 @@ on:
 
 permissions:
   id-token: write
-  contents: read
+  contents: write   # needed for git tag push
 
 concurrency:
   group: chronicis-api-main
@@ -39,6 +39,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Stamp version
+        run: |
+          MAJOR=$(jq -r '.major' version.json)
+          MINOR=$(jq -r '.minor' version.json)
+          APP_VERSION="${MAJOR}.${MINOR}.${{ github.run_number }}"
+          GIT_SHA=$(git rev-parse --short HEAD)
+          echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
+          echo "GIT_SHA=${GIT_SHA}" >> $GITHUB_ENV
+          echo "Stamped version: ${APP_VERSION} (${GIT_SHA})"
+
       - name: Set image tags
         run: |
           echo "IMAGE=${{ vars.ACR_LOGIN_SERVER }}/${{ vars.API_IMAGE_REPO }}:${{ github.sha }}" >> $GITHUB_ENV
@@ -48,8 +58,10 @@ jobs:
         run: |
           test -n "$IMAGE"
           test -n "$IMAGE_LATEST"
+          test -n "$APP_VERSION"
           echo "Using IMAGE=$IMAGE"
           echo "Using IMAGE_LATEST=$IMAGE_LATEST"
+          echo "Using APP_VERSION=$APP_VERSION"
 
       - name: Build and push API image
         run: |
@@ -57,6 +69,8 @@ jobs:
             -f src/Chronicis.Api/Dockerfile \
             -t "$IMAGE" \
             -t "$IMAGE_LATEST" \
+            --build-arg APP_VERSION="$APP_VERSION" \
+            --build-arg GIT_SHA="$GIT_SHA" \
             --cache-from type=gha \
             --cache-to type=gha,mode=max \
             --push .
@@ -66,7 +80,15 @@ jobs:
           az containerapp update \
             --name ${{ vars.API_APP_NAME }} \
             --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --image "$IMAGE"
+            --image "$IMAGE" \
+            --set-env-vars "DD_VERSION=$APP_VERSION"
+
+      - name: Tag release (API)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "api-v${APP_VERSION}"
+          git push origin "api-v${APP_VERSION}"
 
       - name: Print active API revision
         run: |
@@ -76,4 +98,4 @@ jobs:
             --query "[?properties.active==\`true\`].name | [0]" \
             --output tsv)
 
-          echo "✅ Active API revision: $REVISION"
+          echo "✅ Active API revision: $REVISION (v${APP_VERSION})"

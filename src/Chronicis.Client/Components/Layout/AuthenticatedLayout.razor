@@ -20,6 +20,7 @@
 @inject IUserApiService UserApi
 @inject IAppContextService AppContext
 @inject ILogger<AuthenticatedLayout> Logger
+@inject IVersionService VersionService
 @implements IAsyncDisposable
 
 <MudThemeProvider Theme="ChronicisTheme" />
@@ -53,15 +54,9 @@
                       @onkeydown="OnGlobalSearchKeyDown" />
 
         <MudTooltip Text="Tutorial (Ctrl+T)">
-            <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
-                           Color="Color.Inherit"
-                           OnClick="ToggleTutorialDrawer" />
-        </MudTooltip>
-
-        <MudTooltip Text="Quick Start Guide">
             <MudIconButton Icon="@Icons.Material.Filled.Help"
                            Color="Color.Inherit"
-                           OnClick="@(() => Navigation.NavigateTo("/getting-started"))" />
+                           OnClick="ToggleTutorialDrawer" />
         </MudTooltip>
 
         @if (_isSysAdmin)
@@ -157,7 +152,7 @@
                     </ErrorContent>
                 </ErrorBoundary>
             </MudContainer>
-            
+
             <PublicFooter />
         </div>
     </MudMainContent>
@@ -195,6 +190,9 @@
         {
             _dotNetRef = DotNetObjectReference.Create(this);
             await JSRuntime.InvokeVoidAsync("chronicisKeyboardShortcuts.initialize", _dotNetRef);
+
+            var buildInfo = await VersionService.GetBuildInfoAsync();
+            await JSRuntime.InvokeVoidAsync("chronicisRum.setVersion", buildInfo.Version, buildInfo.Sha);
         }
     }
 
@@ -227,20 +225,20 @@
     {
         // Create a sibling article to the currently selected article
         var selectedId = TreeState.SelectedNodeId;
-        
+
         if (!selectedId.HasValue)
         {
             Snackbar.Add("Select an article first, then press Ctrl+N to create a sibling", Severity.Info);
             return;
         }
-        
+
         // Check if the selected node is an article
         if (!TreeState.TryGetNode(selectedId.Value, out var selectedNode) || selectedNode == null)
         {
             Snackbar.Add("Select an article first, then press Ctrl+N to create a sibling", Severity.Info);
             return;
         }
-        
+
         // Only allow Ctrl+N for Article nodes
         if (selectedNode.NodeType != TreeNodeType.Article)
         {
@@ -256,7 +254,7 @@
             Snackbar.Add($"Ctrl+N creates sibling articles. Select an article instead of a {nodeTypeName}.", Severity.Info);
             return;
         }
-        
+
         // Get the current article to find its parent
         var currentArticle = await ArticleApi.GetArticleDetailAsync(selectedId.Value);
         if (currentArticle == null)
@@ -264,9 +262,9 @@
             Snackbar.Add("Could not load the selected article", Severity.Warning);
             return;
         }
-        
+
         Guid? parentId = currentArticle.ParentId;
-        
+
         // Create sibling (same parent, same world/campaign context)
         Guid? newArticleId;
         if (parentId.HasValue)
@@ -287,7 +285,7 @@
                 Type = currentArticle.Type, // Use same type as current article (e.g., SessionNote)
                 EffectiveDate = DateTime.Now
             };
-            
+
             var created = await ArticleApi.CreateArticleAsync(createDto);
             if (created != null)
             {
@@ -300,11 +298,11 @@
                 newArticleId = null;
             }
         }
-        
+
         if (newArticleId.HasValue)
         {
             Snackbar.Add("Article created (Ctrl+N)", Severity.Success);
-            
+
             // Navigate to the new article
             var newArticle = await ArticleApi.GetArticleDetailAsync(newArticleId.Value);
             if (newArticle != null && newArticle.Breadcrumbs.Any())
@@ -441,7 +439,7 @@
         AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
         Navigation.LocationChanged -= HandleLocationChanged;
         AppContext.OnContextChanged -= HandleAppContextChanged;
-        
+
         if (_dotNetRef != null)
         {
             try

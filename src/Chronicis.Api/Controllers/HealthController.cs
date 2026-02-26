@@ -1,3 +1,4 @@
+using System.Reflection;
 using Chronicis.Api.Data;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
@@ -43,7 +44,8 @@ public class HealthController : ControllerBase
         return Ok(new
         {
             status = "healthy",
-            timestamp = DateTime.UtcNow
+            timestamp = DateTime.UtcNow,
+            version = GetApiVersion()
         });
     }
 
@@ -84,6 +86,7 @@ public class HealthController : ControllerBase
             {
                 status = "healthy",
                 timestamp = DateTime.UtcNow,
+                version = GetApiVersion(),
                 checks = new
                 {
                     database = "connected",
@@ -113,6 +116,7 @@ public class HealthController : ControllerBase
         _logger.LogInformation("System health status endpoint called");
 
         var systemHealth = await _systemHealthService.GetSystemHealthAsync();
+        systemHealth.ApiVersion = GetApiVersion();
 
         // Return appropriate HTTP status code based on overall health
         var statusCode = systemHealth.OverallStatus switch
@@ -125,6 +129,11 @@ public class HealthController : ControllerBase
 
         return StatusCode(statusCode, systemHealth);
     }
+
+    internal static string GetApiVersion() =>
+        Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion ?? "0.0.0";
 
     private static string MaskConnectionString(string connectionString)
     {

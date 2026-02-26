@@ -7,6 +7,7 @@ public class SystemHealthStatusDto
 {
     public DateTime Timestamp { get; set; }
     public string OverallStatus { get; set; } = string.Empty;
+    public string ApiVersion { get; set; } = string.Empty;
     public List<ServiceHealthDto> Services { get; set; } = new();
 }
 

@@ -1,7 +1,11 @@
+using System.Net;
 using Bunit.TestDoubles;
 using Chronicis.Client.Components.Shared;
+using Chronicis.Client.Services;
+using Chronicis.Client.Tests.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using MudBlazor;
 using Xunit;
 
@@ -13,6 +17,13 @@ public class PublicLayoutTests : MudBlazorTestContext
     {
         Services.AddSingleton(new MudTheme());
         Services.AddAuthorizationCore();
+
+        // PublicFooter requires IVersionService
+        var json = """{"version":"3.0.0-test","buildNumber":"0","sha":"test","buildDate":""}""";
+        Services.AddSingleton<IVersionService>(
+            new VersionService(
+                TestHttpMessageHandler.CreateClient(HttpStatusCode.OK, json),
+                NullLogger<VersionService>.Instance));
     }
 
     [Fact]

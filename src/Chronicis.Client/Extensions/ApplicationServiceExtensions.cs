@@ -114,6 +114,15 @@ public static class ApplicationServiceExtensions
             return new RenderDefinitionService(http, logger);
         });
 
+        // Version service — reads wwwroot/version.json stamped by CI
+        services.AddSingleton<IVersionService>(sp =>
+        {
+            var navigationManager = sp.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>();
+            var http = new HttpClient { BaseAddress = new Uri(navigationManager.BaseUri) };
+            var logger = sp.GetRequiredService<ILogger<VersionService>>();
+            return new VersionService(http, logger);
+        });
+
         return services;
     }
 }

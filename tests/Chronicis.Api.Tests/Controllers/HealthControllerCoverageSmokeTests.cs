@@ -11,7 +11,7 @@ namespace Chronicis.Api.Tests;
 public class HealthControllerCoverageSmokeTests
 {
     [Fact]
-    public void HealthController_GetHealth_ReturnsOk()
+    public void HealthController_GetHealth_ReturnsOkWithVersion()
     {
         using var db = ControllerCoverageTestFixtures.CreateDbContext();
         var config = new ConfigurationBuilder().AddInMemoryCollection().Build();
@@ -20,6 +20,19 @@ public class HealthControllerCoverageSmokeTests
 
         var result = sut.GetHealth();
 
-        Assert.IsType<OkObjectResult>(result);
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var body = ok.Value!.ToString()!;
+        Assert.Contains("version", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void HealthController_GetApiVersion_ReturnsNonEmptyString()
+    {
+        // GetApiVersion reads AssemblyInformationalVersion; in tests that resolves
+        // to the test assembly version, which is non-empty and non-null.
+        var version = HealthController.GetApiVersion();
+
+        Assert.NotNull(version);
+        Assert.NotEmpty(version);
     }
 }
