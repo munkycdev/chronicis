@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Api.Services.BlobStorageService">
+  <Summary>
+    <Class>Chronicis.Api.Services.BlobStorageService</Class>
+    <Assembly>Chronicis.Api</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Services\BlobStorageService.cs</File>
+    </Files>
+    <Coveredlines>86</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>86</Coverablelines>
+    <Totallines>229</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>16</Coveredbranches>
+    <Totalbranches>16</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>6</Coveredmethods>
+    <Fullcoveredmethods>6</Fullcoveredmethods>
+    <Totalmethods>6</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="ctor">
+      <CrapScore>12</CrapScore>
+      <Cyclomaticcomplexity>12</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="BuildBlobPath">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GenerateUploadSasUrlAsync">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GenerateDownloadSasUrlAsync">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="SanitizeFileName">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="BuildSasUrl">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Services\BlobStorageService.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Azure;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Azure.Storage.Blobs;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Azure.Storage.Blobs.Models;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Azure.Storage.Sas;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Extensions;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Services;" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Azure Blob Storage service for managing world document files." />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public class BlobStorageService : IBlobStorageService" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly BlobServiceClient _blobServiceClient;" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IConfiguration _configuration;" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILogger&lt;BlobStorageService&gt; _logger;" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly string _containerName;" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly string? _customDomain;" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public BlobStorageService(" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IConfiguration configuration," />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ILogger&lt;BlobStorageService&gt; logger)" />
+      <LineAnalysis line="23" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="24" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        _configuration = configuration;" />
+      <LineAnalysis line="25" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger = logger;" />
+      <LineAnalysis line="26" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="27" visits="4" coverage="Covered" coveredbranches="2" totalbranches="2" content="        var connectionString = configuration[&quot;BlobStorage:ConnectionString&quot;]" />
+      <LineAnalysis line="28" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            ?? configuration[&quot;BlobStorage__ConnectionString&quot;];  // Try double underscore format" />
+      <LineAnalysis line="29" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="30" visits="4" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrEmpty(connectionString))" />
+      <LineAnalysis line="31" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="32" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _logger.LogError(&quot;BlobStorage:ConnectionString not configured. Check Azure app settings.&quot;);" />
+      <LineAnalysis line="33" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            throw new InvalidOperationException(&quot;BlobStorage:ConnectionString not configured. Please add BlobStorage__ConnectionString to Azure configuration.&quot;);" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="36" visits="3" coverage="Covered" coveredbranches="4" totalbranches="4" content="        _containerName = configuration[&quot;BlobStorage:ContainerName&quot;]" />
+      <LineAnalysis line="37" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            ?? configuration[&quot;BlobStorage__ContainerName&quot;]" />
+      <LineAnalysis line="38" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            ?? &quot;chronicis-documents&quot;;" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Optional custom domain (e.g., &quot;http://docs.chronicis.app&quot; or &quot;https://docs.chronicis.app&quot;)" />
+      <LineAnalysis line="41" visits="3" coverage="Covered" coveredbranches="2" totalbranches="2" content="        _customDomain = configuration[&quot;BlobStorage:CustomDomain&quot;]" />
+      <LineAnalysis line="42" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            ?? configuration[&quot;BlobStorage__CustomDomain&quot;];" />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="44" visits="3" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(_customDomain))" />
+      <LineAnalysis line="45" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="46" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _logger.LogDebug(&quot;Using custom domain for blob URLs: {CustomDomain}&quot;, _customDomain);" />
+      <LineAnalysis line="47" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="48" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="49" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="50" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="51" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            _blobServiceClient = new BlobServiceClient(connectionString);" />
+      <LineAnalysis line="52" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="53" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Ensure container exists (idempotent)" />
+      <LineAnalysis line="54" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);" />
+      <LineAnalysis line="55" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            containerClient.CreateIfNotExists(PublicAccessType.None);" />
+      <LineAnalysis line="56" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="57" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _logger.LogDebug(&quot;BlobStorageService initialized with container: {ContainerName}&quot;, _containerName);" />
+      <LineAnalysis line="58" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="59" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="60" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="61" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            _logger.LogError(ex, &quot;Failed to initialize BlobStorageService. Connection string may be invalid.&quot;);" />
+      <LineAnalysis line="62" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            throw;" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="64" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;inheritdoc/&gt;" />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public string BuildBlobPath(Guid worldId, Guid documentId, string fileName)" />
+      <LineAnalysis line="68" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="69" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Sanitize filename: remove path separators, keep only safe chars" />
+      <LineAnalysis line="70" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        var sanitized = SanitizeFileName(fileName);" />
+      <LineAnalysis line="71" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        return $&quot;worlds/{worldId}/documents/{documentId}/{sanitized}&quot;;" />
+      <LineAnalysis line="72" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;inheritdoc/&gt;" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public Task&lt;string&gt; GenerateUploadSasUrlAsync(" />
+      <LineAnalysis line="76" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid worldId," />
+      <LineAnalysis line="77" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid documentId," />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        string fileName," />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        string contentType)" />
+      <LineAnalysis line="80" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="81" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        var blobPath = BuildBlobPath(worldId, documentId, fileName);" />
+      <LineAnalysis line="82" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);" />
+      <LineAnalysis line="83" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        var blobClient = containerClient.GetBlobClient(blobPath);" />
+      <LineAnalysis line="84" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="85" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Generate SAS token with write permissions, 15-minute expiry" />
+      <LineAnalysis line="86" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        var sasBuilder = new BlobSasBuilder" />
+      <LineAnalysis line="87" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="88" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            BlobContainerName = _containerName," />
+      <LineAnalysis line="89" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            BlobName = blobPath," />
+      <LineAnalysis line="90" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            Resource = &quot;b&quot;, // blob" />
+      <LineAnalysis line="91" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            StartsOn = DateTimeOffset.UtcNow.AddMinutes(-5), // Allow for clock skew" />
+      <LineAnalysis line="92" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(15)," />
+      <LineAnalysis line="93" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        };" />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="95" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        sasBuilder.SetPermissions(BlobSasPermissions.Create | BlobSasPermissions.Write);" />
+      <LineAnalysis line="96" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="97" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        var sasUrl = BuildSasUrl(blobClient, sasBuilder);" />
+      <LineAnalysis line="98" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="99" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger.LogDebugSanitized(&quot;Generated upload SAS URL for blob: {BlobPath}&quot;, blobPath);" />
+      <LineAnalysis line="100" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="101" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        return Task.FromResult(sasUrl);" />
+      <LineAnalysis line="102" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="104" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;inheritdoc/&gt;" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;BlobMetadata?&gt; GetBlobMetadataAsync(string blobPath)" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="107" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="108" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="109" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);" />
+      <LineAnalysis line="110" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var blobClient = containerClient.GetBlobClient(blobPath);" />
+      <LineAnalysis line="111" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="112" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (!await blobClient.ExistsAsync())" />
+      <LineAnalysis line="113" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="114" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _logger.LogWarningSanitized(&quot;Blob not found: {BlobPath}&quot;, blobPath);" />
+      <LineAnalysis line="115" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                return null;" />
+      <LineAnalysis line="116" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="118" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var properties = await blobClient.GetPropertiesAsync();" />
+      <LineAnalysis line="119" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="120" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return new BlobMetadata" />
+      <LineAnalysis line="121" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="122" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                SizeBytes = properties.Value.ContentLength," />
+      <LineAnalysis line="123" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                ContentType = properties.Value.ContentType" />
+      <LineAnalysis line="124" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            };" />
+      <LineAnalysis line="125" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="126" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (RequestFailedException ex)" />
+      <LineAnalysis line="127" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="128" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Error getting blob metadata for: {BlobPath}&quot;, blobPath);" />
+      <LineAnalysis line="129" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return null;" />
+      <LineAnalysis line="130" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="131" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="132" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="133" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;inheritdoc/&gt;" />
+      <LineAnalysis line="134" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;Stream&gt; OpenReadAsync(string blobPath)" />
+      <LineAnalysis line="135" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="136" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);" />
+      <LineAnalysis line="137" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var blobClient = containerClient.GetBlobClient(blobPath);" />
+      <LineAnalysis line="138" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="139" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!await blobClient.ExistsAsync())" />
+      <LineAnalysis line="140" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="141" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw new FileNotFoundException($&quot;Blob not found: {blobPath}&quot;);" />
+      <LineAnalysis line="142" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="143" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="144" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return await blobClient.OpenReadAsync();" />
+      <LineAnalysis line="145" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="146" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="147" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;inheritdoc/&gt;" />
+      <LineAnalysis line="148" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task DeleteBlobAsync(string blobPath)" />
+      <LineAnalysis line="149" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="150" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="151" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="152" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);" />
+      <LineAnalysis line="153" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var blobClient = containerClient.GetBlobClient(blobPath);" />
+      <LineAnalysis line="154" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="155" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await blobClient.DeleteIfExistsAsync();" />
+      <LineAnalysis line="156" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="157" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogDebugSanitized(&quot;Deleted blob: {BlobPath}&quot;, blobPath);" />
+      <LineAnalysis line="158" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="159" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (RequestFailedException ex)" />
+      <LineAnalysis line="160" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="161" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Error deleting blob: {BlobPath}&quot;, blobPath);" />
+      <LineAnalysis line="162" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw;" />
+      <LineAnalysis line="163" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="164" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="165" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="166" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;inheritdoc/&gt;" />
+      <LineAnalysis line="167" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public Task&lt;string&gt; GenerateDownloadSasUrlAsync(string blobPath)" />
+      <LineAnalysis line="168" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="169" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);" />
+      <LineAnalysis line="170" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        var blobClient = containerClient.GetBlobClient(blobPath);" />
+      <LineAnalysis line="171" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="172" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Generate SAS token with read permissions, 15-minute expiry" />
+      <LineAnalysis line="173" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        var sasBuilder = new BlobSasBuilder" />
+      <LineAnalysis line="174" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="175" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            BlobContainerName = _containerName," />
+      <LineAnalysis line="176" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            BlobName = blobPath," />
+      <LineAnalysis line="177" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            Resource = &quot;b&quot;, // blob" />
+      <LineAnalysis line="178" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            StartsOn = DateTimeOffset.UtcNow.AddMinutes(-5), // Allow for clock skew" />
+      <LineAnalysis line="179" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(15)," />
+      <LineAnalysis line="180" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        };" />
+      <LineAnalysis line="181" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="182" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        sasBuilder.SetPermissions(BlobSasPermissions.Read);" />
+      <LineAnalysis line="183" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="184" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        var sasUrl = BuildSasUrl(blobClient, sasBuilder);" />
+      <LineAnalysis line="185" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="186" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger.LogDebugSanitized(&quot;Generated download SAS URL for blob: {BlobPath}&quot;, blobPath);" />
+      <LineAnalysis line="187" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="188" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        return Task.FromResult(sasUrl);" />
+      <LineAnalysis line="189" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="190" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="191" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private static string SanitizeFileName(string fileName)" />
+      <LineAnalysis line="192" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="193" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Remove path separators and keep only safe characters" />
+      <LineAnalysis line="194" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var invalidChars = Path.GetInvalidFileNameChars();" />
+      <LineAnalysis line="195" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var sanitized = string.Join(&quot;_&quot;, fileName.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));" />
+      <LineAnalysis line="196" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="197" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Limit length" />
+      <LineAnalysis line="198" visits="4" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (sanitized.Length &gt; 200)" />
+      <LineAnalysis line="199" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="200" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            var extension = Path.GetExtension(sanitized);" />
+      <LineAnalysis line="201" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            var nameWithoutExt = Path.GetFileNameWithoutExtension(sanitized);" />
+      <LineAnalysis line="202" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sanitized = nameWithoutExt[..(200 - extension.Length)] + extension;" />
+      <LineAnalysis line="203" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="204" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="205" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        return sanitized;" />
+      <LineAnalysis line="206" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="207" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="208" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="209" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Build a SAS URL using either the custom domain or the default blob endpoint." />
+      <LineAnalysis line="210" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="211" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private string BuildSasUrl(BlobClient blobClient, BlobSasBuilder sasBuilder)" />
+      <LineAnalysis line="212" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="213" visits="4" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(_customDomain))" />
+      <LineAnalysis line="214" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="215" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Generate SAS token only (query string)" />
+      <LineAnalysis line="216" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            var sasToken = blobClient.GenerateSasUri(sasBuilder).Query;" />
+      <LineAnalysis line="217" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="218" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Build custom URL: {customDomain}/{container}/{blobPath}?{sasToken}" />
+      <LineAnalysis line="219" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            var customUrl = $&quot;{_customDomain.TrimEnd('/')}/{_containerName}/{blobClient.Name}{sasToken}&quot;;" />
+      <LineAnalysis line="220" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="221" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            return customUrl;" />
+      <LineAnalysis line="222" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="223" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        else" />
+      <LineAnalysis line="224" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="225" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Use default blob endpoint with SAS" />
+      <LineAnalysis line="226" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            return blobClient.GenerateSasUri(sasBuilder).ToString();" />
+      <LineAnalysis line="227" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="228" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="229" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

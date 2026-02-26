@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Api.Services.AutoLinkService">
+  <Summary>
+    <Class>Chronicis.Api.Services.AutoLinkService</Class>
+    <Assembly>Chronicis.Api</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Services\AutoLinkService.cs</File>
+    </Files>
+    <Coveredlines>45</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>45</Coverablelines>
+    <Totallines>246</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>14</Coveredbranches>
+    <Totalbranches>14</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>4</Coveredmethods>
+    <Fullcoveredmethods>4</Fullcoveredmethods>
+    <Totalmethods>4</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="cctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GetProtectedRanges">
+      <CrapScore>8</CrapScore>
+      <Cyclomaticcomplexity>8</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="IsInProtectedRange">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Services\AutoLinkService.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text.RegularExpressions;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Api.Data;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.DTOs;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Microsoft.EntityFrameworkCore;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Services;" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Service for automatically detecting and inserting wiki links in article content." />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public interface IAutoLinkService" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Scans article content and returns match positions for wiki links." />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// The client uses these positions to insert links via TipTap." />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;param name=&quot;articleId&quot;&gt;The article being edited (to exclude from matches).&lt;/param&gt;" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;param name=&quot;worldId&quot;&gt;The world to search for matching articles.&lt;/param&gt;" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;param name=&quot;body&quot;&gt;The article body content (HTML) to scan.&lt;/param&gt;" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;param name=&quot;userId&quot;&gt;The user ID for scoping.&lt;/param&gt;" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;returns&gt;Response containing match positions and details.&lt;/returns&gt;" />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    Task&lt;AutoLinkResponseDto&gt; FindLinksAsync(Guid articleId, Guid worldId, string body, Guid userId);" />
+      <LineAnalysis line="23" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+      <LineAnalysis line="24" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="25" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="26" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Implementation of auto-link service." />
+      <LineAnalysis line="27" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Works on HTML content and returns match positions for client-side insertion." />
+      <LineAnalysis line="28" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="29" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public class AutoLinkService : IAutoLinkService" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ChronicisDbContext _context;" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILogger&lt;AutoLinkService&gt; _logger;" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Regex to find existing wiki-link spans in HTML" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Matches: &lt;span data-type=&quot;wiki-link&quot; ... &gt;...&lt;/span&gt;" />
+      <LineAnalysis line="36" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    private static readonly Regex ExistingWikiLinkPattern = new(" />
+      <LineAnalysis line="37" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        @&quot;&lt;span[^&gt;]*data-type=&quot;&quot;wiki-link&quot;&quot;[^&gt;]*&gt;.*?&lt;/span&gt;&quot;," />
+      <LineAnalysis line="38" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        RegexOptions.Compiled | RegexOptions.Singleline);" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Regex to find existing external-link spans in HTML" />
+      <LineAnalysis line="41" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    private static readonly Regex ExistingExternalLinkPattern = new(" />
+      <LineAnalysis line="42" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        @&quot;&lt;span[^&gt;]*data-type=&quot;&quot;external-link&quot;&quot;[^&gt;]*&gt;.*?&lt;/span&gt;&quot;," />
+      <LineAnalysis line="43" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        RegexOptions.Compiled | RegexOptions.Singleline);" />
+      <LineAnalysis line="44" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Regex to find HTML tags (to avoid matching inside them)" />
+      <LineAnalysis line="46" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    private static readonly Regex HtmlTagPattern = new(" />
+      <LineAnalysis line="47" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        @&quot;&lt;[^&gt;]+&gt;&quot;," />
+      <LineAnalysis line="48" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        RegexOptions.Compiled);" />
+      <LineAnalysis line="49" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="50" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Legacy markdown wiki link pattern (for backwards compatibility)" />
+      <LineAnalysis line="51" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    private static readonly Regex LegacyWikiLinkPattern = new(" />
+      <LineAnalysis line="52" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        @&quot;\[\[([a-fA-F0-9\-]{36})(?:\|([^\]]+))?\]\]&quot;," />
+      <LineAnalysis line="53" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        RegexOptions.Compiled);" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public AutoLinkService(ChronicisDbContext context, ILogger&lt;AutoLinkService&gt; logger)" />
+      <LineAnalysis line="56" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="57" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        _context = context;" />
+      <LineAnalysis line="58" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger = logger;" />
+      <LineAnalysis line="59" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;AutoLinkResponseDto&gt; FindLinksAsync(" />
+      <LineAnalysis line="62" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid articleId," />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid worldId," />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        string body," />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid userId)" />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (string.IsNullOrWhiteSpace(body))" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="69" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return new AutoLinkResponseDto" />
+      <LineAnalysis line="70" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="71" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                LinksFound = 0," />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Matches = new List&lt;AutoLinkMatchDto&gt;()" />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            };" />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="76" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Get all articles in this world that could be linked to (with their aliases)" />
+      <LineAnalysis line="77" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var linkableArticles = await (" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            from a in _context.Articles" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            join wm in _context.WorldMembers on a.WorldId equals wm.WorldId" />
+      <LineAnalysis line="80" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            where wm.UserId == userId" />
+      <LineAnalysis line="81" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            where a.WorldId == worldId" />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            where a.Id != articleId" />
+      <LineAnalysis line="83" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            where !string.IsNullOrEmpty(a.Title)" />
+      <LineAnalysis line="84" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            select new" />
+      <LineAnalysis line="85" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="86" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                a.Id," />
+      <LineAnalysis line="87" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                a.Title," />
+      <LineAnalysis line="88" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Aliases = a.Aliases.Select(al =&gt; al.AliasText).ToList()" />
+      <LineAnalysis line="89" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="90" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ).ToListAsync();" />
+      <LineAnalysis line="91" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="92" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!linkableArticles.Any())" />
+      <LineAnalysis line="93" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return new AutoLinkResponseDto" />
+      <LineAnalysis line="95" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="96" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                LinksFound = 0," />
+      <LineAnalysis line="97" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Matches = new List&lt;AutoLinkMatchDto&gt;()" />
+      <LineAnalysis line="98" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            };" />
+      <LineAnalysis line="99" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="100" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="101" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Build protected ranges (areas we should not match in)" />
+      <LineAnalysis line="102" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var protectedRanges = GetProtectedRanges(body);" />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="104" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Build a list of all searchable terms (titles + aliases) with their article info" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Each term knows whether it's an alias or the canonical title" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var searchTerms = new List&lt;(string Term, Guid ArticleId, string ArticleTitle, bool IsAlias)&gt;();" />
+      <LineAnalysis line="107" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="108" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        foreach (var article in linkableArticles)" />
+      <LineAnalysis line="109" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="110" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Add the title" />
+      <LineAnalysis line="111" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            searchTerms.Add((article.Title, article.Id, article.Title, false));" />
+      <LineAnalysis line="112" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="113" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Add all aliases" />
+      <LineAnalysis line="114" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            foreach (var alias in article.Aliases)" />
+      <LineAnalysis line="115" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="116" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                if (!string.IsNullOrWhiteSpace(alias))" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="118" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    searchTerms.Add((alias, article.Id, article.Title, true));" />
+      <LineAnalysis line="119" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="120" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="121" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="122" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="123" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Sort by term length descending so we match longer terms first" />
+      <LineAnalysis line="124" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // This prevents &quot;Water&quot; from matching before &quot;Waterdeep&quot;" />
+      <LineAnalysis line="125" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var sortedTerms = searchTerms" />
+      <LineAnalysis line="126" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .OrderByDescending(t =&gt; t.Term.Length)" />
+      <LineAnalysis line="127" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ToList();" />
+      <LineAnalysis line="128" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="129" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var allMatches = new List&lt;AutoLinkMatchDto&gt;();" />
+      <LineAnalysis line="130" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var usedRanges = new List&lt;(int Start, int End)&gt;(); // Track ranges we've already matched" />
+      <LineAnalysis line="131" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="132" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        foreach (var term in sortedTerms)" />
+      <LineAnalysis line="133" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="134" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Build regex for whole-word, case-insensitive match" />
+      <LineAnalysis line="135" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var escapedTerm = Regex.Escape(term.Term);" />
+      <LineAnalysis line="136" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var pattern = $@&quot;\b{escapedTerm}\b&quot;;" />
+      <LineAnalysis line="137" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="138" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            try" />
+      <LineAnalysis line="139" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="140" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var regex = new Regex(pattern, RegexOptions.IgnoreCase);" />
+      <LineAnalysis line="141" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var regexMatches = regex.Matches(body);" />
+      <LineAnalysis line="142" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="143" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                foreach (Match match in regexMatches)" />
+      <LineAnalysis line="144" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="145" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    // Skip if this position is in a protected range (HTML tag, existing link, etc.)" />
+      <LineAnalysis line="146" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    if (IsInProtectedRange(match.Index, match.Length, protectedRanges))" />
+      <LineAnalysis line="147" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    {" />
+      <LineAnalysis line="148" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        continue;" />
+      <LineAnalysis line="149" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    }" />
+      <LineAnalysis line="150" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="151" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    // Skip if this position overlaps with an already-matched range" />
+      <LineAnalysis line="152" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    if (IsInProtectedRange(match.Index, match.Length, usedRanges))" />
+      <LineAnalysis line="153" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    {" />
+      <LineAnalysis line="154" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        continue;" />
+      <LineAnalysis line="155" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    }" />
+      <LineAnalysis line="156" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="157" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    // Valid match - record it" />
+      <LineAnalysis line="158" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    allMatches.Add(new AutoLinkMatchDto" />
+      <LineAnalysis line="159" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    {" />
+      <LineAnalysis line="160" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        MatchedText = match.Value," />
+      <LineAnalysis line="161" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        ArticleTitle = term.ArticleTitle," />
+      <LineAnalysis line="162" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        ArticleId = term.ArticleId," />
+      <LineAnalysis line="163" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        StartIndex = match.Index," />
+      <LineAnalysis line="164" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        EndIndex = match.Index + match.Length," />
+      <LineAnalysis line="165" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        IsAliasMatch = term.IsAlias" />
+      <LineAnalysis line="166" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    });" />
+      <LineAnalysis line="167" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="168" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    // Mark this range as used so shorter terms don't match within it" />
+      <LineAnalysis line="169" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    usedRanges.Add((match.Index, match.Index + match.Length));" />
+      <LineAnalysis line="170" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="171" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="172" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            catch (Exception ex)" />
+      <LineAnalysis line="173" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="174" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _logger.LogWarning(ex, &quot;Failed to create regex for term: {Term}&quot;, term.Term);" />
+      <LineAnalysis line="175" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="176" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="177" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="178" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Sort matches by position for consistent display in confirmation dialog" />
+      <LineAnalysis line="179" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        allMatches = allMatches.OrderBy(m =&gt; m.StartIndex).ToList();" />
+      <LineAnalysis line="180" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="181" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(" />
+      <LineAnalysis line="182" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &quot;Auto-link found {Count} matches for article {ArticleId}&quot;," />
+      <LineAnalysis line="183" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            allMatches.Count," />
+      <LineAnalysis line="184" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            articleId);" />
+      <LineAnalysis line="185" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="186" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return new AutoLinkResponseDto" />
+      <LineAnalysis line="187" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="188" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            LinksFound = allMatches.Count," />
+      <LineAnalysis line="189" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Matches = allMatches" />
+      <LineAnalysis line="190" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        };" />
+      <LineAnalysis line="191" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="192" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="193" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="194" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Gets ranges in the content that should not be matched:" />
+      <LineAnalysis line="195" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// - HTML tags" />
+      <LineAnalysis line="196" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// - Existing wiki-link spans" />
+      <LineAnalysis line="197" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// - Existing external-link spans" />
+      <LineAnalysis line="198" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// - Legacy markdown wiki links" />
+      <LineAnalysis line="199" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="200" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private List&lt;(int Start, int End)&gt; GetProtectedRanges(string body)" />
+      <LineAnalysis line="201" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="202" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        var ranges = new List&lt;(int Start, int End)&gt;();" />
+      <LineAnalysis line="203" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="204" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Protect HTML tags" />
+      <LineAnalysis line="205" visits="15" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (Match match in HtmlTagPattern.Matches(body))" />
+      <LineAnalysis line="206" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="207" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="            ranges.Add((match.Index, match.Index + match.Length));" />
+      <LineAnalysis line="208" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="209" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="210" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Protect existing wiki-link spans (entire span including content)" />
+      <LineAnalysis line="211" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (Match match in ExistingWikiLinkPattern.Matches(body))" />
+      <LineAnalysis line="212" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="213" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            ranges.Add((match.Index, match.Index + match.Length));" />
+      <LineAnalysis line="214" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="215" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="216" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Protect existing external-link spans" />
+      <LineAnalysis line="217" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (Match match in ExistingExternalLinkPattern.Matches(body))" />
+      <LineAnalysis line="218" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="219" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            ranges.Add((match.Index, match.Index + match.Length));" />
+      <LineAnalysis line="220" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="221" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="222" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Protect legacy markdown wiki links (for mixed content)" />
+      <LineAnalysis line="223" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (Match match in LegacyWikiLinkPattern.Matches(body))" />
+      <LineAnalysis line="224" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="225" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            ranges.Add((match.Index, match.Index + match.Length));" />
+      <LineAnalysis line="226" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="227" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="228" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        return ranges;" />
+      <LineAnalysis line="229" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="230" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="231" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="232" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Checks if a position falls within any protected range." />
+      <LineAnalysis line="233" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="234" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private bool IsInProtectedRange(int index, int length, List&lt;(int Start, int End)&gt; ranges)" />
+      <LineAnalysis line="235" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="236" visits="25" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (var range in ranges)" />
+      <LineAnalysis line="237" visits="10" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="238" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Check if any part of the match overlaps with the protected range" />
+      <LineAnalysis line="239" visits="10" coverage="Covered" coveredbranches="4" totalbranches="4" content="            if (index &lt; range.End &amp;&amp; index + length &gt; range.Start)" />
+      <LineAnalysis line="240" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="241" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                return true;" />
+      <LineAnalysis line="242" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="243" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="244" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        return false;" />
+      <LineAnalysis line="245" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="246" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

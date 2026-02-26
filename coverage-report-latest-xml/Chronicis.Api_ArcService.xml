@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Api.Services.ArcService">
+  <Summary>
+    <Class>Chronicis.Api.Services.ArcService</Class>
+    <Assembly>Chronicis.Api</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Services\ArcService.cs</File>
+    </Files>
+    <Coveredlines>4</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>4</Coverablelines>
+    <Totallines>271</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>0</Coveredbranches>
+    <Totalbranches>0</Totalbranches>
+    <Coveredmethods>1</Coveredmethods>
+    <Fullcoveredmethods>1</Fullcoveredmethods>
+    <Totalmethods>1</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="ctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Services\ArcService.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Api.Data;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.DTOs;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Enums;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Models;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Microsoft.EntityFrameworkCore;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Services;" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public class ArcService : IArcService" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ChronicisDbContext _context;" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILogger&lt;ArcService&gt; _logger;" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public ArcService(ChronicisDbContext context, ILogger&lt;ArcService&gt; logger)" />
+      <LineAnalysis line="15" visits="20" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="16" visits="20" coverage="Covered" coveredbranches="" totalbranches="" content="        _context = context;" />
+      <LineAnalysis line="17" visits="20" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger = logger;" />
+      <LineAnalysis line="18" visits="20" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Check if user has access to a campaign (via world membership)." />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="23" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task&lt;bool&gt; UserHasCampaignAccessAsync(Guid campaignId, Guid userId)" />
+      <LineAnalysis line="24" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="25" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return await _context.Campaigns" />
+      <LineAnalysis line="26" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AnyAsync(c =&gt; c.Id == campaignId &amp;&amp; c.World.Members.Any(m =&gt; m.UserId == userId));" />
+      <LineAnalysis line="27" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="28" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="29" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Check if user is a GM in the world that owns the campaign." />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task&lt;bool&gt; UserIsCampaignGMAsync(Guid campaignId, Guid userId)" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return await _context.Campaigns" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AnyAsync(c =&gt; c.Id == campaignId &amp;&amp; c.World.Members.Any(m =&gt; m.UserId == userId &amp;&amp; m.Role == WorldRole.GM));" />
+      <LineAnalysis line="36" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="37" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="38" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Check if user is either the world owner or a GM for the campaign." />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="41" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task&lt;bool&gt; UserIsCampaignOwnerOrGMAsync(Guid campaignId, Guid userId)" />
+      <LineAnalysis line="42" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return await _context.Campaigns" />
+      <LineAnalysis line="44" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AnyAsync(c =&gt; c.Id == campaignId &amp;&amp; (c.World.OwnerId == userId" />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                || c.World.Members.Any(m =&gt; m.UserId == userId &amp;&amp; m.Role == WorldRole.GM)));" />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="47" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="48" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;List&lt;ArcDto&gt;&gt; GetArcsByCampaignAsync(Guid campaignId, Guid userId)" />
+      <LineAnalysis line="49" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="50" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Verify user has access to the campaign via world membership" />
+      <LineAnalysis line="51" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!await UserHasCampaignAccessAsync(campaignId, userId))" />
+      <LineAnalysis line="52" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="53" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogWarning(&quot;Campaign {CampaignId} not found or user {UserId} doesn't have access&quot;, campaignId, userId);" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return new List&lt;ArcDto&gt;();" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="56" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="57" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return await _context.Arcs" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AsNoTracking()" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Where(a =&gt; a.CampaignId == campaignId)" />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .OrderBy(a =&gt; a.SortOrder)" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ThenBy(a =&gt; a.CreatedAt)" />
+      <LineAnalysis line="62" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Select(a =&gt; new ArcDto" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Id = a.Id," />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                CampaignId = a.CampaignId," />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Name = a.Name," />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Description = a.Description," />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                PrivateNotes = null," />
+      <LineAnalysis line="69" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                SortOrder = a.SortOrder," />
+      <LineAnalysis line="70" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                SessionCount = _context.Articles.Count(art =&gt; art.ArcId == a.Id)," />
+      <LineAnalysis line="71" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                IsActive = a.IsActive," />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                CreatedAt = a.CreatedAt," />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                CreatedBy = a.CreatedBy," />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                CreatedByName = a.Creator.DisplayName" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            })" />
+      <LineAnalysis line="76" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ToListAsync();" />
+      <LineAnalysis line="77" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;ArcDto?&gt; GetArcAsync(Guid arcId, Guid userId)" />
+      <LineAnalysis line="80" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="81" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return await _context.Arcs" />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AsNoTracking()" />
+      <LineAnalysis line="83" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Where(a =&gt; a.Id == arcId &amp;&amp; a.Campaign.World.Members.Any(m =&gt; m.UserId == userId))" />
+      <LineAnalysis line="84" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Select(a =&gt; new ArcDto" />
+      <LineAnalysis line="85" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="86" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Id = a.Id," />
+      <LineAnalysis line="87" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                CampaignId = a.CampaignId," />
+      <LineAnalysis line="88" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Name = a.Name," />
+      <LineAnalysis line="89" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Description = a.Description," />
+      <LineAnalysis line="90" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                PrivateNotes = a.Campaign.World.OwnerId == userId" />
+      <LineAnalysis line="91" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    || a.Campaign.World.Members.Any(m =&gt; m.UserId == userId &amp;&amp; m.Role == WorldRole.GM)" />
+      <LineAnalysis line="92" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    ? a.PrivateNotes" />
+      <LineAnalysis line="93" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    : null," />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                SortOrder = a.SortOrder," />
+      <LineAnalysis line="95" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                SessionCount = _context.Articles.Count(art =&gt; art.ArcId == a.Id)," />
+      <LineAnalysis line="96" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                IsActive = a.IsActive," />
+      <LineAnalysis line="97" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                CreatedAt = a.CreatedAt," />
+      <LineAnalysis line="98" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                CreatedBy = a.CreatedBy," />
+      <LineAnalysis line="99" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                CreatedByName = a.Creator.DisplayName" />
+      <LineAnalysis line="100" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            })" />
+      <LineAnalysis line="101" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .FirstOrDefaultAsync();" />
+      <LineAnalysis line="102" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="104" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;ArcDto?&gt; CreateArcAsync(ArcCreateDto dto, Guid userId)" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Only GMs can create arcs" />
+      <LineAnalysis line="107" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!await UserIsCampaignGMAsync(dto.CampaignId, userId))" />
+      <LineAnalysis line="108" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="109" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogWarning(&quot;Campaign {CampaignId} not found or user {UserId} is not a GM&quot;, dto.CampaignId, userId);" />
+      <LineAnalysis line="110" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return null;" />
+      <LineAnalysis line="111" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="112" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="113" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Use provided sort order or auto-calculate next" />
+      <LineAnalysis line="114" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var sortOrder = dto.SortOrder;" />
+      <LineAnalysis line="115" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (sortOrder == 0)" />
+      <LineAnalysis line="116" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var maxSortOrder = await _context.Arcs" />
+      <LineAnalysis line="118" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                .Where(a =&gt; a.CampaignId == dto.CampaignId)" />
+      <LineAnalysis line="119" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                .MaxAsync(a =&gt; (int?)a.SortOrder) ?? 0;" />
+      <LineAnalysis line="120" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            sortOrder = maxSortOrder + 1;" />
+      <LineAnalysis line="121" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="122" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="123" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var arc = new Arc" />
+      <LineAnalysis line="124" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="125" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Id = Guid.NewGuid()," />
+      <LineAnalysis line="126" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            CampaignId = dto.CampaignId," />
+      <LineAnalysis line="127" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Name = dto.Name," />
+      <LineAnalysis line="128" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Description = dto.Description," />
+      <LineAnalysis line="129" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            SortOrder = sortOrder," />
+      <LineAnalysis line="130" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            CreatedAt = DateTime.UtcNow," />
+      <LineAnalysis line="131" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            CreatedBy = userId" />
+      <LineAnalysis line="132" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        };" />
+      <LineAnalysis line="133" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="134" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _context.Arcs.Add(arc);" />
+      <LineAnalysis line="135" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        await _context.SaveChangesAsync();" />
+      <LineAnalysis line="136" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="137" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Created arc {ArcId} '{ArcName}' in campaign {CampaignId}&quot;," />
+      <LineAnalysis line="138" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            arc.Id, arc.Name, arc.CampaignId);" />
+      <LineAnalysis line="139" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="140" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return new ArcDto" />
+      <LineAnalysis line="141" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="142" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Id = arc.Id," />
+      <LineAnalysis line="143" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            CampaignId = arc.CampaignId," />
+      <LineAnalysis line="144" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Name = arc.Name," />
+      <LineAnalysis line="145" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Description = arc.Description," />
+      <LineAnalysis line="146" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            PrivateNotes = null," />
+      <LineAnalysis line="147" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            SortOrder = arc.SortOrder," />
+      <LineAnalysis line="148" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            SessionCount = 0," />
+      <LineAnalysis line="149" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            IsActive = arc.IsActive," />
+      <LineAnalysis line="150" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            CreatedAt = arc.CreatedAt," />
+      <LineAnalysis line="151" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            CreatedBy = arc.CreatedBy" />
+      <LineAnalysis line="152" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        };" />
+      <LineAnalysis line="153" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="154" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="155" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;ArcDto?&gt; UpdateArcAsync(Guid arcId, ArcUpdateDto dto, Guid userId)" />
+      <LineAnalysis line="156" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="157" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var arc = await _context.Arcs" />
+      <LineAnalysis line="158" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Include(a =&gt; a.Creator)" />
+      <LineAnalysis line="159" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .FirstOrDefaultAsync(a =&gt; a.Id == arcId);" />
+      <LineAnalysis line="160" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="161" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (arc == null)" />
+      <LineAnalysis line="162" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="163" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogWarning(&quot;Arc {ArcId} not found&quot;, arcId);" />
+      <LineAnalysis line="164" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return null;" />
+      <LineAnalysis line="165" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="166" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="167" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!await UserIsCampaignOwnerOrGMAsync(arc.CampaignId, userId))" />
+      <LineAnalysis line="168" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="169" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogWarning(&quot;User {UserId} is not authorized to update arc {ArcId}&quot;, userId, arcId);" />
+      <LineAnalysis line="170" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return null;" />
+      <LineAnalysis line="171" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="172" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="173" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        arc.Name = dto.Name;" />
+      <LineAnalysis line="174" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        arc.Description = dto.Description;" />
+      <LineAnalysis line="175" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        arc.PrivateNotes = string.IsNullOrWhiteSpace(dto.PrivateNotes) ? null : dto.PrivateNotes;" />
+      <LineAnalysis line="176" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="177" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (dto.SortOrder.HasValue)" />
+      <LineAnalysis line="178" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="179" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            arc.SortOrder = dto.SortOrder.Value;" />
+      <LineAnalysis line="180" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="181" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="182" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        await _context.SaveChangesAsync();" />
+      <LineAnalysis line="183" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="184" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Updated arc {ArcId} '{ArcName}'&quot;, arc.Id, arc.Name);" />
+      <LineAnalysis line="185" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="186" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var sessionCount = await _context.Articles.CountAsync(a =&gt; a.ArcId == arcId);" />
+      <LineAnalysis line="187" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="188" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return new ArcDto" />
+      <LineAnalysis line="189" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="190" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Id = arc.Id," />
+      <LineAnalysis line="191" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            CampaignId = arc.CampaignId," />
+      <LineAnalysis line="192" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Name = arc.Name," />
+      <LineAnalysis line="193" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Description = arc.Description," />
+      <LineAnalysis line="194" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            PrivateNotes = arc.PrivateNotes," />
+      <LineAnalysis line="195" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            SortOrder = arc.SortOrder," />
+      <LineAnalysis line="196" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            SessionCount = sessionCount," />
+      <LineAnalysis line="197" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            IsActive = arc.IsActive," />
+      <LineAnalysis line="198" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            CreatedAt = arc.CreatedAt," />
+      <LineAnalysis line="199" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            CreatedBy = arc.CreatedBy," />
+      <LineAnalysis line="200" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            CreatedByName = arc.Creator.DisplayName" />
+      <LineAnalysis line="201" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        };" />
+      <LineAnalysis line="202" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="203" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="204" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;bool&gt; DeleteArcAsync(Guid arcId, Guid userId)" />
+      <LineAnalysis line="205" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="206" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var arc = await _context.Arcs" />
+      <LineAnalysis line="207" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .FirstOrDefaultAsync(a =&gt; a.Id == arcId);" />
+      <LineAnalysis line="208" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="209" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (arc == null)" />
+      <LineAnalysis line="210" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="211" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogWarning(&quot;Arc {ArcId} not found&quot;, arcId);" />
+      <LineAnalysis line="212" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return false;" />
+      <LineAnalysis line="213" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="214" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="215" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!await UserIsCampaignGMAsync(arc.CampaignId, userId))" />
+      <LineAnalysis line="216" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="217" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogWarning(&quot;User {UserId} is not a GM for arc {ArcId}&quot;, userId, arcId);" />
+      <LineAnalysis line="218" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return false;" />
+      <LineAnalysis line="219" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="220" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="221" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Check if arc has sessions" />
+      <LineAnalysis line="222" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var hasContent = await _context.Articles.AnyAsync(a =&gt; a.ArcId == arcId);" />
+      <LineAnalysis line="223" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (hasContent)" />
+      <LineAnalysis line="224" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="225" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogWarning(&quot;Cannot delete arc {ArcId} - it has sessions&quot;, arcId);" />
+      <LineAnalysis line="226" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return false;" />
+      <LineAnalysis line="227" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="228" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="229" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _context.Arcs.Remove(arc);" />
+      <LineAnalysis line="230" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        await _context.SaveChangesAsync();" />
+      <LineAnalysis line="231" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="232" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Deleted arc {ArcId}&quot;, arcId);" />
+      <LineAnalysis line="233" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return true;" />
+      <LineAnalysis line="234" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="235" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="236" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;bool&gt; ActivateArcAsync(Guid arcId, Guid userId)" />
+      <LineAnalysis line="237" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="238" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var arc = await _context.Arcs" />
+      <LineAnalysis line="239" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Include(a =&gt; a.Campaign)" />
+      <LineAnalysis line="240" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                .ThenInclude(c =&gt; c.World)" />
+      <LineAnalysis line="241" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    .ThenInclude(w =&gt; w.Members)" />
+      <LineAnalysis line="242" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .FirstOrDefaultAsync(a =&gt; a.Id == arcId);" />
+      <LineAnalysis line="243" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="244" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (arc == null)" />
+      <LineAnalysis line="245" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return false;" />
+      <LineAnalysis line="246" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="247" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Only the world owner or GMs can activate arcs" />
+      <LineAnalysis line="248" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!(arc.Campaign.World.OwnerId == userId" />
+      <LineAnalysis line="249" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            || arc.Campaign.World.Members.Any(m =&gt; m.UserId == userId &amp;&amp; m.Role == WorldRole.GM)))" />
+      <LineAnalysis line="250" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return false;" />
+      <LineAnalysis line="251" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="252" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Deactivate all arcs in the same campaign" />
+      <LineAnalysis line="253" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var campaignArcs = await _context.Arcs" />
+      <LineAnalysis line="254" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Where(a =&gt; a.CampaignId == arc.CampaignId &amp;&amp; a.IsActive)" />
+      <LineAnalysis line="255" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ToListAsync();" />
+      <LineAnalysis line="256" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="257" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        foreach (var a in campaignArcs)" />
+      <LineAnalysis line="258" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="259" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            a.IsActive = false;" />
+      <LineAnalysis line="260" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="261" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="262" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Activate this arc" />
+      <LineAnalysis line="263" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        arc.IsActive = true;" />
+      <LineAnalysis line="264" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="265" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        await _context.SaveChangesAsync();" />
+      <LineAnalysis line="266" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="267" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Activated arc {ArcId} in campaign {CampaignId}&quot;, arcId, arc.CampaignId);" />
+      <LineAnalysis line="268" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="269" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return true;" />
+      <LineAnalysis line="270" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="271" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

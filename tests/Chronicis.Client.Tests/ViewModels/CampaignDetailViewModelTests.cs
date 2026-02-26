@@ -2,6 +2,7 @@ using Chronicis.Client.Abstractions;
 using Chronicis.Client.Services;
 using Chronicis.Client.ViewModels;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using NSubstitute;
@@ -16,6 +17,7 @@ public class CampaignDetailViewModelTests
         ICampaignApiService CampaignApi,
         IArcApiService ArcApi,
         IWorldApiService WorldApi,
+        IAuthService AuthService,
         ITreeStateService TreeState,
         IBreadcrumbService BreadcrumbService,
         IAppNavigator Navigator,
@@ -34,13 +36,15 @@ public class CampaignDetailViewModelTests
         var notifier = Substitute.For<IUserNotifier>();
         var titleService = Substitute.For<IPageTitleService>();
         var dialogService = Substitute.For<IDialogService>();
+        var authService = Substitute.For<IAuthService>();
         var logger = Substitute.For<ILogger<CampaignDetailViewModel>>();
+        authService.GetCurrentUserAsync().Returns(new UserInfo { Email = "gm@example.com", DisplayName = "GM" });
 
         var vm = new CampaignDetailViewModel(
-            campaignApi, arcApi, worldApi, treeState, breadcrumbs,
+            campaignApi, arcApi, worldApi, authService, treeState, breadcrumbs,
             navigator, notifier, titleService, dialogService, logger);
 
-        return new Sut(vm, campaignApi, arcApi, worldApi, treeState,
+        return new Sut(vm, campaignApi, arcApi, worldApi, authService, treeState,
             breadcrumbs, navigator, notifier, titleService, dialogService);
     }
 
@@ -54,6 +58,19 @@ public class CampaignDetailViewModelTests
         ArcCount = 0,
         OwnerName = "DM Dave",
         CreatedAt = new DateTime(2025, 1, 1)
+    };
+
+    private static WorldDetailDto MakeGmWorld(Guid worldId) => new()
+    {
+        Id = worldId,
+        Members = new List<WorldMemberDto>
+        {
+            new()
+            {
+                Email = "gm@example.com",
+                Role = WorldRole.GM
+            }
+        }
     };
 
     // -----------------------------------------------------------------------
@@ -128,7 +145,7 @@ public class CampaignDetailViewModelTests
         var campaign = MakeCampaign();
         c.CampaignApi.GetCampaignAsync(campaign.Id).Returns(campaign);
         c.ArcApi.GetArcsByCampaignAsync(campaign.Id).Returns(new List<ArcDto>());
-        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(new WorldDetailDto());
+        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(MakeGmWorld(campaign.WorldId));
 
         await c.Vm.LoadAsync(campaign.Id);
 
@@ -160,7 +177,7 @@ public class CampaignDetailViewModelTests
         var campaign = MakeCampaign();
         c.CampaignApi.GetCampaignAsync(campaign.Id).Returns(campaign);
         c.ArcApi.GetArcsByCampaignAsync(campaign.Id).Returns(new List<ArcDto>());
-        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(new WorldDetailDto());
+        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(MakeGmWorld(campaign.WorldId));
         await c.Vm.LoadAsync(campaign.Id);
 
         c.Vm.EditName = "New Name";
@@ -175,10 +192,41 @@ public class CampaignDetailViewModelTests
         var campaign = MakeCampaign();
         c.CampaignApi.GetCampaignAsync(campaign.Id).Returns(campaign);
         c.ArcApi.GetArcsByCampaignAsync(campaign.Id).Returns(new List<ArcDto>());
-        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(new WorldDetailDto());
+        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(MakeGmWorld(campaign.WorldId));
         await c.Vm.LoadAsync(campaign.Id);
 
         c.Vm.EditDescription = "New description";
+
+        Assert.True(c.Vm.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public async Task EditPrivateNotes_WhenUserCannotManage_DoesNotSetHasUnsavedChanges()
+    {
+        var c = CreateSut();
+        var campaign = MakeCampaign();
+        c.CampaignApi.GetCampaignAsync(campaign.Id).Returns(campaign);
+        c.ArcApi.GetArcsByCampaignAsync(campaign.Id).Returns(new List<ArcDto>());
+        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(new WorldDetailDto { Id = campaign.WorldId });
+        c.AuthService.GetCurrentUserAsync().Returns(new UserInfo { Email = "player@example.com" });
+        await c.Vm.LoadAsync(campaign.Id);
+
+        c.Vm.EditPrivateNotes = "<p>secret</p>";
+
+        Assert.False(c.Vm.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public async Task EditPrivateNotes_WhenUserCanManage_SetsHasUnsavedChanges()
+    {
+        var c = CreateSut();
+        var campaign = MakeCampaign();
+        c.CampaignApi.GetCampaignAsync(campaign.Id).Returns(campaign);
+        c.ArcApi.GetArcsByCampaignAsync(campaign.Id).Returns(new List<ArcDto>());
+        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(MakeGmWorld(campaign.WorldId));
+        await c.Vm.LoadAsync(campaign.Id);
+
+        c.Vm.EditPrivateNotes = "<p>secret</p>";
 
         Assert.True(c.Vm.HasUnsavedChanges);
     }
@@ -194,7 +242,7 @@ public class CampaignDetailViewModelTests
         var campaign = MakeCampaign();
         c.CampaignApi.GetCampaignAsync(campaign.Id).Returns(campaign);
         c.ArcApi.GetArcsByCampaignAsync(campaign.Id).Returns(new List<ArcDto>());
-        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(new WorldDetailDto());
+        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(MakeGmWorld(campaign.WorldId));
         await c.Vm.LoadAsync(campaign.Id);
         c.Vm.EditName = "Updated Name";
 
@@ -216,7 +264,7 @@ public class CampaignDetailViewModelTests
         var campaign = MakeCampaign();
         c.CampaignApi.GetCampaignAsync(campaign.Id).Returns(campaign);
         c.ArcApi.GetArcsByCampaignAsync(campaign.Id).Returns(new List<ArcDto>());
-        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(new WorldDetailDto());
+        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(MakeGmWorld(campaign.WorldId));
         await c.Vm.LoadAsync(campaign.Id);
 
         c.CampaignApi.UpdateCampaignAsync(campaign.Id, Arg.Any<CampaignUpdateDto>())
@@ -247,7 +295,7 @@ public class CampaignDetailViewModelTests
         var campaign = MakeCampaign();
         c.CampaignApi.GetCampaignAsync(campaign.Id).Returns(campaign);
         c.ArcApi.GetArcsByCampaignAsync(campaign.Id).Returns(new List<ArcDto>());
-        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(new WorldDetailDto());
+        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(MakeGmWorld(campaign.WorldId));
         await c.Vm.LoadAsync(campaign.Id);
 
         c.CampaignApi.ActivateCampaignAsync(campaign.Id).Returns(true);
@@ -265,7 +313,7 @@ public class CampaignDetailViewModelTests
         var campaign = MakeCampaign();
         c.CampaignApi.GetCampaignAsync(campaign.Id).Returns(campaign);
         c.ArcApi.GetArcsByCampaignAsync(campaign.Id).Returns(new List<ArcDto>());
-        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(new WorldDetailDto());
+        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(MakeGmWorld(campaign.WorldId));
         await c.Vm.LoadAsync(campaign.Id);
 
         c.CampaignApi.ActivateCampaignAsync(campaign.Id).Returns(false);
@@ -282,7 +330,7 @@ public class CampaignDetailViewModelTests
         var campaign = MakeCampaign();
         c.CampaignApi.GetCampaignAsync(campaign.Id).Returns(campaign);
         c.ArcApi.GetArcsByCampaignAsync(campaign.Id).Returns(new List<ArcDto>());
-        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(new WorldDetailDto());
+        c.WorldApi.GetWorldAsync(campaign.WorldId).Returns(MakeGmWorld(campaign.WorldId));
         await c.Vm.LoadAsync(campaign.Id);
 
         await c.Vm.OnActiveToggleAsync(false);

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Api.Controllers.UsersController">
+  <Summary>
+    <Class>Chronicis.Api.Controllers.UsersController</Class>
+    <Assembly>Chronicis.Api</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Controllers\UsersController.cs</File>
+    </Files>
+    <Coveredlines>9</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>9</Coverablelines>
+    <Totallines>68</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>0</Coveredbranches>
+    <Totalbranches>0</Totalbranches>
+    <Coveredmethods>1</Coveredmethods>
+    <Fullcoveredmethods>1</Fullcoveredmethods>
+    <Totalmethods>1</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="ctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Controllers\UsersController.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Api.Infrastructure;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Api.Services;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.DTOs;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Microsoft.AspNetCore.Authorization;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Microsoft.AspNetCore.Mvc;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Controllers;" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// API endpoints for User profile management." />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="[ApiController]" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="[Route(&quot;users&quot;)]" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="[Authorize]" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public class UsersController : ControllerBase" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IUserService _userService;" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ICurrentUserService _currentUserService;" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILogger&lt;UsersController&gt; _logger;" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="21" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    public UsersController(" />
+      <LineAnalysis line="22" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        IUserService userService," />
+      <LineAnalysis line="23" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        ICurrentUserService currentUserService," />
+      <LineAnalysis line="24" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        ILogger&lt;UsersController&gt; logger)" />
+      <LineAnalysis line="25" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="26" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        _userService = userService;" />
+      <LineAnalysis line="27" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        _currentUserService = currentUserService;" />
+      <LineAnalysis line="28" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger = logger;" />
+      <LineAnalysis line="29" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// GET /api/users/me - Get the current user's profile." />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    [HttpGet(&quot;me&quot;)]" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;ActionResult&lt;UserProfileDto&gt;&gt; GetCurrentUserProfile()" />
+      <LineAnalysis line="36" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="37" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var user = await _currentUserService.GetRequiredUserAsync();" />
+      <LineAnalysis line="38" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Getting profile for user {UserId}&quot;, user.Id);" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var profile = await _userService.GetUserProfileAsync(user.Id);" />
+      <LineAnalysis line="41" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="42" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (profile == null)" />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="44" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return NotFound(new { error = &quot;User profile not found&quot; });" />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="47" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return Ok(profile);" />
+      <LineAnalysis line="48" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="49" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="50" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="51" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// POST /api/users/me/complete-onboarding - Mark onboarding as complete." />
+      <LineAnalysis line="52" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="53" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    [HttpPost(&quot;me/complete-onboarding&quot;)]" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;IActionResult&gt; CompleteOnboarding()" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="56" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var user = await _currentUserService.GetRequiredUserAsync();" />
+      <LineAnalysis line="57" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Completing onboarding for user {UserId}&quot;, user.Id);" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var success = await _userService.CompleteOnboardingAsync(user.Id);" />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!success)" />
+      <LineAnalysis line="62" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return BadRequest(new { error = &quot;Failed to complete onboarding&quot; });" />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return NoContent();" />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

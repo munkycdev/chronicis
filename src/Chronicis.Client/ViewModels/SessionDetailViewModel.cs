@@ -40,6 +40,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
     private List<ArticleTreeDto> _sessionNotes = new();
     private List<BreadcrumbItem> _breadcrumbs = new();
     private bool _isCurrentUserGm;
+    private bool _isCurrentUserWorldOwner;
     private Guid _currentUserId;
     private string _editName = string.Empty;
     private DateTime? _editSessionDate;
@@ -88,6 +89,9 @@ public sealed class SessionDetailViewModel : ViewModelBase
     public List<ArticleTreeDto> SessionNotes { get => _sessionNotes; private set => SetField(ref _sessionNotes, value); }
     public List<BreadcrumbItem> Breadcrumbs { get => _breadcrumbs; private set => SetField(ref _breadcrumbs, value); }
     public bool IsCurrentUserGM { get => _isCurrentUserGm; private set => SetField(ref _isCurrentUserGm, value); }
+    public bool IsCurrentUserWorldOwner { get => _isCurrentUserWorldOwner; private set => SetField(ref _isCurrentUserWorldOwner, value); }
+    public bool CanManageSessionDetails => IsCurrentUserGM || IsCurrentUserWorldOwner;
+    public bool CanViewPrivateNotes => CanManageSessionDetails;
     public Guid CurrentUserId { get => _currentUserId; private set => SetField(ref _currentUserId, value); }
     public bool CanCreateSessionNote => Session != null
         && Arc != null
@@ -100,7 +104,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
         get => _editName;
         set
         {
-            if (SetField(ref _editName, value) && Session != null && IsCurrentUserGM)
+            if (SetField(ref _editName, value) && Session != null && CanManageSessionDetails)
             {
                 UpdateDirtyState();
             }
@@ -112,7 +116,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
         get => _editSessionDate;
         set
         {
-            if (SetField(ref _editSessionDate, value) && Session != null && IsCurrentUserGM)
+            if (SetField(ref _editSessionDate, value) && Session != null && CanManageSessionDetails)
             {
                 UpdateDirtyState();
             }
@@ -124,7 +128,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
         get => _editPublicNotes;
         set
         {
-            if (SetField(ref _editPublicNotes, value) && Session != null && IsCurrentUserGM)
+            if (SetField(ref _editPublicNotes, value) && Session != null && CanManageSessionDetails)
             {
                 UpdateDirtyState();
             }
@@ -136,7 +140,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
         get => _editPrivateNotes;
         set
         {
-            if (SetField(ref _editPrivateNotes, value) && Session != null && IsCurrentUserGM)
+            if (SetField(ref _editPrivateNotes, value) && Session != null && CanManageSessionDetails)
             {
                 UpdateDirtyState();
             }
@@ -193,7 +197,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
 
     public async Task SaveNotesAsync()
     {
-        if (Session == null || !IsCurrentUserGM || IsSavingNotes)
+        if (Session == null || !CanManageSessionDetails || IsSavingNotes)
         {
             return;
         }
@@ -479,7 +483,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
 
     private void UpdateDirtyState()
     {
-        if (Session == null || !IsCurrentUserGM)
+        if (Session == null || !CanManageSessionDetails)
         {
             HasUnsavedChanges = false;
             return;
@@ -495,6 +499,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
     private async Task ResolveCurrentUserRoleAsync()
     {
         IsCurrentUserGM = false;
+        IsCurrentUserWorldOwner = false;
         CurrentUserId = Guid.Empty;
 
         if (World == null)
@@ -518,6 +523,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
 
         CurrentUserId = member.UserId;
         IsCurrentUserGM = member.Role == WorldRole.GM;
+        IsCurrentUserWorldOwner = member.UserId == World.OwnerId;
     }
 
     private List<BreadcrumbItem> BuildBreadcrumbs()

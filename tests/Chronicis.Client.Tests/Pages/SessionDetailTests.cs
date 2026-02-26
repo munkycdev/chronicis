@@ -110,6 +110,7 @@ public class SessionDetailTests : MudBlazorTestContext
         Services.AddSingleton(d.DialogService);
         Services.AddSingleton(d.KeyboardShortcuts);
         Services.AddSingleton(Substitute.For<ILogger<SessionDetail>>());
+        Services.AddSingleton(d.WorldApi);
         Services.AddSingleton(d.LinkApi);
         Services.AddSingleton(d.ExternalLinkApi);
         Services.AddSingleton(d.WikiLinkService);
@@ -189,7 +190,7 @@ public class SessionDetailTests : MudBlazorTestContext
 
         playerCut.WaitForAssertion(() =>
         {
-            Assert.Contains("Private notes are visible to GMs only", playerCut.Markup, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Private Notes", playerCut.Markup, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("No public notes yet", playerCut.Markup, StringComparison.OrdinalIgnoreCase);
         });
     }
@@ -330,6 +331,13 @@ public class SessionDetailTests : MudBlazorTestContext
         await cut.InvokeAsync(() => InvokeAnyTask(bridge!, "OnExternalLinkClicked", "", "", ""));
         _ = bridge!.GetType().GetMethod("GetArticlePath")!.Invoke(bridge, new object?[] { "not-a-guid" });
         _ = bridge.GetType().GetMethod("GetArticleSummaryPreview")!.Invoke(bridge, new object?[] { "not-a-guid" });
+        Assert.Equal("chronicis-image:doc-123", instance.GetImageProxyUrl("doc-123"));
+        await cut.InvokeAsync(() =>
+        {
+            instance.OnImageUploadStarted("map.png");
+            instance.OnImageUploadError("upload failed");
+            return Task.CompletedTask;
+        });
 
         SetField(instance, "_publicEditorBridgeRef", null);
         SetField(instance, "_privateEditorBridgeRef", null);

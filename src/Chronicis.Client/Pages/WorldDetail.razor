@@ -26,7 +26,8 @@ else if (ViewModel.World != null)
                           TitleChanged="@(v => ViewModel.EditName = v)"
                           Placeholder="World Name"
                           OnTitleEdited="@(() => {})"
-                          OnEnterPressed="@(() => ViewModel.SaveAsync(SharingViewModel))" />
+                          OnEnterPressed="@(() => ViewModel.SaveAsync(SharingViewModel))"
+                          ReadOnly="@(!ViewModel.CanManageWorldDetails)" />
 
         <!-- Description -->
         <MudTextField Value="@ViewModel.EditDescription"
@@ -38,7 +39,8 @@ else if (ViewModel.World != null)
                       MaxLines="20"
                       Placeholder="Describe your world..."
                       Class="mb-4"
-                      Immediate="true" />
+                      Immediate="true"
+                      ReadOnly="@(!ViewModel.CanManageWorldDetails)" />
 
         <!-- Overview Section: Stats + Quick Actions -->
         <div class="world-overview mb-4">
@@ -67,13 +69,16 @@ else if (ViewModel.World != null)
             </div>
 
             <div class="quick-actions-compact">
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.AutoStories"
-                           OnClick="@(() => ViewModel.CreateCampaignAsync())"
-                           Size="Size.Small">
-                    New Campaign
-                </MudButton>
+                @if (ViewModel.CanManageWorldDetails)
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.AutoStories"
+                               OnClick="@(() => ViewModel.CreateCampaignAsync())"
+                               Size="Size.Small">
+                        New Campaign
+                    </MudButton>
+                }
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Person"
@@ -104,13 +109,16 @@ else if (ViewModel.World != null)
                     <div class="resource-subsection mb-4">
                         <div class="d-flex align-center justify-space-between mb-2">
                             <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">External Links</MudText>
-                            <MudButton Variant="Variant.Text"
-                                       Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.Add"
-                                       OnClick="@(() => LinksViewModel.StartAddLink())"
-                                       Size="Size.Small">
-                                Add Link
-                            </MudButton>
+                            @if (ViewModel.CanManageWorldDetails)
+                            {
+                                <MudButton Variant="Variant.Text"
+                                           Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Add"
+                                           OnClick="@(() => LinksViewModel.StartAddLink())"
+                                           Size="Size.Small">
+                                    Add Link
+                                </MudButton>
+                            }
                         </div>
 
                         @if (LinksViewModel.Links.Count == 0 && !LinksViewModel.IsAddingLink)
@@ -153,8 +161,11 @@ else if (ViewModel.World != null)
                                             <MudText Typo="Typo.caption" Class="mud-text-secondary">@link.Description</MudText>
                                         }
                                     </div>
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small" OnClick="@(() => LinksViewModel.StartEditLink(link))" />
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => LinksViewModel.DeleteLinkAsync(link))" />
+                                    @if (ViewModel.CanManageWorldDetails)
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small" OnClick="@(() => LinksViewModel.StartEditLink(link))" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => LinksViewModel.DeleteLinkAsync(link))" />
+                                    }
                                 }
                             </div>
                         }
@@ -272,7 +283,8 @@ else if (ViewModel.World != null)
                                        ValueChanged="@((bool v) => { SharingViewModel.IsPublic = v; SharingViewModel.OnPublicToggleChanged(ViewModel.World); })"
                                        Color="Color.Primary"
                                        Label="Make this world publicly accessible"
-                                       T="bool" />
+                                       T="bool"
+                                       Disabled="@(!ViewModel.CanManageWorldDetails)" />
                         </div>
 
                         @if (SharingViewModel.IsPublic)
@@ -290,7 +302,7 @@ else if (ViewModel.World != null)
                                               Margin="Margin.Dense"
                                               Immediate="true"
                                               Style="max-width: 300px;"
-                                              Disabled="SharingViewModel.IsCheckingSlug"
+                                              Disabled="@(SharingViewModel.IsCheckingSlug || !ViewModel.CanManageWorldDetails)"
                                               Error="@(!string.IsNullOrEmpty(SharingViewModel.SlugError))"
                                               ErrorText="@SharingViewModel.SlugError"
                                               HelperText="@SharingViewModel.SlugHelperText" />
@@ -336,6 +348,23 @@ else if (ViewModel.World != null)
                 </div>
             </MudTabPanel>
 
+            @if (ViewModel.CanViewPrivateNotes)
+            {
+                <MudTabPanel Text="Private Notes" Icon="@Icons.Material.Filled.Lock">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight: 600;">
+                        World Private Notes
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+                        Visible only to the world owner and GMs.
+                    </MudText>
+                    <PrivateNotesTipTapEditor WorldId="WorldId"
+                                             Value="@ViewModel.EditPrivateNotes"
+                                             ValueChanged="@((string v) => ViewModel.EditPrivateNotes = v)"
+                                             ReadOnly="@(!ViewModel.CanManageWorldDetails)"
+                                             UploadContextLabel="world private notes" />
+                </MudTabPanel>
+            }
+
             <!-- Settings Tab -->
             <MudTabPanel Text="Settings" Icon="@Icons.Material.Filled.Settings">
                 @if (ViewModel.IsCurrentUserGm)
@@ -357,7 +386,7 @@ else if (ViewModel.World != null)
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        OnClick="@(() => ViewModel.SaveAsync(SharingViewModel))"
-                       Disabled="ViewModel.IsSaving"
+                       Disabled="@(ViewModel.IsSaving || !ViewModel.CanManageWorldDetails)"
                        StartIcon="@Icons.Material.Filled.Save">
                 Save
             </MudButton>

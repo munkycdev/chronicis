@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Client.Components.Admin.RenderDefinitionGenerator">
+  <Summary>
+    <Class>Chronicis.Client.Components.Admin.RenderDefinitionGenerator</Class>
+    <Assembly>Chronicis.Client</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Client\Components\Admin\RenderDefinitionGenerator.razor</File>
+      <File>Z:\repos\chronicis\src\Chronicis.Client\Components\Admin\RenderDefinitionGenerator.razor.cs</File>
+    </Files>
+    <Coveredlines>68</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>68</Coverablelines>
+    <Totallines>344</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>12</Coveredbranches>
+    <Totalbranches>12</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>7</Coveredmethods>
+    <Fullcoveredmethods>7</Fullcoveredmethods>
+    <Totalmethods>7</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="BuildRenderTree">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="cctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_SuggestedFilePath">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="AutoGenerate">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="OnDefinitionJsonChanged">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ApplyDefinition">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Client\Components\Admin\RenderDefinitionGenerator.razor">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="@using Chronicis.Shared.DTOs" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="@using Chronicis.Client.Models" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="@using Chronicis.Client.Components.Shared" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="&lt;div class=&quot;rdg-container&quot;&gt;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    &lt;MudText Typo=&quot;Typo.h5&quot; Class=&quot;rdg-section-title mb-4&quot;&gt;Render Definition Generator&lt;/MudText&gt;" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    &lt;MudText Typo=&quot;Typo.body2&quot; Class=&quot;mud-text-secondary mb-4&quot;&gt;" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Load a sample external resource record, auto-generate a render definition, edit it, and preview the result." />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    &lt;/MudText&gt;" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    @* --- Step 1: Record picker --- *@" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    &lt;MudPaper Elevation=&quot;1&quot; Class=&quot;pa-4 mb-4&quot;&gt;" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        &lt;MudText Typo=&quot;Typo.subtitle1&quot; Class=&quot;mb-3&quot;&gt;1. Select a sample record&lt;/MudText&gt;" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        &lt;div class=&quot;d-flex align-center gap-3 flex-wrap&quot;&gt;" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;MudSelect T=&quot;string&quot; @bind-Value=&quot;_selectedSource&quot; Label=&quot;Source&quot;" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                       Variant=&quot;Variant.Outlined&quot; Margin=&quot;Margin.Dense&quot; Style=&quot;max-width: 160px;&quot;&gt;" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                &lt;MudSelectItem Value=&quot;@(&quot;ros&quot;)&quot;&gt;ROS&lt;/MudSelectItem&gt;" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                &lt;MudSelectItem Value=&quot;@(&quot;srd&quot;)&quot;&gt;SRD&lt;/MudSelectItem&gt;" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;/MudSelect&gt;" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;MudAutocomplete T=&quot;string&quot;" />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                             Value=&quot;_recordId&quot;" />
+      <LineAnalysis line="23" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                             Label=&quot;Record ID (e.g., bestiary/beast/garoug)&quot;" />
+      <LineAnalysis line="24" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                             SearchFunc=&quot;SearchRecords&quot;" />
+      <LineAnalysis line="25" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                             Variant=&quot;Variant.Outlined&quot;" />
+      <LineAnalysis line="26" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                             Margin=&quot;Margin.Dense&quot;" />
+      <LineAnalysis line="27" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                             Style=&quot;min-width: 400px;&quot;" />
+      <LineAnalysis line="28" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                             DebounceInterval=&quot;300&quot;" />
+      <LineAnalysis line="29" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                             MinCharacters=&quot;2&quot;" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                             MaxItems=&quot;15&quot;" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                             ResetValueOnEmptyText=&quot;false&quot;" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                             CoerceText=&quot;true&quot;" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                             ValueChanged=&quot;OnRecordSelected&quot; /&gt;" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;MudButton Variant=&quot;Variant.Filled&quot; Color=&quot;Color.Primary&quot;" />
+      <LineAnalysis line="36" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                       OnClick=&quot;LoadSampleRecord&quot; Disabled=&quot;_isLoading&quot;" />
+      <LineAnalysis line="37" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                       StartIcon=&quot;@Icons.Material.Filled.Download&quot;&gt;" />
+      <LineAnalysis line="38" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Load" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;/MudButton&gt;" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        &lt;/div&gt;" />
+      <LineAnalysis line="41" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="42" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        @if (!string.IsNullOrEmpty(_loadError))" />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="44" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;MudAlert Severity=&quot;Severity.Error&quot; Class=&quot;mt-3&quot; Dense=&quot;true&quot;&gt;@_loadError&lt;/MudAlert&gt;" />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        @if (!string.IsNullOrEmpty(_existingDefStatus))" />
+      <LineAnalysis line="47" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="48" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;MudAlert Severity=&quot;Severity.Info&quot; Class=&quot;mt-3&quot; Dense=&quot;true&quot;&gt;@_existingDefStatus&lt;/MudAlert&gt;" />
+      <LineAnalysis line="49" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="50" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    &lt;/MudPaper&gt;" />
+      <LineAnalysis line="51" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="52" visits="16" coverage="Covered" coveredbranches="2" totalbranches="2" content="    @if (_sampleContent != null)" />
+      <LineAnalysis line="53" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        @* --- Step 2: Generate / Edit --- *@" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        &lt;MudPaper Elevation=&quot;1&quot; Class=&quot;pa-4 mb-4&quot;&gt;" />
+      <LineAnalysis line="56" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;div class=&quot;d-flex align-center justify-space-between mb-3&quot;&gt;" />
+      <LineAnalysis line="57" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                &lt;MudText Typo=&quot;Typo.subtitle1&quot;&gt;2. Render Definition JSON&lt;/MudText&gt;" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                &lt;div class=&quot;d-flex gap-2&quot;&gt;" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    &lt;MudButton Variant=&quot;Variant.Outlined&quot; Color=&quot;Color.Primary&quot;" />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                               OnClick=&quot;AutoGenerate&quot; Size=&quot;Size.Small&quot;" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                               StartIcon=&quot;@Icons.Material.Filled.AutoAwesome&quot;&gt;" />
+      <LineAnalysis line="62" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        Auto-Generate" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    &lt;/MudButton&gt;" />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    &lt;MudButton Variant=&quot;Variant.Outlined&quot; Color=&quot;Color.Primary&quot;" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                               OnClick=&quot;ApplyDefinition&quot; Size=&quot;Size.Small&quot;" />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                               Disabled=&quot;@(!_definitionDirty)&quot;" />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                               StartIcon=&quot;@Icons.Material.Filled.Refresh&quot;&gt;" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        Apply Preview" />
+      <LineAnalysis line="69" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    &lt;/MudButton&gt;" />
+      <LineAnalysis line="70" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                &lt;/div&gt;" />
+      <LineAnalysis line="71" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;/div&gt;" />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;MudTextField @bind-Value=&quot;_definitionJson&quot;" />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                          Lines=&quot;25&quot;" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                          Variant=&quot;Variant.Outlined&quot;" />
+      <LineAnalysis line="76" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                          Style=&quot;font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.8rem;&quot;" />
+      <LineAnalysis line="77" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                          Immediate=&quot;false&quot;" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                          DebounceInterval=&quot;500&quot;" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                          TextChanged=&quot;OnDefinitionJsonChanged&quot;" />
+      <LineAnalysis line="80" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                          Error=&quot;@(!string.IsNullOrEmpty(_jsonError))&quot;" />
+      <LineAnalysis line="81" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                          ErrorText=&quot;@_jsonError&quot; /&gt;" />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="83" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            @if (!string.IsNullOrEmpty(_jsonError))" />
+      <LineAnalysis line="84" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="85" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                &lt;MudAlert Severity=&quot;Severity.Warning&quot; Class=&quot;mt-2&quot; Dense=&quot;true&quot;&gt;@_jsonError&lt;/MudAlert&gt;" />
+      <LineAnalysis line="86" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="87" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        &lt;/MudPaper&gt;" />
+      <LineAnalysis line="88" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="89" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        @* --- Step 3: Preview --- *@" />
+      <LineAnalysis line="90" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        &lt;MudPaper Elevation=&quot;1&quot; Class=&quot;pa-4 mb-4&quot;&gt;" />
+      <LineAnalysis line="91" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;div class=&quot;d-flex align-center justify-space-between mb-3&quot;&gt;" />
+      <LineAnalysis line="92" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                &lt;MudText Typo=&quot;Typo.subtitle1&quot;&gt;3. Preview&lt;/MudText&gt;" />
+      <LineAnalysis line="93" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                &lt;MudText Typo=&quot;Typo.caption&quot; Class=&quot;mud-text-secondary&quot;&gt;" />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    @(_sampleContent.Title) — @(_sampleContent.Id)" />
+      <LineAnalysis line="95" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                &lt;/MudText&gt;" />
+      <LineAnalysis line="96" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;/div&gt;" />
+      <LineAnalysis line="97" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="98" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;div class=&quot;rdg-preview-panel chronicis-scrollbar-light&quot;&gt;" />
+      <LineAnalysis line="99" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                &lt;ExternalLinkDetailPanel Content=&quot;@_sampleContent&quot;" />
+      <LineAnalysis line="100" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                                         DefinitionOverride=&quot;@_activeDefinition&quot; /&gt;" />
+      <LineAnalysis line="101" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;/div&gt;" />
+      <LineAnalysis line="102" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        &lt;/MudPaper&gt;" />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="104" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        @* --- Step 4: Output path info --- *@" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        &lt;MudPaper Elevation=&quot;1&quot; Class=&quot;pa-4&quot;&gt;" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;MudText Typo=&quot;Typo.subtitle1&quot; Class=&quot;mb-2&quot;&gt;4. Export&lt;/MudText&gt;" />
+      <LineAnalysis line="107" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;MudText Typo=&quot;Typo.body2&quot; Class=&quot;mud-text-secondary mb-3&quot;&gt;" />
+      <LineAnalysis line="108" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Copy the JSON above and save to the appropriate render definition file." />
+      <LineAnalysis line="109" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;/MudText&gt;" />
+      <LineAnalysis line="110" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &lt;MudTextField Value=&quot;@SuggestedFilePath&quot; ReadOnly=&quot;true&quot; Label=&quot;Suggested file path&quot;" />
+      <LineAnalysis line="111" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                          Variant=&quot;Variant.Outlined&quot; Margin=&quot;Margin.Dense&quot;" />
+      <LineAnalysis line="112" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                          Adornment=&quot;Adornment.End&quot; AdornmentIcon=&quot;@Icons.Material.Filled.ContentCopy&quot; /&gt;" />
+      <LineAnalysis line="113" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        &lt;/MudPaper&gt;" />
+      <LineAnalysis line="114" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="115" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="&lt;/div&gt;" />
+    </File>
+    <File name="Z:\repos\chronicis\src\Chronicis.Client\Components\Admin\RenderDefinitionGenerator.razor.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text.Json;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text.Json.Serialization;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Client.Models;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Client.Services;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.DTOs;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Microsoft.AspNetCore.Components;" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Client.Components.Admin;" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public partial class RenderDefinitionGenerator : ComponentBase" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    [Inject] private IExternalLinkApiService ExternalLinkApi { get; set; } = default!;" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    [Inject] private IRenderDefinitionService RenderDefService { get; set; } = default!;" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    [Inject] private ILogger&lt;RenderDefinitionGenerator&gt; Logger { get; set; } = default!;" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="16" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    private string _selectedSource = &quot;ros&quot;;" />
+      <LineAnalysis line="17" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    private string _recordId = &quot;&quot;;" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private bool _isLoading;" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private string? _loadError;" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private string? _existingDefStatus;" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private ExternalLinkContentDto? _sampleContent;" />
+      <LineAnalysis line="23" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    private string _definitionJson = &quot;&quot;;" />
+      <LineAnalysis line="24" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private string? _jsonError;" />
+      <LineAnalysis line="25" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private bool _definitionDirty;" />
+      <LineAnalysis line="26" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private RenderDefinition? _activeDefinition;" />
+      <LineAnalysis line="27" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="28" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Autocomplete support" />
+      <LineAnalysis line="29" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    private static readonly JsonSerializerOptions WriteOptions = new()" />
+      <LineAnalysis line="30" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="31" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        WriteIndented = true," />
+      <LineAnalysis line="32" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull" />
+      <LineAnalysis line="33" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    };" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private string SuggestedFilePath" />
+      <LineAnalysis line="36" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="37" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        get" />
+      <LineAnalysis line="38" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="39" visits="4" coverage="Covered" coveredbranches="2" totalbranches="2" content="            if (string.IsNullOrEmpty(_recordId))" />
+      <LineAnalysis line="40" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="                return &quot;&quot;;" />
+      <LineAnalysis line="41" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            var parts = _recordId.Split('/');" />
+      <LineAnalysis line="42" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            var category = parts[0];" />
+      <LineAnalysis line="43" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            return $&quot;wwwroot/render-definitions/{_selectedSource}/{category}.json&quot;;" />
+      <LineAnalysis line="44" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="47" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task&lt;IEnumerable&lt;string&gt;&gt; SearchRecords(string query, CancellationToken ct)" />
+      <LineAnalysis line="48" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="49" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (string.IsNullOrWhiteSpace(query) || query.Length &lt; 2)" />
+      <LineAnalysis line="50" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return Enumerable.Empty&lt;string&gt;();" />
+      <LineAnalysis line="51" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="52" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="53" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var results = await ExternalLinkApi.GetSuggestionsAsync(" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                null, _selectedSource, query, ct);" />
+      <LineAnalysis line="56" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return results.Select(r =&gt; r.Id);" />
+      <LineAnalysis line="57" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (OperationCanceledException)" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return Enumerable.Empty&lt;string&gt;();" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="62" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Logger.LogWarning(ex, &quot;Autocomplete search failed for {Query}&quot;, query);" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return Enumerable.Empty&lt;string&gt;();" />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="69" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task OnRecordSelected(string? value)" />
+      <LineAnalysis line="70" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="71" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _recordId = value ?? &quot;&quot;;" />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!string.IsNullOrWhiteSpace(_recordId))" />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await LoadSampleRecord();" />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="76" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task LoadSampleRecord()" />
+      <LineAnalysis line="77" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (string.IsNullOrWhiteSpace(_recordId))" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="80" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _loadError = &quot;Please enter a record ID.&quot;;" />
+      <LineAnalysis line="81" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="83" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="84" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _isLoading = true;" />
+      <LineAnalysis line="85" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _loadError = null;" />
+      <LineAnalysis line="86" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _existingDefStatus = null;" />
+      <LineAnalysis line="87" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _sampleContent = null;" />
+      <LineAnalysis line="88" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _activeDefinition = null;" />
+      <LineAnalysis line="89" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _definitionJson = &quot;&quot;;" />
+      <LineAnalysis line="90" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        StateHasChanged();" />
+      <LineAnalysis line="91" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="92" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="93" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var content = await ExternalLinkApi.GetContentAsync(" />
+      <LineAnalysis line="95" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _selectedSource, _recordId.Trim(), CancellationToken.None);" />
+      <LineAnalysis line="96" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="97" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (content == null)" />
+      <LineAnalysis line="98" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="99" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _loadError = $&quot;Record not found: {_selectedSource}/{_recordId}&quot;;" />
+      <LineAnalysis line="100" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="101" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            else if (string.IsNullOrWhiteSpace(content.JsonData))" />
+      <LineAnalysis line="102" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _loadError = &quot;Record loaded but has no JsonData — structured rendering unavailable.&quot;;" />
+      <LineAnalysis line="104" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _sampleContent = content;" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            else" />
+      <LineAnalysis line="107" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="108" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _sampleContent = content;" />
+      <LineAnalysis line="109" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Logger.LogInformation(&quot;Loaded sample record: {Id} with {Len} bytes of JSON&quot;," />
+      <LineAnalysis line="110" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    content.Id, content.JsonData.Length);" />
+      <LineAnalysis line="111" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="112" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                // Try to load an existing render definition for this record's category" />
+      <LineAnalysis line="113" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                await TryLoadExistingDefinition();" />
+      <LineAnalysis line="114" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="115" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="116" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="118" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _loadError = $&quot;Failed to load record: {ex.Message}&quot;;" />
+      <LineAnalysis line="119" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Logger.LogError(ex, &quot;Error loading sample record {Source}/{Id}&quot;, _selectedSource, _recordId);" />
+      <LineAnalysis line="120" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="121" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        finally" />
+      <LineAnalysis line="122" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="123" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _isLoading = false;" />
+      <LineAnalysis line="124" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="125" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="126" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="127" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task TryLoadExistingDefinition()" />
+      <LineAnalysis line="128" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="129" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (_sampleContent == null)" />
+      <LineAnalysis line="130" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="131" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="132" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="133" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="134" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var lastSlash = _sampleContent.Id.LastIndexOf('/');" />
+      <LineAnalysis line="135" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var categoryPath = lastSlash &gt; 0 ? _sampleContent.Id[..lastSlash] : null;" />
+      <LineAnalysis line="136" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="137" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var existing = await RenderDefService.ResolveAsync(_sampleContent.Source, categoryPath);" />
+      <LineAnalysis line="138" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="139" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Check if it's the built-in default or an actual file definition" />
+      <LineAnalysis line="140" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // The built-in default has no DisplayName and empty Sections" />
+      <LineAnalysis line="141" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var isDefault = existing.Sections.Count == 0 &amp;&amp; string.IsNullOrEmpty(existing.DisplayName);" />
+      <LineAnalysis line="142" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="143" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (!isDefault)" />
+      <LineAnalysis line="144" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="145" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _definitionJson = JsonSerializer.Serialize(existing, WriteOptions);" />
+      <LineAnalysis line="146" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _activeDefinition = existing;" />
+      <LineAnalysis line="147" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _definitionDirty = false;" />
+      <LineAnalysis line="148" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _jsonError = null;" />
+      <LineAnalysis line="149" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _existingDefStatus = $&quot;Loaded existing definition ({existing.Sections.Count} sections)&quot;;" />
+      <LineAnalysis line="150" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Logger.LogInformation(&quot;Loaded existing render definition for {Source}/{Category}&quot;," />
+      <LineAnalysis line="151" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    _sampleContent.Source, categoryPath);" />
+      <LineAnalysis line="152" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="153" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            else" />
+      <LineAnalysis line="154" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="155" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _existingDefStatus = &quot;No custom definition found — use Auto-Generate to create one.&quot;;" />
+      <LineAnalysis line="156" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="157" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="158" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="159" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="160" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Logger.LogWarning(ex, &quot;Failed to load existing render definition&quot;);" />
+      <LineAnalysis line="161" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _existingDefStatus = &quot;Could not check for existing definition.&quot;;" />
+      <LineAnalysis line="162" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="163" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="164" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="165" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private void AutoGenerate()" />
+      <LineAnalysis line="166" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="167" visits="3" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (_sampleContent?.JsonData == null)" />
+      <LineAnalysis line="168" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="169" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="170" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="171" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="172" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            using var doc = JsonDocument.Parse(_sampleContent.JsonData);" />
+      <LineAnalysis line="173" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            var definition = RenderDefinitionGeneratorService.Generate(doc.RootElement);" />
+      <LineAnalysis line="174" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _definitionJson = JsonSerializer.Serialize(definition, WriteOptions);" />
+      <LineAnalysis line="175" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _jsonError = null;" />
+      <LineAnalysis line="176" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _definitionDirty = false;" />
+      <LineAnalysis line="177" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="178" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _activeDefinition = definition;" />
+      <LineAnalysis line="179" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            Logger.LogInformation(&quot;Auto-generated definition with {Sections} sections, {Hidden} hidden fields&quot;," />
+      <LineAnalysis line="180" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                definition.Sections.Count, definition.Hidden.Count);" />
+      <LineAnalysis line="181" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="182" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="183" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="184" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _jsonError = $&quot;Generation failed: {ex.Message}&quot;;" />
+      <LineAnalysis line="185" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            Logger.LogError(ex, &quot;Auto-generation failed&quot;);" />
+      <LineAnalysis line="186" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="187" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="188" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="189" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private void OnDefinitionJsonChanged(string newJson)" />
+      <LineAnalysis line="190" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="191" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        _definitionJson = newJson;" />
+      <LineAnalysis line="192" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        _definitionDirty = true;" />
+      <LineAnalysis line="193" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        _jsonError = null;" />
+      <LineAnalysis line="194" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="195" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="196" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="197" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            JsonSerializer.Deserialize&lt;RenderDefinition&gt;(newJson, WriteOptions);" />
+      <LineAnalysis line="198" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="199" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        catch (JsonException ex)" />
+      <LineAnalysis line="200" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="201" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            _jsonError = $&quot;Invalid JSON: {ex.Message}&quot;;" />
+      <LineAnalysis line="202" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="203" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="204" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="205" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private void ApplyDefinition()" />
+      <LineAnalysis line="206" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="207" visits="4" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrWhiteSpace(_definitionJson))" />
+      <LineAnalysis line="208" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="209" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="210" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="211" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="212" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            var definition = JsonSerializer.Deserialize&lt;RenderDefinition&gt;(_definitionJson, WriteOptions);" />
+      <LineAnalysis line="213" visits="2" coverage="Covered" coveredbranches="2" totalbranches="2" content="            if (definition == null)" />
+      <LineAnalysis line="214" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="215" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                _jsonError = &quot;Deserialized to null.&quot;;" />
+      <LineAnalysis line="216" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                return;" />
+      <LineAnalysis line="217" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="218" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="219" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _activeDefinition = definition;" />
+      <LineAnalysis line="220" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _definitionDirty = false;" />
+      <LineAnalysis line="221" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _jsonError = null;" />
+      <LineAnalysis line="222" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            Logger.LogInformation(&quot;Applied edited definition: {Sections} sections&quot;, definition.Sections.Count);" />
+      <LineAnalysis line="223" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="224" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        catch (JsonException ex)" />
+      <LineAnalysis line="225" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="226" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _jsonError = $&quot;Cannot apply — invalid JSON: {ex.Message}&quot;;" />
+      <LineAnalysis line="227" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="228" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="229" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

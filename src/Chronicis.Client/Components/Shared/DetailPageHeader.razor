@@ -18,7 +18,8 @@
                   Style="font-size: 2rem; font-family: var(--chronicis-font-heading);"
                   Immediate="true"
                   @onkeydown="OnKeyDownInternal"
-                  Underline="false" />
+                  Underline="false"
+                  ReadOnly="@ReadOnly" />
 </div>
 
 <!-- Divider -->
@@ -67,15 +68,24 @@
     [Parameter]
     public EventCallback OnEnterPressed { get; set; }
 
+    /// <summary>
+    /// When true, renders the title field as read-only.
+    /// </summary>
+    [Parameter]
+    public bool ReadOnly { get; set; }
+
     private async Task OnTitleChangedInternal()
     {
+        if (ReadOnly)
+            return;
+
         await TitleChanged.InvokeAsync(Title);
         await OnTitleEdited.InvokeAsync();
     }
 
     private async Task OnKeyDownInternal(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter")
+        if (!ReadOnly && e.Key == "Enter")
         {
             await OnEnterPressed.InvokeAsync();
         }

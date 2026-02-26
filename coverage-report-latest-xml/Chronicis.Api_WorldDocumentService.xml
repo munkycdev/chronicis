@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Api.Services.WorldDocumentService">
+  <Summary>
+    <Class>Chronicis.Api.Services.WorldDocumentService</Class>
+    <Assembly>Chronicis.Api</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Services\WorldDocumentService.cs</File>
+    </Files>
+    <Coveredlines>67</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>67</Coverablelines>
+    <Totallines>449</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>16</Coveredbranches>
+    <Totalbranches>16</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>4</Coveredmethods>
+    <Fullcoveredmethods>4</Fullcoveredmethods>
+    <Totalmethods>4</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="cctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ValidateFileUpload">
+      <CrapScore>16</CrapScore>
+      <Cyclomaticcomplexity>16</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="MapToDto">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Services\WorldDocumentService.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Api.Data;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.DTOs;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Extensions;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Models;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Microsoft.EntityFrameworkCore;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Services;" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Service for managing world documents with blob storage integration." />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public class WorldDocumentService : IWorldDocumentService" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ChronicisDbContext _db;" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IBlobStorageService _blobStorage;" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IConfiguration _configuration;" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILogger&lt;WorldDocumentService&gt; _logger;" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // File validation constants" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private const long MaxFileSizeBytes = 209_715_200; // 200 MB" />
+      <LineAnalysis line="21" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    internal static readonly HashSet&lt;string&gt; AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)" />
+      <LineAnalysis line="22" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="23" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        &quot;.pdf&quot;, &quot;.docx&quot;, &quot;.xlsx&quot;, &quot;.pptx&quot;, &quot;.txt&quot;, &quot;.md&quot;," />
+      <LineAnalysis line="24" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        &quot;.png&quot;, &quot;.jpg&quot;, &quot;.jpeg&quot;, &quot;.gif&quot;, &quot;.webp&quot;" />
+      <LineAnalysis line="25" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    };" />
+      <LineAnalysis line="26" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="27" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    internal static readonly Dictionary&lt;string, string&gt; ExtensionToMimeType = new(StringComparer.OrdinalIgnoreCase)" />
+      <LineAnalysis line="28" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="29" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        { &quot;.pdf&quot;, &quot;application/pdf&quot; }," />
+      <LineAnalysis line="30" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        { &quot;.docx&quot;, &quot;application/vnd.openxmlformats-officedocument.wordprocessingml.document&quot; }," />
+      <LineAnalysis line="31" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        { &quot;.xlsx&quot;, &quot;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet&quot; }," />
+      <LineAnalysis line="32" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        { &quot;.pptx&quot;, &quot;application/vnd.openxmlformats-officedocument.presentationml.presentation&quot; }," />
+      <LineAnalysis line="33" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        { &quot;.txt&quot;, &quot;text/plain&quot; }," />
+      <LineAnalysis line="34" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        { &quot;.md&quot;, &quot;text/markdown&quot; }," />
+      <LineAnalysis line="35" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        { &quot;.png&quot;, &quot;image/png&quot; }," />
+      <LineAnalysis line="36" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        { &quot;.jpg&quot;, &quot;image/jpeg&quot; }," />
+      <LineAnalysis line="37" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        { &quot;.jpeg&quot;, &quot;image/jpeg&quot; }," />
+      <LineAnalysis line="38" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        { &quot;.gif&quot;, &quot;image/gif&quot; }," />
+      <LineAnalysis line="39" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        { &quot;.webp&quot;, &quot;image/webp&quot; }" />
+      <LineAnalysis line="40" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    };" />
+      <LineAnalysis line="41" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="42" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public WorldDocumentService(" />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ChronicisDbContext db," />
+      <LineAnalysis line="44" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IBlobStorageService blobStorage," />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IConfiguration configuration," />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ILogger&lt;WorldDocumentService&gt; logger)" />
+      <LineAnalysis line="47" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="48" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="        _db = db;" />
+      <LineAnalysis line="49" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="        _blobStorage = blobStorage;" />
+      <LineAnalysis line="50" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="        _configuration = configuration;" />
+      <LineAnalysis line="51" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger = logger;" />
+      <LineAnalysis line="52" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="53" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;WorldDocumentUploadResponseDto&gt; RequestUploadAsync(" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid worldId," />
+      <LineAnalysis line="56" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid userId," />
+      <LineAnalysis line="57" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        WorldDocumentUploadRequestDto request)" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebugSanitized(&quot;User {UserId} requesting upload for world {WorldId}: {FileName}&quot;," />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            userId, worldId, request.FileName);" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="62" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Verify user owns the world" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var world = await _db.Worlds" />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AsNoTracking()" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .FirstOrDefaultAsync(w =&gt; w.Id == worldId &amp;&amp; w.OwnerId == userId);" />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (world == null)" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="69" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw new UnauthorizedAccessException(&quot;World not found or access denied&quot;);" />
+      <LineAnalysis line="70" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="71" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Validate file" />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ValidateFileUpload(request);" />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Generate unique title (handle duplicates)" />
+      <LineAnalysis line="76" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var title = await GenerateUniqueTitleAsync(worldId, request.FileName);" />
+      <LineAnalysis line="77" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Create pending document record" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var document = new WorldDocument" />
+      <LineAnalysis line="80" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="81" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Id = Guid.NewGuid()," />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            WorldId = worldId," />
+      <LineAnalysis line="83" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            ArticleId = request.ArticleId," />
+      <LineAnalysis line="84" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            FileName = request.FileName," />
+      <LineAnalysis line="85" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Title = title," />
+      <LineAnalysis line="86" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            ContentType = request.ContentType," />
+      <LineAnalysis line="87" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            FileSizeBytes = request.FileSizeBytes," />
+      <LineAnalysis line="88" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Description = request.Description," />
+      <LineAnalysis line="89" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            UploadedById = userId," />
+      <LineAnalysis line="90" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            UploadedAt = DateTime.UtcNow," />
+      <LineAnalysis line="91" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            BlobPath = &quot;&quot; // Will be set after blob path is generated" />
+      <LineAnalysis line="92" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        };" />
+      <LineAnalysis line="93" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Generate blob path and SAS URL" />
+      <LineAnalysis line="95" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var blobPath = _blobStorage.BuildBlobPath(worldId, document.Id, request.FileName);" />
+      <LineAnalysis line="96" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        document.BlobPath = blobPath;" />
+      <LineAnalysis line="97" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="98" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var sasUrl = await _blobStorage.GenerateUploadSasUrlAsync(" />
+      <LineAnalysis line="99" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            worldId," />
+      <LineAnalysis line="100" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            document.Id," />
+      <LineAnalysis line="101" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            request.FileName," />
+      <LineAnalysis line="102" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            request.ContentType);" />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="104" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Save pending document (blob doesn't exist yet)" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _db.WorldDocuments.Add(document);" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        await _db.SaveChangesAsync();" />
+      <LineAnalysis line="107" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="108" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Created pending document {DocumentId} for world {WorldId}&quot;," />
+      <LineAnalysis line="109" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            document.Id, worldId);" />
+      <LineAnalysis line="110" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="111" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return new WorldDocumentUploadResponseDto" />
+      <LineAnalysis line="112" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="113" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            DocumentId = document.Id," />
+      <LineAnalysis line="114" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            UploadUrl = sasUrl," />
+      <LineAnalysis line="115" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Title = title" />
+      <LineAnalysis line="116" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        };" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="118" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="119" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;WorldDocumentDto&gt; ConfirmUploadAsync(" />
+      <LineAnalysis line="120" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid worldId," />
+      <LineAnalysis line="121" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid documentId," />
+      <LineAnalysis line="122" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid userId)" />
+      <LineAnalysis line="123" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="124" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;User {UserId} confirming upload for document {DocumentId}&quot;," />
+      <LineAnalysis line="125" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            userId, documentId);" />
+      <LineAnalysis line="126" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="127" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Get the pending document" />
+      <LineAnalysis line="128" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var document = await _db.WorldDocuments" />
+      <LineAnalysis line="129" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Include(d =&gt; d.World)" />
+      <LineAnalysis line="130" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .FirstOrDefaultAsync(d =&gt; d.Id == documentId &amp;&amp; d.WorldId == worldId);" />
+      <LineAnalysis line="131" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="132" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (document == null)" />
+      <LineAnalysis line="133" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="134" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw new InvalidOperationException(&quot;Document not found&quot;);" />
+      <LineAnalysis line="135" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="136" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="137" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Verify user owns the world" />
+      <LineAnalysis line="138" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (document.World.OwnerId != userId)" />
+      <LineAnalysis line="139" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="140" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw new UnauthorizedAccessException(&quot;Only world owner can upload documents&quot;);" />
+      <LineAnalysis line="141" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="142" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="143" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Verify blob exists in storage" />
+      <LineAnalysis line="144" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var metadata = await _blobStorage.GetBlobMetadataAsync(document.BlobPath);" />
+      <LineAnalysis line="145" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="146" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (metadata == null)" />
+      <LineAnalysis line="147" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="148" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Blob upload failed or didn't complete" />
+      <LineAnalysis line="149" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogWarningSanitized(&quot;Blob not found for document {DocumentId}: {BlobPath}&quot;," />
+      <LineAnalysis line="150" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                documentId, document.BlobPath);" />
+      <LineAnalysis line="151" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw new InvalidOperationException(&quot;File upload did not complete. Please try again.&quot;);" />
+      <LineAnalysis line="152" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="153" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="154" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Update document with actual blob metadata" />
+      <LineAnalysis line="155" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        document.FileSizeBytes = metadata.SizeBytes;" />
+      <LineAnalysis line="156" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        document.ContentType = metadata.ContentType;" />
+      <LineAnalysis line="157" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="158" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        await _db.SaveChangesAsync();" />
+      <LineAnalysis line="159" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="160" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Confirmed upload for document {DocumentId}, size: {SizeBytes} bytes&quot;," />
+      <LineAnalysis line="161" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            documentId, metadata.SizeBytes);" />
+      <LineAnalysis line="162" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="163" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return MapToDto(document);" />
+      <LineAnalysis line="164" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="165" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="166" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;List&lt;WorldDocumentDto&gt;&gt; GetWorldDocumentsAsync(Guid worldId, Guid userId)" />
+      <LineAnalysis line="167" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="168" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;User {UserId} getting documents for world {WorldId}&quot;," />
+      <LineAnalysis line="169" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            userId, worldId);" />
+      <LineAnalysis line="170" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="171" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Verify user has access to the world (owner or member)" />
+      <LineAnalysis line="172" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var hasAccess = await _db.Worlds" />
+      <LineAnalysis line="173" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AsNoTracking()" />
+      <LineAnalysis line="174" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AnyAsync(w =&gt; w.Id == worldId &amp;&amp;" />
+      <LineAnalysis line="175" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                (w.OwnerId == userId || w.Members.Any(m =&gt; m.UserId == userId)));" />
+      <LineAnalysis line="176" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="177" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!hasAccess)" />
+      <LineAnalysis line="178" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="179" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw new UnauthorizedAccessException(&quot;World not found or access denied&quot;);" />
+      <LineAnalysis line="180" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="181" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="182" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var documents = await _db.WorldDocuments" />
+      <LineAnalysis line="183" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AsNoTracking()" />
+      <LineAnalysis line="184" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Where(d =&gt; d.WorldId == worldId)" />
+      <LineAnalysis line="185" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .OrderByDescending(d =&gt; d.UploadedAt)" />
+      <LineAnalysis line="186" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ToListAsync();" />
+      <LineAnalysis line="187" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="188" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return documents.Select(MapToDto).ToList();" />
+      <LineAnalysis line="189" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="190" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="191" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;DocumentContentResult&gt; GetDocumentContentAsync(Guid documentId, Guid userId)" />
+      <LineAnalysis line="192" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="193" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;User {UserId} requesting document download URL for {DocumentId}&quot;," />
+      <LineAnalysis line="194" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            userId, documentId);" />
+      <LineAnalysis line="195" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="196" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var document = await GetAuthorizedDocumentAsync(documentId, userId);" />
+      <LineAnalysis line="197" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var contentType = string.IsNullOrWhiteSpace(document.ContentType)" />
+      <LineAnalysis line="198" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            ? &quot;application/octet-stream&quot;" />
+      <LineAnalysis line="199" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            : document.ContentType;" />
+      <LineAnalysis line="200" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="201" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Generate read-only SAS URL for direct download from blob storage" />
+      <LineAnalysis line="202" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var downloadUrl = await _blobStorage.GenerateDownloadSasUrlAsync(document.BlobPath);" />
+      <LineAnalysis line="203" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="204" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return new DocumentContentResult(" />
+      <LineAnalysis line="205" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            downloadUrl," />
+      <LineAnalysis line="206" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            document.FileName," />
+      <LineAnalysis line="207" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            contentType," />
+      <LineAnalysis line="208" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            document.FileSizeBytes);" />
+      <LineAnalysis line="209" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="210" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="211" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;WorldDocumentDto&gt; UpdateDocumentAsync(" />
+      <LineAnalysis line="212" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid worldId," />
+      <LineAnalysis line="213" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid documentId," />
+      <LineAnalysis line="214" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid userId," />
+      <LineAnalysis line="215" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        WorldDocumentUpdateDto update)" />
+      <LineAnalysis line="216" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="217" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;User {UserId} updating document {DocumentId}&quot;," />
+      <LineAnalysis line="218" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            userId, documentId);" />
+      <LineAnalysis line="219" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="220" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var document = await _db.WorldDocuments" />
+      <LineAnalysis line="221" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Include(d =&gt; d.World)" />
+      <LineAnalysis line="222" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .FirstOrDefaultAsync(d =&gt; d.Id == documentId &amp;&amp; d.WorldId == worldId);" />
+      <LineAnalysis line="223" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="224" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (document == null)" />
+      <LineAnalysis line="225" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="226" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw new InvalidOperationException(&quot;Document not found&quot;);" />
+      <LineAnalysis line="227" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="228" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="229" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Only owner can update" />
+      <LineAnalysis line="230" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (document.World.OwnerId != userId)" />
+      <LineAnalysis line="231" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="232" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw new UnauthorizedAccessException(&quot;Only world owner can update documents&quot;);" />
+      <LineAnalysis line="233" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="234" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="235" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Update metadata" />
+      <LineAnalysis line="236" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!string.IsNullOrWhiteSpace(update.Title))" />
+      <LineAnalysis line="237" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="238" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            document.Title = update.Title.Trim();" />
+      <LineAnalysis line="239" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="240" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="241" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        document.Description = string.IsNullOrWhiteSpace(update.Description)" />
+      <LineAnalysis line="242" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            ? null" />
+      <LineAnalysis line="243" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            : update.Description.Trim();" />
+      <LineAnalysis line="244" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="245" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        await _db.SaveChangesAsync();" />
+      <LineAnalysis line="246" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="247" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Updated document {DocumentId}&quot;, documentId);" />
+      <LineAnalysis line="248" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="249" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return MapToDto(document);" />
+      <LineAnalysis line="250" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="251" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="252" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task DeleteDocumentAsync(Guid worldId, Guid documentId, Guid userId)" />
+      <LineAnalysis line="253" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="254" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;User {UserId} deleting document {DocumentId}&quot;," />
+      <LineAnalysis line="255" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            userId, documentId);" />
+      <LineAnalysis line="256" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="257" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var document = await _db.WorldDocuments" />
+      <LineAnalysis line="258" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Include(d =&gt; d.World)" />
+      <LineAnalysis line="259" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .FirstOrDefaultAsync(d =&gt; d.Id == documentId &amp;&amp; d.WorldId == worldId);" />
+      <LineAnalysis line="260" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="261" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (document == null)" />
+      <LineAnalysis line="262" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="263" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw new InvalidOperationException(&quot;Document not found&quot;);" />
+      <LineAnalysis line="264" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="265" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="266" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Only owner can delete" />
+      <LineAnalysis line="267" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (document.World.OwnerId != userId)" />
+      <LineAnalysis line="268" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="269" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw new UnauthorizedAccessException(&quot;Only world owner can delete documents&quot;);" />
+      <LineAnalysis line="270" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="271" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="272" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Delete blob from storage" />
+      <LineAnalysis line="273" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="274" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="275" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await _blobStorage.DeleteBlobAsync(document.BlobPath);" />
+      <LineAnalysis line="276" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="277" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="278" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="279" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Failed to delete blob for document {DocumentId}: {BlobPath}&quot;," />
+      <LineAnalysis line="280" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                documentId, document.BlobPath);" />
+      <LineAnalysis line="281" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Continue with database deletion even if blob deletion fails" />
+      <LineAnalysis line="282" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="283" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="284" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Delete from database" />
+      <LineAnalysis line="285" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _db.WorldDocuments.Remove(document);" />
+      <LineAnalysis line="286" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        await _db.SaveChangesAsync();" />
+      <LineAnalysis line="287" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="288" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Deleted document {DocumentId}&quot;, documentId);" />
+      <LineAnalysis line="289" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="290" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="291" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;inheritdoc /&gt;" />
+      <LineAnalysis line="292" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task DeleteArticleImagesAsync(Guid articleId)" />
+      <LineAnalysis line="293" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="294" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var documents = await _db.WorldDocuments" />
+      <LineAnalysis line="295" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Where(d =&gt; d.ArticleId == articleId)" />
+      <LineAnalysis line="296" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ToListAsync();" />
+      <LineAnalysis line="297" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="298" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (documents.Count == 0)" />
+      <LineAnalysis line="299" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="300" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="301" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Deleting {Count} images for article {ArticleId}&quot;, documents.Count, articleId);" />
+      <LineAnalysis line="302" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="303" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        foreach (var document in documents)" />
+      <LineAnalysis line="304" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="305" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            try" />
+      <LineAnalysis line="306" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="307" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                await _blobStorage.DeleteBlobAsync(document.BlobPath);" />
+      <LineAnalysis line="308" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="309" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            catch (Exception ex)" />
+      <LineAnalysis line="310" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="311" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _logger.LogWarning(ex, &quot;Failed to delete blob {BlobPath} for document {DocumentId}&quot;," />
+      <LineAnalysis line="312" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    document.BlobPath, document.Id);" />
+      <LineAnalysis line="313" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="314" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="315" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="316" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _db.WorldDocuments.RemoveRange(documents);" />
+      <LineAnalysis line="317" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        await _db.SaveChangesAsync();" />
+      <LineAnalysis line="318" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="319" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Deleted {Count} images for article {ArticleId}&quot;, documents.Count, articleId);" />
+      <LineAnalysis line="320" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="321" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="322" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // ===== Private Helper Methods =====" />
+      <LineAnalysis line="323" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="324" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    internal void ValidateFileUpload(WorldDocumentUploadRequestDto request)" />
+      <LineAnalysis line="325" visits="8" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="326" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Validate file size" />
+      <LineAnalysis line="327" visits="8" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (request.FileSizeBytes &lt;= 0)" />
+      <LineAnalysis line="328" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="329" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            throw new ArgumentException(&quot;File size must be greater than zero&quot;);" />
+      <LineAnalysis line="330" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="331" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="332" visits="7" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (request.FileSizeBytes &gt; MaxFileSizeBytes)" />
+      <LineAnalysis line="333" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="334" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            throw new ArgumentException($&quot;File size exceeds maximum allowed size of {MaxFileSizeBytes / 1024 / 1024} MB&quot;);" />
+      <LineAnalysis line="335" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="336" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="337" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Validate filename" />
+      <LineAnalysis line="338" visits="6" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrWhiteSpace(request.FileName))" />
+      <LineAnalysis line="339" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="340" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            throw new ArgumentException(&quot;Filename is required&quot;);" />
+      <LineAnalysis line="341" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="342" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="343" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        var extension = Path.GetExtension(request.FileName);" />
+      <LineAnalysis line="344" visits="5" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (string.IsNullOrEmpty(extension) || !AllowedExtensions.Contains(extension))" />
+      <LineAnalysis line="345" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="346" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            var allowed = string.Join(&quot;, &quot;, AllowedExtensions);" />
+      <LineAnalysis line="347" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            throw new ArgumentException($&quot;File type '{extension}' is not allowed. Allowed types: {allowed}&quot;);" />
+      <LineAnalysis line="348" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="349" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="350" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Validate content type matches extension" />
+      <LineAnalysis line="351" visits="3" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrWhiteSpace(request.ContentType))" />
+      <LineAnalysis line="352" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="353" visits="2" coverage="Covered" coveredbranches="2" totalbranches="2" content="            if (ExtensionToMimeType.TryGetValue(extension, out var expectedMimeType))" />
+      <LineAnalysis line="354" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="355" visits="2" coverage="Covered" coveredbranches="2" totalbranches="2" content="                if (!request.ContentType.Equals(expectedMimeType, StringComparison.OrdinalIgnoreCase))" />
+      <LineAnalysis line="356" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="357" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                    _logger.LogWarningSanitized(&quot;Content type mismatch for {FileName}: expected {Expected}, got {Actual}&quot;," />
+      <LineAnalysis line="358" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                        request.FileName, expectedMimeType, request.ContentType);" />
+      <LineAnalysis line="359" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="360" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="361" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="362" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="363" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="364" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task&lt;string&gt; GenerateUniqueTitleAsync(Guid worldId, string fileName)" />
+      <LineAnalysis line="365" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="366" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Start with filename without extension as title" />
+      <LineAnalysis line="367" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var baseTitle = Path.GetFileNameWithoutExtension(fileName);" />
+      <LineAnalysis line="368" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var extension = Path.GetExtension(fileName);" />
+      <LineAnalysis line="369" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var title = baseTitle;" />
+      <LineAnalysis line="370" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="371" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Check for existing documents with same title" />
+      <LineAnalysis line="372" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var existingTitles = await _db.WorldDocuments" />
+      <LineAnalysis line="373" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AsNoTracking()" />
+      <LineAnalysis line="374" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Where(d =&gt; d.WorldId == worldId &amp;&amp; d.Title.StartsWith(baseTitle))" />
+      <LineAnalysis line="375" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Select(d =&gt; d.Title)" />
+      <LineAnalysis line="376" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ToListAsync();" />
+      <LineAnalysis line="377" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="378" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!existingTitles.Contains(title))" />
+      <LineAnalysis line="379" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="380" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return title; // Title is unique, use as-is" />
+      <LineAnalysis line="381" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="382" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="383" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Title exists, find next available number" />
+      <LineAnalysis line="384" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var counter = 2;" />
+      <LineAnalysis line="385" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        while (existingTitles.Contains(title))" />
+      <LineAnalysis line="386" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="387" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            title = $&quot;{baseTitle} ({counter})&quot;;" />
+      <LineAnalysis line="388" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            counter++;" />
+      <LineAnalysis line="389" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="390" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Safety check to prevent infinite loop" />
+      <LineAnalysis line="391" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (counter &gt; 1000)" />
+      <LineAnalysis line="392" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="393" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                throw new InvalidOperationException(&quot;Too many documents with similar names&quot;);" />
+      <LineAnalysis line="394" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="395" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="396" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="397" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebugSanitized(&quot;Generated unique title for {FileName}: {Title}&quot;, fileName, title);" />
+      <LineAnalysis line="398" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return title;" />
+      <LineAnalysis line="399" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="400" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="401" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    internal static WorldDocumentDto MapToDto(WorldDocument document)" />
+      <LineAnalysis line="402" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="403" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        return new WorldDocumentDto" />
+      <LineAnalysis line="404" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="405" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            Id = document.Id," />
+      <LineAnalysis line="406" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            WorldId = document.WorldId," />
+      <LineAnalysis line="407" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            ArticleId = document.ArticleId," />
+      <LineAnalysis line="408" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            FileName = document.FileName," />
+      <LineAnalysis line="409" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            Title = document.Title," />
+      <LineAnalysis line="410" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            ContentType = document.ContentType," />
+      <LineAnalysis line="411" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            FileSizeBytes = document.FileSizeBytes," />
+      <LineAnalysis line="412" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            Description = document.Description," />
+      <LineAnalysis line="413" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            UploadedAt = document.UploadedAt," />
+      <LineAnalysis line="414" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            UploadedById = document.UploadedById" />
+      <LineAnalysis line="415" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        };" />
+      <LineAnalysis line="416" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="417" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="418" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task&lt;WorldDocument&gt; GetAuthorizedDocumentAsync(" />
+      <LineAnalysis line="419" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid documentId," />
+      <LineAnalysis line="420" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid userId," />
+      <LineAnalysis line="421" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid? worldId = null)" />
+      <LineAnalysis line="422" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="423" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var query = _db.WorldDocuments" />
+      <LineAnalysis line="424" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Include(d =&gt; d.World)" />
+      <LineAnalysis line="425" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AsQueryable();" />
+      <LineAnalysis line="426" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="427" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (worldId.HasValue)" />
+      <LineAnalysis line="428" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="429" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            query = query.Where(d =&gt; d.WorldId == worldId.Value);" />
+      <LineAnalysis line="430" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="431" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="432" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var document = await query.FirstOrDefaultAsync(d =&gt; d.Id == documentId);" />
+      <LineAnalysis line="433" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="434" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (document == null)" />
+      <LineAnalysis line="435" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="436" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw new InvalidOperationException(&quot;Document not found&quot;);" />
+      <LineAnalysis line="437" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="438" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="439" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var hasAccess = document.World.OwnerId == userId ||" />
+      <LineAnalysis line="440" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await _db.WorldMembers.AnyAsync(m =&gt; m.WorldId == document.WorldId &amp;&amp; m.UserId == userId);" />
+      <LineAnalysis line="441" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="442" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!hasAccess)" />
+      <LineAnalysis line="443" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="444" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            throw new UnauthorizedAccessException(&quot;Access denied&quot;);" />
+      <LineAnalysis line="445" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="446" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="447" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return document;" />
+      <LineAnalysis line="448" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="449" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

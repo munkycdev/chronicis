@@ -25,6 +25,8 @@ public class CampaignService : ICampaignService
         var campaign = await _context.Campaigns
             .Include(c => c.Owner)
             .Include(c => c.Arcs)
+            .Include(c => c.World)
+                .ThenInclude(w => w.Members)
             .FirstOrDefaultAsync(c => c.Id == campaignId);
 
         if (campaign == null)
@@ -34,7 +36,16 @@ public class CampaignService : ICampaignService
         if (!await UserHasAccessAsync(campaignId, userId))
             return null;
 
-        return MapToDetailDto(campaign);
+        var canViewPrivateNotes = campaign.World.OwnerId == userId
+            || campaign.World.Members.Any(m => m.UserId == userId && m.Role == WorldRole.GM);
+
+        var dto = MapToDetailDto(campaign);
+        if (!canViewPrivateNotes)
+        {
+            dto.PrivateNotes = null;
+        }
+
+        return dto;
     }
 
     public async Task<CampaignDto> CreateCampaignAsync(CampaignCreateDto dto, Guid userId)
@@ -101,12 +112,13 @@ public class CampaignService : ICampaignService
         if (campaign == null)
             return null;
 
-        // Only GM can update
-        if (!await UserIsGMAsync(campaignId, userId))
+        // Only world owner or GM can update
+        if (!await UserIsWorldOwnerOrGMAsync(campaignId, userId))
             return null;
 
         campaign.Name = dto.Name;
         campaign.Description = dto.Description;
+        campaign.PrivateNotes = string.IsNullOrWhiteSpace(dto.PrivateNotes) ? null : dto.PrivateNotes;
         campaign.StartedAt = dto.StartedAt;
         campaign.EndedAt = dto.EndedAt;
 
@@ -154,6 +166,25 @@ public class CampaignService : ICampaignService
                         && wm.Role == WorldRole.GM);
     }
 
+    private async Task<bool> UserIsWorldOwnerOrGMAsync(Guid campaignId, Guid userId)
+    {
+        var campaign = await _context.Campaigns
+            .AsNoTracking()
+            .Include(c => c.World)
+            .FirstOrDefaultAsync(c => c.Id == campaignId);
+
+        if (campaign == null)
+            return false;
+
+        if (campaign.World.OwnerId == userId)
+            return true;
+
+        return await _context.WorldMembers
+            .AnyAsync(wm => wm.WorldId == campaign.WorldId
+                && wm.UserId == userId
+                && wm.Role == WorldRole.GM);
+    }
+
     public async Task<bool> ActivateCampaignAsync(Guid campaignId, Guid userId)
     {
         var campaign = await _context.Campaigns
@@ -162,8 +193,8 @@ public class CampaignService : ICampaignService
         if (campaign == null)
             return false;
 
-        // Only GM can activate
-        if (!await UserIsGMAsync(campaignId, userId))
+        // Only the world owner or a GM can activate
+        if (!await UserIsWorldOwnerOrGMAsync(campaignId, userId))
             return false;
 
         // Deactivate all campaigns in the same world
@@ -262,6 +293,7 @@ public class CampaignService : ICampaignService
             WorldId = campaign.WorldId,
             Name = campaign.Name,
             Description = campaign.Description,
+            PrivateNotes = campaign.PrivateNotes,
             OwnerId = campaign.OwnerId,
             OwnerName = campaign.Owner?.DisplayName ?? "Unknown",
             CreatedAt = campaign.CreatedAt,
@@ -275,6 +307,7 @@ public class CampaignService : ICampaignService
                 CampaignId = a.CampaignId,
                 Name = a.Name,
                 Description = a.Description,
+                PrivateNotes = null,
                 SortOrder = a.SortOrder,
                 IsActive = a.IsActive,
                 CreatedAt = a.CreatedAt

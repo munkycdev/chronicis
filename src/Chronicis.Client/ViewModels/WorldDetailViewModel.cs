@@ -31,11 +31,13 @@ public sealed class WorldDetailViewModel : ViewModelBase
     private WorldDetailDto? _world;
     private string _editName = string.Empty;
     private string _editDescription = string.Empty;
+    private string _editPrivateNotes = string.Empty;
     private bool _isSaving;
     private bool _hasUnsavedChanges;
     private List<BreadcrumbItem> _breadcrumbs = new();
     private Guid _currentUserId;
     private bool _isCurrentUserGm;
+    private bool _isCurrentUserWorldOwner;
 
     public WorldDetailViewModel(
         IWorldApiService worldApi,
@@ -91,6 +93,16 @@ public sealed class WorldDetailViewModel : ViewModelBase
         }
     }
 
+    public string EditPrivateNotes
+    {
+        get => _editPrivateNotes;
+        set
+        {
+            if (SetField(ref _editPrivateNotes, value) && CanManageWorldDetails)
+                HasUnsavedChanges = true;
+        }
+    }
+
     public bool IsSaving
     {
         get => _isSaving;
@@ -121,6 +133,15 @@ public sealed class WorldDetailViewModel : ViewModelBase
         private set => SetField(ref _isCurrentUserGm, value);
     }
 
+    public bool IsCurrentUserWorldOwner
+    {
+        get => _isCurrentUserWorldOwner;
+        private set => SetField(ref _isCurrentUserWorldOwner, value);
+    }
+
+    public bool CanManageWorldDetails => IsCurrentUserGm || IsCurrentUserWorldOwner;
+    public bool CanViewPrivateNotes => CanManageWorldDetails;
+
     /// <summary>Loads the world and resolves the current user's role.</summary>
     public async Task LoadAsync(Guid worldId, WorldSharingViewModel sharingVm, WorldLinksViewModel linksVm, WorldDocumentsViewModel documentsVm)
     {
@@ -128,6 +149,10 @@ public sealed class WorldDetailViewModel : ViewModelBase
 
         try
         {
+            CurrentUserId = Guid.Empty;
+            IsCurrentUserGm = false;
+            IsCurrentUserWorldOwner = false;
+
             var authState = await _authStateProvider.GetAuthenticationStateAsync();
             var world = await _worldApi.GetWorldAsync(worldId);
 
@@ -140,6 +165,7 @@ public sealed class WorldDetailViewModel : ViewModelBase
             World = world;
             EditName = world.Name;
             EditDescription = world.Description ?? string.Empty;
+            EditPrivateNotes = world.PrivateNotes ?? string.Empty;
             HasUnsavedChanges = false;
             Breadcrumbs = _breadcrumbService.ForWorld(world);
 
@@ -159,6 +185,7 @@ public sealed class WorldDetailViewModel : ViewModelBase
                     {
                         CurrentUserId = currentMember.UserId;
                         IsCurrentUserGm = currentMember.Role == WorldRole.GM;
+                        IsCurrentUserWorldOwner = world.OwnerId == currentMember.UserId;
                     }
                 }
             }
@@ -185,7 +212,7 @@ public sealed class WorldDetailViewModel : ViewModelBase
     /// <summary>Saves name, description, and sharing settings.</summary>
     public async Task SaveAsync(WorldSharingViewModel sharingVm)
     {
-        if (_world == null || IsSaving)
+        if (_world == null || !CanManageWorldDetails || IsSaving)
             return;
 
         if (sharingVm.IsPublic && !sharingVm.SlugIsAvailable)
@@ -202,6 +229,7 @@ public sealed class WorldDetailViewModel : ViewModelBase
             {
                 Name = EditName.Trim(),
                 Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim(),
+                PrivateNotes = string.IsNullOrWhiteSpace(EditPrivateNotes) ? null : EditPrivateNotes,
                 IsPublic = sharingVm.IsPublic,
                 PublicSlug = sharingVm.IsPublic ? sharingVm.PublicSlug.Trim().ToLowerInvariant() : null
             };
@@ -211,6 +239,7 @@ public sealed class WorldDetailViewModel : ViewModelBase
             {
                 _world.Name = updated.Name;
                 _world.Description = updated.Description;
+                _world.PrivateNotes = string.IsNullOrWhiteSpace(EditPrivateNotes) ? null : EditPrivateNotes;
                 _world.IsPublic = updated.IsPublic;
                 _world.PublicSlug = updated.PublicSlug;
                 HasUnsavedChanges = false;

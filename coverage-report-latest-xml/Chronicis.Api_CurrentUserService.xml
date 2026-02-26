@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Api.Infrastructure.CurrentUserService">
+  <Summary>
+    <Class>Chronicis.Api.Infrastructure.CurrentUserService</Class>
+    <Assembly>Chronicis.Api</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Infrastructure\CurrentUserService.cs</File>
+    </Files>
+    <Coveredlines>29</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>29</Coverablelines>
+    <Totallines>137</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>26</Coveredbranches>
+    <Totalbranches>26</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>4</Coveredmethods>
+    <Fullcoveredmethods>4</Fullcoveredmethods>
+    <Totalmethods>4</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="ctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsAuthenticated">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GetAuth0UserId">
+      <CrapScore>12</CrapScore>
+      <Cyclomaticcomplexity>12</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ExtractNameFromEmail">
+      <CrapScore>8</CrapScore>
+      <Cyclomaticcomplexity>8</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Infrastructure\CurrentUserService.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Security.Claims;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Api.Services;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Admin;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Models;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Infrastructure;" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Implementation of ICurrentUserService that resolves the user from HTTP context claims." />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// This service is scoped per-request and caches the user lookup for the request lifetime." />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public class CurrentUserService : ICurrentUserService" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IHttpContextAccessor _httpContextAccessor;" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IUserService _userService;" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ISysAdminChecker _sysAdminChecker;" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private User? _cachedUser;" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private bool _userLookedUp;" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public CurrentUserService(" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IHttpContextAccessor httpContextAccessor," />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IUserService userService," />
+      <LineAnalysis line="23" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ISysAdminChecker sysAdminChecker)" />
+      <LineAnalysis line="24" visits="32" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="25" visits="32" coverage="Covered" coveredbranches="" totalbranches="" content="        _httpContextAccessor = httpContextAccessor;" />
+      <LineAnalysis line="26" visits="32" coverage="Covered" coveredbranches="" totalbranches="" content="        _userService = userService;" />
+      <LineAnalysis line="27" visits="32" coverage="Covered" coveredbranches="" totalbranches="" content="        _sysAdminChecker = sysAdminChecker;" />
+      <LineAnalysis line="28" visits="32" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="29" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool IsAuthenticated =&gt;" />
+      <LineAnalysis line="31" visits="33" coverage="Covered" coveredbranches="6" totalbranches="6" content="        _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public string? GetAuth0UserId()" />
+      <LineAnalysis line="34" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="35" visits="30" coverage="Covered" coveredbranches="2" totalbranches="2" content="        var user = _httpContextAccessor.HttpContext?.User;" />
+      <LineAnalysis line="36" visits="30" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (user == null || !IsAuthenticated)" />
+      <LineAnalysis line="37" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="            return null;" />
+      <LineAnalysis line="38" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Auth0 puts the user ID in the 'sub' claim (NameIdentifier)" />
+      <LineAnalysis line="40" visits="24" coverage="Covered" coveredbranches="6" totalbranches="6" content="        return user.FindFirst(ClaimTypes.NameIdentifier)?.Value" />
+      <LineAnalysis line="41" visits="24" coverage="Covered" coveredbranches="" totalbranches="" content="            ?? user.FindFirst(&quot;sub&quot;)?.Value;" />
+      <LineAnalysis line="42" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="44" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;User?&gt; GetCurrentUserAsync()" />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Return cached user if already looked up this request" />
+      <LineAnalysis line="47" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (_userLookedUp)" />
+      <LineAnalysis line="48" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return _cachedUser;" />
+      <LineAnalysis line="49" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="50" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _userLookedUp = true;" />
+      <LineAnalysis line="51" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="52" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var auth0UserId = GetAuth0UserId();" />
+      <LineAnalysis line="53" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (string.IsNullOrEmpty(auth0UserId))" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return null;" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="56" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Extract additional claims for user creation/update" />
+      <LineAnalysis line="57" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var claimsPrincipal = _httpContextAccessor.HttpContext?.User;" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        const string customNamespace = &quot;https://chronicis.app&quot;;" />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var email = claimsPrincipal?.FindFirst($&quot;{customNamespace}/email&quot;)?.Value" />
+      <LineAnalysis line="62" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                   ?? claimsPrincipal?.FindFirst(ClaimTypes.Email)?.Value" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                   ?? claimsPrincipal?.FindFirst(&quot;email&quot;)?.Value" />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                   ?? &quot;&quot;;" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var displayName = claimsPrincipal?.FindFirst($&quot;{customNamespace}/name&quot;)?.Value" />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                         ?? claimsPrincipal?.FindFirst(ClaimTypes.Name)?.Value" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                         ?? claimsPrincipal?.FindFirst(&quot;name&quot;)?.Value" />
+      <LineAnalysis line="69" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                         ?? claimsPrincipal?.FindFirst(&quot;nickname&quot;)?.Value" />
+      <LineAnalysis line="70" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                         ?? claimsPrincipal?.FindFirst(&quot;preferred_username&quot;)?.Value" />
+      <LineAnalysis line="71" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                         ?? claimsPrincipal?.FindFirst(&quot;given_name&quot;)?.Value" />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                         ?? ExtractNameFromEmail(email)" />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                         ?? &quot;Unknown User&quot;;" />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var avatarUrl = claimsPrincipal?.FindFirst($&quot;{customNamespace}/picture&quot;)?.Value" />
+      <LineAnalysis line="76" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                       ?? claimsPrincipal?.FindFirst(&quot;picture&quot;)?.Value;" />
+      <LineAnalysis line="77" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Get or create the user in the database" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _cachedUser = await _userService.GetOrCreateUserAsync(" />
+      <LineAnalysis line="80" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            auth0UserId," />
+      <LineAnalysis line="81" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            email," />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            displayName," />
+      <LineAnalysis line="83" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            avatarUrl);" />
+      <LineAnalysis line="84" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="85" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return _cachedUser;" />
+      <LineAnalysis line="86" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="87" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="88" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;User&gt; GetRequiredUserAsync()" />
+      <LineAnalysis line="89" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="90" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var user = await GetCurrentUserAsync();" />
+      <LineAnalysis line="91" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return user ?? throw new InvalidOperationException(" />
+      <LineAnalysis line="92" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            &quot;User not found. Ensure this endpoint requires authentication.&quot;);" />
+      <LineAnalysis line="93" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="95" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;inheritdoc/&gt;" />
+      <LineAnalysis line="96" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;bool&gt; IsSysAdminAsync()" />
+      <LineAnalysis line="97" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="98" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var auth0UserId = GetAuth0UserId();" />
+      <LineAnalysis line="99" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (string.IsNullOrEmpty(auth0UserId))" />
+      <LineAnalysis line="100" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return false;" />
+      <LineAnalysis line="101" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="102" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Resolve email from the cached/current user to support email-based sysadmin checks." />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var user = await GetCurrentUserAsync();" />
+      <LineAnalysis line="104" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return _sysAdminChecker.IsSysAdmin(auth0UserId, user?.Email);" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="107" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="108" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Extracts a display name from an email address as a fallback." />
+      <LineAnalysis line="109" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// e.g., &quot;john.doe@example.com&quot; becomes &quot;John Doe&quot;" />
+      <LineAnalysis line="110" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="111" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private static string? ExtractNameFromEmail(string? email)" />
+      <LineAnalysis line="112" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="113" visits="7" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (string.IsNullOrEmpty(email) || !email.Contains('@'))" />
+      <LineAnalysis line="114" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            return null;" />
+      <LineAnalysis line="115" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="116" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var localPart = email.Split('@')[0];" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="118" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Replace common separators with spaces" />
+      <LineAnalysis line="119" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var name = localPart" />
+      <LineAnalysis line="120" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            .Replace('.', ' ')" />
+      <LineAnalysis line="121" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            .Replace('_', ' ')" />
+      <LineAnalysis line="122" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            .Replace('-', ' ');" />
+      <LineAnalysis line="123" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="124" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Title case each word" />
+      <LineAnalysis line="125" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);" />
+      <LineAnalysis line="126" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var titleCased = words.Select(w =&gt;" />
+      <LineAnalysis line="127" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            char.ToUpper(w[0]) + (w.Length &gt; 1 ? w.Substring(1).ToLower() : &quot;&quot;));" />
+      <LineAnalysis line="128" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="129" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var result = string.Join(&quot; &quot;, titleCased);" />
+      <LineAnalysis line="130" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="131" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Don't return if it looks like gibberish (all numbers, too short, etc.)" />
+      <LineAnalysis line="132" visits="4" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (result.Length &lt; 2 || result.All(c =&gt; char.IsDigit(c)))" />
+      <LineAnalysis line="133" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            return null;" />
+      <LineAnalysis line="134" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="135" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        return result;" />
+      <LineAnalysis line="136" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="137" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

@@ -243,6 +243,36 @@ public class WorldDetailViewModelTests
         Assert.True(c.Vm.HasUnsavedChanges);
     }
 
+    [Fact]
+    public async Task EditPrivateNotes_WhenUserCannotManage_DoesNotSetHasUnsavedChanges()
+    {
+        var c = CreateSut(userEmail: "player@example.com", role: WorldRole.Player);
+        var world = MakeWorld(email: "gm@example.com");
+        c.WorldApi.GetWorldAsync(world.Id).Returns(world);
+        c.WorldApi.GetWorldLinksAsync(world.Id).Returns(new List<WorldLinkDto>());
+        c.WorldApi.GetWorldDocumentsAsync(world.Id).Returns(new List<WorldDocumentDto>());
+        await c.Vm.LoadAsync(world.Id, c.SharingVm, c.LinksVm, c.DocumentsVm);
+
+        c.Vm.EditPrivateNotes = "<p>secret</p>";
+
+        Assert.False(c.Vm.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public async Task EditPrivateNotes_WhenUserCanManage_SetsHasUnsavedChanges()
+    {
+        var c = CreateSut();
+        var world = MakeWorld();
+        c.WorldApi.GetWorldAsync(world.Id).Returns(world);
+        c.WorldApi.GetWorldLinksAsync(world.Id).Returns(new List<WorldLinkDto>());
+        c.WorldApi.GetWorldDocumentsAsync(world.Id).Returns(new List<WorldDocumentDto>());
+        await c.Vm.LoadAsync(world.Id, c.SharingVm, c.LinksVm, c.DocumentsVm);
+
+        c.Vm.EditPrivateNotes = "<p>secret</p>";
+
+        Assert.True(c.Vm.HasUnsavedChanges);
+    }
+
     // ---------------------------------------------------------------------------
     // OnMembersChangedAsync
     // ---------------------------------------------------------------------------

@@ -1,0 +1,669 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Client.Services.Tree.TreeUiState">
+  <Summary>
+    <Class>Chronicis.Client.Services.Tree.TreeUiState</Class>
+    <Assembly>Chronicis.Client</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Client\Services\Tree\TreeUiState.cs</File>
+    </Files>
+    <Coveredlines>231</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>231</Coverablelines>
+    <Totallines>490</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>124</Coveredbranches>
+    <Totalbranches>124</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>25</Coveredmethods>
+    <Fullcoveredmethods>25</Fullcoveredmethods>
+    <Totalmethods>25</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="ctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_SelectedNodeId">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_SearchQuery">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsSearchActive">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_PendingSelectionId">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_ExpandedNodeIds">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="SetNodeIndex">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="Reset">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ClearPendingSelection">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ConsumePendingSelection">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ExpandNode">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="CollapseNode">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ToggleNode">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="SelectNode">
+      <CrapScore>24</CrapScore>
+      <Cyclomaticcomplexity>24</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ExpandPathToAndSelect">
+      <CrapScore>20</CrapScore>
+      <Cyclomaticcomplexity>20</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="BuildPathToNode">
+      <CrapScore>14</CrapScore>
+      <Cyclomaticcomplexity>14</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ClearSelection">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="SetSearchQuery">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ClearSearch">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="ApplySearchFilter">
+      <CrapScore>18</CrapScore>
+      <Cyclomaticcomplexity>18</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="AddNodeAndAncestors">
+      <CrapScore>10</CrapScore>
+      <Cyclomaticcomplexity>10</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GetExpandedNodeIds">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="RestoreExpandedNodes">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="RestoreExpandedNodesPreserving">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GetExpandedNodesStorageKey">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Client\Services\Tree\TreeUiState.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Blazored.LocalStorage;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Client.Models;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Client.Services.Tree;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Manages UI-related state for the tree: expansion, selection, search filtering, and persistence." />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// This component does not perform any API calls - it operates purely on the in-memory node index." />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="internal sealed class TreeUiState" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILocalStorageService _localStorage;" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILogger _logger;" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private const string ExpandedNodesStorageKey = &quot;chronicis_expanded_nodes&quot;;" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Shared node index (owned by TreeStateService, passed in)" />
+      <LineAnalysis line="18" visits="53" coverage="Covered" coveredbranches="" totalbranches="" content="    private TreeNodeIndex _nodeIndex = new();" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // UI State" />
+      <LineAnalysis line="21" visits="53" coverage="Covered" coveredbranches="" totalbranches="" content="    private readonly HashSet&lt;Guid&gt; _expandedNodeIds = new();" />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private Guid? _selectedNodeId;" />
+      <LineAnalysis line="23" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private Guid? _pendingSelectionId;" />
+      <LineAnalysis line="24" visits="53" coverage="Covered" coveredbranches="" totalbranches="" content="    private string _searchQuery = string.Empty;" />
+      <LineAnalysis line="25" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="26" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public TreeUiState(ILocalStorageService localStorage, ILogger logger)" />
+      <LineAnalysis line="27" visits="53" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="28" visits="53" coverage="Covered" coveredbranches="" totalbranches="" content="        _localStorage = localStorage;" />
+      <LineAnalysis line="29" visits="53" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger = logger;" />
+      <LineAnalysis line="30" visits="53" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // ============================================" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // State Properties" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // ============================================" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="36" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="37" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Gets the currently selected node ID." />
+      <LineAnalysis line="38" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="39" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="    public Guid? SelectedNodeId =&gt; _selectedNodeId;" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="41" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="42" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Gets the current search query." />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="44" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    public string SearchQuery =&gt; _searchQuery;" />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="47" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Gets whether a search filter is currently active." />
+      <LineAnalysis line="48" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="49" visits="25" coverage="Covered" coveredbranches="" totalbranches="" content="    public bool IsSearchActive =&gt; !string.IsNullOrWhiteSpace(_searchQuery);" />
+      <LineAnalysis line="50" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="51" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="52" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Gets the pending selection ID (for selection before tree is initialized)." />
+      <LineAnalysis line="53" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="54" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    public Guid? PendingSelectionId =&gt; _pendingSelectionId;" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="56" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="57" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Gets the set of expanded node IDs." />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="59" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="    public IReadOnlySet&lt;Guid&gt; ExpandedNodeIds =&gt; _expandedNodeIds;" />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // ============================================" />
+      <LineAnalysis line="62" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Initialization" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // ============================================" />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Sets the node index reference. Called after tree is built." />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void SetNodeIndex(TreeNodeIndex nodeIndex)" />
+      <LineAnalysis line="69" visits="53" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="70" visits="53" coverage="Covered" coveredbranches="" totalbranches="" content="        _nodeIndex = nodeIndex;" />
+      <LineAnalysis line="71" visits="53" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Resets UI state (called before tree rebuild)." />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="76" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void Reset()" />
+      <LineAnalysis line="77" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="78" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        _expandedNodeIds.Clear();" />
+      <LineAnalysis line="79" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        _selectedNodeId = null;" />
+      <LineAnalysis line="80" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        _searchQuery = string.Empty;" />
+      <LineAnalysis line="81" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="83" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="84" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Clears the pending selection." />
+      <LineAnalysis line="85" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="86" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void ClearPendingSelection()" />
+      <LineAnalysis line="87" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="88" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        _pendingSelectionId = null;" />
+      <LineAnalysis line="89" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="90" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="91" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="92" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Checks if there's a pending selection and returns it, clearing the pending state." />
+      <LineAnalysis line="93" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public Guid? ConsumePendingSelection()" />
+      <LineAnalysis line="95" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="96" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="        var pending = _pendingSelectionId;" />
+      <LineAnalysis line="97" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="        _pendingSelectionId = null;" />
+      <LineAnalysis line="98" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="        return pending;" />
+      <LineAnalysis line="99" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="100" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="101" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // ============================================" />
+      <LineAnalysis line="102" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Node Operations" />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // ============================================" />
+      <LineAnalysis line="104" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Expands a node to show its children." />
+      <LineAnalysis line="107" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="108" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;returns&gt;True if the node was found and expanded.&lt;/returns&gt;" />
+      <LineAnalysis line="109" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool ExpandNode(Guid nodeId)" />
+      <LineAnalysis line="110" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="111" visits="14" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (_nodeIndex.TryGetNode(nodeId, out var node) &amp;&amp; node != null)" />
+      <LineAnalysis line="112" visits="13" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="113" visits="13" coverage="Covered" coveredbranches="" totalbranches="" content="            node.IsExpanded = true;" />
+      <LineAnalysis line="114" visits="13" coverage="Covered" coveredbranches="" totalbranches="" content="            _expandedNodeIds.Add(nodeId);" />
+      <LineAnalysis line="115" visits="13" coverage="Covered" coveredbranches="" totalbranches="" content="            _ = SaveExpandedStateAsync();" />
+      <LineAnalysis line="116" visits="13" coverage="Covered" coveredbranches="" totalbranches="" content="            return true;" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="118" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        return false;" />
+      <LineAnalysis line="119" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="120" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="121" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="122" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Collapses a node to hide its children." />
+      <LineAnalysis line="123" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="124" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;returns&gt;True if the node was found and collapsed.&lt;/returns&gt;" />
+      <LineAnalysis line="125" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool CollapseNode(Guid nodeId)" />
+      <LineAnalysis line="126" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="127" visits="5" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (_nodeIndex.TryGetNode(nodeId, out var node) &amp;&amp; node != null)" />
+      <LineAnalysis line="128" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="129" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            node.IsExpanded = false;" />
+      <LineAnalysis line="130" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            _expandedNodeIds.Remove(nodeId);" />
+      <LineAnalysis line="131" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            _ = SaveExpandedStateAsync();" />
+      <LineAnalysis line="132" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            return true;" />
+      <LineAnalysis line="133" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="134" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        return false;" />
+      <LineAnalysis line="135" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="136" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="137" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="138" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Toggles a node's expanded state." />
+      <LineAnalysis line="139" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="140" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;returns&gt;True if the node was found and toggled.&lt;/returns&gt;" />
+      <LineAnalysis line="141" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool ToggleNode(Guid nodeId)" />
+      <LineAnalysis line="142" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="143" visits="6" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (_nodeIndex.TryGetNode(nodeId, out var node) &amp;&amp; node != null)" />
+      <LineAnalysis line="144" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="145" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="            if (node.IsExpanded)" />
+      <LineAnalysis line="146" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                return CollapseNode(nodeId);" />
+      <LineAnalysis line="147" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            else" />
+      <LineAnalysis line="148" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="                return ExpandNode(nodeId);" />
+      <LineAnalysis line="149" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="150" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        return false;" />
+      <LineAnalysis line="151" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="152" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="153" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="154" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Selects a node. For virtual groups, toggles expansion instead." />
+      <LineAnalysis line="155" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="156" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;returns&gt;True if selection changed or node was toggled.&lt;/returns&gt;" />
+      <LineAnalysis line="157" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool SelectNode(Guid nodeId)" />
+      <LineAnalysis line="158" visits="21" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="159" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Deselect previous" />
+      <LineAnalysis line="160" visits="21" coverage="Covered" coveredbranches="6" totalbranches="6" content="        if (_selectedNodeId.HasValue &amp;&amp; _nodeIndex.TryGetNode(_selectedNodeId.Value, out var previousNode) &amp;&amp; previousNode != null)" />
+      <LineAnalysis line="161" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="162" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="            previousNode.IsSelected = false;" />
+      <LineAnalysis line="163" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="164" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="165" visits="21" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (_nodeIndex.TryGetNode(nodeId, out var node) &amp;&amp; node != null)" />
+      <LineAnalysis line="166" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="167" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Selectable node types: Article, World, Campaign, Arc, Session" />
+      <LineAnalysis line="168" visits="18" coverage="Covered" coveredbranches="10" totalbranches="10" content="            if (node.NodeType == TreeNodeType.Article ||" />
+      <LineAnalysis line="169" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="                node.NodeType == TreeNodeType.World ||" />
+      <LineAnalysis line="170" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="                node.NodeType == TreeNodeType.Campaign ||" />
+      <LineAnalysis line="171" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="                node.NodeType == TreeNodeType.Arc ||" />
+      <LineAnalysis line="172" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="                node.NodeType == TreeNodeType.Session)" />
+      <LineAnalysis line="173" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="174" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="                node.IsSelected = true;" />
+      <LineAnalysis line="175" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="                _selectedNodeId = nodeId;" />
+      <LineAnalysis line="176" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="177" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                // Auto-expand if node has children" />
+      <LineAnalysis line="178" visits="17" coverage="Covered" coveredbranches="4" totalbranches="4" content="                if (node.HasChildren &amp;&amp; !node.IsExpanded)" />
+      <LineAnalysis line="179" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="180" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="                    node.IsExpanded = true;" />
+      <LineAnalysis line="181" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="                    _expandedNodeIds.Add(nodeId);" />
+      <LineAnalysis line="182" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="                    _ = SaveExpandedStateAsync();" />
+      <LineAnalysis line="183" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="184" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="                return true;" />
+      <LineAnalysis line="185" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="186" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            else" />
+      <LineAnalysis line="187" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="188" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                // For virtual groups, just toggle expand" />
+      <LineAnalysis line="189" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                ToggleNode(nodeId);" />
+      <LineAnalysis line="190" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                _selectedNodeId = null;" />
+      <LineAnalysis line="191" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                return true;" />
+      <LineAnalysis line="192" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="193" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="194" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        else" />
+      <LineAnalysis line="195" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="196" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            _selectedNodeId = null;" />
+      <LineAnalysis line="197" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            return false;" />
+      <LineAnalysis line="198" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="199" visits="21" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="200" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="201" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="202" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Expands the path to a node, collapses nodes not in the path, and selects the target." />
+      <LineAnalysis line="203" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// If tree is not initialized, stores as pending selection." />
+      <LineAnalysis line="204" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="205" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;param name=&quot;nodeId&quot;&gt;The node to navigate to.&lt;/param&gt;" />
+      <LineAnalysis line="206" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;param name=&quot;isInitialized&quot;&gt;Whether the tree is initialized.&lt;/param&gt;" />
+      <LineAnalysis line="207" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;returns&gt;True if the operation was performed, false if deferred as pending.&lt;/returns&gt;" />
+      <LineAnalysis line="208" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool ExpandPathToAndSelect(Guid nodeId, bool isInitialized)" />
+      <LineAnalysis line="209" visits="13" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="210" visits="13" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!isInitialized)" />
+      <LineAnalysis line="211" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="212" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            _pendingSelectionId = nodeId;" />
+      <LineAnalysis line="213" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            _selectedNodeId = nodeId;" />
+      <LineAnalysis line="214" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            return false;" />
+      <LineAnalysis line="215" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="216" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="217" visits="9" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (!_nodeIndex.TryGetNode(nodeId, out var targetNode) || targetNode == null)" />
+      <LineAnalysis line="218" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="219" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Some content (e.g., tutorial/system articles) is intentionally excluded" />
+      <LineAnalysis line="220" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // from the navigation tree but still needs to be loadable in the editor." />
+      <LineAnalysis line="221" visits="3" coverage="Covered" coveredbranches="6" totalbranches="6" content="            if (_selectedNodeId.HasValue &amp;&amp;" />
+      <LineAnalysis line="222" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="                _nodeIndex.TryGetNode(_selectedNodeId.Value, out var previousNode) &amp;&amp;" />
+      <LineAnalysis line="223" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="                previousNode != null)" />
+      <LineAnalysis line="224" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="225" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                previousNode.IsSelected = false;" />
+      <LineAnalysis line="226" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="227" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="228" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            _selectedNodeId = nodeId;" />
+      <LineAnalysis line="229" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            _logger.LogInformation(&quot;ExpandPathToAndSelect: Node {NodeId} not found in tree; selected directly&quot;, nodeId);" />
+      <LineAnalysis line="230" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            return false;" />
+      <LineAnalysis line="231" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="232" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="233" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Build path from root to target" />
+      <LineAnalysis line="234" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        var path = BuildPathToNode(targetNode);" />
+      <LineAnalysis line="235" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        var pathNodeIds = new HashSet&lt;Guid&gt;(path.Select(n =&gt; n.Id));" />
+      <LineAnalysis line="236" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="237" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Collapse all nodes that are NOT in the path to the target" />
+      <LineAnalysis line="238" visits="72" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (var node in _nodeIndex.AllNodes)" />
+      <LineAnalysis line="239" visits="27" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="240" visits="27" coverage="Covered" coveredbranches="4" totalbranches="4" content="            if (node.IsExpanded &amp;&amp; !pathNodeIds.Contains(node.Id))" />
+      <LineAnalysis line="241" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="242" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                node.IsExpanded = false;" />
+      <LineAnalysis line="243" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                _expandedNodeIds.Remove(node.Id);" />
+      <LineAnalysis line="244" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="245" visits="27" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="246" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="247" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Expand all ancestors in the path (except the target itself)" />
+      <LineAnalysis line="248" visits="20" coverage="Covered" coveredbranches="2" totalbranches="2" content="        for (int i = 0; i &lt; path.Count - 1; i++)" />
+      <LineAnalysis line="249" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="250" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            var node = path[i];" />
+      <LineAnalysis line="251" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            node.IsExpanded = true;" />
+      <LineAnalysis line="252" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            _expandedNodeIds.Add(node.Id);" />
+      <LineAnalysis line="253" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="254" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="255" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Select the target" />
+      <LineAnalysis line="256" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        SelectNode(nodeId);" />
+      <LineAnalysis line="257" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="258" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        _ = SaveExpandedStateAsync();" />
+      <LineAnalysis line="259" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        return true;" />
+      <LineAnalysis line="260" visits="13" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="261" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="262" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="263" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Builds the path from root to the given node." />
+      <LineAnalysis line="264" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="265" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private List&lt;TreeNode&gt; BuildPathToNode(TreeNode targetNode)" />
+      <LineAnalysis line="266" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="267" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        var path = new List&lt;TreeNode&gt;();" />
+      <LineAnalysis line="268" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        var current = targetNode;" />
+      <LineAnalysis line="269" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        var visitedNodes = new HashSet&lt;TreeNode&gt;();" />
+      <LineAnalysis line="270" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="271" visits="16" coverage="Covered" coveredbranches="2" totalbranches="2" content="        while (current != null)" />
+      <LineAnalysis line="272" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="273" visits="11" coverage="Covered" coveredbranches="2" totalbranches="2" content="            if (!visitedNodes.Add(current))" />
+      <LineAnalysis line="274" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="275" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                _logger.LogWarning(" />
+      <LineAnalysis line="276" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                    &quot;Detected cycle while building tree path for node {NodeId}. This can happen when legacy Session and Article nodes share an ID.&quot;," />
+      <LineAnalysis line="277" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                    targetNode.Id);" />
+      <LineAnalysis line="278" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                break;" />
+      <LineAnalysis line="279" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="280" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="281" visits="10" coverage="Covered" coveredbranches="" totalbranches="" content="            path.Insert(0, current);" />
+      <LineAnalysis line="282" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="283" visits="10" coverage="Covered" coveredbranches="" totalbranches="" content="            TreeNode? next = null;" />
+      <LineAnalysis line="284" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="285" visits="10" coverage="Covered" coveredbranches="8" totalbranches="8" content="            if (current.ParentId.HasValue &amp;&amp;" />
+      <LineAnalysis line="286" visits="10" coverage="Covered" coveredbranches="" totalbranches="" content="                _nodeIndex.TryGetNode(current.ParentId.Value, out var parent) &amp;&amp;" />
+      <LineAnalysis line="287" visits="10" coverage="Covered" coveredbranches="" totalbranches="" content="                parent != null &amp;&amp;" />
+      <LineAnalysis line="288" visits="10" coverage="Covered" coveredbranches="" totalbranches="" content="                !ReferenceEquals(parent, current))" />
+      <LineAnalysis line="289" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="290" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="                next = parent;" />
+      <LineAnalysis line="291" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="292" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="293" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Duplicate IDs (legacy Session article + Session entity) can cause the index lookup" />
+      <LineAnalysis line="294" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // to return the current node instead of its structural parent. Fall back to tree traversal." />
+      <LineAnalysis line="295" visits="10" coverage="Covered" coveredbranches="2" totalbranches="2" content="            next ??= _nodeIndex.FindParentNode(current);" />
+      <LineAnalysis line="296" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="297" visits="10" coverage="Covered" coveredbranches="" totalbranches="" content="            current = next;" />
+      <LineAnalysis line="298" visits="10" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="299" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="300" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        return path;" />
+      <LineAnalysis line="301" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="302" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="303" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="304" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Clears the current selection." />
+      <LineAnalysis line="305" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="306" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void ClearSelection()" />
+      <LineAnalysis line="307" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="308" visits="3" coverage="Covered" coveredbranches="6" totalbranches="6" content="        if (_selectedNodeId.HasValue &amp;&amp; _nodeIndex.TryGetNode(_selectedNodeId.Value, out var node) &amp;&amp; node != null)" />
+      <LineAnalysis line="309" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="310" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            node.IsSelected = false;" />
+      <LineAnalysis line="311" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="312" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        _selectedNodeId = null;" />
+      <LineAnalysis line="313" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="314" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="315" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // ============================================" />
+      <LineAnalysis line="316" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Search/Filter" />
+      <LineAnalysis line="317" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // ============================================" />
+      <LineAnalysis line="318" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="319" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="320" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Sets the search query and filters the tree." />
+      <LineAnalysis line="321" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="322" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void SetSearchQuery(string query)" />
+      <LineAnalysis line="323" visits="13" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="324" visits="13" coverage="Covered" coveredbranches="4" totalbranches="4" content="        _searchQuery = query?.Trim() ?? string.Empty;" />
+      <LineAnalysis line="325" visits="13" coverage="Covered" coveredbranches="" totalbranches="" content="        ApplySearchFilter();" />
+      <LineAnalysis line="326" visits="13" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="327" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="328" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="329" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Clears the search filter and makes all nodes visible." />
+      <LineAnalysis line="330" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="331" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void ClearSearch()" />
+      <LineAnalysis line="332" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="333" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        _searchQuery = string.Empty;" />
+      <LineAnalysis line="334" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="335" visits="34" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (var node in _nodeIndex.AllNodes)" />
+      <LineAnalysis line="336" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="337" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="            node.IsVisible = true;" />
+      <LineAnalysis line="338" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="339" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="340" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="341" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="342" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Applies the current search filter to the tree." />
+      <LineAnalysis line="343" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="344" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void ApplySearchFilter()" />
+      <LineAnalysis line="345" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="346" visits="14" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!IsSearchActive)" />
+      <LineAnalysis line="347" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="348" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            ClearSearch();" />
+      <LineAnalysis line="349" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="350" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="351" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="352" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="        var searchLower = _searchQuery.ToLowerInvariant();" />
+      <LineAnalysis line="353" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="        var matchingNodeIds = new HashSet&lt;Guid&gt;();" />
+      <LineAnalysis line="354" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="355" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Find all matching nodes (articles + sessions)" />
+      <LineAnalysis line="356" visits="106" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (var node in _nodeIndex.AllNodes)" />
+      <LineAnalysis line="357" visits="35" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="358" visits="35" coverage="Covered" coveredbranches="6" totalbranches="6" content="            if ((node.NodeType == TreeNodeType.Article || node.NodeType == TreeNodeType.Session) &amp;&amp;" />
+      <LineAnalysis line="359" visits="35" coverage="Covered" coveredbranches="" totalbranches="" content="                node.Title.Contains(searchLower, StringComparison.OrdinalIgnoreCase))" />
+      <LineAnalysis line="360" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="361" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="                AddNodeAndAncestors(node, matchingNodeIds);" />
+      <LineAnalysis line="362" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="363" visits="35" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="364" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="365" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Set visibility" />
+      <LineAnalysis line="366" visits="106" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (var node in _nodeIndex.AllNodes)" />
+      <LineAnalysis line="367" visits="35" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="368" visits="35" coverage="Covered" coveredbranches="" totalbranches="" content="            node.IsVisible = matchingNodeIds.Contains(node.Id);" />
+      <LineAnalysis line="369" visits="35" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="370" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="371" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Expand nodes that have visible children" />
+      <LineAnalysis line="372" visits="106" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (var node in _nodeIndex.AllNodes)" />
+      <LineAnalysis line="373" visits="35" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="374" visits="35" coverage="Covered" coveredbranches="2" totalbranches="2" content="            if (!matchingNodeIds.Contains(node.Id))" />
+      <LineAnalysis line="375" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="376" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="                continue;" />
+      <LineAnalysis line="377" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="378" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="379" visits="18" coverage="Covered" coveredbranches="2" totalbranches="2" content="            if (node.Children.Any(c =&gt; c.IsVisible))" />
+      <LineAnalysis line="380" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="381" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="                node.IsExpanded = true;" />
+      <LineAnalysis line="382" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="                _expandedNodeIds.Add(node.Id);" />
+      <LineAnalysis line="383" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="384" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="385" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="386" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="387" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="388" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Recursively adds a node and all its ancestors to the set." />
+      <LineAnalysis line="389" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="390" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private void AddNodeAndAncestors(TreeNode node, HashSet&lt;Guid&gt; set)" />
+      <LineAnalysis line="391" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="392" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="        set.Add(node.Id);" />
+      <LineAnalysis line="393" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="394" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Add direct parent" />
+      <LineAnalysis line="395" visits="18" coverage="Covered" coveredbranches="6" totalbranches="6" content="        if (node.ParentId.HasValue &amp;&amp; _nodeIndex.TryGetNode(node.ParentId.Value, out var parent) &amp;&amp; parent != null)" />
+      <LineAnalysis line="396" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="397" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            AddNodeAndAncestors(parent, set);" />
+      <LineAnalysis line="398" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="399" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="400" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Also find the containing node (for virtual groups, etc.)" />
+      <LineAnalysis line="401" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="        var container = _nodeIndex.FindParentNode(node);" />
+      <LineAnalysis line="402" visits="18" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (container != null &amp;&amp; !set.Contains(container.Id))" />
+      <LineAnalysis line="403" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="404" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="            AddNodeAndAncestors(container, set);" />
+      <LineAnalysis line="405" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="406" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="407" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="408" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // ============================================" />
+      <LineAnalysis line="409" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Persistence" />
+      <LineAnalysis line="410" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // ============================================" />
+      <LineAnalysis line="411" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="412" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="413" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Gets the IDs of all currently expanded nodes." />
+      <LineAnalysis line="414" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="415" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    public IReadOnlySet&lt;Guid&gt; GetExpandedNodeIds() =&gt; _expandedNodeIds;" />
+      <LineAnalysis line="416" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="417" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="418" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Restores expanded state from a set of node IDs." />
+      <LineAnalysis line="419" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="420" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void RestoreExpandedNodes(IEnumerable&lt;Guid&gt; nodeIds)" />
+      <LineAnalysis line="421" visits="16" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="422" visits="16" coverage="Covered" coveredbranches="" totalbranches="" content="        _expandedNodeIds.Clear();" />
+      <LineAnalysis line="423" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="424" visits="56" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (var nodeId in nodeIds)" />
+      <LineAnalysis line="425" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="426" visits="4" coverage="Covered" coveredbranches="4" totalbranches="4" content="            if (_nodeIndex.TryGetNode(nodeId, out var node) &amp;&amp; node != null)" />
+      <LineAnalysis line="427" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="428" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="                node.IsExpanded = true;" />
+      <LineAnalysis line="429" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="                _expandedNodeIds.Add(nodeId);" />
+      <LineAnalysis line="430" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="431" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="432" visits="16" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="433" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="434" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="435" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Restores expanded state from a previously saved set, preserving additional expanded nodes." />
+      <LineAnalysis line="436" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Used during refresh to maintain state." />
+      <LineAnalysis line="437" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="438" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void RestoreExpandedNodesPreserving(IEnumerable&lt;Guid&gt; nodeIds)" />
+      <LineAnalysis line="439" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="440" visits="26" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (var nodeId in nodeIds)" />
+      <LineAnalysis line="441" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="442" visits="4" coverage="Covered" coveredbranches="4" totalbranches="4" content="            if (_nodeIndex.TryGetNode(nodeId, out var node) &amp;&amp; node != null)" />
+      <LineAnalysis line="443" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="444" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="                node.IsExpanded = true;" />
+      <LineAnalysis line="445" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="                _expandedNodeIds.Add(nodeId);" />
+      <LineAnalysis line="446" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="447" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="448" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="449" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="450" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="451" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Saves the current expanded state to localStorage." />
+      <LineAnalysis line="452" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="453" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task SaveExpandedStateAsync()" />
+      <LineAnalysis line="454" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="455" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="456" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="457" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await _localStorage.SetItemAsync(ExpandedNodesStorageKey, _expandedNodeIds.ToList());" />
+      <LineAnalysis line="458" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="459" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="460" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="461" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogWarning(ex, &quot;Failed to save expanded state&quot;);" />
+      <LineAnalysis line="462" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="463" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="464" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="465" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="466" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Restores expanded state from localStorage." />
+      <LineAnalysis line="467" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="468" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task RestoreExpandedStateFromStorageAsync()" />
+      <LineAnalysis line="469" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="470" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="471" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="472" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var savedIds = await _localStorage.GetItemAsync&lt;List&lt;Guid&gt;&gt;(ExpandedNodesStorageKey);" />
+      <LineAnalysis line="473" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="474" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (savedIds != null)" />
+      <LineAnalysis line="475" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="476" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                RestoreExpandedNodes(savedIds);" />
+      <LineAnalysis line="477" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="478" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="479" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="480" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="481" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogWarning(ex, &quot;Failed to restore expanded state&quot;);" />
+      <LineAnalysis line="482" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="483" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="484" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="485" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="486" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Gets the localStorage key used for expanded nodes persistence." />
+      <LineAnalysis line="487" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Exposed for testing purposes." />
+      <LineAnalysis line="488" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="489" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    public static string GetExpandedNodesStorageKey() =&gt; ExpandedNodesStorageKey;" />
+      <LineAnalysis line="490" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

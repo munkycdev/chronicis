@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Api.Services.ExportService">
+  <Summary>
+    <Class>Chronicis.Api.Services.ExportService</Class>
+    <Assembly>Chronicis.Api</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Services\ExportService.cs</File>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Services\ExportService.MarkdownBuilders.cs</File>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Services\ExportService.Utilities.cs</File>
+    </Files>
+    <Coveredlines>157</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>157</Coverablelines>
+    <Totallines>410</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>40</Coveredbranches>
+    <Totalbranches>40</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>10</Coveredmethods>
+    <Fullcoveredmethods>10</Fullcoveredmethods>
+    <Totalmethods>10</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="ctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="BuildArticleMarkdown">
+      <CrapScore>10</CrapScore>
+      <Cyclomaticcomplexity>10</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="AppendAISummary">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="BuildCampaignMarkdown">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="BuildSessionMarkdown">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="AppendSessionAiSummary">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="BuildArcMarkdown">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="SanitizeFileName">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GetUniqueSiblingName">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="EscapeYaml">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Services\ExportService.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.IO.Compression;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Api.Data;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Enums;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Models;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Microsoft.EntityFrameworkCore;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Services;" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Service for exporting world data to downloadable archives" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public partial class ExportService : IExportService" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ChronicisDbContext _db;" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IWorldMembershipService _membershipService;" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILogger&lt;ExportService&gt; _logger;" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public ExportService(" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ChronicisDbContext db," />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IWorldMembershipService membershipService," />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ILogger&lt;ExportService&gt; logger)" />
+      <LineAnalysis line="22" visits="21" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="23" visits="21" coverage="Covered" coveredbranches="" totalbranches="" content="        _db = db;" />
+      <LineAnalysis line="24" visits="21" coverage="Covered" coveredbranches="" totalbranches="" content="        _membershipService = membershipService;" />
+      <LineAnalysis line="25" visits="21" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger = logger;" />
+      <LineAnalysis line="26" visits="21" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="27" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="28" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task&lt;byte[]?&gt; ExportWorldToMarkdownAsync(Guid worldId, Guid userId)" />
+      <LineAnalysis line="29" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Verify user has access to the world" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!await _membershipService.UserHasAccessAsync(worldId, userId))" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogWarning(&quot;User {UserId} attempted to export world {WorldId} without access&quot;, userId, worldId);" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return null;" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="36" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="37" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var world = await _db.Worlds" />
+      <LineAnalysis line="38" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AsNoTracking()" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .FirstOrDefaultAsync(w =&gt; w.Id == worldId);" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="41" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (world == null)" />
+      <LineAnalysis line="42" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogWarning(&quot;World {WorldId} not found for export&quot;, worldId);" />
+      <LineAnalysis line="44" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return null;" />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="47" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Starting export of world {WorldId} ({WorldName}) for user {UserId}&quot;," />
+      <LineAnalysis line="48" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            worldId, world.Name, userId);" />
+      <LineAnalysis line="49" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="50" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Get all articles for this world with their hierarchy info" />
+      <LineAnalysis line="51" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var articles = await _db.Articles" />
+      <LineAnalysis line="52" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AsNoTracking()" />
+      <LineAnalysis line="53" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Where(a =&gt; a.WorldId == worldId)" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .OrderBy(a =&gt; a.Title)" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ToListAsync();" />
+      <LineAnalysis line="56" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="57" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Get campaigns and arcs for building folder structure" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var campaigns = await _db.Campaigns" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AsNoTracking()" />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Where(c =&gt; c.WorldId == worldId)" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ToListAsync();" />
+      <LineAnalysis line="62" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var arcs = await _db.Arcs" />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AsNoTracking()" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Where(a =&gt; campaigns.Select(c =&gt; c.Id).Contains(a.CampaignId))" />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ToListAsync();" />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var arcIds = arcs.Select(a =&gt; a.Id).ToList();" />
+      <LineAnalysis line="69" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var sessionEntities = await _db.Sessions" />
+      <LineAnalysis line="70" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .AsNoTracking()" />
+      <LineAnalysis line="71" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Where(s =&gt; arcIds.Contains(s.ArcId))" />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ToListAsync();" />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Build the zip archive" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        using var memoryStream = new MemoryStream();" />
+      <LineAnalysis line="76" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))" />
+      <LineAnalysis line="77" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var worldFolderName = SanitizeFileName(world.Name);" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="80" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Export wiki articles (hierarchical)" />
+      <LineAnalysis line="81" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var wikiArticles = articles.Where(a =&gt; a.Type == ArticleType.WikiArticle || a.Type == ArticleType.Legacy).ToList();" />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await ExportArticleHierarchy(archive, wikiArticles, $&quot;{worldFolderName}/Wiki&quot;, null);" />
+      <LineAnalysis line="83" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="84" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Export characters" />
+      <LineAnalysis line="85" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var characters = articles.Where(a =&gt; a.Type == ArticleType.Character).ToList();" />
+      <LineAnalysis line="86" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await ExportArticleHierarchy(archive, characters, $&quot;{worldFolderName}/Characters&quot;, null);" />
+      <LineAnalysis line="87" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="88" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Export campaigns with their sessions" />
+      <LineAnalysis line="89" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var usedCampaignNames = new HashSet&lt;string&gt;(StringComparer.OrdinalIgnoreCase);" />
+      <LineAnalysis line="90" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            foreach (var campaign in campaigns)" />
+      <LineAnalysis line="91" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="92" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var campaignFolderName = GetUniqueSiblingName(campaign.Name, usedCampaignNames);" />
+      <LineAnalysis line="93" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var campaignFolder = $&quot;{worldFolderName}/Campaigns/{campaignFolderName}&quot;;" />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="95" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                // Campaign info file" />
+      <LineAnalysis line="96" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var campaignContent = BuildCampaignMarkdown(campaign);" />
+      <LineAnalysis line="97" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                await AddFileToArchive(archive, $&quot;{campaignFolder}/{campaignFolderName}.md&quot;, campaignContent);" />
+      <LineAnalysis line="98" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="99" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                // Export arcs and sessions" />
+      <LineAnalysis line="100" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var campaignArcs = arcs.Where(a =&gt; a.CampaignId == campaign.Id).OrderBy(a =&gt; a.SortOrder).ToList();" />
+      <LineAnalysis line="101" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var usedArcNames = new HashSet&lt;string&gt;(StringComparer.OrdinalIgnoreCase);" />
+      <LineAnalysis line="102" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                foreach (var arc in campaignArcs)" />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="104" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    var arcFolderName = GetUniqueSiblingName(arc.Name, usedArcNames);" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    var arcFolder = $&quot;{campaignFolder}/{arcFolderName}&quot;;" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="107" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    // Arc info file" />
+      <LineAnalysis line="108" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    var arcContent = BuildArcMarkdown(arc);" />
+      <LineAnalysis line="109" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    await AddFileToArchive(archive, $&quot;{arcFolder}/{arcFolderName}.md&quot;, arcContent);" />
+      <LineAnalysis line="110" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="111" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    // Session entities in this arc" />
+      <LineAnalysis line="112" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    var arcSessions = sessionEntities" />
+      <LineAnalysis line="113" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        .Where(s =&gt; s.ArcId == arc.Id)" />
+      <LineAnalysis line="114" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        .OrderBy(s =&gt; s.SessionDate ?? s.CreatedAt)" />
+      <LineAnalysis line="115" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        .ThenBy(s =&gt; s.Name)" />
+      <LineAnalysis line="116" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        .ToList();" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="118" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    var usedSessionFolderNames = new HashSet&lt;string&gt;(StringComparer.OrdinalIgnoreCase);" />
+      <LineAnalysis line="119" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    foreach (var session in arcSessions)" />
+      <LineAnalysis line="120" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    {" />
+      <LineAnalysis line="121" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        var sessionFolderName = GetUniqueSiblingName(session.Name, usedSessionFolderNames);" />
+      <LineAnalysis line="122" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        var sessionContent = BuildSessionMarkdown(session);" />
+      <LineAnalysis line="123" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        await AddFileToArchive(archive, $&quot;{arcFolder}/{sessionFolderName}/{sessionFolderName}.md&quot;, sessionContent);" />
+      <LineAnalysis line="124" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="125" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        // Session notes attached via Article.SessionId" />
+      <LineAnalysis line="126" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        var sessionNotes = articles" />
+      <LineAnalysis line="127" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                            .Where(a =&gt; a.SessionId == session.Id &amp;&amp; a.Type == ArticleType.SessionNote)" />
+      <LineAnalysis line="128" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                            .OrderBy(a =&gt; a.CreatedAt)" />
+      <LineAnalysis line="129" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                            .ThenBy(a =&gt; a.Title)" />
+      <LineAnalysis line="130" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                            .ToList();" />
+      <LineAnalysis line="131" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="132" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        var usedSessionNoteNames = new HashSet&lt;string&gt;(StringComparer.OrdinalIgnoreCase);" />
+      <LineAnalysis line="133" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        foreach (var note in sessionNotes)" />
+      <LineAnalysis line="134" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        {" />
+      <LineAnalysis line="135" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                            var noteContent = BuildArticleMarkdown(note);" />
+      <LineAnalysis line="136" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                            var noteFileName = GetUniqueSiblingName(note.Title, usedSessionNoteNames);" />
+      <LineAnalysis line="137" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                            await AddFileToArchive(archive, $&quot;{arcFolder}/{sessionFolderName}/{noteFileName}.md&quot;, noteContent);" />
+      <LineAnalysis line="138" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        }" />
+      <LineAnalysis line="139" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    }" />
+      <LineAnalysis line="140" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="141" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="142" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="143" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="144" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        memoryStream.Position = 0;" />
+      <LineAnalysis line="145" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var result = memoryStream.ToArray();" />
+      <LineAnalysis line="146" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="147" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _logger.LogDebug(&quot;Export completed for world {WorldId}. Archive size: {Size} bytes&quot;," />
+      <LineAnalysis line="148" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            worldId, result.Length);" />
+      <LineAnalysis line="149" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="150" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        return result;" />
+      <LineAnalysis line="151" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="152" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="153" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task ExportArticleHierarchy(" />
+      <LineAnalysis line="154" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ZipArchive archive," />
+      <LineAnalysis line="155" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        List&lt;Article&gt; articles," />
+      <LineAnalysis line="156" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        string basePath," />
+      <LineAnalysis line="157" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Guid? parentId)" />
+      <LineAnalysis line="158" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="159" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var children = articles.Where(a =&gt; a.ParentId == parentId).OrderBy(a =&gt; a.Title).ToList();" />
+      <LineAnalysis line="160" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var usedSiblingNames = new HashSet&lt;string&gt;(StringComparer.OrdinalIgnoreCase);" />
+      <LineAnalysis line="161" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="162" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        foreach (var article in children)" />
+      <LineAnalysis line="163" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="164" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var articleFileName = GetUniqueSiblingName(article.Title, usedSiblingNames);" />
+      <LineAnalysis line="165" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var hasChildren = articles.Any(a =&gt; a.ParentId == article.Id);" />
+      <LineAnalysis line="166" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="167" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (hasChildren)" />
+      <LineAnalysis line="168" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="169" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                // Article with children: ArticleName/ArticleName.md" />
+      <LineAnalysis line="170" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var articleFolder = $&quot;{basePath}/{articleFileName}&quot;;" />
+      <LineAnalysis line="171" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var content = BuildArticleMarkdown(article);" />
+      <LineAnalysis line="172" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                await AddFileToArchive(archive, $&quot;{articleFolder}/{articleFileName}.md&quot;, content);" />
+      <LineAnalysis line="173" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="174" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                // Recursively export children" />
+      <LineAnalysis line="175" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                await ExportArticleHierarchy(archive, articles, articleFolder, article.Id);" />
+      <LineAnalysis line="176" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="177" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            else" />
+      <LineAnalysis line="178" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="179" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                // Leaf article: ArticleName.md" />
+      <LineAnalysis line="180" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var content = BuildArticleMarkdown(article);" />
+      <LineAnalysis line="181" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                await AddFileToArchive(archive, $&quot;{basePath}/{articleFileName}.md&quot;, content);" />
+      <LineAnalysis line="182" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="183" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="184" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="185" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="186" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Services\ExportService.MarkdownBuilders.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Models;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Services;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public partial class ExportService" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    internal string BuildArticleMarkdown(Article article)" />
+      <LineAnalysis line="9" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="10" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="        var sb = new StringBuilder();" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="12" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;---&quot;);" />
+      <LineAnalysis line="13" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;title: \&quot;{EscapeYaml(article.Title)}\&quot;&quot;);" />
+      <LineAnalysis line="14" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;type: {article.Type}&quot;);" />
+      <LineAnalysis line="15" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;visibility: {article.Visibility}&quot;);" />
+      <LineAnalysis line="16" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;created: {article.CreatedAt:yyyy-MM-dd HH:mm:ss}&quot;);" />
+      <LineAnalysis line="17" visits="7" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (article.ModifiedAt.HasValue)" />
+      <LineAnalysis line="18" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;modified: {article.ModifiedAt:yyyy-MM-dd HH:mm:ss}&quot;);" />
+      <LineAnalysis line="19" visits="7" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (article.SessionDate.HasValue)" />
+      <LineAnalysis line="20" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;session_date: {article.SessionDate:yyyy-MM-dd}&quot;);" />
+      <LineAnalysis line="21" visits="7" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(article.InGameDate))" />
+      <LineAnalysis line="22" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;in_game_date: \&quot;{EscapeYaml(article.InGameDate)}\&quot;&quot;);" />
+      <LineAnalysis line="23" visits="7" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(article.IconEmoji))" />
+      <LineAnalysis line="24" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;icon: \&quot;{article.IconEmoji}\&quot;&quot;);" />
+      <LineAnalysis line="25" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;---&quot;);" />
+      <LineAnalysis line="26" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="27" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="28" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;# {article.Title}&quot;);" />
+      <LineAnalysis line="29" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="31" visits="7" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(article.Body))" />
+      <LineAnalysis line="32" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="33" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine(HtmlToMarkdownConverter.Convert(article.Body));" />
+      <LineAnalysis line="34" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="36" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="        AppendAISummary(sb, article);" />
+      <LineAnalysis line="37" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="38" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="        return sb.ToString();" />
+      <LineAnalysis line="39" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="41" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private static void AppendAISummary(StringBuilder sb, Article article)" />
+      <LineAnalysis line="42" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="43" visits="7" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrEmpty(article.AISummary))" />
+      <LineAnalysis line="44" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="46" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="47" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;---&quot;);" />
+      <LineAnalysis line="48" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="49" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;## AI Summary&quot;);" />
+      <LineAnalysis line="50" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="51" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(article.AISummary);" />
+      <LineAnalysis line="52" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="53" visits="2" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (article.AISummaryGeneratedAt.HasValue)" />
+      <LineAnalysis line="54" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="55" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine();" />
+      <LineAnalysis line="56" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;*Generated: {article.AISummaryGeneratedAt:yyyy-MM-dd HH:mm:ss}*&quot;);" />
+      <LineAnalysis line="57" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="58" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    internal string BuildCampaignMarkdown(Campaign campaign)" />
+      <LineAnalysis line="61" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="62" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        var sb = new StringBuilder();" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="64" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;---&quot;);" />
+      <LineAnalysis line="65" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;title: \&quot;{EscapeYaml(campaign.Name)}\&quot;&quot;);" />
+      <LineAnalysis line="66" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;type: Campaign&quot;);" />
+      <LineAnalysis line="67" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;created: {campaign.CreatedAt:yyyy-MM-dd HH:mm:ss}&quot;);" />
+      <LineAnalysis line="68" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;---&quot;);" />
+      <LineAnalysis line="69" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="70" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;# {campaign.Name}&quot;);" />
+      <LineAnalysis line="71" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="73" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(campaign.Description))" />
+      <LineAnalysis line="74" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine(campaign.Description);" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="76" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        return sb.ToString();" />
+      <LineAnalysis line="77" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    internal string BuildSessionMarkdown(Session session)" />
+      <LineAnalysis line="80" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="81" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        var sb = new StringBuilder();" />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="83" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;---&quot;);" />
+      <LineAnalysis line="84" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;title: \&quot;{EscapeYaml(session.Name)}\&quot;&quot;);" />
+      <LineAnalysis line="85" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;type: Session&quot;);" />
+      <LineAnalysis line="86" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;created: {session.CreatedAt:yyyy-MM-dd HH:mm:ss}&quot;);" />
+      <LineAnalysis line="87" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (session.ModifiedAt.HasValue)" />
+      <LineAnalysis line="88" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="89" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;modified: {session.ModifiedAt:yyyy-MM-dd HH:mm:ss}&quot;);" />
+      <LineAnalysis line="90" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="91" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="92" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (session.SessionDate.HasValue)" />
+      <LineAnalysis line="93" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="94" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;session_date: {session.SessionDate:yyyy-MM-dd}&quot;);" />
+      <LineAnalysis line="95" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="96" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="97" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;---&quot;);" />
+      <LineAnalysis line="98" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="99" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;# {session.Name}&quot;);" />
+      <LineAnalysis line="100" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="101" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="102" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(session.PublicNotes))" />
+      <LineAnalysis line="103" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="104" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine(HtmlToMarkdownConverter.Convert(session.PublicNotes));" />
+      <LineAnalysis line="105" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="107" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        AppendSessionAiSummary(sb, session);" />
+      <LineAnalysis line="108" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="109" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        return sb.ToString();" />
+      <LineAnalysis line="110" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="111" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="112" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private static void AppendSessionAiSummary(StringBuilder sb, Session session)" />
+      <LineAnalysis line="113" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="114" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrEmpty(session.AiSummary))" />
+      <LineAnalysis line="115" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="116" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="118" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="119" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="120" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;---&quot;);" />
+      <LineAnalysis line="121" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="122" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;## AI Summary&quot;);" />
+      <LineAnalysis line="123" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="124" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(session.AiSummary);" />
+      <LineAnalysis line="125" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="126" visits="3" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (session.AiSummaryGeneratedAt.HasValue)" />
+      <LineAnalysis line="127" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="128" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine();" />
+      <LineAnalysis line="129" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;*Generated: {session.AiSummaryGeneratedAt:yyyy-MM-dd HH:mm:ss}*&quot;);" />
+      <LineAnalysis line="130" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="131" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="132" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="133" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    internal string BuildArcMarkdown(Arc arc)" />
+      <LineAnalysis line="134" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="135" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        var sb = new StringBuilder();" />
+      <LineAnalysis line="136" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="137" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;---&quot;);" />
+      <LineAnalysis line="138" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;title: \&quot;{EscapeYaml(arc.Name)}\&quot;&quot;);" />
+      <LineAnalysis line="139" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;type: Arc&quot;);" />
+      <LineAnalysis line="140" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;sort_order: {arc.SortOrder}&quot;);" />
+      <LineAnalysis line="141" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;created: {arc.CreatedAt:yyyy-MM-dd HH:mm:ss}&quot;);" />
+      <LineAnalysis line="142" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;---&quot;);" />
+      <LineAnalysis line="143" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="144" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;# {arc.Name}&quot;);" />
+      <LineAnalysis line="145" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="146" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="147" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(arc.Description))" />
+      <LineAnalysis line="148" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine(arc.Description);" />
+      <LineAnalysis line="149" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="150" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        return sb.ToString();" />
+      <LineAnalysis line="151" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="152" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Services\ExportService.Utilities.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.IO.Compression;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Services;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public partial class ExportService" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private static async Task AddFileToArchive(ZipArchive archive, string path, string content)" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var entry = archive.CreateEntry(path, CompressionLevel.Optimal);" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        using var stream = entry.Open();" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        using var writer = new StreamWriter(stream, Encoding.UTF8);" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        await writer.WriteAsync(content);" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    internal static string SanitizeFileName(string name)" />
+      <LineAnalysis line="17" visits="36" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="18" visits="36" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrWhiteSpace(name))" />
+      <LineAnalysis line="19" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            return &quot;Untitled&quot;;" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="21" visits="34" coverage="Covered" coveredbranches="" totalbranches="" content="        var invalid = Path.GetInvalidFileNameChars();" />
+      <LineAnalysis line="22" visits="34" coverage="Covered" coveredbranches="" totalbranches="" content="        var sanitized = new StringBuilder(name);" />
+      <LineAnalysis line="23" visits="2890" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (var c in invalid)" />
+      <LineAnalysis line="24" visits="1394" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="25" visits="1394" coverage="Covered" coveredbranches="" totalbranches="" content="            sanitized.Replace(c, '_');" />
+      <LineAnalysis line="26" visits="1394" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="27" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="28" visits="34" coverage="Covered" coveredbranches="" totalbranches="" content="        sanitized.Replace('/', '_');" />
+      <LineAnalysis line="29" visits="34" coverage="Covered" coveredbranches="" totalbranches="" content="        sanitized.Replace('\\', '_');" />
+      <LineAnalysis line="30" visits="34" coverage="Covered" coveredbranches="" totalbranches="" content="        sanitized.Replace(':', '_');" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="32" visits="34" coverage="Covered" coveredbranches="" totalbranches="" content="        var result = sanitized.ToString().Trim();" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="34" visits="34" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (result.Length &gt; 100)" />
+      <LineAnalysis line="35" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            result = result[..100];" />
+      <LineAnalysis line="36" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="37" visits="34" coverage="Covered" coveredbranches="" totalbranches="" content="        return result;" />
+      <LineAnalysis line="38" visits="36" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    internal static string GetUniqueSiblingName(string desiredName, ISet&lt;string&gt; usedSiblingNames)" />
+      <LineAnalysis line="41" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="42" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="        var baseName = SanitizeFileName(desiredName);" />
+      <LineAnalysis line="43" visits="15" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (usedSiblingNames.Add(baseName))" />
+      <LineAnalysis line="44" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="45" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="            return baseName;" />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="47" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="48" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        var suffix = 2;" />
+      <LineAnalysis line="49" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        while (true)" />
+      <LineAnalysis line="50" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="51" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            var candidate = $&quot;{baseName} ({suffix})&quot;;" />
+      <LineAnalysis line="52" visits="4" coverage="Covered" coveredbranches="2" totalbranches="2" content="            if (usedSiblingNames.Add(candidate))" />
+      <LineAnalysis line="53" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="54" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="                return candidate;" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="56" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="57" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            suffix++;" />
+      <LineAnalysis line="58" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="59" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    internal static string EscapeYaml(string value)" />
+      <LineAnalysis line="62" visits="25" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="63" visits="25" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrEmpty(value))" />
+      <LineAnalysis line="64" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            return value;" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="66" visits="24" coverage="Covered" coveredbranches="" totalbranches="" content="        return value" />
+      <LineAnalysis line="67" visits="24" coverage="Covered" coveredbranches="" totalbranches="" content="            .Replace(&quot;\\&quot;, &quot;\\\\&quot;)" />
+      <LineAnalysis line="68" visits="24" coverage="Covered" coveredbranches="" totalbranches="" content="            .Replace(&quot;\&quot;&quot;, &quot;\\\&quot;&quot;)" />
+      <LineAnalysis line="69" visits="24" coverage="Covered" coveredbranches="" totalbranches="" content="            .Replace(&quot;\n&quot;, &quot;\\n&quot;)" />
+      <LineAnalysis line="70" visits="24" coverage="Covered" coveredbranches="" totalbranches="" content="            .Replace(&quot;\r&quot;, &quot;&quot;);" />
+      <LineAnalysis line="71" visits="25" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

@@ -27,6 +27,7 @@ public class CampaignDto
 [ExcludeFromCodeCoverage]
 public class CampaignDetailDto : CampaignDto
 {
+    public string? PrivateNotes { get; set; }
     public List<ArcDto> Arcs { get; set; } = new();
 }
 
@@ -49,6 +50,7 @@ public class CampaignUpdateDto
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public string? PrivateNotes { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? EndedAt { get; set; }
 }

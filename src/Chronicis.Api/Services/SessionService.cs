@@ -90,8 +90,11 @@ public class SessionService : ISessionService
 
         var dto = MapDto(session);
 
-        // Server remains the source of truth for GM-only private notes visibility/editability.
-        if (membership.Role != WorldRole.GM)
+        var canViewPrivateNotes = membership.Role == WorldRole.GM
+            || session.Arc.Campaign.World.OwnerId == userId;
+
+        // Server remains the source of truth for private notes visibility.
+        if (!canViewPrivateNotes)
         {
             dto.PrivateNotes = null;
         }
@@ -226,9 +229,12 @@ public class SessionService : ISessionService
             return ServiceResult<SessionDto>.NotFound("Session not found or access denied");
         }
 
-        if (membership.Role != WorldRole.GM)
+        var canEditSession = membership.Role == WorldRole.GM
+            || session.Arc.Campaign.World.OwnerId == userId;
+
+        if (!canEditSession)
         {
-            return ServiceResult<SessionDto>.Forbidden("Only GMs can update session notes");
+            return ServiceResult<SessionDto>.Forbidden("Only the world owner or GMs can update session notes");
         }
 
         if (trimmedName != null)

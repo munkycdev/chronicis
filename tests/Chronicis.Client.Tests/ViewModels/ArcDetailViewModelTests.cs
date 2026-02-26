@@ -71,6 +71,19 @@ public class ArcDetailViewModelTests
         Name = "Test Campaign"
     };
 
+    private static WorldDetailDto MakeGmWorld(Guid worldId) => new()
+    {
+        Id = worldId,
+        Members = new List<WorldMemberDto>
+        {
+            new()
+            {
+                Email = "gm@example.com",
+                Role = WorldRole.GM
+            }
+        }
+    };
+
     private void SetupHappyPath(Sut c, ArcDto arc, CampaignDto campaign, WorldDetailDto? world = null)
     {
         world ??= new WorldDetailDto { Id = campaign.WorldId };
@@ -218,6 +231,35 @@ public class ArcDetailViewModelTests
         Assert.True(c.Vm.HasUnsavedChanges);
     }
 
+    [Fact]
+    public async Task EditPrivateNotes_WhenUserCannotManage_DoesNotSetHasUnsavedChanges()
+    {
+        var c = CreateSut();
+        var arc = MakeArc();
+        var campaign = MakeCampaign(id: arc.CampaignId);
+        SetupHappyPath(c, arc, campaign);
+        await c.Vm.LoadAsync(arc.Id);
+
+        c.Vm.EditPrivateNotes = "<p>secret</p>";
+
+        Assert.False(c.Vm.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public async Task EditPrivateNotes_WhenUserCanManage_SetsHasUnsavedChanges()
+    {
+        var c = CreateSut();
+        var arc = MakeArc();
+        var campaign = MakeCampaign(id: arc.CampaignId);
+        SetupHappyPath(c, arc, campaign, MakeGmWorld(campaign.WorldId));
+        c.AuthService.GetCurrentUserAsync().Returns(new UserInfo { Email = "gm@example.com" });
+        await c.Vm.LoadAsync(arc.Id);
+
+        c.Vm.EditPrivateNotes = "<p>secret</p>";
+
+        Assert.True(c.Vm.HasUnsavedChanges);
+    }
+
     // -----------------------------------------------------------------------
     // SaveAsync
     // -----------------------------------------------------------------------
@@ -227,7 +269,9 @@ public class ArcDetailViewModelTests
     {
         var c = CreateSut();
         var arc = MakeArc();
-        SetupHappyPath(c, arc, MakeCampaign(id: arc.CampaignId));
+        var campaign = MakeCampaign(id: arc.CampaignId);
+        SetupHappyPath(c, arc, campaign, MakeGmWorld(campaign.WorldId));
+        c.AuthService.GetCurrentUserAsync().Returns(new UserInfo { Email = "gm@example.com" });
         await c.Vm.LoadAsync(arc.Id);
         c.Vm.EditName = "Updated Arc";
 
@@ -255,7 +299,9 @@ public class ArcDetailViewModelTests
     {
         var c = CreateSut();
         var arc = MakeArc();
-        SetupHappyPath(c, arc, MakeCampaign(id: arc.CampaignId));
+        var campaign = MakeCampaign(id: arc.CampaignId);
+        SetupHappyPath(c, arc, campaign, MakeGmWorld(campaign.WorldId));
+        c.AuthService.GetCurrentUserAsync().Returns(new UserInfo { Email = "gm@example.com" });
         await c.Vm.LoadAsync(arc.Id);
 
         c.ArcApi.UpdateArcAsync(arc.Id, Arg.Any<ArcUpdateDto>())
@@ -276,7 +322,9 @@ public class ArcDetailViewModelTests
     {
         var c = CreateSut();
         var arc = MakeArc();
-        SetupHappyPath(c, arc, MakeCampaign(id: arc.CampaignId));
+        var campaign = MakeCampaign(id: arc.CampaignId);
+        SetupHappyPath(c, arc, campaign, MakeGmWorld(campaign.WorldId));
+        c.AuthService.GetCurrentUserAsync().Returns(new UserInfo { Email = "gm@example.com" });
         await c.Vm.LoadAsync(arc.Id);
 
         c.ArcApi.ActivateArcAsync(arc.Id).Returns(true);
@@ -292,7 +340,9 @@ public class ArcDetailViewModelTests
     {
         var c = CreateSut();
         var arc = MakeArc();
-        SetupHappyPath(c, arc, MakeCampaign(id: arc.CampaignId));
+        var campaign = MakeCampaign(id: arc.CampaignId);
+        SetupHappyPath(c, arc, campaign, MakeGmWorld(campaign.WorldId));
+        c.AuthService.GetCurrentUserAsync().Returns(new UserInfo { Email = "gm@example.com" });
         await c.Vm.LoadAsync(arc.Id);
 
         await c.Vm.OnActiveToggleAsync(false);
@@ -310,7 +360,9 @@ public class ArcDetailViewModelTests
     {
         var c = CreateSut();
         var arc = MakeArc();
-        SetupHappyPath(c, arc, MakeCampaign(id: arc.CampaignId));
+        var campaign = MakeCampaign(id: arc.CampaignId);
+        SetupHappyPath(c, arc, campaign, MakeGmWorld(campaign.WorldId));
+        c.AuthService.GetCurrentUserAsync().Returns(new UserInfo { Email = "gm@example.com" });
         await c.Vm.LoadAsync(arc.Id);
         c.Confirmation.ConfirmAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
             .Returns(true);
@@ -359,7 +411,9 @@ public class ArcDetailViewModelTests
     {
         var c = CreateSut();
         var arc = MakeArc();
-        SetupHappyPath(c, arc, MakeCampaign(id: arc.CampaignId));
+        var campaign = MakeCampaign(id: arc.CampaignId);
+        SetupHappyPath(c, arc, campaign, MakeGmWorld(campaign.WorldId));
+        c.AuthService.GetCurrentUserAsync().Returns(new UserInfo { Email = "gm@example.com" });
         await c.Vm.LoadAsync(arc.Id);
         c.Confirmation.ConfirmAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
             .Returns(true);

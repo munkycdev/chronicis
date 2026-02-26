@@ -1,6 +1,6 @@
+using System.Reflection;
 using Chronicis.Client.Components.Admin;
 using Chronicis.Shared.Enums;
-using System.Reflection;
 using Xunit;
 
 namespace Chronicis.Client.Tests.Components.Admin;

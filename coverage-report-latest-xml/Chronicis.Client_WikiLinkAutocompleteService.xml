@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Client.Services.WikiLinkAutocompleteService">
+  <Summary>
+    <Class>Chronicis.Client.Services.WikiLinkAutocompleteService</Class>
+    <Assembly>Chronicis.Client</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Client\Services\WikiLinkAutocompleteService.cs</File>
+    </Files>
+    <Coveredlines>62</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>62</Coverablelines>
+    <Totallines>171</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>32</Coveredbranches>
+    <Totalbranches>32</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>7</Coveredmethods>
+    <Fullcoveredmethods>7</Fullcoveredmethods>
+    <Totalmethods>7</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="ctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="Hide">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="SelectNext">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="SelectPrevious">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="SetSelectedIndex">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GetSelectedSuggestion">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="TryParseExternalQuery">
+      <CrapScore>10</CrapScore>
+      <Cyclomaticcomplexity>10</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Client\Services\WikiLinkAutocompleteService.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Client.Services;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public class WikiLinkAutocompleteService : IWikiLinkAutocompleteService" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILinkApiService _linkApiService;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IExternalLinkApiService _externalLinkApiService;" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILogger&lt;WikiLinkAutocompleteService&gt; _logger;" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public event Action? OnShow;" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public event Action? OnHide;" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public event Action? OnSuggestionsUpdated;" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public (double X, double Y) Position { get; private set; }" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool IsVisible { get; private set; }" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public string Query { get; private set; } = string.Empty;" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool IsExternalQuery { get; private set; }" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public string? ExternalSourceKey { get; private set; }" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public List&lt;WikiLinkAutocompleteItem&gt; Suggestions { get; private set; } = new();" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public int SelectedIndex { get; private set; }" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool IsLoading { get; private set; }" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public WikiLinkAutocompleteService(" />
+      <LineAnalysis line="23" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ILinkApiService linkApiService," />
+      <LineAnalysis line="24" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IExternalLinkApiService externalLinkApiService," />
+      <LineAnalysis line="25" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ILogger&lt;WikiLinkAutocompleteService&gt; logger)" />
+      <LineAnalysis line="26" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="27" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="        _linkApiService = linkApiService;" />
+      <LineAnalysis line="28" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="        _externalLinkApiService = externalLinkApiService;" />
+      <LineAnalysis line="29" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger = logger;" />
+      <LineAnalysis line="30" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task ShowAsync(string query, double x, double y, Guid? worldId)" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Position = (x, y);" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsVisible = true;" />
+      <LineAnalysis line="36" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        SelectedIndex = 0;" />
+      <LineAnalysis line="37" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="38" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsExternalQuery = TryParseExternalQuery(query, out var sourceKey, out var remainder);" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ExternalSourceKey = IsExternalQuery ? sourceKey : null;" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        Query = IsExternalQuery ? remainder : query;" />
+      <LineAnalysis line="41" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="42" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        OnShow?.Invoke();" />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="44" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // For external queries: no minimum length (show categories)" />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // For internal queries: require 3 characters minimum" />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var minLength = IsExternalQuery ? 0 : 3;" />
+      <LineAnalysis line="47" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="48" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (Query.Length &lt; minLength)" />
+      <LineAnalysis line="49" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="50" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Suggestions = new();" />
+      <LineAnalysis line="51" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            OnSuggestionsUpdated?.Invoke();" />
+      <LineAnalysis line="52" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="53" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsLoading = true;" />
+      <LineAnalysis line="56" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        OnSuggestionsUpdated?.Invoke();" />
+      <LineAnalysis line="57" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (IsExternalQuery)" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="62" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var externalSuggestions = await _externalLinkApiService.GetSuggestionsAsync(" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    worldId ?? Guid.Empty," />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    ExternalSourceKey ?? string.Empty," />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    Query," />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    CancellationToken.None);" />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Suggestions = externalSuggestions" />
+      <LineAnalysis line="69" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    .Select(WikiLinkAutocompleteItem.FromExternal)" />
+      <LineAnalysis line="70" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    .ToList();" />
+      <LineAnalysis line="71" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            else" />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var internalSuggestions = await _linkApiService.GetSuggestionsAsync(" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    worldId ?? Guid.Empty," />
+      <LineAnalysis line="76" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    Query);" />
+      <LineAnalysis line="77" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Suggestions = internalSuggestions" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    .Select(WikiLinkAutocompleteItem.FromInternal)" />
+      <LineAnalysis line="80" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    .ToList();" />
+      <LineAnalysis line="81" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="83" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="84" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="85" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogError(ex, &quot;Error getting autocomplete suggestions for query: {Query}&quot;, query);" />
+      <LineAnalysis line="86" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Suggestions = new();" />
+      <LineAnalysis line="87" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="88" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        finally" />
+      <LineAnalysis line="89" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="90" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            IsLoading = false;" />
+      <LineAnalysis line="91" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            OnSuggestionsUpdated?.Invoke();" />
+      <LineAnalysis line="92" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="93" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="95" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void Hide()" />
+      <LineAnalysis line="96" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="97" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        IsVisible = false;" />
+      <LineAnalysis line="98" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        Suggestions = new();" />
+      <LineAnalysis line="99" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        IsExternalQuery = false;" />
+      <LineAnalysis line="100" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        ExternalSourceKey = null;" />
+      <LineAnalysis line="101" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        Query = string.Empty;" />
+      <LineAnalysis line="102" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        SelectedIndex = 0;" />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="104" visits="2" coverage="Covered" coveredbranches="2" totalbranches="2" content="        OnHide?.Invoke();" />
+      <LineAnalysis line="105" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="107" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void SelectNext()" />
+      <LineAnalysis line="108" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="109" visits="4" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (Suggestions.Any())" />
+      <LineAnalysis line="110" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="111" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            SelectedIndex = (SelectedIndex + 1) % Suggestions.Count;" />
+      <LineAnalysis line="112" visits="3" coverage="Covered" coveredbranches="2" totalbranches="2" content="            OnSuggestionsUpdated?.Invoke();" />
+      <LineAnalysis line="113" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="114" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="115" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="116" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void SelectPrevious()" />
+      <LineAnalysis line="117" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="118" visits="3" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (Suggestions.Any())" />
+      <LineAnalysis line="119" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="120" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            SelectedIndex = (SelectedIndex - 1 + Suggestions.Count) % Suggestions.Count;" />
+      <LineAnalysis line="121" visits="2" coverage="Covered" coveredbranches="2" totalbranches="2" content="            OnSuggestionsUpdated?.Invoke();" />
+      <LineAnalysis line="122" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="123" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="124" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="125" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void SetSelectedIndex(int index)" />
+      <LineAnalysis line="126" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="127" visits="5" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (index &gt;= 0 &amp;&amp; index &lt; Suggestions.Count)" />
+      <LineAnalysis line="128" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="129" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            SelectedIndex = index;" />
+      <LineAnalysis line="130" visits="2" coverage="Covered" coveredbranches="2" totalbranches="2" content="            OnSuggestionsUpdated?.Invoke();" />
+      <LineAnalysis line="131" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="132" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="133" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="134" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public WikiLinkAutocompleteItem? GetSelectedSuggestion()" />
+      <LineAnalysis line="135" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="136" visits="3" coverage="Covered" coveredbranches="6" totalbranches="6" content="        if (Suggestions.Any() &amp;&amp; SelectedIndex &gt;= 0 &amp;&amp; SelectedIndex &lt; Suggestions.Count)" />
+      <LineAnalysis line="137" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="138" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            return Suggestions[SelectedIndex];" />
+      <LineAnalysis line="139" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="140" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        return null;" />
+      <LineAnalysis line="141" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="142" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="143" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private static bool TryParseExternalQuery(string query, out string sourceKey, out string remainder)" />
+      <LineAnalysis line="144" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="145" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="        sourceKey = string.Empty;" />
+      <LineAnalysis line="146" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="        remainder = string.Empty;" />
+      <LineAnalysis line="147" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="148" visits="14" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrWhiteSpace(query))" />
+      <LineAnalysis line="149" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            return false;" />
+      <LineAnalysis line="150" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="151" visits="13" coverage="Covered" coveredbranches="" totalbranches="" content="        var slashIndex = query.IndexOf('/');" />
+      <LineAnalysis line="152" visits="13" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (slashIndex &lt; 0)" />
+      <LineAnalysis line="153" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="154" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // No slash found - check if it could be a source key prefix" />
+      <LineAnalysis line="155" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="            var lowerQuery = query.ToLowerInvariant();" />
+      <LineAnalysis line="156" visits="11" coverage="Covered" coveredbranches="6" totalbranches="6" content="            if (lowerQuery.StartsWith(&quot;srd&quot;) ||" />
+      <LineAnalysis line="157" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="                lowerQuery.StartsWith(&quot;open5e&quot;) ||" />
+      <LineAnalysis line="158" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="                lowerQuery.StartsWith(&quot;ros&quot;))" />
+      <LineAnalysis line="159" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="160" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="                sourceKey = lowerQuery;" />
+      <LineAnalysis line="161" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="                remainder = string.Empty;" />
+      <LineAnalysis line="162" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="                return true;" />
+      <LineAnalysis line="163" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="164" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="            return false;" />
+      <LineAnalysis line="165" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="166" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="167" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        sourceKey = query.Substring(0, slashIndex).ToLowerInvariant();" />
+      <LineAnalysis line="168" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        remainder = query.Substring(slashIndex + 1);" />
+      <LineAnalysis line="169" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        return true;" />
+      <LineAnalysis line="170" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="171" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

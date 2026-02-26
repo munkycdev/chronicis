@@ -23,123 +23,150 @@ else if (ViewModel.Arc != null)
                           TitleChanged="@(v => ViewModel.EditName = v)"
                           Placeholder="Arc Name"
                           OnTitleEdited="@(() => {})"
-                          OnEnterPressed="@(() => ViewModel.SaveAsync())" />
+                          OnEnterPressed="@(() => ViewModel.SaveAsync())"
+                          ReadOnly="@(!ViewModel.CanManageArcDetails)" />
 
-        <MudTextField Value="@ViewModel.EditDescription"
-                      ValueChanged="@((string v) => ViewModel.EditDescription = v)"
-                      Label="Description"
-                      Variant="Variant.Outlined"
-                      Lines="3"
-                      Placeholder="Describe this arc..."
-                      Class="mb-4"
-                      Immediate="true" />
+        <MudTabs Elevation="0"
+                 Rounded="true"
+                 ApplyEffectsToContainer="true"
+                 PanelClass="pa-4">
+            <MudTabPanel Text="Overview" Icon="@Icons.Material.Filled.Bookmark">
+                <MudTextField Value="@ViewModel.EditDescription"
+                              ValueChanged="@((string v) => ViewModel.EditDescription = v)"
+                              Label="Description"
+                              Variant="Variant.Outlined"
+                              Lines="3"
+                              Placeholder="Describe this arc..."
+                              Class="mb-4"
+                              Immediate="true"
+                              ReadOnly="@(!ViewModel.CanManageArcDetails)" />
 
-        <MudNumericField Value="@ViewModel.EditSortOrder"
-                         ValueChanged="@((int v) => ViewModel.EditSortOrder = v)"
-                         Label="Sort Order"
-                         Variant="Variant.Outlined"
-                         Min="0"
-                         Class="mb-4"
-                         Style="max-width: 150px;"
-                         Immediate="true" />
+                <MudNumericField Value="@ViewModel.EditSortOrder"
+                                 ValueChanged="@((int v) => ViewModel.EditSortOrder = v)"
+                                 Label="Sort Order"
+                                 Variant="Variant.Outlined"
+                                 Min="0"
+                                 Class="mb-4"
+                                 Style="max-width: 150px;"
+                                 Immediate="true"
+                                 Disabled="@(!ViewModel.CanManageArcDetails)" />
 
-        <div class="d-flex align-center justify-space-between mb-3">
-            <MudText Typo="Typo.h6" Style="color: var(--chronicis-beige-gold);">
-                <MudIcon Icon="@Icons.Material.Filled.EventNote" Size="Size.Small" Class="mr-2" />
-                Sessions
-            </MudText>
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       Size="Size.Small"
-                       StartIcon="@Icons.Material.Filled.Add"
-                       OnClick="@(() => ViewModel.CreateSessionAsync())">
-                New Session
-            </MudButton>
-        </div>
-
-        @if (ViewModel.Sessions.Any())
-        {
-            <MudList T="SessionTreeDto" Dense="true" Class="mb-4">
-                @foreach (var session in ViewModel.Sessions.OrderBy(s => s.Name))
-                {
-                    <EntityListItem Icon="@Icons.Material.Filled.EventNote"
-                                    Title="@(string.IsNullOrEmpty(session.Name) ? "Untitled Session" : session.Name)"
-                                    OnClick="@(() => ViewModel.NavigateToSessionAsync(session))" />
-                }
-            </MudList>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Info" Class="mb-4">
-                No sessions yet. Create your first session to start documenting your adventures!
-            </MudAlert>
-        }
-
-        <ArcQuestList ArcId="@ArcId" IsGm="ViewModel.IsCurrentUserGM" OnEditQuest="ViewModel.OnEditQuest" />
-
-        @if (ViewModel.SelectedQuest != null)
-        {
-            <MudDivider Class="my-4" />
-            <ArcQuestEditor Quest="ViewModel.SelectedQuest"
-                            OnQuestUpdated="ViewModel.OnQuestUpdated" />
-            <ArcQuestTimeline Quest="ViewModel.SelectedQuest"
-                              IsGm="ViewModel.IsCurrentUserGM"
-                              CurrentUserId="ViewModel.CurrentUserId" />
-        }
-
-        <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
-            Arc Info
-        </MudText>
-
-        <MudSimpleTable Dense="true" Hover="true" Class="mb-4">
-            <tbody>
-                <tr>
-                    <td><MudIcon Icon="@Icons.Material.Filled.PlayCircle" Size="Size.Small" Class="mr-2" />Active Arc</td>
-                    <td>
-                        <MudSwitch T="bool"
-                                   Value="ViewModel.Arc.IsActive"
-                                   ValueChanged="@((bool v) => ViewModel.OnActiveToggleAsync(v))"
-                                   Color="Color.Success"
+                <div class="d-flex align-center justify-space-between mb-3">
+                    <MudText Typo="Typo.h6" Style="color: var(--chronicis-beige-gold);">
+                        <MudIcon Icon="@Icons.Material.Filled.EventNote" Size="Size.Small" Class="mr-2" />
+                        Sessions
+                    </MudText>
+                    @if (ViewModel.IsCurrentUserGM)
+                    {
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
                                    Size="Size.Small"
-                                   Disabled="ViewModel.IsTogglingActive" />
-                    </td>
-                </tr>
-                <tr>
-                    <td><MudIcon Icon="@Icons.Material.Filled.EventNote" Size="Size.Small" Class="mr-2" />Sessions</td>
-                    <td>@ViewModel.Arc.SessionCount</td>
-                </tr>
-                <tr>
-                    <td><MudIcon Icon="@Icons.Material.Filled.Sort" Size="Size.Small" Class="mr-2" />Sort Order</td>
-                    <td>@ViewModel.Arc.SortOrder</td>
-                </tr>
-                <tr>
-                    <td><MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="mr-2" />Created</td>
-                    <td>@ViewModel.Arc.CreatedAt.ToString("MMMM d, yyyy")</td>
-                </tr>
-            </tbody>
-        </MudSimpleTable>
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="@(() => ViewModel.CreateSessionAsync())">
+                            New Session
+                        </MudButton>
+                    }
+                </div>
 
-        <AISummarySection EntityId="ArcId"
-                          EntityType="Arc"
-                          IsExpanded="ViewModel.SummaryExpanded"
-                          IsExpandedChanged="@((bool v) => ViewModel.SummaryExpanded = v)" />
+                @if (ViewModel.Sessions.Any())
+                {
+                    <MudList T="SessionTreeDto" Dense="true" Class="mb-4">
+                        @foreach (var session in ViewModel.Sessions.OrderBy(s => s.Name))
+                        {
+                            <EntityListItem Icon="@Icons.Material.Filled.EventNote"
+                                            Title="@(string.IsNullOrEmpty(session.Name) ? "Untitled Session" : session.Name)"
+                                            OnClick="@(() => ViewModel.NavigateToSessionAsync(session))" />
+                        }
+                    </MudList>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Class="mb-4">
+                        No sessions yet. Create your first session to start documenting your adventures!
+                    </MudAlert>
+                }
+
+                <ArcQuestList ArcId="@ArcId" IsGm="ViewModel.IsCurrentUserGM" OnEditQuest="ViewModel.OnEditQuest" />
+
+                @if (ViewModel.SelectedQuest != null)
+                {
+                    <MudDivider Class="my-4" />
+                    <ArcQuestEditor Quest="ViewModel.SelectedQuest"
+                                    OnQuestUpdated="ViewModel.OnQuestUpdated" />
+                    <ArcQuestTimeline Quest="ViewModel.SelectedQuest"
+                                      IsGm="ViewModel.IsCurrentUserGM"
+                                      CurrentUserId="ViewModel.CurrentUserId" />
+                }
+
+                <MudText Typo="Typo.h6" Class="mb-3" Style="color: var(--chronicis-beige-gold);">
+                    Arc Info
+                </MudText>
+
+                <MudSimpleTable Dense="true" Hover="true" Class="mb-4">
+                    <tbody>
+                        <tr>
+                            <td><MudIcon Icon="@Icons.Material.Filled.PlayCircle" Size="Size.Small" Class="mr-2" />Active Arc</td>
+                            <td>
+                                <MudSwitch T="bool"
+                                           Value="ViewModel.Arc.IsActive"
+                                           ValueChanged="@((bool v) => ViewModel.OnActiveToggleAsync(v))"
+                                           Color="Color.Success"
+                                           Size="Size.Small"
+                                           Disabled="@(ViewModel.IsTogglingActive || !ViewModel.CanManageArcDetails)" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><MudIcon Icon="@Icons.Material.Filled.EventNote" Size="Size.Small" Class="mr-2" />Sessions</td>
+                            <td>@ViewModel.Arc.SessionCount</td>
+                        </tr>
+                        <tr>
+                            <td><MudIcon Icon="@Icons.Material.Filled.Sort" Size="Size.Small" Class="mr-2" />Sort Order</td>
+                            <td>@ViewModel.Arc.SortOrder</td>
+                        </tr>
+                        <tr>
+                            <td><MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="mr-2" />Created</td>
+                            <td>@ViewModel.Arc.CreatedAt.ToString("MMMM d, yyyy")</td>
+                        </tr>
+                    </tbody>
+                </MudSimpleTable>
+
+                <AISummarySection EntityId="ArcId"
+                                  EntityType="Arc"
+                                  IsExpanded="ViewModel.SummaryExpanded"
+                                  IsExpandedChanged="@((bool v) => ViewModel.SummaryExpanded = v)" />
+            </MudTabPanel>
+
+            @if (ViewModel.CanViewPrivateNotes)
+            {
+                <MudTabPanel Text="Private Notes" Icon="@Icons.Material.Filled.Lock">
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+                        Visible only to the world owner and GMs.
+                    </MudText>
+                    <PrivateNotesTipTapEditor WorldId="@ViewModel.Campaign!.WorldId"
+                                             Value="@ViewModel.EditPrivateNotes"
+                                             ValueChanged="@((string v) => ViewModel.EditPrivateNotes = v)"
+                                             ReadOnly="@(!ViewModel.CanManageArcDetails)"
+                                             UploadContextLabel="arc private notes" />
+                </MudTabPanel>
+            }
+        </MudTabs>
 
         <div class="chronicis-flex-between mt-4">
             <SaveStatusIndicator IsSaving="ViewModel.IsSaving" HasUnsavedChanges="ViewModel.HasUnsavedChanges" />
 
             <div class="d-flex gap-2">
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           OnClick="@(() => ViewModel.SaveAsync())"
-                           Disabled="ViewModel.IsSaving"
-                           StartIcon="@Icons.Material.Filled.Save">
+                           <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       OnClick="@(() => ViewModel.SaveAsync())"
+                                       Disabled="@(ViewModel.IsSaving || !ViewModel.CanManageArcDetails)"
+                                       StartIcon="@Icons.Material.Filled.Save">
                     Save
                 </MudButton>
 
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Error"
                            OnClick="@(() => ViewModel.DeleteAsync())"
-                           Disabled="@(ViewModel.IsSaving || ViewModel.Sessions.Any())"
+                           Disabled="@(ViewModel.IsSaving || ViewModel.Sessions.Any() || !ViewModel.IsCurrentUserGM)"
                            StartIcon="@Icons.Material.Filled.Delete">
                     Delete
                 </MudButton>

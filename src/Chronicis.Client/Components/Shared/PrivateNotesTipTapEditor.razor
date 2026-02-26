@@ -1,0 +1,671 @@
+@using Chronicis.Client.Components.Articles
+@using Chronicis.Client.Services
+@using Chronicis.Shared.DTOs
+@using Microsoft.JSInterop
+@using ArticleWikiLinkAutocompleteItem = Chronicis.Client.Components.Articles.WikiLinkAutocompleteItem
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
+@inject ILinkApiService LinkApiService
+@inject IExternalLinkApiService ExternalLinkApiService
+@inject IWikiLinkService WikiLinkService
+@inject IArticleCacheService ArticleCache
+@inject IAISummaryApiService SummaryApi
+@inject IWorldApiService WorldApi
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject ILogger<PrivateNotesTipTapEditor> Logger
+
+@if (ReadOnly)
+{
+    @if (!string.IsNullOrWhiteSpace(Value))
+    {
+        <MudPaper Outlined="true" Class="pa-4">
+            @((MarkupString)Value)
+        </MudPaper>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">
+            No private notes yet.
+        </MudAlert>
+    }
+}
+else
+{
+    <div class="chronicis-editor-toolbar mb-2">
+        <MudTooltip Text="Insert Image" Placement="Placement.Top">
+            <MudIconButton Icon="@Icons.Material.Filled.Image"
+                           Size="Size.Small"
+                           Color="Color.Default"
+                           OnClick="InsertImageFromToolbarAsync"
+                           Disabled="!_editorInitialized" />
+        </MudTooltip>
+    </div>
+
+    <div id="@EditorElementId" class="chronicis-editor-container mb-2"></div>
+
+    @if (_showAutocomplete)
+    {
+        <ArticleDetailWikiLinkAutocomplete Suggestions="@_autocompleteSuggestions"
+                                           Loading="@_autocompleteLoading"
+                                           SelectedIndex="@_autocompleteSelectedIndex"
+                                           SelectedIndexChanged="OnAutocompleteIndexChanged"
+                                           OnSelect="OnAutocompleteSelect"
+                                           OnCreate="OnAutocompleteCreate"
+                                           Position="@_autocompletePosition"
+                                           Query="@_autocompleteQuery"
+                                           IsExternalQuery="@_autocompleteIsExternalQuery" />
+    }
+
+    <MudDrawer @bind-Open="_externalPreviewOpen"
+               Anchor="Anchor.End"
+               Variant="@DrawerVariant.Temporary"
+               Elevation="9999"
+               Class="external-link-preview-drawer">
+        <MudDrawerHeader>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseExternalPreview" />
+        </MudDrawerHeader>
+        <MudDrawerContainer>
+            <div class="external-link-preview-header">
+                @if (!string.IsNullOrWhiteSpace(_externalPreviewSource))
+                {
+                    <span class="external-link-preview-source">@_externalPreviewSource.ToUpperInvariant()</span>
+                }
+                <MudText Typo="Typo.h6">@(_externalPreviewTitle ?? "External Link")</MudText>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(_externalPreviewContent?.Kind))
+            {
+                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                    @_externalPreviewContent.Kind
+                </MudText>
+            }
+            @if (_externalPreviewLoading)
+            {
+                <div class="d-flex justify-center align-center" style="padding: 24px;">
+                    <MudProgressCircular Indeterminate="true" />
+                </div>
+            }
+            else if (!string.IsNullOrWhiteSpace(_externalPreviewError))
+            {
+                <MudAlert Severity="Severity.Error">@_externalPreviewError</MudAlert>
+            }
+            else if (_externalPreviewContent != null)
+            {
+                <ExternalLinkDetailPanel Content="_externalPreviewContent" />
+            }
+        </MudDrawerContainer>
+    </MudDrawer>
+}
+
+@code {
+    [Parameter]
+    public Guid WorldId { get; set; }
+
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool ReadOnly { get; set; }
+
+    [Parameter]
+    public string UploadContextLabel { get; set; } = "Private Notes";
+
+    private readonly string _instanceId = Guid.NewGuid().ToString("N");
+    private string EditorElementId => $"private-notes-editor-{_instanceId}";
+
+    private bool _editorInitialized;
+    private bool _disposed;
+    private bool _suppressEditorUpdates;
+    private string _editorValue = string.Empty;
+    private DotNetObjectReference<PrivateNotesTipTapEditor>? _dotNetRef;
+
+    private bool _showAutocomplete;
+    private bool _autocompleteLoading;
+    private List<ArticleWikiLinkAutocompleteItem> _autocompleteSuggestions = new();
+    private int _autocompleteSelectedIndex;
+    private (double X, double Y) _autocompletePosition = (0, 0);
+    private string _autocompleteQuery = string.Empty;
+    private bool _autocompleteIsExternalQuery;
+    private string? _autocompleteExternalSourceKey;
+
+    private bool _externalPreviewOpen;
+    private bool _externalPreviewLoading;
+    private string? _externalPreviewError;
+    private ExternalLinkContentDto? _externalPreviewContent;
+    private string? _externalPreviewSource;
+    private string? _externalPreviewTitle;
+    private readonly Dictionary<string, ExternalLinkContentDto> _externalLinkCache = new(StringComparer.OrdinalIgnoreCase);
+
+    protected override void OnInitialized()
+    {
+        _dotNetRef = DotNetObjectReference.Create(this);
+        _editorValue = Value ?? string.Empty;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var incoming = Value ?? string.Empty;
+
+        if (!_editorInitialized)
+        {
+            _editorValue = incoming;
+            return;
+        }
+
+        if (ReadOnly)
+        {
+            await DestroyEditorAsync();
+            _editorValue = incoming;
+            return;
+        }
+
+        if (!string.Equals(incoming, _editorValue, StringComparison.Ordinal))
+        {
+            _editorValue = incoming;
+            _suppressEditorUpdates = true;
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("setTipTapContent", EditorElementId, _editorValue);
+                await JSRuntime.InvokeVoidAsync("resolveEditorImages", EditorElementId, _dotNetRef);
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            finally
+            {
+                _suppressEditorUpdates = false;
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ReadOnly || _editorInitialized || _disposed || _dotNetRef == null)
+            return;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("initializeTipTapEditor", EditorElementId, _editorValue, _dotNetRef);
+            await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", EditorElementId, _dotNetRef);
+            await JSRuntime.InvokeVoidAsync("initializeImageUpload", EditorElementId, _dotNetRef);
+            await JSRuntime.InvokeVoidAsync("resolveEditorImages", EditorElementId, _dotNetRef);
+            _editorInitialized = true;
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize private notes editor {EditorId}", EditorElementId);
+            Snackbar.Add("Failed to initialize private notes editor", Severity.Warning);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        await DestroyEditorAsync();
+        _dotNetRef?.Dispose();
+    }
+
+    private async Task DestroyEditorAsync()
+    {
+        if (!_editorInitialized)
+            return;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", EditorElementId);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "Failed to destroy private notes editor {EditorId}", EditorElementId);
+        }
+        finally
+        {
+            _editorInitialized = false;
+            _showAutocomplete = false;
+            _autocompleteSuggestions = new();
+        }
+    }
+
+    private async Task InsertImageFromToolbarAsync()
+    {
+        if (!_editorInitialized || _dotNetRef == null)
+            return;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("triggerImageUpload", EditorElementId, _dotNetRef);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnEditorUpdate(string html)
+    {
+        if (_suppressEditorUpdates)
+            return;
+
+        if (string.Equals(_editorValue, html, StringComparison.Ordinal))
+            return;
+
+        _editorValue = html ?? string.Empty;
+        await ValueChanged.InvokeAsync(_editorValue);
+    }
+
+    [JSInvokable]
+    public async Task OnAutocompleteTriggered(string query, double x, double y)
+    {
+        _autocompletePosition = (x, y);
+        _showAutocomplete = true;
+        _autocompleteSelectedIndex = 0;
+
+        _autocompleteIsExternalQuery = TryParseExternalAutocompleteQuery(query, out var sourceKey, out var remainder);
+        _autocompleteExternalSourceKey = _autocompleteIsExternalQuery ? sourceKey : null;
+        _autocompleteQuery = _autocompleteIsExternalQuery ? remainder : query;
+
+        var minLength = _autocompleteIsExternalQuery ? 0 : 3;
+        if (_autocompleteQuery.Length < minLength)
+        {
+            _autocompleteSuggestions = new();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        _autocompleteLoading = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            if (_autocompleteIsExternalQuery)
+            {
+                var externalSuggestions = await ExternalLinkApiService.GetSuggestionsAsync(
+                    WorldId,
+                    _autocompleteExternalSourceKey ?? string.Empty,
+                    _autocompleteQuery,
+                    CancellationToken.None);
+
+                _autocompleteSuggestions = externalSuggestions.Select(ArticleWikiLinkAutocompleteItem.FromExternal).ToList();
+            }
+            else
+            {
+                var internalSuggestions = await LinkApiService.GetSuggestionsAsync(WorldId, _autocompleteQuery);
+                _autocompleteSuggestions = internalSuggestions.Select(ArticleWikiLinkAutocompleteItem.FromInternal).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting private notes autocomplete suggestions");
+            _autocompleteSuggestions = new();
+        }
+        finally
+        {
+            _autocompleteLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    [JSInvokable]
+    public Task OnAutocompleteHidden()
+    {
+        _showAutocomplete = false;
+        _autocompleteSuggestions = new();
+        _autocompleteIsExternalQuery = false;
+        _autocompleteExternalSourceKey = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public Task OnAutocompleteArrowDown()
+    {
+        if (_autocompleteSuggestions.Any())
+        {
+            _autocompleteSelectedIndex = (_autocompleteSelectedIndex + 1) % _autocompleteSuggestions.Count;
+            return InvokeAsync(StateHasChanged);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnAutocompleteArrowUp()
+    {
+        if (_autocompleteSuggestions.Any())
+        {
+            _autocompleteSelectedIndex = (_autocompleteSelectedIndex - 1 + _autocompleteSuggestions.Count) % _autocompleteSuggestions.Count;
+            return InvokeAsync(StateHasChanged);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task OnAutocompleteEnter()
+    {
+        if (_autocompleteSuggestions.Any() && _autocompleteSelectedIndex < _autocompleteSuggestions.Count)
+        {
+            await OnAutocompleteSelect(_autocompleteSuggestions[_autocompleteSelectedIndex]);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnWikiLinkClicked(string targetArticleId)
+    {
+        if (!Guid.TryParse(targetArticleId, out var articleId))
+            return;
+
+        try
+        {
+            var path = await ArticleCache.GetNavigationPathAsync(articleId);
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                Navigation.NavigateTo($"/article/{path}");
+            }
+            else
+            {
+                Snackbar.Add("Article not found", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error navigating to private notes wiki link {ArticleId}", targetArticleId);
+            Snackbar.Add("Failed to navigate to article", Severity.Error);
+        }
+    }
+
+    [JSInvokable]
+    public Task OnBrokenLinkClicked(string targetArticleId)
+    {
+        Snackbar.Add("This link points to a missing article", Severity.Warning);
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task OnExternalLinkClicked(string source, string id, string title)
+    {
+        if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(id))
+            return;
+
+        _externalPreviewOpen = true;
+        _externalPreviewLoading = true;
+        _externalPreviewError = null;
+        _externalPreviewSource = source;
+        _externalPreviewTitle = string.IsNullOrWhiteSpace(title) ? "External Link" : title;
+        _externalPreviewContent = null;
+        await InvokeAsync(StateHasChanged);
+
+        var cacheKey = $"{source}:{id}".ToLowerInvariant();
+        if (_externalLinkCache.TryGetValue(cacheKey, out var cached))
+        {
+            _externalPreviewContent = cached;
+            _externalPreviewLoading = false;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        try
+        {
+            var content = await ExternalLinkApiService.GetContentAsync(source, id, CancellationToken.None);
+            if (content == null || string.IsNullOrWhiteSpace(content.Markdown))
+            {
+                _externalPreviewError = "No content available.";
+            }
+            else
+            {
+                _externalPreviewContent = content;
+                _externalLinkCache[cacheKey] = content;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading external preview for private notes {Source} {Id}", source, id);
+            _externalPreviewError = "Failed to load external content.";
+        }
+        finally
+        {
+            _externalPreviewLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    [JSInvokable]
+    public async Task<string?> GetArticlePath(string targetArticleId)
+    {
+        if (!Guid.TryParse(targetArticleId, out var articleId))
+            return null;
+
+        try
+        {
+            return await ArticleCache.GetArticlePathAsync(articleId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting article path for private notes {ArticleId}", targetArticleId);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public async Task<object?> GetArticleSummaryPreview(string targetArticleId)
+    {
+        if (!Guid.TryParse(targetArticleId, out var articleId))
+            return null;
+
+        try
+        {
+            var preview = await SummaryApi.GetSummaryPreviewAsync(articleId);
+            if (preview == null || !preview.HasSummary)
+                return null;
+
+            return new
+            {
+                title = preview.Title,
+                summary = preview.Summary,
+                templateName = preview.TemplateName
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting summary preview for private notes {ArticleId}", targetArticleId);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public async Task<object?> OnImageUploadRequested(string fileName, string contentType, long fileSize)
+    {
+        if (WorldId == Guid.Empty)
+            return null;
+
+        try
+        {
+            var request = new WorldDocumentUploadRequestDto
+            {
+                FileName = fileName,
+                ContentType = contentType,
+                FileSizeBytes = fileSize,
+                ArticleId = null,
+                Description = $"Inline image for {UploadContextLabel}"
+            };
+
+            var response = await WorldApi.RequestDocumentUploadAsync(WorldId, request);
+            if (response == null)
+                return null;
+
+            return new
+            {
+                uploadUrl = response.UploadUrl,
+                documentId = response.DocumentId.ToString()
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error requesting image upload for private notes in world {WorldId}", WorldId);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnImageUploadConfirmed(string documentIdStr)
+    {
+        if (WorldId == Guid.Empty || !Guid.TryParse(documentIdStr, out var documentId))
+            return;
+
+        try
+        {
+            await WorldApi.ConfirmDocumentUploadAsync(WorldId, documentId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error confirming private notes image upload {DocumentId}", documentId);
+        }
+    }
+
+    [JSInvokable]
+    public string GetImageProxyUrl(string documentIdStr) => $"chronicis-image:{documentIdStr}";
+
+    [JSInvokable]
+    public async Task<string?> ResolveImageUrl(string documentIdStr)
+    {
+        if (!Guid.TryParse(documentIdStr, out var documentId))
+            return null;
+
+        try
+        {
+            var result = await WorldApi.DownloadDocumentAsync(documentId);
+            return result?.DownloadUrl;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error resolving private notes image {DocumentId}", documentId);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public Task OnImageUploadStarted(string fileName)
+    {
+        Snackbar.Add($"Uploading {fileName}...", Severity.Info);
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnImageUploadError(string message)
+    {
+        Snackbar.Add(message, Severity.Error);
+        return Task.CompletedTask;
+    }
+
+    private Task OnAutocompleteIndexChanged(int index)
+    {
+        _autocompleteSelectedIndex = index;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task OnAutocompleteSelect(ArticleWikiLinkAutocompleteItem suggestion)
+    {
+        try
+        {
+            if (suggestion.IsCategory && !string.IsNullOrEmpty(suggestion.CategoryKey))
+            {
+                await JSRuntime.InvokeVoidAsync("updateAutocompleteText", EditorElementId, $"{suggestion.Source}/{suggestion.CategoryKey}/");
+                return;
+            }
+
+            if (suggestion.IsExternal)
+            {
+                if (string.IsNullOrWhiteSpace(suggestion.Source) || string.IsNullOrWhiteSpace(suggestion.ExternalId))
+                {
+                    Logger.LogWarning("External suggestion missing source or id");
+                    return;
+                }
+
+                await JSRuntime.InvokeVoidAsync("insertExternalLinkToken", EditorElementId, suggestion.Source, suggestion.ExternalId, suggestion.Title);
+            }
+            else
+            {
+                if (!suggestion.ArticleId.HasValue)
+                {
+                    Logger.LogWarning("Internal suggestion missing article id");
+                    return;
+                }
+
+                var displayText = !string.IsNullOrWhiteSpace(suggestion.MatchedAlias)
+                    ? $"{suggestion.MatchedAlias} → {suggestion.Title}"
+                    : suggestion.Title;
+
+                await JSRuntime.InvokeVoidAsync("insertWikiLink", EditorElementId, suggestion.ArticleId.Value.ToString(), displayText);
+            }
+
+            _showAutocomplete = false;
+            _autocompleteSuggestions = new();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error inserting private notes link");
+            Snackbar.Add("Failed to insert link", Severity.Error);
+        }
+    }
+
+    private async Task OnAutocompleteCreate(string articleName)
+    {
+        if (_autocompleteIsExternalQuery || string.IsNullOrWhiteSpace(articleName) || WorldId == Guid.Empty)
+            return;
+
+        try
+        {
+            var created = await WikiLinkService.CreateArticleFromAutocompleteAsync(articleName, WorldId);
+            if (created == null)
+            {
+                Snackbar.Add("Failed to create article", Severity.Error);
+                return;
+            }
+
+            await JSRuntime.InvokeVoidAsync("insertWikiLink", EditorElementId, created.Id.ToString(), created.Title);
+            _showAutocomplete = false;
+            _autocompleteSuggestions = new();
+            StateHasChanged();
+            Snackbar.Add($"Created and linked '{articleName}'", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error creating article from private notes autocomplete");
+            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void CloseExternalPreview()
+    {
+        _externalPreviewOpen = false;
+        StateHasChanged();
+    }
+
+    private static bool TryParseExternalAutocompleteQuery(string query, out string sourceKey, out string remainder)
+    {
+        sourceKey = string.Empty;
+        remainder = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(query))
+            return false;
+
+        var slashIndex = query.IndexOf('/');
+        if (slashIndex <= 0)
+            return false;
+
+        sourceKey = query[..slashIndex].Trim().ToLowerInvariant();
+        remainder = query[(slashIndex + 1)..];
+        return !string.IsNullOrWhiteSpace(sourceKey);
+    }
+}

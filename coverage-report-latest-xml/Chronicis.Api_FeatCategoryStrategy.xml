@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Api.Services.ExternalLinks.FeatCategoryStrategy">
+  <Summary>
+    <Class>Chronicis.Api.Services.ExternalLinks.FeatCategoryStrategy</Class>
+    <Assembly>Chronicis.Api</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Services\ExternalLinks\FeatCategoryStrategy.cs</File>
+    </Files>
+    <Coveredlines>19</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>19</Coverablelines>
+    <Totallines>33</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>4</Coveredbranches>
+    <Totalbranches>4</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>5</Coveredmethods>
+    <Fullcoveredmethods>5</Fullcoveredmethods>
+    <Totalmethods>5</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="get_CategoryKey">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_Endpoint">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_DisplayName">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_Icon">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="BuildMarkdown">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Services\ExternalLinks\FeatCategoryStrategy.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text.Json;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using static Chronicis.Api.Services.ExternalLinks.Open5eJsonHelpers;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Services.ExternalLinks;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public sealed class FeatCategoryStrategy : Open5eCategoryStrategyBase" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="9" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="    public override string CategoryKey =&gt; &quot;feats&quot;;" />
+      <LineAnalysis line="10" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    public override string Endpoint =&gt; &quot;feats&quot;;" />
+      <LineAnalysis line="11" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    public override string DisplayName =&gt; &quot;Feat&quot;;" />
+      <LineAnalysis line="12" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    public override string? Icon =&gt; &quot;⭐&quot;;" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public override string BuildMarkdown(JsonElement root, string title)" />
+      <LineAnalysis line="15" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="16" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var sb = new StringBuilder();" />
+      <LineAnalysis line="17" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;# {title}&quot;);" />
+      <LineAnalysis line="18" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="20" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var prerequisite = GetString(root, &quot;prerequisite&quot;);" />
+      <LineAnalysis line="21" visits="4" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(prerequisite))" />
+      <LineAnalysis line="22" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="23" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;*Prerequisite: {prerequisite}*&quot;);" />
+      <LineAnalysis line="24" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine();" />
+      <LineAnalysis line="25" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="26" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="27" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var desc = GetString(root, &quot;desc&quot;);" />
+      <LineAnalysis line="28" visits="4" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(desc))" />
+      <LineAnalysis line="29" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine(desc);" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="31" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        return sb.ToString().Trim();" />
+      <LineAnalysis line="32" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

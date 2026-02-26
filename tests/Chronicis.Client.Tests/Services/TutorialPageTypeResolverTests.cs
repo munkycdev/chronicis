@@ -1,6 +1,6 @@
+using System.Reflection;
 using Chronicis.Client.Services;
 using Chronicis.Shared.Enums;
-using System.Reflection;
 using Xunit;
 
 namespace Chronicis.Client.Tests.Services;
@@ -19,6 +19,7 @@ public class TutorialPageTypeResolverTests
     public void Resolve_WhenRootPath_ReturnsPageDefault()
     {
         Assert.Equal("Page:Default", _sut.Resolve("/"));
+        Assert.Equal("Page:Default", _sut.Resolve("http://example.com/"));
         Assert.Equal("Page:Default", _sut.Resolve("https://example.com/"));
     }
 
@@ -85,6 +86,19 @@ public class TutorialPageTypeResolverTests
         Assert.False(ok);
         Assert.NotNull(args[1]);
         Assert.Empty((string[])args[1]!);
+    }
+
+    [Fact]
+    public void TryGetPathSegments_WhenAbsoluteUriHasUnsupportedScheme_FallsBackToRelativeParsing()
+    {
+        var method = typeof(TutorialPageTypeResolver).GetMethod("TryGetPathSegments", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+        object?[] args = ["ftp://example.com/custom-page", null];
+
+        var ok = (bool)method!.Invoke(null, args)!;
+
+        Assert.True(ok);
+        Assert.Equal(["ftp:", "example.com", "custom-page"], (string[])args[1]!);
     }
 
     [Fact]

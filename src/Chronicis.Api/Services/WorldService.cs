@@ -59,7 +59,16 @@ public class WorldService : IWorldService
         if (!await _membershipService.UserHasAccessAsync(worldId, userId))
             return null;
 
-        return MapToDetailDto(world);
+        var canViewPrivateNotes = world.OwnerId == userId
+            || world.Members.Any(m => m.UserId == userId && m.Role == WorldRole.GM);
+
+        var dto = MapToDetailDto(world);
+        if (!canViewPrivateNotes)
+        {
+            dto.PrivateNotes = null;
+        }
+
+        return dto;
     }
 
     public async Task<WorldDto> CreateWorldAsync(WorldCreateDto dto, Guid userId)
@@ -224,8 +233,14 @@ public class WorldService : IWorldService
         if (world == null)
             return null;
 
-        // Only owner can update
-        if (world.OwnerId != userId)
+        var isOwner = world.OwnerId == userId;
+        var isGM = await _context.WorldMembers.AnyAsync(m =>
+            m.WorldId == worldId &&
+            m.UserId == userId &&
+            m.Role == WorldRole.GM);
+
+        // Only the world owner or a GM can update
+        if (!isOwner && !isGM)
             return null;
 
         // If name changed, regenerate slug
@@ -236,6 +251,7 @@ public class WorldService : IWorldService
 
         world.Name = dto.Name;
         world.Description = dto.Description;
+        world.PrivateNotes = string.IsNullOrWhiteSpace(dto.PrivateNotes) ? null : dto.PrivateNotes;
 
         // Handle public visibility changes if specified
         if (dto.IsPublic.HasValue)
@@ -362,6 +378,7 @@ public class WorldService : IWorldService
             IsPublic = world.IsPublic,
             IsTutorial = world.IsTutorial,
             PublicSlug = world.PublicSlug,
+            PrivateNotes = world.PrivateNotes,
             Campaigns = world.Campaigns?.Select(c => new CampaignDto
             {
                 Id = c.Id,

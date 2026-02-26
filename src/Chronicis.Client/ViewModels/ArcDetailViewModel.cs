@@ -39,11 +39,13 @@ public sealed class ArcDetailViewModel : ViewModelBase
     private List<SessionTreeDto> _sessions = new();
     private string _editName = string.Empty;
     private string _editDescription = string.Empty;
+    private string _editPrivateNotes = string.Empty;
     private int _editSortOrder;
     private List<BreadcrumbItem> _breadcrumbs = new();
     private QuestDto? _selectedQuest;
     private Guid _currentUserId;
     private bool _isCurrentUserGM;
+    private bool _isCurrentUserWorldOwner;
 
     public ArcDetailViewModel(
         IArcApiService arcApi,
@@ -87,6 +89,9 @@ public sealed class ArcDetailViewModel : ViewModelBase
     public QuestDto? SelectedQuest { get => _selectedQuest; private set => SetField(ref _selectedQuest, value); }
     public Guid CurrentUserId { get => _currentUserId; private set => SetField(ref _currentUserId, value); }
     public bool IsCurrentUserGM { get => _isCurrentUserGM; private set => SetField(ref _isCurrentUserGM, value); }
+    public bool IsCurrentUserWorldOwner { get => _isCurrentUserWorldOwner; private set => SetField(ref _isCurrentUserWorldOwner, value); }
+    public bool CanManageArcDetails => IsCurrentUserGM || IsCurrentUserWorldOwner;
+    public bool CanViewPrivateNotes => CanManageArcDetails;
     public int EditSortOrder { get => _editSortOrder; set { if (SetField(ref _editSortOrder, value)) HasUnsavedChanges = true; } }
 
     public string EditName
@@ -101,6 +106,12 @@ public sealed class ArcDetailViewModel : ViewModelBase
         set { if (SetField(ref _editDescription, value)) HasUnsavedChanges = true; }
     }
 
+    public string EditPrivateNotes
+    {
+        get => _editPrivateNotes;
+        set { if (SetField(ref _editPrivateNotes, value) && CanManageArcDetails) HasUnsavedChanges = true; }
+    }
+
     /// <summary>Loads the arc and all related data for the given <paramref name="arcId"/>.</summary>
     public async Task LoadAsync(Guid arcId)
     {
@@ -108,6 +119,10 @@ public sealed class ArcDetailViewModel : ViewModelBase
 
         try
         {
+            CurrentUserId = Guid.Empty;
+            IsCurrentUserGM = false;
+            IsCurrentUserWorldOwner = false;
+
             var arc = await _arcApi.GetArcAsync(arcId);
             if (arc == null)
             {
@@ -118,6 +133,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
             Arc = arc;
             EditName = arc.Name;
             EditDescription = arc.Description ?? string.Empty;
+            EditPrivateNotes = arc.PrivateNotes ?? string.Empty;
             EditSortOrder = arc.SortOrder;
             HasUnsavedChanges = false;
 
@@ -155,6 +171,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
                     {
                         CurrentUserId = member.UserId;
                         IsCurrentUserGM = member.Role == WorldRole.GM;
+                        IsCurrentUserWorldOwner = member.UserId == world.OwnerId;
                     }
                 }
             }
@@ -173,7 +190,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
     /// <summary>Toggles the active state of the arc.</summary>
     public async Task OnActiveToggleAsync(bool isActive)
     {
-        if (_arc == null || IsTogglingActive)
+        if (_arc == null || !CanManageArcDetails || IsTogglingActive)
             return;
 
         IsTogglingActive = true;
@@ -213,7 +230,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
     /// <summary>Persists name, description, and sort order changes to the API.</summary>
     public async Task SaveAsync()
     {
-        if (_arc == null || IsSaving)
+        if (_arc == null || !CanManageArcDetails || IsSaving)
             return;
 
         IsSaving = true;
@@ -224,6 +241,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
             {
                 Name = EditName.Trim(),
                 Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim(),
+                PrivateNotes = string.IsNullOrWhiteSpace(EditPrivateNotes) ? null : EditPrivateNotes,
                 SortOrder = EditSortOrder
             };
 
@@ -232,6 +250,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
             {
                 _arc.Name = updated.Name;
                 _arc.Description = updated.Description;
+                _arc.PrivateNotes = updated.PrivateNotes;
                 _arc.SortOrder = updated.SortOrder;
                 HasUnsavedChanges = false;
 
@@ -254,7 +273,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
     /// <summary>Confirms and deletes the arc, then navigates back to the campaign.</summary>
     public async Task DeleteAsync()
     {
-        if (_arc == null || Sessions.Any())
+        if (_arc == null || !IsCurrentUserGM || Sessions.Any())
             return;
 
         var confirmed = await _confirmation.ConfirmAsync(
@@ -283,7 +302,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
     /// <summary>Creates a new Session entity under this arc and navigates to it.</summary>
     public async Task CreateSessionAsync()
     {
-        if (_arc == null || _campaign == null)
+        if (_arc == null || _campaign == null || !IsCurrentUserGM)
             return;
 
         var sessionNumber = Sessions.Count + 1;

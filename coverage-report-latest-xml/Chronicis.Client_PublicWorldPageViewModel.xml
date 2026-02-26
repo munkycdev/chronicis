@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Client.ViewModels.PublicWorldPageViewModel">
+  <Summary>
+    <Class>Chronicis.Client.ViewModels.PublicWorldPageViewModel</Class>
+    <Assembly>Chronicis.Client</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Client\ViewModels\PublicWorldPageViewModel.cs</File>
+    </Files>
+    <Coveredlines>53</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>53</Coverablelines>
+    <Totallines>249</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>22</Coveredbranches>
+    <Totalbranches>22</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>18</Coveredmethods>
+    <Fullcoveredmethods>18</Fullcoveredmethods>
+    <Totalmethods>18</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="ctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_World">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_World">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_ArticleTree">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_ArticleTree">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_CurrentArticle">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_CurrentArticle">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsLoading">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_IsLoading">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsLoadingArticle">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_IsLoadingArticle">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_WikiLinksInitialized">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_WikiLinksInitialized">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="NavigateToArticle">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GetBreadcrumbItems">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GetPageTitle">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GetArticleTypeLabel">
+      <CrapScore>12</CrapScore>
+      <Cyclomaticcomplexity>12</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="DisposeAsync">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Client\ViewModels\PublicWorldPageViewModel.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Client.Abstractions;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Client.Services;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.DTOs;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Enums;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Microsoft.JSInterop;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using MudBlazor;" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Client.ViewModels;" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// ViewModel for the public (unauthenticated) world viewer page." />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Owns world/article loading, breadcrumb building, page-title computation," />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// and the JS interop lifecycle for wiki-link click handling." />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Implements &lt;see cref=&quot;IAsyncDisposable&quot;/&gt; to dispose the" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;see cref=&quot;DotNetObjectReference{T}&quot;/&gt; created for JS interop." />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public sealed class PublicWorldPageViewModel : ViewModelBase, IAsyncDisposable" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IPublicApiService _publicApi;" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IAppNavigator _navigator;" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILogger&lt;PublicWorldPageViewModel&gt; _logger;" />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="23" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private WorldDetailDto? _world;" />
+      <LineAnalysis line="24" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    private List&lt;ArticleTreeDto&gt; _articleTree = new();" />
+      <LineAnalysis line="25" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private ArticleDto? _currentArticle;" />
+      <LineAnalysis line="26" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    private bool _isLoading = true;" />
+      <LineAnalysis line="27" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    private bool _isLoadingArticle = false;" />
+      <LineAnalysis line="28" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    private bool _wikiLinksInitialized = false;" />
+      <LineAnalysis line="29" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private DotNetObjectReference&lt;PublicWorldPageViewModel&gt;? _dotNetHelper;" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // -------------------------------------------------------------------------" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Observable properties" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // -------------------------------------------------------------------------" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;The loaded world, or &lt;c&gt;null&lt;/c&gt; while loading or if not found.&lt;/summary&gt;" />
+      <LineAnalysis line="36" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public WorldDetailDto? World" />
+      <LineAnalysis line="37" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="38" visits="111" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _world;" />
+      <LineAnalysis line="39" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="        private set =&gt; SetField(ref _world, value);" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="41" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="42" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;The public article tree for the current world.&lt;/summary&gt;" />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public List&lt;ArticleTreeDto&gt; ArticleTree" />
+      <LineAnalysis line="44" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="45" visits="32" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _articleTree;" />
+      <LineAnalysis line="46" visits="25" coverage="Covered" coveredbranches="" totalbranches="" content="        private set =&gt; SetField(ref _articleTree, value);" />
+      <LineAnalysis line="47" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="48" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="49" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;The currently displayed article, or &lt;c&gt;null&lt;/c&gt; on the world landing view.&lt;/summary&gt;" />
+      <LineAnalysis line="50" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public ArticleDto? CurrentArticle" />
+      <LineAnalysis line="51" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="52" visits="128" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _currentArticle;" />
+      <LineAnalysis line="53" visits="25" coverage="Covered" coveredbranches="" totalbranches="" content="        private set =&gt; SetField(ref _currentArticle, value);" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="56" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Whether the initial world load is in progress.&lt;/summary&gt;" />
+      <LineAnalysis line="57" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool IsLoading" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="59" visits="34" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _isLoading;" />
+      <LineAnalysis line="60" visits="72" coverage="Covered" coveredbranches="" totalbranches="" content="        private set =&gt; SetField(ref _isLoading, value);" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="62" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Whether an individual article is currently loading.&lt;/summary&gt;" />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool IsLoadingArticle" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="66" visits="19" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _isLoadingArticle;" />
+      <LineAnalysis line="67" visits="24" coverage="Covered" coveredbranches="" totalbranches="" content="        private set =&gt; SetField(ref _isLoadingArticle, value);" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="69" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="70" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="71" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Whether wiki-link JS handlers have been initialised for the current article render." />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Reset to &lt;c&gt;false&lt;/c&gt; on every navigation so &lt;c&gt;OnAfterRenderAsync&lt;/c&gt; re-initialises them." />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool WikiLinksInitialized" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="76" visits="23" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _wikiLinksInitialized;" />
+      <LineAnalysis line="77" visits="37" coverage="Covered" coveredbranches="" totalbranches="" content="        private set =&gt; SetField(ref _wikiLinksInitialized, value);" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="80" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    public PublicWorldPageViewModel(" />
+      <LineAnalysis line="81" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="        IPublicApiService publicApi," />
+      <LineAnalysis line="82" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="        IAppNavigator navigator," />
+      <LineAnalysis line="83" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="        ILogger&lt;PublicWorldPageViewModel&gt; logger)" />
+      <LineAnalysis line="84" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="85" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="        _publicApi = publicApi;" />
+      <LineAnalysis line="86" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="        _navigator = navigator;" />
+      <LineAnalysis line="87" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger = logger;" />
+      <LineAnalysis line="88" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="89" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="90" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // -------------------------------------------------------------------------" />
+      <LineAnalysis line="91" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Lifecycle" />
+      <LineAnalysis line="92" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // -------------------------------------------------------------------------" />
+      <LineAnalysis line="93" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="95" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Loads world + tree and, if an article path is supplied, the article too." />
+      <LineAnalysis line="96" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Resets wiki-link init flag so &lt;c&gt;OnAfterRenderAsync&lt;/c&gt; re-binds on navigation." />
+      <LineAnalysis line="97" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Call from &lt;c&gt;OnParametersSetAsync&lt;/c&gt;." />
+      <LineAnalysis line="98" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="99" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task LoadWorldAsync(string publicSlug, string? articlePath)" />
+      <LineAnalysis line="100" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="101" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        WikiLinksInitialized = false;" />
+      <LineAnalysis line="102" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsLoading = true;" />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="104" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            World = await _publicApi.GetPublicWorldAsync(publicSlug);" />
+      <LineAnalysis line="107" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="108" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (World != null)" />
+      <LineAnalysis line="109" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="110" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                ArticleTree = await _publicApi.GetPublicArticleTreeAsync(publicSlug);" />
+      <LineAnalysis line="111" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="112" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                if (!string.IsNullOrEmpty(articlePath))" />
+      <LineAnalysis line="113" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="114" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    // Switch from page-level loading to article-level skeleton state." />
+      <LineAnalysis line="115" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    IsLoading = false;" />
+      <LineAnalysis line="116" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    await LoadArticleAsync(publicSlug, articlePath);" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="118" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                else" />
+      <LineAnalysis line="119" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    CurrentArticle = null;" />
+      <LineAnalysis line="120" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="121" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="122" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        finally" />
+      <LineAnalysis line="123" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="124" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            IsLoading = false;" />
+      <LineAnalysis line="125" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="126" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="127" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="128" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="129" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Initialises the JS wiki-link click handlers if they have not yet been set up for the current render." />
+      <LineAnalysis line="130" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Call from &lt;c&gt;OnAfterRenderAsync&lt;/c&gt; when &lt;see cref=&quot;CurrentArticle&quot;/&gt; has body content." />
+      <LineAnalysis line="131" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="132" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task InitializeWikiLinksAsync(IJSRuntime jsRuntime)" />
+      <LineAnalysis line="133" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="134" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (WikiLinksInitialized)" />
+      <LineAnalysis line="135" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="136" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="137" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        _dotNetHelper ??= DotNetObjectReference.Create(this);" />
+      <LineAnalysis line="138" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="139" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="140" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await jsRuntime.InvokeAsync&lt;object&gt;(" />
+      <LineAnalysis line="141" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                &quot;initializePublicWikiLinks&quot;, &quot;public-article-body&quot;, _dotNetHelper);" />
+      <LineAnalysis line="142" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            WikiLinksInitialized = true;" />
+      <LineAnalysis line="143" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="144" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception)" />
+      <LineAnalysis line="145" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="146" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Intentionally swallowed — JS interop may fail during pre-rendering" />
+      <LineAnalysis line="147" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // or if the component is disposed before the call completes." />
+      <LineAnalysis line="148" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="149" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="150" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="151" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="152" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Invoked from JavaScript when a wiki link in the public article body is clicked." />
+      <LineAnalysis line="153" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Resolves the article path and navigates to it." />
+      <LineAnalysis line="154" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="155" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    [JSInvokable]" />
+      <LineAnalysis line="156" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task OnPublicWikiLinkClicked(string targetArticleId)" />
+      <LineAnalysis line="157" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="158" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!Guid.TryParse(targetArticleId, out var articleId))" />
+      <LineAnalysis line="159" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="160" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="161" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // publicSlug must be captured; read from the current world." />
+      <LineAnalysis line="162" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var slug = World?.Slug ?? string.Empty;" />
+      <LineAnalysis line="163" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (string.IsNullOrEmpty(slug))" />
+      <LineAnalysis line="164" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="165" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="166" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="167" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="168" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var path = await _publicApi.ResolvePublicArticlePathAsync(slug, articleId);" />
+      <LineAnalysis line="169" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (!string.IsNullOrEmpty(path))" />
+      <LineAnalysis line="170" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _navigator.NavigateTo($&quot;/w/{slug}/{path}&quot;);" />
+      <LineAnalysis line="171" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="172" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception)" />
+      <LineAnalysis line="173" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="174" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Silently ignore — link may not be public or may not exist." />
+      <LineAnalysis line="175" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="176" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="177" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="178" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // -------------------------------------------------------------------------" />
+      <LineAnalysis line="179" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Navigation helpers (called by the component's event callbacks)" />
+      <LineAnalysis line="180" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // -------------------------------------------------------------------------" />
+      <LineAnalysis line="181" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="182" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Navigates to &lt;paramref name=&quot;articlePath&quot;/&gt; within the current world.&lt;/summary&gt;" />
+      <LineAnalysis line="183" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void NavigateToArticle(string publicSlug, string articlePath)" />
+      <LineAnalysis line="184" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="185" visits="2" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrEmpty(articlePath))" />
+      <LineAnalysis line="186" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _navigator.NavigateTo($&quot;/w/{publicSlug}&quot;);" />
+      <LineAnalysis line="187" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        else" />
+      <LineAnalysis line="188" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _navigator.NavigateTo($&quot;/w/{publicSlug}/{articlePath}&quot;);" />
+      <LineAnalysis line="189" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="190" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="191" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // -------------------------------------------------------------------------" />
+      <LineAnalysis line="192" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Pure helpers" />
+      <LineAnalysis line="193" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // -------------------------------------------------------------------------" />
+      <LineAnalysis line="194" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="195" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Builds breadcrumb items for the current article.&lt;/summary&gt;" />
+      <LineAnalysis line="196" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public List&lt;BreadcrumbItem&gt; GetBreadcrumbItems(string publicSlug)" />
+      <LineAnalysis line="197" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="198" visits="2" coverage="Covered" coveredbranches="2" totalbranches="2" content="        return CurrentArticle == null" />
+      <LineAnalysis line="199" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            ? new List&lt;BreadcrumbItem&gt;()" />
+      <LineAnalysis line="200" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            : PublicBreadcrumbBuilder.Build(publicSlug, CurrentArticle);" />
+      <LineAnalysis line="201" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="202" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="203" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Returns the page title, incorporating the world name when loaded.&lt;/summary&gt;" />
+      <LineAnalysis line="204" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public string GetPageTitle()" />
+      <LineAnalysis line="205" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="206" visits="2" coverage="Covered" coveredbranches="4" totalbranches="4" content="        var worldName = string.IsNullOrWhiteSpace(World?.Name) ? &quot;World&quot; : World.Name;" />
+      <LineAnalysis line="207" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        return $&quot;{worldName} — Chronicis&quot;;" />
+      <LineAnalysis line="208" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="209" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="210" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Maps an &lt;see cref=&quot;ArticleType&quot;/&gt; to its display label.&lt;/summary&gt;" />
+      <LineAnalysis line="211" visits="15" coverage="Covered" coveredbranches="12" totalbranches="12" content="    public static string GetArticleTypeLabel(ArticleType type) =&gt; type switch" />
+      <LineAnalysis line="212" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="213" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        ArticleType.WikiArticle =&gt; &quot;Wiki Article&quot;," />
+      <LineAnalysis line="214" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        ArticleType.Character =&gt; &quot;Character&quot;," />
+      <LineAnalysis line="215" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        ArticleType.CharacterNote =&gt; &quot;Character Note&quot;," />
+      <LineAnalysis line="216" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        ArticleType.Session =&gt; &quot;Session&quot;," />
+      <LineAnalysis line="217" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        ArticleType.SessionNote =&gt; &quot;Session Note&quot;," />
+      <LineAnalysis line="218" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        ArticleType.Legacy =&gt; &quot;Article&quot;," />
+      <LineAnalysis line="219" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="        _ =&gt; &quot;Article&quot;," />
+      <LineAnalysis line="220" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="    };" />
+      <LineAnalysis line="221" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="222" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // -------------------------------------------------------------------------" />
+      <LineAnalysis line="223" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // IAsyncDisposable" />
+      <LineAnalysis line="224" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // -------------------------------------------------------------------------" />
+      <LineAnalysis line="225" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="226" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;inheritdoc /&gt;" />
+      <LineAnalysis line="227" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public ValueTask DisposeAsync()" />
+      <LineAnalysis line="228" visits="10" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="229" visits="10" coverage="Covered" coveredbranches="2" totalbranches="2" content="        _dotNetHelper?.Dispose();" />
+      <LineAnalysis line="230" visits="10" coverage="Covered" coveredbranches="" totalbranches="" content="        return ValueTask.CompletedTask;" />
+      <LineAnalysis line="231" visits="10" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="232" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="233" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // -------------------------------------------------------------------------" />
+      <LineAnalysis line="234" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Private helpers" />
+      <LineAnalysis line="235" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // -------------------------------------------------------------------------" />
+      <LineAnalysis line="236" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="237" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task LoadArticleAsync(string publicSlug, string articlePath)" />
+      <LineAnalysis line="238" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="239" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsLoadingArticle = true;" />
+      <LineAnalysis line="240" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="241" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="242" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            CurrentArticle = await _publicApi.GetPublicArticleAsync(publicSlug, articlePath);" />
+      <LineAnalysis line="243" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="244" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        finally" />
+      <LineAnalysis line="245" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="246" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            IsLoadingArticle = false;" />
+      <LineAnalysis line="247" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="248" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="249" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

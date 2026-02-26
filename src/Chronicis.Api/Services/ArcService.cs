@@ -1,5 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,6 +26,25 @@ public class ArcService : IArcService
             .AnyAsync(c => c.Id == campaignId && c.World.Members.Any(m => m.UserId == userId));
     }
 
+    /// <summary>
+    /// Check if user is a GM in the world that owns the campaign.
+    /// </summary>
+    private async Task<bool> UserIsCampaignGMAsync(Guid campaignId, Guid userId)
+    {
+        return await _context.Campaigns
+            .AnyAsync(c => c.Id == campaignId && c.World.Members.Any(m => m.UserId == userId && m.Role == WorldRole.GM));
+    }
+
+    /// <summary>
+    /// Check if user is either the world owner or a GM for the campaign.
+    /// </summary>
+    private async Task<bool> UserIsCampaignOwnerOrGMAsync(Guid campaignId, Guid userId)
+    {
+        return await _context.Campaigns
+            .AnyAsync(c => c.Id == campaignId && (c.World.OwnerId == userId
+                || c.World.Members.Any(m => m.UserId == userId && m.Role == WorldRole.GM)));
+    }
+
     public async Task<List<ArcDto>> GetArcsByCampaignAsync(Guid campaignId, Guid userId)
     {
         // Verify user has access to the campaign via world membership
@@ -45,6 +65,7 @@ public class ArcService : IArcService
                 CampaignId = a.CampaignId,
                 Name = a.Name,
                 Description = a.Description,
+                PrivateNotes = null,
                 SortOrder = a.SortOrder,
                 SessionCount = _context.Articles.Count(art => art.ArcId == a.Id),
                 IsActive = a.IsActive,
@@ -66,6 +87,10 @@ public class ArcService : IArcService
                 CampaignId = a.CampaignId,
                 Name = a.Name,
                 Description = a.Description,
+                PrivateNotes = a.Campaign.World.OwnerId == userId
+                    || a.Campaign.World.Members.Any(m => m.UserId == userId && m.Role == WorldRole.GM)
+                    ? a.PrivateNotes
+                    : null,
                 SortOrder = a.SortOrder,
                 SessionCount = _context.Articles.Count(art => art.ArcId == a.Id),
                 IsActive = a.IsActive,
@@ -78,10 +103,10 @@ public class ArcService : IArcService
 
     public async Task<ArcDto?> CreateArcAsync(ArcCreateDto dto, Guid userId)
     {
-        // Verify user has access to the campaign via world membership
-        if (!await UserHasCampaignAccessAsync(dto.CampaignId, userId))
+        // Only GMs can create arcs
+        if (!await UserIsCampaignGMAsync(dto.CampaignId, userId))
         {
-            _logger.LogWarning("Campaign {CampaignId} not found or user {UserId} doesn't have access", dto.CampaignId, userId);
+            _logger.LogWarning("Campaign {CampaignId} not found or user {UserId} is not a GM", dto.CampaignId, userId);
             return null;
         }
 
@@ -118,6 +143,7 @@ public class ArcService : IArcService
             CampaignId = arc.CampaignId,
             Name = arc.Name,
             Description = arc.Description,
+            PrivateNotes = null,
             SortOrder = arc.SortOrder,
             SessionCount = 0,
             IsActive = arc.IsActive,
@@ -130,16 +156,23 @@ public class ArcService : IArcService
     {
         var arc = await _context.Arcs
             .Include(a => a.Creator)
-            .FirstOrDefaultAsync(a => a.Id == arcId && a.Campaign.World.Members.Any(m => m.UserId == userId));
+            .FirstOrDefaultAsync(a => a.Id == arcId);
 
         if (arc == null)
         {
-            _logger.LogWarning("Arc {ArcId} not found or user {UserId} doesn't have access", arcId, userId);
+            _logger.LogWarning("Arc {ArcId} not found", arcId);
+            return null;
+        }
+
+        if (!await UserIsCampaignOwnerOrGMAsync(arc.CampaignId, userId))
+        {
+            _logger.LogWarning("User {UserId} is not authorized to update arc {ArcId}", userId, arcId);
             return null;
         }
 
         arc.Name = dto.Name;
         arc.Description = dto.Description;
+        arc.PrivateNotes = string.IsNullOrWhiteSpace(dto.PrivateNotes) ? null : dto.PrivateNotes;
 
         if (dto.SortOrder.HasValue)
         {
@@ -158,6 +191,7 @@ public class ArcService : IArcService
             CampaignId = arc.CampaignId,
             Name = arc.Name,
             Description = arc.Description,
+            PrivateNotes = arc.PrivateNotes,
             SortOrder = arc.SortOrder,
             SessionCount = sessionCount,
             IsActive = arc.IsActive,
@@ -170,11 +204,17 @@ public class ArcService : IArcService
     public async Task<bool> DeleteArcAsync(Guid arcId, Guid userId)
     {
         var arc = await _context.Arcs
-            .FirstOrDefaultAsync(a => a.Id == arcId && a.Campaign.World.Members.Any(m => m.UserId == userId));
+            .FirstOrDefaultAsync(a => a.Id == arcId);
 
         if (arc == null)
         {
-            _logger.LogWarning("Arc {ArcId} not found or user {UserId} doesn't have access", arcId, userId);
+            _logger.LogWarning("Arc {ArcId} not found", arcId);
+            return false;
+        }
+
+        if (!await UserIsCampaignGMAsync(arc.CampaignId, userId))
+        {
+            _logger.LogWarning("User {UserId} is not a GM for arc {ArcId}", userId, arcId);
             return false;
         }
 
@@ -204,8 +244,9 @@ public class ArcService : IArcService
         if (arc == null)
             return false;
 
-        // User must be a member of the world to activate arcs
-        if (!arc.Campaign.World.Members.Any(m => m.UserId == userId))
+        // Only the world owner or GMs can activate arcs
+        if (!(arc.Campaign.World.OwnerId == userId
+            || arc.Campaign.World.Members.Any(m => m.UserId == userId && m.Role == WorldRole.GM)))
             return false;
 
         // Deactivate all arcs in the same campaign

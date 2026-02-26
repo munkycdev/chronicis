@@ -45,6 +45,7 @@ public class WorldDto
 [ExcludeFromCodeCoverage]
 public class WorldDetailDto : WorldDto
 {
+    public string? PrivateNotes { get; set; }
     public List<CampaignDto> Campaigns { get; set; } = new();
     public List<WorldMemberDto> Members { get; set; } = new();
     public List<WorldInvitationDto> Invitations { get; set; } = new();
@@ -68,6 +69,7 @@ public class WorldUpdateDto
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public string? PrivateNotes { get; set; }
 
     /// <summary>
     /// Whether to make the world publicly accessible.

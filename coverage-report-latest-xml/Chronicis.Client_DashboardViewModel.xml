@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Client.ViewModels.DashboardViewModel">
+  <Summary>
+    <Class>Chronicis.Client.ViewModels.DashboardViewModel</Class>
+    <Assembly>Chronicis.Client</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Client\ViewModels\DashboardViewModel.cs</File>
+    </Files>
+    <Coveredlines>51</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>51</Coverablelines>
+    <Totallines>245</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>6</Coveredbranches>
+    <Totalbranches>6</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>13</Coveredmethods>
+    <Fullcoveredmethods>13</Fullcoveredmethods>
+    <Totalmethods>13</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="ctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsLoading">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_IsLoading">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_Dashboard">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_Dashboard">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_OrderedWorlds">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_OrderedWorlds">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_Quote">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_Quote">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="HandlePromptClick">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GetCategoryClass">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="OnTreeStateChanged">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="Dispose">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Client\ViewModels\DashboardViewModel.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Client.Abstractions;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Client.Components.Dialogs;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Client.Services;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.DTOs;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Extensions;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using MudBlazor;" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Client.ViewModels;" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// ViewModel for the Dashboard page." />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Coordinates data loading, world ordering, and user actions." />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Implements &lt;see cref=&quot;IDisposable&quot;/&gt; to clean up the tree state subscription." />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public sealed class DashboardViewModel : ViewModelBase, IDisposable" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IDashboardApiService _dashboardApi;" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IUserApiService _userApi;" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IWorldApiService _worldApi;" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IArticleApiService _articleApi;" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IQuoteService _quoteService;" />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ITreeStateService _treeState;" />
+      <LineAnalysis line="23" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IDialogService _dialogService;" />
+      <LineAnalysis line="24" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IAppNavigator _navigator;" />
+      <LineAnalysis line="25" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IUserNotifier _notifier;" />
+      <LineAnalysis line="26" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILogger&lt;DashboardViewModel&gt; _logger;" />
+      <LineAnalysis line="27" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="28" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="    private bool _isLoading = true;" />
+      <LineAnalysis line="29" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private DashboardDto? _dashboard;" />
+      <LineAnalysis line="30" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="    private List&lt;DashboardWorldDto&gt; _orderedWorlds = new();" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private Quote? _quote;" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="33" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="    public DashboardViewModel(" />
+      <LineAnalysis line="34" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        IDashboardApiService dashboardApi," />
+      <LineAnalysis line="35" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        IUserApiService userApi," />
+      <LineAnalysis line="36" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        IWorldApiService worldApi," />
+      <LineAnalysis line="37" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        IArticleApiService articleApi," />
+      <LineAnalysis line="38" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        IQuoteService quoteService," />
+      <LineAnalysis line="39" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        ITreeStateService treeState," />
+      <LineAnalysis line="40" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        IDialogService dialogService," />
+      <LineAnalysis line="41" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        IAppNavigator navigator," />
+      <LineAnalysis line="42" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        IUserNotifier notifier," />
+      <LineAnalysis line="43" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        ILogger&lt;DashboardViewModel&gt; logger)" />
+      <LineAnalysis line="44" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="45" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        _dashboardApi = dashboardApi;" />
+      <LineAnalysis line="46" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        _userApi = userApi;" />
+      <LineAnalysis line="47" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        _worldApi = worldApi;" />
+      <LineAnalysis line="48" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        _articleApi = articleApi;" />
+      <LineAnalysis line="49" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        _quoteService = quoteService;" />
+      <LineAnalysis line="50" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        _treeState = treeState;" />
+      <LineAnalysis line="51" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        _dialogService = dialogService;" />
+      <LineAnalysis line="52" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        _navigator = navigator;" />
+      <LineAnalysis line="53" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        _notifier = notifier;" />
+      <LineAnalysis line="54" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger = logger;" />
+      <LineAnalysis line="55" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="56" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="        _treeState.OnStateChanged += OnTreeStateChanged;" />
+      <LineAnalysis line="57" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Whether the initial data load is in progress.&lt;/summary&gt;" />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public bool IsLoading" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="62" visits="8" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _isLoading;" />
+      <LineAnalysis line="63" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        private set =&gt; SetField(ref _isLoading, value);" />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;The loaded dashboard data, or &lt;c&gt;null&lt;/c&gt; if loading failed.&lt;/summary&gt;" />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public DashboardDto? Dashboard" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="69" visits="28" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _dashboard;" />
+      <LineAnalysis line="70" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="        private set =&gt; SetField(ref _dashboard, value);" />
+      <LineAnalysis line="71" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Worlds ordered by activity for display.&lt;/summary&gt;" />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public List&lt;DashboardWorldDto&gt; OrderedWorlds" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="76" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _orderedWorlds;" />
+      <LineAnalysis line="77" visits="10" coverage="Covered" coveredbranches="" totalbranches="" content="        private set =&gt; SetField(ref _orderedWorlds, value);" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="80" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;The motivational quote shown in the hero section.&lt;/summary&gt;" />
+      <LineAnalysis line="81" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public Quote? Quote" />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="83" visits="8" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _quote;" />
+      <LineAnalysis line="84" visits="8" coverage="Covered" coveredbranches="" totalbranches="" content="        private set =&gt; SetField(ref _quote, value);" />
+      <LineAnalysis line="85" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="86" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="87" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="88" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Runs onboarding redirect check, subscribes to tree state, and loads dashboard + quote in parallel." />
+      <LineAnalysis line="89" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="90" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task InitializeAsync()" />
+      <LineAnalysis line="91" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="92" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var profile = await _userApi.GetUserProfileAsync();" />
+      <LineAnalysis line="93" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (profile != null &amp;&amp; !profile.HasCompletedOnboarding)" />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="95" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _navigator.NavigateTo(&quot;/getting-started&quot;, replace: true);" />
+      <LineAnalysis line="96" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="97" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="98" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="99" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        await Task.WhenAll(LoadDashboardAsync(), LoadQuoteAsync());" />
+      <LineAnalysis line="100" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="101" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="102" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Loads (or reloads) the dashboard data and updates &lt;see cref=&quot;OrderedWorlds&quot;/&gt;.&lt;/summary&gt;" />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task LoadDashboardAsync()" />
+      <LineAnalysis line="104" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsLoading = true;" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="107" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="108" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="109" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var data = await _dashboardApi.GetDashboardAsync();" />
+      <LineAnalysis line="110" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Dashboard = data;" />
+      <LineAnalysis line="111" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="112" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (data != null)" />
+      <LineAnalysis line="113" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="114" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                OrderedWorlds = data.Worlds" />
+      <LineAnalysis line="115" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    .OrderByDescending(w =&gt; w.Campaigns.Any(c =&gt; c.IsActive))" />
+      <LineAnalysis line="116" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    .ThenByDescending(w =&gt; w.Campaigns" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        .Where(c =&gt; c.CurrentArc?.LatestSessionDate != null)" />
+      <LineAnalysis line="118" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        .Select(c =&gt; c.CurrentArc!.LatestSessionDate)" />
+      <LineAnalysis line="119" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        .DefaultIfEmpty(DateTime.MinValue)" />
+      <LineAnalysis line="120" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        .Max())" />
+      <LineAnalysis line="121" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    .ThenByDescending(w =&gt; w.CreatedAt)" />
+      <LineAnalysis line="122" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    .ToList();" />
+      <LineAnalysis line="123" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="124" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="125" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="126" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="127" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Error loading dashboard&quot;);" />
+      <LineAnalysis line="128" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Error(&quot;Failed to load dashboard&quot;);" />
+      <LineAnalysis line="129" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="130" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        finally" />
+      <LineAnalysis line="131" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="132" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            IsLoading = false;" />
+      <LineAnalysis line="133" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="134" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="135" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="136" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Loads the motivational quote. Failures are swallowed silently.&lt;/summary&gt;" />
+      <LineAnalysis line="137" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task LoadQuoteAsync()" />
+      <LineAnalysis line="138" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="139" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="140" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="141" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Quote = await _quoteService.GetRandomQuoteAsync();" />
+      <LineAnalysis line="142" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="143" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="144" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="145" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Error loading quote&quot;);" />
+      <LineAnalysis line="146" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="147" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="148" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="149" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Creates a new world and navigates to it.&lt;/summary&gt;" />
+      <LineAnalysis line="150" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task CreateNewWorldAsync()" />
+      <LineAnalysis line="151" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="152" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="153" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="154" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var createDto = new WorldCreateDto" />
+      <LineAnalysis line="155" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="156" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Name = &quot;New World&quot;," />
+      <LineAnalysis line="157" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Description = &quot;A new world for your adventures&quot;" />
+      <LineAnalysis line="158" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            };" />
+      <LineAnalysis line="159" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="160" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var world = await _worldApi.CreateWorldAsync(createDto);" />
+      <LineAnalysis line="161" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="162" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (world != null)" />
+      <LineAnalysis line="163" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="164" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _notifier.Success($&quot;World '{world.Name}' created!&quot;);" />
+      <LineAnalysis line="165" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                await _treeState.RefreshAsync();" />
+      <LineAnalysis line="166" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="167" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                if (world.WorldRootArticleId.HasValue)" />
+      <LineAnalysis line="168" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="169" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    _treeState.ShouldFocusTitle = true;" />
+      <LineAnalysis line="170" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    _navigator.NavigateTo($&quot;/world/{world.Slug}&quot;);" />
+      <LineAnalysis line="171" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="172" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                else" />
+      <LineAnalysis line="173" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="174" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    await LoadDashboardAsync();" />
+      <LineAnalysis line="175" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="176" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="177" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            else" />
+      <LineAnalysis line="178" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="179" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _notifier.Error(&quot;Failed to create world&quot;);" />
+      <LineAnalysis line="180" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="181" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="182" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="183" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="184" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Error creating world&quot;);" />
+      <LineAnalysis line="185" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Error($&quot;Error: {ex.Message}&quot;);" />
+      <LineAnalysis line="186" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="187" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="188" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="189" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Opens the join-world dialog and handles the result.&lt;/summary&gt;" />
+      <LineAnalysis line="190" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task JoinWorldAsync()" />
+      <LineAnalysis line="191" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="192" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var dialog = await _dialogService.ShowAsync&lt;JoinWorldDialog&gt;(&quot;Join a World&quot;);" />
+      <LineAnalysis line="193" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var result = await dialog.Result;" />
+      <LineAnalysis line="194" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="195" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (result != null &amp;&amp; !result.Canceled &amp;&amp; result.Data is WorldJoinResultDto joinResult)" />
+      <LineAnalysis line="196" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="197" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Success($&quot;Welcome to {joinResult.WorldName}!&quot;);" />
+      <LineAnalysis line="198" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await _treeState.RefreshAsync();" />
+      <LineAnalysis line="199" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await LoadDashboardAsync();" />
+      <LineAnalysis line="200" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="201" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (joinResult.WorldId.HasValue)" />
+      <LineAnalysis line="202" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="203" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _navigator.NavigateTo($&quot;/world/{joinResult.WorldId}&quot;);" />
+      <LineAnalysis line="204" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="205" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="206" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="207" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="208" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Resolves a character's article path and navigates to it.&lt;/summary&gt;" />
+      <LineAnalysis line="209" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task NavigateToCharacterAsync(Guid characterId)" />
+      <LineAnalysis line="210" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="211" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var article = await _articleApi.GetArticleDetailAsync(characterId);" />
+      <LineAnalysis line="212" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (article != null &amp;&amp; article.Breadcrumbs.Any())" />
+      <LineAnalysis line="213" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="214" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var path = string.Join(&quot;/&quot;, article.Breadcrumbs.Select(b =&gt; b.Slug));" />
+      <LineAnalysis line="215" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _navigator.NavigateTo($&quot;/article/{path}&quot;);" />
+      <LineAnalysis line="216" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="217" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="218" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="219" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Handles a dashboard prompt click, navigating if the prompt has an action URL.&lt;/summary&gt;" />
+      <LineAnalysis line="220" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void HandlePromptClick(PromptDto prompt)" />
+      <LineAnalysis line="221" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="222" visits="3" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(prompt.ActionUrl))" />
+      <LineAnalysis line="223" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="224" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _navigator.NavigateTo(prompt.ActionUrl);" />
+      <LineAnalysis line="225" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="226" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="227" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="228" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;Returns the CSS class for a prompt category.&lt;/summary&gt;" />
+      <LineAnalysis line="229" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public static string GetCategoryClass(PromptCategory category) =&gt;" />
+      <LineAnalysis line="230" visits="6" coverage="Covered" coveredbranches="4" totalbranches="4" content="        category switch" />
+      <LineAnalysis line="231" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="232" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            PromptCategory.MissingFundamental =&gt; &quot;missing-fundamental&quot;," />
+      <LineAnalysis line="233" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            PromptCategory.NeedsAttention =&gt; &quot;needs-attention&quot;," />
+      <LineAnalysis line="234" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            PromptCategory.Suggestion =&gt; &quot;suggestion&quot;," />
+      <LineAnalysis line="235" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            _ =&gt; string.Empty" />
+      <LineAnalysis line="236" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        };" />
+      <LineAnalysis line="237" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="238" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    private void OnTreeStateChanged() =&gt; RaisePropertyChanged(nameof(OrderedWorlds));" />
+      <LineAnalysis line="239" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="240" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;inheritdoc /&gt;" />
+      <LineAnalysis line="241" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public void Dispose()" />
+      <LineAnalysis line="242" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="243" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="        _treeState.OnStateChanged -= OnTreeStateChanged;" />
+      <LineAnalysis line="244" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="245" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

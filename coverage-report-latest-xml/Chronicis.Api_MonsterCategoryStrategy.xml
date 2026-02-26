@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Api.Services.ExternalLinks.MonsterCategoryStrategy">
+  <Summary>
+    <Class>Chronicis.Api.Services.ExternalLinks.MonsterCategoryStrategy</Class>
+    <Assembly>Chronicis.Api</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Services\ExternalLinks\MonsterCategoryStrategy.cs</File>
+    </Files>
+    <Coveredlines>55</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>55</Coverablelines>
+    <Totallines>79</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>24</Coveredbranches>
+    <Totalbranches>24</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>8</Coveredmethods>
+    <Fullcoveredmethods>8</Fullcoveredmethods>
+    <Totalmethods>8</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="get_CategoryKey">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_Endpoint">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_DisplayName">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_Icon">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="BuildMarkdown">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="BuildSubtitle">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="AppendTypeLine">
+      <CrapScore>8</CrapScore>
+      <Cyclomaticcomplexity>8</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="AppendStatistics">
+      <CrapScore>12</CrapScore>
+      <Cyclomaticcomplexity>12</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Services\ExternalLinks\MonsterCategoryStrategy.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text.Json;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using static Chronicis.Api.Services.ExternalLinks.Open5eJsonHelpers;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Services.ExternalLinks;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public sealed class MonsterCategoryStrategy : Open5eCategoryStrategyBase" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="9" visits="16" coverage="Covered" coveredbranches="" totalbranches="" content="    public override string CategoryKey =&gt; &quot;monsters&quot;;" />
+      <LineAnalysis line="10" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    public override string Endpoint =&gt; &quot;creatures&quot;;" />
+      <LineAnalysis line="11" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="    public override string DisplayName =&gt; &quot;Monster&quot;;" />
+      <LineAnalysis line="12" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    public override string? Icon =&gt; &quot;🐉&quot;;" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public override string BuildMarkdown(JsonElement root, string title)" />
+      <LineAnalysis line="15" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="16" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        var sb = new StringBuilder();" />
+      <LineAnalysis line="17" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine($&quot;# {title}&quot;);" />
+      <LineAnalysis line="18" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="20" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        AppendTypeLine(sb, root);" />
+      <LineAnalysis line="21" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        AppendStatistics(sb, root);" />
+      <LineAnalysis line="22" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        AppendNamedArray(sb, root, &quot;actions&quot;, &quot;Actions&quot;);" />
+      <LineAnalysis line="23" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        AppendNamedArray(sb, root, &quot;special_abilities&quot;, &quot;Special Abilities&quot;);" />
+      <LineAnalysis line="24" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        AppendNamedArray(sb, root, &quot;legendary_actions&quot;, &quot;Legendary Actions&quot;);" />
+      <LineAnalysis line="25" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="26" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        return sb.ToString().Trim();" />
+      <LineAnalysis line="27" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="28" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="29" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public override string BuildSubtitle(JsonElement item)" />
+      <LineAnalysis line="30" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="31" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var parts = new List&lt;string&gt; { DisplayName };" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="33" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var cr = GetString(item, &quot;challenge_rating&quot;);" />
+      <LineAnalysis line="34" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        var type = GetString(item, &quot;type&quot;);" />
+      <LineAnalysis line="35" visits="4" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(cr))" />
+      <LineAnalysis line="36" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            parts.Add($&quot;CR {cr}&quot;);" />
+      <LineAnalysis line="37" visits="4" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(type))" />
+      <LineAnalysis line="38" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            parts.Add(type);" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="40" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        return string.Join(&quot; • &quot;, parts);" />
+      <LineAnalysis line="41" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="42" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private static void AppendTypeLine(StringBuilder sb, JsonElement root)" />
+      <LineAnalysis line="44" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="45" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        var size = GetStringFromObject(root, &quot;size&quot;, &quot;name&quot;) ?? GetString(root, &quot;size&quot;);" />
+      <LineAnalysis line="46" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        var type = GetStringFromObject(root, &quot;type&quot;, &quot;name&quot;) ?? GetString(root, &quot;type&quot;);" />
+      <LineAnalysis line="47" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        var alignment = GetString(root, &quot;alignment&quot;);" />
+      <LineAnalysis line="48" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        var typeLine = string.Join(&quot; &quot;, new[] { size, type }.Where(s =&gt; !string.IsNullOrEmpty(s)));" />
+      <LineAnalysis line="49" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(alignment))" />
+      <LineAnalysis line="50" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            typeLine += $&quot;, {alignment}&quot;;" />
+      <LineAnalysis line="51" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(typeLine))" />
+      <LineAnalysis line="52" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="53" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;*{typeLine}*&quot;);" />
+      <LineAnalysis line="54" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine();" />
+      <LineAnalysis line="55" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="56" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="57" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private static void AppendStatistics(StringBuilder sb, JsonElement root)" />
+      <LineAnalysis line="59" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="60" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine(&quot;## Statistics&quot;);" />
+      <LineAnalysis line="61" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        var ac = GetString(root, &quot;armor_class&quot;);" />
+      <LineAnalysis line="62" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        var hp = GetString(root, &quot;hit_points&quot;);" />
+      <LineAnalysis line="63" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        var hitDice = GetString(root, &quot;hit_dice&quot;);" />
+      <LineAnalysis line="64" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        var cr = GetString(root, &quot;challenge_rating&quot;) ?? GetString(root, &quot;cr&quot;);" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="66" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(ac))" />
+      <LineAnalysis line="67" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;**Armor Class:** {ac}&quot;);" />
+      <LineAnalysis line="68" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(hp))" />
+      <LineAnalysis line="69" visits="2" coverage="Covered" coveredbranches="2" totalbranches="2" content="            sb.AppendLine($&quot;**Hit Points:** {hp}{(!string.IsNullOrEmpty(hitDice) ? $&quot; ({hitDice})&quot; : &quot;&quot;)}&quot;);" />
+      <LineAnalysis line="70" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(cr))" />
+      <LineAnalysis line="71" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;**Challenge:** {cr}&quot;);" />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="73" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        var speed = GetSpeedString(root);" />
+      <LineAnalysis line="74" visits="5" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!string.IsNullOrEmpty(speed))" />
+      <LineAnalysis line="75" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            sb.AppendLine($&quot;**Speed:** {speed}&quot;);" />
+      <LineAnalysis line="76" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="77" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="        sb.AppendLine();" />
+      <LineAnalysis line="78" visits="5" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

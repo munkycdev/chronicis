@@ -25,6 +25,7 @@ public class CampaignDetailTests : MudBlazorTestContext
         ICampaignApiService? campaignApi = null,
         IArcApiService? arcApi = null,
         IWorldApiService? worldApi = null,
+        IAuthService? authService = null,
         ITreeStateService? treeState = null,
         IBreadcrumbService? breadcrumbs = null,
         IAppNavigator? navigator = null,
@@ -35,6 +36,7 @@ public class CampaignDetailTests : MudBlazorTestContext
         campaignApi ??= Substitute.For<ICampaignApiService>();
         arcApi ??= Substitute.For<IArcApiService>();
         worldApi ??= Substitute.For<IWorldApiService>();
+        authService ??= Substitute.For<IAuthService>();
         treeState ??= Substitute.For<ITreeStateService>();
         breadcrumbs ??= Substitute.For<IBreadcrumbService>();
         navigator ??= Substitute.For<IAppNavigator>();
@@ -44,7 +46,7 @@ public class CampaignDetailTests : MudBlazorTestContext
         var logger = Substitute.For<ILogger<CampaignDetailViewModel>>();
 
         return new CampaignDetailViewModel(
-            campaignApi, arcApi, worldApi, treeState, breadcrumbs,
+            campaignApi, arcApi, worldApi, authService, treeState, breadcrumbs,
             navigator, notifier, titleService, dialogService, logger);
     }
 

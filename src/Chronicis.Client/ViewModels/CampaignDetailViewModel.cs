@@ -2,6 +2,7 @@ using Chronicis.Client.Abstractions;
 using Chronicis.Client.Components.Dialogs;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Chronicis.Shared.Extensions;
 using MudBlazor;
 
@@ -16,6 +17,7 @@ public sealed class CampaignDetailViewModel : ViewModelBase
     private readonly ICampaignApiService _campaignApi;
     private readonly IArcApiService _arcApi;
     private readonly IWorldApiService _worldApi;
+    private readonly IAuthService _authService;
     private readonly ITreeStateService _treeState;
     private readonly IBreadcrumbService _breadcrumbService;
     private readonly IAppNavigator _navigator;
@@ -33,12 +35,16 @@ public sealed class CampaignDetailViewModel : ViewModelBase
     private List<ArcDto> _arcs = new();
     private string _editName = string.Empty;
     private string _editDescription = string.Empty;
+    private string _editPrivateNotes = string.Empty;
     private List<BreadcrumbItem> _breadcrumbs = new();
+    private bool _isCurrentUserGm;
+    private bool _isCurrentUserWorldOwner;
 
     public CampaignDetailViewModel(
         ICampaignApiService campaignApi,
         IArcApiService arcApi,
         IWorldApiService worldApi,
+        IAuthService authService,
         ITreeStateService treeState,
         IBreadcrumbService breadcrumbService,
         IAppNavigator navigator,
@@ -50,6 +56,7 @@ public sealed class CampaignDetailViewModel : ViewModelBase
         _campaignApi = campaignApi;
         _arcApi = arcApi;
         _worldApi = worldApi;
+        _authService = authService;
         _treeState = treeState;
         _breadcrumbService = breadcrumbService;
         _navigator = navigator;
@@ -67,6 +74,10 @@ public sealed class CampaignDetailViewModel : ViewModelBase
     public CampaignDetailDto? Campaign { get => _campaign; private set => SetField(ref _campaign, value); }
     public List<ArcDto> Arcs { get => _arcs; private set => SetField(ref _arcs, value); }
     public List<BreadcrumbItem> Breadcrumbs { get => _breadcrumbs; private set => SetField(ref _breadcrumbs, value); }
+    public bool IsCurrentUserGM { get => _isCurrentUserGm; private set => SetField(ref _isCurrentUserGm, value); }
+    public bool IsCurrentUserWorldOwner { get => _isCurrentUserWorldOwner; private set => SetField(ref _isCurrentUserWorldOwner, value); }
+    public bool CanManageCampaignDetails => IsCurrentUserGM || IsCurrentUserWorldOwner;
+    public bool CanViewPrivateNotes => CanManageCampaignDetails;
 
     public string EditName
     {
@@ -88,6 +99,16 @@ public sealed class CampaignDetailViewModel : ViewModelBase
         }
     }
 
+    public string EditPrivateNotes
+    {
+        get => _editPrivateNotes;
+        set
+        {
+            if (SetField(ref _editPrivateNotes, value) && CanManageCampaignDetails)
+                HasUnsavedChanges = true;
+        }
+    }
+
     /// <summary>Loads the campaign and all related data for the given <paramref name="campaignId"/>.</summary>
     public async Task LoadAsync(Guid campaignId)
     {
@@ -95,6 +116,9 @@ public sealed class CampaignDetailViewModel : ViewModelBase
 
         try
         {
+            IsCurrentUserGM = false;
+            IsCurrentUserWorldOwner = false;
+
             var campaign = await _campaignApi.GetCampaignAsync(campaignId);
             if (campaign == null)
             {
@@ -105,6 +129,7 @@ public sealed class CampaignDetailViewModel : ViewModelBase
             Campaign = campaign;
             EditName = campaign.Name;
             EditDescription = campaign.Description ?? string.Empty;
+            EditPrivateNotes = campaign.PrivateNotes ?? string.Empty;
             HasUnsavedChanges = false;
 
             Arcs = await _arcApi.GetArcsByCampaignAsync(campaignId);
@@ -117,6 +142,8 @@ public sealed class CampaignDetailViewModel : ViewModelBase
                     new("Dashboard", href: "/dashboard"),
                     new(campaign.Name, href: null, disabled: true)
                 };
+
+            await ResolveCurrentUserRoleAsync(world);
 
             await _titleService.SetTitleAsync(campaign.Name);
             _treeState.ExpandPathToAndSelect(campaignId);
@@ -135,7 +162,7 @@ public sealed class CampaignDetailViewModel : ViewModelBase
     /// <summary>Toggles the active state of the campaign.</summary>
     public async Task OnActiveToggleAsync(bool isActive)
     {
-        if (_campaign == null || IsTogglingActive)
+        if (_campaign == null || !CanManageCampaignDetails || IsTogglingActive)
             return;
 
         IsTogglingActive = true;
@@ -175,7 +202,7 @@ public sealed class CampaignDetailViewModel : ViewModelBase
     /// <summary>Persists name and description changes to the API.</summary>
     public async Task SaveAsync()
     {
-        if (_campaign == null || IsSaving)
+        if (_campaign == null || !CanManageCampaignDetails || IsSaving)
             return;
 
         IsSaving = true;
@@ -185,7 +212,8 @@ public sealed class CampaignDetailViewModel : ViewModelBase
             var updateDto = new CampaignUpdateDto
             {
                 Name = EditName.Trim(),
-                Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim()
+                Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim(),
+                PrivateNotes = string.IsNullOrWhiteSpace(EditPrivateNotes) ? null : EditPrivateNotes
             };
 
             var updated = await _campaignApi.UpdateCampaignAsync(_campaign.Id, updateDto);
@@ -193,6 +221,7 @@ public sealed class CampaignDetailViewModel : ViewModelBase
             {
                 _campaign.Name = updated.Name;
                 _campaign.Description = updated.Description;
+                _campaign.PrivateNotes = string.IsNullOrWhiteSpace(EditPrivateNotes) ? null : EditPrivateNotes;
                 HasUnsavedChanges = false;
 
                 await _treeState.RefreshAsync();
@@ -214,7 +243,7 @@ public sealed class CampaignDetailViewModel : ViewModelBase
     /// <summary>Opens the create-arc dialog and navigates to the new arc on success.</summary>
     public async Task CreateArcAsync()
     {
-        if (_campaign == null)
+        if (_campaign == null || !IsCurrentUserGM)
             return;
 
         var parameters = new DialogParameters { { "CampaignId", _campaign.Id } };
@@ -232,4 +261,32 @@ public sealed class CampaignDetailViewModel : ViewModelBase
 
     /// <summary>Navigates to the arc detail page.</summary>
     public void NavigateToArc(Guid arcId) => _navigator.NavigateTo($"/arc/{arcId}");
+
+    private async Task ResolveCurrentUserRoleAsync(WorldDetailDto? world)
+    {
+        IsCurrentUserGM = false;
+        IsCurrentUserWorldOwner = false;
+
+        if (world?.Members == null)
+        {
+            return;
+        }
+
+        var user = await _authService.GetCurrentUserAsync();
+        if (user == null || string.IsNullOrWhiteSpace(user.Email))
+        {
+            return;
+        }
+
+        var member = world.Members.FirstOrDefault(m =>
+            m.Email.Equals(user.Email, StringComparison.OrdinalIgnoreCase));
+
+        if (member == null)
+        {
+            return;
+        }
+
+        IsCurrentUserGM = member.Role == WorldRole.GM;
+        IsCurrentUserWorldOwner = member.UserId == world.OwnerId;
+    }
 }

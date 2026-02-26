@@ -1,0 +1,671 @@
+   1: @using Chronicis.Client.Components.Articles
+   2: @using Chronicis.Client.Services
+   3: @using Chronicis.Shared.DTOs
+   4: @using Microsoft.JSInterop
+   5: @using ArticleWikiLinkAutocompleteItem = Chronicis.Client.Components.Articles.WikiLinkAutocompleteItem
+   6: @implements IAsyncDisposable
+   7: @inject IJSRuntime JSRuntime
+   8: @inject ILinkApiService LinkApiService
+   9: @inject IExternalLinkApiService ExternalLinkApiService
+  10: @inject IWikiLinkService WikiLinkService
+  11: @inject IArticleCacheService ArticleCache
+  12: @inject IAISummaryApiService SummaryApi
+  13: @inject IWorldApiService WorldApi
+  14: @inject NavigationManager Navigation
+  15: @inject ISnackbar Snackbar
+  16: @inject ILogger<PrivateNotesTipTapEditor> Logger
+  17: 
+  18: @if (ReadOnly)
+  19: {
+  20:     @if (!string.IsNullOrWhiteSpace(Value))
+  21:     {
+  22:         <MudPaper Outlined="true" Class="pa-4">
+  23:             @((MarkupString)Value)
+  24:         </MudPaper>
+  25:     }
+  26:     else
+  27:     {
+  28:         <MudAlert Severity="Severity.Info">
+  29:             No private notes yet.
+  30:         </MudAlert>
+  31:     }
+  32: }
+  33: else
+  34: {
+  35:     <div class="chronicis-editor-toolbar mb-2">
+  36:         <MudTooltip Text="Insert Image" Placement="Placement.Top">
+  37:             <MudIconButton Icon="@Icons.Material.Filled.Image"
+  38:                            Size="Size.Small"
+  39:                            Color="Color.Default"
+  40:                            OnClick="InsertImageFromToolbarAsync"
+  41:                            Disabled="!_editorInitialized" />
+  42:         </MudTooltip>
+  43:     </div>
+  44: 
+  45:     <div id="@EditorElementId" class="chronicis-editor-container mb-2"></div>
+  46: 
+  47:     @if (_showAutocomplete)
+  48:     {
+  49:         <ArticleDetailWikiLinkAutocomplete Suggestions="@_autocompleteSuggestions"
+  50:                                            Loading="@_autocompleteLoading"
+  51:                                            SelectedIndex="@_autocompleteSelectedIndex"
+  52:                                            SelectedIndexChanged="OnAutocompleteIndexChanged"
+  53:                                            OnSelect="OnAutocompleteSelect"
+  54:                                            OnCreate="OnAutocompleteCreate"
+  55:                                            Position="@_autocompletePosition"
+  56:                                            Query="@_autocompleteQuery"
+  57:                                            IsExternalQuery="@_autocompleteIsExternalQuery" />
+  58:     }
+  59: 
+  60:     <MudDrawer @bind-Open="_externalPreviewOpen"
+  61:                Anchor="Anchor.End"
+  62:                Variant="@DrawerVariant.Temporary"
+  63:                Elevation="9999"
+  64:                Class="external-link-preview-drawer">
+  65:         <MudDrawerHeader>
+  66:             <MudSpacer />
+  67:             <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseExternalPreview" />
+  68:         </MudDrawerHeader>
+  69:         <MudDrawerContainer>
+  70:             <div class="external-link-preview-header">
+  71:                 @if (!string.IsNullOrWhiteSpace(_externalPreviewSource))
+  72:                 {
+  73:                     <span class="external-link-preview-source">@_externalPreviewSource.ToUpperInvariant()</span>
+  74:                 }
+  75:                 <MudText Typo="Typo.h6">@(_externalPreviewTitle ?? "External Link")</MudText>
+  76:             </div>
+  77:             @if (!string.IsNullOrWhiteSpace(_externalPreviewContent?.Kind))
+  78:             {
+  79:                 <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+  80:                     @_externalPreviewContent.Kind
+  81:                 </MudText>
+  82:             }
+  83:             @if (_externalPreviewLoading)
+  84:             {
+  85:                 <div class="d-flex justify-center align-center" style="padding: 24px;">
+  86:                     <MudProgressCircular Indeterminate="true" />
+  87:                 </div>
+  88:             }
+  89:             else if (!string.IsNullOrWhiteSpace(_externalPreviewError))
+  90:             {
+  91:                 <MudAlert Severity="Severity.Error">@_externalPreviewError</MudAlert>
+  92:             }
+  93:             else if (_externalPreviewContent != null)
+  94:             {
+  95:                 <ExternalLinkDetailPanel Content="_externalPreviewContent" />
+  96:             }
+  97:         </MudDrawerContainer>
+  98:     </MudDrawer>
+  99: }
+ 100: 
+ 101: @code {
+ 102:     [Parameter]
+ 103:     public Guid WorldId { get; set; }
+ 104: 
+ 105:     [Parameter]
+ 106:     public string? Value { get; set; }
+ 107: 
+ 108:     [Parameter]
+ 109:     public EventCallback<string> ValueChanged { get; set; }
+ 110: 
+ 111:     [Parameter]
+ 112:     public bool ReadOnly { get; set; }
+ 113: 
+ 114:     [Parameter]
+ 115:     public string UploadContextLabel { get; set; } = "Private Notes";
+ 116: 
+ 117:     private readonly string _instanceId = Guid.NewGuid().ToString("N");
+ 118:     private string EditorElementId => $"private-notes-editor-{_instanceId}";
+ 119: 
+ 120:     private bool _editorInitialized;
+ 121:     private bool _disposed;
+ 122:     private bool _suppressEditorUpdates;
+ 123:     private string _editorValue = string.Empty;
+ 124:     private DotNetObjectReference<PrivateNotesTipTapEditor>? _dotNetRef;
+ 125: 
+ 126:     private bool _showAutocomplete;
+ 127:     private bool _autocompleteLoading;
+ 128:     private List<ArticleWikiLinkAutocompleteItem> _autocompleteSuggestions = new();
+ 129:     private int _autocompleteSelectedIndex;
+ 130:     private (double X, double Y) _autocompletePosition = (0, 0);
+ 131:     private string _autocompleteQuery = string.Empty;
+ 132:     private bool _autocompleteIsExternalQuery;
+ 133:     private string? _autocompleteExternalSourceKey;
+ 134: 
+ 135:     private bool _externalPreviewOpen;
+ 136:     private bool _externalPreviewLoading;
+ 137:     private string? _externalPreviewError;
+ 138:     private ExternalLinkContentDto? _externalPreviewContent;
+ 139:     private string? _externalPreviewSource;
+ 140:     private string? _externalPreviewTitle;
+ 141:     private readonly Dictionary<string, ExternalLinkContentDto> _externalLinkCache = new(StringComparer.OrdinalIgnoreCase);
+ 142: 
+ 143:     protected override void OnInitialized()
+ 144:     {
+ 145:         _dotNetRef = DotNetObjectReference.Create(this);
+ 146:         _editorValue = Value ?? string.Empty;
+ 147:     }
+ 148: 
+ 149:     protected override async Task OnParametersSetAsync()
+ 150:     {
+ 151:         var incoming = Value ?? string.Empty;
+ 152: 
+ 153:         if (!_editorInitialized)
+ 154:         {
+ 155:             _editorValue = incoming;
+ 156:             return;
+ 157:         }
+ 158: 
+ 159:         if (ReadOnly)
+ 160:         {
+ 161:             await DestroyEditorAsync();
+ 162:             _editorValue = incoming;
+ 163:             return;
+ 164:         }
+ 165: 
+ 166:         if (!string.Equals(incoming, _editorValue, StringComparison.Ordinal))
+ 167:         {
+ 168:             _editorValue = incoming;
+ 169:             _suppressEditorUpdates = true;
+ 170:             try
+ 171:             {
+ 172:                 await JSRuntime.InvokeVoidAsync("setTipTapContent", EditorElementId, _editorValue);
+ 173:                 await JSRuntime.InvokeVoidAsync("resolveEditorImages", EditorElementId, _dotNetRef);
+ 174:             }
+ 175:             catch (JSDisconnectedException)
+ 176:             {
+ 177:             }
+ 178:             finally
+ 179:             {
+ 180:                 _suppressEditorUpdates = false;
+ 181:             }
+ 182:         }
+ 183:     }
+ 184: 
+ 185:     protected override async Task OnAfterRenderAsync(bool firstRender)
+ 186:     {
+ 187:         if (ReadOnly || _editorInitialized || _disposed || _dotNetRef == null)
+ 188:             return;
+ 189: 
+ 190:         try
+ 191:         {
+ 192:             await JSRuntime.InvokeVoidAsync("initializeTipTapEditor", EditorElementId, _editorValue, _dotNetRef);
+ 193:             await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", EditorElementId, _dotNetRef);
+ 194:             await JSRuntime.InvokeVoidAsync("initializeImageUpload", EditorElementId, _dotNetRef);
+ 195:             await JSRuntime.InvokeVoidAsync("resolveEditorImages", EditorElementId, _dotNetRef);
+ 196:             _editorInitialized = true;
+ 197:         }
+ 198:         catch (JSDisconnectedException)
+ 199:         {
+ 200:         }
+ 201:         catch (Exception ex)
+ 202:         {
+ 203:             Logger.LogError(ex, "Failed to initialize private notes editor {EditorId}", EditorElementId);
+ 204:             Snackbar.Add("Failed to initialize private notes editor", Severity.Warning);
+ 205:         }
+ 206:     }
+ 207: 
+ 208:     public async ValueTask DisposeAsync()
+ 209:     {
+ 210:         _disposed = true;
+ 211:         await DestroyEditorAsync();
+ 212:         _dotNetRef?.Dispose();
+ 213:     }
+ 214: 
+ 215:     private async Task DestroyEditorAsync()
+ 216:     {
+ 217:         if (!_editorInitialized)
+ 218:             return;
+ 219: 
+ 220:         try
+ 221:         {
+ 222:             await JSRuntime.InvokeVoidAsync("destroyTipTapEditor", EditorElementId);
+ 223:         }
+ 224:         catch (JSDisconnectedException)
+ 225:         {
+ 226:         }
+ 227:         catch (Exception ex)
+ 228:         {
+ 229:             Logger.LogDebug(ex, "Failed to destroy private notes editor {EditorId}", EditorElementId);
+ 230:         }
+ 231:         finally
+ 232:         {
+ 233:             _editorInitialized = false;
+ 234:             _showAutocomplete = false;
+ 235:             _autocompleteSuggestions = new();
+ 236:         }
+ 237:     }
+ 238: 
+ 239:     private async Task InsertImageFromToolbarAsync()
+ 240:     {
+ 241:         if (!_editorInitialized || _dotNetRef == null)
+ 242:             return;
+ 243: 
+ 244:         try
+ 245:         {
+ 246:             await JSRuntime.InvokeVoidAsync("triggerImageUpload", EditorElementId, _dotNetRef);
+ 247:         }
+ 248:         catch (JSDisconnectedException)
+ 249:         {
+ 250:         }
+ 251:     }
+ 252: 
+ 253:     [JSInvokable]
+ 254:     public async Task OnEditorUpdate(string html)
+ 255:     {
+ 256:         if (_suppressEditorUpdates)
+ 257:             return;
+ 258: 
+ 259:         if (string.Equals(_editorValue, html, StringComparison.Ordinal))
+ 260:             return;
+ 261: 
+ 262:         _editorValue = html ?? string.Empty;
+ 263:         await ValueChanged.InvokeAsync(_editorValue);
+ 264:     }
+ 265: 
+ 266:     [JSInvokable]
+ 267:     public async Task OnAutocompleteTriggered(string query, double x, double y)
+ 268:     {
+ 269:         _autocompletePosition = (x, y);
+ 270:         _showAutocomplete = true;
+ 271:         _autocompleteSelectedIndex = 0;
+ 272: 
+ 273:         _autocompleteIsExternalQuery = TryParseExternalAutocompleteQuery(query, out var sourceKey, out var remainder);
+ 274:         _autocompleteExternalSourceKey = _autocompleteIsExternalQuery ? sourceKey : null;
+ 275:         _autocompleteQuery = _autocompleteIsExternalQuery ? remainder : query;
+ 276: 
+ 277:         var minLength = _autocompleteIsExternalQuery ? 0 : 3;
+ 278:         if (_autocompleteQuery.Length < minLength)
+ 279:         {
+ 280:             _autocompleteSuggestions = new();
+ 281:             await InvokeAsync(StateHasChanged);
+ 282:             return;
+ 283:         }
+ 284: 
+ 285:         _autocompleteLoading = true;
+ 286:         await InvokeAsync(StateHasChanged);
+ 287: 
+ 288:         try
+ 289:         {
+ 290:             if (_autocompleteIsExternalQuery)
+ 291:             {
+ 292:                 var externalSuggestions = await ExternalLinkApiService.GetSuggestionsAsync(
+ 293:                     WorldId,
+ 294:                     _autocompleteExternalSourceKey ?? string.Empty,
+ 295:                     _autocompleteQuery,
+ 296:                     CancellationToken.None);
+ 297: 
+ 298:                 _autocompleteSuggestions = externalSuggestions.Select(ArticleWikiLinkAutocompleteItem.FromExternal).ToList();
+ 299:             }
+ 300:             else
+ 301:             {
+ 302:                 var internalSuggestions = await LinkApiService.GetSuggestionsAsync(WorldId, _autocompleteQuery);
+ 303:                 _autocompleteSuggestions = internalSuggestions.Select(ArticleWikiLinkAutocompleteItem.FromInternal).ToList();
+ 304:             }
+ 305:         }
+ 306:         catch (Exception ex)
+ 307:         {
+ 308:             Logger.LogError(ex, "Error getting private notes autocomplete suggestions");
+ 309:             _autocompleteSuggestions = new();
+ 310:         }
+ 311:         finally
+ 312:         {
+ 313:             _autocompleteLoading = false;
+ 314:             await InvokeAsync(StateHasChanged);
+ 315:         }
+ 316:     }
+ 317: 
+ 318:     [JSInvokable]
+ 319:     public Task OnAutocompleteHidden()
+ 320:     {
+ 321:         _showAutocomplete = false;
+ 322:         _autocompleteSuggestions = new();
+ 323:         _autocompleteIsExternalQuery = false;
+ 324:         _autocompleteExternalSourceKey = null;
+ 325:         return InvokeAsync(StateHasChanged);
+ 326:     }
+ 327: 
+ 328:     [JSInvokable]
+ 329:     public Task OnAutocompleteArrowDown()
+ 330:     {
+ 331:         if (_autocompleteSuggestions.Any())
+ 332:         {
+ 333:             _autocompleteSelectedIndex = (_autocompleteSelectedIndex + 1) % _autocompleteSuggestions.Count;
+ 334:             return InvokeAsync(StateHasChanged);
+ 335:         }
+ 336: 
+ 337:         return Task.CompletedTask;
+ 338:     }
+ 339: 
+ 340:     [JSInvokable]
+ 341:     public Task OnAutocompleteArrowUp()
+ 342:     {
+ 343:         if (_autocompleteSuggestions.Any())
+ 344:         {
+ 345:             _autocompleteSelectedIndex = (_autocompleteSelectedIndex - 1 + _autocompleteSuggestions.Count) % _autocompleteSuggestions.Count;
+ 346:             return InvokeAsync(StateHasChanged);
+ 347:         }
+ 348: 
+ 349:         return Task.CompletedTask;
+ 350:     }
+ 351: 
+ 352:     [JSInvokable]
+ 353:     public async Task OnAutocompleteEnter()
+ 354:     {
+ 355:         if (_autocompleteSuggestions.Any() && _autocompleteSelectedIndex < _autocompleteSuggestions.Count)
+ 356:         {
+ 357:             await OnAutocompleteSelect(_autocompleteSuggestions[_autocompleteSelectedIndex]);
+ 358:         }
+ 359:     }
+ 360: 
+ 361:     [JSInvokable]
+ 362:     public async Task OnWikiLinkClicked(string targetArticleId)
+ 363:     {
+ 364:         if (!Guid.TryParse(targetArticleId, out var articleId))
+ 365:             return;
+ 366: 
+ 367:         try
+ 368:         {
+ 369:             var path = await ArticleCache.GetNavigationPathAsync(articleId);
+ 370:             if (!string.IsNullOrWhiteSpace(path))
+ 371:             {
+ 372:                 Navigation.NavigateTo($"/article/{path}");
+ 373:             }
+ 374:             else
+ 375:             {
+ 376:                 Snackbar.Add("Article not found", Severity.Warning);
+ 377:             }
+ 378:         }
+ 379:         catch (Exception ex)
+ 380:         {
+ 381:             Logger.LogError(ex, "Error navigating to private notes wiki link {ArticleId}", targetArticleId);
+ 382:             Snackbar.Add("Failed to navigate to article", Severity.Error);
+ 383:         }
+ 384:     }
+ 385: 
+ 386:     [JSInvokable]
+ 387:     public Task OnBrokenLinkClicked(string targetArticleId)
+ 388:     {
+ 389:         Snackbar.Add("This link points to a missing article", Severity.Warning);
+ 390:         return Task.CompletedTask;
+ 391:     }
+ 392: 
+ 393:     [JSInvokable]
+ 394:     public async Task OnExternalLinkClicked(string source, string id, string title)
+ 395:     {
+ 396:         if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(id))
+ 397:             return;
+ 398: 
+ 399:         _externalPreviewOpen = true;
+ 400:         _externalPreviewLoading = true;
+ 401:         _externalPreviewError = null;
+ 402:         _externalPreviewSource = source;
+ 403:         _externalPreviewTitle = string.IsNullOrWhiteSpace(title) ? "External Link" : title;
+ 404:         _externalPreviewContent = null;
+ 405:         await InvokeAsync(StateHasChanged);
+ 406: 
+ 407:         var cacheKey = $"{source}:{id}".ToLowerInvariant();
+ 408:         if (_externalLinkCache.TryGetValue(cacheKey, out var cached))
+ 409:         {
+ 410:             _externalPreviewContent = cached;
+ 411:             _externalPreviewLoading = false;
+ 412:             await InvokeAsync(StateHasChanged);
+ 413:             return;
+ 414:         }
+ 415: 
+ 416:         try
+ 417:         {
+ 418:             var content = await ExternalLinkApiService.GetContentAsync(source, id, CancellationToken.None);
+ 419:             if (content == null || string.IsNullOrWhiteSpace(content.Markdown))
+ 420:             {
+ 421:                 _externalPreviewError = "No content available.";
+ 422:             }
+ 423:             else
+ 424:             {
+ 425:                 _externalPreviewContent = content;
+ 426:                 _externalLinkCache[cacheKey] = content;
+ 427:             }
+ 428:         }
+ 429:         catch (Exception ex)
+ 430:         {
+ 431:             Logger.LogError(ex, "Error loading external preview for private notes {Source} {Id}", source, id);
+ 432:             _externalPreviewError = "Failed to load external content.";
+ 433:         }
+ 434:         finally
+ 435:         {
+ 436:             _externalPreviewLoading = false;
+ 437:             await InvokeAsync(StateHasChanged);
+ 438:         }
+ 439:     }
+ 440: 
+ 441:     [JSInvokable]
+ 442:     public async Task<string?> GetArticlePath(string targetArticleId)
+ 443:     {
+ 444:         if (!Guid.TryParse(targetArticleId, out var articleId))
+ 445:             return null;
+ 446: 
+ 447:         try
+ 448:         {
+ 449:             return await ArticleCache.GetArticlePathAsync(articleId);
+ 450:         }
+ 451:         catch (Exception ex)
+ 452:         {
+ 453:             Logger.LogError(ex, "Error getting article path for private notes {ArticleId}", targetArticleId);
+ 454:             return null;
+ 455:         }
+ 456:     }
+ 457: 
+ 458:     [JSInvokable]
+ 459:     public async Task<object?> GetArticleSummaryPreview(string targetArticleId)
+ 460:     {
+ 461:         if (!Guid.TryParse(targetArticleId, out var articleId))
+ 462:             return null;
+ 463: 
+ 464:         try
+ 465:         {
+ 466:             var preview = await SummaryApi.GetSummaryPreviewAsync(articleId);
+ 467:             if (preview == null || !preview.HasSummary)
+ 468:                 return null;
+ 469: 
+ 470:             return new
+ 471:             {
+ 472:                 title = preview.Title,
+ 473:                 summary = preview.Summary,
+ 474:                 templateName = preview.TemplateName
+ 475:             };
+ 476:         }
+ 477:         catch (Exception ex)
+ 478:         {
+ 479:             Logger.LogError(ex, "Error getting summary preview for private notes {ArticleId}", targetArticleId);
+ 480:             return null;
+ 481:         }
+ 482:     }
+ 483: 
+ 484:     [JSInvokable]
+ 485:     public async Task<object?> OnImageUploadRequested(string fileName, string contentType, long fileSize)
+ 486:     {
+ 487:         if (WorldId == Guid.Empty)
+ 488:             return null;
+ 489: 
+ 490:         try
+ 491:         {
+ 492:             var request = new WorldDocumentUploadRequestDto
+ 493:             {
+ 494:                 FileName = fileName,
+ 495:                 ContentType = contentType,
+ 496:                 FileSizeBytes = fileSize,
+ 497:                 ArticleId = null,
+ 498:                 Description = $"Inline image for {UploadContextLabel}"
+ 499:             };
+ 500: 
+ 501:             var response = await WorldApi.RequestDocumentUploadAsync(WorldId, request);
+ 502:             if (response == null)
+ 503:                 return null;
+ 504: 
+ 505:             return new
+ 506:             {
+ 507:                 uploadUrl = response.UploadUrl,
+ 508:                 documentId = response.DocumentId.ToString()
+ 509:             };
+ 510:         }
+ 511:         catch (Exception ex)
+ 512:         {
+ 513:             Logger.LogError(ex, "Error requesting image upload for private notes in world {WorldId}", WorldId);
+ 514:             return null;
+ 515:         }
+ 516:     }
+ 517: 
+ 518:     [JSInvokable]
+ 519:     public async Task OnImageUploadConfirmed(string documentIdStr)
+ 520:     {
+ 521:         if (WorldId == Guid.Empty || !Guid.TryParse(documentIdStr, out var documentId))
+ 522:             return;
+ 523: 
+ 524:         try
+ 525:         {
+ 526:             await WorldApi.ConfirmDocumentUploadAsync(WorldId, documentId);
+ 527:         }
+ 528:         catch (Exception ex)
+ 529:         {
+ 530:             Logger.LogError(ex, "Error confirming private notes image upload {DocumentId}", documentId);
+ 531:         }
+ 532:     }
+ 533: 
+ 534:     [JSInvokable]
+ 535:     public string GetImageProxyUrl(string documentIdStr) => $"chronicis-image:{documentIdStr}";
+ 536: 
+ 537:     [JSInvokable]
+ 538:     public async Task<string?> ResolveImageUrl(string documentIdStr)
+ 539:     {
+ 540:         if (!Guid.TryParse(documentIdStr, out var documentId))
+ 541:             return null;
+ 542: 
+ 543:         try
+ 544:         {
+ 545:             var result = await WorldApi.DownloadDocumentAsync(documentId);
+ 546:             return result?.DownloadUrl;
+ 547:         }
+ 548:         catch (Exception ex)
+ 549:         {
+ 550:             Logger.LogError(ex, "Error resolving private notes image {DocumentId}", documentId);
+ 551:             return null;
+ 552:         }
+ 553:     }
+ 554: 
+ 555:     [JSInvokable]
+ 556:     public Task OnImageUploadStarted(string fileName)
+ 557:     {
+ 558:         Snackbar.Add($"Uploading {fileName}...", Severity.Info);
+ 559:         return Task.CompletedTask;
+ 560:     }
+ 561: 
+ 562:     [JSInvokable]
+ 563:     public Task OnImageUploadError(string message)
+ 564:     {
+ 565:         Snackbar.Add(message, Severity.Error);
+ 566:         return Task.CompletedTask;
+ 567:     }
+ 568: 
+ 569:     private Task OnAutocompleteIndexChanged(int index)
+ 570:     {
+ 571:         _autocompleteSelectedIndex = index;
+ 572:         StateHasChanged();
+ 573:         return Task.CompletedTask;
+ 574:     }
+ 575: 
+ 576:     private async Task OnAutocompleteSelect(ArticleWikiLinkAutocompleteItem suggestion)
+ 577:     {
+ 578:         try
+ 579:         {
+ 580:             if (suggestion.IsCategory && !string.IsNullOrEmpty(suggestion.CategoryKey))
+ 581:             {
+ 582:                 await JSRuntime.InvokeVoidAsync("updateAutocompleteText", EditorElementId, $"{suggestion.Source}/{suggestion.CategoryKey}/");
+ 583:                 return;
+ 584:             }
+ 585: 
+ 586:             if (suggestion.IsExternal)
+ 587:             {
+ 588:                 if (string.IsNullOrWhiteSpace(suggestion.Source) || string.IsNullOrWhiteSpace(suggestion.ExternalId))
+ 589:                 {
+ 590:                     Logger.LogWarning("External suggestion missing source or id");
+ 591:                     return;
+ 592:                 }
+ 593: 
+ 594:                 await JSRuntime.InvokeVoidAsync("insertExternalLinkToken", EditorElementId, suggestion.Source, suggestion.ExternalId, suggestion.Title);
+ 595:             }
+ 596:             else
+ 597:             {
+ 598:                 if (!suggestion.ArticleId.HasValue)
+ 599:                 {
+ 600:                     Logger.LogWarning("Internal suggestion missing article id");
+ 601:                     return;
+ 602:                 }
+ 603: 
+ 604:                 var displayText = !string.IsNullOrWhiteSpace(suggestion.MatchedAlias)
+ 605:                     ? $"{suggestion.MatchedAlias} → {suggestion.Title}"
+ 606:                     : suggestion.Title;
+ 607: 
+ 608:                 await JSRuntime.InvokeVoidAsync("insertWikiLink", EditorElementId, suggestion.ArticleId.Value.ToString(), displayText);
+ 609:             }
+ 610: 
+ 611:             _showAutocomplete = false;
+ 612:             _autocompleteSuggestions = new();
+ 613:             StateHasChanged();
+ 614:         }
+ 615:         catch (Exception ex)
+ 616:         {
+ 617:             Logger.LogError(ex, "Error inserting private notes link");
+ 618:             Snackbar.Add("Failed to insert link", Severity.Error);
+ 619:         }
+ 620:     }
+ 621: 
+ 622:     private async Task OnAutocompleteCreate(string articleName)
+ 623:     {
+ 624:         if (_autocompleteIsExternalQuery || string.IsNullOrWhiteSpace(articleName) || WorldId == Guid.Empty)
+ 625:             return;
+ 626: 
+ 627:         try
+ 628:         {
+ 629:             var created = await WikiLinkService.CreateArticleFromAutocompleteAsync(articleName, WorldId);
+ 630:             if (created == null)
+ 631:             {
+ 632:                 Snackbar.Add("Failed to create article", Severity.Error);
+ 633:                 return;
+ 634:             }
+ 635: 
+ 636:             await JSRuntime.InvokeVoidAsync("insertWikiLink", EditorElementId, created.Id.ToString(), created.Title);
+ 637:             _showAutocomplete = false;
+ 638:             _autocompleteSuggestions = new();
+ 639:             StateHasChanged();
+ 640:             Snackbar.Add($"Created and linked '{articleName}'", Severity.Success);
+ 641:         }
+ 642:         catch (Exception ex)
+ 643:         {
+ 644:             Logger.LogError(ex, "Error creating article from private notes autocomplete");
+ 645:             Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
+ 646:         }
+ 647:     }
+ 648: 
+ 649:     private void CloseExternalPreview()
+ 650:     {
+ 651:         _externalPreviewOpen = false;
+ 652:         StateHasChanged();
+ 653:     }
+ 654: 
+ 655:     private static bool TryParseExternalAutocompleteQuery(string query, out string sourceKey, out string remainder)
+ 656:     {
+ 657:         sourceKey = string.Empty;
+ 658:         remainder = string.Empty;
+ 659: 
+ 660:         if (string.IsNullOrWhiteSpace(query))
+ 661:             return false;
+ 662: 
+ 663:         var slashIndex = query.IndexOf('/');
+ 664:         if (slashIndex <= 0)
+ 665:             return false;
+ 666: 
+ 667:         sourceKey = query[..slashIndex].Trim().ToLowerInvariant();
+ 668:         remainder = query[(slashIndex + 1)..];
+ 669:         return !string.IsNullOrWhiteSpace(sourceKey);
+ 670:     }
+ 671: }

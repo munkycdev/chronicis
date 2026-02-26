@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Shared.Utilities.SlugGenerator">
+  <Summary>
+    <Class>Chronicis.Shared.Utilities.SlugGenerator</Class>
+    <Assembly>Chronicis.Shared</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Shared\Utilities\SlugGenerator.cs</File>
+    </Files>
+    <Coveredlines>27</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>27</Coverablelines>
+    <Totallines>76</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>10</Coveredbranches>
+    <Totalbranches>10</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>4</Coveredmethods>
+    <Fullcoveredmethods>4</Fullcoveredmethods>
+    <Totalmethods>4</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="cctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GenerateSlug">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="IsValidSlug">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="GenerateUniqueSlug">
+      <CrapScore>4</CrapScore>
+      <Cyclomaticcomplexity>4</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Shared\Utilities\SlugGenerator.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text.RegularExpressions;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Shared.Utilities;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Utility class for generating URL-safe slugs from article titles." />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public static class SlugGenerator" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="10" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    private static readonly Regex InvalidCharsRegex = new(@&quot;[^a-z0-9-]&quot;, RegexOptions.Compiled);" />
+      <LineAnalysis line="11" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    private static readonly Regex MultipleHyphensRegex = new(@&quot;-{2,}&quot;, RegexOptions.Compiled);" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Generates a URL-safe slug from a title." />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Rules:" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// - Converts to lowercase" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// - Replaces spaces with hyphens" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// - Removes all characters except a-z, 0-9, and hyphens" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// - Collapses multiple consecutive hyphens into single hyphen" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// - Trims hyphens from start and end" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// - Returns &quot;untitled&quot; if result is empty" />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="23" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public static string GenerateSlug(string title)" />
+      <LineAnalysis line="24" visits="53" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="25" visits="53" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrWhiteSpace(title))" />
+      <LineAnalysis line="26" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            return &quot;untitled&quot;;" />
+      <LineAnalysis line="27" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="28" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Convert to lowercase" />
+      <LineAnalysis line="29" visits="50" coverage="Covered" coveredbranches="" totalbranches="" content="        var slug = title.ToLowerInvariant();" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Replace spaces with hyphens" />
+      <LineAnalysis line="32" visits="50" coverage="Covered" coveredbranches="" totalbranches="" content="        slug = slug.Replace(&quot; &quot;, &quot;-&quot;);" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Remove invalid characters (keep only a-z, 0-9, hyphens)" />
+      <LineAnalysis line="35" visits="50" coverage="Covered" coveredbranches="" totalbranches="" content="        slug = InvalidCharsRegex.Replace(slug, string.Empty);" />
+      <LineAnalysis line="36" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="37" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Replace multiple consecutive hyphens with single hyphen" />
+      <LineAnalysis line="38" visits="50" coverage="Covered" coveredbranches="" totalbranches="" content="        slug = MultipleHyphensRegex.Replace(slug, &quot;-&quot;);" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Trim hyphens from start and end" />
+      <LineAnalysis line="41" visits="50" coverage="Covered" coveredbranches="" totalbranches="" content="        slug = slug.Trim('-');" />
+      <LineAnalysis line="42" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="43" visits="50" coverage="Covered" coveredbranches="2" totalbranches="2" content="        return string.IsNullOrEmpty(slug) ? &quot;untitled&quot; : slug;" />
+      <LineAnalysis line="44" visits="53" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="47" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Validates if a slug is URL-safe." />
+      <LineAnalysis line="48" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="49" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public static bool IsValidSlug(string slug)" />
+      <LineAnalysis line="50" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="51" visits="30" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrWhiteSpace(slug))" />
+      <LineAnalysis line="52" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            return false;" />
+      <LineAnalysis line="53" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Must be lowercase alphanumeric and hyphens only" />
+      <LineAnalysis line="55" visits="27" coverage="Covered" coveredbranches="" totalbranches="" content="        return Regex.IsMatch(slug, @&quot;^[a-z0-9-]+$&quot;);" />
+      <LineAnalysis line="56" visits="30" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="57" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Generates a unique slug by appending a counter if needed." />
+      <LineAnalysis line="60" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="61" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public static string GenerateUniqueSlug(string baseSlug, HashSet&lt;string&gt; existingSlugs)" />
+      <LineAnalysis line="62" visits="22" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="63" visits="22" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (!existingSlugs.Contains(baseSlug))" />
+      <LineAnalysis line="64" visits="13" coverage="Covered" coveredbranches="" totalbranches="" content="            return baseSlug;" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="66" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="        var counter = 2;" />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        string uniqueSlug;" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        do" />
+      <LineAnalysis line="69" visits="113" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="70" visits="113" coverage="Covered" coveredbranches="" totalbranches="" content="            uniqueSlug = $&quot;{baseSlug}-{counter++}&quot;;" />
+      <LineAnalysis line="71" visits="113" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="72" visits="113" coverage="Covered" coveredbranches="2" totalbranches="2" content="        while (existingSlugs.Contains(uniqueSlug));" />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="74" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="        return uniqueSlug;" />
+      <LineAnalysis line="75" visits="22" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="76" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

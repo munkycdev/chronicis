@@ -33,6 +33,11 @@ public class Arc
     public string? Description { get; set; }
 
     /// <summary>
+    /// Private notes for the arc, visible only to the world owner and GMs.
+    /// </summary>
+    public string? PrivateNotes { get; set; }
+
+    /// <summary>
     /// Sort order for displaying arcs within a campaign.
     /// Lower numbers appear first.
     /// </summary>

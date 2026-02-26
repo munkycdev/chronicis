@@ -24,6 +24,7 @@
 @inject IAppContextService AppContext
 @inject IArticleCacheService ArticleCache
 @inject IAISummaryApiService SummaryApi
+@inject IWorldApiService WorldApi
 
 @if (ViewModel.IsLoading)
 {
@@ -44,7 +45,7 @@ else
                      Class="mr-3 generic-container-icon"
                      Style="color: var(--chronicis-beige-gold); font-size: 2.5rem;" />
             <div class="flex-grow-1">
-                @if (ViewModel.IsCurrentUserGM)
+                @if (ViewModel.CanManageSessionDetails)
                 {
                     <MudTextField @bind-Value="ViewModel.EditName"
                                   Variant="Variant.Text"
@@ -79,7 +80,7 @@ else
                     </MudText>
                 }
             </div>
-            @if (ViewModel.IsCurrentUserGM)
+            @if (ViewModel.CanManageSessionDetails)
             {
                 <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Size="Size.Small">
                     GM
@@ -89,51 +90,73 @@ else
 
         <div class="chronicis-rune-divider mb-4"></div>
 
-        <MudText Typo="Typo.h6" Class="mb-2" Style="color: var(--chronicis-beige-gold);">
-            <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Small" Class="mr-2" />
-            Public Notes
-        </MudText>
+        <MudTabs Elevation="0"
+                 Rounded="true"
+                 ApplyEffectsToContainer="true"
+                 KeepPanelsAlive="true"
+                 PanelClass="pa-4 mb-2">
+            <MudTabPanel Text="Notes" Icon="@Icons.Material.Filled.Public">
+                <MudText Typo="Typo.h6" Class="mb-2" Style="color: var(--chronicis-beige-gold);">
+                    <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Small" Class="mr-2" />
+                    Public Notes
+                </MudText>
 
-        @if (ViewModel.IsCurrentUserGM)
-        {
-            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">
-                Public Notes
-            </MudText>
-            <div id="@PublicEditorElementId" class="chronicis-editor-container mb-4"></div>
-        }
-        else if (!string.IsNullOrWhiteSpace(ViewModel.Session.PublicNotes))
-        {
-            <MudPaper Outlined="true" Class="pa-4 mb-4">
-                @((MarkupString)ViewModel.Session.PublicNotes)
-            </MudPaper>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Info" Class="mb-4">
-                No public notes yet.
-            </MudAlert>
-        }
+                @if (ViewModel.CanManageSessionDetails)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">
+                        Public Notes
+                    </MudText>
+                    <div id="@PublicEditorElementId" class="chronicis-editor-container mb-4"></div>
+                }
+                else if (!string.IsNullOrWhiteSpace(ViewModel.Session.PublicNotes))
+                {
+                    <MudPaper Outlined="true" Class="pa-4 mb-4">
+                        @((MarkupString)ViewModel.Session.PublicNotes)
+                    </MudPaper>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Class="mb-4">
+                        No public notes yet.
+                    </MudAlert>
+                }
+            </MudTabPanel>
 
-        <MudText Typo="Typo.h6" Class="mb-2" Style="color: var(--chronicis-beige-gold);">
-            <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Class="mr-2" />
-            Private Notes
-        </MudText>
+            @if (ViewModel.CanViewPrivateNotes)
+            {
+                <MudTabPanel Text="Private Notes" Icon="@Icons.Material.Filled.Lock">
+                    <MudText Typo="Typo.h6" Class="mb-2" Style="color: var(--chronicis-beige-gold);">
+                        <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Class="mr-2" />
+                        Private Notes
+                    </MudText>
 
-        @if (ViewModel.IsCurrentUserGM)
-        {
-            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">
-                Private Notes (GM only)
-            </MudText>
-            <div id="@PrivateEditorElementId" class="chronicis-editor-container mb-4"></div>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Info" Class="mb-4">
-                Private notes are visible to GMs only.
-            </MudAlert>
-        }
+                    @if (ViewModel.CanManageSessionDetails)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">
+                            Private Notes (World owner / GM only)
+                        </MudText>
+                        <div class="chronicis-editor-toolbar mb-2">
+                            <MudTooltip Text="Insert Image" Placement="Placement.Top">
+                                <MudIconButton Icon="@Icons.Material.Filled.Image"
+                                               Size="Size.Small"
+                                               Color="Color.Default"
+                                               OnClick="InsertPrivateImageFromToolbarAsync"
+                                               Disabled="!_privateEditorInitialized" />
+                            </MudTooltip>
+                        </div>
+                        <div id="@PrivateEditorElementId" class="chronicis-editor-container mb-4"></div>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info" Class="mb-4">
+                            Private notes are visible to the world owner and GMs only.
+                        </MudAlert>
+                    }
+                </MudTabPanel>
+            }
+        </MudTabs>
 
-        @if (ViewModel.IsCurrentUserGM)
+        @if (ViewModel.CanManageSessionDetails)
         {
             <div class="chronicis-flex-between mb-4">
                 <SaveStatusIndicator IsSaving="ViewModel.IsSavingNotes" HasUnsavedChanges="ViewModel.HasUnsavedChanges" />
@@ -265,7 +288,7 @@ else
             </MudAlert>
         }
 
-        @if (ViewModel.IsCurrentUserGM)
+        @if (ViewModel.CanManageSessionDetails)
         {
             <MudDrawer @bind-Open="_externalPreviewOpen"
                        Anchor="Anchor.End"
@@ -442,7 +465,7 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (ViewModel.IsLoading || !ViewModel.IsCurrentUserGM || ViewModel.Session == null || ViewModel.Session.Id != SessionId)
+        if (ViewModel.IsLoading || !ViewModel.CanManageSessionDetails || ViewModel.Session == null || ViewModel.Session.Id != SessionId)
         {
             return;
         }
@@ -460,7 +483,7 @@ else
 
     private async Task OnSessionTitleKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && ViewModel.IsCurrentUserGM)
+        if (e.Key == "Enter" && ViewModel.CanManageSessionDetails)
         {
             await SaveSessionNotesAsync();
         }
@@ -468,7 +491,7 @@ else
 
     private async void HandleSaveShortcut()
     {
-        if (!ViewModel.IsCurrentUserGM || ViewModel.Session == null)
+        if (!ViewModel.CanManageSessionDetails || ViewModel.Session == null)
         {
             return;
         }
@@ -524,7 +547,7 @@ else
 
     private async Task InitializeEditorsAsync()
     {
-        if (ViewModel.Session == null || !ViewModel.IsCurrentUserGM || _publicEditorBridgeRef == null || _privateEditorBridgeRef == null)
+        if (ViewModel.Session == null || !ViewModel.CanManageSessionDetails || _publicEditorBridgeRef == null || _privateEditorBridgeRef == null)
         {
             return;
         }
@@ -535,10 +558,14 @@ else
         {
             await JSRuntime.InvokeVoidAsync("initializeTipTapEditor", PublicEditorElementId, ViewModel.EditPublicNotes, _publicEditorBridgeRef);
             await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", PublicEditorElementId, _publicEditorBridgeRef);
+            await JSRuntime.InvokeVoidAsync("initializeImageUpload", PublicEditorElementId, _publicEditorBridgeRef);
+            await JSRuntime.InvokeVoidAsync("resolveEditorImages", PublicEditorElementId, _publicEditorBridgeRef);
             _publicEditorInitialized = true;
 
             await JSRuntime.InvokeVoidAsync("initializeTipTapEditor", PrivateEditorElementId, ViewModel.EditPrivateNotes, _privateEditorBridgeRef);
             await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", PrivateEditorElementId, _privateEditorBridgeRef);
+            await JSRuntime.InvokeVoidAsync("initializeImageUpload", PrivateEditorElementId, _privateEditorBridgeRef);
+            await JSRuntime.InvokeVoidAsync("resolveEditorImages", PrivateEditorElementId, _privateEditorBridgeRef);
             _privateEditorInitialized = true;
         }
         catch (JSDisconnectedException)
@@ -595,7 +622,7 @@ else
 
     private async Task SyncEditorsToViewModelAsync()
     {
-        if (!ViewModel.IsCurrentUserGM)
+        if (!ViewModel.CanManageSessionDetails)
         {
             return;
         }
@@ -620,7 +647,7 @@ else
 
     private Task HandleEditorUpdateAsync(SessionEditorKind editorKind, string html)
     {
-        if (!ViewModel.IsCurrentUserGM)
+        if (!ViewModel.CanManageSessionDetails)
         {
             return Task.CompletedTask;
         }
@@ -750,7 +777,7 @@ else
 
     private async Task OnAutocompleteSelect(ArticleWikiLinkAutocompleteItem suggestion)
     {
-        if (!ViewModel.IsCurrentUserGM)
+        if (!ViewModel.CanManageSessionDetails)
         {
             return;
         }
@@ -997,6 +1024,111 @@ else
     private void CloseExternalPreview()
     {
         _externalPreviewOpen = false;
+        StateHasChanged();
+    }
+
+    private async Task InsertPrivateImageFromToolbarAsync()
+    {
+        if (!_privateEditorInitialized || _privateEditorBridgeRef == null)
+        {
+            return;
+        }
+
+        await JSRuntime.InvokeVoidAsync("triggerImageUpload", PrivateEditorElementId, _privateEditorBridgeRef);
+    }
+
+    [JSInvokable]
+    public async Task<object?> OnImageUploadRequested(string fileName, string contentType, long fileSize)
+    {
+        var worldId = ViewModel.World?.Id ?? AppContext.CurrentWorldId ?? Guid.Empty;
+        if (worldId == Guid.Empty)
+        {
+            return null;
+        }
+
+        try
+        {
+            var request = new WorldDocumentUploadRequestDto
+            {
+                FileName = fileName,
+                ContentType = contentType,
+                FileSizeBytes = fileSize,
+                ArticleId = null,
+                Description = $"Inline image for session private notes: {ViewModel.Session?.Name ?? "Session"}"
+            };
+
+            var response = await WorldApi.RequestDocumentUploadAsync(worldId, request);
+            if (response == null)
+            {
+                return null;
+            }
+
+            return new
+            {
+                uploadUrl = response.UploadUrl,
+                documentId = response.DocumentId.ToString()
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error requesting session private note image upload for world {WorldId}", worldId);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnImageUploadConfirmed(string documentIdStr)
+    {
+        var worldId = ViewModel.World?.Id ?? AppContext.CurrentWorldId ?? Guid.Empty;
+        if (worldId == Guid.Empty || !Guid.TryParse(documentIdStr, out var documentId))
+        {
+            return;
+        }
+
+        try
+        {
+            await WorldApi.ConfirmDocumentUploadAsync(worldId, documentId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error confirming session private note image upload {DocumentId}", documentId);
+        }
+    }
+
+    [JSInvokable]
+    public string GetImageProxyUrl(string documentIdStr) => $"chronicis-image:{documentIdStr}";
+
+    [JSInvokable]
+    public async Task<string?> ResolveImageUrl(string documentIdStr)
+    {
+        if (!Guid.TryParse(documentIdStr, out var documentId))
+        {
+            return null;
+        }
+
+        try
+        {
+            var result = await WorldApi.DownloadDocumentAsync(documentId);
+            return result?.DownloadUrl;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error resolving session private note image {DocumentId}", documentId);
+            return null;
+        }
+    }
+
+    [JSInvokable]
+    public void OnImageUploadStarted(string fileName)
+    {
+        Snackbar.Add($"Uploading {fileName}...", Severity.Info);
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnImageUploadError(string message)
+    {
+        Snackbar.Add(message, Severity.Error);
         StateHasChanged();
     }
 }

@@ -1,7 +1,5 @@
-using System.Reflection;
 using Chronicis.Api.Controllers;
 using Chronicis.Api.Services;
-using Chronicis.Shared.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;

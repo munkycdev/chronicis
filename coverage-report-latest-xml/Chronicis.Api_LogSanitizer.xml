@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Api.Utilities.LogSanitizer">
+  <Summary>
+    <Class>Chronicis.Api.Utilities.LogSanitizer</Class>
+    <Assembly>Chronicis.Api</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Utilities\LogSanitizer.cs</File>
+    </Files>
+    <Coveredlines>31</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>31</Coverablelines>
+    <Totallines>88</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>10</Coveredbranches>
+    <Totalbranches>10</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>4</Coveredmethods>
+    <Fullcoveredmethods>4</Fullcoveredmethods>
+    <Totalmethods>4</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="cctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="Sanitize">
+      <CrapScore>8</CrapScore>
+      <Cyclomaticcomplexity>8</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="SanitizeObject">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="SanitizeMultiple">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Utilities\LogSanitizer.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text.RegularExpressions;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Utilities;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Provides aggressive sanitization of user input before logging to prevent log injection attacks." />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public static class LogSanitizer" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private const int MaxLogLength = 1000;" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private const string TruncationMarker = &quot;...[TRUNCATED]&quot;;" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private const string SanitizedMarker = &quot;[SANITIZED]&quot;;" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Matches all control characters including newlines, carriage returns, tabs, etc." />
+      <LineAnalysis line="15" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    private static readonly Regex ControlCharPattern = new(@&quot;[\x00-\x1F\x7F-\x9F]&quot;, RegexOptions.Compiled);" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Matches potentially dangerous sequences" />
+      <LineAnalysis line="18" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="    private static readonly Regex DangerousPattern = new(@&quot;(\r\n|\r|\n|\t|%0[aAdD]|%0[aA]|%0[dD])&quot;, RegexOptions.Compiled);" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Sanitizes a string value for safe logging by removing control characters and truncating length." />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="23" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;param name=&quot;value&quot;&gt;The value to sanitize. Can be null.&lt;/param&gt;" />
+      <LineAnalysis line="24" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;returns&gt;A sanitized version of the input safe for logging.&lt;/returns&gt;" />
+      <LineAnalysis line="25" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public static string? Sanitize(string? value)" />
+      <LineAnalysis line="26" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="27" visits="15" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrEmpty(value))" />
+      <LineAnalysis line="28" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="29" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            return value;" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // First pass: Remove control characters" />
+      <LineAnalysis line="33" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="        var sanitized = ControlCharPattern.Replace(value, &quot;&quot;);" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Second pass: Remove URL-encoded dangerous characters" />
+      <LineAnalysis line="36" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="        sanitized = DangerousPattern.Replace(sanitized, &quot;&quot;);" />
+      <LineAnalysis line="37" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="38" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Remove any remaining whitespace sequences longer than 1 space" />
+      <LineAnalysis line="39" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="        sanitized = Regex.Replace(sanitized, @&quot;\s{2,}&quot;, &quot; &quot;);" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="41" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Trim the result" />
+      <LineAnalysis line="42" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="        sanitized = sanitized.Trim();" />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="44" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Check if we sanitized anything" />
+      <LineAnalysis line="45" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="        var wasSanitized = sanitized != value;" />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="47" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Truncate if too long" />
+      <LineAnalysis line="48" visits="12" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (sanitized.Length &gt; MaxLogLength)" />
+      <LineAnalysis line="49" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="50" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            sanitized = sanitized.Substring(0, MaxLogLength) + TruncationMarker;" />
+      <LineAnalysis line="51" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            wasSanitized = true;" />
+      <LineAnalysis line="52" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="53" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Add marker if content was modified" />
+      <LineAnalysis line="55" visits="12" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (wasSanitized &amp;&amp; !string.IsNullOrWhiteSpace(sanitized))" />
+      <LineAnalysis line="56" visits="8" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="57" visits="8" coverage="Covered" coveredbranches="" totalbranches="" content="            sanitized = $&quot;{sanitized} {SanitizedMarker}&quot;;" />
+      <LineAnalysis line="58" visits="8" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="60" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="        return sanitized;" />
+      <LineAnalysis line="61" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="62" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="64" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Sanitizes an object by converting it to string and then sanitizing." />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Handles null values gracefully." />
+      <LineAnalysis line="66" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="67" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;param name=&quot;value&quot;&gt;The object to sanitize. Can be null.&lt;/param&gt;" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;returns&gt;A sanitized string representation safe for logging.&lt;/returns&gt;" />
+      <LineAnalysis line="69" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public static string? SanitizeObject(object? value)" />
+      <LineAnalysis line="70" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="71" visits="3" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (value == null)" />
+      <LineAnalysis line="72" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="73" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            return null;" />
+      <LineAnalysis line="74" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="75" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="76" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        return Sanitize(value.ToString());" />
+      <LineAnalysis line="77" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="80" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Sanitizes multiple values for logging." />
+      <LineAnalysis line="81" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;param name=&quot;values&quot;&gt;Array of values to sanitize.&lt;/param&gt;" />
+      <LineAnalysis line="83" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;returns&gt;Array of sanitized values in the same order.&lt;/returns&gt;" />
+      <LineAnalysis line="84" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public static string?[] SanitizeMultiple(params string?[] values)" />
+      <LineAnalysis line="85" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="86" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        return values.Select(Sanitize).ToArray();" />
+      <LineAnalysis line="87" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="88" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

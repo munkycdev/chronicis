@@ -2,7 +2,6 @@ using System.Reflection;
 using Bunit;
 using Chronicis.Client.Components.Admin;
 using Chronicis.Client.Services;
-using Chronicis.Client.Tests.Components;
 using Chronicis.Shared.DTOs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

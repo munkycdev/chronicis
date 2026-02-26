@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Api.Services.ExternalLinks.BlobFilenameParser">
+  <Summary>
+    <Class>Chronicis.Api.Services.ExternalLinks.BlobFilenameParser</Class>
+    <Assembly>Chronicis.Api</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Api\Services\ExternalLinks\BlobFilenameParser.cs</File>
+    </Files>
+    <Coveredlines>53</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>53</Coverablelines>
+    <Totallines>130</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>22</Coveredbranches>
+    <Totalbranches>22</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>3</Coveredmethods>
+    <Fullcoveredmethods>3</Fullcoveredmethods>
+    <Totalmethods>3</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="DeriveSlug">
+      <CrapScore>10</CrapScore>
+      <Cyclomaticcomplexity>10</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="NormalizeSlug">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="PrettifySlug">
+      <CrapScore>10</CrapScore>
+      <Cyclomaticcomplexity>10</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Api\Services\ExternalLinks\BlobFilenameParser.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using System.Text.RegularExpressions;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Api.Services.ExternalLinks;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Parses blob filenames to derive slugs and titles." />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// Handles SRD filename conventions (e.g., &quot;srd-2024_animated-armor.json&quot;)." />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public static partial class BlobFilenameParser" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    // Matches any sequence of non-alphanumeric characters (to replace with single hyphen)" />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    [GeneratedRegex(@&quot;[^a-z0-9]+&quot;, RegexOptions.Compiled)]" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private static partial Regex NonSlugCharsPattern();" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Derives a slug from a blob filename." />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;param name=&quot;filename&quot;&gt;Full filename including extension (e.g., &quot;srd-2024_animated-armor.json&quot;).&lt;/param&gt;" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;returns&gt;Normalized slug (e.g., &quot;animated-armor&quot;), or empty string if normalization fails.&lt;/returns&gt;" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;remarks&gt;" />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Rules:" />
+      <LineAnalysis line="23" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// 1. Remove .json extension" />
+      <LineAnalysis line="24" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// 2. If contains underscore, take substring after first underscore" />
+      <LineAnalysis line="25" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// 3. Otherwise, use entire base filename" />
+      <LineAnalysis line="26" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// 4. Normalize:" />
+      <LineAnalysis line="27" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    ///    - Convert to lowercase" />
+      <LineAnalysis line="28" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    ///    - Replace runs of non-alphanumeric chars with single hyphen (preserves word boundaries)" />
+      <LineAnalysis line="29" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    ///    - Trim leading/trailing hyphens" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    ///    - Collapse multiple consecutive hyphens to single hyphen" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// 5. If result is empty, return empty string (caller should skip and log warning)" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/remarks&gt;" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public static string DeriveSlug(string filename)" />
+      <LineAnalysis line="34" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="35" visits="12" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrWhiteSpace(filename))" />
+      <LineAnalysis line="36" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="37" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            return string.Empty;" />
+      <LineAnalysis line="38" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="40" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Remove .json extension if present" />
+      <LineAnalysis line="41" visits="9" coverage="Covered" coveredbranches="2" totalbranches="2" content="        var baseName = filename.EndsWith(&quot;.json&quot;, StringComparison.OrdinalIgnoreCase)" />
+      <LineAnalysis line="42" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="            ? filename[..^5]" />
+      <LineAnalysis line="43" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="            : filename;" />
+      <LineAnalysis line="44" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="45" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // If contains underscore, take substring after first underscore" />
+      <LineAnalysis line="46" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="        var underscoreIndex = baseName.IndexOf('_');" />
+      <LineAnalysis line="47" visits="9" coverage="Covered" coveredbranches="2" totalbranches="2" content="        var slug = underscoreIndex &gt;= 0" />
+      <LineAnalysis line="48" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="            ? baseName[(underscoreIndex + 1)..]" />
+      <LineAnalysis line="49" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="            : baseName;" />
+      <LineAnalysis line="50" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="51" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Normalize slug: preserve word boundaries by replacing non-alphanumeric runs with hyphens" />
+      <LineAnalysis line="52" visits="9" coverage="Covered" coveredbranches="" totalbranches="" content="        slug = NormalizeSlug(slug);" />
+      <LineAnalysis line="53" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="54" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Guard: If normalization produced empty slug, try fallback with full base name" />
+      <LineAnalysis line="55" visits="9" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrWhiteSpace(slug))" />
+      <LineAnalysis line="56" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="57" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            slug = NormalizeSlug(baseName);" />
+      <LineAnalysis line="58" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="59" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // If still empty after fallback, return empty (caller MUST skip and log warning)" />
+      <LineAnalysis line="60" visits="2" coverage="Covered" coveredbranches="2" totalbranches="2" content="            if (string.IsNullOrWhiteSpace(slug))" />
+      <LineAnalysis line="61" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="62" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="                return string.Empty;" />
+      <LineAnalysis line="63" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="64" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="65" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="66" visits="8" coverage="Covered" coveredbranches="" totalbranches="" content="        return slug;" />
+      <LineAnalysis line="67" visits="12" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="68" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="69" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="70" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Normalizes a string to a valid slug format." />
+      <LineAnalysis line="71" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Preserves word boundaries by replacing non-alphanumeric runs with single hyphens." />
+      <LineAnalysis line="72" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="73" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private static string NormalizeSlug(string input)" />
+      <LineAnalysis line="74" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="75" visits="11" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrWhiteSpace(input))" />
+      <LineAnalysis line="76" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="77" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            return string.Empty;" />
+      <LineAnalysis line="78" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="79" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="80" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Convert to lowercase" />
+      <LineAnalysis line="81" visits="8" coverage="Covered" coveredbranches="" totalbranches="" content="        var normalized = input.ToLowerInvariant();" />
+      <LineAnalysis line="82" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="83" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Replace any run of non-alphanumeric characters with a single hyphen" />
+      <LineAnalysis line="84" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // This preserves word boundaries: &quot;hello world!&quot; -&gt; &quot;hello-world&quot;" />
+      <LineAnalysis line="85" visits="8" coverage="Covered" coveredbranches="" totalbranches="" content="        normalized = NonSlugCharsPattern().Replace(normalized, &quot;-&quot;);" />
+      <LineAnalysis line="86" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="87" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Trim leading and trailing hyphens" />
+      <LineAnalysis line="88" visits="8" coverage="Covered" coveredbranches="" totalbranches="" content="        normalized = normalized.Trim('-');" />
+      <LineAnalysis line="89" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="90" visits="8" coverage="Covered" coveredbranches="" totalbranches="" content="        return normalized;" />
+      <LineAnalysis line="91" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="92" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="93" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;summary&gt;" />
+      <LineAnalysis line="94" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Prettifies a slug for display as a title." />
+      <LineAnalysis line="95" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// Culture-invariant and deterministic." />
+      <LineAnalysis line="96" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;/summary&gt;" />
+      <LineAnalysis line="97" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;param name=&quot;slug&quot;&gt;Slug to prettify (e.g., &quot;animated-armor&quot;).&lt;/param&gt;" />
+      <LineAnalysis line="98" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    /// &lt;returns&gt;Human-readable title (e.g., &quot;Animated Armor&quot;).&lt;/returns&gt;" />
+      <LineAnalysis line="99" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public static string PrettifySlug(string slug)" />
+      <LineAnalysis line="100" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="101" visits="14" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (string.IsNullOrWhiteSpace(slug))" />
+      <LineAnalysis line="102" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="103" visits="3" coverage="Covered" coveredbranches="" totalbranches="" content="            return string.Empty;" />
+      <LineAnalysis line="104" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="106" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        // Replace hyphens with spaces and title case each word (culture-invariant)" />
+      <LineAnalysis line="107" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="        var words = slug.Split('-', StringSplitOptions.RemoveEmptyEntries);" />
+      <LineAnalysis line="108" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="        var sb = new StringBuilder();" />
+      <LineAnalysis line="109" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="110" visits="67" coverage="Covered" coveredbranches="2" totalbranches="2" content="        foreach (var word in words)" />
+      <LineAnalysis line="111" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="112" visits="17" coverage="Covered" coveredbranches="2" totalbranches="2" content="            if (sb.Length &gt; 0)" />
+      <LineAnalysis line="113" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="114" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="                sb.Append(' ');" />
+      <LineAnalysis line="115" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="116" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            // Title case: first letter uppercase (invariant), rest lowercase" />
+      <LineAnalysis line="118" visits="17" coverage="Covered" coveredbranches="2" totalbranches="2" content="            if (word.Length &gt; 0)" />
+      <LineAnalysis line="119" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="120" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="                sb.Append(char.ToUpperInvariant(word[0]));" />
+      <LineAnalysis line="121" visits="17" coverage="Covered" coveredbranches="2" totalbranches="2" content="                if (word.Length &gt; 1)" />
+      <LineAnalysis line="122" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="123" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="                    sb.Append(word[1..].ToLowerInvariant());" />
+      <LineAnalysis line="124" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="125" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="126" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="127" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="128" visits="11" coverage="Covered" coveredbranches="" totalbranches="" content="        return sb.ToString();" />
+      <LineAnalysis line="129" visits="14" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="130" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

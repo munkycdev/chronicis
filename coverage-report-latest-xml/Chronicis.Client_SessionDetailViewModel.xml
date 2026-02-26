@@ -1,0 +1,783 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageReport scope="Chronicis.Client.ViewModels.SessionDetailViewModel">
+  <Summary>
+    <Class>Chronicis.Client.ViewModels.SessionDetailViewModel</Class>
+    <Assembly>Chronicis.Client</Assembly>
+    <Files>
+      <File>Z:\repos\chronicis\src\Chronicis.Client\ViewModels\SessionDetailViewModel.cs</File>
+    </Files>
+    <Coveredlines>118</Coveredlines>
+    <Uncoveredlines>0</Uncoveredlines>
+    <Coverablelines>118</Coverablelines>
+    <Totallines>562</Totallines>
+    <Linecoverage>100</Linecoverage>
+    <Coveredbranches>72</Coveredbranches>
+    <Totalbranches>72</Totalbranches>
+    <Branchcoverage>100</Branchcoverage>
+    <Coveredmethods>32</Coveredmethods>
+    <Fullcoveredmethods>32</Fullcoveredmethods>
+    <Totalmethods>32</Totalmethods>
+    <Methodcoverage>100</Methodcoverage>
+    <Fullmethodcoverage>100</Fullmethodcoverage>
+  </Summary>
+  <Metrics>
+    <Element name="ctor">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsLoading">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsSavingNotes">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsGeneratingSummary">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsDeletingSummary">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsCreatingSessionNote">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsDeleting">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_HasUnsavedChanges">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_Session">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_Arc">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_Campaign">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_World">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_SessionNotes">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_Breadcrumbs">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsCurrentUserGM">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_IsCurrentUserWorldOwner">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_CanManageSessionDetails">
+      <CrapScore>2</CrapScore>
+      <Cyclomaticcomplexity>2</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_CanViewPrivateNotes">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_CurrentUserId">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_CanCreateSessionNote">
+      <CrapScore>8</CrapScore>
+      <Cyclomaticcomplexity>8</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_EditName">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_EditName">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_EditSessionDate">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_EditSessionDate">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_EditPublicNotes">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_EditPublicNotes">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="get_EditPrivateNotes">
+      <CrapScore>1</CrapScore>
+      <Cyclomaticcomplexity>1</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="set_EditPrivateNotes">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="UpdateDirtyState">
+      <CrapScore>16</CrapScore>
+      <Cyclomaticcomplexity>16</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="BuildBreadcrumbs">
+      <CrapScore>8</CrapScore>
+      <Cyclomaticcomplexity>8</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="AreSameDate">
+      <CrapScore>8</CrapScore>
+      <Cyclomaticcomplexity>8</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+    <Element name="BuildDefaultSessionNoteTitle">
+      <CrapScore>6</CrapScore>
+      <Cyclomaticcomplexity>6</Cyclomaticcomplexity>
+      <Linecoverage>100</Linecoverage>
+      <Branchcoverage>100</Branchcoverage>
+    </Element>
+  </Metrics>
+  <Files>
+    <File name="Z:\repos\chronicis\src\Chronicis.Client\ViewModels\SessionDetailViewModel.cs">
+      <LineAnalysis line="1" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Client.Abstractions;" />
+      <LineAnalysis line="2" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Client.Services;" />
+      <LineAnalysis line="3" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.DTOs;" />
+      <LineAnalysis line="4" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.DTOs.Sessions;" />
+      <LineAnalysis line="5" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Enums;" />
+      <LineAnalysis line="6" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using Chronicis.Shared.Extensions;" />
+      <LineAnalysis line="7" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="using MudBlazor;" />
+      <LineAnalysis line="8" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="9" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="namespace Chronicis.Client.ViewModels;" />
+      <LineAnalysis line="10" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="11" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;summary&gt;" />
+      <LineAnalysis line="12" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// ViewModel for the Session detail page." />
+      <LineAnalysis line="13" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="/// &lt;/summary&gt;" />
+      <LineAnalysis line="14" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="public sealed class SessionDetailViewModel : ViewModelBase" />
+      <LineAnalysis line="15" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="{" />
+      <LineAnalysis line="16" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ISessionApiService _sessionApi;" />
+      <LineAnalysis line="17" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IArticleApiService _articleApi;" />
+      <LineAnalysis line="18" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IArcApiService _arcApi;" />
+      <LineAnalysis line="19" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ICampaignApiService _campaignApi;" />
+      <LineAnalysis line="20" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IWorldApiService _worldApi;" />
+      <LineAnalysis line="21" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IAuthService _authService;" />
+      <LineAnalysis line="22" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ITreeStateService _treeState;" />
+      <LineAnalysis line="23" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IBreadcrumbService _breadcrumbService;" />
+      <LineAnalysis line="24" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IAppNavigator _navigator;" />
+      <LineAnalysis line="25" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IUserNotifier _notifier;" />
+      <LineAnalysis line="26" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly IPageTitleService _titleService;" />
+      <LineAnalysis line="27" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private readonly ILogger&lt;SessionDetailViewModel&gt; _logger;" />
+      <LineAnalysis line="28" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="29" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="    private bool _isLoading = true;" />
+      <LineAnalysis line="30" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private bool _isSavingNotes;" />
+      <LineAnalysis line="31" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private bool _isGeneratingSummary;" />
+      <LineAnalysis line="32" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private bool _isDeletingSummary;" />
+      <LineAnalysis line="33" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private bool _isCreatingSessionNote;" />
+      <LineAnalysis line="34" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private bool _isDeleting;" />
+      <LineAnalysis line="35" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private bool _hasUnsavedChanges;" />
+      <LineAnalysis line="36" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private SessionDto? _session;" />
+      <LineAnalysis line="37" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private ArcDto? _arc;" />
+      <LineAnalysis line="38" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private CampaignDetailDto? _campaign;" />
+      <LineAnalysis line="39" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private WorldDetailDto? _world;" />
+      <LineAnalysis line="40" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="    private List&lt;ArticleTreeDto&gt; _sessionNotes = new();" />
+      <LineAnalysis line="41" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="    private List&lt;BreadcrumbItem&gt; _breadcrumbs = new();" />
+      <LineAnalysis line="42" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private bool _isCurrentUserGm;" />
+      <LineAnalysis line="43" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private bool _isCurrentUserWorldOwner;" />
+      <LineAnalysis line="44" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private Guid _currentUserId;" />
+      <LineAnalysis line="45" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="    private string _editName = string.Empty;" />
+      <LineAnalysis line="46" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private DateTime? _editSessionDate;" />
+      <LineAnalysis line="47" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="    private string _editPublicNotes = string.Empty;" />
+      <LineAnalysis line="48" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="    private string _editPrivateNotes = string.Empty;" />
+      <LineAnalysis line="49" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="50" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="    public SessionDetailViewModel(" />
+      <LineAnalysis line="51" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        ISessionApiService sessionApi," />
+      <LineAnalysis line="52" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        IArticleApiService articleApi," />
+      <LineAnalysis line="53" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        IArcApiService arcApi," />
+      <LineAnalysis line="54" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        ICampaignApiService campaignApi," />
+      <LineAnalysis line="55" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        IWorldApiService worldApi," />
+      <LineAnalysis line="56" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        IAuthService authService," />
+      <LineAnalysis line="57" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        ITreeStateService treeState," />
+      <LineAnalysis line="58" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        IBreadcrumbService breadcrumbService," />
+      <LineAnalysis line="59" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        IAppNavigator navigator," />
+      <LineAnalysis line="60" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        IUserNotifier notifier," />
+      <LineAnalysis line="61" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        IPageTitleService titleService," />
+      <LineAnalysis line="62" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        ILogger&lt;SessionDetailViewModel&gt; logger)" />
+      <LineAnalysis line="63" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="64" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        _sessionApi = sessionApi;" />
+      <LineAnalysis line="65" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        _articleApi = articleApi;" />
+      <LineAnalysis line="66" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        _arcApi = arcApi;" />
+      <LineAnalysis line="67" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        _campaignApi = campaignApi;" />
+      <LineAnalysis line="68" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        _worldApi = worldApi;" />
+      <LineAnalysis line="69" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        _authService = authService;" />
+      <LineAnalysis line="70" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        _treeState = treeState;" />
+      <LineAnalysis line="71" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        _breadcrumbService = breadcrumbService;" />
+      <LineAnalysis line="72" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        _navigator = navigator;" />
+      <LineAnalysis line="73" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        _notifier = notifier;" />
+      <LineAnalysis line="74" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        _titleService = titleService;" />
+      <LineAnalysis line="75" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        _logger = logger;" />
+      <LineAnalysis line="76" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="77" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="78" visits="93" coverage="Covered" coveredbranches="" totalbranches="" content="    public bool IsLoading { get =&gt; _isLoading; private set =&gt; SetField(ref _isLoading, value); }" />
+      <LineAnalysis line="79" visits="50" coverage="Covered" coveredbranches="" totalbranches="" content="    public bool IsSavingNotes { get =&gt; _isSavingNotes; private set =&gt; SetField(ref _isSavingNotes, value); }" />
+      <LineAnalysis line="80" visits="76" coverage="Covered" coveredbranches="" totalbranches="" content="    public bool IsGeneratingSummary { get =&gt; _isGeneratingSummary; private set =&gt; SetField(ref _isGeneratingSummary, value); }" />
+      <LineAnalysis line="81" visits="31" coverage="Covered" coveredbranches="" totalbranches="" content="    public bool IsDeletingSummary { get =&gt; _isDeletingSummary; private set =&gt; SetField(ref _isDeletingSummary, value); }" />
+      <LineAnalysis line="82" visits="58" coverage="Covered" coveredbranches="" totalbranches="" content="    public bool IsCreatingSessionNote { get =&gt; _isCreatingSessionNote; private set =&gt; SetField(ref _isCreatingSessionNote, value); }" />
+      <LineAnalysis line="83" visits="104" coverage="Covered" coveredbranches="" totalbranches="" content="    public bool IsDeleting { get =&gt; _isDeleting; private set =&gt; SetField(ref _isDeleting, value); }" />
+      <LineAnalysis line="84" visits="82" coverage="Covered" coveredbranches="" totalbranches="" content="    public bool HasUnsavedChanges { get =&gt; _hasUnsavedChanges; private set =&gt; SetField(ref _hasUnsavedChanges, value); }" />
+      <LineAnalysis line="85" visits="435" coverage="Covered" coveredbranches="" totalbranches="" content="    public SessionDto? Session { get =&gt; _session; private set =&gt; SetField(ref _session, value); }" />
+      <LineAnalysis line="86" visits="133" coverage="Covered" coveredbranches="" totalbranches="" content="    public ArcDto? Arc { get =&gt; _arc; private set =&gt; SetField(ref _arc, value); }" />
+      <LineAnalysis line="87" visits="130" coverage="Covered" coveredbranches="" totalbranches="" content="    public CampaignDetailDto? Campaign { get =&gt; _campaign; private set =&gt; SetField(ref _campaign, value); }" />
+      <LineAnalysis line="88" visits="173" coverage="Covered" coveredbranches="" totalbranches="" content="    public WorldDetailDto? World { get =&gt; _world; private set =&gt; SetField(ref _world, value); }" />
+      <LineAnalysis line="89" visits="41" coverage="Covered" coveredbranches="" totalbranches="" content="    public List&lt;ArticleTreeDto&gt; SessionNotes { get =&gt; _sessionNotes; private set =&gt; SetField(ref _sessionNotes, value); }" />
+      <LineAnalysis line="90" visits="40" coverage="Covered" coveredbranches="" totalbranches="" content="    public List&lt;BreadcrumbItem&gt; Breadcrumbs { get =&gt; _breadcrumbs; private set =&gt; SetField(ref _breadcrumbs, value); }" />
+      <LineAnalysis line="91" visits="336" coverage="Covered" coveredbranches="" totalbranches="" content="    public bool IsCurrentUserGM { get =&gt; _isCurrentUserGm; private set =&gt; SetField(ref _isCurrentUserGm, value); }" />
+      <LineAnalysis line="92" visits="130" coverage="Covered" coveredbranches="" totalbranches="" content="    public bool IsCurrentUserWorldOwner { get =&gt; _isCurrentUserWorldOwner; private set =&gt; SetField(ref _isCurrentUserWorldOwner, value); }" />
+      <LineAnalysis line="93" visits="296" coverage="Covered" coveredbranches="2" totalbranches="2" content="    public bool CanManageSessionDetails =&gt; IsCurrentUserGM || IsCurrentUserWorldOwner;" />
+      <LineAnalysis line="94" visits="29" coverage="Covered" coveredbranches="" totalbranches="" content="    public bool CanViewPrivateNotes =&gt; CanManageSessionDetails;" />
+      <LineAnalysis line="95" visits="62" coverage="Covered" coveredbranches="" totalbranches="" content="    public Guid CurrentUserId { get =&gt; _currentUserId; private set =&gt; SetField(ref _currentUserId, value); }" />
+      <LineAnalysis line="96" visits="26" coverage="Covered" coveredbranches="8" totalbranches="8" content="    public bool CanCreateSessionNote =&gt; Session != null" />
+      <LineAnalysis line="97" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        &amp;&amp; Arc != null" />
+      <LineAnalysis line="98" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        &amp;&amp; Campaign != null" />
+      <LineAnalysis line="99" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        &amp;&amp; World != null" />
+      <LineAnalysis line="100" visits="26" coverage="Covered" coveredbranches="" totalbranches="" content="        &amp;&amp; CurrentUserId != Guid.Empty;" />
+      <LineAnalysis line="101" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="102" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public string EditName" />
+      <LineAnalysis line="103" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="104" visits="58" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _editName;" />
+      <LineAnalysis line="105" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        set" />
+      <LineAnalysis line="106" visits="27" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="107" visits="27" coverage="Covered" coveredbranches="6" totalbranches="6" content="            if (SetField(ref _editName, value) &amp;&amp; Session != null &amp;&amp; CanManageSessionDetails)" />
+      <LineAnalysis line="108" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="109" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="                UpdateDirtyState();" />
+      <LineAnalysis line="110" visits="6" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="111" visits="27" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="112" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="113" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="114" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public DateTime? EditSessionDate" />
+      <LineAnalysis line="115" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="116" visits="39" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _editSessionDate;" />
+      <LineAnalysis line="117" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        set" />
+      <LineAnalysis line="118" visits="24" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="119" visits="24" coverage="Covered" coveredbranches="6" totalbranches="6" content="            if (SetField(ref _editSessionDate, value) &amp;&amp; Session != null &amp;&amp; CanManageSessionDetails)" />
+      <LineAnalysis line="120" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="121" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="                UpdateDirtyState();" />
+      <LineAnalysis line="122" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="123" visits="24" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="124" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="125" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="126" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public string EditPublicNotes" />
+      <LineAnalysis line="127" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="128" visits="25" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _editPublicNotes;" />
+      <LineAnalysis line="129" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        set" />
+      <LineAnalysis line="130" visits="24" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="131" visits="24" coverage="Covered" coveredbranches="6" totalbranches="6" content="            if (SetField(ref _editPublicNotes, value) &amp;&amp; Session != null &amp;&amp; CanManageSessionDetails)" />
+      <LineAnalysis line="132" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="133" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="                UpdateDirtyState();" />
+      <LineAnalysis line="134" visits="4" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="135" visits="24" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="136" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="137" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="138" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public string EditPrivateNotes" />
+      <LineAnalysis line="139" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="140" visits="25" coverage="Covered" coveredbranches="" totalbranches="" content="        get =&gt; _editPrivateNotes;" />
+      <LineAnalysis line="141" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        set" />
+      <LineAnalysis line="142" visits="22" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="143" visits="22" coverage="Covered" coveredbranches="6" totalbranches="6" content="            if (SetField(ref _editPrivateNotes, value) &amp;&amp; Session != null &amp;&amp; CanManageSessionDetails)" />
+      <LineAnalysis line="144" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="145" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="                UpdateDirtyState();" />
+      <LineAnalysis line="146" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="147" visits="22" coverage="Covered" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="148" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="149" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="150" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task LoadAsync(Guid sessionId)" />
+      <LineAnalysis line="151" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="152" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsLoading = true;" />
+      <LineAnalysis line="153" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="154" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="155" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="156" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var session = await _sessionApi.GetSessionAsync(sessionId);" />
+      <LineAnalysis line="157" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (session == null)" />
+      <LineAnalysis line="158" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="159" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _navigator.NavigateTo(&quot;/dashboard&quot;, replace: true);" />
+      <LineAnalysis line="160" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                return;" />
+      <LineAnalysis line="161" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="162" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="163" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Session = session;" />
+      <LineAnalysis line="164" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            EditName = session.Name;" />
+      <LineAnalysis line="165" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            EditSessionDate = session.SessionDate?.Date;" />
+      <LineAnalysis line="166" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            EditPublicNotes = session.PublicNotes ?? string.Empty;" />
+      <LineAnalysis line="167" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            EditPrivateNotes = session.PrivateNotes ?? string.Empty;" />
+      <LineAnalysis line="168" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            HasUnsavedChanges = false;" />
+      <LineAnalysis line="169" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="170" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _treeState.ExpandPathToAndSelect(sessionId);" />
+      <LineAnalysis line="171" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="172" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Arc = await _arcApi.GetArcAsync(session.ArcId);" />
+      <LineAnalysis line="173" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (Arc != null)" />
+      <LineAnalysis line="174" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="175" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Campaign = await _campaignApi.GetCampaignAsync(Arc.CampaignId);" />
+      <LineAnalysis line="176" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                if (Campaign != null)" />
+      <LineAnalysis line="177" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="178" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    World = await _worldApi.GetWorldAsync(Campaign.WorldId);" />
+      <LineAnalysis line="179" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="180" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="181" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="182" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await ResolveCurrentUserRoleAsync();" />
+      <LineAnalysis line="183" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Breadcrumbs = BuildBreadcrumbs();" />
+      <LineAnalysis line="184" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await LoadSessionNotesAsync(sessionId);" />
+      <LineAnalysis line="185" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await _titleService.SetTitleAsync(session.Name);" />
+      <LineAnalysis line="186" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="187" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="188" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="189" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Error loading session {SessionId}&quot;, sessionId);" />
+      <LineAnalysis line="190" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Error($&quot;Failed to load session: {ex.Message}&quot;);" />
+      <LineAnalysis line="191" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="192" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        finally" />
+      <LineAnalysis line="193" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="194" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            IsLoading = false;" />
+      <LineAnalysis line="195" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="196" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="197" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="198" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task SaveNotesAsync()" />
+      <LineAnalysis line="199" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="200" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (Session == null || !CanManageSessionDetails || IsSavingNotes)" />
+      <LineAnalysis line="201" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="202" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="203" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="204" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="205" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var trimmedName = (EditName ?? string.Empty).Trim();" />
+      <LineAnalysis line="206" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (string.IsNullOrWhiteSpace(trimmedName))" />
+      <LineAnalysis line="207" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="208" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Error(&quot;Session title is required&quot;);" />
+      <LineAnalysis line="209" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="210" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="211" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="212" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (trimmedName.Length &gt; 500)" />
+      <LineAnalysis line="213" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="214" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Error(&quot;Session title must be 500 characters or fewer&quot;);" />
+      <LineAnalysis line="215" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="216" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="217" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="218" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var editedSessionDate = EditSessionDate?.Date;" />
+      <LineAnalysis line="219" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var shouldClearSessionDate = Session.SessionDate.HasValue &amp;&amp; !editedSessionDate.HasValue;" />
+      <LineAnalysis line="220" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="221" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsSavingNotes = true;" />
+      <LineAnalysis line="222" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="223" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="224" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="225" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var updated = await _sessionApi.UpdateSessionNotesAsync(Session.Id, new SessionUpdateDto" />
+      <LineAnalysis line="226" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="227" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Name = trimmedName," />
+      <LineAnalysis line="228" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                SessionDate = editedSessionDate," />
+      <LineAnalysis line="229" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                ClearSessionDate = shouldClearSessionDate," />
+      <LineAnalysis line="230" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                PublicNotes = string.IsNullOrWhiteSpace(EditPublicNotes) ? null : EditPublicNotes," />
+      <LineAnalysis line="231" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                PrivateNotes = string.IsNullOrWhiteSpace(EditPrivateNotes) ? null : EditPrivateNotes" />
+      <LineAnalysis line="232" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            });" />
+      <LineAnalysis line="233" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="234" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (updated == null)" />
+      <LineAnalysis line="235" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="236" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _notifier.Error(&quot;Failed to save session notes&quot;);" />
+      <LineAnalysis line="237" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                return;" />
+      <LineAnalysis line="238" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="239" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="240" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Session = updated;" />
+      <LineAnalysis line="241" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            EditName = updated.Name;" />
+      <LineAnalysis line="242" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            EditSessionDate = updated.SessionDate?.Date;" />
+      <LineAnalysis line="243" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            EditPublicNotes = updated.PublicNotes ?? string.Empty;" />
+      <LineAnalysis line="244" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            EditPrivateNotes = updated.PrivateNotes ?? string.Empty;" />
+      <LineAnalysis line="245" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Breadcrumbs = BuildBreadcrumbs();" />
+      <LineAnalysis line="246" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await _titleService.SetTitleAsync(updated.Name);" />
+      <LineAnalysis line="247" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await _treeState.RefreshAsync();" />
+      <LineAnalysis line="248" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            HasUnsavedChanges = false;" />
+      <LineAnalysis line="249" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Success(&quot;Session saved&quot;);" />
+      <LineAnalysis line="250" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="251" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="252" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="253" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Error saving session {SessionId}&quot;, Session.Id);" />
+      <LineAnalysis line="254" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Error($&quot;Failed to save session: {ex.Message}&quot;);" />
+      <LineAnalysis line="255" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="256" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        finally" />
+      <LineAnalysis line="257" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="258" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            IsSavingNotes = false;" />
+      <LineAnalysis line="259" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="260" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="261" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="262" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task GenerateAiSummaryAsync()" />
+      <LineAnalysis line="263" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="264" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (Session == null || IsGeneratingSummary)" />
+      <LineAnalysis line="265" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="266" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="267" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="268" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="269" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var hadSummary = !string.IsNullOrWhiteSpace(Session.AiSummary);" />
+      <LineAnalysis line="270" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsGeneratingSummary = true;" />
+      <LineAnalysis line="271" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="272" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="273" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="274" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var result = await _sessionApi.GenerateAiSummaryAsync(Session.Id);" />
+      <LineAnalysis line="275" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (result?.Success != true)" />
+      <LineAnalysis line="276" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="277" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _notifier.Error(result?.ErrorMessage ?? &quot;Failed to generate AI summary&quot;);" />
+      <LineAnalysis line="278" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                return;" />
+      <LineAnalysis line="279" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="280" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="281" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Session.AiSummary = result.Summary;" />
+      <LineAnalysis line="282" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Session.AiSummaryGeneratedAt = result.GeneratedDate;" />
+      <LineAnalysis line="283" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            RaisePropertyChanged(nameof(Session));" />
+      <LineAnalysis line="284" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="285" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Success(hadSummary ? &quot;AI summary refreshed&quot; : &quot;AI summary generated&quot;);" />
+      <LineAnalysis line="286" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="287" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="288" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="289" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Error generating AI summary for session {SessionId}&quot;, Session.Id);" />
+      <LineAnalysis line="290" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Error($&quot;Failed to generate summary: {ex.Message}&quot;);" />
+      <LineAnalysis line="291" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="292" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        finally" />
+      <LineAnalysis line="293" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="294" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            IsGeneratingSummary = false;" />
+      <LineAnalysis line="295" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="296" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="297" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="298" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task ClearAiSummaryAsync()" />
+      <LineAnalysis line="299" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="300" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (Session == null || IsDeletingSummary || string.IsNullOrWhiteSpace(Session.AiSummary))" />
+      <LineAnalysis line="301" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="302" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="303" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="304" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="305" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsDeletingSummary = true;" />
+      <LineAnalysis line="306" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="307" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="308" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="309" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var cleared = await _sessionApi.ClearAiSummaryAsync(Session.Id);" />
+      <LineAnalysis line="310" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (!cleared)" />
+      <LineAnalysis line="311" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="312" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _notifier.Error(&quot;Failed to delete AI summary&quot;);" />
+      <LineAnalysis line="313" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                return;" />
+      <LineAnalysis line="314" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="315" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="316" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Session.AiSummary = null;" />
+      <LineAnalysis line="317" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Session.AiSummaryGeneratedAt = null;" />
+      <LineAnalysis line="318" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            Session.AiSummaryGeneratedByUserId = null;" />
+      <LineAnalysis line="319" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            RaisePropertyChanged(nameof(Session));" />
+      <LineAnalysis line="320" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="321" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Success(&quot;AI summary deleted&quot;);" />
+      <LineAnalysis line="322" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="323" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="324" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="325" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Error clearing AI summary for session {SessionId}&quot;, Session.Id);" />
+      <LineAnalysis line="326" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Error($&quot;Failed to delete AI summary: {ex.Message}&quot;);" />
+      <LineAnalysis line="327" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="328" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        finally" />
+      <LineAnalysis line="329" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="330" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            IsDeletingSummary = false;" />
+      <LineAnalysis line="331" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="332" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="333" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="334" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task DeleteSessionAsync()" />
+      <LineAnalysis line="335" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="336" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (Session == null || !IsCurrentUserGM || IsDeleting)" />
+      <LineAnalysis line="337" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="338" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="339" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="340" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="341" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsDeleting = true;" />
+      <LineAnalysis line="342" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="343" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var sessionId = Session.Id;" />
+      <LineAnalysis line="344" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var sessionName = Session.Name;" />
+      <LineAnalysis line="345" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var arcId = Arc?.Id ?? Session.ArcId;" />
+      <LineAnalysis line="346" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="347" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="348" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="349" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var deleted = await _sessionApi.DeleteSessionAsync(sessionId);" />
+      <LineAnalysis line="350" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (!deleted)" />
+      <LineAnalysis line="351" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="352" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _notifier.Error(&quot;Failed to delete session&quot;);" />
+      <LineAnalysis line="353" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                return;" />
+      <LineAnalysis line="354" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="355" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="356" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await _treeState.RefreshAsync();" />
+      <LineAnalysis line="357" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Success(&quot;Session deleted&quot;);" />
+      <LineAnalysis line="358" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _navigator.NavigateTo($&quot;/arc/{arcId}&quot;, replace: true);" />
+      <LineAnalysis line="359" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="360" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="361" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="362" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Error deleting session {SessionId}&quot;, sessionId);" />
+      <LineAnalysis line="363" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Error($&quot;Failed to delete session '{sessionName}': {ex.Message}&quot;);" />
+      <LineAnalysis line="364" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="365" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        finally" />
+      <LineAnalysis line="366" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="367" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            IsDeleting = false;" />
+      <LineAnalysis line="368" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="369" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="370" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="371" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task CreateSessionNoteAsync()" />
+      <LineAnalysis line="372" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="373" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (!CanCreateSessionNote || Session == null || Arc == null || Campaign == null || World == null || IsCreatingSessionNote)" />
+      <LineAnalysis line="374" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="375" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="376" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="377" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="378" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsCreatingSessionNote = true;" />
+      <LineAnalysis line="379" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        ArticleDto? createdNote = null;" />
+      <LineAnalysis line="380" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var attachedToSession = false;" />
+      <LineAnalysis line="381" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="382" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="383" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="384" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var user = await _authService.GetCurrentUserAsync();" />
+      <LineAnalysis line="385" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var title = BuildDefaultSessionNoteTitle(user?.DisplayName);" />
+      <LineAnalysis line="386" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="387" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            createdNote = await _articleApi.CreateArticleAsync(new ArticleCreateDto" />
+      <LineAnalysis line="388" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="389" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Title = title," />
+      <LineAnalysis line="390" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                WorldId = World.Id," />
+      <LineAnalysis line="391" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                CampaignId = Campaign.Id," />
+      <LineAnalysis line="392" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                ArcId = Arc.Id," />
+      <LineAnalysis line="393" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Type = ArticleType.SessionNote," />
+      <LineAnalysis line="394" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Visibility = ArticleVisibility.Public" />
+      <LineAnalysis line="395" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            });" />
+      <LineAnalysis line="396" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="397" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (createdNote == null)" />
+      <LineAnalysis line="398" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="399" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _notifier.Error(&quot;Failed to create session note&quot;);" />
+      <LineAnalysis line="400" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                return;" />
+      <LineAnalysis line="401" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="402" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="403" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            attachedToSession = await _articleApi.MoveArticleAsync(createdNote.Id, newParentId: null, newSessionId: Session.Id);" />
+      <LineAnalysis line="404" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (!attachedToSession)" />
+      <LineAnalysis line="405" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="406" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                var deleted = await _articleApi.DeleteArticleAsync(createdNote.Id);" />
+      <LineAnalysis line="407" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                if (!deleted)" />
+      <LineAnalysis line="408" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="409" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    _logger.LogWarning(" />
+      <LineAnalysis line="410" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        &quot;Failed to delete orphan session note {ArticleId} after attach failure for session {SessionId}&quot;," />
+      <LineAnalysis line="411" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        createdNote.Id," />
+      <LineAnalysis line="412" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                        Session.Id);" />
+      <LineAnalysis line="413" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="414" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="415" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _notifier.Error(&quot;Failed to attach session note to this session&quot;);" />
+      <LineAnalysis line="416" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                return;" />
+      <LineAnalysis line="417" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="418" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="419" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await _treeState.RefreshAsync();" />
+      <LineAnalysis line="420" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await LoadSessionNotesAsync(Session.Id);" />
+      <LineAnalysis line="421" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Success(&quot;Session note added&quot;);" />
+      <LineAnalysis line="422" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="423" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            await OpenSessionNoteAsync(new ArticleTreeDto" />
+      <LineAnalysis line="424" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="425" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Id = createdNote.Id," />
+      <LineAnalysis line="426" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Slug = createdNote.Slug," />
+      <LineAnalysis line="427" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                Title = createdNote.Title" />
+      <LineAnalysis line="428" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            });" />
+      <LineAnalysis line="429" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="430" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="431" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="432" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Error creating session note for session {SessionId}&quot;, Session.Id);" />
+      <LineAnalysis line="433" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="434" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (createdNote != null &amp;&amp; !attachedToSession)" />
+      <LineAnalysis line="435" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="436" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                try" />
+      <LineAnalysis line="437" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="438" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    await _articleApi.DeleteArticleAsync(createdNote.Id);" />
+      <LineAnalysis line="439" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="440" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                catch (Exception cleanupEx)" />
+      <LineAnalysis line="441" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                {" />
+      <LineAnalysis line="442" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                    _logger.LogWarning(cleanupEx, &quot;Cleanup failed for created session note {ArticleId}&quot;, createdNote.Id);" />
+      <LineAnalysis line="443" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                }" />
+      <LineAnalysis line="444" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="445" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="446" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Error($&quot;Failed to create session note: {ex.Message}&quot;);" />
+      <LineAnalysis line="447" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="448" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        finally" />
+      <LineAnalysis line="449" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="450" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            IsCreatingSessionNote = false;" />
+      <LineAnalysis line="451" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="452" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="453" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="454" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    public async Task OpenSessionNoteAsync(ArticleTreeDto note)" />
+      <LineAnalysis line="455" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="456" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        try" />
+      <LineAnalysis line="457" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="458" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            var article = await _articleApi.GetArticleDetailAsync(note.Id);" />
+      <LineAnalysis line="459" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            if (article != null &amp;&amp; article.Breadcrumbs.Any())" />
+      <LineAnalysis line="460" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            {" />
+      <LineAnalysis line="461" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                _navigator.NavigateTo(_breadcrumbService.BuildArticleUrl(article.Breadcrumbs));" />
+      <LineAnalysis line="462" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="                return;" />
+      <LineAnalysis line="463" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            }" />
+      <LineAnalysis line="464" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="465" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _navigator.NavigateTo($&quot;/article/{note.Slug}&quot;);" />
+      <LineAnalysis line="466" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="467" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        catch (Exception ex)" />
+      <LineAnalysis line="468" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="469" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _logger.LogErrorSanitized(ex, &quot;Error navigating to session note {ArticleId}&quot;, note.Id);" />
+      <LineAnalysis line="470" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            _notifier.Error(&quot;Failed to navigate to session note&quot;);" />
+      <LineAnalysis line="471" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="472" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="473" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="474" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task LoadSessionNotesAsync(Guid sessionId)" />
+      <LineAnalysis line="475" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="476" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var allArticles = await _articleApi.GetAllArticlesAsync();" />
+      <LineAnalysis line="477" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        SessionNotes = allArticles" />
+      <LineAnalysis line="478" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .Where(a =&gt; a.Type == ArticleType.SessionNote &amp;&amp; a.SessionId == sessionId)" />
+      <LineAnalysis line="479" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .OrderBy(a =&gt; a.Title)" />
+      <LineAnalysis line="480" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ThenBy(a =&gt; a.CreatedAt)" />
+      <LineAnalysis line="481" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            .ToList();" />
+      <LineAnalysis line="482" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="483" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="484" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private void UpdateDirtyState()" />
+      <LineAnalysis line="485" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="486" visits="17" coverage="Covered" coveredbranches="4" totalbranches="4" content="        if (Session == null || !CanManageSessionDetails)" />
+      <LineAnalysis line="487" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="488" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            HasUnsavedChanges = false;" />
+      <LineAnalysis line="489" visits="2" coverage="Covered" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="490" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="491" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="492" visits="15" coverage="Covered" coveredbranches="4" totalbranches="4" content="        var nameChanged = !string.Equals(Session.Name ?? string.Empty, EditName ?? string.Empty, StringComparison.Ordinal);" />
+      <LineAnalysis line="493" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="        var dateChanged = !AreSameDate(Session.SessionDate, EditSessionDate);" />
+      <LineAnalysis line="494" visits="15" coverage="Covered" coveredbranches="4" totalbranches="4" content="        var publicChanged = !string.Equals(Session.PublicNotes ?? string.Empty, EditPublicNotes ?? string.Empty, StringComparison.Ordinal);" />
+      <LineAnalysis line="495" visits="15" coverage="Covered" coveredbranches="4" totalbranches="4" content="        var privateChanged = !string.Equals(Session.PrivateNotes ?? string.Empty, EditPrivateNotes ?? string.Empty, StringComparison.Ordinal);" />
+      <LineAnalysis line="496" visits="15" coverage="Covered" coveredbranches="" totalbranches="" content="        HasUnsavedChanges = nameChanged || dateChanged || publicChanged || privateChanged;" />
+      <LineAnalysis line="497" visits="17" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="498" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="499" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private async Task ResolveCurrentUserRoleAsync()" />
+      <LineAnalysis line="500" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="501" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsCurrentUserGM = false;" />
+      <LineAnalysis line="502" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsCurrentUserWorldOwner = false;" />
+      <LineAnalysis line="503" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        CurrentUserId = Guid.Empty;" />
+      <LineAnalysis line="504" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="505" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (World == null)" />
+      <LineAnalysis line="506" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="507" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="508" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="509" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="510" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var user = await _authService.GetCurrentUserAsync();" />
+      <LineAnalysis line="511" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (user == null || World.Members == null)" />
+      <LineAnalysis line="512" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="513" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="514" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="515" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="516" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        var member = World.Members.FirstOrDefault(m =&gt;" />
+      <LineAnalysis line="517" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            m.Email.Equals(user.Email, StringComparison.OrdinalIgnoreCase));" />
+      <LineAnalysis line="518" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="519" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        if (member == null)" />
+      <LineAnalysis line="520" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="521" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="            return;" />
+      <LineAnalysis line="522" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="523" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="524" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        CurrentUserId = member.UserId;" />
+      <LineAnalysis line="525" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsCurrentUserGM = member.Role == WorldRole.GM;" />
+      <LineAnalysis line="526" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        IsCurrentUserWorldOwner = member.UserId == World.OwnerId;" />
+      <LineAnalysis line="527" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="528" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="529" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private List&lt;BreadcrumbItem&gt; BuildBreadcrumbs()" />
+      <LineAnalysis line="530" visits="20" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="531" visits="20" coverage="Covered" coveredbranches="2" totalbranches="2" content="        if (Session == null)" />
+      <LineAnalysis line="532" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="533" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            return new List&lt;BreadcrumbItem&gt; { new(&quot;Dashboard&quot;, href: &quot;/dashboard&quot;) };" />
+      <LineAnalysis line="534" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="535" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="536" visits="19" coverage="Covered" coveredbranches="6" totalbranches="6" content="        if (Arc != null &amp;&amp; Campaign != null &amp;&amp; World != null)" />
+      <LineAnalysis line="537" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="538" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="            var items = _breadcrumbService.ForArc(Arc, Campaign, World, currentDisabled: false);" />
+      <LineAnalysis line="539" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="            items.Add(new BreadcrumbItem(Session.Name, href: null, disabled: true));" />
+      <LineAnalysis line="540" visits="18" coverage="Covered" coveredbranches="" totalbranches="" content="            return items;" />
+      <LineAnalysis line="541" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="        }" />
+      <LineAnalysis line="542" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="543" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        return new List&lt;BreadcrumbItem&gt;" />
+      <LineAnalysis line="544" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        {" />
+      <LineAnalysis line="545" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            new(&quot;Dashboard&quot;, href: &quot;/dashboard&quot;)," />
+      <LineAnalysis line="546" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="            new(Session.Name, href: null, disabled: true)" />
+      <LineAnalysis line="547" visits="1" coverage="Covered" coveredbranches="" totalbranches="" content="        };" />
+      <LineAnalysis line="548" visits="20" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="549" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="550" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private static bool AreSameDate(DateTime? left, DateTime? right)" />
+      <LineAnalysis line="551" visits="17" coverage="Covered" coveredbranches="8" totalbranches="8" content="        =&gt; left?.Date == right?.Date;" />
+      <LineAnalysis line="552" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="553" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="    private static string BuildDefaultSessionNoteTitle(string? displayName)" />
+      <LineAnalysis line="554" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="    {" />
+      <LineAnalysis line="555" visits="7" coverage="Covered" coveredbranches="2" totalbranches="2" content="        var trimmed = displayName?.Trim();" />
+      <LineAnalysis line="556" visits="7" coverage="Covered" coveredbranches="2" totalbranches="2" content="        var title = string.IsNullOrWhiteSpace(trimmed)" />
+      <LineAnalysis line="557" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="            ? &quot;My Notes&quot;" />
+      <LineAnalysis line="558" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="            : $&quot;{trimmed}'s Notes&quot;;" />
+      <LineAnalysis line="559" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="" />
+      <LineAnalysis line="560" visits="7" coverage="Covered" coveredbranches="2" totalbranches="2" content="        return title.Length &lt;= 500 ? title : title[..500];" />
+      <LineAnalysis line="561" visits="7" coverage="Covered" coveredbranches="" totalbranches="" content="    }" />
+      <LineAnalysis line="562" visits="-1" coverage="NotCoverable" coveredbranches="" totalbranches="" content="}" />
+    </File>
+  </Files>
+</CoverageReport>

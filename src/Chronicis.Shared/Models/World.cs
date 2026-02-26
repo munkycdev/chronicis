@@ -34,6 +34,11 @@ public class World
     public string? Description { get; set; }
 
     /// <summary>
+    /// Private notes for the world, visible only to the world owner and GMs.
+    /// </summary>
+    public string? PrivateNotes { get; set; }
+
+    /// <summary>
     /// The user who owns this world (typically the DM).
     /// </summary>
     public Guid OwnerId { get; set; }
