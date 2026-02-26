@@ -64,6 +64,7 @@
     margin-bottom: var(--chronicis-space-md);
     font-weight: 500;
     line-height: 1.3;
+    padding: 0.25em 0;
 }
 
 .chronicis-editor-content h1 {
@@ -285,7 +286,8 @@
    ============================================ */
 
 .chronicis-editor-content img {
-    max-width: 100%;
+    max-width: 250px;
+    width: 100%;
     height: auto;
     border-radius: var(--chronicis-radius-md);
     margin: var(--chronicis-space-md) 0;
@@ -388,4 +390,45 @@
     .chronicis-editor-content h2 {
         font-size: 1.5rem;
     }
+}
+
+/* ============================================
+   Shared Rendered-HTML List Normalisation
+   Applies consistent ol/ul indentation across
+   all surfaces that render markdown as HTML:
+   - TipTap editor (.chronicis-editor-content)
+   - Article read view (.chronicis-article-body)
+   - Tutorial drawer (.tutorial-drawer-body)
+   - Any other future markdown render host
+   ============================================ */
+
+.chronicis-editor-content ul,
+.chronicis-editor-content ol,
+.chronicis-article-body ul,
+.chronicis-article-body ol,
+.tutorial-drawer-body ul,
+.tutorial-drawer-body ol {
+    padding-left: 28px !important;
+    margin-left: 0 !important;
+    list-style-position: outside !important;
+    margin-bottom: var(--chronicis-space-md) !important;
+}
+
+.chronicis-editor-content ul,
+.chronicis-article-body ul,
+.tutorial-drawer-body ul {
+    list-style-type: disc !important;
+}
+
+.chronicis-editor-content ol,
+.chronicis-article-body ol,
+.tutorial-drawer-body ol {
+    list-style-type: decimal !important;
+}
+
+.chronicis-editor-content li,
+.chronicis-article-body li,
+.tutorial-drawer-body li {
+    margin-bottom: var(--chronicis-space-xs) !important;
+    padding-left: var(--chronicis-space-xs) !important;
 }

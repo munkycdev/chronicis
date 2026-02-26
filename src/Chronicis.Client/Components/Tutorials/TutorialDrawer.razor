@@ -193,12 +193,16 @@
 
     .tutorial-drawer-body {
         margin-top: 8px;
-        margin-bottom: 8px;
+        margin-bottom: 0;
         padding: 10px;
         border: 1px solid rgba(0, 0, 0, 0.08);
         border-radius: 8px;
         background: rgba(255, 255, 255, 0.7);
         color: var(--chronicis-primary);
+    }
+
+    .tutorial-drawer-body > *:last-child {
+        margin-bottom: 0 !important;
     }
 
     .tutorial-drawer-body :is(h1, h2, h3, h4, h5, h6) {
@@ -207,7 +211,7 @@
     }
 
     .tutorial-drawer-body h1 {
-        font-size: 1.4rem;
+        font-size: 1.0rem;
         line-height: 1.3;
     }
 

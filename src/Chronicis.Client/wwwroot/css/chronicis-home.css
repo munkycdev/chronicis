@@ -79,6 +79,7 @@
 }
 /* Tips Card */
 .chronicis-welcome-page .mud-divider {
+  display:none;
   opacity: 0.3;
 }
 

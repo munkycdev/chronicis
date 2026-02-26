@@ -25,8 +25,8 @@
         <div class="article-tree__empty">
             <div class="article-tree__empty-icon">🌍</div>
             <MudText Typo="Typo.body2" Class="mt-2 mb-3">No worlds yet</MudText>
-            <MudButton 
-                Variant="Variant.Text" 
+            <MudButton
+                Variant="Variant.Text"
                 Color="Color.Primary"
                 Size="Size.Small"
                 StartIcon="@Icons.Material.Filled.Add"
@@ -48,23 +48,21 @@
     {
         <div class="article-tree__nodes">
             @* Dashboard link *@
-            <MudNavLink Href="/dashboard" 
+            <MudNavLink Href="/dashboard"
                     Match="NavLinkMatch.All"
-                    Class="article-tree__dashboard-link">
+                    Class="article-tree__dashboard-link"
+                    IconColor="Color.Secondary">
                 <div style="width: 30px;"></div>
                 <MudIcon Icon="@Icons.Material.Filled.Home"
-                            Color="Color.Primary" 
-                            Size="Size.Small" 
+                            Size="Size.Small"
                             Style="margin-right: 8px;" />
-                <span style="vertical-align: top;">Dashboard</span>
+                <span style="vertical-align: top; color: var(--chronicis-secondary); font-weight:600;font-size:14.5px">Dashboard</span>
             </MudNavLink>
-            
-            <MudDivider Class="my-2" Style="opacity: 0.3;" />
-            
+
             @* Worlds and their contents *@
             @foreach (var node in TreeState.RootNodes.Where(n => n.IsVisible))
             {
-                <ArticleTreeNode 
+                <ArticleTreeNode
                     Node="node"
                     OnSelect="HandleSelect"
                     OnToggle="HandleToggle"
@@ -74,9 +72,9 @@
                     DraggedNodeId="_draggedNodeId"
                     DraggedNodeIdChanged="OnDraggedNodeIdChanged" />
             }
-            
+
             <MudDivider Class="my-2" Style="opacity: 0.3;" />
-            
+
             @* Drop zone to make items root-level *@
             @if (_draggedNodeId.HasValue)
             {
@@ -97,44 +95,44 @@
 @code {
     private Guid? _draggedNodeId;
     private bool _isOverRootZone;
-    
+
     protected override async Task OnInitializedAsync()
     {
         TreeState.OnStateChanged += OnTreeStateChanged;
-        
+
         // Initialize tree if not already loaded
         if (!TreeState.RootNodes.Any() && !TreeState.IsLoading)
         {
             await TreeState.InitializeAsync();
         }
     }
-    
+
     private void OnTreeStateChanged()
     {
         InvokeAsync(StateHasChanged);
     }
-    
+
     private bool HasVisibleNodes()
     {
         return TreeState.RootNodes.Any(n => n.IsVisible);
     }
-    
+
     private async Task HandleSelect(TreeNode node)
     {
         if (node == null) return;
         var nodeId = node.Id;
-        
+
         // Route based on node type
         switch (node.NodeType)
         {
             case TreeNodeType.World:
                 Navigation.NavigateTo($"/world/{nodeId}");
                 break;
-                
+
             case TreeNodeType.Campaign:
                 Navigation.NavigateTo($"/campaign/{nodeId}");
                 break;
-                
+
             case TreeNodeType.Arc:
                 Navigation.NavigateTo($"/arc/{nodeId}");
                 break;
@@ -143,12 +141,12 @@
                 TreeState.ExpandPathToAndSelect(nodeId);
                 Navigation.NavigateTo($"/session/{nodeId}");
                 break;
-                
+
             case TreeNodeType.VirtualGroup:
                 // Virtual groups just expand/collapse, don't navigate
                 TreeState.ToggleNode(nodeId);
                 break;
-                
+
             case TreeNodeType.Article:
                 TreeState.ExpandPathToAndSelect(nodeId);
                 var article = await ArticleApi.GetArticleDetailAsync(nodeId);
@@ -160,7 +158,7 @@
                 break;
         }
     }
-    
+
     // Helper to flatten tree for searching
     private IEnumerable<TreeNode> GetAllNodes(TreeNode node)
     {
@@ -173,20 +171,20 @@
             }
         }
     }
-    
+
     private void HandleToggle(Guid nodeId)
     {
         TreeState.ToggleNode(nodeId);
     }
-    
+
     private async Task HandleAddChild(Guid parentId)
     {
         var newId = await TreeState.CreateChildArticleAsync(parentId);
-        
+
         if (newId.HasValue)
         {
             Snackbar.Add("Article created", Severity.Success);
-            
+
             // Navigate to the new article
             var article = await ArticleApi.GetArticleDetailAsync(newId.Value);
             if (article != null && article.Breadcrumbs.Any())
@@ -200,33 +198,33 @@
             Snackbar.Add("Failed to create article", Severity.Error);
         }
     }
-    
+
     private async Task HandleDelete(Guid nodeId)
     {
         // Get node info for confirmation message
         var article = await ArticleApi.GetArticleDetailAsync(nodeId);
         if (article == null) return;
-        
+
         var title = string.IsNullOrWhiteSpace(article.Title) ? "(Untitled)" : article.Title;
         var message = $"Are you sure you want to delete '{title}'?";
-        
+
         if (article.ChildCount > 0)
         {
             var childText = article.ChildCount == 1 ? "1 child article" : $"{article.ChildCount} child articles";
             message += $"\n\n⚠️ WARNING: This will also delete {childText} and all their descendants.";
         }
-        
+
         message += "\n\nThis action cannot be undone.";
-        
+
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", message);
         if (!confirmed) return;
-        
+
         var success = await TreeState.DeleteArticleAsync(nodeId);
-        
+
         if (success)
         {
             Snackbar.Add("Article deleted", Severity.Success);
-            
+
             // Navigate to parent or dashboard
             if (article.ParentId.HasValue)
             {
@@ -247,7 +245,7 @@
             Snackbar.Add("Failed to delete article", Severity.Error);
         }
     }
-    
+
     private async Task CreateWorld()
     {
         var dialog = await DialogService.ShowAsync<CreateWorldDialog>("New World");
@@ -260,22 +258,22 @@
             Snackbar.Add("World created", Severity.Success);
         }
     }
-    
+
     // ============================================
     // Drag and Drop
     // ============================================
-    
+
     private void OnDraggedNodeIdChanged(Guid? nodeId)
     {
         _draggedNodeId = nodeId;
         _isOverRootZone = false;
         StateHasChanged();
     }
-    
+
     private async Task HandleMove((Guid ArticleId, Guid? NewParentId) moveInfo)
     {
         var success = await TreeState.MoveArticleAsync(moveInfo.ArticleId, moveInfo.NewParentId);
-        
+
         if (success)
         {
             Snackbar.Add("Article moved", Severity.Success);
@@ -284,30 +282,30 @@
         {
             Snackbar.Add("Cannot move article here", Severity.Warning);
         }
-        
+
         _draggedNodeId = null;
     }
-    
+
     private void HandleRootDragOver(DragEventArgs e)
     {
         _isOverRootZone = true;
     }
-    
+
     private void HandleRootDragLeave(DragEventArgs e)
     {
         _isOverRootZone = false;
     }
-    
+
     private async Task HandleRootDrop(DragEventArgs e)
     {
         _isOverRootZone = false;
-        
+
         if (_draggedNodeId.HasValue)
         {
             await HandleMove((_draggedNodeId.Value, null));
         }
     }
-    
+
     public void Dispose()
     {
         TreeState.OnStateChanged -= OnTreeStateChanged;
