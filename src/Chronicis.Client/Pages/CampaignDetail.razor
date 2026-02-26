@@ -4,6 +4,7 @@
 @using Chronicis.Client.Components.Dialogs
 @using Chronicis.Client.Components.Shared
 @inject CampaignDetailViewModel ViewModel
+@inject IAppContextService AppContext
 
 @if (ViewModel.IsLoading)
 {
@@ -131,6 +132,12 @@ else if (ViewModel.Campaign != null)
     {
         ViewModel.PropertyChanged += OnViewModelChanged;
         await ViewModel.LoadAsync(CampaignId);
+
+        if (ViewModel.Campaign != null &&
+            (AppContext.CurrentWorldId != ViewModel.Campaign.WorldId || AppContext.CurrentCampaignId != ViewModel.Campaign.Id))
+        {
+            await AppContext.SelectWorldAsync(ViewModel.Campaign.WorldId, ViewModel.Campaign.Id);
+        }
     }
 
     private void OnViewModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

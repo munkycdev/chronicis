@@ -443,75 +443,26 @@ namespace Chronicis.Api.Services
             if (slugs.Length == 0)
                 return null;
 
-            // First segment is the world slug
-            var worldSlug = slugs[0];
+            // Normal paths are world-scoped ("world-slug/article-slug/..."), but tutorial
+            // articles are global/system content (WorldId == Guid.Empty) and arrive as
+            // "tutorial-slug[/child-slug]". Try world resolution first, then tutorial fallback.
+            var article = await TryResolveWorldArticleByPathAsync(slugs, userId)
+                ?? await TryResolveTutorialArticleByPathAsync(slugs, userId);
 
-            // Look up the world by slug - user must be a member of the world
-            var world = await _context.Worlds
-                .AsNoTracking()
-                .Where(w => w.Slug == worldSlug && w.Members.Any(m => m.UserId == userId))
-                .Select(w => new { w.Id })
-                .FirstOrDefaultAsync();
-
-            if (world == null)
+            if (article == null && slugs.Length > 1)
             {
-                _logger.LogWarningSanitized("World not found for slug '{WorldSlug}' or user {UserId} doesn't have access", worldSlug, userId);
-                return null;
+                // Some tutorial URLs include a synthetic "system tutorial world" prefix
+                // (e.g. /article/system-tutorial/tutorial-article-any). Tutorials are
+                // stored as global/system articles, so retry after stripping that prefix.
+                article = await TryResolveTutorialArticleByPathAsync(slugs.Skip(1).ToArray(), userId);
             }
 
-            // If only world slug provided, no article to return
-            if (slugs.Length == 1)
+            if (article == null)
             {
-                _logger.LogWarningSanitized("Path '{Path}' contains only world slug, no article path", path);
-                return null;
+                _logger.LogWarningSanitized("Article not found for path '{Path}' for user {UserId}", path, userId);
             }
 
-            // Remaining segments are the article path within the world
-            Guid? currentParentId = null;
-            Guid? articleId = null;
-
-            // Walk down the tree using slugs (starting from index 1, skipping world slug)
-            for (int i = 1; i < slugs.Length; i++)
-            {
-                var slug = slugs[i];
-                var isRootLevel = (i == 1); // First article slug (index 1) is at root level
-
-                Article? article;
-                if (isRootLevel)
-                {
-                    // Root-level article: filter by WorldId and ParentId = null
-                    article = await GetAccessibleArticles(userId)
-                        .AsNoTracking()
-                        .Where(a => a.Slug == slug &&
-                                    a.ParentId == null &&
-                                    a.WorldId == world.Id)
-                        .FirstOrDefaultAsync();
-                }
-                else
-                {
-                    // Child article: filter by ParentId
-                    article = await GetAccessibleArticles(userId)
-                        .AsNoTracking()
-                        .Where(a => a.Slug == slug &&
-                                    a.ParentId == currentParentId)
-                        .FirstOrDefaultAsync();
-                }
-
-                if (article == null)
-                {
-                    _logger.LogWarningSanitized("Article not found for slug '{Slug}' under parent {ParentId} in world {WorldId} for user {UserId}",
-                        slug, currentParentId, world.Id, userId);
-                    return null;
-                }
-
-                articleId = article.Id;
-                currentParentId = article.Id; // Next iteration looks for children of this article
-            }
-
-            // Found the article, now get full details
-            return articleId.HasValue
-                ? await GetArticleDetailAsync(articleId.Value, userId)
-                : null;
+            return article;
         }
 
         /// <summary>
@@ -590,6 +541,107 @@ namespace Chronicis.Api.Services
         public async Task<string> BuildArticlePathAsync(Guid articleId, Guid userId)
         {
             return await _hierarchyService.BuildPathAsync(articleId);
+        }
+
+        private async Task<ArticleDto?> TryResolveWorldArticleByPathAsync(string[] slugs, Guid userId)
+        {
+            if (slugs.Length < 2)
+            {
+                return null;
+            }
+
+            var worldSlug = slugs[0];
+
+            var world = await _context.Worlds
+                .AsNoTracking()
+                .Where(w => w.Slug == worldSlug && w.Members.Any(m => m.UserId == userId))
+                .Select(w => new { w.Id })
+                .FirstOrDefaultAsync();
+
+            if (world == null)
+            {
+                return null;
+            }
+
+            Guid? currentParentId = null;
+            Guid? articleId = null;
+
+            for (int i = 1; i < slugs.Length; i++)
+            {
+                var slug = slugs[i];
+                var isRootLevel = (i == 1);
+
+                Article? article;
+                if (isRootLevel)
+                {
+                    article = await GetAccessibleArticles(userId)
+                        .AsNoTracking()
+                        .Where(a => a.Slug == slug &&
+                                    a.ParentId == null &&
+                                    a.WorldId == world.Id)
+                        .FirstOrDefaultAsync();
+                }
+                else
+                {
+                    article = await GetAccessibleArticles(userId)
+                        .AsNoTracking()
+                        .Where(a => a.Slug == slug &&
+                                    a.ParentId == currentParentId)
+                        .FirstOrDefaultAsync();
+                }
+
+                if (article == null)
+                {
+                    return null;
+                }
+
+                articleId = article.Id;
+                currentParentId = article.Id;
+            }
+
+            return articleId.HasValue
+                ? await GetArticleDetailAsync(articleId.Value, userId)
+                : null;
+        }
+
+        private async Task<ArticleDto?> TryResolveTutorialArticleByPathAsync(string[] slugs, Guid userId)
+        {
+            if (slugs.Length == 0)
+            {
+                return null;
+            }
+
+            Guid? currentParentId = null;
+            Guid? articleId = null;
+
+            for (int i = 0; i < slugs.Length; i++)
+            {
+                var slug = slugs[i];
+                var isRootLevel = (i == 0);
+
+                var query = _context.Articles
+                    .AsNoTracking()
+                    .Where(a => a.Type == ArticleType.Tutorial &&
+                                a.WorldId == Guid.Empty &&
+                                a.Slug == slug);
+
+                query = isRootLevel
+                    ? query.Where(a => a.ParentId == null)
+                    : query.Where(a => a.ParentId == currentParentId);
+
+                var article = await query.FirstOrDefaultAsync();
+                if (article == null)
+                {
+                    return null;
+                }
+
+                articleId = article.Id;
+                currentParentId = article.Id;
+            }
+
+            return articleId.HasValue
+                ? await GetArticleDetailAsync(articleId.Value, userId)
+                : null;
         }
     }
 }

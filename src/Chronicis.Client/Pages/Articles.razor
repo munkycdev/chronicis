@@ -3,6 +3,7 @@
 @inject ITreeStateService TreeStateService
 @inject IArticleApiService ArticleApi
 @inject IQuoteService QuoteService
+@inject IAppContextService AppContext
 @inject NavigationManager Navigation
 @implements IDisposable
 
@@ -59,6 +60,13 @@ else
             
             if (article != null)
             {
+                if (article.WorldId.HasValue &&
+                    article.WorldId.Value != Guid.Empty &&
+                    AppContext.CurrentWorldId != article.WorldId.Value)
+                {
+                    await AppContext.SelectWorldAsync(article.WorldId.Value);
+                }
+
                 if (article.Id != TreeStateService.SelectedArticleId)
                 {
                     // Expand path to article and select it

@@ -432,6 +432,12 @@ else
         ViewModel.PropertyChanged -= OnViewModelChanged;
         ViewModel.PropertyChanged += OnViewModelChanged;
         await ViewModel.LoadAsync(SessionId);
+
+        if (ViewModel.World != null &&
+            (AppContext.CurrentWorldId != ViewModel.World.Id || AppContext.CurrentCampaignId != ViewModel.Campaign?.Id))
+        {
+            await AppContext.SelectWorldAsync(ViewModel.World.Id, ViewModel.Campaign?.Id);
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

@@ -9,6 +9,7 @@
 @inject WorldLinksViewModel LinksViewModel
 @inject WorldDocumentsViewModel DocumentsViewModel
 @inject WorldSharingViewModel SharingViewModel
+@inject IAppContextService AppContext
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 
@@ -376,6 +377,10 @@ else if (ViewModel.World != null)
         SharingViewModel.PropertyChanged += OnViewModelChanged;
 
         await ViewModel.LoadAsync(WorldId, SharingViewModel, LinksViewModel, DocumentsViewModel);
+        if (ViewModel.World != null && AppContext.CurrentWorldId != ViewModel.World.Id)
+        {
+            await AppContext.SelectWorldAsync(ViewModel.World.Id);
+        }
     }
 
     private async Task CopyPublicUrl()

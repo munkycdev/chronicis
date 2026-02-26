@@ -98,7 +98,7 @@
                     <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                    Color="Color.Primary"
                                    Size="Size.Small"
-                                   OnClick="@(() => OpenTutorialEditorAsync(context))" />
+                                   OnClick="@(() => OpenTutorialEditorAsync(context.PageType, context.ArticleId))" />
                 </MudTooltip>
             </MudTd>
         </RowTemplate>

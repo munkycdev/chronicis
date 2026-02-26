@@ -1,5 +1,6 @@
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -125,9 +126,14 @@ public partial class AdminTutorialsPanel : ComponentBase
         }
     }
 
-    private async Task OpenTutorialEditorAsync(TutorialMappingDto mapping)
+    private async Task OpenTutorialEditorAsync(string pageType, Guid articleId)
     {
-        await OpenTutorialEditorByArticleIdAsync(mapping.ArticleId);
+        Logger.LogInformation(
+            "Opening tutorial editor from admin row {PageType} -> {ArticleId}",
+            pageType,
+            articleId);
+
+        await OpenTutorialEditorByArticleIdAsync(articleId);
     }
 
     private async Task OpenTutorialEditorByArticleIdAsync(Guid articleId)
@@ -144,6 +150,17 @@ public partial class AdminTutorialsPanel : ComponentBase
             if (article.Breadcrumbs == null || article.Breadcrumbs.Count == 0)
             {
                 Snackbar.Add("Tutorial article path could not be resolved.", Severity.Error);
+                return;
+            }
+
+            if (article.Type == ArticleType.Tutorial &&
+                article.WorldId == Guid.Empty &&
+                !string.IsNullOrWhiteSpace(article.Slug))
+            {
+                // Tutorial articles are global/system content. Navigating by slug avoids
+                // edge cases in breadcrumb-derived paths for synthetic system-world rows.
+                var tutorialUrl = $"/article/system-tutorial/{Uri.EscapeDataString(article.Slug)}";
+                Navigation.NavigateTo(tutorialUrl, forceLoad: true);
                 return;
             }
 

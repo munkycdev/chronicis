@@ -83,6 +83,7 @@ mono_crash.*
 # Local AI helper files (keep these out of source control)
 /scripts/codex.ps1
 /CODEX_INSTRUCTIONS.md
+/.codex_build
 
 # Local configuration files (do not commit secrets or dev-only config)
 # If you intend to keep appsettings.Development.json in source control, remove it here.

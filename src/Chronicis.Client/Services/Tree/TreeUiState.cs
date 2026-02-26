@@ -216,7 +216,17 @@ internal sealed class TreeUiState
 
         if (!_nodeIndex.TryGetNode(nodeId, out var targetNode) || targetNode == null)
         {
-            _logger.LogWarning("ExpandPathToAndSelect: Node {NodeId} not found", nodeId);
+            // Some content (e.g., tutorial/system articles) is intentionally excluded
+            // from the navigation tree but still needs to be loadable in the editor.
+            if (_selectedNodeId.HasValue &&
+                _nodeIndex.TryGetNode(_selectedNodeId.Value, out var previousNode) &&
+                previousNode != null)
+            {
+                previousNode.IsSelected = false;
+            }
+
+            _selectedNodeId = nodeId;
+            _logger.LogInformation("ExpandPathToAndSelect: Node {NodeId} not found in tree; selected directly", nodeId);
             return false;
         }
 
