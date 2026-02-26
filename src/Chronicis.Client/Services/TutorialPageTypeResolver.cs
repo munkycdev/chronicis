@@ -101,7 +101,8 @@ public class TutorialPageTypeResolver
         }
 
         Uri? parsedUri = null;
-        if (Uri.TryCreate(uri, UriKind.Absolute, out var absoluteUri))
+        if (Uri.TryCreate(uri, UriKind.Absolute, out var absoluteUri) &&
+            (absoluteUri.Scheme == Uri.UriSchemeHttp || absoluteUri.Scheme == Uri.UriSchemeHttps))
         {
             parsedUri = absoluteUri;
         }
