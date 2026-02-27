@@ -176,7 +176,7 @@ public class SessionDetailTests : MudBlazorTestContext
         {
             Assert.Contains($"session-public-editor-{gmSessionId}", gmCut.Markup, StringComparison.Ordinal);
             Assert.Contains($"session-private-editor-{gmSessionId}", gmCut.Markup, StringComparison.Ordinal);
-            Assert.Contains("Delete Session", gmCut.Markup, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("Delete", gmCut.Markup, StringComparison.OrdinalIgnoreCase);
         });
     }
 

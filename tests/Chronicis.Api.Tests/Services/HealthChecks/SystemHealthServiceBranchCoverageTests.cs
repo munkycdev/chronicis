@@ -15,7 +15,6 @@ public class SystemHealthServiceBranchCoverageTests
             null!,
             null!,
             null!,
-            null!,
             NullLogger<SystemHealthService>.Instance);
 
         Assert.NotNull(service);

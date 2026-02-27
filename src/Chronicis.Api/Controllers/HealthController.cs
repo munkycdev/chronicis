@@ -130,8 +130,10 @@ public class HealthController : ControllerBase
         return StatusCode(statusCode, systemHealth);
     }
 
-    internal static string GetApiVersion() =>
-        Assembly.GetExecutingAssembly()
+    internal static string GetApiVersion() => GetApiVersion(Assembly.GetExecutingAssembly());
+
+    internal static string GetApiVersion(Assembly assembly) =>
+        assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             ?.InformationalVersion ?? "0.0.0";
 

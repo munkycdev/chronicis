@@ -1,9 +1,11 @@
+using System.Reflection;
 using Bunit;
 using Chronicis.Client.Pages.Admin;
 using Chronicis.Client.Services;
 using Chronicis.Client.Tests.Components;
 using Chronicis.Shared.DTOs;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using NSubstitute;
 using Xunit;
 
@@ -179,5 +181,17 @@ public class StatusTests : MudBlazorTestContext
             Assert.Contains(expectedServiceName, cut.Markup);
             Assert.Contains(expectedStatusText, cut.Markup);
         });
+    }
+
+    [Fact]
+    public void Status_GetOverallStatusIcon_CoversAllBranches()
+    {
+        var method = typeof(Status).GetMethod("GetOverallStatusIcon", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        Assert.Equal(Icons.Material.Filled.CheckCircle, (string)method!.Invoke(null, [HealthStatus.Healthy])!);
+        Assert.Equal(Icons.Material.Filled.Warning, (string)method.Invoke(null, [HealthStatus.Degraded])!);
+        Assert.Equal(Icons.Material.Filled.Error, (string)method.Invoke(null, [HealthStatus.Unhealthy])!);
+        Assert.Equal(Icons.Material.Filled.Info, (string)method.Invoke(null, ["unknown"])!);
     }
 }

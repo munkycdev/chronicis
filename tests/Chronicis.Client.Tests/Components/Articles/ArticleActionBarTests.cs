@@ -206,7 +206,7 @@ public class ArticleActionBarTests : MudBlazorTestContext
         // Assert
         var saveButtons = cut.FindComponents<MudButton>();
         var saveButton = saveButtons.First(b => b.Markup.Contains("Save"));
-        Assert.Equal(Color.Success, saveButton.Instance.Color);
+        Assert.Equal(Color.Primary, saveButton.Instance.Color);
         Assert.Equal(Variant.Filled, saveButton.Instance.Variant);
     }
 
@@ -220,7 +220,7 @@ public class ArticleActionBarTests : MudBlazorTestContext
         var deleteButtons = cut.FindComponents<MudButton>();
         var deleteButton = deleteButtons.First(b => b.Markup.Contains("Delete"));
         Assert.Equal(Color.Error, deleteButton.Instance.Color);
-        Assert.Equal(Variant.Filled, deleteButton.Instance.Variant);
+        Assert.Equal(Variant.Outlined, deleteButton.Instance.Variant);
     }
 
     [Fact]

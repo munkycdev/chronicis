@@ -10,6 +10,7 @@ public class HealthControllerBranchCoverageTests
     {
         var mask = RemainingApiBranchCoverageTestHelpers.GetMethod(typeof(HealthController), "MaskConnectionString");
 
+        Assert.Equal("(empty)", (string)mask.Invoke(null, [null])!);
         Assert.Equal("(empty)", (string)mask.Invoke(null, [""])!);
 
         var masked = (string)mask.Invoke(null, ["Server=.;Database=Db;User Id=sa;Password=secret;MultipleActiveResultSets=True;Encrypt=True"])!;

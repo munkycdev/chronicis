@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using System.Reflection;
+using System.Reflection.Emit;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
@@ -34,5 +36,16 @@ public class HealthControllerCoverageSmokeTests
 
         Assert.NotNull(version);
         Assert.NotEmpty(version);
+    }
+
+    [Fact]
+    public void HealthController_GetApiVersion_WithoutInformationalAttribute_ReturnsFallback()
+    {
+        var assemblyName = new AssemblyName($"NoInfoVersion{Guid.NewGuid():N}");
+        var dynamicAssembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+
+        var version = HealthController.GetApiVersion(dynamicAssembly);
+
+        Assert.Equal("0.0.0", version);
     }
 }
