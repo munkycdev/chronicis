@@ -87,6 +87,7 @@ public class PublicWorldService : IPublicWorldService
             .AsNoTracking()
             .Include(w => w.Campaigns)
                 .ThenInclude(c => c.Arcs)
+                    .ThenInclude(a => a.SessionEntities)
             .Where(w => w.PublicSlug == normalizedSlug && w.IsPublic)
             .FirstOrDefaultAsync();
 
@@ -109,6 +110,7 @@ public class PublicWorldService : IPublicWorldService
                 WorldId = a.WorldId,
                 CampaignId = a.CampaignId,
                 ArcId = a.ArcId,
+                SessionId = a.SessionId,
                 Type = a.Type,
                 Visibility = a.Visibility,
                 HasChildren = false, // Will calculate below
@@ -123,7 +125,10 @@ public class PublicWorldService : IPublicWorldService
 
         // Build article index and children relationships
         var articleIndex = allPublicArticles.ToDictionary(a => a.Id);
-        var publicArticleIds = new HashSet<Guid>(allPublicArticles.Select(a => a.Id));
+        var sessionNotesBySessionId = allPublicArticles
+            .Where(a => a.Type == ArticleType.SessionNote && a.SessionId.HasValue)
+            .GroupBy(a => a.SessionId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         // Link children to parents
         foreach (var article in allPublicArticles)
@@ -175,15 +180,79 @@ public class PublicWorldService : IPublicWorldService
                     IsVirtualGroup = true
                 };
 
-                // Find session articles for this arc
-                var sessionArticles = allPublicArticles
-                    .Where(a => a.ArcId == arc.Id && a.Type == ArticleType.Session && a.ParentId == null)
-                    .OrderBy(a => a.Title)
-                    .ToList();
+                var sessions = arc.SessionEntities?
+                    .OrderBy(s => s.SessionDate ?? DateTime.MaxValue)
+                    .ThenBy(s => s.Name)
+                    .ThenBy(s => s.CreatedAt)
+                    ?? Enumerable.Empty<Chronicis.Shared.Models.Session>();
 
-                foreach (var session in sessionArticles)
+                foreach (var session in sessions)
                 {
-                    arcNode.Children.Add(session);
+                    var hasLegacyPublicSessionArticle = articleIndex.TryGetValue(session.Id, out var legacySessionArticle)
+                        && legacySessionArticle.Type == ArticleType.Session
+                        && legacySessionArticle.ParentId == null
+                        && legacySessionArticle.Visibility == ArticleVisibility.Public;
+
+                    var rootSessionNotes = new List<ArticleTreeDto>();
+                    if (sessionNotesBySessionId.TryGetValue(session.Id, out var notes))
+                    {
+                        var sessionNoteIds = notes.Select(n => n.Id).ToHashSet();
+                        rootSessionNotes = notes
+                            .Where(n => !n.ParentId.HasValue || !sessionNoteIds.Contains(n.ParentId.Value))
+                            .OrderBy(n => n.Title)
+                            .ToList();
+                    }
+
+                    if (hasLegacyPublicSessionArticle)
+                    {
+                        legacySessionArticle!.HasAISummary = !string.IsNullOrWhiteSpace(session.AiSummary);
+                        legacySessionArticle.Children ??= new List<ArticleTreeDto>();
+
+                        var existingChildIds = legacySessionArticle.Children.Select(c => c.Id).ToHashSet();
+                        foreach (var note in rootSessionNotes.Where(n => !existingChildIds.Contains(n.Id)))
+                        {
+                            legacySessionArticle.Children.Add(note);
+                        }
+
+                        if (legacySessionArticle.Children.Any())
+                        {
+                            legacySessionArticle.Children = legacySessionArticle.Children.OrderBy(c => c.Title).ToList();
+                        }
+
+                        legacySessionArticle.HasChildren = legacySessionArticle.Children.Any();
+                        legacySessionArticle.ChildCount = legacySessionArticle.Children.Count;
+
+                        arcNode.Children.Add(legacySessionArticle);
+                        arcNode.HasChildren = true;
+                        arcNode.ChildCount++;
+                        continue;
+                    }
+
+                    if (!rootSessionNotes.Any())
+                    {
+                        continue;
+                    }
+
+                    var sessionNode = new ArticleTreeDto
+                    {
+                        Id = session.Id,
+                        Title = session.Name,
+                        Slug = session.Name.ToLowerInvariant().Replace(" ", "-"),
+                        Type = ArticleType.Session,
+                        IconEmoji = "fa-solid fa-calendar-day",
+                        Children = new List<ArticleTreeDto>(),
+                        IsVirtualGroup = true,
+                        HasAISummary = !string.IsNullOrWhiteSpace(session.AiSummary)
+                    };
+
+                    foreach (var note in rootSessionNotes)
+                    {
+                        sessionNode.Children.Add(note);
+                        sessionNode.HasChildren = true;
+                        sessionNode.ChildCount++;
+                    }
+
+                    arcNode.Children.Add(sessionNode);
                     arcNode.HasChildren = true;
                     arcNode.ChildCount++;
                 }
@@ -273,7 +342,9 @@ public class PublicWorldService : IPublicWorldService
         }
 
         var uncategorizedArticles = allPublicArticles
-            .Where(a => a.ParentId == null && !includedIds.Contains(a.Id))
+            .Where(a => a.ParentId == null &&
+                        !includedIds.Contains(a.Id) &&
+                        a.Type != ArticleType.Session)
             .OrderBy(a => a.Title)
             .ToList();
 
@@ -358,47 +429,79 @@ public class PublicWorldService : IPublicWorldService
         // Walk down the tree using slugs
         Guid? currentParentId = null;
         Guid? articleId = null;
+        ArticleType? currentArticleType = null;
 
         for (int i = 0; i < slugs.Length; i++)
         {
             var slug = slugs[i];
             var isRootLevel = (i == 0);
 
-            Guid? foundArticleId;
+            (Guid Id, ArticleType Type)? foundArticle = null;
 
             if (isRootLevel)
             {
                 // Root-level article: filter by WorldId and ParentId = null
-                foundArticleId = await _context.Articles
+                var rootArticle = await _context.Articles
                     .AsNoTracking()
                     .Where(a => a.Slug == slug &&
                                 a.ParentId == null &&
                                 a.WorldId == world.Id &&
                                 a.Visibility == ArticleVisibility.Public)
-                    .Select(a => (Guid?)a.Id)
+                    .Select(a => new { a.Id, a.Type })
                     .FirstOrDefaultAsync();
+                if (rootArticle != null)
+                {
+                    foundArticle = (rootArticle.Id, rootArticle.Type);
+                }
             }
             else
             {
                 // Child article: filter by ParentId
-                foundArticleId = await _context.Articles
+                var childArticle = await _context.Articles
                     .AsNoTracking()
                     .Where(a => a.Slug == slug &&
                                 a.ParentId == currentParentId &&
+                                a.WorldId == world.Id &&
                                 a.Visibility == ArticleVisibility.Public)
-                    .Select(a => (Guid?)a.Id)
+                    .Select(a => new { a.Id, a.Type })
                     .FirstOrDefaultAsync();
+                if (childArticle != null)
+                {
+                    foundArticle = (childArticle.Id, childArticle.Type);
+                }
+
+                // Session-entity refactor compatibility:
+                // session-attached root notes can have ParentId = null.
+                // If parent is a legacy Session article, allow lookup by SessionId.
+                if (foundArticle == null && currentArticleType == ArticleType.Session)
+                {
+                    var sessionRootNote = await _context.Articles
+                        .AsNoTracking()
+                        .Where(a => a.Slug == slug &&
+                                    a.ParentId == null &&
+                                    a.SessionId == currentParentId &&
+                                    a.WorldId == world.Id &&
+                                    a.Type == ArticleType.SessionNote &&
+                                    a.Visibility == ArticleVisibility.Public)
+                        .Select(a => new { a.Id, a.Type })
+                        .FirstOrDefaultAsync();
+                    if (sessionRootNote != null)
+                    {
+                        foundArticle = (sessionRootNote.Id, sessionRootNote.Type);
+                    }
+                }
             }
 
-            if (!foundArticleId.HasValue)
+            if (foundArticle == null)
             {
                 _logger.LogDebugSanitized("Public article not found for slug '{Slug}' in path '{Path}' for world '{PublicSlug}'",
                     slug, articlePath, normalizedSlug);
                 return null;
             }
 
-            articleId = foundArticleId.Value;
-            currentParentId = foundArticleId.Value;
+            articleId = foundArticle.Value.Id;
+            currentParentId = foundArticle.Value.Id;
+            currentArticleType = foundArticle.Value.Type;
         }
 
         // Found the article, now get full details
@@ -407,7 +510,9 @@ public class PublicWorldService : IPublicWorldService
 
         var article = await _context.Articles
             .AsNoTracking()
-            .Where(a => a.Id == articleId.Value && a.Visibility == ArticleVisibility.Public)
+            .Where(a => a.Id == articleId.Value &&
+                        a.WorldId == world.Id &&
+                        a.Visibility == ArticleVisibility.Public)
             .Select(a => new ArticleDto
             {
                 Id = a.Id,
@@ -481,7 +586,7 @@ public class PublicWorldService : IPublicWorldService
             .Where(a => a.Id == articleId &&
                         a.WorldId == world.Id &&
                         a.Visibility == ArticleVisibility.Public)
-            .Select(a => new { a.Id, a.Slug, a.ParentId })
+            .Select(a => new { a.Id, a.Slug, a.ParentId, a.SessionId, a.Type })
             .FirstOrDefaultAsync();
 
         if (article == null)
@@ -490,15 +595,40 @@ public class PublicWorldService : IPublicWorldService
             return null;
         }
 
-        // Build the path by walking up the parent tree
+        // Build the path by walking up the parent tree.
+        // Root SessionNotes can belong to a Session entity while having ParentId = null.
+        // In that case, prefer including the matching legacy Session article slug
+        // (when one exists) so links are stable with older public URLs.
         var slugs = new List<string> { article.Slug };
+
+        if (article.Type == ArticleType.SessionNote &&
+            !article.ParentId.HasValue &&
+            article.SessionId.HasValue)
+        {
+            var legacySessionArticleSlug = await _context.Articles
+                .AsNoTracking()
+                .Where(a => a.Id == article.SessionId.Value &&
+                            a.WorldId == world.Id &&
+                            a.Type == ArticleType.Session &&
+                            a.Visibility == ArticleVisibility.Public)
+                .Select(a => a.Slug)
+                .FirstOrDefaultAsync();
+
+            if (!string.IsNullOrEmpty(legacySessionArticleSlug))
+            {
+                slugs.Insert(0, legacySessionArticleSlug);
+            }
+        }
+
         var currentParentId = article.ParentId;
 
         while (currentParentId.HasValue)
         {
             var parentArticle = await _context.Articles
                 .AsNoTracking()
-                .Where(a => a.Id == currentParentId.Value && a.Visibility == ArticleVisibility.Public)
+                .Where(a => a.Id == currentParentId.Value &&
+                            a.WorldId == world.Id &&
+                            a.Visibility == ArticleVisibility.Public)
                 .Select(a => new { a.Slug, a.ParentId })
                 .FirstOrDefaultAsync();
 

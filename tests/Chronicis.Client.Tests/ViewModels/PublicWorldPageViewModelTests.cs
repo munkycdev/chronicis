@@ -32,8 +32,15 @@ public class PublicWorldPageViewModelTests
         return new Sut(vm, publicApi, navigator);
     }
 
-    private static WorldDetailDto MakeWorld(string slug = "my-world") =>
-        new() { Id = Guid.NewGuid(), Name = "My World", Slug = slug, OwnerName = "Dave" };
+    private static WorldDetailDto MakeWorld(string slug = "my-world", string? publicSlug = null) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            Name = "My World",
+            Slug = slug,
+            PublicSlug = publicSlug,
+            OwnerName = "Dave"
+        };
 
     private static ArticleDto MakeArticle(Guid? id = null) =>
         new()
@@ -222,6 +229,24 @@ public class PublicWorldPageViewModelTests
         await c.VM.OnPublicWikiLinkClicked(articleId.ToString());
 
         c.Navigator.Received(1).NavigateTo("/w/test-world/lore/magic");
+    }
+
+    [Fact]
+    public async Task OnPublicWikiLinkClicked_PrefersPublicSlug_WhenAvailable()
+    {
+        var c = CreateSut();
+        var world = MakeWorld("internal-world", "public-world");
+        c.PublicApi.GetPublicWorldAsync("public-world").Returns(world);
+        c.PublicApi.GetPublicArticleTreeAsync("public-world").Returns(new List<ArticleTreeDto>());
+        await c.VM.LoadWorldAsync("public-world", null);
+
+        var articleId = Guid.NewGuid();
+        c.PublicApi.ResolvePublicArticlePathAsync("public-world", articleId).Returns("lore/magic");
+
+        await c.VM.OnPublicWikiLinkClicked(articleId.ToString());
+
+        await c.PublicApi.Received(1).ResolvePublicArticlePathAsync("public-world", articleId);
+        c.Navigator.Received(1).NavigateTo("/w/public-world/lore/magic");
     }
 
     [Fact]

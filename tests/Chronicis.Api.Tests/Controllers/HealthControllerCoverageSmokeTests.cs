@@ -1,11 +1,11 @@
+using System.Reflection;
+using System.Reflection.Emit;
 using Chronicis.Api.Controllers;
 using Chronicis.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
-using System.Reflection;
-using System.Reflection.Emit;
 using Xunit;
 
 namespace Chronicis.Api.Tests;

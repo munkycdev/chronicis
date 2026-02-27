@@ -158,8 +158,11 @@ public sealed class PublicWorldPageViewModel : ViewModelBase, IAsyncDisposable
         if (!Guid.TryParse(targetArticleId, out var articleId))
             return;
 
-        // publicSlug must be captured; read from the current world.
-        var slug = World?.Slug ?? string.Empty;
+        // Prefer the true public slug used by anonymous routes.
+        // Fall back to legacy world slug to preserve compatibility in older data/tests.
+        var slug = !string.IsNullOrWhiteSpace(World?.PublicSlug)
+            ? World!.PublicSlug!
+            : World?.Slug ?? string.Empty;
         if (string.IsNullOrEmpty(slug))
             return;
 
