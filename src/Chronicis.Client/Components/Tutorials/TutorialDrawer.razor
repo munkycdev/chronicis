@@ -37,12 +37,6 @@
     else
     {
         <div class="tutorial-drawer-panel">
-            @if (IsForcedOpen)
-            {
-                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-3">
-                    Tutorial is required in this context.
-                </MudAlert>
-            }
 
             <div class="tutorial-drawer-body">
                 @((MarkupString)MarkdownService.EnsureHtml(_tutorial.Body))
@@ -210,7 +204,8 @@
         color: var(--chronicis-primary);
     }
 
-    .tutorial-drawer-body h1 {
+    .tutorial-drawer-body h1,
+    .tutorial-drawer-body h2 {
         font-size: 1.0rem;
         line-height: 1.3;
     }

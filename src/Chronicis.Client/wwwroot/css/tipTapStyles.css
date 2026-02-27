@@ -275,7 +275,6 @@
     align-items: center;
     gap: 4px;
     padding: 4px 8px;
-    border: 1px solid rgba(0, 0, 0, 0.12);
     border-bottom: none;
     border-radius: var(--chronicis-radius-sm) var(--chronicis-radius-sm) 0 0;
     background-color: var(--chronicis-background-light);
@@ -431,4 +430,11 @@
 .tutorial-drawer-body li {
     margin-bottom: var(--chronicis-space-xs) !important;
     padding-left: var(--chronicis-space-xs) !important;
+}
+
+
+.tutorial-drawer-body h1,
+.tutorial-drawer-body h2{
+    font-size:1.0rem;
+    margin-bottom:0.5rem;
 }

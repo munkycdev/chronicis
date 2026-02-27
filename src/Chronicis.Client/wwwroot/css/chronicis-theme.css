@@ -1,7 +1,7 @@
 /* ============================================
    Chronicis Custom MudBlazor Theme
    Based on Chronicis Style Guide v1.0
-   
+
    This is the SINGLE SOURCE OF TRUTH for:
    - CSS Custom Properties (variables)
    - Global scrollbar styles
@@ -11,7 +11,7 @@
 
 /* ============================================
    CSS Custom Properties
-   
+
    Naming aligned with MudBlazor theme semantics:
    - Primary: Main action color (buttons, links) - slate-grey
    - Secondary: Accent/decorative color - beige-gold
@@ -22,46 +22,46 @@
     --chronicis-primary: #3A4750;            /* Slate-grey - buttons, actions, links */
     --chronicis-secondary: #C4AF8E;          /* Beige-gold - accents, decorative elements */
     --chronicis-secondary-muted: #D9C9A7;    /* Lighter beige-gold for subtle accents */
-    
+
     /* Backgrounds */
     --chronicis-background-dark: #1F2A33;    /* Appbar, drawer, dark surfaces */
     --chronicis-background-light: #F4F0EA;   /* Page background, light surfaces */
     --chronicis-background-content: #cabda3; /* Main content area background */
     --chronicis-surface: #FFFFFF;            /* Cards, papers, elevated surfaces */
-    
+
     /* Text */
     --chronicis-text-primary: #1A1A1A;       /* Main body text on light backgrounds */
     --chronicis-text-on-dark: #F4F0EA;       /* Text on dark backgrounds */
-    
+
     /* Semantic Colors (status/feedback) */
     --chronicis-success: #4CAF50;
     --chronicis-warning: #FFA726;
     --chronicis-error: #ad1412ff;
     --chronicis-info: #29B6F6;
-    
+
     /* Typography */
     --chronicis-font-heading: 'Libre Baskerville', Georgia, serif;
     --chronicis-font-body: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    
+
     /* Spacing */
     --chronicis-space-xs: 4px;
     --chronicis-space-sm: 8px;
     --chronicis-space-md: 16px;
     --chronicis-space-lg: 24px;
     --chronicis-space-xl: 32px;
-    
+
     /* Shadows */
     --chronicis-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
     --chronicis-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
     --chronicis-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
     --chronicis-glow-secondary: 0 0 12px rgba(196, 175, 142, 0.4);
-    
+
     /* Border Radius */
     --chronicis-radius-sm: 4px;
     --chronicis-radius-md: 6px;
     --chronicis-radius-lg: 8px;
     --chronicis-radius-xl: 12px;
-    
+
     /* Transitions */
     --chronicis-transition-fast: 150ms ease-in-out;
     --chronicis-transition-normal: 250ms ease-in-out;
@@ -204,7 +204,7 @@
 
 /* ============================================
    Global MudBlazor Overrides
-   
+
    Note: MudBlazor Primary = slate-grey (#3A4750) for buttons/actions
          MudBlazor Secondary = beige-gold (#C4AF8E) for accents/decorative
    ============================================ */
@@ -224,18 +224,6 @@
 }
 
 /* Drawer */
-.mud-drawer {
-    background-color: var(--chronicis-background-dark) !important;
-    border-right: 1px solid var(--chronicis-primary);
-}
-
-.mud-drawer-paper {
-    background-color: var(--chronicis-background-dark) !important;
-}
-
-.mud-drawer-content {
-    background-color: var(--chronicis-background-dark);
-}
 
 /* Metadata drawer overrides - right-side panel uses light (off-white) background */
 .metadata-drawer.mud-drawer,
@@ -433,8 +421,8 @@
     padding: 0 !important;
 }
 
-.mud-secondary-text { 
-    color: var(--chronicis-error) !important; 
+.mud-secondary-text {
+    color: var(--chronicis-error) !important;
 }
 
 .fa-solid {

@@ -38,7 +38,7 @@
 }
 else if (_article == null)
 {
-    <EmptyState 
+    <EmptyState
         Icon="📝"
         Title="No Article Selected"
         Message="Select an article from the tree to view and edit its content."
@@ -52,7 +52,7 @@ else
         .mud-input.mud-input-underline:after,
         .mud-input.mud-input-underline:hover:not(.mud-disabled):before,
         .mud-input.mud-input-underline:hover:not(.mud-disabled):after {
-            border-bottom: none !important;        
+            border-bottom: none !important;
         }
 
         .mud-input,
@@ -91,11 +91,14 @@ else
         <!-- Editor Toolbar -->
         <div class="chronicis-editor-toolbar mb-2">
             <MudTooltip Text="Insert Image" Placement="Placement.Top">
-                <MudIconButton Icon="@Icons.Material.Filled.Image"
-                               Size="Size.Small"
-                               Color="Color.Default"
-                               OnClick="InsertImageFromToolbar"
-                               Disabled="!_editorInitialized" />
+                <MudButton
+                    Variant="Variant.Filled"
+                    Color="Color.Primary"
+                    OnClick="InsertImageFromToolbar"
+                    Disabled="!_editorInitialized"
+                    StartIcon="@Icons.Material.Filled.Image">
+                    Insert Image
+                </MudButton>
             </MudTooltip>
         </div>
 
@@ -133,7 +136,7 @@ else
         <MudDrawerHeader>
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseExternalPreview" />
-            
+
         </MudDrawerHeader>
         <MudDrawerContainer>
             <div class="external-link-preview-header">
@@ -187,7 +190,7 @@ else
     private List<BreadcrumbItem>? _breadcrumbs;
     private string _editTitle = string.Empty;
     private string _editBody = string.Empty;
-    
+
     // UI state
     private bool _isLoading = false;
     private bool _isSaving = false;
@@ -198,13 +201,13 @@ else
     private string _lastSaveTime = "just now";
     private bool _isSummaryExpanded = false;
     private bool _shouldFocusTitle = false;
-    
+
     // Timer and references
     private Timer? _autoSaveTimer;
     private DotNetObjectReference<ArticleDetail>? _dotNetHelper;
     private DrawerHost? _drawerHost;
     private bool _disposed = false;
-    
+
     // Autocomplete state
     private bool _showAutocomplete = false;
     private bool _autocompleteLoading = false;
@@ -224,7 +227,7 @@ else
     private string? _externalPreviewId;
     private string? _externalPreviewTitle;
     private readonly Dictionary<string, ExternalLinkContentDto> _externalLinkCache = new(StringComparer.OrdinalIgnoreCase);
-    
+
     private const string LastArticlePathKey = "chronicis_last_article_path";
 
     #region Lifecycle
@@ -261,7 +264,7 @@ else
         KeyboardShortcutService.OnSaveRequested -= HandleSaveShortcut;
         OnCtrlNPressed -= HandleCtrlNInstance;
         _autoSaveTimer?.Dispose();
-        
+
         // Clear and dispose the DotNetObjectReference
         var helper = _dotNetHelper;
         _dotNetHelper = null;
@@ -325,11 +328,11 @@ else
     private async void OnTreeStateChanged()
     {
         if (_disposed) return;
-        
+
         await InvokeAsync(async () =>
         {
             if (_disposed) return;
-            
+
             try
             {
                 if (_editorInitialized && _article != null)
@@ -440,9 +443,9 @@ else
             try
             {
                 await JSRuntime.InvokeVoidAsync("initializeTipTapEditor", $"tiptap-editor-{_article.Id}", _editBody, _dotNetHelper);
-                
+
                 if (_disposed) return;
-                
+
                 await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", $"tiptap-editor-{_article.Id}", _dotNetHelper);
 
                 // Initialize image upload (drag-drop, paste)
@@ -628,7 +631,7 @@ else
         // - Any length after category selected: search immediately
         // For internal queries: require 3 characters minimum
         var minLength = _autocompleteIsExternalQuery ? 0 : 3;
-        
+
         if (_autocompleteQuery.Length < minLength)
         {
             _autocompleteSuggestions = new();
@@ -642,7 +645,7 @@ else
         try
         {
             var worldId = AppContext.CurrentWorldId ?? _article?.WorldId ?? Guid.Empty;
-            
+
             if (_autocompleteIsExternalQuery)
             {
                 var externalSuggestions = await ExternalLinkApiService.GetSuggestionsAsync(
@@ -734,7 +737,7 @@ else
                     "updateAutocompleteText",
                     $"tiptap-editor-{_article.Id}",
                     $"{suggestion.Source}/{suggestion.CategoryKey}/");
-                
+
                 // Trigger autocomplete again with the new text
                 // The user can now type a search term
                 return;
@@ -800,7 +803,7 @@ else
         {
             var worldId = AppContext.CurrentWorldId ?? _article.WorldId ?? Guid.Empty;
             var created = await WikiLinkService.CreateArticleFromAutocompleteAsync(articleName, worldId);
-            
+
             if (created == null)
             {
                 Snackbar.Add("Failed to create article", Severity.Error);

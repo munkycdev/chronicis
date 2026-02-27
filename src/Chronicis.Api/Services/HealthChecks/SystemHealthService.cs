@@ -13,7 +13,6 @@ public class SystemHealthService : ISystemHealthService
     private readonly AzureOpenAIHealthCheckService _azureOpenAIHealth;
     private readonly BlobStorageHealthCheckService _blobStorageHealth;
     private readonly Auth0HealthCheckService _auth0Health;
-    private readonly Open5eHealthCheckService _open5eHealth;
     private readonly ILogger<SystemHealthService> _logger;
 
     public SystemHealthService(
@@ -21,14 +20,12 @@ public class SystemHealthService : ISystemHealthService
         AzureOpenAIHealthCheckService azureOpenAIHealth,
         BlobStorageHealthCheckService blobStorageHealth,
         Auth0HealthCheckService auth0Health,
-        Open5eHealthCheckService open5eHealth,
         ILogger<SystemHealthService> logger)
     {
         _databaseHealth = databaseHealth;
         _azureOpenAIHealth = azureOpenAIHealth;
         _blobStorageHealth = blobStorageHealth;
         _auth0Health = auth0Health;
-        _open5eHealth = open5eHealth;
         _logger = logger;
     }
 
@@ -43,8 +40,7 @@ public class SystemHealthService : ISystemHealthService
             _databaseHealth.CheckHealthAsync("Database", ServiceKeys.Database),
             _azureOpenAIHealth.CheckHealthAsync("Azure OpenAI", ServiceKeys.AzureOpenAI),
             _blobStorageHealth.CheckHealthAsync("Document Storage", ServiceKeys.BlobStorage),
-            _auth0Health.CheckHealthAsync("Auth0", ServiceKeys.Auth0),
-            _open5eHealth.CheckHealthAsync("Open5e API", ServiceKeys.Open5e)
+            _auth0Health.CheckHealthAsync("Auth0", ServiceKeys.Auth0)
         };
 
         // Add API self-check
