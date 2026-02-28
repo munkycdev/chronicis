@@ -136,15 +136,6 @@ else
                         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">
                             Private Notes (World owner / GM only)
                         </MudText>
-                        <div class="chronicis-editor-toolbar mb-2">
-                            <MudTooltip Text="Insert Image" Placement="Placement.Top">
-                                <MudIconButton Icon="@Icons.Material.Filled.Image"
-                                               Size="Size.Small"
-                                               Color="Color.Default"
-                                               OnClick="InsertPrivateImageFromToolbarAsync"
-                                               Disabled="!_privateEditorInitialized" />
-                            </MudTooltip>
-                        </div>
                         <div id="@PrivateEditorElementId" class="chronicis-editor-container mb-4"></div>
                     }
                     else

@@ -33,16 +33,6 @@
 }
 else
 {
-    <div class="chronicis-editor-toolbar mb-2">
-        <MudTooltip Text="Insert Image" Placement="Placement.Top">
-            <MudIconButton Icon="@Icons.Material.Filled.Image"
-                           Size="Size.Small"
-                           Color="Color.Default"
-                           OnClick="InsertImageFromToolbarAsync"
-                           Disabled="!_editorInitialized" />
-        </MudTooltip>
-    </div>
-
     <div id="@EditorElementId" class="chronicis-editor-container mb-2"></div>
 
     @if (_showAutocomplete)

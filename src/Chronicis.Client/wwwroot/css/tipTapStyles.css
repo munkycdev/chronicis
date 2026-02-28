@@ -511,7 +511,12 @@
 
 
 .tutorial-drawer-body h1,
-.tutorial-drawer-body h2{
+.tutorial-drawer-body h2,
+.tutorial-drawer-body h3,
+.tutorial-drawer-body h4,
+.tutorial-drawer-body h5,
+.tutorial-drawer-body h6 {
     font-size:1.0rem;
-    margin-bottom:0.5rem;
+    padding-top:16px;
+    padding-bottom:8px;
 }

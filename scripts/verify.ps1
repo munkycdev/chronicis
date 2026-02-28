@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
-clear 
+clear
 
 # --- Config ---
 $RepoRoot = "z:\repos\chronicis"
@@ -133,6 +133,7 @@ try {
     Write-Host ""
     Write-Host "Coverage is 100% line and branch for Chronicis.Shared, Chronicis.Api, and Chronicis.Client." -ForegroundColor Green
     Write-Host "Pre-merge validation complete." -ForegroundColor Green
+
 }
 finally {
     Pop-Location
