@@ -310,7 +310,7 @@ public partial class QuestDrawer : IAsyncDisposable
         {
             _dotNetRef = DotNetObjectReference.Create(this);
             _editorModule = await JSRuntime.InvokeAsync<IJSObjectReference>(
-                "import", "./js/questEditor.js");
+                "import", "./js/questEditor.js?v=3");
 
             await _editorModule.InvokeVoidAsync("initializeEditor", "quest-update-editor", _dotNetRef);
             _editorInitialized = true;

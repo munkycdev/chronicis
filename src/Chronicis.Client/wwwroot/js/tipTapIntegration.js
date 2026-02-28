@@ -21,7 +21,7 @@ function isHtmlContent(content) {
     if (!content || content.trim() === '') return false;
     
     // Check for common HTML tags that TipTap produces
-    const htmlTagPattern = /<(p|h[1-6]|ul|ol|li|strong|em|a|pre|code|blockquote|div|span|br)[^>]*>/i;
+    const htmlTagPattern = /<(p|h[1-6]|ul|ol|li|strong|em|a|pre|code|blockquote|div|span|br|table|thead|tbody|tr|th|td)[^>]*>/i;
     return htmlTagPattern.test(content);
 }
 
@@ -40,6 +40,355 @@ function ensureHtml(content) {
 // Expose for Blazor interop
 window.ensureHtml = ensureHtml;
 window.isHtmlContent = isHtmlContent;
+
+// ================================================
+// MARKDOWN TABLE NORMALIZATION
+// ================================================
+
+function parseMarkdownPipeRow(text) {
+    const trimmed = (text || '').trim();
+    if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) {
+        return [];
+    }
+
+    const inner = trimmed.slice(1, -1);
+    return inner.split('|').map(cell => cell.trim());
+}
+
+function isMarkdownPipeRow(text) {
+    const cells = parseMarkdownPipeRow(text);
+    return cells.length > 0;
+}
+
+function isMarkdownSeparatorCell(cell) {
+    return /^:?-{3,}:?$/.test((cell || '').trim());
+}
+
+function createTableElementFromMarkdownRows(headerCells, separatorCells, bodyRows) {
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+
+    const columnCount = Math.max(
+        headerCells.length,
+        separatorCells.length,
+        bodyRows.reduce((max, row) => Math.max(max, row.length), 0),
+        1);
+
+    const normalizeCells = (cells) => {
+        const normalized = cells.slice(0, columnCount);
+        while (normalized.length < columnCount) {
+            normalized.push('');
+        }
+        return normalized;
+    };
+
+    normalizeCells(headerCells).forEach(cell => {
+        const th = document.createElement('th');
+        th.textContent = cell;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    bodyRows.forEach(rowCells => {
+        const tr = document.createElement('tr');
+        normalizeCells(rowCells).forEach(cell => {
+            const td = document.createElement('td');
+            td.textContent = cell;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+
+    return table;
+}
+
+function extractLinesFromParagraph(paragraph) {
+    const parts = paragraph.innerHTML.split(/<br\s*\/?>/i);
+    return parts
+        .map(part => {
+            const temp = document.createElement('div');
+            temp.innerHTML = part;
+            return (temp.textContent || '').trim();
+        })
+        .filter(line => line.length > 0);
+}
+
+function convertMarkdownPipeTablesInHtml(html) {
+    if (!html || html.indexOf('|') === -1) {
+        return html;
+    }
+
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    let changed = false;
+
+    let i = 0;
+    while (i < container.children.length) {
+        const current = container.children[i];
+        if (!current || current.tagName !== 'P') {
+            i += 1;
+            continue;
+        }
+
+        // Scenario A: single paragraph with <br>-separated markdown table lines.
+        if (current.innerHTML.toLowerCase().includes('<br')) {
+            const lines = extractLinesFromParagraph(current);
+            if (lines.length >= 2 && isMarkdownPipeRow(lines[0]) && isMarkdownPipeRow(lines[1])) {
+                const headerCells = parseMarkdownPipeRow(lines[0]);
+                const separatorCells = parseMarkdownPipeRow(lines[1]);
+                const isSeparator = separatorCells.length > 0 && separatorCells.every(isMarkdownSeparatorCell);
+
+                if (isSeparator) {
+                    const bodyRows = lines
+                        .slice(2)
+                        .filter(isMarkdownPipeRow)
+                        .map(parseMarkdownPipeRow);
+
+                    const table = createTableElementFromMarkdownRows(headerCells, separatorCells, bodyRows);
+                    current.before(table);
+                    current.remove();
+                    changed = true;
+                    i += 1;
+                    continue;
+                }
+            }
+        }
+
+        // Scenario B: consecutive paragraphs where each paragraph is a markdown table row.
+        const rowNodes = [];
+        let j = i;
+        while (j < container.children.length) {
+            const candidate = container.children[j];
+            if (!candidate || candidate.tagName !== 'P') {
+                break;
+            }
+
+            const rowText = (candidate.textContent || '').trim();
+            if (!isMarkdownPipeRow(rowText)) {
+                break;
+            }
+
+            rowNodes.push(candidate);
+            j += 1;
+        }
+
+        if (rowNodes.length >= 2) {
+            const headerCells = parseMarkdownPipeRow(rowNodes[0].textContent || '');
+            const separatorCells = parseMarkdownPipeRow(rowNodes[1].textContent || '');
+            const isSeparator = separatorCells.length > 0 && separatorCells.every(isMarkdownSeparatorCell);
+
+            if (isSeparator) {
+                const bodyRows = rowNodes
+                    .slice(2)
+                    .map(node => parseMarkdownPipeRow(node.textContent || ''))
+                    .filter(row => row.length > 0);
+
+                const table = createTableElementFromMarkdownRows(headerCells, separatorCells, bodyRows);
+                rowNodes[0].before(table);
+                rowNodes.forEach(node => node.remove());
+                changed = true;
+                i += 1;
+                continue;
+            }
+        }
+
+        i += 1;
+    }
+
+    return changed ? container.innerHTML : html;
+}
+
+window.tipTapTableNormalizeLocks = window.tipTapTableNormalizeLocks || {};
+window.tipTapTableControlTeardowns = window.tipTapTableControlTeardowns || {};
+
+function normalizeMarkdownTablesInEditor(editor, editorId) {
+    if (!editor) {
+        return '';
+    }
+
+    const lockKey = editorId || editor?.options?.element?.id || '__default__';
+    if (window.tipTapTableNormalizeLocks[lockKey]) {
+        return editor.getHTML();
+    }
+
+    const html = editor.getHTML();
+    const normalizedHtml = convertMarkdownPipeTablesInHtml(html);
+    if (normalizedHtml === html) {
+        return html;
+    }
+
+    window.tipTapTableNormalizeLocks[lockKey] = true;
+    try {
+        editor.commands.setContent(normalizedHtml, false);
+    } finally {
+        window.tipTapTableNormalizeLocks[lockKey] = false;
+    }
+
+    return normalizedHtml;
+}
+
+window.normalizeMarkdownTablesInEditor = normalizeMarkdownTablesInEditor;
+
+// ================================================
+// TABLE CONTROLS
+// ================================================
+
+function createTableControlButton(config, runCommand) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'chronicis-table-control-button';
+    button.setAttribute('title', config.title);
+    button.setAttribute('aria-label', config.title);
+    button.innerHTML = `<i class="${config.icon}" aria-hidden="true"></i><span>${config.label}</span>`;
+    button.dataset.requiresTable = config.requiresTable ? 'true' : 'false';
+    button.addEventListener('click', () => runCommand(config.command, config.args));
+    return button;
+}
+
+function updateTipTapTableControlState(editor, controlsElement) {
+    const inTable = editor?.isActive?.('table') === true;
+    controlsElement.querySelectorAll('[data-requires-table="true"]').forEach(button => {
+        button.disabled = !inTable;
+    });
+}
+
+function disposeTipTapTableControls(editorId) {
+    const teardown = window.tipTapTableControlTeardowns[editorId];
+    if (typeof teardown === 'function') {
+        teardown();
+    }
+
+    delete window.tipTapTableControlTeardowns[editorId];
+}
+
+function initializeTipTapTableControls(editorId, editor) {
+    if (!editorId || !editor) {
+        return;
+    }
+
+    disposeTipTapTableControls(editorId);
+
+    const container = document.getElementById(editorId);
+    if (!container || !container.parentElement) {
+        return;
+    }
+
+    const chainProbe = editor.chain?.();
+    if (!chainProbe || typeof chainProbe.insertTable !== 'function') {
+        return;
+    }
+
+    const controls = document.createElement('div');
+    controls.id = `chronicis-table-controls-${editorId}`;
+    controls.className = 'chronicis-editor-table-controls';
+    controls.setAttribute('role', 'toolbar');
+    controls.setAttribute('aria-label', 'Table controls');
+
+    const runCommand = (command, args) => {
+        if (!editor || editor.isDestroyed) {
+            return;
+        }
+
+        try {
+            const chain = editor.chain().focus();
+            if (typeof chain[command] !== 'function') {
+                return;
+            }
+
+            const result = args === undefined ? chain[command]() : chain[command](args);
+            if (result && typeof result.run === 'function') {
+                result.run();
+            }
+        } catch (err) {
+            console.error(`Failed to run TipTap table command '${command}'`, err);
+        }
+
+        updateTipTapTableControlState(editor, controls);
+    };
+
+    const buttonConfigs = [
+        {
+            label: 'Insert',
+            title: 'Insert table (3x3)',
+            icon: 'fa-solid fa-table',
+            command: 'insertTable',
+            args: { rows: 3, cols: 3, withHeaderRow: true },
+            requiresTable: false
+        },
+        {
+            label: 'Row +',
+            title: 'Add row below',
+            icon: 'fa-solid fa-plus',
+            command: 'addRowAfter',
+            requiresTable: true
+        },
+        {
+            label: 'Col +',
+            title: 'Add column to the right',
+            icon: 'fa-solid fa-plus',
+            command: 'addColumnAfter',
+            requiresTable: true
+        },
+        {
+            label: 'Del Row',
+            title: 'Delete current row',
+            icon: 'fa-solid fa-minus',
+            command: 'deleteRow',
+            requiresTable: true
+        },
+        {
+            label: 'Del Col',
+            title: 'Delete current column',
+            icon: 'fa-solid fa-minus',
+            command: 'deleteColumn',
+            requiresTable: true
+        },
+        {
+            label: 'Header',
+            title: 'Toggle header row',
+            icon: 'fa-solid fa-heading',
+            command: 'toggleHeaderRow',
+            requiresTable: true
+        },
+        {
+            label: 'Del Table',
+            title: 'Delete table',
+            icon: 'fa-solid fa-trash',
+            command: 'deleteTable',
+            requiresTable: true
+        }
+    ];
+
+    buttonConfigs
+        .map(config => createTableControlButton(config, runCommand))
+        .forEach(button => controls.appendChild(button));
+
+    container.parentElement.insertBefore(controls, container);
+
+    const updateState = () => updateTipTapTableControlState(editor, controls);
+    editor.on('selectionUpdate', updateState);
+    editor.on('update', updateState);
+
+    updateState();
+
+    window.tipTapTableControlTeardowns[editorId] = () => {
+        try {
+            editor.off('selectionUpdate', updateState);
+            editor.off('update', updateState);
+        } catch {
+            // Ignore cleanup failures during disposal.
+        }
+
+        controls.remove();
+    };
+}
+
+window.initializeTipTapTableControls = initializeTipTapTableControls;
+window.disposeTipTapTableControls = disposeTipTapTableControls;
 
 // ================================================
 // EDITOR INITIALIZATION
@@ -118,23 +467,33 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
         }));
     }
 
+    // Add table extensions for rich table editing support.
+    if (window.TipTap.Table && window.TipTap.TableRow && window.TipTap.TableHeader && window.TipTap.TableCell) {
+        extensions.push(window.TipTap.Table.configure({ resizable: true }));
+        extensions.push(window.TipTap.TableRow);
+        extensions.push(window.TipTap.TableHeader);
+        extensions.push(window.TipTap.TableCell);
+    }
+
     // Create editor
     // Auto-detect if content is HTML or markdown and convert if needed
     // This provides backwards compatibility for existing markdown content
     const htmlContent = ensureHtml(initialContent);
+    const normalizedInitialContent = convertMarkdownPipeTablesInHtml(htmlContent);
     const editor = new window.TipTap.Editor({
         element: container,
         extensions: extensions,
-        content: htmlContent,
+        content: normalizedInitialContent,
         editable: true,
         onUpdate: ({ editor }) => {
-            const html = editor.getHTML();
+            const html = normalizeMarkdownTablesInEditor(editor, editorId);
             dotNetHelper.invokeMethodAsync('OnEditorUpdate', html);
         },
     });
 
     // Store editor instance
     window.tipTapEditors[editorId] = editor;
+    initializeTipTapTableControls(editorId, editor);
 
     // Add click handler for wiki links
     container.addEventListener('click', (e) => {
@@ -238,6 +597,7 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
 function destroyTipTapEditor(editorId) {
     const editor = window.tipTapEditors[editorId];
     if (editor) {
+        disposeTipTapTableControls(editorId);
         editor.destroy();
         delete window.tipTapEditors[editorId];
     }
@@ -248,7 +608,8 @@ function setTipTapContent(editorId, content) {
     if (editor) {
         // Auto-detect if content is HTML or markdown and convert if needed
         const htmlContent = ensureHtml(content);
-        editor.commands.setContent(htmlContent);
+        const normalizedHtml = convertMarkdownPipeTablesInHtml(htmlContent);
+        editor.commands.setContent(normalizedHtml);
     } else {
         console.error(`Editor not found: ${editorId}`);
     }

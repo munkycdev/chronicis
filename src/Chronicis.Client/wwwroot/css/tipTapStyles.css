@@ -280,6 +280,49 @@
     background-color: var(--chronicis-background-light);
 }
 
+/* Persistent table controls for TipTap editors */
+.chronicis-editor-table-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    padding: 6px 8px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: var(--chronicis-radius-sm);
+    background: rgba(255, 255, 255, 0.75);
+}
+
+.chronicis-table-control-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--chronicis-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 6px 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.chronicis-table-control-button:hover:not(:disabled) {
+    background: var(--chronicis-secondary-light);
+    border-color: var(--chronicis-secondary);
+}
+
+.chronicis-table-control-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.chronicis-table-control-button i {
+    font-size: 0.72rem;
+}
+
 /* ============================================
    Images
    ============================================ */
@@ -319,6 +362,7 @@
     width: 100%;
     margin-bottom: var(--chronicis-space-md);
     background-color: white;
+    border: 1px solid rgba(31, 42, 51, 0.35);
     border-radius: var(--chronicis-radius-sm);
     overflow: hidden;
 }
@@ -333,12 +377,13 @@
     text-align: left;
     font-family: var(--chronicis-font-heading);
     font-weight: 500;
+    border: 1px solid rgba(31, 42, 51, 0.35);
     border-bottom: 2px solid var(--chronicis-secondary);
 }
 
 .chronicis-editor-content td {
     padding: 10px var(--chronicis-space-md);
-    border-bottom: 1px solid var(--chronicis-secondary-muted);
+    border: 1px solid rgba(31, 42, 51, 0.25);
 }
 
 .chronicis-editor-content tbody tr:hover {
@@ -346,7 +391,12 @@
 }
 
 .chronicis-editor-content tbody tr:last-child td {
-    border-bottom: none;
+    border-bottom: 1px solid rgba(31, 42, 51, 0.25);
+}
+
+.chronicis-editor-content .selectedCell {
+    background-color: rgba(196, 175, 142, 0.22);
+    box-shadow: inset 0 0 0 2px var(--chronicis-secondary);
 }
 
 /* ============================================
@@ -389,6 +439,15 @@
     .chronicis-editor-content h2 {
         font-size: 1.5rem;
     }
+
+    .chronicis-editor-table-controls {
+        gap: 4px;
+    }
+
+    .chronicis-table-control-button {
+        font-size: 0.75rem;
+        padding: 5px 6px;
+    }
 }
 
 /* ============================================
@@ -430,6 +489,24 @@
 .tutorial-drawer-body li {
     margin-bottom: var(--chronicis-space-xs) !important;
     padding-left: var(--chronicis-space-xs) !important;
+}
+
+.chronicis-article-body table,
+.tutorial-drawer-body table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: var(--chronicis-space-md);
+    border: 1px solid rgba(31, 42, 51, 0.35);
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.chronicis-article-body th,
+.chronicis-article-body td,
+.tutorial-drawer-body th,
+.tutorial-drawer-body td {
+    border: 1px solid rgba(31, 42, 51, 0.25);
+    padding: 8px 10px;
+    text-align: left;
 }
 
 

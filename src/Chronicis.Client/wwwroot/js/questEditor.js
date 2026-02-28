@@ -4,6 +4,7 @@
 let editor = null;
 let dotNetRef = null;
 let isInitializing = false;
+let currentEditorId = null;
 
 export async function initializeEditor(elementId, dotNetRefParam) {
     // Prevent duplicate initialization
@@ -39,6 +40,7 @@ export async function initializeEditor(elementId, dotNetRefParam) {
     
     // Store the dotNetRef for Esc key handling
     dotNetRef = dotNetRefParam;
+    currentEditorId = elementId;
     
     // Destroy existing editor if any
     if (editor) {
@@ -83,11 +85,25 @@ export async function initializeEditor(elementId, dotNetRefParam) {
                 console.error('Failed to load external link extension in quest editor:', err);
             }
         }
+
+        // Add table extensions when available.
+        if (window.TipTap.Table && window.TipTap.TableRow && window.TipTap.TableHeader && window.TipTap.TableCell) {
+            extensions.push(window.TipTap.Table.configure({ resizable: true }));
+            extensions.push(window.TipTap.TableRow);
+            extensions.push(window.TipTap.TableHeader);
+            extensions.push(window.TipTap.TableCell);
+            console.log('Table extensions added to quest editor');
+        }
         
         editor = new window.TipTap.Editor({
             element: element,
             extensions: extensions,
             content: '',
+            onUpdate: ({ editor }) => {
+                if (typeof window.normalizeMarkdownTablesInEditor === 'function') {
+                    window.normalizeMarkdownTablesInEditor(editor, elementId);
+                }
+            },
             editorProps: {
                 attributes: {
                     class: 'chronicis-editor-content',
@@ -119,6 +135,11 @@ export async function initializeEditor(elementId, dotNetRefParam) {
         // Store editor instance for autocomplete
         window.tipTapEditors = window.tipTapEditors || {};
         window.tipTapEditors[elementId] = editor;
+
+        // Initialize persistent table controls
+        if (typeof window.initializeTipTapTableControls === 'function') {
+            window.initializeTipTapTableControls(elementId, editor);
+        }
         
         // Initialize wiki link autocomplete
         if (typeof initializeWikiLinkAutocomplete === 'function') {
@@ -139,18 +160,20 @@ export async function initializeEditor(elementId, dotNetRefParam) {
 
 export function destroyEditor() {
     if (editor) {
-        // Get the element ID before destroying
-        const elementId = 'quest-update-editor';
-        
         // Remove from global store
-        if (window.tipTapEditors && window.tipTapEditors[elementId]) {
-            delete window.tipTapEditors[elementId];
+        if (window.tipTapEditors && currentEditorId && window.tipTapEditors[currentEditorId]) {
+            delete window.tipTapEditors[currentEditorId];
+        }
+
+        if (typeof window.disposeTipTapTableControls === 'function' && currentEditorId) {
+            window.disposeTipTapTableControls(currentEditorId);
         }
         
         editor.destroy();
         editor = null;
     }
     dotNetRef = null;
+    currentEditorId = null;
     isInitializing = false;
 }
 

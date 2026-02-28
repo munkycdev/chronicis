@@ -329,3 +329,13 @@ a:focus-visible {
   max-width:100%;
   height:auto;
 }
+
+.tableWrapper table {
+  border-collapse: collapse;
+}
+
+.tableWrapper th, .tableWrapper td {
+  border:solid 1px black;
+  padding:6px;
+  border-collapse:collapse;
+}
