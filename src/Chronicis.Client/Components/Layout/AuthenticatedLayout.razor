@@ -349,7 +349,11 @@
 
     private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        _ = InvokeAsync(() => EvaluateTutorialDrawerStateAsync(allowOnboardingAutoOpen: true));
+        _ = InvokeAsync(async () =>
+        {
+            DrawerCoordinator.Close();
+            await EvaluateTutorialDrawerStateAsync(allowOnboardingAutoOpen: true);
+        });
     }
 
     private void HandleAppContextChanged()
@@ -360,7 +364,7 @@
     private async Task EvaluateTutorialDrawerStateAsync(bool allowOnboardingAutoOpen)
     {
         var isTutorialWorld = AppContext.CurrentWorld?.IsTutorial == true;
-        DrawerCoordinator.IsForcedOpen = isTutorialWorld;
+        DrawerCoordinator.IsForcedOpen = false;
 
         if (isTutorialWorld)
         {

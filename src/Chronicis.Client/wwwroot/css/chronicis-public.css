@@ -994,13 +994,14 @@ a:focus, button:focus, input:focus, textarea:focus, select:focus,
 
 .public-tree-item {
     user-select: none;
+    padding-left:16px !important;
 }
 
 .public-tree-item-content {
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 8px;
+    padding: 4px 0px;
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.15s;
@@ -1040,10 +1041,8 @@ a:focus, button:focus, input:focus, textarea:focus, select:focus,
 }
 
 .public-tree-icon {
-    flex-shrink: 0;
-    width: 20px;
-    text-align: center;
-    font-size: 0.85rem;
+    width: 0px;
+    display:none;
 }
 
 .public-tree-icon .tree-icon {

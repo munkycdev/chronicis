@@ -15,7 +15,8 @@ public class PublicWorldServiceBranchCoverageTests
         var service = new PublicWorldService(
             db,
             NullLogger<PublicWorldService>.Instance,
-            Substitute.For<IArticleHierarchyService>());
+            Substitute.For<IArticleHierarchyService>(),
+            Substitute.For<IBlobStorageService>());
 
         Assert.NotNull(service);
     }

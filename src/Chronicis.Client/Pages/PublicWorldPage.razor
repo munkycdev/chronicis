@@ -173,7 +173,7 @@ else
                     <div id="public-article-body" class="public-article-body chronicis-editor-content">
                         @if (!string.IsNullOrEmpty(VM.CurrentArticle.Body))
                         {
-                            @((MarkupString)MarkdownService.EnsureHtml(VM.CurrentArticle.Body))
+                            @((MarkupString)VM.GetRenderedArticleBodyHtml(MarkdownService))
                         }
                         else
                         {

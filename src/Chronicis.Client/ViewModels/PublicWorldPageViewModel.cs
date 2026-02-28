@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Chronicis.Client.Abstractions;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
@@ -16,6 +17,12 @@ namespace Chronicis.Client.ViewModels;
 /// </summary>
 public sealed class PublicWorldPageViewModel : ViewModelBase, IAsyncDisposable
 {
+    private static readonly Regex InlineImageReferenceRegex = new(
+        @"chronicis-image:([0-9a-fA-F-]{36})",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private const string PublicInlineImagePathPrefix = "/api/public/documents/";
+
     private readonly IPublicApiService _publicApi;
     private readonly IAppNavigator _navigator;
     private readonly ILogger<PublicWorldPageViewModel> _logger;
@@ -208,6 +215,24 @@ public sealed class PublicWorldPageViewModel : ViewModelBase, IAsyncDisposable
     {
         var worldName = string.IsNullOrWhiteSpace(World?.Name) ? "World" : World.Name;
         return $"{worldName} — Chronicis";
+    }
+
+    /// <summary>
+    /// Converts markdown/HTML to sanitized HTML and rewrites inline image references
+    /// from chronicis-image:{guid} to the public image endpoint.
+    /// </summary>
+    public string GetRenderedArticleBodyHtml(IMarkdownService markdownService)
+    {
+        if (CurrentArticle == null || string.IsNullOrWhiteSpace(CurrentArticle.Body))
+        {
+            return string.Empty;
+        }
+
+        var rewrittenBody = InlineImageReferenceRegex.Replace(
+            CurrentArticle.Body,
+            $"{PublicInlineImagePathPrefix}$1");
+
+        return markdownService.EnsureHtml(rewrittenBody);
     }
 
     /// <summary>Maps an <see cref="ArticleType"/> to its display label.</summary>

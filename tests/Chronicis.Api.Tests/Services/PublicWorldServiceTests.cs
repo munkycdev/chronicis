@@ -14,6 +14,7 @@ public sealed class PublicWorldServiceTests : IDisposable
 {
     private readonly ChronicisDbContext _context;
     private readonly IArticleHierarchyService _hierarchyService;
+    private readonly IBlobStorageService _blobStorage;
     private readonly PublicWorldService _sut;
     private bool _disposed;
 
@@ -27,11 +28,15 @@ public sealed class PublicWorldServiceTests : IDisposable
         _hierarchyService = Substitute.For<IArticleHierarchyService>();
         _hierarchyService.BuildBreadcrumbsAsync(Arg.Any<Guid>(), Arg.Any<HierarchyWalkOptions?>())
             .Returns(Task.FromResult(new List<BreadcrumbDto>()));
+        _blobStorage = Substitute.For<IBlobStorageService>();
+        _blobStorage.GenerateDownloadSasUrlAsync(Arg.Any<string>())
+            .Returns(args => Task.FromResult($"https://cdn.test/{args.Arg<string>()}"));
 
         _sut = new PublicWorldService(
             _context,
             NullLogger<PublicWorldService>.Instance,
-            _hierarchyService);
+            _hierarchyService,
+            _blobStorage);
     }
 
     public void Dispose()
@@ -168,6 +173,90 @@ public sealed class PublicWorldServiceTests : IDisposable
         var path = await _sut.GetPublicArticlePathAsync(seed.World.PublicSlug!, rootNote.Id);
 
         Assert.Equal($"{seed.LegacySessionArticleSlug}/{rootNote.Slug}", path);
+    }
+
+    [Fact]
+    public async Task GetPublicDocumentDownloadUrlAsync_ReturnsUrl_WhenDocumentAttachedToPublicArticleInPublicWorld()
+    {
+        var owner = TestHelpers.CreateUser();
+        var world = TestHelpers.CreateWorld(ownerId: owner.Id, name: "Public World", slug: "internal-world");
+        world.IsPublic = true;
+        world.PublicSlug = "public-world";
+
+        var article = TestHelpers.CreateArticle(
+            worldId: world.Id,
+            createdBy: owner.Id,
+            title: "Public Article",
+            slug: "public-article",
+            type: ArticleType.WikiArticle,
+            visibility: ArticleVisibility.Public);
+
+        var document = new WorldDocument
+        {
+            Id = Guid.NewGuid(),
+            WorldId = world.Id,
+            ArticleId = article.Id,
+            FileName = "image.png",
+            Title = "Image",
+            ContentType = "image/png",
+            FileSizeBytes = 128,
+            UploadedById = owner.Id,
+            UploadedAt = DateTime.UtcNow,
+            BlobPath = "worlds/path/image.png"
+        };
+
+        _context.Users.Add(owner);
+        _context.Worlds.Add(world);
+        _context.Articles.Add(article);
+        _context.WorldDocuments.Add(document);
+        await _context.SaveChangesAsync();
+
+        var url = await _sut.GetPublicDocumentDownloadUrlAsync(document.Id);
+
+        Assert.Equal("https://cdn.test/worlds/path/image.png", url);
+        await _blobStorage.Received(1).GenerateDownloadSasUrlAsync("worlds/path/image.png");
+    }
+
+    [Fact]
+    public async Task GetPublicDocumentDownloadUrlAsync_ReturnsNull_WhenArticleNotPublic()
+    {
+        var owner = TestHelpers.CreateUser();
+        var world = TestHelpers.CreateWorld(ownerId: owner.Id, name: "Public World", slug: "internal-world");
+        world.IsPublic = true;
+        world.PublicSlug = "public-world";
+
+        var article = TestHelpers.CreateArticle(
+            worldId: world.Id,
+            createdBy: owner.Id,
+            title: "Private Article",
+            slug: "private-article",
+            type: ArticleType.WikiArticle,
+            visibility: ArticleVisibility.Private);
+
+        var document = new WorldDocument
+        {
+            Id = Guid.NewGuid(),
+            WorldId = world.Id,
+            ArticleId = article.Id,
+            FileName = "image.png",
+            Title = "Image",
+            ContentType = "image/png",
+            FileSizeBytes = 128,
+            UploadedById = owner.Id,
+            UploadedAt = DateTime.UtcNow,
+            BlobPath = "worlds/path/private-image.png"
+        };
+
+        _context.Users.Add(owner);
+        _context.Worlds.Add(world);
+        _context.Articles.Add(article);
+        _context.WorldDocuments.Add(document);
+        await _context.SaveChangesAsync();
+
+        var url = await _sut.GetPublicDocumentDownloadUrlAsync(document.Id);
+
+        Assert.Null(url);
+        await _blobStorage.DidNotReceive().GenerateDownloadSasUrlAsync(Arg.Any<string>());
     }
 
     private async Task<(User Owner, World World, Campaign Campaign, Arc Arc, Session Session, string LegacySessionArticleSlug)> SeedWorldWithSessionAsync(bool includeLegacySessionArticle)

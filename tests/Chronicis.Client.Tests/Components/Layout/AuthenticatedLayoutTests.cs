@@ -15,6 +15,7 @@ using Chronicis.Shared.Enums;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -740,7 +741,7 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void HandleAppContextChanged_SchedulesTutorialDrawerEvaluation()
+    public void HandleAppContextChanged_InTutorialWorld_DefaultOpensTutorialWithoutForcedMode()
     {
         _appContext.CurrentWorld.Returns(new WorldDetailDto { IsTutorial = true });
         _userApi.GetUserProfileAsync().Returns(new UserProfileDto { HasCompletedOnboarding = true });
@@ -751,7 +752,47 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
 
         cut.WaitForAssertion(() =>
         {
-            _drawerCoordinator.Received().IsForcedOpen = true;
+            _drawerCoordinator.Received().IsForcedOpen = false;
+            _drawerCoordinator.Received().Open(DrawerType.Tutorial);
+        });
+    }
+
+    [Fact]
+    public void HandleLocationChanged_NonTutorialWorld_ClosesOpenDrawers()
+    {
+        _appContext.CurrentWorld.Returns((WorldDetailDto?)null);
+        _userApi.GetUserProfileAsync().Returns(new UserProfileDto { HasCompletedOnboarding = true });
+        var cut = RenderComponent<AuthenticatedLayout>(
+            ComponentParameter.CreateParameter("Body", (RenderFragment)(_ => { })));
+        _drawerCoordinator.ClearReceivedCalls();
+
+        var args = new LocationChangedEventArgs("https://localhost/dashboard", isNavigationIntercepted: false);
+        cut.InvokeAsync(() => InvokePrivate(cut.Instance, "HandleLocationChanged", null, args));
+
+        cut.WaitForAssertion(() =>
+        {
+            _drawerCoordinator.Received(1).Close();
+            _drawerCoordinator.DidNotReceive().Open(DrawerType.Tutorial);
+        });
+    }
+
+    [Fact]
+    public void HandleLocationChanged_TutorialWorld_ClosesThenReopensTutorialByDefault()
+    {
+        _appContext.CurrentWorld.Returns(new WorldDetailDto { IsTutorial = true });
+        _userApi.GetUserProfileAsync().Returns(new UserProfileDto { HasCompletedOnboarding = true });
+        var cut = RenderComponent<AuthenticatedLayout>(
+            ComponentParameter.CreateParameter("Body", (RenderFragment)(_ => { })));
+        _drawerCoordinator.ClearReceivedCalls();
+
+        var args = new LocationChangedEventArgs("https://localhost/dashboard", isNavigationIntercepted: false);
+        cut.InvokeAsync(() => InvokePrivate(cut.Instance, "HandleLocationChanged", null, args));
+
+        cut.WaitForAssertion(() =>
+        {
+            _drawerCoordinator.Received(1).Close();
+            _drawerCoordinator.Received(1).Open(DrawerType.Tutorial);
+            _drawerCoordinator.Received().IsForcedOpen = false;
         });
     }
 

@@ -31,4 +31,10 @@ public interface IPublicWorldService
     /// Returns null if the article doesn't exist, is not public, or doesn't belong to the specified world.
     /// </summary>
     Task<string?> GetPublicArticlePathAsync(string publicSlug, Guid articleId);
+
+    /// <summary>
+    /// Resolve a public inline-image document ID to a fresh download URL.
+    /// Returns null when the document is not attached to a public article in a public world.
+    /// </summary>
+    Task<string?> GetPublicDocumentDownloadUrlAsync(Guid documentId);
 }

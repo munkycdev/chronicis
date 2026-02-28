@@ -372,6 +372,42 @@ public class PublicWorldPageViewModelTests
         Assert.Equal("My World — Chronicis", c.VM.GetPageTitle());
     }
 
+    [Fact]
+    public void GetRenderedArticleBodyHtml_NoCurrentArticle_ReturnsEmptyString()
+    {
+        var c = CreateSut();
+        var markdownService = Substitute.For<IMarkdownService>();
+
+        var rendered = c.VM.GetRenderedArticleBodyHtml(markdownService);
+
+        Assert.Equal(string.Empty, rendered);
+    }
+
+    [Fact]
+    public async Task GetRenderedArticleBodyHtml_RewritesInlineImageReferencesToPublicEndpoint()
+    {
+        var c = CreateSut();
+        var world = MakeWorld();
+        var imageId = Guid.NewGuid();
+        var article = MakeArticle();
+        article.Body = $"<p>Text</p><img src=\"chronicis-image:{imageId}\" alt=\"img\" />";
+
+        c.PublicApi.GetPublicWorldAsync("my-world").Returns(world);
+        c.PublicApi.GetPublicArticleTreeAsync("my-world").Returns(new List<ArticleTreeDto>());
+        c.PublicApi.GetPublicArticleAsync("my-world", "lore").Returns(article);
+
+        await c.VM.LoadWorldAsync("my-world", "lore");
+
+        var markdownService = Substitute.For<IMarkdownService>();
+        markdownService.EnsureHtml(Arg.Any<string>())
+            .Returns(args => args.Arg<string>());
+
+        var rendered = c.VM.GetRenderedArticleBodyHtml(markdownService);
+
+        Assert.Contains($"/api/public/documents/{imageId}", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("chronicis-image:", rendered, StringComparison.Ordinal);
+    }
+
     // -------------------------------------------------------------------------
     // GetArticleTypeLabel (static)
     // -------------------------------------------------------------------------

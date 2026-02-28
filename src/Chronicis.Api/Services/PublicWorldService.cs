@@ -15,12 +15,18 @@ public class PublicWorldService : IPublicWorldService
     private readonly ChronicisDbContext _context;
     private readonly ILogger<PublicWorldService> _logger;
     private readonly IArticleHierarchyService _hierarchyService;
+    private readonly IBlobStorageService _blobStorage;
 
-    public PublicWorldService(ChronicisDbContext context, ILogger<PublicWorldService> logger, IArticleHierarchyService hierarchyService)
+    public PublicWorldService(
+        ChronicisDbContext context,
+        ILogger<PublicWorldService> logger,
+        IArticleHierarchyService hierarchyService,
+        IBlobStorageService blobStorage)
     {
         _context = context;
         _logger = logger;
         _hierarchyService = hierarchyService;
+        _blobStorage = blobStorage;
     }
 
     /// <summary>
@@ -648,5 +654,44 @@ public class PublicWorldService : IPublicWorldService
             articleId, path, normalizedSlug);
 
         return path;
+    }
+
+    /// <summary>
+    /// Resolve a public inline-image document ID to a fresh download URL.
+    /// The document must be an image attached to a public article in a public world.
+    /// </summary>
+    public async Task<string?> GetPublicDocumentDownloadUrlAsync(Guid documentId)
+    {
+        var document = await _context.WorldDocuments
+            .AsNoTracking()
+            .Where(d => d.Id == documentId
+                        && d.ArticleId.HasValue
+                        && d.ContentType.StartsWith("image/"))
+            .Join(
+                _context.Articles.AsNoTracking(),
+                d => d.ArticleId,
+                a => a.Id,
+                (d, a) => new
+                {
+                    d.BlobPath,
+                    d.WorldId,
+                    ArticleWorldId = a.WorldId,
+                    a.Visibility
+                })
+            .Join(
+                _context.Worlds.AsNoTracking().Where(w => w.IsPublic),
+                joined => joined.WorldId,
+                w => w.Id,
+                (joined, _) => joined)
+            .FirstOrDefaultAsync();
+
+        if (document == null
+            || document.Visibility != ArticleVisibility.Public
+            || document.ArticleWorldId != document.WorldId)
+        {
+            return null;
+        }
+
+        return await _blobStorage.GenerateDownloadSasUrlAsync(document.BlobPath);
     }
 }

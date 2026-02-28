@@ -509,7 +509,9 @@ else
 
     #region Save & Delete
 
-    private async Task SaveArticle()
+    private Task SaveArticle() => SaveArticleAsync(showSuccessSnackbar: true);
+
+    private async Task SaveArticleAsync(bool showSuccessSnackbar)
     {
         var result = await ViewModel.SaveArticleAsync(_editBody);
 
@@ -518,6 +520,21 @@ else
         _hasUnsavedChanges = ViewModel.HasUnsavedChanges;
         _lastSaveTime = ViewModel.LastSaveTime;
         _breadcrumbs  = ViewModel.Breadcrumbs;
+
+        if (showSuccessSnackbar
+            && (result.Kind == SaveArticleResult.ResultKind.Saved
+                || result.Kind == SaveArticleResult.ResultKind.Navigate))
+        {
+            Snackbar.Add(
+                "Article saved",
+                Severity.Success,
+                options =>
+                {
+                    options.SnackbarTypeClass = "article-save-snackbar-top-right";
+                    options.DuplicatesBehavior = MudBlazor.SnackbarDuplicatesBehavior.Prevent;
+                },
+                "article-save-status");
+        }
 
         if (result.Kind == SaveArticleResult.ResultKind.Navigate && result.NavigationPath != null)
             Navigation.NavigateTo(result.NavigationPath, replace: true);

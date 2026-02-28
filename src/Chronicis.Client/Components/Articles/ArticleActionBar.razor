@@ -1,9 +1,16 @@
 @* ArticleActionBar.razor - Action buttons and save status for article editing *@
 
 <div class="chronicis-flex-between mt-4">
-    <SaveStatusIndicator IsSaving="IsSaving" 
-                         HasUnsavedChanges="HasUnsavedChanges" 
-                         LastSaveTime="@LastSaveTime" />
+    @if (IsSaving || HasUnsavedChanges)
+    {
+        <SaveStatusIndicator IsSaving="IsSaving"
+                             HasUnsavedChanges="HasUnsavedChanges"
+                             LastSaveTime="@LastSaveTime" />
+    }
+    else
+    {
+        <div></div>
+    }
 
     <div class="chronicis-flex" style="gap: 8px;">
         <MudButton 

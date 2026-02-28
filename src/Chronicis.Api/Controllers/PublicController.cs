@@ -127,4 +127,21 @@ public class PublicController : ControllerBase
 
         return Ok(path);
     }
+
+    /// <summary>
+    /// GET /api/public/documents/{documentId} - Resolve a public inline image document to a fresh download URL.
+    /// Only documents attached to public articles in public worlds are accessible.
+    /// </summary>
+    [HttpGet("documents/{documentId:guid}")]
+    public async Task<IActionResult> GetPublicDocumentContent(Guid documentId)
+    {
+        var downloadUrl = await _publicWorldService.GetPublicDocumentDownloadUrlAsync(documentId);
+
+        if (string.IsNullOrWhiteSpace(downloadUrl))
+        {
+            return NotFound(new { error = "Document not found or not publicly accessible" });
+        }
+
+        return Redirect(downloadUrl);
+    }
 }

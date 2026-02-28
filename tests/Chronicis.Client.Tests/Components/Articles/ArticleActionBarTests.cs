@@ -26,14 +26,26 @@ public class ArticleActionBarTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void ArticleActionBar_RendersSaveStatusIndicator()
+    public void ArticleActionBar_WhenSaved_DoesNotRenderSaveStatusIndicator()
     {
         // Act
         var cut = RenderComponent<ArticleActionBar>();
 
         // Assert
+        Assert.Empty(cut.FindComponents<SaveStatusIndicator>());
+    }
+
+    [Fact]
+    public void ArticleActionBar_WhenUnsaved_RendersSaveStatusIndicator()
+    {
+        // Act
+        var cut = RenderComponent<ArticleActionBar>(parameters => parameters
+            .Add(p => p.HasUnsavedChanges, true));
+
+        // Assert
         var statusIndicator = cut.FindComponent<SaveStatusIndicator>();
         Assert.NotNull(statusIndicator);
+        Assert.True(statusIndicator.Instance.HasUnsavedChanges);
     }
 
     [Fact]
