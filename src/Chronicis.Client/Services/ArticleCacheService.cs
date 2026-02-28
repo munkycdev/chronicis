@@ -12,6 +12,7 @@ public class CachedArticleInfo
     public string Slug { get; set; } = string.Empty;
     public string? DisplayPath { get; set; }
     public List<BreadcrumbDto>? Breadcrumbs { get; set; }
+    public ArticleDto? FullArticle { get; set; }
     public DateTime CachedAt { get; set; }
 }
 
@@ -39,6 +40,11 @@ public interface IArticleCacheService
     /// Adds or updates an article in the cache (called when article is loaded).
     /// </summary>
     void CacheArticle(ArticleDto article);
+
+    /// <summary>
+    /// Tries to get a fully cached article without making an API call.
+    /// </summary>
+    bool TryGetCachedArticle(Guid articleId, out ArticleDto? article);
 
     /// <summary>
     /// Invalidates all cached data (called on save/delete).
@@ -146,6 +152,7 @@ public class ArticleCacheService : IArticleCacheService
             Title = article.Title,
             Slug = article.Slug,
             Breadcrumbs = article.Breadcrumbs,
+            FullArticle = article,
             CachedAt = DateTime.UtcNow
         };
 
@@ -162,6 +169,24 @@ public class ArticleCacheService : IArticleCacheService
         }
 
         _logger.LogDebug("Cached article {ArticleId}: {Title}", article.Id, article.Title);
+    }
+
+    /// <summary>
+    /// Tries to get a fully cached article without making an API call.
+    /// </summary>
+    public bool TryGetCachedArticle(Guid articleId, out ArticleDto? article)
+    {
+        lock (_lock)
+        {
+            if (_cache.TryGetValue(articleId, out var cached) && cached.FullArticle != null)
+            {
+                article = cached.FullArticle;
+                return true;
+            }
+        }
+
+        article = null;
+        return false;
     }
 
     /// <summary>

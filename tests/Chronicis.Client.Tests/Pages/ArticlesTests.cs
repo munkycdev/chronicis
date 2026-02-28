@@ -234,7 +234,9 @@ public class ArticlesTests : MudBlazorTestContext
         var sut = new Articles(Substitute.For<ILogger<Articles>>());
         SetProperty(sut, "TreeStateService", tree);
         SetProperty(sut, "ArticleApi", api);
+        SetProperty(sut, "ArticleCache", Substitute.For<IArticleCacheService>());
         SetProperty(sut, "QuoteService", Substitute.For<IQuoteService>());
+        SetProperty(sut, "AppContext", Substitute.For<IAppContextService>());
         SetProperty(sut, "Navigation", nav);
         SetProperty(sut, nameof(Articles.Path), path);
 
@@ -275,7 +277,9 @@ public class ArticlesTests : MudBlazorTestContext
         ComponentFactories.AddStub<ArticleDetail>();
         Services.AddSingleton(tree);
         Services.AddSingleton(api);
+        Services.AddSingleton(Substitute.For<IArticleCacheService>());
         Services.AddSingleton(Substitute.For<IQuoteService>());
+        Services.AddSingleton(Substitute.For<IAppContextService>());
         Services.AddSingleton(Substitute.For<ILogger<Articles>>());
 
         return RenderComponent<Articles>(parameters =>

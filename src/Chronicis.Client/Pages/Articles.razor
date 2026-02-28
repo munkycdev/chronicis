@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject ITreeStateService TreeStateService
 @inject IArticleApiService ArticleApi
+@inject IArticleCacheService ArticleCache
 @inject IQuoteService QuoteService
 @inject IAppContextService AppContext
 @inject NavigationManager Navigation
@@ -60,6 +61,8 @@ else
             
             if (article != null)
             {
+                ArticleCache.CacheArticle(article);
+
                 if (article.WorldId.HasValue &&
                     article.WorldId.Value != Guid.Empty &&
                     AppContext.CurrentWorldId != article.WorldId.Value)

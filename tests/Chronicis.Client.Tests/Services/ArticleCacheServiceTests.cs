@@ -141,5 +141,27 @@ public class ArticleCacheServiceTests
 
         Assert.Null(result);
     }
+
+    [Fact]
+    public void TryGetCachedArticle_ReturnsExpectedResult()
+    {
+        var id = Guid.NewGuid();
+        var api = Substitute.For<IArticleApiService>();
+        var sut = new ArticleCacheService(api, NullLogger<ArticleCacheService>.Instance);
+        var dto = new ArticleDto
+        {
+            Id = id,
+            Title = "Cached",
+            Slug = "cached"
+        };
+
+        Assert.False(sut.TryGetCachedArticle(id, out var missing));
+        Assert.Null(missing);
+
+        sut.CacheArticle(dto);
+
+        Assert.True(sut.TryGetCachedArticle(id, out var cached));
+        Assert.Same(dto, cached);
+    }
 }
 

@@ -237,6 +237,10 @@ else
         TreeState.OnStateChanged += OnTreeStateChanged;
         KeyboardShortcutService.OnSaveRequested += HandleSaveShortcut;
         _dotNetHelper = DotNetObjectReference.Create(this);
+
+        // If an article is already selected, render loading UI before first fetch completes.
+        _isLoading = TreeState.SelectedArticleId.HasValue && TreeState.SelectedArticleId.Value != Guid.Empty;
+
         await Task.CompletedTask;
     }
 
@@ -351,6 +355,7 @@ else
                 else
                 {
                     _article = null;
+                    _isLoading = false;
                     if (!_disposed)
                     {
                         await JSRuntime.InvokeVoidAsync("eval", "document.title = 'Chronicis'");
@@ -383,14 +388,22 @@ else
     private async Task LoadArticleAsync(Guid articleId)
     {
         _externalPreviewOpen = false;
-        StateHasChanged();
 
-        await ViewModel.LoadArticleAsync(articleId);
+        if (ArticleCache.TryGetCachedArticle(articleId, out var preloadedArticle) && preloadedArticle != null)
+        {
+            await ViewModel.HydrateArticleAsync(preloadedArticle);
+        }
+        else
+        {
+            _isLoading = true;
+            StateHasChanged();
+            await ViewModel.LoadArticleAsync(articleId);
+        }
 
         _article    = ViewModel.Article;
         _editTitle  = ViewModel.EditTitle;
         _editBody   = ViewModel.EditBody;
-        _isLoading  = ViewModel.IsLoading;
+        _isLoading  = false;
         _hasUnsavedChanges = ViewModel.HasUnsavedChanges;
         _breadcrumbs = ViewModel.Breadcrumbs;
 

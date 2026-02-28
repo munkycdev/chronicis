@@ -7,6 +7,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject IArticleApiService ArticleApi
+@inject IArticleCacheService ArticleCache
 @inject IAppContextService AppContext
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
@@ -148,8 +149,13 @@
                 break;
 
             case TreeNodeType.Article:
-                TreeState.ExpandPathToAndSelect(nodeId);
                 var article = await ArticleApi.GetArticleDetailAsync(nodeId);
+                if (article != null)
+                {
+                    ArticleCache.CacheArticle(article);
+                }
+
+                TreeState.ExpandPathToAndSelect(nodeId);
                 if (article != null && article.Breadcrumbs.Any())
                 {
                     var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));

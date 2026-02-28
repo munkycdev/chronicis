@@ -329,6 +329,43 @@ public class TreeDataBuilderTests
     }
 
     [Fact]
+    public void BuildArcNode_SortsSessionsByName()
+    {
+        var articleApi = Substitute.For<IArticleApiService>();
+        var worldApi = Substitute.For<IWorldApiService>();
+        var campaignApi = Substitute.For<ICampaignApiService>();
+        var arcApi = Substitute.For<IArcApiService>();
+        var sessionApi = Substitute.For<ISessionApiService>();
+        var sut = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, NullLogger.Instance);
+
+        var method = typeof(TreeDataBuilder).GetMethod("BuildArcNode", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var arc = new ArcDto { Id = Guid.NewGuid(), CampaignId = Guid.NewGuid(), Name = "Arc" };
+
+        var result = method!.Invoke(sut, new object?[]
+        {
+            arc,
+            new List<ArticleTreeDto>(),
+            new Dictionary<Guid, ArticleTreeDto>(),
+            new Dictionary<Guid, List<SessionTreeDto>>
+            {
+                [arc.Id] = new List<SessionTreeDto>
+                {
+                    new() { Id = Guid.NewGuid(), ArcId = arc.Id, Name = "Zulu" },
+                    new() { Id = Guid.NewGuid(), ArcId = arc.Id, Name = "alpha" },
+                    new() { Id = Guid.NewGuid(), ArcId = arc.Id, Name = "Bravo" }
+                }
+            },
+            new TreeNodeIndex()
+        });
+
+        var arcNode = Assert.IsType<TreeNode>(result);
+
+        Assert.Equal(new[] { "alpha", "Bravo", "Zulu" }, arcNode.Children.Select(c => c.Title).ToArray());
+    }
+
+    [Fact]
     public void BuildArcNode_WhenSessionsLookupMissing_UsesEmptyListBranch()
     {
         var articleApi = Substitute.For<IArticleApiService>();

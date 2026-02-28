@@ -398,7 +398,9 @@ internal sealed class TreeDataBuilder
 
         if (sessions.Count > 0)
         {
-            foreach (var session in sessions)
+            foreach (var session in sessions
+                .OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(s => s.Id))
             {
                 var sessionNode = BuildSessionNode(session, arc, worldArticles, articleIndex, nodeIndex);
                 arcNode.Children.Add(sessionNode);

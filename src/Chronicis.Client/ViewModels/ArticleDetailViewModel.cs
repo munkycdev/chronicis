@@ -145,6 +145,23 @@ public sealed class ArticleDetailViewModel : ViewModelBase
     // ---------------------------------------------------------------------------
 
     /// <summary>
+    /// Hydrates VM state from an already-fetched article.
+    /// </summary>
+    public async Task HydrateArticleAsync(ArticleDto article)
+    {
+        Article = article;
+        EditTitle = article.Title ?? string.Empty;
+        EditBody = article.Body ?? string.Empty;
+        HasUnsavedChanges = false;
+
+        _articleCache.CacheArticle(article);
+        RefreshBreadcrumbs();
+
+        await _titleService.SetTitleAsync(
+            string.IsNullOrEmpty(article.Title) ? "Untitled" : article.Title);
+    }
+
+    /// <summary>
     /// Loads an article by ID and populates all VM state.
     /// Returns true if the article was loaded successfully.
     /// </summary>

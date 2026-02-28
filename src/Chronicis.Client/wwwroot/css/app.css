@@ -324,3 +324,8 @@ a:focus-visible {
 .generic-container-icon {
     margin-bottom:15px;
 }
+
+.chronicis-inline-image {
+  max-width:100%;
+  height:auto;
+}
