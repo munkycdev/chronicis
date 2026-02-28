@@ -25,7 +25,7 @@ public class ResourceProvidersControllerCoverageSmokeTests
                     Description = "desc",
                     DocumentationLink = "https://example.test/docs",
                     License = "OGL"
-                }, true)
+                }, true, "srd")
             ]);
 
         var sut = new ResourceProvidersController(service, user, NullLogger<ResourceProvidersController>.Instance);

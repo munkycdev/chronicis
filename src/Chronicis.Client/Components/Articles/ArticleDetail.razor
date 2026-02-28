@@ -247,6 +247,7 @@ else
     protected override void OnInitialized()
     {
         OnCtrlNPressed += HandleCtrlNInstance;
+        DrawerCoordinator.OnChanged += HandleDrawerCoordinatorChanged;
         base.OnInitialized();
     }
 
@@ -267,6 +268,7 @@ else
         TreeState.OnStateChanged -= OnTreeStateChanged;
         KeyboardShortcutService.OnSaveRequested -= HandleSaveShortcut;
         OnCtrlNPressed -= HandleCtrlNInstance;
+        DrawerCoordinator.OnChanged -= HandleDrawerCoordinatorChanged;
         _autoSaveTimer?.Dispose();
 
         // Clear and dispose the DotNetObjectReference
@@ -944,6 +946,12 @@ else
     {
         if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(id)) return;
 
+        DrawerCoordinator.Close();
+        if (DrawerCoordinator.Current != DrawerType.None)
+        {
+            return;
+        }
+
         _externalPreviewOpen = true;
         _externalPreviewLoading = true;
         _externalPreviewError = null;
@@ -994,6 +1002,17 @@ else
     {
         _externalPreviewOpen = false;
         StateHasChanged();
+    }
+
+    private void HandleDrawerCoordinatorChanged()
+    {
+        if (!_externalPreviewOpen || DrawerCoordinator.Current == DrawerType.None)
+        {
+            return;
+        }
+
+        _externalPreviewOpen = false;
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private static string GetExternalCacheKey(string source, string id) => $"{source}:{id}".ToLowerInvariant();

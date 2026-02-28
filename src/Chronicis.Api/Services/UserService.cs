@@ -517,6 +517,7 @@ public class UserService : IUserService
             WorldId = newWorldId,
             ResourceProviderCode = wrp.ResourceProviderCode,
             IsEnabled = wrp.IsEnabled,
+            LookupKey = wrp.LookupKey,
             ModifiedAt = wrp.ModifiedAt,
             ModifiedByUserId = userId
         }).ToList();

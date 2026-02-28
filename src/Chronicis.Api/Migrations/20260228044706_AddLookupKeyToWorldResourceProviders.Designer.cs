@@ -4,6 +4,7 @@ using Chronicis.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Chronicis.Api.Migrations
 {
     [DbContext(typeof(ChronicisDbContext))]
-    partial class ChronicisDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260228044706_AddLookupKeyToWorldResourceProviders")]
+    partial class AddLookupKeyToWorldResourceProviders
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

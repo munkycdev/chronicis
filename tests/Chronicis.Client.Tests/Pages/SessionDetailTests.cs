@@ -42,7 +42,8 @@ public class SessionDetailTests : MudBlazorTestContext
         IWikiLinkService WikiLinkService,
         IAppContextService AppContext,
         IArticleCacheService ArticleCache,
-        IAISummaryApiService SummaryApi);
+        IAISummaryApiService SummaryApi,
+        IDrawerCoordinator DrawerCoordinator);
 
     private static PageDeps CreatePageDeps()
     {
@@ -65,6 +66,7 @@ public class SessionDetailTests : MudBlazorTestContext
         var appContext = Substitute.For<IAppContextService>();
         var articleCache = Substitute.For<IArticleCacheService>();
         var summaryApi = Substitute.For<IAISummaryApiService>();
+        var drawerCoordinator = new DrawerCoordinator();
         var vmLogger = Substitute.For<ILogger<SessionDetailViewModel>>();
 
         var vm = new SessionDetailViewModel(
@@ -101,7 +103,8 @@ public class SessionDetailTests : MudBlazorTestContext
             wikiLinkService,
             appContext,
             articleCache,
-            summaryApi);
+            summaryApi,
+            drawerCoordinator);
     }
 
     private IRenderedComponent<SessionDetail> RenderPage(PageDeps d, Guid sessionId)
@@ -117,6 +120,7 @@ public class SessionDetailTests : MudBlazorTestContext
         Services.AddSingleton(d.AppContext);
         Services.AddSingleton(d.ArticleCache);
         Services.AddSingleton(d.SummaryApi);
+        Services.AddSingleton<IDrawerCoordinator>(d.DrawerCoordinator);
 
         Services.GetRequiredService<FakeNavigationManager>().NavigateTo("http://localhost/session/test");
 
@@ -309,6 +313,24 @@ public class SessionDetailTests : MudBlazorTestContext
 
         // Broken link and preview close
         await InvokeNonPublicTask(instance, "OnBrokenLinkClicked", "missing-id");
+
+        d.ExternalLinkApi.GetContentAsync("srd", "acid-arrow", Arg.Any<CancellationToken>())
+            .Returns(new ExternalLinkContentDto
+            {
+                Source = "srd",
+                Id = "acid-arrow",
+                Title = "Acid Arrow",
+                Kind = "Spell",
+                Markdown = "content"
+            });
+        d.DrawerCoordinator.Open(DrawerType.Metadata);
+        await cut.InvokeAsync(() => InvokeNonPublicTask(instance, "OnExternalLinkClicked", "srd", "acid-arrow", "Acid Arrow"));
+        Assert.Equal(DrawerType.None, d.DrawerCoordinator.Current);
+        Assert.True((bool)GetField(instance, "_externalPreviewOpen")!);
+
+        d.DrawerCoordinator.Open(DrawerType.Quests);
+        cut.WaitForAssertion(() => Assert.False((bool)GetField(instance, "_externalPreviewOpen")!));
+
         SetField(instance, "_externalPreviewOpen", true);
         await cut.InvokeAsync(() =>
         {

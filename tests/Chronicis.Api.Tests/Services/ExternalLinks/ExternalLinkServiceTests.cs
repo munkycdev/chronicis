@@ -138,7 +138,7 @@ public class ExternalLinkServiceTests : IDisposable
         _resourceProviderRepository.GetWorldProvidersAsync(worldId)
             .Returns(
             [
-                (new ResourceProvider { Code = "srd" }, false)
+                (new ResourceProvider { Code = "srd" }, false, "srd")
             ]);
 
         var result = await _sut.GetSuggestionsAsync(worldId, "srd", "test", CancellationToken.None);
@@ -154,7 +154,7 @@ public class ExternalLinkServiceTests : IDisposable
         _resourceProviderRepository.GetWorldProvidersAsync(worldId)
             .Returns(
             [
-                (new ResourceProvider { Code = "srd" }, true)
+                (new ResourceProvider { Code = "srd" }, true, "srd")
             ]);
 
         var provider = Substitute.For<IExternalLinkProvider>();
@@ -179,6 +179,26 @@ public class ExternalLinkServiceTests : IDisposable
 
         await _resourceProviderRepository.DidNotReceive()
             .GetWorldProvidersAsync(Arg.Any<Guid>());
+    }
+
+    [Fact]
+    public async Task GetSuggestions_LookupKeyAlias_ResolvesToProviderCode()
+    {
+        var worldId = Guid.NewGuid();
+        _resourceProviderRepository.GetWorldProvidersAsync(worldId)
+            .Returns(
+            [
+                (new ResourceProvider { Code = "srd14" }, true, "rules")
+            ]);
+
+        var provider = Substitute.For<IExternalLinkProvider>();
+        provider.SearchAsync("test", Arg.Any<CancellationToken>())
+            .Returns([]);
+        _registry.GetProvider("srd14").Returns(provider);
+
+        await _sut.GetSuggestionsAsync(worldId, "rules", "test", CancellationToken.None);
+
+        await provider.Received(1).SearchAsync("test", Arg.Any<CancellationToken>());
     }
 
     // ── GetContentAsync ───────────────────────────────────────────

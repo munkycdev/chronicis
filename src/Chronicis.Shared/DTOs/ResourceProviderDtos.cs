@@ -23,6 +23,7 @@ public class WorldResourceProviderDto
 {
     public ResourceProviderDto Provider { get; set; } = new();
     public bool IsEnabled { get; set; }
+    public string LookupKey { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -32,4 +33,5 @@ public class WorldResourceProviderDto
 public class ToggleResourceProviderRequestDto
 {
     public bool Enabled { get; set; }
+    public string? LookupKey { get; set; }
 }

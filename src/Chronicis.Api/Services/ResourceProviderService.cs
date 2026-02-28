@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
 using Chronicis.Api.Repositories;
 using Chronicis.Shared.Extensions;
@@ -11,6 +12,8 @@ namespace Chronicis.Api.Services;
 /// </summary>
 public class ResourceProviderService : IResourceProviderService
 {
+    private static readonly Regex LookupKeyPattern = new("^[a-z0-9][a-z0-9_-]{0,49}$", RegexOptions.Compiled);
+
     private readonly IResourceProviderRepository _repository;
     private readonly ChronicisDbContext _context;
     private readonly ILogger<ResourceProviderService> _logger;
@@ -32,7 +35,7 @@ public class ResourceProviderService : IResourceProviderService
     }
 
     /// <inheritdoc/>
-    public async Task<List<(ResourceProvider Provider, bool IsEnabled)>> GetWorldProvidersAsync(Guid worldId, Guid userId)
+    public async Task<List<(ResourceProvider Provider, bool IsEnabled, string LookupKey)>> GetWorldProvidersAsync(Guid worldId, Guid userId)
     {
         // Verify world exists and user has access
         var world = await _context.Worlds
@@ -60,7 +63,7 @@ public class ResourceProviderService : IResourceProviderService
     }
 
     /// <inheritdoc/>
-    public async Task<bool> SetProviderEnabledAsync(Guid worldId, string providerCode, bool enabled, Guid userId)
+    public async Task<bool> SetProviderEnabledAsync(Guid worldId, string providerCode, bool enabled, Guid userId, string? lookupKey = null)
     {
         // Verify world exists
         var world = await _context.Worlds
@@ -80,8 +83,59 @@ public class ResourceProviderService : IResourceProviderService
             throw new UnauthorizedAccessException($"Only the world owner can modify resource provider settings");
         }
 
+        var providerExists = await _context.ResourceProviders
+            .AsNoTracking()
+            .AnyAsync(rp => rp.Code == providerCode && rp.IsActive);
+
+        if (!providerExists)
+        {
+            _logger.LogWarning("Provider {ProviderCode} not found or inactive", providerCode);
+            throw new KeyNotFoundException($"Resource provider '{providerCode}' not found or inactive");
+        }
+
+        var lookupKeyUpdateRequested = lookupKey != null;
+        var normalizedLookupKey = lookupKeyUpdateRequested
+            ? NormalizeLookupKey(lookupKey)
+            : null;
+
+        if (lookupKeyUpdateRequested && normalizedLookupKey != null && !LookupKeyPattern.IsMatch(normalizedLookupKey))
+        {
+            throw new ArgumentException(
+                "Lookup key must start with a letter/number and use only lowercase letters, numbers, '-' or '_', max 50 characters.",
+                nameof(lookupKey));
+        }
+
+        var worldProviders = await _repository.GetWorldProvidersAsync(worldId);
+        var targetProvider = worldProviders.FirstOrDefault(
+            p => p.Provider.Code.Equals(providerCode, StringComparison.OrdinalIgnoreCase));
+
+        var effectiveLookupKey = lookupKeyUpdateRequested
+            ? normalizedLookupKey ?? providerCode.ToLowerInvariant()
+            : targetProvider == default
+                ? providerCode.ToLowerInvariant()
+                : targetProvider.LookupKey.ToLowerInvariant();
+
+        if (enabled)
+        {
+            var keyConflict = worldProviders.Any(p =>
+                p.IsEnabled
+                && !p.Provider.Code.Equals(providerCode, StringComparison.OrdinalIgnoreCase)
+                && p.LookupKey.Equals(effectiveLookupKey, StringComparison.OrdinalIgnoreCase));
+
+            if (keyConflict)
+            {
+                throw new InvalidOperationException(
+                    $"Lookup key '{effectiveLookupKey}' is already in use by another enabled provider in this world.");
+            }
+        }
+
         // Attempt to enable/disable the provider
-        var result = await _repository.SetProviderEnabledAsync(worldId, providerCode, enabled, userId);
+        var result = await _repository.SetProviderEnabledAsync(
+            worldId,
+            providerCode,
+            enabled,
+            userId,
+            lookupKeyUpdateRequested ? lookupKey : null);
 
         if (!result)
         {
@@ -97,5 +151,15 @@ public class ResourceProviderService : IResourceProviderService
             worldId);
 
         return true;
+    }
+
+    private static string? NormalizeLookupKey(string? lookupKey)
+    {
+        if (string.IsNullOrWhiteSpace(lookupKey))
+        {
+            return null;
+        }
+
+        return lookupKey.Trim().ToLowerInvariant();
     }
 }

@@ -25,6 +25,7 @@
 @inject IArticleCacheService ArticleCache
 @inject IAISummaryApiService SummaryApi
 @inject IWorldApiService WorldApi
+@inject IDrawerCoordinator DrawerCoordinator
 
 @if (ViewModel.IsLoading)
 {
@@ -443,6 +444,7 @@ else
     protected override void OnInitialized()
     {
         KeyboardShortcutService.OnSaveRequested += HandleSaveShortcut;
+        DrawerCoordinator.OnChanged += HandleDrawerCoordinatorChanged;
         _publicEditorBridge = new SessionEditorInteropBridge(this, SessionEditorKind.Public);
         _privateEditorBridge = new SessionEditorInteropBridge(this, SessionEditorKind.Private);
         _publicEditorBridgeRef = DotNetObjectReference.Create(_publicEditorBridge);
@@ -540,9 +542,21 @@ else
     public void Dispose()
     {
         KeyboardShortcutService.OnSaveRequested -= HandleSaveShortcut;
+        DrawerCoordinator.OnChanged -= HandleDrawerCoordinatorChanged;
         ViewModel.PropertyChanged -= OnViewModelChanged;
         _publicEditorBridgeRef?.Dispose();
         _privateEditorBridgeRef?.Dispose();
+    }
+
+    private void HandleDrawerCoordinatorChanged()
+    {
+        if (!_externalPreviewOpen || DrawerCoordinator.Current == DrawerType.None)
+        {
+            return;
+        }
+
+        _externalPreviewOpen = false;
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private async Task InitializeEditorsAsync()
@@ -974,6 +988,12 @@ else
     private async Task OnExternalLinkClicked(string source, string id, string title)
     {
         if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(id))
+        {
+            return;
+        }
+
+        DrawerCoordinator.Close();
+        if (DrawerCoordinator.Current != DrawerType.None)
         {
             return;
         }

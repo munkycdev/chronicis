@@ -1,10 +1,14 @@
+using Chronicis.Shared.DTOs;
+
 namespace Chronicis.Client.Services;
 
 public class WikiLinkAutocompleteService : IWikiLinkAutocompleteService
 {
     private readonly ILinkApiService _linkApiService;
     private readonly IExternalLinkApiService _externalLinkApiService;
+    private readonly IResourceProviderApiService _resourceProviderApiService;
     private readonly ILogger<WikiLinkAutocompleteService> _logger;
+    private readonly Dictionary<Guid, IReadOnlyList<WorldResourceProviderDto>> _worldProviderCache = new();
 
     public event Action? OnShow;
     public event Action? OnHide;
@@ -22,10 +26,12 @@ public class WikiLinkAutocompleteService : IWikiLinkAutocompleteService
     public WikiLinkAutocompleteService(
         ILinkApiService linkApiService,
         IExternalLinkApiService externalLinkApiService,
+        IResourceProviderApiService resourceProviderApiService,
         ILogger<WikiLinkAutocompleteService> logger)
     {
         _linkApiService = linkApiService;
         _externalLinkApiService = externalLinkApiService;
+        _resourceProviderApiService = resourceProviderApiService;
         _logger = logger;
     }
 
@@ -35,7 +41,8 @@ public class WikiLinkAutocompleteService : IWikiLinkAutocompleteService
         IsVisible = true;
         SelectedIndex = 0;
 
-        IsExternalQuery = TryParseExternalQuery(query, out var sourceKey, out var remainder);
+        var worldProviders = await GetWorldProvidersAsync(worldId);
+        IsExternalQuery = TryParseExternalQuery(query, worldProviders, out var sourceKey, out var remainder);
         ExternalSourceKey = IsExternalQuery ? sourceKey : null;
         Query = IsExternalQuery ? remainder : query;
 
@@ -140,7 +147,38 @@ public class WikiLinkAutocompleteService : IWikiLinkAutocompleteService
         return null;
     }
 
-    private static bool TryParseExternalQuery(string query, out string sourceKey, out string remainder)
+    private async Task<IReadOnlyList<WorldResourceProviderDto>> GetWorldProvidersAsync(Guid? worldId)
+    {
+        if (!worldId.HasValue || worldId.Value == Guid.Empty)
+        {
+            return Array.Empty<WorldResourceProviderDto>();
+        }
+
+        if (_worldProviderCache.TryGetValue(worldId.Value, out var cached))
+        {
+            return cached;
+        }
+
+        var providers = await _resourceProviderApiService.GetWorldProvidersAsync(worldId.Value)
+            ?? new List<WorldResourceProviderDto>();
+
+        foreach (var provider in providers)
+        {
+            if (string.IsNullOrWhiteSpace(provider.LookupKey))
+            {
+                provider.LookupKey = provider.Provider.Code;
+            }
+        }
+
+        _worldProviderCache[worldId.Value] = providers;
+        return providers;
+    }
+
+    private static bool TryParseExternalQuery(
+        string query,
+        IReadOnlyList<WorldResourceProviderDto> worldProviders,
+        out string sourceKey,
+        out string remainder)
     {
         sourceKey = string.Empty;
         remainder = string.Empty;
@@ -151,21 +189,72 @@ public class WikiLinkAutocompleteService : IWikiLinkAutocompleteService
         var slashIndex = query.IndexOf('/');
         if (slashIndex < 0)
         {
-            // No slash found - check if it could be a source key prefix
             var lowerQuery = query.ToLowerInvariant();
-            if (lowerQuery.StartsWith("srd") ||
-                lowerQuery.StartsWith("open5e") ||
-                lowerQuery.StartsWith("ros"))
+
+            var exactMatch = worldProviders
+                .Select(p => new
+                {
+                    ProviderCode = p.Provider.Code.ToLowerInvariant(),
+                    LookupKey = NormalizeLookupKey(p.LookupKey, p.Provider.Code),
+                })
+                .FirstOrDefault(p =>
+                    p.ProviderCode.Equals(lowerQuery, StringComparison.OrdinalIgnoreCase)
+                    || p.LookupKey.Equals(lowerQuery, StringComparison.OrdinalIgnoreCase));
+
+            if (exactMatch != null)
             {
-                sourceKey = lowerQuery;
+                sourceKey = exactMatch.ProviderCode;
                 remainder = string.Empty;
                 return true;
             }
+
+            var startsWithMatch = worldProviders
+                .Select(p => new
+                {
+                    ProviderCode = p.Provider.Code.ToLowerInvariant(),
+                    LookupKey = NormalizeLookupKey(p.LookupKey, p.Provider.Code),
+                })
+                .Where(p =>
+                    lowerQuery.StartsWith(p.ProviderCode, StringComparison.OrdinalIgnoreCase)
+                    || lowerQuery.StartsWith(p.LookupKey, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(p => p.LookupKey.Length)
+                .ThenByDescending(p => p.ProviderCode.Length)
+                .FirstOrDefault();
+
+            if (startsWithMatch != null)
+            {
+                sourceKey = startsWithMatch.ProviderCode;
+                remainder = string.Empty;
+                return true;
+            }
+
             return false;
         }
 
-        sourceKey = query.Substring(0, slashIndex).ToLowerInvariant();
+        var sourcePrefix = query.Substring(0, slashIndex).Trim().ToLowerInvariant();
         remainder = query.Substring(slashIndex + 1);
+
+        var providerMatch = worldProviders
+            .Select(p => new
+            {
+                ProviderCode = p.Provider.Code.ToLowerInvariant(),
+                LookupKey = NormalizeLookupKey(p.LookupKey, p.Provider.Code),
+            })
+            .FirstOrDefault(p =>
+                p.ProviderCode.Equals(sourcePrefix, StringComparison.OrdinalIgnoreCase)
+                || p.LookupKey.Equals(sourcePrefix, StringComparison.OrdinalIgnoreCase));
+
+        sourceKey = providerMatch?.ProviderCode ?? sourcePrefix;
         return true;
+    }
+
+    private static string NormalizeLookupKey(string? lookupKey, string providerCode)
+    {
+        if (string.IsNullOrWhiteSpace(lookupKey))
+        {
+            return providerCode.ToLowerInvariant();
+        }
+
+        return lookupKey.Trim().ToLowerInvariant();
     }
 }

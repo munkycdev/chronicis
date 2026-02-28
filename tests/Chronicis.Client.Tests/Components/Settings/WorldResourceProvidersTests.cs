@@ -249,11 +249,35 @@ public class WorldResourceProvidersTests : MudBlazorTestContext
         await _providersApi.Received(1).ToggleProviderAsync(worldId, "srd", true);
     }
 
+    [Fact]
+    public async Task OnSaveLookupKey_WhenSuccess_NormalizesAndSaves()
+    {
+        var worldId = Guid.NewGuid();
+        _providersApi.GetWorldProvidersAsync(worldId).Returns(new List<WorldResourceProviderDto>
+        {
+            CreateProvider("srd", "SRD", enabled: true)
+        });
+        _providersApi.ToggleProviderAsync(worldId, "srd", true, " Rules_Ref ").Returns(true);
+
+        var cut = RenderComponent<WorldResourceProviders>(p => p.Add(x => x.WorldId, worldId));
+        cut.WaitForAssertion(() => Assert.Contains("Save Key", cut.Markup));
+
+        var providers = GetField<List<WorldResourceProviderDto>?>(cut.Instance, "_providers");
+        Assert.NotNull(providers);
+        providers![0].LookupKey = " Rules_Ref ";
+
+        await InvokePrivateOnRendererAsync(cut, "OnSaveLookupKey", providers[0]);
+
+        await _providersApi.Received(1).ToggleProviderAsync(worldId, "srd", true, " Rules_Ref ");
+        Assert.Equal("rules_ref", providers[0].LookupKey);
+    }
+
     private static WorldResourceProviderDto CreateProvider(string code, string name, bool enabled)
     {
         return new WorldResourceProviderDto
         {
             IsEnabled = enabled,
+            LookupKey = code,
             Provider = new ResourceProviderDto
             {
                 Code = code,

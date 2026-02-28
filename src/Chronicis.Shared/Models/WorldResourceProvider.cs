@@ -25,6 +25,12 @@ public class WorldResourceProvider
     public bool IsEnabled { get; set; }
 
     /// <summary>
+    /// Optional world-specific lookup key used in wiki-link autocomplete (for example "rules").
+    /// When null/empty, the provider code is used as the default lookup key.
+    /// </summary>
+    public string? LookupKey { get; set; }
+
+    /// <summary>
     /// When this provider was last enabled/disabled. 
     /// Nullable to follow audit property conventions, though typically always set.
     /// </summary>

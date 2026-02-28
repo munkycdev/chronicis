@@ -16,7 +16,7 @@ public class WikiLinkAutocompleteServiceTests
             .Returns(new List<LinkSuggestionDto> { new() { ArticleId = Guid.NewGuid(), Title = "Wizard" } });
 
         var externalApi = Substitute.For<IExternalLinkApiService>();
-        var sut = new WikiLinkAutocompleteService(linkApi, externalApi, NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService(linkApi, externalApi);
 
         var showCount = 0;
         var updateCount = 0;
@@ -40,7 +40,7 @@ public class WikiLinkAutocompleteServiceTests
         externalApi.GetSuggestionsAsync(Arg.Any<Guid?>(), "srd", "acid", Arg.Any<CancellationToken>())
             .Returns(new List<ExternalLinkSuggestionDto> { new() { Source = "srd", Id = "/api/x", Title = "Acid" } });
 
-        var sut = new WikiLinkAutocompleteService(linkApi, externalApi, NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService(linkApi, externalApi);
 
         await sut.ShowAsync("srd/acid", 0, 0, null);
 
@@ -58,7 +58,7 @@ public class WikiLinkAutocompleteServiceTests
         var externalApi = Substitute.For<IExternalLinkApiService>();
         externalApi.GetSuggestionsAsync(worldId, "srd", "acid", Arg.Any<CancellationToken>())
             .Returns(new List<ExternalLinkSuggestionDto>());
-        var sut = new WikiLinkAutocompleteService(linkApi, externalApi, NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService(linkApi, externalApi);
 
         await sut.ShowAsync("srd/acid", 0, 0, worldId);
 
@@ -68,10 +68,7 @@ public class WikiLinkAutocompleteServiceTests
     [Fact]
     public async Task ShowAsync_ShortInternalQuery_ClearsSuggestionsWithoutLoading()
     {
-        var sut = new WikiLinkAutocompleteService(
-            Substitute.For<ILinkApiService>(),
-            Substitute.For<IExternalLinkApiService>(),
-            NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService();
 
         await sut.ShowAsync("ab", 0, 0, Guid.NewGuid());
 
@@ -85,7 +82,7 @@ public class WikiLinkAutocompleteServiceTests
         var linkApi = Substitute.For<ILinkApiService>();
         linkApi.GetSuggestionsAsync(Arg.Any<Guid>(), Arg.Any<string>())
             .Returns(_ => Task.FromException<List<LinkSuggestionDto>>(new InvalidOperationException("boom")));
-        var sut = new WikiLinkAutocompleteService(linkApi, Substitute.For<IExternalLinkApiService>(), NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService(linkApi, Substitute.For<IExternalLinkApiService>());
 
         await sut.ShowAsync("wizard", 0, 0, Guid.NewGuid());
 
@@ -104,7 +101,7 @@ public class WikiLinkAutocompleteServiceTests
                 new() { ArticleId = Guid.NewGuid(), Title = "B" }
             });
 
-        var sut = new WikiLinkAutocompleteService(linkApi, Substitute.For<IExternalLinkApiService>(), NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService(linkApi, Substitute.For<IExternalLinkApiService>());
         await sut.ShowAsync("query", 0, 0, Guid.NewGuid());
 
         sut.SelectNext();
@@ -133,13 +130,24 @@ public class WikiLinkAutocompleteServiceTests
     [Fact]
     public async Task ShowAsync_ParsesKnownPrefixWithoutSlash_AsExternal()
     {
+        var worldId = Guid.NewGuid();
         var externalApi = Substitute.For<IExternalLinkApiService>();
         externalApi.GetSuggestionsAsync(Arg.Any<Guid?>(), "srd", "", Arg.Any<CancellationToken>())
             .Returns(new List<ExternalLinkSuggestionDto>());
 
-        var sut = new WikiLinkAutocompleteService(Substitute.For<ILinkApiService>(), externalApi, NullLogger<WikiLinkAutocompleteService>.Instance);
+        var providerApi = Substitute.For<IResourceProviderApiService>();
+        providerApi.GetWorldProvidersAsync(worldId).Returns(new List<WorldResourceProviderDto>
+        {
+            new()
+            {
+                IsEnabled = true,
+                LookupKey = "srd",
+                Provider = new ResourceProviderDto { Code = "srd", Name = "SRD", Description = "", DocumentationLink = "", License = "" }
+            }
+        });
+        var sut = CreateService(Substitute.For<ILinkApiService>(), externalApi, providerApi);
 
-        await sut.ShowAsync("srd", 0, 0, Guid.NewGuid());
+        await sut.ShowAsync("srd", 0, 0, worldId);
 
         Assert.True(sut.IsExternalQuery);
         Assert.Equal("srd", sut.ExternalSourceKey);
@@ -151,7 +159,7 @@ public class WikiLinkAutocompleteServiceTests
     {
         var linkApi = Substitute.For<ILinkApiService>();
         linkApi.GetSuggestionsAsync(Arg.Any<Guid>(), "abc").Returns(new List<LinkSuggestionDto>());
-        var sut = new WikiLinkAutocompleteService(linkApi, Substitute.For<IExternalLinkApiService>(), NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService(linkApi, Substitute.For<IExternalLinkApiService>());
 
         await sut.ShowAsync("abc", 0, 0, Guid.NewGuid());
 
@@ -162,7 +170,7 @@ public class WikiLinkAutocompleteServiceTests
     [Fact]
     public async Task ShowAsync_WhitespaceQuery_IsTreatedAsInternalAndClearsSuggestions()
     {
-        var sut = new WikiLinkAutocompleteService(Substitute.For<ILinkApiService>(), Substitute.For<IExternalLinkApiService>(), NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService();
 
         await sut.ShowAsync("   ", 0, 0, Guid.NewGuid());
 
@@ -174,12 +182,23 @@ public class WikiLinkAutocompleteServiceTests
     [Fact]
     public async Task ShowAsync_Open5ePrefixWithoutSlash_IsExternal()
     {
+        var worldId = Guid.NewGuid();
         var externalApi = Substitute.For<IExternalLinkApiService>();
         externalApi.GetSuggestionsAsync(Arg.Any<Guid?>(), "open5e", "", Arg.Any<CancellationToken>())
             .Returns(new List<ExternalLinkSuggestionDto>());
-        var sut = new WikiLinkAutocompleteService(Substitute.For<ILinkApiService>(), externalApi, NullLogger<WikiLinkAutocompleteService>.Instance);
+        var providerApi = Substitute.For<IResourceProviderApiService>();
+        providerApi.GetWorldProvidersAsync(worldId).Returns(new List<WorldResourceProviderDto>
+        {
+            new()
+            {
+                IsEnabled = true,
+                LookupKey = "open5e",
+                Provider = new ResourceProviderDto { Code = "open5e", Name = "Open5e", Description = "", DocumentationLink = "", License = "" }
+            }
+        });
+        var sut = CreateService(Substitute.For<ILinkApiService>(), externalApi, providerApi);
 
-        await sut.ShowAsync("open5e", 0, 0, Guid.NewGuid());
+        await sut.ShowAsync("open5e", 0, 0, worldId);
 
         Assert.True(sut.IsExternalQuery);
         Assert.Equal("open5e", sut.ExternalSourceKey);
@@ -188,7 +207,7 @@ public class WikiLinkAutocompleteServiceTests
     [Fact]
     public void SelectionMethods_NoOp_WhenNoSuggestions()
     {
-        var sut = new WikiLinkAutocompleteService(Substitute.For<ILinkApiService>(), Substitute.For<IExternalLinkApiService>(), NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService();
 
         sut.SelectNext();
         sut.SelectPrevious();
@@ -207,7 +226,7 @@ public class WikiLinkAutocompleteServiceTests
             {
                 new() { ArticleId = Guid.NewGuid(), Title = "A" }
             });
-        var sut = new WikiLinkAutocompleteService(linkApi, Substitute.For<IExternalLinkApiService>(), NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService(linkApi, Substitute.For<IExternalLinkApiService>());
         await sut.ShowAsync("query", 0, 0, Guid.NewGuid());
 
         sut.SetSelectedIndex(-1);
@@ -218,10 +237,7 @@ public class WikiLinkAutocompleteServiceTests
     [Fact]
     public async Task ShowAsync_ShortQuery_WithSubscriber_RaisesSuggestionsUpdated()
     {
-        var sut = new WikiLinkAutocompleteService(
-            Substitute.For<ILinkApiService>(),
-            Substitute.For<IExternalLinkApiService>(),
-            NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService();
         var updates = 0;
         sut.OnSuggestionsUpdated += () => updates++;
 
@@ -235,7 +251,7 @@ public class WikiLinkAutocompleteServiceTests
     {
         var linkApi = Substitute.For<ILinkApiService>();
         linkApi.GetSuggestionsAsync(Guid.Empty, "spell").Returns(new List<LinkSuggestionDto>());
-        var sut = new WikiLinkAutocompleteService(linkApi, Substitute.For<IExternalLinkApiService>(), NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService(linkApi, Substitute.For<IExternalLinkApiService>());
 
         await sut.ShowAsync("spell", 0, 0, null);
 
@@ -252,7 +268,7 @@ public class WikiLinkAutocompleteServiceTests
                 new() { ArticleId = Guid.NewGuid(), Title = "A" },
                 new() { ArticleId = Guid.NewGuid(), Title = "B" }
             });
-        var sut = new WikiLinkAutocompleteService(linkApi, Substitute.For<IExternalLinkApiService>(), NullLogger<WikiLinkAutocompleteService>.Instance);
+        var sut = CreateService(linkApi, Substitute.For<IExternalLinkApiService>());
         var hideCount = 0;
         var updateCount = 0;
         sut.OnHide += () => hideCount++;
@@ -266,6 +282,52 @@ public class WikiLinkAutocompleteServiceTests
 
         Assert.Equal(1, hideCount);
         Assert.True(updateCount >= 4);
+    }
+
+    [Fact]
+    public async Task ShowAsync_ExternalQuery_WithLookupKeyAlias_MapsToProviderCode()
+    {
+        var worldId = Guid.NewGuid();
+        var externalApi = Substitute.For<IExternalLinkApiService>();
+        externalApi.GetSuggestionsAsync(worldId, "srd14", "acid", Arg.Any<CancellationToken>())
+            .Returns(new List<ExternalLinkSuggestionDto>());
+
+        var providerApi = Substitute.For<IResourceProviderApiService>();
+        providerApi.GetWorldProvidersAsync(worldId).Returns(new List<WorldResourceProviderDto>
+        {
+            new()
+            {
+                IsEnabled = true,
+                LookupKey = "rules",
+                Provider = new ResourceProviderDto { Code = "srd14", Name = "SRD 2014", Description = "", DocumentationLink = "", License = "" }
+            }
+        });
+
+        var sut = CreateService(Substitute.For<ILinkApiService>(), externalApi, providerApi);
+        await sut.ShowAsync("rules/acid", 0, 0, worldId);
+
+        await externalApi.Received(1).GetSuggestionsAsync(worldId, "srd14", "acid", Arg.Any<CancellationToken>());
+    }
+
+    private static WikiLinkAutocompleteService CreateService(
+        ILinkApiService? linkApi = null,
+        IExternalLinkApiService? externalApi = null,
+        IResourceProviderApiService? providerApi = null)
+    {
+        linkApi ??= Substitute.For<ILinkApiService>();
+        externalApi ??= Substitute.For<IExternalLinkApiService>();
+        if (providerApi == null)
+        {
+            providerApi = Substitute.For<IResourceProviderApiService>();
+            providerApi.GetWorldProvidersAsync(Arg.Any<Guid>())
+                .Returns(new List<WorldResourceProviderDto>());
+        }
+
+        return new WikiLinkAutocompleteService(
+            linkApi,
+            externalApi,
+            providerApi,
+            NullLogger<WikiLinkAutocompleteService>.Instance);
     }
 }
 

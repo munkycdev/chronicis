@@ -25,7 +25,8 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
         IWikiLinkService WikiLinkService,
         IArticleCacheService ArticleCache,
         IAISummaryApiService SummaryApi,
-        IWorldApiService WorldApi);
+        IWorldApiService WorldApi,
+        IDrawerCoordinator DrawerCoordinator);
 
     private Deps CreateDeps()
     {
@@ -35,6 +36,7 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
         var articleCache = Substitute.For<IArticleCacheService>();
         var summaryApi = Substitute.For<IAISummaryApiService>();
         var worldApi = Substitute.For<IWorldApiService>();
+        var drawerCoordinator = new DrawerCoordinator();
 
         Services.AddSingleton(linkApi);
         Services.AddSingleton(externalLinkApi);
@@ -42,6 +44,7 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
         Services.AddSingleton(articleCache);
         Services.AddSingleton(summaryApi);
         Services.AddSingleton(worldApi);
+        Services.AddSingleton<IDrawerCoordinator>(drawerCoordinator);
         Services.AddSingleton(Substitute.For<ILogger<PrivateNotesTipTapEditor>>());
 
         ComponentFactories.AddStub<ArticleDetailWikiLinkAutocomplete>();
@@ -55,7 +58,7 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
             _providersRendered = true;
         }
 
-        return new Deps(linkApi, externalLinkApi, wikiLinkService, articleCache, summaryApi, worldApi);
+        return new Deps(linkApi, externalLinkApi, wikiLinkService, articleCache, summaryApi, worldApi, drawerCoordinator);
     }
 
     [Fact]
@@ -222,7 +225,14 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
                 Kind = "Spell",
                 Markdown = "content"
             });
+        d.DrawerCoordinator.Open(DrawerType.Metadata);
         await instance.OnExternalLinkClicked("srd", "acid-arrow", "Acid Arrow");
+        Assert.Equal(DrawerType.None, d.DrawerCoordinator.Current);
+        Assert.True((bool)GetField(instance, "_externalPreviewOpen")!);
+
+        d.DrawerCoordinator.Open(DrawerType.Quests);
+        cut.WaitForAssertion(() => Assert.False((bool)GetField(instance, "_externalPreviewOpen")!));
+
         await instance.OnExternalLinkClicked("srd", "acid-arrow", "Acid Arrow"); // cache hit
 
         d.ExternalLinkApi.GetContentAsync("srd", "boom", Arg.Any<CancellationToken>())

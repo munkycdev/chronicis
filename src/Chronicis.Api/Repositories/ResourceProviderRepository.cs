@@ -27,7 +27,7 @@ public class ResourceProviderRepository : IResourceProviderRepository
     }
 
     /// <inheritdoc/>
-    public async Task<List<(ResourceProvider Provider, bool IsEnabled)>> GetWorldProvidersAsync(Guid worldId)
+    public async Task<List<(ResourceProvider Provider, bool IsEnabled, string LookupKey)>> GetWorldProvidersAsync(Guid worldId)
     {
         // Get all active providers
         var providers = await _context.ResourceProviders
@@ -36,21 +36,27 @@ public class ResourceProviderRepository : IResourceProviderRepository
             .AsNoTracking()
             .ToListAsync();
 
-        // Get enabled providers for this world
-        var enabledProviderCodes = await _context.WorldResourceProviders
-            .Where(wrp => wrp.WorldId == worldId && wrp.IsEnabled)
-            .Select(wrp => wrp.ResourceProviderCode)
-            .ToListAsync();
+        // Get world-level provider associations (enabled state + optional lookup key override)
+        var worldAssociations = await _context.WorldResourceProviders
+            .Where(wrp => wrp.WorldId == worldId)
+            .AsNoTracking()
+            .ToDictionaryAsync(
+                wrp => wrp.ResourceProviderCode,
+                wrp => wrp,
+                StringComparer.OrdinalIgnoreCase);
 
         // Combine into result
         return providers.Select(p => (
             Provider: p,
-            IsEnabled: enabledProviderCodes.Contains(p.Code)
+            IsEnabled: worldAssociations.TryGetValue(p.Code, out var association) && association.IsEnabled,
+            LookupKey: worldAssociations.TryGetValue(p.Code, out var wrp) && !string.IsNullOrWhiteSpace(wrp.LookupKey)
+                ? wrp.LookupKey!
+                : p.Code
         )).ToList();
     }
 
     /// <inheritdoc/>
-    public async Task<bool> SetProviderEnabledAsync(Guid worldId, string providerCode, bool enabled, Guid userId)
+    public async Task<bool> SetProviderEnabledAsync(Guid worldId, string providerCode, bool enabled, Guid userId, string? lookupKey = null)
     {
         // Verify provider exists
         var providerExists = await _context.ResourceProviders
@@ -73,6 +79,7 @@ public class ResourceProviderRepository : IResourceProviderRepository
                 WorldId = worldId,
                 ResourceProviderCode = providerCode,
                 IsEnabled = enabled,
+                LookupKey = NormalizeLookupKeyForStorage(lookupKey),
                 ModifiedAt = DateTimeOffset.UtcNow,
                 ModifiedByUserId = userId
             };
@@ -82,11 +89,26 @@ public class ResourceProviderRepository : IResourceProviderRepository
         {
             // Update existing association
             association.IsEnabled = enabled;
+            if (lookupKey != null)
+            {
+                association.LookupKey = NormalizeLookupKeyForStorage(lookupKey);
+            }
+
             association.ModifiedAt = DateTimeOffset.UtcNow;
             association.ModifiedByUserId = userId;
         }
 
         await _context.SaveChangesAsync();
         return true;
+    }
+
+    private static string? NormalizeLookupKeyForStorage(string? lookupKey)
+    {
+        if (string.IsNullOrWhiteSpace(lookupKey))
+        {
+            return null;
+        }
+
+        return lookupKey.Trim().ToLowerInvariant();
     }
 }

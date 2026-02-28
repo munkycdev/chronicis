@@ -42,6 +42,15 @@ public partial class WorldResourceProviders : ComponentBase
             {
                 // Sort providers alphabetically by name
                 _providers = _providers.OrderBy(p => p.Provider.Name).ToList();
+
+                // Ensure lookup keys are always initialized with effective defaults.
+                foreach (var provider in _providers)
+                {
+                    if (string.IsNullOrWhiteSpace(provider.LookupKey))
+                    {
+                        provider.LookupKey = provider.Provider.Code;
+                    }
+                }
             }
         }
         catch (Exception ex)
@@ -106,6 +115,55 @@ public partial class WorldResourceProviders : ComponentBase
                 ex,
                 "Error toggling provider {ProviderCode} for world {WorldId}",
                 providerCode,
+                WorldId);
+        }
+        finally
+        {
+            _updating = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnSaveLookupKey(WorldResourceProviderDto provider)
+    {
+        if (provider == null)
+        {
+            return;
+        }
+
+        _updating = true;
+        StateHasChanged();
+
+        try
+        {
+            var requestedLookupKey = provider.LookupKey ?? string.Empty;
+            var success = await ResourceProviderService.ToggleProviderAsync(
+                WorldId,
+                provider.Provider.Code,
+                provider.IsEnabled,
+                requestedLookupKey);
+
+            if (success)
+            {
+                var normalized = requestedLookupKey.Trim().ToLowerInvariant();
+                provider.LookupKey = string.IsNullOrWhiteSpace(normalized)
+                    ? provider.Provider.Code
+                    : normalized;
+
+                Snackbar.Add($"Lookup key saved: {provider.LookupKey}", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to save lookup key", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving lookup key: {ex.Message}", Severity.Error);
+            Logger.LogError(
+                ex,
+                "Error saving lookup key for provider {ProviderCode} in world {WorldId}",
+                provider.Provider.Code,
                 WorldId);
         }
         finally

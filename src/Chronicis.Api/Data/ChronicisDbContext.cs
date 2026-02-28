@@ -718,6 +718,9 @@ public class ChronicisDbContext : DbContext
             entity.Property(wrp => wrp.IsEnabled)
                 .IsRequired();
 
+            entity.Property(wrp => wrp.LookupKey)
+                .HasMaxLength(50);
+
             entity.Property(wrp => wrp.ModifiedAt)
                 .IsRequired();
 
@@ -741,6 +744,12 @@ public class ChronicisDbContext : DbContext
 
             // Index for querying worlds by provider
             entity.HasIndex(wrp => wrp.ResourceProviderCode);
+
+            // Lookup keys must be unique within a world when explicitly configured
+            entity.HasIndex(wrp => new { wrp.WorldId, wrp.LookupKey })
+                .IsUnique()
+                .HasFilter("[LookupKey] IS NOT NULL")
+                .HasDatabaseName("IX_WorldResourceProviders_WorldId_LookupKey");
         });
     }
 

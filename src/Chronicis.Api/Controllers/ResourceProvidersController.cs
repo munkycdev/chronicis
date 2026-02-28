@@ -56,7 +56,8 @@ public class ResourceProvidersController : ControllerBase
                     DocumentationLink = p.Provider.DocumentationLink,
                     License = p.Provider.License
                 },
-                IsEnabled = p.IsEnabled
+                IsEnabled = p.IsEnabled,
+                LookupKey = p.LookupKey
             }).ToList();
 
             return Ok(dtos);
@@ -94,7 +95,7 @@ public class ResourceProvidersController : ControllerBase
         try
         {
             var user = await _currentUserService.GetRequiredUserAsync();
-            await _service.SetProviderEnabledAsync(worldId, providerCode, request.Enabled, user.Id);
+            await _service.SetProviderEnabledAsync(worldId, providerCode, request.Enabled, user.Id, request.LookupKey);
 
             return Ok(new { message = $"Provider {providerCode} {(request.Enabled ? "enabled" : "disabled")} successfully" });
         }
@@ -107,6 +108,16 @@ public class ResourceProvidersController : ControllerBase
         {
             _logger.LogWarning(ex, "Unauthorized attempt to modify world {WorldId}", worldId);
             return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid provider configuration for world {WorldId} and provider {ProviderCode}", worldId, providerCode);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Invalid provider lookup key for world {WorldId} and provider {ProviderCode}", worldId, providerCode);
+            return BadRequest(new { message = ex.Message });
         }
     }
 }

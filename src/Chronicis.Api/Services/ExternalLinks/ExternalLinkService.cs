@@ -43,11 +43,16 @@ public class ExternalLinkService : IExternalLinkService
             return Array.Empty<ExternalLinkSuggestion>();
         }
 
-        // Check world-level provider enablement
+        var resolvedSource = source;
+
+        // Check world-level provider enablement and resolve lookup-key aliases
         if (worldId.HasValue)
         {
             var worldProviders = await _resourceProviderRepository.GetWorldProvidersAsync(worldId.Value);
-            var enabledProvider = worldProviders.FirstOrDefault(p => p.Provider.Code == source && p.IsEnabled);
+            var enabledProvider = worldProviders.FirstOrDefault(p =>
+                p.IsEnabled
+                && (p.Provider.Code.Equals(source, StringComparison.OrdinalIgnoreCase)
+                    || p.LookupKey.Equals(source, StringComparison.OrdinalIgnoreCase)));
 
             if (enabledProvider == default)
             {
@@ -55,17 +60,19 @@ public class ExternalLinkService : IExternalLinkService
                     "Provider {Source} is not enabled for world {WorldId}", source, worldId);
                 return Array.Empty<ExternalLinkSuggestion>();
             }
+
+            resolvedSource = enabledProvider.Provider.Code;
         }
 
         query ??= string.Empty;
 
-        var cacheKey = BuildSuggestionCacheKey(source, query);
+        var cacheKey = BuildSuggestionCacheKey(resolvedSource, query);
         if (_cache.TryGetValue<IReadOnlyList<ExternalLinkSuggestion>>(cacheKey, out var cached) && cached != null)
         {
             return cached;
         }
 
-        var provider = _registry.GetProvider(source);
+        var provider = _registry.GetProvider(resolvedSource);
         if (provider == null)
         {
             return Array.Empty<ExternalLinkSuggestion>();
@@ -81,7 +88,7 @@ public class ExternalLinkService : IExternalLinkService
             _logger.LogErrorSanitized(
                 ex,
                 "External link provider {Source} failed to search for query {Query}",
-                source, query);
+                resolvedSource, query);
             return Array.Empty<ExternalLinkSuggestion>();
         }
 

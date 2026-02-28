@@ -122,6 +122,7 @@ public class ResourceProviderRepositoryTests : IDisposable
 
         Assert.Equal(2, result.Count);
         Assert.All(result, r => Assert.False(r.IsEnabled));
+        Assert.All(result, r => Assert.Equal(r.Provider.Code, r.LookupKey));
     }
 
     [Fact]
@@ -289,5 +290,49 @@ public class ResourceProviderRepositoryTests : IDisposable
             .SingleAsync(w => w.WorldId == _worldId && w.ResourceProviderCode == "srd14");
         Assert.Equal(newUserId, assoc.ModifiedByUserId);
         Assert.True(assoc.ModifiedAt >= beforeUpdate);
+    }
+
+    [Fact]
+    public async Task Set_WithLookupKey_StoresNormalizedLookupKey()
+    {
+        await SeedProvider("srd14", "SRD 2014");
+
+        var result = await _repo.SetProviderEnabledAsync(
+            _worldId, "srd14", true, _userId, " Rules_Ref ");
+
+        Assert.True(result);
+        var assoc = await _context.WorldResourceProviders
+            .SingleAsync(w => w.WorldId == _worldId && w.ResourceProviderCode == "srd14");
+        Assert.Equal("rules_ref", assoc.LookupKey);
+    }
+
+    [Fact]
+    public async Task Set_WithNullLookupKey_DoesNotChangeExistingLookupKey()
+    {
+        await SeedProvider("srd14", "SRD 2014");
+        await _repo.SetProviderEnabledAsync(_worldId, "srd14", true, _userId, "rules");
+
+        var result = await _repo.SetProviderEnabledAsync(
+            _worldId, "srd14", false, _userId, null);
+
+        Assert.True(result);
+        var assoc = await _context.WorldResourceProviders
+            .SingleAsync(w => w.WorldId == _worldId && w.ResourceProviderCode == "srd14");
+        Assert.Equal("rules", assoc.LookupKey);
+    }
+
+    [Fact]
+    public async Task Set_WithWhitespaceLookupKey_ClearsOverride()
+    {
+        await SeedProvider("srd14", "SRD 2014");
+        await _repo.SetProviderEnabledAsync(_worldId, "srd14", true, _userId, "rules");
+
+        var result = await _repo.SetProviderEnabledAsync(
+            _worldId, "srd14", true, _userId, "   ");
+
+        Assert.True(result);
+        var assoc = await _context.WorldResourceProviders
+            .SingleAsync(w => w.WorldId == _worldId && w.ResourceProviderCode == "srd14");
+        Assert.Null(assoc.LookupKey);
     }
 }

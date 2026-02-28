@@ -14,6 +14,7 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject ILogger<PrivateNotesTipTapEditor> Logger
+@inject IDrawerCoordinator DrawerCoordinator
 
 @if (ReadOnly)
 {
@@ -144,6 +145,7 @@ else
     {
         _dotNetRef = DotNetObjectReference.Create(this);
         _editorValue = Value ?? string.Empty;
+        DrawerCoordinator.OnChanged += HandleDrawerCoordinatorChanged;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -208,6 +210,7 @@ else
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
+        DrawerCoordinator.OnChanged -= HandleDrawerCoordinatorChanged;
         await DestroyEditorAsync();
         _dotNetRef?.Dispose();
     }
@@ -395,6 +398,12 @@ else
     {
         if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(id))
             return;
+
+        DrawerCoordinator.Close();
+        if (DrawerCoordinator.Current != DrawerType.None)
+        {
+            return;
+        }
 
         _externalPreviewOpen = true;
         _externalPreviewLoading = true;
@@ -650,6 +659,17 @@ else
     {
         _externalPreviewOpen = false;
         StateHasChanged();
+    }
+
+    private void HandleDrawerCoordinatorChanged()
+    {
+        if (!_externalPreviewOpen || DrawerCoordinator.Current == DrawerType.None)
+        {
+            return;
+        }
+
+        _externalPreviewOpen = false;
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private static bool TryParseExternalAutocompleteQuery(string query, out string sourceKey, out string remainder)

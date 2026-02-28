@@ -43,6 +43,21 @@
                             ValueChanged="@(async (bool enabled) => await OnToggleProvider(provider.Provider.Code, enabled))"
                             Disabled="@_updating" />
                     </MudStack>
+                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-3">
+                        <MudTextField T="string"
+                                      Label="Lookup key"
+                                      Placeholder="@provider.Provider.Code"
+                                      Immediate="true"
+                                      @bind-Value="provider.LookupKey"
+                                      Disabled="@_updating"
+                                      Style="max-width: 220px;" />
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="Size.Small"
+                                   Disabled="@_updating"
+                                   OnClick="@(async () => await OnSaveLookupKey(provider))">
+                            Save Key
+                        </MudButton>
+                    </MudStack>
                 </MudPaper>
             }
         </MudStack>
