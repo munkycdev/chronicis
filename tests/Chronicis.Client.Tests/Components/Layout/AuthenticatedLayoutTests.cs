@@ -259,16 +259,11 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
     [Fact]
     public void Render_AdminButton_ClickNavigatesToAdminUtilities()
     {
-        _authService.GetCurrentUserAsync().Returns(new UserInfo { DisplayName = "Admin", Email = "admin@example.com" });
-        _adminAuthService.IsSysAdminAsync().Returns(true);
+        var instance = CreateInstance();
         var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
         Assert.NotNull(nav);
-        var cut = RenderComponent<AuthenticatedLayout>(
-            ComponentParameter.CreateParameter("Body", (RenderFragment)(_ => { })));
 
-        var adminButton = cut.FindComponents<MudIconButton>()
-            .First(b => b.Instance.Icon == Icons.Material.Filled.AdminPanelSettings);
-        adminButton.Find("button").Click();
+        InvokePrivate(instance, "OpenAdminUtilities");
 
         Assert.Contains("/admin/utilities", nav!.Uri, StringComparison.OrdinalIgnoreCase);
     }
@@ -670,6 +665,26 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
         InvokePrivate(instance, "OnCtrlT");
 
         _drawerCoordinator.Received(1).Toggle(DrawerType.Tutorial);
+    }
+
+    [Fact]
+    public void OnCtrlShiftF_OpensFeaturedArticleDrawerThroughCoordinator()
+    {
+        var instance = CreateInstance();
+
+        InvokePrivate(instance, "OnCtrlShiftF");
+
+        _drawerCoordinator.Received(1).Open(DrawerType.FeaturedArticle);
+    }
+
+    [Fact]
+    public void OpenFeaturesDrawer_OpensFeaturedArticleDrawerThroughCoordinator()
+    {
+        var instance = CreateInstance();
+
+        InvokePrivate(instance, "OpenFeaturesDrawer");
+
+        _drawerCoordinator.Received(1).Open(DrawerType.FeaturedArticle);
     }
 
     [Fact]

@@ -61,11 +61,23 @@
 
         @if (_isSysAdmin)
         {
-            <MudTooltip Text="Admin Utilities">
-                <MudIconButton Icon="@Icons.Material.Filled.AdminPanelSettings"
-                               Color="Color.Inherit"
-                               OnClick="@(() => Navigation.NavigateTo("/admin/utilities"))" />
-            </MudTooltip>
+            <MudMenu Icon="@Icons.Material.Filled.AdminPanelSettings"
+                     Color="Color.Inherit"
+                     AnchorOrigin="Origin.BottomRight"
+                     TransformOrigin="Origin.TopRight">
+                <ChildContent>
+                    <MudMenuItem Icon="@Icons.Material.Filled.AdminPanelSettings"
+                                 IconColor="Color.Default"
+                                 OnClick="OpenAdminUtilities">
+                        Admin Utilities
+                    </MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.AutoStories"
+                                 IconColor="Color.Default"
+                                 OnClick="OpenFeaturesDrawer">
+                        Features
+                    </MudMenuItem>
+                </ChildContent>
+            </MudMenu>
         }
 
         <MudMenu Icon="@Icons.Material.Filled.AccountCircle"
@@ -209,6 +221,12 @@
     }
 
     [JSInvokable]
+    public void OnCtrlShiftF()
+    {
+        OpenFeaturesDrawer();
+    }
+
+    [JSInvokable]
     public void OnCtrlQ()
     {
         QuestDrawerService.Toggle();
@@ -335,6 +353,16 @@
     private void ToggleTutorialDrawer()
     {
         DrawerCoordinator.Toggle(DrawerType.Tutorial);
+    }
+
+    private void OpenAdminUtilities()
+    {
+        Navigation.NavigateTo("/admin/utilities");
+    }
+
+    private void OpenFeaturesDrawer()
+    {
+        DrawerCoordinator.Open(DrawerType.FeaturedArticle);
     }
 
     private bool ShouldRenderGlobalDrawerHost => !IsArticleRoute();

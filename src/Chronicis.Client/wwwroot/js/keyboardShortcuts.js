@@ -88,6 +88,15 @@ window.chronicisKeyboardShortcuts = {
             }
             return;
         }
+
+        // Ctrl+Shift+F - Open featured article drawer (works everywhere).
+        if (e.ctrlKey && e.shiftKey && e.key && e.key.toLowerCase() === 'f') {
+            e.preventDefault();
+            if (this.dotNetHelper) {
+                this.dotNetHelper.invokeMethodAsync('OnCtrlShiftF');
+            }
+            return;
+        }
         
         // Skip other shortcuts if in input
         if (isInInput) {

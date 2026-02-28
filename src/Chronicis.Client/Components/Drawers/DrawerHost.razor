@@ -104,6 +104,10 @@
                        IsForcedOpen="IsTutorialForcedOpen"
                        Article="Article" />
     </div>
+
+    <div class="drawer-host-pane @(IsFeaturedArticleOpen ? "active" : "")">
+        <FeaturedArticleDrawer IsOpen="IsFeaturedArticleOpen" />
+    </div>
 </MudDrawer>
 
 @code {
@@ -129,6 +133,7 @@
     private bool IsTutorialOpen => DrawerCoordinator.Current == DrawerType.Tutorial;
     private bool IsQuestsOpen => DrawerCoordinator.Current == DrawerType.Quests;
     private bool IsMetadataOpen => DrawerCoordinator.Current == DrawerType.Metadata;
+    private bool IsFeaturedArticleOpen => DrawerCoordinator.Current == DrawerType.FeaturedArticle;
     private bool IsTutorialForcedOpen => DrawerCoordinator.IsForcedOpen && IsTutorialOpen;
     private bool CanCloseCurrentDrawer => IsAnyDrawerOpen && !IsTutorialForcedOpen;
 
@@ -137,6 +142,7 @@
         DrawerType.Tutorial => "Tutorial",
         DrawerType.Quests => "Quests",
         DrawerType.Metadata => "Metadata",
+        DrawerType.FeaturedArticle => "Features",
         _ => string.Empty
     };
 
@@ -145,6 +151,7 @@
         DrawerType.Tutorial => Icons.Material.Filled.School,
         DrawerType.Quests => Icons.Material.Filled.Assignment,
         DrawerType.Metadata => Icons.Material.Filled.IntegrationInstructions,
+        DrawerType.FeaturedArticle => Icons.Material.Filled.AutoStories,
         _ => Icons.Material.Filled.HelpOutline
     };
 

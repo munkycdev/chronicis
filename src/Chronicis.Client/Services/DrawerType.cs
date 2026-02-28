@@ -8,5 +8,6 @@ public enum DrawerType
     None = 0,
     Tutorial = 1,
     Quests = 2,
-    Metadata = 3
+    Metadata = 3,
+    FeaturedArticle = 4
 }
