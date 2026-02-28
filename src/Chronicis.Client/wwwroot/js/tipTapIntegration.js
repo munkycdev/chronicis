@@ -19,7 +19,7 @@ window.addEventListener('tiptap-ready', function() {
 // Markdown will have #, *, -, etc. without HTML tags
 function isHtmlContent(content) {
     if (!content || content.trim() === '') return false;
-    
+
     // Check for common HTML tags that TipTap produces
     const htmlTagPattern = /<(p|h[1-6]|ul|ol|li|strong|em|a|pre|code|blockquote|div|span|br|table|thead|tbody|tr|th|td)[^>]*>/i;
     return htmlTagPattern.test(content);
@@ -28,11 +28,11 @@ function isHtmlContent(content) {
 // Ensure content is HTML - convert from markdown if needed
 function ensureHtml(content) {
     if (!content || content.trim() === '') return '<p></p>';
-    
+
     if (isHtmlContent(content)) {
         return content;
     }
-    
+
     // Content appears to be markdown - convert to HTML
     return markdownToHTML(content);
 }
@@ -245,7 +245,7 @@ function createTableControlButton(config, runCommand) {
     button.setAttribute('aria-label', config.title);
     button.innerHTML = `<i class="${config.icon}" aria-hidden="true"></i><span>${config.label}</span>`;
     button.dataset.requiresTable = config.requiresTable ? 'true' : 'false';
-    button.addEventListener('click', () => runCommand(config.command, config.args));
+    button.addEventListener('click', () => runCommand(config));
     return button;
 }
 
@@ -265,7 +265,7 @@ function disposeTipTapTableControls(editorId) {
     delete window.tipTapTableControlTeardowns[editorId];
 }
 
-function initializeTipTapTableControls(editorId, editor) {
+function initializeTipTapTableControls(editorId, editor, dotNetHelper) {
     if (!editorId || !editor) {
         return;
     }
@@ -288,29 +288,47 @@ function initializeTipTapTableControls(editorId, editor) {
     controls.setAttribute('role', 'toolbar');
     controls.setAttribute('aria-label', 'Table controls');
 
-    const runCommand = (command, args) => {
+    const runCommand = (config) => {
         if (!editor || editor.isDestroyed) {
             return;
         }
 
         try {
-            const chain = editor.chain().focus();
-            if (typeof chain[command] !== 'function') {
+            if (typeof config.action === 'function') {
+                config.action();
+                updateTipTapTableControlState(editor, controls);
                 return;
             }
 
-            const result = args === undefined ? chain[command]() : chain[command](args);
+            const chain = editor.chain().focus();
+            if (typeof chain[config.command] !== 'function') {
+                return;
+            }
+
+            const result = config.args === undefined ? chain[config.command]() : chain[config.command](config.args);
             if (result && typeof result.run === 'function') {
                 result.run();
             }
         } catch (err) {
-            console.error(`Failed to run TipTap table command '${command}'`, err);
+            const actionName = config.command || config.label || 'unknown';
+            console.error(`Failed to run TipTap table command '${actionName}'`, err);
         }
 
         updateTipTapTableControlState(editor, controls);
     };
 
     const buttonConfigs = [
+        {
+            label: 'Image',
+            title: 'Insert image',
+            icon: 'fa-solid fa-image',
+            requiresTable: false,
+            action: () => {
+                if (typeof window.triggerImageUpload === 'function') {
+                    window.triggerImageUpload(editorId, dotNetHelper);
+                }
+            }
+        },
         {
             label: 'Insert',
             title: 'Insert table (3x3)',
@@ -493,7 +511,7 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
 
     // Store editor instance
     window.tipTapEditors[editorId] = editor;
-    initializeTipTapTableControls(editorId, editor);
+    initializeTipTapTableControls(editorId, editor, dotNetHelper);
 
     // Add click handler for wiki links
     container.addEventListener('click', (e) => {
@@ -503,7 +521,7 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
             e.stopPropagation();
             const targetArticleId = wikiLink.getAttribute('data-target-id');
             const isBroken = wikiLink.getAttribute('data-broken') === 'true';
-            
+
             if (targetArticleId) {
                 if (isBroken) {
                     // Dispatch event for broken link - Blazor will handle via event listener
@@ -540,26 +558,26 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
         const wikiLink = e.target.closest('span[data-type="wiki-link"]');
         if (wikiLink && !wikiLink.hasAttribute('data-tooltip-loading')) {
             const targetArticleId = wikiLink.getAttribute('data-target-id');
-            
+
             // Cancel any pending hide
             cancelTooltipHide();
-            
+
             // Clear any existing show timeout
             if (tooltipShowTimeout) {
                 clearTimeout(tooltipShowTimeout);
             }
-            
+
             // Add slight delay to avoid flickering on quick mouse passes
             tooltipShowTimeout = setTimeout(async () => {
                 if (!targetArticleId) return;
-                
+
                 // Mark as loading to prevent duplicate requests
                 wikiLink.setAttribute('data-tooltip-loading', 'true');
-                
+
                 try {
                     // First try to get AI summary preview
                     const summaryPreview = await dotNetHelper.invokeMethodAsync('GetArticleSummaryPreview', targetArticleId);
-                    
+
                     if (summaryPreview && summaryPreview.summary) {
                         // Show rich summary tooltip
                         showSummaryTooltip(wikiLink, summaryPreview);
@@ -644,51 +662,51 @@ function scheduleTooltipHide(delay = 100) {
 
 function showWikiLinkTooltip(element, path) {
     hideWikiLinkTooltip();
-    
+
     const tooltip = document.createElement('div');
     tooltip.className = 'wiki-link-tooltip';
     tooltip.textContent = path;
-    
+
     positionTooltip(tooltip, element);
-    
+
     document.body.appendChild(tooltip);
     currentWikiLinkTooltip = tooltip;
-    
+
     addTooltipHoverHandlers(tooltip);
 }
 
 function showSummaryTooltip(element, preview) {
     hideWikiLinkTooltip();
-    
+
     const tooltip = document.createElement('div');
     tooltip.className = 'wiki-link-tooltip wiki-link-tooltip--summary';
-    
+
     // Build tooltip content
     const header = document.createElement('div');
     header.className = 'wiki-link-tooltip__header';
-    
+
     const title = document.createElement('span');
     title.className = 'wiki-link-tooltip__title';
     title.textContent = preview.title;
     header.appendChild(title);
-    
+
     const badge = document.createElement('span');
     badge.className = 'wiki-link-tooltip__badge';
     badge.textContent = 'AI Summary';
     header.appendChild(badge);
-    
+
     tooltip.appendChild(header);
-    
+
     const summary = document.createElement('div');
     summary.className = 'wiki-link-tooltip__summary';
     summary.textContent = preview.summary;
     tooltip.appendChild(summary);
-    
+
     positionTooltip(tooltip, element);
-    
+
     document.body.appendChild(tooltip);
     currentWikiLinkTooltip = tooltip;
-    
+
     addTooltipHoverHandlers(tooltip);
 }
 
@@ -873,7 +891,7 @@ function htmlToMarkdown(html) {
     markdown = markdown.replace(/<p[^>]*>/gi, '');
     markdown = markdown.replace(/<\/p>/gi, '\n\n');
     markdown = markdown.replace(/<br\s*\/?>/gi, '\n');
-    
+
     // Iteratively remove HTML tags to handle malformed/nested tags
     // This prevents bypass via constructs like <script<script>>
     let previousLength;

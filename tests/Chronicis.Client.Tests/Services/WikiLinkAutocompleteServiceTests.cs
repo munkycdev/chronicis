@@ -1,3 +1,4 @@
+using System.Reflection;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -307,6 +308,74 @@ public class WikiLinkAutocompleteServiceTests
         await sut.ShowAsync("rules/acid", 0, 0, worldId);
 
         await externalApi.Received(1).GetSuggestionsAsync(worldId, "srd14", "acid", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ShowAsync_KnownPrefixWithoutSlash_UsesStartsWithMatchAndLookupKeyFallback()
+    {
+        var worldId = Guid.NewGuid();
+        var externalApi = Substitute.For<IExternalLinkApiService>();
+        externalApi.GetSuggestionsAsync(worldId, "open5e", "", Arg.Any<CancellationToken>())
+            .Returns(new List<ExternalLinkSuggestionDto>());
+
+        var providerApi = Substitute.For<IResourceProviderApiService>();
+        providerApi.GetWorldProvidersAsync(worldId).Returns(new List<WorldResourceProviderDto>
+        {
+            new()
+            {
+                IsEnabled = true,
+                LookupKey = "   ",
+                Provider = new ResourceProviderDto
+                {
+                    Code = "Open5E",
+                    Name = "Open5E",
+                    Description = "",
+                    DocumentationLink = "",
+                    License = ""
+                }
+            }
+        });
+
+        var sut = CreateService(Substitute.For<ILinkApiService>(), externalApi, providerApi);
+        await sut.ShowAsync("open5espells", 0, 0, worldId);
+
+        Assert.True(sut.IsExternalQuery);
+        Assert.Equal("open5e", sut.ExternalSourceKey);
+        Assert.Equal(string.Empty, sut.Query);
+        await externalApi.Received(1).GetSuggestionsAsync(worldId, "open5e", "", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void TryParseExternalQuery_WithWhitespaceLookupKey_UsesProviderCodeFallback()
+    {
+        var method = typeof(WikiLinkAutocompleteService).GetMethod(
+            "TryParseExternalQuery",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        Assert.NotNull(method);
+
+        IReadOnlyList<WorldResourceProviderDto> worldProviders = new List<WorldResourceProviderDto>
+        {
+            new()
+            {
+                LookupKey = "   ",
+                Provider = new ResourceProviderDto
+                {
+                    Code = "Open5E",
+                    Name = "Open5E",
+                    Description = "",
+                    DocumentationLink = "",
+                    License = ""
+                }
+            }
+        };
+
+        object?[] args = ["open5e/acid", worldProviders, string.Empty, string.Empty];
+        var parsed = (bool)method!.Invoke(null, args)!;
+
+        Assert.True(parsed);
+        Assert.Equal("open5e", args[2]);
+        Assert.Equal("acid", args[3]);
     }
 
     private static WikiLinkAutocompleteService CreateService(

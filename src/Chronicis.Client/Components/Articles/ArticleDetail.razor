@@ -88,20 +88,6 @@ else
             </div>
         }
 
-        <!-- Editor Toolbar -->
-        <div class="chronicis-editor-toolbar mb-2">
-            <MudTooltip Text="Insert Image" Placement="Placement.Top">
-                <MudButton
-                    Variant="Variant.Filled"
-                    Color="Color.Primary"
-                    OnClick="InsertImageFromToolbar"
-                    Disabled="!_editorInitialized"
-                    StartIcon="@Icons.Material.Filled.Image">
-                    Insert Image
-                </MudButton>
-            </MudTooltip>
-        </div>
-
         <!-- TipTap Editor Container -->
         <div id="tiptap-editor-@_article.Id" class="chronicis-editor-container mb-4"></div>
 
@@ -1116,12 +1102,6 @@ else
             Snackbar.Add(message, Severity.Error);
             StateHasChanged();
         });
-    }
-
-    private async Task InsertImageFromToolbar()
-    {
-        if (_article == null || !_editorInitialized) return;
-        await JSRuntime.InvokeVoidAsync("triggerImageUpload", $"tiptap-editor-{_article.Id}", _dotNetHelper);
     }
 
     #endregion

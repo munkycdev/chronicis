@@ -1,3 +1,5 @@
 cd z:\repos\chronicis\src\Chronicis.Api
+clear
 
-dotnet watch run
+Write-Host "Starting Chronicis API"
+dotnet watch --no-launch-profile run --no-hot-reload
