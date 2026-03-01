@@ -363,7 +363,7 @@ Chronicis.Shared  ---->  (no project references)
 - Explicit conventions are machine-enforced in architectural tests.
 
 ### 9.2 Notable Tradeoffs
-- Most API domains use direct DbContext access in services/controllers, while repository abstraction is selectively applied (resource providers only).
+- API controllers are orchestration-only (no direct `ChronicisDbContext` injection), while most persistence/query behavior remains centralized in services with direct `DbContext` usage.
 - Architecture combines both first-class Session entities and legacy session article patterns, increasing compatibility complexity.
 - Public and authenticated read models coexist and require duplicated access-rule rigor across service/controller boundaries.
 
@@ -373,5 +373,131 @@ Chronicis.Shared  ---->  (no project references)
 - Prioritize explicit boundaries and testability over clever coupling shortcuts.
 - Favor incremental refactors that reduce blast radius without forcing endpoint contract rewrites.
 
-## 10) Out of Scope
+## 10) Architecture Governance
+
+### 10.1 Ownership Model
+- API data-access policy owner:
+- Primary owner: `API Platform Lead`.
+- Supporting owners: maintainers of `src/Chronicis.Api/Services` and `src/Chronicis.Api/Controllers`.
+- Decision authority: data-access boundary exceptions and policy interpretation.
+- Session domain architecture owner:
+- Primary owner: `Campaign and Session Domain Lead`.
+- Supporting owners: maintainers of `SessionService`, `PublicWorldService`, and session-related API contracts.
+- Decision authority: canonical session flow and compatibility boundary scope.
+- Read-policy architecture owner:
+- Primary owner: `Read Policy and Public Access Lead`.
+- Supporting owners: maintainers of `PublicController`, `PublicWorldService`, and authenticated read services.
+- Decision authority: shared policy inputs and parity decisions.
+
+### 10.2 API Data-Access Policy by Component Type
+- Controller (`src/Chronicis.Api/Controllers/*`):
+- Allowed: HTTP validation, status mapping, orchestration via service interfaces.
+- Not allowed: direct `ChronicisDbContext` injection, EF query composition, `SaveChanges*` calls.
+- Write orchestration service (`src/Chronicis.Api/Services/*` write paths):
+- Allowed: domain-state mutation, transactional coordination, persistence via owned boundary.
+- Not allowed: cross-domain persistence orchestration that bypasses service boundaries.
+- Read projection service (`src/Chronicis.Api/Services/*` read paths):
+- Allowed: projection-only queries, `AsNoTracking` reads, DTO assembly.
+- Not allowed: tracked entity mutation, `SaveChanges*`, mixed write behavior.
+- Provider adapter/service (`src/Chronicis.Api/Services/ExternalLinks/*`, provider settings paths):
+- Allowed: external provider orchestration and persistence through repository abstractions.
+- Not allowed: direct provider metadata persistence via `ChronicisDbContext` in adapter orchestration code.
+- Health/infrastructure service:
+- Allowed: health probes, diagnostics, infrastructure status reads.
+- Not allowed: business-domain writes.
+
+### 10.3 Classification Decision Tree for New API Code
+- If code is an HTTP entry point, place it in a controller and call service interfaces only.
+- If code mutates domain state, place it in a write orchestration service.
+- If code only assembles response projections, place it in a read projection service.
+- If code talks to external providers and world-provider metadata, place it behind provider adapters and repositories.
+- If placement is ambiguous, architecture owner decides and records the decision.
+
+### 10.4 Policy Exception Rules
+- Every exception must include: component, owner, rationale, expiry date, and closure ticket.
+- Exceptions are temporary and must be reviewed each release.
+- Unowned or expired exceptions are treated as policy violations.
+
+### 10.5 Architecture Map (Entry Points and Dependency Seams)
+- Authenticated API entry points with architecture impact:
+- `ArticlesController`, `WorldsController`, `DashboardController`, `SearchController`, `SessionsController`.
+- Public API entry point with architecture impact:
+- `PublicController` (backed by `PublicWorldService`).
+- Shared policy/traversal seam:
+- `ArticleHierarchyService` is shared between public and authenticated traversal/breadcrumb logic.
+- Persistence boundary seam:
+- `ChronicisDbContext` is directly injected across many services and controllers.
+- Existing repository seam:
+- `IResourceProviderRepository` / `ResourceProviderRepository` is the primary explicit repository abstraction path.
+
+### 10.6 Current Implementation Inventory (As Of 2026-02-28)
+- Data-access boundaries:
+- Services with direct `ChronicisDbContext` field injection: `33`.
+- Controllers with direct `ChronicisDbContext` field injection: `0`.
+- Session model:
+- Legacy `ArticleType.Session` references in API controllers/services (excluding migrations/tests): `6`.
+- Distribution: `ArticleValidationService` (`1`), `PublicWorldService` (`5`).
+- Access-policy enforcement:
+- Public visibility/public slug rule condition hits in key read-path services/controllers (`PublicWorldService`, `WorldService`, `SessionService`, `SummaryService`, `PublicController`): `58`.
+
+### 10.7 Measurement Commands (Repeatable)
+```powershell
+# Services with direct DbContext fields
+rg -l "private readonly\s+ChronicisDbContext\b|private readonly\s+.*\s+_db\b" src/Chronicis.Api/Services
+
+# Controllers with direct DbContext fields
+rg -l "private readonly\s+ChronicisDbContext\b|private readonly\s+.*\s+_db\b" src/Chronicis.Api/Controllers
+
+# Legacy session references in active API code (exclude migrations)
+rg -n "ArticleType\.Session\b" src/Chronicis.Api/Services src/Chronicis.Api/Controllers --glob "!**/Migrations/**"
+
+# Public-policy rule hotspots in key read-path services/controllers
+rg -n "ArticleVisibility\.Public|IsPublic|PublicSlug" `
+  src/Chronicis.Api/Services/PublicWorldService.cs `
+  src/Chronicis.Api/Services/WorldService.cs `
+  src/Chronicis.Api/Services/SessionService.cs `
+  src/Chronicis.Api/Services/SummaryService.cs `
+  src/Chronicis.Api/Controllers/PublicController.cs
+```
+
+### 10.8 Compliance Metrics and Release Gates
+- Data-access boundary metric:
+- Measure: number of controllers/services directly injecting `ChronicisDbContext`.
+- Gate: count must not increase release-over-release; temporary exceptions must be tracked.
+- Session architecture metric:
+- Measure: number of legacy `ArticleType.Session` references outside migrations/tests.
+- Gate: count must trend down until only approved compatibility boundaries remain.
+- Access-policy parity metric:
+- Measure: duplicated visibility/public-slug rule paths outside shared policy inputs.
+- Gate: duplicated rule logic must trend down; divergences block release sign-off.
+
+### 10.9 Data-Access Boundary Operating Model
+- Domain boundary unit:
+- One API domain boundary consists of controller orchestration paths, owning services, targeted tests, and exception-ledger coverage.
+- API domain coverage groups:
+- Content and graph domains: `Articles`, `Worlds`, `Public read path`, `Search`.
+- Collaboration and progression domains: `Campaigns`, `Arcs`, `Sessions`, `WorldMembership`, `WorldInvitation`, `WorldDocuments`.
+- Supporting domains: `Summary`, `Admin`, `Tutorial`, `Health`, and edge endpoints.
+- Change checklist:
+- Classify each new or changed code path to a policy type from Section `10.2`.
+- Keep controllers free of direct `ChronicisDbContext` usage.
+- Keep persistence and projection logic inside owning services.
+- Add or update boundary and regression tests for touched domains.
+- Run repo verification (`scripts/verify.ps1`) before merge.
+- Release criteria:
+- No new controller-level `DbContext` usage.
+- No unmanaged policy exceptions.
+- Domain behavior remains contract-compatible unless versioned API changes are explicitly approved.
+
+### 10.10 Data-Access Exception Ledger
+- Required exception fields are enforced by Section `10.4`: component, owner, rationale, expiry date, closure ticket.
+- Active exceptions: none.
+- Baseline statement: no controller-level `DbContext` exceptions are permitted.
+
+### 10.11 Domain Boundary Coverage
+- Content and graph domains are implemented through service-owned boundaries for `Articles`, `Worlds`, `Public read path`, and `Search`.
+- Collaboration and progression domains are implemented through service-owned boundaries for `Campaigns`, `Arcs`, `Sessions`, `WorldMembership`, `WorldInvitation`, and `WorldDocuments`.
+- Supporting domains are implemented through service-owned boundaries for `Summary`, `Admin`, `Tutorial`, `Health`, and edge endpoints.
+
+## 11) Out of Scope
 - `Chronicis.CaptureApp` architecture is intentionally excluded.

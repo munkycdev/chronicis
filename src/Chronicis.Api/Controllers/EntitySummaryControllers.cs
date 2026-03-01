@@ -1,10 +1,8 @@
-using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Controllers;
 
@@ -18,18 +16,18 @@ namespace Chronicis.Api.Controllers;
 public class ArticleSummaryController : ControllerBase
 {
     private readonly ISummaryService _summaryService;
-    private readonly ChronicisDbContext _context;
+    private readonly ISummaryAccessService _summaryAccessService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ArticleSummaryController> _logger;
 
     public ArticleSummaryController(
         ISummaryService summaryService,
-        ChronicisDbContext context,
+        ISummaryAccessService summaryAccessService,
         ICurrentUserService currentUserService,
         ILogger<ArticleSummaryController> logger)
     {
         _summaryService = summaryService;
-        _context = context;
+        _summaryAccessService = summaryAccessService;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -162,10 +160,7 @@ public class ArticleSummaryController : ControllerBase
 
     private async Task<bool> HasAccessAsync(Guid articleId, Guid userId)
     {
-        return await _context.Articles
-            .Where(a => a.Id == articleId)
-            .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == userId))
-            .AnyAsync();
+        return await _summaryAccessService.CanAccessArticleAsync(articleId, userId);
     }
 }
 
@@ -178,18 +173,18 @@ public class ArticleSummaryController : ControllerBase
 public class CampaignSummaryController : ControllerBase
 {
     private readonly ISummaryService _summaryService;
-    private readonly ChronicisDbContext _context;
+    private readonly ISummaryAccessService _summaryAccessService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CampaignSummaryController> _logger;
 
     public CampaignSummaryController(
         ISummaryService summaryService,
-        ChronicisDbContext context,
+        ISummaryAccessService summaryAccessService,
         ICurrentUserService currentUserService,
         ILogger<CampaignSummaryController> logger)
     {
         _summaryService = summaryService;
-        _context = context;
+        _summaryAccessService = summaryAccessService;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -292,10 +287,7 @@ public class CampaignSummaryController : ControllerBase
 
     private async Task<bool> HasAccessAsync(Guid campaignId, Guid userId)
     {
-        return await _context.Campaigns
-            .Where(c => c.Id == campaignId)
-            .Where(c => c.World != null && c.World.Members.Any(m => m.UserId == userId))
-            .AnyAsync();
+        return await _summaryAccessService.CanAccessCampaignAsync(campaignId, userId);
     }
 }
 
@@ -308,18 +300,18 @@ public class CampaignSummaryController : ControllerBase
 public class ArcSummaryController : ControllerBase
 {
     private readonly ISummaryService _summaryService;
-    private readonly ChronicisDbContext _context;
+    private readonly ISummaryAccessService _summaryAccessService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ArcSummaryController> _logger;
 
     public ArcSummaryController(
         ISummaryService summaryService,
-        ChronicisDbContext context,
+        ISummaryAccessService summaryAccessService,
         ICurrentUserService currentUserService,
         ILogger<ArcSummaryController> logger)
     {
         _summaryService = summaryService;
-        _context = context;
+        _summaryAccessService = summaryAccessService;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -422,9 +414,6 @@ public class ArcSummaryController : ControllerBase
 
     private async Task<bool> HasAccessAsync(Guid arcId, Guid userId)
     {
-        return await _context.Arcs
-            .Where(a => a.Id == arcId)
-            .Where(a => a.Campaign != null && a.Campaign.World != null && a.Campaign.World.Members.Any(m => m.UserId == userId))
-            .AnyAsync();
+        return await _summaryAccessService.CanAccessArcAsync(arcId, userId);
     }
 }

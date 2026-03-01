@@ -12,11 +12,12 @@ public class CampaignSummaryControllerCoverageSmokeTests
     [Fact]
     public async Task CampaignSummaryController_GetSummary_ReturnsNotFound_WhenNoAccess()
     {
-        using var db = ControllerCoverageTestFixtures.CreateDbContext();
         var summaryService = Substitute.For<ISummaryService>();
+        var accessService = Substitute.For<ISummaryAccessService>();
+        accessService.CanAccessCampaignAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(false);
         var sut = new CampaignSummaryController(
             summaryService,
-            db,
+            accessService,
             ControllerCoverageTestFixtures.CreateCurrentUserService(),
             NullLogger<CampaignSummaryController>.Instance);
 

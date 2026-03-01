@@ -13,7 +13,6 @@ public class ArticlesControllerCoverageSmokeTests
     [Fact]
     public async Task ArticlesController_GetRootArticles_ReturnsOk()
     {
-        using var db = ControllerCoverageTestFixtures.CreateDbContext();
         var user = ControllerCoverageTestFixtures.CreateCurrentUserService();
         var articleService = Substitute.For<IArticleService>();
         articleService.GetRootArticlesAsync(Arg.Any<Guid>(), Arg.Any<Guid?>()).Returns([]);
@@ -25,9 +24,8 @@ public class ArticlesControllerCoverageSmokeTests
             Substitute.For<IAutoLinkService>(),
             Substitute.For<IArticleExternalLinkService>(),
             Substitute.For<IArticleHierarchyService>(),
-            db,
+            Substitute.For<IArticleDataAccessService>(),
             user,
-            Substitute.For<IWorldDocumentService>(),
             NullLogger<ArticlesController>.Instance);
 
         var result = await sut.GetRootArticles(null);

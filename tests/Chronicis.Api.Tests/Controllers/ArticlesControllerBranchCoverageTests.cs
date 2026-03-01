@@ -1,11 +1,7 @@
 using Chronicis.Api.Controllers;
 using Chronicis.Api.Services;
-using Chronicis.Api.Services.Articles;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Abstractions;
-using NSubstitute;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
@@ -27,7 +23,7 @@ public class ArticlesControllerBranchCoverageTests
     }
 
     [Fact]
-    public async Task ArticlesController_GetReadableArticlesQuery_IncludesReadableWorldArticlesAndTutorials()
+    public async Task ArticleDataAccessService_ResolveReadableLinks_IncludesReadableWorldArticlesAndTutorials()
     {
         using var db = ControllerCoverageTestFixtures.CreateDbContext();
         var user = ControllerCoverageTestFixtures.CreateCurrentUserService();
@@ -40,60 +36,58 @@ public class ArticlesControllerBranchCoverageTests
             new World { Id = readableWorldId, Name = "Readable", OwnerId = currentUser.Id, Slug = "readable", CreatedAt = DateTime.UtcNow },
             new World { Id = unreadableWorldId, Name = "Unreadable", OwnerId = otherUserId, Slug = "unreadable", CreatedAt = DateTime.UtcNow });
         db.WorldMembers.Add(new WorldMember { Id = Guid.NewGuid(), WorldId = readableWorldId, UserId = currentUser.Id, Role = WorldRole.GM, JoinedAt = DateTime.UtcNow });
+
+        var readableArticle = new Article
+        {
+            Id = Guid.NewGuid(),
+            Title = "Readable World Article",
+            Slug = "readable-world-article",
+            WorldId = readableWorldId,
+            Type = ArticleType.WikiArticle,
+            Visibility = ArticleVisibility.Public,
+            CreatedBy = currentUser.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var unreadableArticle = new Article
+        {
+            Id = Guid.NewGuid(),
+            Title = "Unreadable World Article",
+            Slug = "unreadable-world-article",
+            WorldId = unreadableWorldId,
+            Type = ArticleType.WikiArticle,
+            Visibility = ArticleVisibility.Public,
+            CreatedBy = otherUserId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var tutorialArticle = new Article
+        {
+            Id = Guid.NewGuid(),
+            Title = "Tutorial Article",
+            Slug = "tutorial-article",
+            WorldId = Guid.Empty,
+            Type = ArticleType.Tutorial,
+            Visibility = ArticleVisibility.Public,
+            CreatedBy = currentUser.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+
         db.Articles.AddRange(
-            new Article
-            {
-                Id = Guid.NewGuid(),
-                Title = "Readable World Article",
-                Slug = "readable-world-article",
-                WorldId = readableWorldId,
-                Type = ArticleType.WikiArticle,
-                Visibility = ArticleVisibility.Public,
-                CreatedBy = currentUser.Id,
-                CreatedAt = DateTime.UtcNow
-            },
-            new Article
-            {
-                Id = Guid.NewGuid(),
-                Title = "Unreadable World Article",
-                Slug = "unreadable-world-article",
-                WorldId = unreadableWorldId,
-                Type = ArticleType.WikiArticle,
-                Visibility = ArticleVisibility.Public,
-                CreatedBy = otherUserId,
-                CreatedAt = DateTime.UtcNow
-            },
-            new Article
-            {
-                Id = Guid.NewGuid(),
-                Title = "Tutorial Article",
-                Slug = "tutorial-article",
-                WorldId = Guid.Empty,
-                Type = ArticleType.Tutorial,
-                Visibility = ArticleVisibility.Public,
-                CreatedBy = currentUser.Id,
-                CreatedAt = DateTime.UtcNow
-            });
+            readableArticle,
+            unreadableArticle,
+            tutorialArticle);
         db.SaveChanges();
 
-        var sut = new ArticlesController(
-            Substitute.For<IArticleService>(),
-            Substitute.For<IArticleValidationService>(),
-            Substitute.For<ILinkSyncService>(),
-            Substitute.For<IAutoLinkService>(),
-            Substitute.For<IArticleExternalLinkService>(),
-            Substitute.For<IArticleHierarchyService>(),
-            db,
-            user,
-            Substitute.For<IWorldDocumentService>(),
-            NullLogger<ArticlesController>.Instance);
+        var service = new ArticleDataAccessService(db, NSubstitute.Substitute.For<IWorldDocumentService>());
 
-        var method = RemainingApiBranchCoverageTestHelpers.GetMethod(typeof(ArticlesController), "GetReadableArticlesQuery");
-        var query = (IQueryable<Article>)method.Invoke(sut, [currentUser.Id])!;
-        var ids = query.AsNoTracking().Select(a => a.Title).ToList();
+        var result = await service.ResolveReadableLinksAsync(
+            [readableArticle.Id, unreadableArticle.Id, tutorialArticle.Id],
+            currentUser.Id);
 
-        Assert.Contains("Readable World Article", ids);
-        Assert.Contains("Tutorial Article", ids);
-        Assert.DoesNotContain("Unreadable World Article", ids);
+        var titles = result.Select(r => r.Title).ToList();
+        Assert.Contains("Readable World Article", titles);
+        Assert.Contains("Tutorial Article", titles);
+        Assert.DoesNotContain("Unreadable World Article", titles);
     }
 }

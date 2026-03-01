@@ -1,10 +1,8 @@
 using System.Reflection;
-using Chronicis.Api.Data;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Controllers;
 
@@ -16,21 +14,21 @@ namespace Chronicis.Api.Controllers;
 [Route("health")]
 public class HealthController : ControllerBase
 {
-    private readonly ChronicisDbContext _context;
     private readonly ILogger<HealthController> _logger;
     private readonly IConfiguration _configuration;
     private readonly ISystemHealthService _systemHealthService;
+    private readonly IHealthReadinessService _healthReadinessService;
 
     public HealthController(
-        ChronicisDbContext context,
         ILogger<HealthController> logger,
         IConfiguration configuration,
-        ISystemHealthService systemHealthService)
+        ISystemHealthService systemHealthService,
+        IHealthReadinessService healthReadinessService)
     {
-        _context = context;
         _logger = logger;
         _configuration = configuration;
         _systemHealthService = systemHealthService;
+        _healthReadinessService = healthReadinessService;
     }
 
     /// <summary>
@@ -58,10 +56,8 @@ public class HealthController : ControllerBase
     {
         try
         {
-            // Check database connectivity
-            var canConnect = await _context.Database.CanConnectAsync();
-
-            if (!canConnect)
+            var readiness = await _healthReadinessService.GetReadinessAsync();
+            if (!readiness.IsHealthy)
             {
                 _logger.LogWarning("Health check failed: Cannot connect to database");
                 return StatusCode(503, new
@@ -70,7 +66,7 @@ public class HealthController : ControllerBase
                     timestamp = DateTime.UtcNow,
                     checks = new
                     {
-                        database = "unavailable"
+                        database = readiness.DatabaseStatus
                     }
                 });
             }
@@ -89,7 +85,7 @@ public class HealthController : ControllerBase
                 version = GetApiVersion(),
                 checks = new
                 {
-                    database = "connected",
+                    database = readiness.DatabaseStatus,
                     connectionInfo = maskedConnStr
                 }
             });

@@ -1,5 +1,4 @@
-using System.Text.RegularExpressions;
-using Chronicis.Api.Controllers;
+using Chronicis.Api.Services;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
@@ -7,24 +6,20 @@ namespace Chronicis.Api.Tests;
 public class SearchControllerBranchCoverageTests
 {
     [Fact]
-    public void SearchController_HashtagPattern_StaticInitializer_IsCovered()
+    public void SearchReadService_CleanForDisplay_CoversMarkupAndWikiLinkBranches()
     {
-        var field = typeof(SearchController).GetField(
-            "HashtagPattern",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var cleanForDisplay = RemainingApiBranchCoverageTestHelpers.GetMethod(typeof(SearchReadService), "CleanForDisplay");
 
-        Assert.NotNull(field);
+        var input = "<p>alpha</p> [[00000000-0000-0000-0000-000000000001|beta]]   gamma";
+        var cleaned = (string)cleanForDisplay.Invoke(null, [input])!;
 
-        var regex = Assert.IsType<Regex>(field!.GetValue(null));
-        var match = regex.Match("value #tag_1 value");
-        Assert.True(match.Success);
-        Assert.Equal("tag_1", match.Groups[1].Value);
+        Assert.Equal("alpha beta gamma", cleaned);
     }
 
     [Fact]
-    public void SearchController_ExtractSnippet_CoversBranches()
+    public void SearchReadService_ExtractSnippet_CoversBranches()
     {
-        var extractSnippet = RemainingApiBranchCoverageTestHelpers.GetMethod(typeof(SearchController), "ExtractSnippet");
+        var extractSnippet = RemainingApiBranchCoverageTestHelpers.GetMethod(typeof(SearchReadService), "ExtractSnippet");
 
         Assert.Equal(string.Empty, (string)extractSnippet.Invoke(null, ["", "q", 3])!);
 

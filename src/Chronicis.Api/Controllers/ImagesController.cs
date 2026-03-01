@@ -1,9 +1,8 @@
-using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
+using Chronicis.Api.Models;
 using Chronicis.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Controllers;
 
@@ -15,21 +14,15 @@ namespace Chronicis.Api.Controllers;
 [Route("api/images")]
 public class ImagesController : ControllerBase
 {
-    private readonly ChronicisDbContext _db;
-    private readonly IBlobStorageService _blobStorage;
+    private readonly IImageAccessService _imageAccessService;
     private readonly ICurrentUserService _currentUserService;
-    private readonly ILogger<ImagesController> _logger;
 
     public ImagesController(
-        ChronicisDbContext db,
-        IBlobStorageService blobStorage,
-        ICurrentUserService currentUserService,
-        ILogger<ImagesController> logger)
+        IImageAccessService imageAccessService,
+        ICurrentUserService currentUserService)
     {
-        _db = db;
-        _blobStorage = blobStorage;
+        _imageAccessService = imageAccessService;
         _currentUserService = currentUserService;
-        _logger = logger;
     }
 
     /// <summary>
@@ -41,35 +34,13 @@ public class ImagesController : ControllerBase
     public async Task<IActionResult> GetImage(Guid documentId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-
-        var document = await _db.WorldDocuments
-            .AsNoTracking()
-            .Include(d => d.World)
-            .FirstOrDefaultAsync(d => d.Id == documentId);
-
-        if (document == null)
+        var result = await _imageAccessService.GetImageDownloadUrlAsync(documentId, user.Id);
+        return result.Status switch
         {
-            return NotFound();
-        }
-
-        // Check access: user must be the world owner or a member
-        var hasAccess = document.World.OwnerId == user.Id
-            || await _db.WorldMembers.AnyAsync(m => m.WorldId == document.WorldId && m.UserId == user.Id);
-
-        if (!hasAccess)
-        {
-            return Forbid();
-        }
-
-        // Verify it's an image content type
-        if (!document.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-        {
-            _logger.LogWarning("Non-image document {DocumentId} requested via image proxy", documentId);
-            return BadRequest(new { error = "Document is not an image" });
-        }
-
-        var downloadUrl = await _blobStorage.GenerateDownloadSasUrlAsync(document.BlobPath);
-
-        return Redirect(downloadUrl);
+            ServiceStatus.NotFound => NotFound(),
+            ServiceStatus.Forbidden => Forbid(),
+            ServiceStatus.ValidationError => BadRequest(new { error = result.ErrorMessage }),
+            _ => Redirect(result.Value!)
+        };
     }
 }

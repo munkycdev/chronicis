@@ -12,11 +12,12 @@ public class ArticleSummaryControllerCoverageSmokeTests
     [Fact]
     public async Task ArticleSummaryController_GetSummary_ReturnsNotFound_WhenNoAccess()
     {
-        using var db = ControllerCoverageTestFixtures.CreateDbContext();
         var summaryService = Substitute.For<ISummaryService>();
+        var accessService = Substitute.For<ISummaryAccessService>();
+        accessService.CanAccessArticleAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(false);
         var sut = new ArticleSummaryController(
             summaryService,
-            db,
+            accessService,
             ControllerCoverageTestFixtures.CreateCurrentUserService(),
             NullLogger<ArticleSummaryController>.Instance);
 

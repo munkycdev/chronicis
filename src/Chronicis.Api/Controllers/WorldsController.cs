@@ -1,12 +1,10 @@
-using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
+using Chronicis.Api.Models;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Enums;
 using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Controllers;
 
@@ -23,8 +21,7 @@ public class WorldsController : ControllerBase
     private readonly IWorldInvitationService _invitationService;
     private readonly IWorldPublicSharingService _publicSharingService;
     private readonly IExportService _exportService;
-    private readonly IArticleHierarchyService _hierarchyService;
-    private readonly ChronicisDbContext _context;
+    private readonly IWorldLinkSuggestionService _worldLinkSuggestionService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<WorldsController> _logger;
 
@@ -34,8 +31,7 @@ public class WorldsController : ControllerBase
         IWorldInvitationService invitationService,
         IWorldPublicSharingService publicSharingService,
         IExportService exportService,
-        IArticleHierarchyService hierarchyService,
-        ChronicisDbContext context,
+        IWorldLinkSuggestionService worldLinkSuggestionService,
         ICurrentUserService currentUserService,
         ILogger<WorldsController> logger)
     {
@@ -44,8 +40,7 @@ public class WorldsController : ControllerBase
         _invitationService = invitationService;
         _publicSharingService = publicSharingService;
         _exportService = exportService;
-        _hierarchyService = hierarchyService;
-        _context = context;
+        _worldLinkSuggestionService = worldLinkSuggestionService;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -345,71 +340,12 @@ public class WorldsController : ControllerBase
         }
 
         _logger.LogDebugSanitized("Getting link suggestions for query '{Query}' in world {WorldId}", query, id);
-
-        // Verify user has access to the world
-        var hasAccess = await _context.WorldMembers
-            .AnyAsync(wm => wm.WorldId == id && wm.UserId == user.Id);
-
-        if (!hasAccess)
+        var result = await _worldLinkSuggestionService.GetSuggestionsAsync(id, query, user.Id);
+        return result.Status switch
         {
-            return Forbid();
-        }
-
-        var normalizedQuery = query.ToLowerInvariant();
-
-        // Search articles by title match
-        var titleMatches = await _context.Articles
-            .Where(a => a.WorldId == id)
-            .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
-            .Where(a => a.Title != null && a.Title.ToLower().Contains(normalizedQuery))
-            .OrderBy(a => a.Title)
-            .Take(20)
-            .Select(a => new LinkSuggestionDto
-            {
-                ArticleId = a.Id,
-                Title = a.Title ?? "Untitled",
-                Slug = a.Slug,
-                ArticleType = a.Type,
-                DisplayPath = "",
-                MatchedAlias = null // Title match, no alias
-            })
-            .ToListAsync();
-
-        // Search articles by alias match (excluding those already found by title)
-        var titleMatchIds = titleMatches.Select(t => t.ArticleId).ToHashSet();
-
-        var aliasMatches = await _context.ArticleAliases
-            .Include(aa => aa.Article)
-            .Where(aa => aa.Article.WorldId == id)
-            .Where(aa => aa.Article.Type != ArticleType.Tutorial && aa.Article.WorldId != Guid.Empty)
-            .Where(aa => aa.AliasText.ToLower().Contains(normalizedQuery))
-            .Where(aa => !titleMatchIds.Contains(aa.ArticleId))
-            .OrderBy(aa => aa.AliasText)
-            .Take(20)
-            .Select(aa => new LinkSuggestionDto
-            {
-                ArticleId = aa.ArticleId,
-                Title = aa.Article.Title ?? "Untitled",
-                Slug = aa.Article.Slug,
-                ArticleType = aa.Article.Type,
-                DisplayPath = "",
-                MatchedAlias = aa.AliasText // This matched via alias
-            })
-            .ToListAsync();
-
-        // Combine results: title matches first, then alias matches
-        var suggestions = titleMatches
-            .Concat(aliasMatches)
-            .Take(20)
-            .ToList();
-
-        // Build display paths using centralised hierarchy service
-        foreach (var suggestion in suggestions)
-        {
-            suggestion.DisplayPath = await _hierarchyService.BuildDisplayPathAsync(suggestion.ArticleId);
-        }
-
-        return Ok(new LinkSuggestionsResponseDto { Suggestions = suggestions });
+            ServiceStatus.Forbidden => Forbid(),
+            _ => Ok(new LinkSuggestionsResponseDto { Suggestions = result.Value ?? new List<LinkSuggestionDto>() })
+        };
     }
 
 }

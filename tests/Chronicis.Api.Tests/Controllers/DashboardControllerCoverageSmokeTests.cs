@@ -13,13 +13,12 @@ public class DashboardControllerCoverageSmokeTests
     [Fact]
     public async Task DashboardController_GetDashboard_ReturnsOk()
     {
-        using var db = ControllerCoverageTestFixtures.CreateDbContext();
-        var promptService = Substitute.For<IPromptService>();
-        promptService.GeneratePrompts(Arg.Any<DashboardDto>()).Returns([]);
+        var userService = ControllerCoverageTestFixtures.CreateCurrentUserService();
+        var readService = Substitute.For<IDashboardReadService>();
+        readService.GetDashboardAsync(Arg.Any<Guid>(), Arg.Any<string>()).Returns(new DashboardDto());
         var sut = new DashboardController(
-            db,
-            promptService,
-            ControllerCoverageTestFixtures.CreateCurrentUserService(),
+            readService,
+            userService,
             NullLogger<DashboardController>.Instance);
 
         var result = await sut.GetDashboard();

@@ -12,11 +12,12 @@ public class ArcSummaryControllerCoverageSmokeTests
     [Fact]
     public async Task ArcSummaryController_GetSummary_ReturnsNotFound_WhenNoAccess()
     {
-        using var db = ControllerCoverageTestFixtures.CreateDbContext();
         var summaryService = Substitute.For<ISummaryService>();
+        var accessService = Substitute.For<ISummaryAccessService>();
+        accessService.CanAccessArcAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(false);
         var sut = new ArcSummaryController(
             summaryService,
-            db,
+            accessService,
             ControllerCoverageTestFixtures.CreateCurrentUserService(),
             NullLogger<ArcSummaryController>.Instance);
 

@@ -200,11 +200,15 @@ internal class Program
             // Services
             builder.Services.AddScoped<IArticleHierarchyService, ArticleHierarchyService>();
             builder.Services.AddScoped<IArticleService, ArticleService>();
+            builder.Services.AddScoped<IArticleDataAccessService, ArticleDataAccessService>();
             builder.Services.AddScoped<IArticleValidationService, ArticleValidationService>();
             builder.Services.AddScoped<IArticleExternalLinkService, ArticleExternalLinkService>();
             builder.Services.AddScoped<ISummaryService, SummaryService>();
+            builder.Services.AddScoped<ISummaryAccessService, SummaryAccessService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IWorldService, WorldService>();
+            builder.Services.AddScoped<IWorldLinkService, WorldLinkService>();
+            builder.Services.AddScoped<IWorldLinkSuggestionService, WorldLinkSuggestionService>();
             builder.Services.AddScoped<IWorldMembershipService, WorldMembershipService>();
             builder.Services.AddScoped<IWorldInvitationService, WorldInvitationService>();
             builder.Services.AddScoped<IWorldPublicSharingService, WorldPublicSharingService>();
@@ -215,8 +219,12 @@ internal class Program
             builder.Services.AddScoped<ILinkSyncService, LinkSyncService>();
             builder.Services.AddScoped<IAutoLinkService, AutoLinkService>();
             builder.Services.AddScoped<IPromptService, PromptService>();
+            builder.Services.AddScoped<IDashboardReadService, DashboardReadService>();
+            builder.Services.AddScoped<ISearchReadService, SearchReadService>();
+            builder.Services.AddScoped<ICharacterClaimService, CharacterClaimService>();
             builder.Services.AddScoped<IPublicWorldService, PublicWorldService>();
             builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+            builder.Services.AddScoped<IImageAccessService, ImageAccessService>();
             builder.Services.AddScoped<IWorldDocumentService, WorldDocumentService>();
             builder.Services.AddScoped<IExportService, ExportService>();
             builder.Services.AddScoped<IResourceProviderService, ResourceProviderService>();
@@ -232,6 +240,7 @@ internal class Program
             builder.Services.AddScoped<Auth0HealthCheckService>();
             builder.Services.AddScoped<Open5eHealthCheckService>();
             builder.Services.AddScoped<ISystemHealthService, SystemHealthService>();
+            builder.Services.AddScoped<IHealthReadinessService, HealthReadinessService>();
 
             // Repositories
             builder.Services.AddScoped<IResourceProviderRepository, ResourceProviderRepository>();

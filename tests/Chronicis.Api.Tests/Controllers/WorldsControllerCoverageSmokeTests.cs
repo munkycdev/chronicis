@@ -12,7 +12,6 @@ public class WorldsControllerCoverageSmokeTests
     [Fact]
     public async Task WorldsController_GetWorlds_ReturnsOk()
     {
-        using var db = ControllerCoverageTestFixtures.CreateDbContext();
         var user = ControllerCoverageTestFixtures.CreateCurrentUserService();
         var worldService = Substitute.For<IWorldService>();
         worldService.GetUserWorldsAsync(Arg.Any<Guid>()).Returns([]);
@@ -22,8 +21,7 @@ public class WorldsControllerCoverageSmokeTests
             Substitute.For<IWorldInvitationService>(),
             Substitute.For<IWorldPublicSharingService>(),
             Substitute.For<IExportService>(),
-            Substitute.For<IArticleHierarchyService>(),
-            db,
+            Substitute.For<IWorldLinkSuggestionService>(),
             user,
             NullLogger<WorldsController>.Instance);
 

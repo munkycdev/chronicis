@@ -95,18 +95,16 @@ try {
         }
 
         [xml]$coverage = Get-Content $coverageFile.FullName
-        $matchingClasses = Get-CoverageClassesByPrefix -Coverage $coverage -Prefix $target.Prefix
+        $matchingClasses = @(Get-CoverageClassesByPrefix -Coverage $coverage -Prefix $target.Prefix)
 
         if ($matchingClasses.Count -eq 0) {
             $coverageFailures += "[$($target.Name)] No classes matched prefix '$($target.Prefix)' in $($coverageFile.FullName)"
             continue
         }
 
-        $below100 = @(
-            $matchingClasses | Where-Object {
-                [double]$_.'line-rate' -lt 1 -or [double]$_.'branch-rate' -lt 1
-            }
-        )
+        $below100 = @($matchingClasses | Where-Object {
+            [double]$_.'line-rate' -lt 1 -or [double]$_.'branch-rate' -lt 1
+        })
 
         if ($below100.Count -eq 0) {
             Write-Host "  [PASS] $($target.Name): 100% line and branch across $($matchingClasses.Count) classes"

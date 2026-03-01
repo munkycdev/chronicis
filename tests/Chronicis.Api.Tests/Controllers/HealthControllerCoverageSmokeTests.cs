@@ -15,10 +15,14 @@ public class HealthControllerCoverageSmokeTests
     [Fact]
     public void HealthController_GetHealth_ReturnsOkWithVersion()
     {
-        using var db = ControllerCoverageTestFixtures.CreateDbContext();
         var config = new ConfigurationBuilder().AddInMemoryCollection().Build();
         var healthService = Substitute.For<ISystemHealthService>();
-        var sut = new HealthController(db, NullLogger<HealthController>.Instance, config, healthService);
+        var readinessService = Substitute.For<IHealthReadinessService>();
+        var sut = new HealthController(
+            NullLogger<HealthController>.Instance,
+            config,
+            healthService,
+            readinessService);
 
         var result = sut.GetHealth();
 

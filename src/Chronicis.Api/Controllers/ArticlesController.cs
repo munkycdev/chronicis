@@ -1,4 +1,3 @@
-using Chronicis.Api.Data;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Api.Services.Articles;
@@ -9,7 +8,6 @@ using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Controllers;
 
@@ -27,9 +25,8 @@ public class ArticlesController : ControllerBase
     private readonly IAutoLinkService _autoLinkService;
     private readonly IArticleExternalLinkService _externalLinkService;
     private readonly IArticleHierarchyService _hierarchyService;
-    private readonly ChronicisDbContext _context;
+    private readonly IArticleDataAccessService _articleDataAccessService;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IWorldDocumentService _worldDocumentService;
     private readonly ILogger<ArticlesController> _logger;
 
     public ArticlesController(
@@ -39,9 +36,8 @@ public class ArticlesController : ControllerBase
         IAutoLinkService autoLinkService,
         IArticleExternalLinkService externalLinkService,
         IArticleHierarchyService hierarchyService,
-        ChronicisDbContext context,
+        IArticleDataAccessService articleDataAccessService,
         ICurrentUserService currentUserService,
-        IWorldDocumentService worldDocumentService,
         ILogger<ArticlesController> logger)
     {
         _articleService = articleService;
@@ -50,9 +46,8 @@ public class ArticlesController : ControllerBase
         _autoLinkService = autoLinkService;
         _externalLinkService = externalLinkService;
         _hierarchyService = hierarchyService;
-        _context = context;
+        _articleDataAccessService = articleDataAccessService;
         _currentUserService = currentUserService;
-        _worldDocumentService = worldDocumentService;
         _logger = logger;
     }
 
@@ -208,7 +203,7 @@ public class ArticlesController : ControllerBase
                 }
 
                 var isSlugUnique = dto.Type == ArticleType.Tutorial
-                    ? await IsTutorialSlugUniqueAsync(dto.Slug, dto.ParentId)
+                    ? await _articleDataAccessService.IsTutorialSlugUniqueAsync(dto.Slug, dto.ParentId)
                     : await _articleService.IsSlugUniqueAsync(dto.Slug, dto.ParentId, normalizedWorldId, user.Id);
 
                 if (!isSlugUnique)
@@ -221,7 +216,7 @@ public class ArticlesController : ControllerBase
             else
             {
                 slug = dto.Type == ArticleType.Tutorial
-                    ? await GenerateTutorialSlugAsync(dto.Title, dto.ParentId)
+                    ? await _articleDataAccessService.GenerateTutorialSlugAsync(dto.Title, dto.ParentId)
                     : await _articleService.GenerateUniqueSlugAsync(dto.Title, dto.ParentId, normalizedWorldId, user.Id);
             }
 
@@ -246,8 +241,7 @@ public class ArticlesController : ControllerBase
                 PlayerId = dto.PlayerId
             };
 
-            _context.Articles.Add(article);
-            await _context.SaveChangesAsync();
+            await _articleDataAccessService.AddArticleAsync(article);
 
             // Sync wiki links if body contains content
             if (!string.IsNullOrEmpty(dto.Body))
@@ -305,7 +299,7 @@ public class ArticlesController : ControllerBase
                 return BadRequest(new { errors = validationResult.Errors });
             }
 
-            var article = await FindReadableArticleAsync(id, user.Id);
+            var article = await _articleDataAccessService.FindReadableArticleAsync(id, user.Id);
 
             if (article == null)
             {
@@ -335,7 +329,7 @@ public class ArticlesController : ControllerBase
                 }
 
                 var isSlugUnique = targetIsTutorial
-                    ? await IsTutorialSlugUniqueAsync(dto.Slug, article.ParentId, id)
+                    ? await _articleDataAccessService.IsTutorialSlugUniqueAsync(dto.Slug, article.ParentId, id)
                     : await _articleService.IsSlugUniqueAsync(dto.Slug, article.ParentId, article.WorldId, user.Id, id);
 
                 if (!isSlugUnique)
@@ -379,7 +373,7 @@ public class ArticlesController : ControllerBase
             article.ModifiedAt = DateTime.UtcNow;
             article.LastModifiedBy = user.Id;
 
-            await _context.SaveChangesAsync();
+            await _articleDataAccessService.SaveChangesAsync();
 
             // Sync wiki links after update
             if (!string.IsNullOrEmpty(dto.Body))
@@ -411,7 +405,7 @@ public class ArticlesController : ControllerBase
 
         try
         {
-            var article = await FindReadableArticleAsync(id, user.Id);
+            var article = await _articleDataAccessService.FindReadableArticleAsync(id, user.Id);
 
             if (article == null)
             {
@@ -424,7 +418,7 @@ public class ArticlesController : ControllerBase
             }
 
             // Delete all descendants recursively
-            await DeleteArticleAndDescendantsAsync(id);
+            await _articleDataAccessService.DeleteArticleAndDescendantsAsync(id);
 
             return NoContent();
         }
@@ -486,12 +480,7 @@ public class ArticlesController : ControllerBase
                 return BadRequest("Invalid request body");
             }
 
-            var article = await _context.Articles
-                .Include(a => a.Aliases)
-                .Where(a => a.Id == id)
-                .Where(a => (a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty) ||
-                            (a.World != null && a.World.Members.Any(m => m.UserId == user.Id)))
-                .FirstOrDefaultAsync();
+            var article = await _articleDataAccessService.GetReadableArticleWithAliasesAsync(id, user.Id);
 
             if (article == null)
             {
@@ -514,39 +503,7 @@ public class ArticlesController : ControllerBase
                 return BadRequest($"Alias cannot match the article's title: {string.Join(", ", invalidAliases)}");
             }
 
-            // Remove aliases that are no longer in the list
-            var aliasesToRemove = article.Aliases
-                .Where(existing => !newAliases.Contains(existing.AliasText, StringComparer.OrdinalIgnoreCase))
-                .ToList();
-            foreach (var alias in aliasesToRemove)
-            {
-                _context.ArticleAliases.Remove(alias);
-            }
-
-            // Add new aliases that don't already exist
-            var existingAliasTexts = article.Aliases
-                .Select(a => a.AliasText.ToLowerInvariant())
-                .ToHashSet();
-
-            foreach (var aliasText in newAliases)
-            {
-                if (!existingAliasTexts.Contains(aliasText.ToLowerInvariant()))
-                {
-                    var newAlias = new ArticleAlias
-                    {
-                        Id = Guid.NewGuid(),
-                        ArticleId = id,
-                        AliasText = aliasText,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    _context.ArticleAliases.Add(newAlias);
-                }
-            }
-
-            article.ModifiedAt = DateTime.UtcNow;
-            article.LastModifiedBy = user.Id;
-
-            await _context.SaveChangesAsync();
+            await _articleDataAccessService.UpsertAliasesAsync(article, newAliases, user.Id);
 
             // Return updated article with aliases
             var updatedArticle = await _articleService.GetArticleDetailAsync(id, user.Id);
@@ -590,7 +547,7 @@ public class ArticlesController : ControllerBase
         var user = await _currentUserService.GetRequiredUserAsync();
         _logger.LogDebug("Getting backlinks for article {ArticleId}", id);
 
-        var article = await FindReadableArticleAsync(id, user.Id);
+        var article = await _articleDataAccessService.FindReadableArticleAsync(id, user.Id);
 
         if (article == null)
         {
@@ -598,18 +555,7 @@ public class ArticlesController : ControllerBase
         }
 
         // Get all articles that link TO this article
-        var backlinks = await _context.ArticleLinks
-            .Where(l => l.TargetArticleId == id)
-            .Select(l => new BacklinkDto
-            {
-                ArticleId = l.SourceArticleId,
-                Title = l.SourceArticle.Title ?? "Untitled",
-                Slug = l.SourceArticle.Slug,
-                Snippet = l.DisplayText,
-                DisplayPath = ""
-            })
-            .Distinct()
-            .ToListAsync();
+        var backlinks = await _articleDataAccessService.GetBacklinksAsync(id);
 
         // Build display paths using centralised hierarchy service
         foreach (var backlink in backlinks)
@@ -629,7 +575,7 @@ public class ArticlesController : ControllerBase
         var user = await _currentUserService.GetRequiredUserAsync();
         _logger.LogDebug("Getting outgoing links for article {ArticleId}", id);
 
-        var article = await FindReadableArticleAsync(id, user.Id);
+        var article = await _articleDataAccessService.FindReadableArticleAsync(id, user.Id);
 
         if (article == null)
         {
@@ -637,18 +583,7 @@ public class ArticlesController : ControllerBase
         }
 
         // Get all articles that this article links TO
-        var outgoingLinks = await _context.ArticleLinks
-            .Where(l => l.SourceArticleId == id)
-            .Select(l => new BacklinkDto
-            {
-                ArticleId = l.TargetArticleId,
-                Title = l.TargetArticle.Title ?? "Untitled",
-                Slug = l.TargetArticle.Slug,
-                Snippet = l.DisplayText,
-                DisplayPath = ""
-            })
-            .Distinct()
-            .ToListAsync();
+        var outgoingLinks = await _articleDataAccessService.GetOutgoingLinksAsync(id);
 
         // Build display paths using centralised hierarchy service
         foreach (var link in outgoingLinks)
@@ -675,16 +610,7 @@ public class ArticlesController : ControllerBase
         _logger.LogDebug("Resolving {Count} article links", request.ArticleIds.Count);
 
         // Get all requested articles that the user has access to
-        var articles = await GetReadableArticlesQuery(user.Id)
-            .Where(a => request.ArticleIds.Contains(a.Id))
-            .Select(a => new ResolvedLinkDto
-            {
-                ArticleId = a.Id,
-                Exists = true,
-                Title = a.Title,
-                Slug = a.Slug
-            })
-            .ToListAsync();
+        var articles = await _articleDataAccessService.ResolveReadableLinksAsync(request.ArticleIds, user.Id);
 
         // Build response dictionary
         var result = new LinkResolutionResponseDto
@@ -732,24 +658,20 @@ public class ArticlesController : ControllerBase
         _logger.LogDebug("Auto-linking article {ArticleId}", id);
 
         // Get article and verify access
-        var article = await GetReadableArticlesQuery(user.Id)
-            .Where(a => a.Id == id)
-            .Select(a => new { a.Id, a.WorldId })
-            .FirstOrDefaultAsync();
-
-        if (article == null)
+        var articleContext = await _articleDataAccessService.TryGetReadableArticleWorldAsync(id, user.Id);
+        if (!articleContext.Found)
         {
             return NotFound(new { error = "Article not found or access denied" });
         }
 
-        if (!article.WorldId.HasValue)
+        if (!articleContext.WorldId.HasValue)
         {
             return BadRequest(new { error = "Article must belong to a world" });
         }
 
         var result = await _autoLinkService.FindLinksAsync(
             id,
-            article.WorldId.Value,
+            articleContext.WorldId.Value,
             request.Body,
             user.Id);
 
@@ -758,114 +680,4 @@ public class ArticlesController : ControllerBase
 
     #endregion
 
-    #region Private Helpers
-
-    private IQueryable<Article> GetReadableArticlesQuery(Guid userId)
-    {
-        var worldScoped = _context.Articles
-            .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
-            .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == userId));
-
-        var tutorials = _context.Articles
-            .Where(a => a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty);
-
-        return worldScoped.Concat(tutorials);
-    }
-
-    private async Task<Article?> FindReadableArticleAsync(Guid articleId, Guid userId)
-    {
-        return await GetReadableArticlesQuery(userId)
-            .Where(a => a.Id == articleId)
-            .FirstOrDefaultAsync();
-    }
-
-    private async Task<bool> IsTutorialSlugUniqueAsync(string slug, Guid? parentId, Guid? excludeArticleId = null)
-    {
-        var query = _context.Articles
-            .AsNoTracking()
-            .Where(a => a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty && a.Slug == slug);
-
-        if (parentId.HasValue)
-        {
-            query = query.Where(a => a.ParentId == parentId.Value);
-        }
-        else
-        {
-            query = query.Where(a => a.ParentId == null);
-        }
-
-        if (excludeArticleId.HasValue)
-        {
-            query = query.Where(a => a.Id != excludeArticleId.Value);
-        }
-
-        return !await query.AnyAsync();
-    }
-
-    private async Task<string> GenerateTutorialSlugAsync(string title, Guid? parentId, Guid? excludeArticleId = null)
-    {
-        var baseSlug = SlugGenerator.GenerateSlug(title);
-
-        var query = _context.Articles
-            .AsNoTracking()
-            .Where(a => a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty);
-
-        if (parentId.HasValue)
-        {
-            query = query.Where(a => a.ParentId == parentId.Value);
-        }
-        else
-        {
-            query = query.Where(a => a.ParentId == null);
-        }
-
-        if (excludeArticleId.HasValue)
-        {
-            query = query.Where(a => a.Id != excludeArticleId.Value);
-        }
-
-        var existingSlugs = await query
-            .Select(a => a.Slug)
-            .ToHashSetAsync();
-
-        return SlugGenerator.GenerateUniqueSlug(baseSlug, existingSlugs);
-    }
-
-    /// <summary>
-    /// Recursively deletes an article and all its descendants.
-    /// </summary>
-    private async Task DeleteArticleAndDescendantsAsync(Guid articleId)
-    {
-        // Get all children
-        var children = await _context.Articles
-            .Where(a => a.ParentId == articleId)
-            .Select(a => a.Id)
-            .ToListAsync();
-
-        // Recursively delete children first
-        foreach (var childId in children)
-        {
-            await DeleteArticleAndDescendantsAsync(childId);
-        }
-
-        // Delete article links pointing to/from this article
-        var linksToDelete = await _context.ArticleLinks
-            .Where(l => l.SourceArticleId == articleId || l.TargetArticleId == articleId)
-            .ToListAsync();
-        _context.ArticleLinks.RemoveRange(linksToDelete);
-
-        // Delete inline images associated with this article
-        await _worldDocumentService.DeleteArticleImagesAsync(articleId);
-
-        // Delete the article itself
-        var article = await _context.Articles.FindAsync(articleId);
-        if (article != null)
-        {
-            _context.Articles.Remove(article);
-        }
-
-        await _context.SaveChangesAsync();
-    }
-
-    #endregion
 }
