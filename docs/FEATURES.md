@@ -1,6 +1,6 @@
 # Chronicis Feature Inventory
 
-Last reviewed: 2026-02-28
+Last reviewed: 2026-03-01
 
 Scope:
 - Included: `src/Chronicis.Api`, `src/Chronicis.Client`
@@ -55,6 +55,7 @@ Scope:
 - Session-level private notes for GM/owner contexts.
 - Session summary generation and clearing.
 - Cleanup of session-linked content on deletion.
+- Canonical session workflows use first-class `Session` entities; legacy `ArticleType.Session` handling is compatibility-only.
 
 ## 5) Articles and Knowledge Base
 - Hierarchical article tree with unlimited nesting.
@@ -154,6 +155,7 @@ Scope:
 - Public world landing page by slug.
 - Public article tree navigation.
 - Public article-by-path viewing.
+- Public compatibility routing for legacy session-article URL segments when resolving session-note paths.
 - Public breadcrumbs and path-aware navigation.
 - Public rendering of visible article content only.
 - Public read-only behavior for shared content.

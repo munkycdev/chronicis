@@ -162,6 +162,7 @@ public class ArticleValidationServiceTests : IDisposable
         Assert.False(result.IsValid);
         Assert.Contains("Type", result.Errors.Keys);
         Assert.Contains("deprecated", result.Errors["Type"][0], StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("/api/arcs/{arcId}/sessions", result.Errors["Type"][0], StringComparison.Ordinal);
     }
 
     // ────────────────────────────────────────────────────────────────

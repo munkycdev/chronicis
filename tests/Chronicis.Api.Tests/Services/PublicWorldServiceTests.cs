@@ -176,6 +176,30 @@ public sealed class PublicWorldServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetPublicArticlePathAsync_RootSessionNoteWithoutLegacySessionArticle_ReturnsNoteSlug()
+    {
+        var seed = await SeedWorldWithSessionAsync(includeLegacySessionArticle: false);
+
+        var rootNote = TestHelpers.CreateArticle(
+            worldId: seed.World.Id,
+            campaignId: seed.Campaign.Id,
+            arcId: seed.Arc.Id,
+            createdBy: seed.Owner.Id,
+            title: "Path Test Note 2",
+            slug: "path-test-note-2",
+            type: ArticleType.SessionNote,
+            visibility: ArticleVisibility.Public);
+        rootNote.SessionId = seed.Session.Id;
+        rootNote.ParentId = null;
+        _context.Articles.Add(rootNote);
+        await _context.SaveChangesAsync();
+
+        var path = await _sut.GetPublicArticlePathAsync(seed.World.PublicSlug!, rootNote.Id);
+
+        Assert.Equal(rootNote.Slug, path);
+    }
+
+    [Fact]
     public async Task GetPublicDocumentDownloadUrlAsync_ReturnsUrl_WhenDocumentAttachedToPublicArticleInPublicWorld()
     {
         var owner = TestHelpers.CreateUser();

@@ -1,6 +1,6 @@
 # Chronicis Architecture Inventory
 
-Last reviewed: 2026-02-28
+Last reviewed: 2026-03-01
 
 ## 1) Scope
 - Projects covered:
@@ -430,13 +430,15 @@ Chronicis.Shared  ---->  (no project references)
 - Existing repository seam:
 - `IResourceProviderRepository` / `ResourceProviderRepository` is the primary explicit repository abstraction path.
 
-### 10.6 Current Implementation Inventory (As Of 2026-02-28)
+### 10.6 Current Implementation Inventory (As Of 2026-03-01)
 - Data-access boundaries:
 - Services with direct `ChronicisDbContext` field injection: `33`.
 - Controllers with direct `ChronicisDbContext` field injection: `0`.
 - Session model:
 - Legacy `ArticleType.Session` references in API controllers/services (excluding migrations/tests): `6`.
 - Distribution: `ArticleValidationService` (`1`), `PublicWorldService` (`5`).
+- Legacy `ArticleType.Session` references in client source (`.cs` + `.razor`): `11`.
+- Distribution: `TutorialPageTypes` (`1`), `ArticleMetadataDrawer` (`2`), `CreateArticleDialog` (`2`), `QuestDrawer` (`2`), `TreeNode` (`1`), `PublicWorldPageViewModel` (`1`), `TreeDataBuilder` (`1`), `TreeMutations` (`1`).
 - Access-policy enforcement:
 - Public visibility/public slug rule condition hits in key read-path services/controllers (`PublicWorldService`, `WorldService`, `SessionService`, `SummaryService`, `PublicController`): `58`.
 
@@ -450,6 +452,9 @@ rg -l "private readonly\s+ChronicisDbContext\b|private readonly\s+.*\s+_db\b" sr
 
 # Legacy session references in active API code (exclude migrations)
 rg -n "ArticleType\.Session\b" src/Chronicis.Api/Services src/Chronicis.Api/Controllers --glob "!**/Migrations/**"
+
+# Legacy session references in active client code
+rg -n "ArticleType\.Session\b" src/Chronicis.Client
 
 # Public-policy rule hotspots in key read-path services/controllers
 rg -n "ArticleVisibility\.Public|IsPublic|PublicSlug" `
@@ -498,6 +503,34 @@ rg -n "ArticleVisibility\.Public|IsPublic|PublicSlug" `
 - Content and graph domains are implemented through service-owned boundaries for `Articles`, `Worlds`, `Public read path`, and `Search`.
 - Collaboration and progression domains are implemented through service-owned boundaries for `Campaigns`, `Arcs`, `Sessions`, `WorldMembership`, `WorldInvitation`, and `WorldDocuments`.
 - Supporting domains are implemented through service-owned boundaries for `Summary`, `Admin`, `Tutorial`, `Health`, and edge endpoints.
+
+### 10.12 Session Model Canonicalization (Step 4)
+- Canonical session model:
+- `Session` entity (`Chronicis.Shared.Models.Session`) is the only model for new session workflows.
+- `ArticleType.Session` is non-canonical and exists only for compatibility with legacy data/read paths.
+- Compatibility boundary policy:
+- Allowed compatibility-only API files:
+- `src/Chronicis.Api/Services/ArticleValidationService.cs` (rejection guard for new legacy session articles)
+- `src/Chronicis.Api/Services/PublicWorldService.cs` (public read-path compatibility)
+- Allowed compatibility-only client files:
+- `src/Chronicis.Client/Components/Admin/TutorialPageTypes.cs`
+- `src/Chronicis.Client/Components/Articles/ArticleMetadataDrawer.razor`
+- `src/Chronicis.Client/Components/Dialogs/CreateArticleDialog.razor`
+- `src/Chronicis.Client/Components/Quests/QuestDrawer.razor.cs`
+- `src/Chronicis.Client/Models/TreeNode.cs`
+- `src/Chronicis.Client/ViewModels/PublicWorldPageViewModel.cs`
+- `src/Chronicis.Client/Services/Tree/TreeDataBuilder.cs`
+- `src/Chronicis.Client/Services/Tree/TreeMutations.cs`
+- Freeze rule:
+- No new `ArticleType.Session` references may be introduced outside the compatibility boundary allowlist.
+- Transition states:
+- `Coexistence`: canonical and legacy models both exist; all new write paths remain canonical.
+- `Compatibility-only`: legacy references are read/interop only; no legacy write paths are allowed.
+- `Retirement`: legacy references and data paths removed after parity and migration exit criteria are satisfied.
+- Guardrails:
+- `tests/Chronicis.ArchitecturalTests/SessionModelGuardrailTests.cs` enforces:
+- no expansion of compatibility boundary file set for API/client.
+- no increase above baseline legacy-reference counts (`API <= 6`, `Client <= 11`).
 
 ## 11) Out of Scope
 - `Chronicis.CaptureApp` architecture is intentionally excluded.

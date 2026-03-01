@@ -1,11 +1,12 @@
 # Chronicis Architectural Fixes Plan
 
-Last reviewed: 2026-02-28
+Last reviewed: 2026-03-01
 
-## 0) Step 1-3 Execution Status
+## 0) Step 1-4 Execution Status
 - Step 1 (`Baseline and Ownership`): completed.
 - Step 2 (`Data-Access Policy Definition`): completed.
 - Step 3 (`Data-Access Boundary Migration`): completed.
+- Step 4 (`Session Model Canonicalization Plan`): completed.
 - Verification evidence:
 - `dotnet build Chronicis.CI.sln` passes with 0 warnings and 0 errors.
 - `dotnet test Chronicis.CI.sln` passes.
@@ -74,9 +75,26 @@ Step 3 acceptance criteria:
 - All Step 3 slices merge only with passing `.\scripts\verify.ps1`. `Status: complete`.
 
 ### Step 4: Session Model Canonicalization Plan
+- Status: completed.
 - Declare a canonical session model for future development and a compatibility strategy for legacy session-article flows.
 - Define transition states: coexistence, compatibility-only, and retirement.
 - Freeze new architectural debt by preventing expansion of the non-canonical path.
+- Canonical session governance and compatibility boundary are published in `docs/ARCHITECTURE.md` Section `10.12`.
+- Baseline session-model inventory is updated in `docs/ARCHITECTURE.md` Section `10.6` and repeatable measurements in Section `10.7`.
+- Architectural guardrails are enforced in `tests/Chronicis.ArchitecturalTests/SessionModelGuardrailTests.cs`.
+
+Step 4 deliverables:
+- Canonical session model declaration for new development (`Session` entity as canonical).
+- Explicit compatibility boundary allowlist for legacy `ArticleType.Session` behavior.
+- Transition-state model with entry/exit criteria (`coexistence`, `compatibility-only`, `retirement`).
+- Architecture tests that block expansion of the non-canonical session path.
+- Updated architecture/feature/changelog documentation to reflect canonical vs compatibility-only expectations.
+
+Step 4 acceptance criteria:
+- New session workflows are defined as `Session` entity-first with no ambiguity. `Status: complete`.
+- Non-canonical legacy session behavior is isolated to approved compatibility boundaries. `Status: complete`.
+- Net-new `ArticleType.Session` usage outside compatibility boundaries fails architecture tests. `Status: complete`.
+- Step 4 changes merge only with passing `.\scripts\verify.ps1`. `Status: complete`.
 
 ### Step 5: Session Convergence Execution
 - Redirect new session workflows to the canonical model while preserving existing read behavior.
