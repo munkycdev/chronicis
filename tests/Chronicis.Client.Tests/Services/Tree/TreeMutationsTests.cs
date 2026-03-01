@@ -3,6 +3,7 @@ using Chronicis.Client.Models;
 using Chronicis.Client.Services;
 using Chronicis.Client.Services.Tree;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -15,6 +16,7 @@ namespace Chronicis.Client.Tests;
 public class TreeMutationsTests
 {
     private readonly IArticleApiService _articleApi;
+    private readonly ISessionApiService _sessionApi;
     private readonly IAppContextService _appContext;
     private readonly ILogger _logger;
     private readonly TreeMutations _mutations;
@@ -23,9 +25,10 @@ public class TreeMutationsTests
     public TreeMutationsTests()
     {
         _articleApi = Substitute.For<IArticleApiService>();
+        _sessionApi = Substitute.For<ISessionApiService>();
         _appContext = Substitute.For<IAppContextService>();
         _logger = NullLogger.Instance;
-        _mutations = new TreeMutations(_articleApi, _appContext, _logger);
+        _mutations = new TreeMutations(_articleApi, _sessionApi, _appContext, _logger);
 
         _refreshCallbackInvoked = false;
         _mutations.SetRefreshCallback(() =>
@@ -379,7 +382,7 @@ public class TreeMutationsTests
     }
 
     [Fact]
-    public async Task CreateChildArticleAsync_UnderArc_ShouldCreateSessionArticle()
+    public async Task CreateChildArticleAsync_UnderArc_ShouldCreateSessionEntity()
     {
         // Arrange
         var nodeIndex = new TreeNodeIndex();
@@ -395,18 +398,45 @@ public class TreeMutationsTests
         nodeIndex.AddNode(arcNode);
         _mutations.SetNodeIndex(nodeIndex);
 
-        var newArticleId = Guid.NewGuid();
-        _articleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>())
-            .Returns(new ArticleDto { Id = newArticleId });
+        var newSessionId = Guid.NewGuid();
+        _sessionApi.CreateSessionAsync(arcId, Arg.Any<SessionCreateDto>())
+            .Returns(new SessionDto { Id = newSessionId, ArcId = arcId, Name = "Session 1" });
 
         // Act
         var result = await _mutations.CreateChildArticleAsync(arcId);
 
         // Assert
-        Assert.Equal(newArticleId, result);
-        await _articleApi.Received(1).CreateArticleAsync(Arg.Is<ArticleCreateDto>(dto =>
-            dto.Type == ArticleType.Session &&
-            dto.ArcId == arcId));
+        Assert.Equal(newSessionId, result);
+        await _sessionApi.Received(1).CreateSessionAsync(arcId, Arg.Is<SessionCreateDto>(dto =>
+            System.Text.RegularExpressions.Regex.IsMatch(
+                dto.Name,
+                @"^\d{4}-\d{2}-\d{2}$")
+            && dto.SessionDate.HasValue));
+        await _articleApi.DidNotReceive().CreateArticleAsync(Arg.Any<ArticleCreateDto>());
+    }
+
+    [Fact]
+    public async Task CreateChildArticleAsync_UnderArc_WhenSessionApiReturnsNull_ShouldReturnNull()
+    {
+        var nodeIndex = new TreeNodeIndex();
+        var arcId = Guid.NewGuid();
+        var arcNode = new TreeNode
+        {
+            Id = arcId,
+            NodeType = TreeNodeType.Arc,
+            Title = "Arc",
+            WorldId = Guid.NewGuid(),
+            CampaignId = Guid.NewGuid()
+        };
+        nodeIndex.AddNode(arcNode);
+        _mutations.SetNodeIndex(nodeIndex);
+
+        _sessionApi.CreateSessionAsync(arcId, Arg.Any<SessionCreateDto>()).Returns((SessionDto?)null);
+
+        var result = await _mutations.CreateChildArticleAsync(arcId);
+
+        Assert.Null(result);
+        await _articleApi.DidNotReceive().CreateArticleAsync(Arg.Any<ArticleCreateDto>());
     }
 
     [Theory]

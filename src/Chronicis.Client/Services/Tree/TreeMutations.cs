@@ -1,5 +1,6 @@
 using Chronicis.Client.Models;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 
 namespace Chronicis.Client.Services.Tree;
@@ -11,6 +12,7 @@ namespace Chronicis.Client.Services.Tree;
 internal sealed class TreeMutations
 {
     private readonly IArticleApiService _articleApi;
+    private readonly ISessionApiService _sessionApi;
     private readonly IAppContextService _appContext;
     private readonly ILogger _logger;
 
@@ -22,10 +24,12 @@ internal sealed class TreeMutations
 
     public TreeMutations(
         IArticleApiService articleApi,
+        ISessionApiService sessionApi,
         IAppContextService appContext,
         ILogger logger)
     {
         _articleApi = articleApi;
+        _sessionApi = sessionApi;
         _appContext = appContext;
         _logger = logger;
     }
@@ -106,6 +110,11 @@ internal sealed class TreeMutations
             return null;
         }
 
+        if (parentNode.NodeType == TreeNodeType.Arc)
+        {
+            return await CreateSessionUnderArcAsync(parentNode);
+        }
+
         // Determine article type based on parent
         var articleType = DetermineChildArticleType(parentNode);
 
@@ -154,10 +163,33 @@ internal sealed class TreeMutations
                 VirtualGroupType.Uncategorized => ArticleType.Legacy,
                 _ => ArticleType.WikiArticle
             },
-            TreeNodeType.Arc => ArticleType.Session,
             TreeNodeType.Article => parentNode.ArticleType ?? ArticleType.WikiArticle,
             _ => ArticleType.WikiArticle
         };
+    }
+
+    private async Task<Guid?> CreateSessionUnderArcAsync(TreeNode arcNode)
+    {
+        var now = DateTime.Now;
+        var createDto = new SessionCreateDto
+        {
+            Name = now.ToString("yyyy-MM-dd"),
+            SessionDate = now
+        };
+
+        var created = await _sessionApi.CreateSessionAsync(arcNode.Id, createDto);
+        if (created == null)
+        {
+            _logger.LogWarning("Failed to create session under arc {ArcId}", arcNode.Id);
+            return null;
+        }
+
+        if (_refreshCallback != null)
+        {
+            await _refreshCallback();
+        }
+
+        return created.Id;
     }
 
     // ============================================

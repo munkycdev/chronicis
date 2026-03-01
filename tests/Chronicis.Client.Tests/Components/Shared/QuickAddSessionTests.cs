@@ -4,6 +4,7 @@ using Chronicis.Client.Components.Shared;
 using Chronicis.Client.Models;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
@@ -15,14 +16,14 @@ namespace Chronicis.Client.Tests.Components.Shared;
 public class QuickAddSessionTests : MudBlazorTestContext
 {
     private readonly ICampaignApiService _campaignApi = Substitute.For<ICampaignApiService>();
-    private readonly IArticleApiService _articleApi = Substitute.For<IArticleApiService>();
+    private readonly ISessionApiService _sessionApi = Substitute.For<ISessionApiService>();
     private readonly ISnackbar _snackbar = Substitute.For<ISnackbar>();
     private readonly FakeTreeStateService _treeState = new();
 
     public QuickAddSessionTests()
     {
         Services.AddSingleton(_campaignApi);
-        Services.AddSingleton(_articleApi);
+        Services.AddSingleton(_sessionApi);
         Services.AddSingleton<ITreeStateService>(_treeState);
         Services.AddSingleton(_snackbar);
     }
@@ -48,7 +49,7 @@ public class QuickAddSessionTests : MudBlazorTestContext
 
         var cut = RenderComponent<QuickAddSession>();
         _treeState.RaiseStateChanged();
-        cut.WaitForAssertion(() => Assert.DoesNotContain("New Session Note", cut.Markup));
+        cut.WaitForAssertion(() => Assert.DoesNotContain("New Session", cut.Markup));
     }
 
     [Fact]
@@ -69,7 +70,7 @@ public class QuickAddSessionTests : MudBlazorTestContext
 
         cut.WaitForAssertion(() =>
         {
-            Assert.Contains("New Session Note", cut.Markup);
+            Assert.Contains("New Session", cut.Markup);
             Assert.Contains("Campaign", cut.Markup);
             Assert.Contains("Arc", cut.Markup);
         });
@@ -81,7 +82,7 @@ public class QuickAddSessionTests : MudBlazorTestContext
         var worldId = Guid.NewGuid();
         var campaignId = Guid.NewGuid();
         var arcId = Guid.NewGuid();
-        var articleId = Guid.NewGuid();
+        var sessionId = Guid.NewGuid();
 
         _treeState.RootNodesInternal = [new TreeNode { Id = worldId, NodeType = TreeNodeType.World }];
         _campaignApi.GetActiveContextAsync(worldId).Returns(new ActiveContextDto
@@ -92,28 +93,20 @@ public class QuickAddSessionTests : MudBlazorTestContext
             ArcName = "Arc"
         });
 
-        _articleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>()).Returns(new ArticleDto { Id = articleId });
-        _articleApi.GetArticleDetailAsync(articleId).Returns(new ArticleDto
-        {
-            Id = articleId,
-            Breadcrumbs =
-            [
-                new BreadcrumbDto { Slug = "world" },
-                new BreadcrumbDto { Slug = "campaign" },
-                new BreadcrumbDto { Slug = "session" }
-            ]
-        });
+        _sessionApi.CreateSessionAsync(arcId, Arg.Any<SessionCreateDto>())
+            .Returns(new SessionDto { Id = sessionId, ArcId = arcId, Name = "2026-01-01" });
 
         var nav = Services.GetRequiredService<FakeNavigationManager>();
         var cut = RenderComponent<QuickAddSession>();
         _treeState.RaiseStateChanged();
 
-        cut.WaitForAssertion(() => Assert.Contains("New Session Note", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("New Session", cut.Markup));
         await cut.Find("button").ClickAsync(new());
 
-        Assert.EndsWith("/article/world/campaign/session", nav.Uri, StringComparison.OrdinalIgnoreCase);
+        Assert.EndsWith($"/session/{sessionId}", nav.Uri, StringComparison.OrdinalIgnoreCase);
         Assert.True(_treeState.RefreshCalled);
-        Assert.Equal(articleId, _treeState.LastExpandedAndSelectedId);
+        Assert.Equal(sessionId, _treeState.LastExpandedAndSelectedId);
+        await _sessionApi.Received(1).CreateSessionAsync(arcId, Arg.Any<SessionCreateDto>());
     }
 
     [Fact]
@@ -129,11 +122,11 @@ public class QuickAddSessionTests : MudBlazorTestContext
             ArcName = "Arc"
         });
 
-        _articleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>()).Returns((ArticleDto?)null);
+        _sessionApi.CreateSessionAsync(Arg.Any<Guid>(), Arg.Any<SessionCreateDto>()).Returns((SessionDto?)null);
 
         var cut = RenderComponent<QuickAddSession>();
         _treeState.RaiseStateChanged();
-        cut.WaitForAssertion(() => Assert.Contains("New Session Note", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("New Session", cut.Markup));
 
         await cut.Find("button").ClickAsync(new());
 

@@ -51,6 +51,9 @@ All notable changes to this project are documented in this file.
 - Removed tree fallback that built Arc sessions from legacy `ArticleType.Session` articles when Session API results are empty
 - Campaign/arc summaries and dashboard session counts now query Session entities instead of legacy session articles
 - Generic article creation validation now rejects new `ArticleType.Session` articles (Session entities must be created via the Sessions API)
+- Arc tree add-child now creates Session entities instead of deprecated `ArticleType.Session` articles
+- Quick-add session control now creates Session entities and navigates to `/session/{id}`
+- Public compatibility logic for legacy session-article URL segments is isolated behind dedicated compatibility methods in `PublicWorldService`
 
 ---
 

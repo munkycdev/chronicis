@@ -185,10 +185,18 @@
 
     private async Task HandleAddChild(Guid parentId)
     {
+        TreeState.TryGetNode(parentId, out var parentNode);
         var newId = await TreeState.CreateChildArticleAsync(parentId);
 
         if (newId.HasValue)
         {
+            if (parentNode?.NodeType == TreeNodeType.Arc)
+            {
+                Snackbar.Add("Session created", Severity.Success);
+                Navigation.NavigateTo($"/session/{newId.Value}");
+                return;
+            }
+
             Snackbar.Add("Article created", Severity.Success);
 
             // Navigate to the new article

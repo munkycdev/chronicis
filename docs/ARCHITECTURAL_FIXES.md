@@ -97,9 +97,23 @@ Step 4 acceptance criteria:
 - Step 4 changes merge only with passing `.\scripts\verify.ps1`. `Status: complete`.
 
 ### Step 5: Session Convergence Execution
-- Redirect new session workflows to the canonical model while preserving existing read behavior.
-- Move legacy-dependent paths behind a compatibility boundary to isolate migration complexity.
-- Retire transitional paths only after parity checks confirm no user-visible regressions.
+- Status: completed.
+- New session workflows are redirected to canonical `Session` entity writes.
+- Legacy-dependent public read paths remain compatibility-only and isolated in `PublicWorldService`.
+- Transitional legacy write affordances are removed from active client workflows.
+
+Step 5 deliverables:
+- Arc tree child-creation path creates `Session` entities rather than `ArticleType.Session` articles.
+- Quick-add session workflow creates `Session` entities and navigates to `/session/{id}`.
+- Legacy session compatibility handling in public reads is isolated behind dedicated compatibility helper paths in `PublicWorldService`.
+- Compatibility allowlist and architecture guardrail baselines are reduced to match retired legacy references.
+- Updated architecture/feature/changelog documentation to reflect Step 5 convergence outcomes.
+
+Step 5 acceptance criteria:
+- Net-new session writes route through `Session` entity APIs only. `Status: complete`.
+- Legacy session-article behavior is read-compatibility only with no new write expansion. `Status: complete`.
+- No user-visible regressions in legacy public session-note URL compatibility paths. `Status: complete`.
+- Step 5 changes merge only with passing `.\scripts\verify.ps1`. `Status: complete`.
 
 ### Step 6: Unified Access-Policy Architecture
 - Create one shared policy evaluation layer used by both public and authenticated read models.

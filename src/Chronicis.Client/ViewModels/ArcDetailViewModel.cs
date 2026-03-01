@@ -302,28 +302,19 @@ public sealed class ArcDetailViewModel : ViewModelBase
     /// <summary>Creates a new Session entity under this arc and navigates to it.</summary>
     public async Task CreateSessionAsync()
     {
-        if (_arc == null || _campaign == null || !IsCurrentUserGM)
+        if (_arc == null || !IsCurrentUserGM)
             return;
-
-        var sessionNumber = Sessions.Count + 1;
-        var createDto = new SessionCreateDto
-        {
-            Name = $"Session {sessionNumber}",
-            SessionDate = DateTime.Now
-        };
 
         try
         {
-            var created = await _sessionApi.CreateSessionAsync(_arc.Id, createDto);
-            if (created == null)
+            var createdSessionId = await _treeState.CreateChildArticleAsync(_arc.Id);
+            if (!createdSessionId.HasValue)
             {
                 _notifier.Error("Failed to create session");
                 return;
             }
 
-            await _treeState.RefreshAsync();
-            await LoadAsync(_arc.Id);
-            _navigator.NavigateTo($"/session/{created.Id}");
+            _navigator.NavigateTo($"/session/{createdSessionId.Value}");
             _notifier.Success("Session created");
         }
         catch (Exception ex)

@@ -45,7 +45,7 @@ public class TreeStateService : ITreeStateService
         // Create internal components
         _dataBuilder = new TreeDataBuilder(articleApi, worldApi, campaignApi, arcApi, sessionApi, logger);
         _uiState = new TreeUiState(localStorage, logger);
-        _mutations = new TreeMutations(articleApi, appContext, logger);
+        _mutations = new TreeMutations(articleApi, sessionApi, appContext, logger);
 
         // Wire up refresh callback for mutations
         _mutations.SetRefreshCallback(RefreshAsync);
@@ -232,6 +232,9 @@ public class TreeStateService : ITreeStateService
 
     public async Task<Guid?> CreateChildArticleAsync(Guid parentId)
     {
+        var isArcChildCreate = _nodeIndex.TryGetNode(parentId, out var parentNode)
+            && parentNode?.NodeType == TreeNodeType.Arc;
+
         var newId = await _mutations.CreateChildArticleAsync(parentId);
 
         if (newId.HasValue)
@@ -239,7 +242,7 @@ public class TreeStateService : ITreeStateService
             // Expand parent and select new node (refresh already happened via callback)
             _uiState.ExpandNode(parentId);
             _uiState.SelectNode(newId.Value);
-            ShouldFocusTitle = true;
+            ShouldFocusTitle = !isArcChildCreate;
             NotifyStateChanged();
         }
 

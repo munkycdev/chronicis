@@ -7,7 +7,7 @@ namespace Chronicis.ArchitecturalTests;
 public sealed class SessionModelGuardrailTests
 {
     private const int ApiLegacyReferenceBaseline = 6;
-    private const int ClientLegacyReferenceBaseline = 11;
+    private const int ClientLegacyReferenceBaseline = 8;
     private static readonly string RepoRoot = ResolveRepoRoot();
     private static readonly Regex LegacySessionPattern = new(@"\bArticleType\.Session\b", RegexOptions.CultureInvariant);
 
@@ -53,12 +53,10 @@ public sealed class SessionModelGuardrailTests
         {
             "src/Chronicis.Client/Components/Admin/TutorialPageTypes.cs",
             "src/Chronicis.Client/Components/Articles/ArticleMetadataDrawer.razor",
-            "src/Chronicis.Client/Components/Dialogs/CreateArticleDialog.razor",
             "src/Chronicis.Client/Components/Quests/QuestDrawer.razor.cs",
             "src/Chronicis.Client/Models/TreeNode.cs",
             "src/Chronicis.Client/ViewModels/PublicWorldPageViewModel.cs",
-            "src/Chronicis.Client/Services/Tree/TreeDataBuilder.cs",
-            "src/Chronicis.Client/Services/Tree/TreeMutations.cs"
+            "src/Chronicis.Client/Services/Tree/TreeDataBuilder.cs"
         };
 
         var unexpectedFiles = scan.FilesWithReferenceCounts.Keys

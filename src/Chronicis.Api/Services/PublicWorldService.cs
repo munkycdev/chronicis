@@ -194,41 +194,22 @@ public class PublicWorldService : IPublicWorldService
 
                 foreach (var session in sessions)
                 {
-                    var hasLegacyPublicSessionArticle = articleIndex.TryGetValue(session.Id, out var legacySessionArticle)
-                        && legacySessionArticle.Type == ArticleType.Session
-                        && legacySessionArticle.ParentId == null
-                        && legacySessionArticle.Visibility == ArticleVisibility.Public;
+                    var hasLegacyPublicSessionArticle = TryGetLegacyPublicSessionArticle(
+                        articleIndex,
+                        session.Id,
+                        out var legacySessionArticle);
 
-                    var rootSessionNotes = new List<ArticleTreeDto>();
-                    if (sessionNotesBySessionId.TryGetValue(session.Id, out var notes))
-                    {
-                        var sessionNoteIds = notes.Select(n => n.Id).ToHashSet();
-                        rootSessionNotes = notes
-                            .Where(n => !n.ParentId.HasValue || !sessionNoteIds.Contains(n.ParentId.Value))
-                            .OrderBy(n => n.Title)
-                            .ToList();
-                    }
+                    var rootSessionNotes = GetRootSessionNotesForSession(sessionNotesBySessionId, session.Id);
 
                     if (hasLegacyPublicSessionArticle)
                     {
-                        legacySessionArticle!.HasAISummary = !string.IsNullOrWhiteSpace(session.AiSummary);
-                        legacySessionArticle.Children ??= new List<ArticleTreeDto>();
+                        var compatibilitySessionArticle = legacySessionArticle!;
+                        AttachRootSessionNotesToLegacySessionNode(
+                            compatibilitySessionArticle,
+                            rootSessionNotes,
+                            !string.IsNullOrWhiteSpace(session.AiSummary));
 
-                        var existingChildIds = legacySessionArticle.Children.Select(c => c.Id).ToHashSet();
-                        foreach (var note in rootSessionNotes.Where(n => !existingChildIds.Contains(n.Id)))
-                        {
-                            legacySessionArticle.Children.Add(note);
-                        }
-
-                        if (legacySessionArticle.Children.Any())
-                        {
-                            legacySessionArticle.Children = legacySessionArticle.Children.OrderBy(c => c.Title).ToList();
-                        }
-
-                        legacySessionArticle.HasChildren = legacySessionArticle.Children.Any();
-                        legacySessionArticle.ChildCount = legacySessionArticle.Children.Count;
-
-                        arcNode.Children.Add(legacySessionArticle);
+                        arcNode.Children.Add(compatibilitySessionArticle);
                         arcNode.HasChildren = true;
                         arcNode.ChildCount++;
                         continue;
@@ -372,6 +353,63 @@ public class PublicWorldService : IPublicWorldService
         return result;
     }
 
+    private static bool TryGetLegacyPublicSessionArticle(
+        IReadOnlyDictionary<Guid, ArticleTreeDto> articleIndex,
+        Guid sessionId,
+        out ArticleTreeDto? legacySessionArticle)
+    {
+        if (articleIndex.TryGetValue(sessionId, out var article)
+            && article.Type == ArticleType.Session
+            && article.ParentId == null
+            && article.Visibility == ArticleVisibility.Public)
+        {
+            legacySessionArticle = article;
+            return true;
+        }
+
+        legacySessionArticle = null;
+        return false;
+    }
+
+    private static List<ArticleTreeDto> GetRootSessionNotesForSession(
+        IReadOnlyDictionary<Guid, List<ArticleTreeDto>> sessionNotesBySessionId,
+        Guid sessionId)
+    {
+        if (!sessionNotesBySessionId.TryGetValue(sessionId, out var notes))
+        {
+            return new List<ArticleTreeDto>();
+        }
+
+        var sessionNoteIds = notes.Select(n => n.Id).ToHashSet();
+        return notes
+            .Where(n => !n.ParentId.HasValue || !sessionNoteIds.Contains(n.ParentId.Value))
+            .OrderBy(n => n.Title)
+            .ToList();
+    }
+
+    private static void AttachRootSessionNotesToLegacySessionNode(
+        ArticleTreeDto legacySessionArticle,
+        IReadOnlyCollection<ArticleTreeDto> rootSessionNotes,
+        bool hasAiSummary)
+    {
+        legacySessionArticle.HasAISummary = hasAiSummary;
+        legacySessionArticle.Children ??= new List<ArticleTreeDto>();
+
+        var existingChildIds = legacySessionArticle.Children.Select(c => c.Id).ToHashSet();
+        foreach (var note in rootSessionNotes.Where(n => !existingChildIds.Contains(n.Id)))
+        {
+            legacySessionArticle.Children.Add(note);
+        }
+
+        if (legacySessionArticle.Children.Any())
+        {
+            legacySessionArticle.Children = legacySessionArticle.Children.OrderBy(c => c.Title).ToList();
+        }
+
+        legacySessionArticle.HasChildren = legacySessionArticle.Children.Any();
+        legacySessionArticle.ChildCount = legacySessionArticle.Children.Count;
+    }
+
     private static ArticleTreeDto CreateVirtualGroup(string slug, string title, string icon)
     {
         return new ArticleTreeDto
@@ -398,6 +436,44 @@ public class PublicWorldService : IPublicWorldService
                 CollectArticleIds(child, ids);
             }
         }
+    }
+
+    private async Task<(Guid Id, ArticleType Type)?> TryResolveCompatibilitySessionRootNoteAsync(
+        Guid worldId,
+        string slug,
+        Guid? legacySessionArticleId)
+    {
+        if (!legacySessionArticleId.HasValue)
+        {
+            return null;
+        }
+
+        var sessionRootNote = await _context.Articles
+            .AsNoTracking()
+            .Where(a => a.Slug == slug &&
+                        a.ParentId == null &&
+                        a.SessionId == legacySessionArticleId &&
+                        a.WorldId == worldId &&
+                        a.Type == ArticleType.SessionNote &&
+                        a.Visibility == ArticleVisibility.Public)
+            .Select(a => new { a.Id, a.Type })
+            .FirstOrDefaultAsync();
+
+        return sessionRootNote == null
+            ? null
+            : (sessionRootNote.Id, sessionRootNote.Type);
+    }
+
+    private async Task<string?> TryGetCompatibilityLegacySessionSlugAsync(Guid worldId, Guid sessionId)
+    {
+        return await _context.Articles
+            .AsNoTracking()
+            .Where(a => a.Id == sessionId &&
+                        a.WorldId == worldId &&
+                        a.Type == ArticleType.Session &&
+                        a.Visibility == ArticleVisibility.Public)
+            .Select(a => a.Slug)
+            .FirstOrDefaultAsync();
     }
 
     /// <summary>
@@ -476,25 +552,12 @@ public class PublicWorldService : IPublicWorldService
                     foundArticle = (childArticle.Id, childArticle.Type);
                 }
 
-                // Session-entity refactor compatibility:
-                // session-attached root notes can have ParentId = null.
-                // If parent is a legacy Session article, allow lookup by SessionId.
                 if (foundArticle == null && currentArticleType == ArticleType.Session)
                 {
-                    var sessionRootNote = await _context.Articles
-                        .AsNoTracking()
-                        .Where(a => a.Slug == slug &&
-                                    a.ParentId == null &&
-                                    a.SessionId == currentParentId &&
-                                    a.WorldId == world.Id &&
-                                    a.Type == ArticleType.SessionNote &&
-                                    a.Visibility == ArticleVisibility.Public)
-                        .Select(a => new { a.Id, a.Type })
-                        .FirstOrDefaultAsync();
-                    if (sessionRootNote != null)
-                    {
-                        foundArticle = (sessionRootNote.Id, sessionRootNote.Type);
-                    }
+                    foundArticle = await TryResolveCompatibilitySessionRootNoteAsync(
+                        world.Id,
+                        slug,
+                        currentParentId);
                 }
             }
 
@@ -611,14 +674,9 @@ public class PublicWorldService : IPublicWorldService
             !article.ParentId.HasValue &&
             article.SessionId.HasValue)
         {
-            var legacySessionArticleSlug = await _context.Articles
-                .AsNoTracking()
-                .Where(a => a.Id == article.SessionId.Value &&
-                            a.WorldId == world.Id &&
-                            a.Type == ArticleType.Session &&
-                            a.Visibility == ArticleVisibility.Public)
-                .Select(a => a.Slug)
-                .FirstOrDefaultAsync();
+            var legacySessionArticleSlug = await TryGetCompatibilityLegacySessionSlugAsync(
+                world.Id,
+                article.SessionId.Value);
 
             if (!string.IsNullOrEmpty(legacySessionArticleSlug))
             {

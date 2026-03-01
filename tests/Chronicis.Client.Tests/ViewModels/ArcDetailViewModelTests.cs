@@ -425,6 +425,50 @@ public class ArcDetailViewModelTests
     }
 
     // -----------------------------------------------------------------------
+    // CreateSessionAsync
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task CreateSessionAsync_WhenTreeCreateSucceeds_NavigatesToSession()
+    {
+        var c = CreateSut();
+        var arc = MakeArc();
+        var campaign = MakeCampaign(id: arc.CampaignId);
+        SetupHappyPath(c, arc, campaign, MakeGmWorld(campaign.WorldId));
+        c.AuthService.GetCurrentUserAsync().Returns(new UserInfo { Email = "gm@example.com" });
+        await c.Vm.LoadAsync(arc.Id);
+
+        var sessionId = Guid.NewGuid();
+        c.TreeState.CreateChildArticleAsync(arc.Id).Returns((Guid?)sessionId);
+
+        await c.Vm.CreateSessionAsync();
+
+        await c.TreeState.Received(1).CreateChildArticleAsync(arc.Id);
+        await c.SessionApi.DidNotReceive().CreateSessionAsync(Arg.Any<Guid>(), Arg.Any<SessionCreateDto>());
+        c.Navigator.Received(1).NavigateTo($"/session/{sessionId}");
+        c.Notifier.Received(1).Success("Session created");
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_WhenTreeCreateFails_ShowsError()
+    {
+        var c = CreateSut();
+        var arc = MakeArc();
+        var campaign = MakeCampaign(id: arc.CampaignId);
+        SetupHappyPath(c, arc, campaign, MakeGmWorld(campaign.WorldId));
+        c.AuthService.GetCurrentUserAsync().Returns(new UserInfo { Email = "gm@example.com" });
+        await c.Vm.LoadAsync(arc.Id);
+
+        c.TreeState.CreateChildArticleAsync(arc.Id).Returns((Guid?)null);
+
+        await c.Vm.CreateSessionAsync();
+
+        await c.TreeState.Received(1).CreateChildArticleAsync(arc.Id);
+        c.Navigator.DidNotReceive().NavigateTo(Arg.Any<string>(), Arg.Any<bool>());
+        c.Notifier.Received(1).Error("Failed to create session");
+    }
+
+    // -----------------------------------------------------------------------
     // NavigateToSessionAsync
     // -----------------------------------------------------------------------
 

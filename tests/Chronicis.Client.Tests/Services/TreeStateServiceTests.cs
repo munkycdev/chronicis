@@ -102,6 +102,25 @@ public class TreeStateServiceTests
     }
 
     [Fact]
+    public async Task CreateChildArticleAsync_WhenParentIsArc_CreatesSessionAndDoesNotSetTitleFocus()
+    {
+        var sessionId = Guid.NewGuid();
+        var (sut, _, _, sessionApi, _, _) = CreateSut();
+
+        sessionApi.CreateSessionAsync(TestArcId, Arg.Any<SessionCreateDto>())
+            .Returns(new SessionDto { Id = sessionId, ArcId = TestArcId, Name = "Session 1" });
+
+        await sut.InitializeAsync();
+
+        sut.ShouldFocusTitle = true;
+        var createdId = await sut.CreateChildArticleAsync(TestArcId);
+
+        Assert.Equal(sessionId, createdId);
+        Assert.False(sut.ShouldFocusTitle);
+        await sessionApi.Received(1).CreateSessionAsync(TestArcId, Arg.Any<SessionCreateDto>());
+    }
+
+    [Fact]
     public async Task DeleteAndMovePaths_ReturnStatus()
     {
         var (sut, _, _, _, _, _) = CreateSut();

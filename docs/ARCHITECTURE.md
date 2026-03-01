@@ -437,8 +437,8 @@ Chronicis.Shared  ---->  (no project references)
 - Session model:
 - Legacy `ArticleType.Session` references in API controllers/services (excluding migrations/tests): `6`.
 - Distribution: `ArticleValidationService` (`1`), `PublicWorldService` (`5`).
-- Legacy `ArticleType.Session` references in client source (`.cs` + `.razor`): `11`.
-- Distribution: `TutorialPageTypes` (`1`), `ArticleMetadataDrawer` (`2`), `CreateArticleDialog` (`2`), `QuestDrawer` (`2`), `TreeNode` (`1`), `PublicWorldPageViewModel` (`1`), `TreeDataBuilder` (`1`), `TreeMutations` (`1`).
+- Legacy `ArticleType.Session` references in client source (`.cs` + `.razor`): `8`.
+- Distribution: `TutorialPageTypes` (`1`), `ArticleMetadataDrawer` (`2`), `QuestDrawer` (`2`), `TreeNode` (`1`), `PublicWorldPageViewModel` (`1`), `TreeDataBuilder` (`1`).
 - Access-policy enforcement:
 - Public visibility/public slug rule condition hits in key read-path services/controllers (`PublicWorldService`, `WorldService`, `SessionService`, `SummaryService`, `PublicController`): `58`.
 
@@ -515,12 +515,10 @@ rg -n "ArticleVisibility\.Public|IsPublic|PublicSlug" `
 - Allowed compatibility-only client files:
 - `src/Chronicis.Client/Components/Admin/TutorialPageTypes.cs`
 - `src/Chronicis.Client/Components/Articles/ArticleMetadataDrawer.razor`
-- `src/Chronicis.Client/Components/Dialogs/CreateArticleDialog.razor`
 - `src/Chronicis.Client/Components/Quests/QuestDrawer.razor.cs`
 - `src/Chronicis.Client/Models/TreeNode.cs`
 - `src/Chronicis.Client/ViewModels/PublicWorldPageViewModel.cs`
 - `src/Chronicis.Client/Services/Tree/TreeDataBuilder.cs`
-- `src/Chronicis.Client/Services/Tree/TreeMutations.cs`
 - Freeze rule:
 - No new `ArticleType.Session` references may be introduced outside the compatibility boundary allowlist.
 - Transition states:
@@ -530,7 +528,7 @@ rg -n "ArticleVisibility\.Public|IsPublic|PublicSlug" `
 - Guardrails:
 - `tests/Chronicis.ArchitecturalTests/SessionModelGuardrailTests.cs` enforces:
 - no expansion of compatibility boundary file set for API/client.
-- no increase above baseline legacy-reference counts (`API <= 6`, `Client <= 11`).
+- no increase above baseline legacy-reference counts (`API <= 6`, `Client <= 8`).
 
 ## 11) Out of Scope
 - `Chronicis.CaptureApp` architecture is intentionally excluded.

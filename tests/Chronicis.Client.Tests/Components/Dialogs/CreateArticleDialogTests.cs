@@ -25,7 +25,6 @@ public class CreateArticleDialogTests : MudBlazorTestContext
     [Theory]
     [InlineData(ArticleType.Character, "New Player Character", "Character Name")]
     [InlineData(ArticleType.WikiArticle, "New Wiki Article", "Title")]
-    [InlineData(ArticleType.Session, "New Session", "Title")]
     [InlineData((ArticleType)999, "New Article", "Title")]
     public void TypeHelpers_ReturnExpectedValues(ArticleType type, string expectedTitle, string expectedLabel)
     {

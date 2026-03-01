@@ -56,6 +56,7 @@ Scope:
 - Session summary generation and clearing.
 - Cleanup of session-linked content on deletion.
 - Canonical session workflows use first-class `Session` entities; legacy `ArticleType.Session` handling is compatibility-only.
+- Arc tree add-child and quick-add session actions create `Session` entities directly.
 
 ## 5) Articles and Knowledge Base
 - Hierarchical article tree with unlimited nesting.

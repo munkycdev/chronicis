@@ -1,8 +1,8 @@
 @using Chronicis.Shared.DTOs
-@using Chronicis.Shared.Enums
+@using Chronicis.Shared.DTOs.Sessions
 @using System.Diagnostics.CodeAnalysis
 @inject ICampaignApiService CampaignApi
-@inject IArticleApiService ArticleApi
+@inject ISessionApiService SessionApi
 @inject ITreeStateService TreeState
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
@@ -14,7 +14,7 @@
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    FullWidth="true"
-                   OnClick="CreateSessionNote"
+                   OnClick="CreateSession"
                    Disabled="_isCreating"
                    Class="quick-add-session-btn">
             @if (_isCreating)
@@ -24,7 +24,7 @@
             }
             else
             {
-                <span>New Session Note</span>
+                <span>New Session</span>
             }
         </MudButton>
         @if (!string.IsNullOrEmpty(_contextLabel))
@@ -96,7 +96,7 @@
         }
     }
 
-    private async Task CreateSessionNote()
+    private async Task CreateSession()
     {
         if (_activeContext?.ArcId == null || _activeContext?.CampaignId == null || _worldId == null || _isCreating) 
             return;
@@ -106,33 +106,20 @@
 
         try
         {
-            // Generate session name as YYYY-MM-DD
             var sessionName = DateTime.Now.ToString("yyyy-MM-dd");
-
-            var createDto = new ArticleCreateDto
+            var createDto = new SessionCreateDto
             {
-                Title = sessionName,
-                WorldId = _worldId,
-                CampaignId = _activeContext.CampaignId,
-                ArcId = _activeContext.ArcId,
-                Type = ArticleType.SessionNote
+                Name = sessionName,
+                SessionDate = DateTime.Now
             };
 
-            var newArticle = await ArticleApi.CreateArticleAsync(createDto);
+            var newSession = await SessionApi.CreateSessionAsync(_activeContext.ArcId.Value, createDto);
             
-            if (newArticle != null)
+            if (newSession != null)
             {
-                // Refresh tree to show new session
                 await TreeState.RefreshAsync();
-                TreeState.ExpandPathToAndSelect(newArticle.Id);
-                
-                // Fetch the full article to get breadcrumbs for navigation
-                var articleDetail = await ArticleApi.GetArticleDetailAsync(newArticle.Id);
-                if (articleDetail != null && articleDetail.Breadcrumbs.Any())
-                {
-                    var path = string.Join("/", articleDetail.Breadcrumbs.Select(b => b.Slug));
-                    Navigation.NavigateTo($"/article/{path}");
-                }
+                TreeState.ExpandPathToAndSelect(newSession.Id);
+                Navigation.NavigateTo($"/session/{newSession.Id}");
                 
                 Snackbar.Add($"Session '{sessionName}' created", Severity.Success);
             }
