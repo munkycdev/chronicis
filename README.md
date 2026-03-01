@@ -187,8 +187,6 @@ chronicis/
 
 | Document | Description |
 |----------|-------------|
-| [QUICK-START.md](docs/QUICK-START.md) | User guide and tutorials |
-| [STATUS.md](docs/STATUS.md) | Current project state and progress |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Technical architecture and data model |
 | [FEATURES.md](docs/FEATURES.md) | Feature documentation and API reference |
 | [CHANGELOG.md](docs/CHANGELOG.md) | Version history |
@@ -221,9 +219,7 @@ chronicis/
 
 ### Planned 🔜
 - Knowledge base Q&A (RAG via Qdrant + Azure OpenAI)
-- Import from Obsidian / Notion
 - Mobile-optimized experience
-- Real-time collaborative editing
 - Session audio transcription integration
 
 ---
@@ -257,7 +253,7 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 <div align="center">
   
-  **[Live Demo](https://chronicis.app)** · **[Documentation](docs/QUICK-START.md)** · **[Changelog](docs/CHANGELOG.md)**
+  **[Live Demo](https://chronicis.app)** · **[Architecture](docs/ARCHITECTURE.md)** · **[Feature List](docs/FEATURES.md)** · **[Changelog](docs/CHANGELOG.md)**
   
   <sub>Developed in partnership with Claude (Anthropic) and Codex (OpenAI) 🤖✨</sub>
   
