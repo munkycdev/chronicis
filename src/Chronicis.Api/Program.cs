@@ -203,6 +203,7 @@ internal class Program
             builder.Services.AddScoped<IArticleDataAccessService, ArticleDataAccessService>();
             builder.Services.AddScoped<IArticleValidationService, ArticleValidationService>();
             builder.Services.AddScoped<IArticleExternalLinkService, ArticleExternalLinkService>();
+            builder.Services.AddScoped<IReadAccessPolicyService, ReadAccessPolicyService>();
             builder.Services.AddScoped<ISummaryService, SummaryService>();
             builder.Services.AddScoped<ISummaryAccessService, SummaryAccessService>();
             builder.Services.AddScoped<IUserService, UserService>();

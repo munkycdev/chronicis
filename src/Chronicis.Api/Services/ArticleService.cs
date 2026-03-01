@@ -13,12 +13,18 @@ namespace Chronicis.Api.Services
         private readonly ChronicisDbContext _context;
         private readonly ILogger<ArticleService> _logger;
         private readonly IArticleHierarchyService _hierarchyService;
+        private readonly IReadAccessPolicyService _readAccessPolicy;
 
-        public ArticleService(ChronicisDbContext context, ILogger<ArticleService> logger, IArticleHierarchyService hierarchyService)
+        public ArticleService(
+            ChronicisDbContext context,
+            ILogger<ArticleService> logger,
+            IArticleHierarchyService hierarchyService,
+            IReadAccessPolicyService readAccessPolicy)
         {
             _context = context;
             _logger = logger;
             _hierarchyService = hierarchyService;
+            _readAccessPolicy = readAccessPolicy;
         }
 
         /// <summary>
@@ -28,14 +34,7 @@ namespace Chronicis.Api.Services
         /// </summary>
         private IQueryable<Article> GetAccessibleArticles(Guid userId)
         {
-            return from a in _context.Articles
-                   join wm in _context.WorldMembers on a.WorldId equals wm.WorldId
-                   where wm.UserId == userId
-                   where a.Type != ArticleType.Tutorial
-                   where a.WorldId != Guid.Empty
-                   // Private articles only visible to creator
-                   where a.Visibility != ArticleVisibility.Private || a.CreatedBy == userId
-                   select a;
+            return _readAccessPolicy.ApplyAuthenticatedWorldArticleFilter(_context.Articles, userId);
         }
 
         /// <summary>
@@ -43,11 +42,7 @@ namespace Chronicis.Api.Services
         /// </summary>
         private IQueryable<Article> GetReadableArticles(Guid userId)
         {
-            var worldScoped = GetAccessibleArticles(userId);
-            var tutorials = _context.Articles
-                .Where(a => a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty);
-
-            return worldScoped.Concat(tutorials);
+            return _readAccessPolicy.ApplyAuthenticatedReadableArticleFilter(_context.Articles, userId);
         }
 
         /// <summary>
@@ -552,13 +547,16 @@ namespace Chronicis.Api.Services
 
             var worldSlug = slugs[0];
 
-            var world = await _context.Worlds
-                .AsNoTracking()
-                .Where(w => w.Slug == worldSlug && w.Members.Any(m => m.UserId == userId))
+            var world = _context.Worlds
+                .AsNoTracking();
+
+            var resolvedWorld = await _readAccessPolicy
+                .ApplyAuthenticatedWorldFilter(world, userId)
+                .Where(w => w.Slug == worldSlug)
                 .Select(w => new { w.Id })
                 .FirstOrDefaultAsync();
 
-            if (world == null)
+            if (resolvedWorld == null)
             {
                 return null;
             }
@@ -578,7 +576,7 @@ namespace Chronicis.Api.Services
                         .AsNoTracking()
                         .Where(a => a.Slug == slug &&
                                     a.ParentId == null &&
-                                    a.WorldId == world.Id)
+                                    a.WorldId == resolvedWorld.Id)
                         .FirstOrDefaultAsync();
                 }
                 else

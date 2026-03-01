@@ -44,6 +44,23 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## 2026 Q1 Unified Access-Policy Architecture (Step 6)
+
+- Added shared read-policy layer: `IReadAccessPolicyService` + `ReadAccessPolicyService`
+- Unified public and authenticated read-policy inputs across:
+- `PublicWorldService`
+- `ArticleService`
+- `ArticleDataAccessService`
+- `SummaryAccessService`
+- `SearchReadService`
+- Removed duplicated inline visibility/membership/public-world filters from migrated read paths
+- Added policy matrix regression coverage in:
+- `ReadAccessPolicyServiceTests`
+- `SearchReadServiceTests`
+- Extended `SummaryAccessServiceTests` and `ArticleDataAccessServiceTests` for private-owner policy parity
+
+---
+
 ## 2026 Q1 Session Entity Refactor (Phase 7)
 
 - Finalized quest session FK cutover to Session entities and removed the legacy quest article-session FK bridge column

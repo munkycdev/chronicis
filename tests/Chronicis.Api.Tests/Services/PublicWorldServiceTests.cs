@@ -36,7 +36,8 @@ public sealed class PublicWorldServiceTests : IDisposable
             _context,
             NullLogger<PublicWorldService>.Instance,
             _hierarchyService,
-            _blobStorage);
+            _blobStorage,
+            new ReadAccessPolicyService());
     }
 
     public void Dispose()

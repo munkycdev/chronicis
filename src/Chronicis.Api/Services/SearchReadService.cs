@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
@@ -10,11 +9,16 @@ public class SearchReadService : ISearchReadService
 {
     private readonly ChronicisDbContext _context;
     private readonly IArticleHierarchyService _hierarchyService;
+    private readonly IReadAccessPolicyService _readAccessPolicy;
 
-    public SearchReadService(ChronicisDbContext context, IArticleHierarchyService hierarchyService)
+    public SearchReadService(
+        ChronicisDbContext context,
+        IArticleHierarchyService hierarchyService,
+        IReadAccessPolicyService readAccessPolicy)
     {
         _context = context;
         _hierarchyService = hierarchyService;
+        _readAccessPolicy = readAccessPolicy;
     }
 
     public async Task<GlobalSearchResultsDto> SearchAsync(string query, Guid userId)
@@ -31,16 +35,11 @@ public class SearchReadService : ISearchReadService
             };
         }
 
-        var accessibleWorldIds = await _context.WorldMembers
-            .Where(wm => wm.UserId == userId)
-            .Select(wm => wm.WorldId)
-            .ToListAsync();
-
         var normalizedQuery = query.ToLowerInvariant();
+        var readableWorldArticles = _readAccessPolicy
+            .ApplyAuthenticatedWorldArticleFilter(_context.Articles.AsNoTracking(), userId);
 
-        var titleMatches = await _context.Articles
-            .Where(a => a.WorldId.HasValue && accessibleWorldIds.Contains(a.WorldId.Value))
-            .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
+        var titleMatches = await readableWorldArticles
             .Where(a => a.Title != null && a.Title.ToLower().Contains(normalizedQuery))
             .OrderBy(a => a.Title)
             .Take(20)
@@ -56,9 +55,7 @@ public class SearchReadService : ISearchReadService
             })
             .ToListAsync();
 
-        var bodyMatches = await _context.Articles
-            .Where(a => a.WorldId.HasValue && accessibleWorldIds.Contains(a.WorldId.Value))
-            .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
+        var bodyMatches = await readableWorldArticles
             .Where(a => a.Body != null && a.Body.ToLower().Contains(normalizedQuery))
             .OrderByDescending(a => a.ModifiedAt ?? a.CreatedAt)
             .Take(20)
@@ -84,9 +81,7 @@ public class SearchReadService : ISearchReadService
         }).ToList();
 
         var hashtagQuery = $"#{query}";
-        var hashtagMatches = await _context.Articles
-            .Where(a => a.WorldId.HasValue && accessibleWorldIds.Contains(a.WorldId.Value))
-            .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
+        var hashtagMatches = await readableWorldArticles
             .Where(a => a.Body != null && a.Body.Contains(hashtagQuery))
             .OrderByDescending(a => a.ModifiedAt ?? a.CreatedAt)
             .Take(20)

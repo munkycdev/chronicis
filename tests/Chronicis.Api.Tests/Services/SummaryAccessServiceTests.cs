@@ -18,7 +18,7 @@ public class SummaryAccessServiceTests
         db.Articles.Add(article);
         await db.SaveChangesAsync();
 
-        var sut = new SummaryAccessService(db);
+        var sut = new SummaryAccessService(db, new ReadAccessPolicyService());
 
         Assert.True(await sut.CanAccessArticleAsync(article.Id, userId));
         Assert.False(await sut.CanAccessArticleAsync(article.Id, otherUserId));
@@ -37,7 +37,7 @@ public class SummaryAccessServiceTests
         db.Campaigns.Add(campaign);
         await db.SaveChangesAsync();
 
-        var sut = new SummaryAccessService(db);
+        var sut = new SummaryAccessService(db, new ReadAccessPolicyService());
 
         Assert.True(await sut.CanAccessCampaignAsync(campaign.Id, userId));
         Assert.False(await sut.CanAccessCampaignAsync(campaign.Id, otherUserId));
@@ -58,9 +58,35 @@ public class SummaryAccessServiceTests
         db.Arcs.Add(arc);
         await db.SaveChangesAsync();
 
-        var sut = new SummaryAccessService(db);
+        var sut = new SummaryAccessService(db, new ReadAccessPolicyService());
 
         Assert.True(await sut.CanAccessArcAsync(arc.Id, userId));
         Assert.False(await sut.CanAccessArcAsync(arc.Id, otherUserId));
+    }
+
+    [Fact]
+    public async Task CanAccessArticleAsync_RespectsPrivateOwnership_ForWorldMembers()
+    {
+        using var db = RemainingApiBranchCoverageTestHelpers.CreateDbContext();
+        var userId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
+
+        var world = TestHelpers.CreateWorld(ownerId: userId);
+        db.Worlds.Add(world);
+        db.WorldMembers.AddRange(
+            TestHelpers.CreateWorldMember(worldId: world.Id, userId: userId),
+            TestHelpers.CreateWorldMember(worldId: world.Id, userId: otherUserId));
+
+        var privateArticle = TestHelpers.CreateArticle(
+            worldId: world.Id,
+            createdBy: otherUserId,
+            visibility: Chronicis.Shared.Enums.ArticleVisibility.Private);
+        db.Articles.Add(privateArticle);
+        await db.SaveChangesAsync();
+
+        var sut = new SummaryAccessService(db, new ReadAccessPolicyService());
+
+        Assert.False(await sut.CanAccessArticleAsync(privateArticle.Id, userId));
+        Assert.True(await sut.CanAccessArticleAsync(privateArticle.Id, otherUserId));
     }
 }

@@ -16,17 +16,20 @@ public class PublicWorldService : IPublicWorldService
     private readonly ILogger<PublicWorldService> _logger;
     private readonly IArticleHierarchyService _hierarchyService;
     private readonly IBlobStorageService _blobStorage;
+    private readonly IReadAccessPolicyService _readAccessPolicy;
 
     public PublicWorldService(
         ChronicisDbContext context,
         ILogger<PublicWorldService> logger,
         IArticleHierarchyService hierarchyService,
-        IBlobStorageService blobStorage)
+        IBlobStorageService blobStorage,
+        IReadAccessPolicyService readAccessPolicy)
     {
         _context = context;
         _logger = logger;
         _hierarchyService = hierarchyService;
         _blobStorage = blobStorage;
+        _readAccessPolicy = readAccessPolicy;
     }
 
     /// <summary>
@@ -35,13 +38,12 @@ public class PublicWorldService : IPublicWorldService
     /// </summary>
     public async Task<WorldDetailDto?> GetPublicWorldAsync(string publicSlug)
     {
-        var normalizedSlug = publicSlug.Trim().ToLowerInvariant();
+        var normalizedSlug = _readAccessPolicy.NormalizePublicSlug(publicSlug);
 
-        var world = await _context.Worlds
-            .AsNoTracking()
+        var world = await _readAccessPolicy
+            .ApplyPublicWorldSlugFilter(_context.Worlds.AsNoTracking(), normalizedSlug)
             .Include(w => w.Owner)
             .Include(w => w.Campaigns)
-            .Where(w => w.PublicSlug == normalizedSlug && w.IsPublic)
             .FirstOrDefaultAsync();
 
         if (world == null)
@@ -86,15 +88,14 @@ public class PublicWorldService : IPublicWorldService
     /// </summary>
     public async Task<List<ArticleTreeDto>> GetPublicArticleTreeAsync(string publicSlug)
     {
-        var normalizedSlug = publicSlug.Trim().ToLowerInvariant();
+        var normalizedSlug = _readAccessPolicy.NormalizePublicSlug(publicSlug);
 
         // First, verify the world exists and is public
-        var world = await _context.Worlds
-            .AsNoTracking()
+        var world = await _readAccessPolicy
+            .ApplyPublicWorldSlugFilter(_context.Worlds.AsNoTracking(), normalizedSlug)
             .Include(w => w.Campaigns)
                 .ThenInclude(c => c.Arcs)
                     .ThenInclude(a => a.SessionEntities)
-            .Where(w => w.PublicSlug == normalizedSlug && w.IsPublic)
             .FirstOrDefaultAsync();
 
         if (world == null)
@@ -104,9 +105,8 @@ public class PublicWorldService : IPublicWorldService
         }
 
         // Get all public articles for this world
-        var allPublicArticles = await _context.Articles
-            .AsNoTracking()
-            .Where(a => a.WorldId == world.Id && a.Visibility == ArticleVisibility.Public)
+        var allPublicArticles = await _readAccessPolicy
+            .ApplyPublicArticleFilter(_context.Articles.AsNoTracking(), world.Id)
             .Select(a => new ArticleTreeDto
             {
                 Id = a.Id,
@@ -448,14 +448,12 @@ public class PublicWorldService : IPublicWorldService
             return null;
         }
 
-        var sessionRootNote = await _context.Articles
-            .AsNoTracking()
+        var sessionRootNote = await _readAccessPolicy
+            .ApplyPublicArticleFilter(_context.Articles.AsNoTracking(), worldId)
             .Where(a => a.Slug == slug &&
                         a.ParentId == null &&
                         a.SessionId == legacySessionArticleId &&
-                        a.WorldId == worldId &&
-                        a.Type == ArticleType.SessionNote &&
-                        a.Visibility == ArticleVisibility.Public)
+                        a.Type == ArticleType.SessionNote)
             .Select(a => new { a.Id, a.Type })
             .FirstOrDefaultAsync();
 
@@ -466,12 +464,10 @@ public class PublicWorldService : IPublicWorldService
 
     private async Task<string?> TryGetCompatibilityLegacySessionSlugAsync(Guid worldId, Guid sessionId)
     {
-        return await _context.Articles
-            .AsNoTracking()
+        return await _readAccessPolicy
+            .ApplyPublicArticleFilter(_context.Articles.AsNoTracking(), worldId)
             .Where(a => a.Id == sessionId &&
-                        a.WorldId == worldId &&
-                        a.Type == ArticleType.Session &&
-                        a.Visibility == ArticleVisibility.Public)
+                        a.Type == ArticleType.Session)
             .Select(a => a.Slug)
             .FirstOrDefaultAsync();
     }
@@ -483,12 +479,11 @@ public class PublicWorldService : IPublicWorldService
     /// </summary>
     public async Task<ArticleDto?> GetPublicArticleAsync(string publicSlug, string articlePath)
     {
-        var normalizedSlug = publicSlug.Trim().ToLowerInvariant();
+        var normalizedSlug = _readAccessPolicy.NormalizePublicSlug(publicSlug);
 
         // First, verify the world exists and is public
-        var world = await _context.Worlds
-            .AsNoTracking()
-            .Where(w => w.PublicSlug == normalizedSlug && w.IsPublic)
+        var world = await _readAccessPolicy
+            .ApplyPublicWorldSlugFilter(_context.Worlds.AsNoTracking(), normalizedSlug)
             .Select(w => new { w.Id, w.Name, w.Slug })
             .FirstOrDefaultAsync();
 
@@ -523,12 +518,10 @@ public class PublicWorldService : IPublicWorldService
             if (isRootLevel)
             {
                 // Root-level article: filter by WorldId and ParentId = null
-                var rootArticle = await _context.Articles
-                    .AsNoTracking()
+                var rootArticle = await _readAccessPolicy
+                    .ApplyPublicArticleFilter(_context.Articles.AsNoTracking(), world.Id)
                     .Where(a => a.Slug == slug &&
-                                a.ParentId == null &&
-                                a.WorldId == world.Id &&
-                                a.Visibility == ArticleVisibility.Public)
+                                a.ParentId == null)
                     .Select(a => new { a.Id, a.Type })
                     .FirstOrDefaultAsync();
                 if (rootArticle != null)
@@ -539,12 +532,10 @@ public class PublicWorldService : IPublicWorldService
             else
             {
                 // Child article: filter by ParentId
-                var childArticle = await _context.Articles
-                    .AsNoTracking()
+                var childArticle = await _readAccessPolicy
+                    .ApplyPublicArticleFilter(_context.Articles.AsNoTracking(), world.Id)
                     .Where(a => a.Slug == slug &&
-                                a.ParentId == currentParentId &&
-                                a.WorldId == world.Id &&
-                                a.Visibility == ArticleVisibility.Public)
+                                a.ParentId == currentParentId)
                     .Select(a => new { a.Id, a.Type })
                     .FirstOrDefaultAsync();
                 if (childArticle != null)
@@ -577,11 +568,9 @@ public class PublicWorldService : IPublicWorldService
         if (!articleId.HasValue)
             return null;
 
-        var article = await _context.Articles
-            .AsNoTracking()
-            .Where(a => a.Id == articleId.Value &&
-                        a.WorldId == world.Id &&
-                        a.Visibility == ArticleVisibility.Public)
+        var article = await _readAccessPolicy
+            .ApplyPublicArticleFilter(_context.Articles.AsNoTracking(), world.Id)
+            .Where(a => a.Id == articleId.Value)
             .Select(a => new ArticleDto
             {
                 Id = a.Id,
@@ -634,12 +623,11 @@ public class PublicWorldService : IPublicWorldService
     /// </summary>
     public async Task<string?> GetPublicArticlePathAsync(string publicSlug, Guid articleId)
     {
-        var normalizedSlug = publicSlug.Trim().ToLowerInvariant();
+        var normalizedSlug = _readAccessPolicy.NormalizePublicSlug(publicSlug);
 
         // Verify the world exists and is public
-        var world = await _context.Worlds
-            .AsNoTracking()
-            .Where(w => w.PublicSlug == normalizedSlug && w.IsPublic)
+        var world = await _readAccessPolicy
+            .ApplyPublicWorldSlugFilter(_context.Worlds.AsNoTracking(), normalizedSlug)
             .Select(w => new { w.Id })
             .FirstOrDefaultAsync();
 
@@ -650,11 +638,9 @@ public class PublicWorldService : IPublicWorldService
         }
 
         // Get the article and verify it's public and belongs to this world
-        var article = await _context.Articles
-            .AsNoTracking()
-            .Where(a => a.Id == articleId &&
-                        a.WorldId == world.Id &&
-                        a.Visibility == ArticleVisibility.Public)
+        var article = await _readAccessPolicy
+            .ApplyPublicArticleFilter(_context.Articles.AsNoTracking(), world.Id)
+            .Where(a => a.Id == articleId)
             .Select(a => new { a.Id, a.Slug, a.ParentId, a.SessionId, a.Type })
             .FirstOrDefaultAsync();
 
@@ -688,11 +674,9 @@ public class PublicWorldService : IPublicWorldService
 
         while (currentParentId.HasValue)
         {
-            var parentArticle = await _context.Articles
-                .AsNoTracking()
-                .Where(a => a.Id == currentParentId.Value &&
-                            a.WorldId == world.Id &&
-                            a.Visibility == ArticleVisibility.Public)
+            var parentArticle = await _readAccessPolicy
+                .ApplyPublicArticleFilter(_context.Articles.AsNoTracking(), world.Id)
+                .Where(a => a.Id == currentParentId.Value)
                 .Select(a => new { a.Slug, a.ParentId })
                 .FirstOrDefaultAsync();
 
@@ -720,31 +704,34 @@ public class PublicWorldService : IPublicWorldService
     /// </summary>
     public async Task<string?> GetPublicDocumentDownloadUrlAsync(Guid documentId)
     {
+        var publicArticles = _readAccessPolicy
+            .ApplyPublicVisibilityFilter(_context.Articles.AsNoTracking());
+        var publicWorlds = _readAccessPolicy
+            .ApplyPublicWorldFilter(_context.Worlds.AsNoTracking());
+
         var document = await _context.WorldDocuments
             .AsNoTracking()
             .Where(d => d.Id == documentId
                         && d.ArticleId.HasValue
                         && d.ContentType.StartsWith("image/"))
             .Join(
-                _context.Articles.AsNoTracking(),
+                publicArticles,
                 d => d.ArticleId,
                 a => a.Id,
                 (d, a) => new
                 {
                     d.BlobPath,
                     d.WorldId,
-                    ArticleWorldId = a.WorldId,
-                    a.Visibility
+                    ArticleWorldId = a.WorldId
                 })
             .Join(
-                _context.Worlds.AsNoTracking().Where(w => w.IsPublic),
+                publicWorlds,
                 joined => joined.WorldId,
                 w => w.Id,
                 (joined, _) => joined)
             .FirstOrDefaultAsync();
 
         if (document == null
-            || document.Visibility != ArticleVisibility.Public
             || document.ArticleWorldId != document.WorldId)
         {
             return null;

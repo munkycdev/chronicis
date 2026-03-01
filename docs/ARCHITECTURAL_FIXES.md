@@ -2,11 +2,13 @@
 
 Last reviewed: 2026-03-01
 
-## 0) Step 1-4 Execution Status
+## 0) Step 1-6 Execution Status
 - Step 1 (`Baseline and Ownership`): completed.
 - Step 2 (`Data-Access Policy Definition`): completed.
 - Step 3 (`Data-Access Boundary Migration`): completed.
 - Step 4 (`Session Model Canonicalization Plan`): completed.
+- Step 5 (`Session Convergence Execution`): completed.
+- Step 6 (`Unified Access-Policy Architecture`): completed.
 - Verification evidence:
 - `dotnet build Chronicis.CI.sln` passes with 0 warnings and 0 errors.
 - `dotnet test Chronicis.CI.sln` passes.
@@ -116,9 +118,31 @@ Step 5 acceptance criteria:
 - Step 5 changes merge only with passing `.\scripts\verify.ps1`. `Status: complete`.
 
 ### Step 6: Unified Access-Policy Architecture
-- Create one shared policy evaluation layer used by both public and authenticated read models.
-- Separate policy decisions from projection assembly so visibility rules are enforced once.
-- Require both controller families to consume the same policy outcomes.
+- Status: completed.
+- Shared read-policy layer implemented as `IReadAccessPolicyService` + `ReadAccessPolicyService`.
+- Public and authenticated read services consume shared policy outcomes:
+- `PublicWorldService`
+- `ArticleService`
+- `ArticleDataAccessService`
+- `SummaryAccessService`
+- `SearchReadService`
+- Policy decisions are separated from projection assembly:
+- access constraints are composed through policy service filters;
+- DTO/tree/path projection logic remains in owning read services.
+
+Step 6 deliverables:
+- Shared public-world and public-article policy filters for anonymous reads.
+- Shared authenticated world/article/campaign/arc policy filters for member reads.
+- Shared tutorial-read policy input for authenticated read paths that support tutorial/system content.
+- Updated service wiring in `Program.cs` and migrated read-service consumers.
+- Regression tests added for the policy service and read-path integrations.
+- Updated architecture/changelog documentation for Step 6 completion and metrics.
+
+Step 6 acceptance criteria:
+- One policy evaluation layer is consumed by both public and authenticated read models. `Status: complete`.
+- Visibility and membership rules are no longer duplicated inline across migrated read services. `Status: complete`.
+- Public and authenticated controller families consume shared policy outcomes through their backing services. `Status: complete`.
+- Full repo verification gate passes (`.\scripts\verify.ps1`). `Status: complete`.
 
 ### Step 7: Read-Model Parity Hardening
 - Consolidate duplicate rule logic into shared projections or shared policy inputs.

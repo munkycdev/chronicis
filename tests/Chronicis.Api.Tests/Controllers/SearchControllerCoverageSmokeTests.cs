@@ -17,7 +17,7 @@ public class SearchControllerCoverageSmokeTests
         using var db = ControllerCoverageTestFixtures.CreateDbContext();
         var user = ControllerCoverageTestFixtures.CreateCurrentUserService();
         var hierarchy = Substitute.For<IArticleHierarchyService>();
-        var searchReadService = new SearchReadService(db, hierarchy);
+        var searchReadService = new SearchReadService(db, hierarchy, new ReadAccessPolicyService());
         var sut = new SearchController(searchReadService, user, NullLogger<SearchController>.Instance);
 
         var result = await sut.Search("a");
@@ -58,7 +58,7 @@ public class SearchControllerCoverageSmokeTests
                 type: ArticleType.WikiArticle));
         await db.SaveChangesAsync();
 
-        var searchReadService = new SearchReadService(db, hierarchy);
+        var searchReadService = new SearchReadService(db, hierarchy, new ReadAccessPolicyService());
         var sut = new SearchController(searchReadService, currentUserService, NullLogger<SearchController>.Instance);
 
         var result = await sut.Search("root");

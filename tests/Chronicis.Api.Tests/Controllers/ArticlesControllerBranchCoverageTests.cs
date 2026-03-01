@@ -79,7 +79,10 @@ public class ArticlesControllerBranchCoverageTests
             tutorialArticle);
         db.SaveChanges();
 
-        var service = new ArticleDataAccessService(db, NSubstitute.Substitute.For<IWorldDocumentService>());
+        var service = new ArticleDataAccessService(
+            db,
+            NSubstitute.Substitute.For<IWorldDocumentService>(),
+            new ReadAccessPolicyService());
 
         var result = await service.ResolveReadableLinksAsync(
             [readableArticle.Id, unreadableArticle.Id, tutorialArticle.Id],

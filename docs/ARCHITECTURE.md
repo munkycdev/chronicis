@@ -425,6 +425,7 @@ Chronicis.Shared  ---->  (no project references)
 - `PublicController` (backed by `PublicWorldService`).
 - Shared policy/traversal seam:
 - `ArticleHierarchyService` is shared between public and authenticated traversal/breadcrumb logic.
+- `ReadAccessPolicyService` is shared between public and authenticated read-path policy evaluation.
 - Persistence boundary seam:
 - `ChronicisDbContext` is directly injected across many services and controllers.
 - Existing repository seam:
@@ -440,7 +441,9 @@ Chronicis.Shared  ---->  (no project references)
 - Legacy `ArticleType.Session` references in client source (`.cs` + `.razor`): `8`.
 - Distribution: `TutorialPageTypes` (`1`), `ArticleMetadataDrawer` (`2`), `QuestDrawer` (`2`), `TreeNode` (`1`), `PublicWorldPageViewModel` (`1`), `TreeDataBuilder` (`1`).
 - Access-policy enforcement:
-- Public visibility/public slug rule condition hits in key read-path services/controllers (`PublicWorldService`, `WorldService`, `SessionService`, `SummaryService`, `PublicController`): `58`.
+- Public visibility/public slug rule condition hits in key read-path services/controllers (`PublicWorldService`, `WorldService`, `SessionService`, `SummaryService`, `PublicController`): `48`.
+- Shared read-policy consumers:
+- `PublicWorldService`, `ArticleService`, `ArticleDataAccessService`, `SummaryAccessService`, `SearchReadService`.
 
 ### 10.7 Measurement Commands (Repeatable)
 ```powershell
@@ -463,6 +466,14 @@ rg -n "ArticleVisibility\.Public|IsPublic|PublicSlug" `
   src/Chronicis.Api/Services/SessionService.cs `
   src/Chronicis.Api/Services/SummaryService.cs `
   src/Chronicis.Api/Controllers/PublicController.cs
+
+# Shared read-policy layer consumers
+rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
+  src/Chronicis.Api/Services/PublicWorldService.cs `
+  src/Chronicis.Api/Services/ArticleService.cs `
+  src/Chronicis.Api/Services/ArticleDataAccessService.cs `
+  src/Chronicis.Api/Services/SummaryAccessService.cs `
+  src/Chronicis.Api/Services/SearchReadService.cs
 ```
 
 ### 10.8 Compliance Metrics and Release Gates
@@ -529,6 +540,21 @@ rg -n "ArticleVisibility\.Public|IsPublic|PublicSlug" `
 - `tests/Chronicis.ArchitecturalTests/SessionModelGuardrailTests.cs` enforces:
 - no expansion of compatibility boundary file set for API/client.
 - no increase above baseline legacy-reference counts (`API <= 6`, `Client <= 8`).
+
+### 10.13 Unified Access-Policy Architecture (Step 6)
+- Shared policy contract:
+- `IReadAccessPolicyService` defines canonical read-policy inputs for:
+- public world lookup, public article visibility, tutorial readability, and authenticated world/article/campaign/arc access.
+- Shared implementation:
+- `ReadAccessPolicyService` centralizes policy evaluation and query composition for both anonymous and authenticated reads.
+- Migrated read-path consumers:
+- `PublicWorldService`, `ArticleService`, `ArticleDataAccessService`, `SummaryAccessService`, and `SearchReadService`.
+- Separation of concerns:
+- Policy decisions are evaluated once in the policy layer.
+- Projection assembly (DTO/tree/path materialization) remains in owning read services.
+- Validation:
+- `tests/Chronicis.Api.Tests/Services/ReadAccessPolicyServiceTests.cs` covers policy matrix behavior.
+- Service-level regressions validate adoption in public/auth read paths.
 
 ## 11) Out of Scope
 - `Chronicis.CaptureApp` architecture is intentionally excluded.

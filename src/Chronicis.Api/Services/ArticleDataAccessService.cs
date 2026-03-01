@@ -11,11 +11,16 @@ public class ArticleDataAccessService : IArticleDataAccessService
 {
     private readonly ChronicisDbContext _context;
     private readonly IWorldDocumentService _worldDocumentService;
+    private readonly IReadAccessPolicyService _readAccessPolicy;
 
-    public ArticleDataAccessService(ChronicisDbContext context, IWorldDocumentService worldDocumentService)
+    public ArticleDataAccessService(
+        ChronicisDbContext context,
+        IWorldDocumentService worldDocumentService,
+        IReadAccessPolicyService readAccessPolicy)
     {
         _context = context;
         _worldDocumentService = worldDocumentService;
+        _readAccessPolicy = readAccessPolicy;
     }
 
     public async Task AddArticleAsync(Article article)
@@ -164,11 +169,21 @@ public class ArticleDataAccessService : IArticleDataAccessService
 
     public async Task<Article?> GetReadableArticleWithAliasesAsync(Guid articleId, Guid userId)
     {
-        return await _context.Articles
+        var worldReadable = await _readAccessPolicy
+            .ApplyAuthenticatedWorldArticleFilter(_context.Articles, userId)
             .Include(a => a.Aliases)
             .Where(a => a.Id == articleId)
-            .Where(a => (a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty) ||
-                        (a.World != null && a.World.Members.Any(m => m.UserId == userId)))
+            .FirstOrDefaultAsync();
+
+        if (worldReadable != null)
+        {
+            return worldReadable;
+        }
+
+        return await _readAccessPolicy
+            .ApplyTutorialArticleFilter(_context.Articles)
+            .Include(a => a.Aliases)
+            .Where(a => a.Id == articleId)
             .FirstOrDefaultAsync();
     }
 
@@ -209,14 +224,7 @@ public class ArticleDataAccessService : IArticleDataAccessService
 
     private IQueryable<Article> GetReadableArticlesQuery(Guid userId)
     {
-        var worldScoped = _context.Articles
-            .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
-            .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == userId));
-
-        var tutorials = _context.Articles
-            .Where(a => a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty);
-
-        return worldScoped.Concat(tutorials);
+        return _readAccessPolicy.ApplyAuthenticatedReadableArticleFilter(_context.Articles, userId);
     }
 }
 

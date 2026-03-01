@@ -12,7 +12,7 @@ public class ArticleDataAccessServiceTests
     public async Task AddArticleAsync_AndSaveChangesAsync_PersistUpdates()
     {
         using var db = RemainingApiBranchCoverageTestHelpers.CreateDbContext();
-        var sut = new ArticleDataAccessService(db, Substitute.For<IWorldDocumentService>());
+        var sut = new ArticleDataAccessService(db, Substitute.For<IWorldDocumentService>(), new ReadAccessPolicyService());
         var article = TestHelpers.CreateArticle(type: ArticleType.Tutorial, worldId: Guid.Empty);
 
         await sut.AddArticleAsync(article);
@@ -50,16 +50,26 @@ public class ArticleDataAccessServiceTests
             title: "Tutorial",
             type: ArticleType.Tutorial);
 
-        db.Articles.AddRange(readable, unreadable, tutorial);
+        var privateNotOwned = TestHelpers.CreateArticle(
+            worldId: readableWorld.Id,
+            createdBy: Guid.NewGuid(),
+            title: "Private Not Owned",
+            type: ArticleType.WikiArticle,
+            visibility: ArticleVisibility.Private);
+
+        db.Articles.AddRange(readable, unreadable, tutorial, privateNotOwned);
         await db.SaveChangesAsync();
 
-        var sut = new ArticleDataAccessService(db, Substitute.For<IWorldDocumentService>());
+        var sut = new ArticleDataAccessService(db, Substitute.For<IWorldDocumentService>(), new ReadAccessPolicyService());
 
         Assert.NotNull(await sut.FindReadableArticleAsync(readable.Id, userId));
         Assert.NotNull(await sut.FindReadableArticleAsync(tutorial.Id, userId));
         Assert.Null(await sut.FindReadableArticleAsync(unreadable.Id, userId));
+        Assert.Null(await sut.FindReadableArticleAsync(privateNotOwned.Id, userId));
 
-        var resolved = await sut.ResolveReadableLinksAsync([readable.Id, unreadable.Id, tutorial.Id], userId);
+        var resolved = await sut.ResolveReadableLinksAsync(
+            [readable.Id, unreadable.Id, tutorial.Id, privateNotOwned.Id],
+            userId);
         Assert.Equal(2, resolved.Count);
         Assert.Contains(resolved, r => r.ArticleId == readable.Id);
         Assert.Contains(resolved, r => r.ArticleId == tutorial.Id);
@@ -75,6 +85,10 @@ public class ArticleDataAccessServiceTests
         var missingResult = await sut.TryGetReadableArticleWorldAsync(unreadable.Id, userId);
         Assert.False(missingResult.Found);
         Assert.Null(missingResult.WorldId);
+
+        var privateMissingResult = await sut.TryGetReadableArticleWorldAsync(privateNotOwned.Id, userId);
+        Assert.False(privateMissingResult.Found);
+        Assert.Null(privateMissingResult.WorldId);
     }
 
     [Fact]
@@ -96,7 +110,7 @@ public class ArticleDataAccessServiceTests
         db.Articles.AddRange(parent, rootTutorial, childTutorial);
         await db.SaveChangesAsync();
 
-        var sut = new ArticleDataAccessService(db, Substitute.For<IWorldDocumentService>());
+        var sut = new ArticleDataAccessService(db, Substitute.For<IWorldDocumentService>(), new ReadAccessPolicyService());
 
         Assert.False(await sut.IsTutorialSlugUniqueAsync("duplicate-root", null));
         Assert.False(await sut.IsTutorialSlugUniqueAsync("duplicate-child", parent.Id));
@@ -128,7 +142,7 @@ public class ArticleDataAccessServiceTests
         db.Articles.AddRange(parent, root1, root2, child);
         await db.SaveChangesAsync();
 
-        var sut = new ArticleDataAccessService(db, Substitute.For<IWorldDocumentService>());
+        var sut = new ArticleDataAccessService(db, Substitute.For<IWorldDocumentService>(), new ReadAccessPolicyService());
 
         var generatedRoot = await sut.GenerateTutorialSlugAsync("Hello World", null);
         Assert.Equal("hello-world-3", generatedRoot);
@@ -145,7 +159,7 @@ public class ArticleDataAccessServiceTests
     {
         using var db = RemainingApiBranchCoverageTestHelpers.CreateDbContext();
         var worldDocumentService = Substitute.For<IWorldDocumentService>();
-        var sut = new ArticleDataAccessService(db, worldDocumentService);
+        var sut = new ArticleDataAccessService(db, worldDocumentService, new ReadAccessPolicyService());
 
         var world = TestHelpers.CreateWorld(ownerId: Guid.NewGuid());
         db.Worlds.Add(world);
@@ -201,7 +215,7 @@ public class ArticleDataAccessServiceTests
     public async Task GetBacklinksAndOutgoingLinks_ReturnExpectedDtos()
     {
         using var db = RemainingApiBranchCoverageTestHelpers.CreateDbContext();
-        var sut = new ArticleDataAccessService(db, Substitute.For<IWorldDocumentService>());
+        var sut = new ArticleDataAccessService(db, Substitute.For<IWorldDocumentService>(), new ReadAccessPolicyService());
         var world = TestHelpers.CreateWorld(ownerId: Guid.NewGuid());
         db.Worlds.Add(world);
 
@@ -267,7 +281,7 @@ public class ArticleDataAccessServiceTests
         db.Articles.Add(tutorial);
         await db.SaveChangesAsync();
 
-        var sut = new ArticleDataAccessService(db, Substitute.For<IWorldDocumentService>());
+        var sut = new ArticleDataAccessService(db, Substitute.For<IWorldDocumentService>(), new ReadAccessPolicyService());
 
         var readable = await sut.GetReadableArticleWithAliasesAsync(article.Id, memberId);
         Assert.NotNull(readable);

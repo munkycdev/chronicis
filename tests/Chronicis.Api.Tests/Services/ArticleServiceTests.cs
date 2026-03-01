@@ -34,7 +34,8 @@ public class ArticleServiceTests : IDisposable
         _service = new ArticleService(
             _context,
             NullLogger<ArticleService>.Instance,
-            _hierarchyService);
+            _hierarchyService,
+            new ReadAccessPolicyService());
 
         SeedTestData();
     }
