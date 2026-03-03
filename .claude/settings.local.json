@@ -1,7 +1,11 @@
 {
   "permissions": {
+    "defaultMode": "acceptEdits",
     "allow": [
-      "Bash(xargs grep -l \"DbSet<\")"
+      "Bash(xargs grep -l \"DbSet<\")",
+      "Bash(dotnet ef migrations add *)",
+      "Bash(./scripts/*)",
+      "Bash(dotnet build *)"
     ]
   }
 }

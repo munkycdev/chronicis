@@ -31,6 +31,12 @@ public class ChronicisDbContext : DbContext
     public DbSet<QuestUpdate> QuestUpdates { get; set; } = null!;
     public DbSet<Session> Sessions { get; set; } = null!;
 
+    // ===== Maps =====
+    public DbSet<WorldMap> WorldMaps { get; set; } = null!;
+    public DbSet<MapLayer> MapLayers { get; set; } = null!;
+    public DbSet<WorldMapCampaign> WorldMapCampaigns { get; set; } = null!;
+    public DbSet<WorldMapArc> WorldMapArcs { get; set; } = null!;
+
 
     public ChronicisDbContext(DbContextOptions<ChronicisDbContext> options)
         : base(options)
@@ -58,6 +64,10 @@ public class ChronicisDbContext : DbContext
         ConfigureQuest(modelBuilder);
         ConfigureQuestUpdate(modelBuilder);
         ConfigureSession(modelBuilder);
+        ConfigureWorldMap(modelBuilder);
+        ConfigureMapLayer(modelBuilder);
+        ConfigureWorldMapCampaign(modelBuilder);
+        ConfigureWorldMapArc(modelBuilder);
     }
 
     private static void ConfigureUser(ModelBuilder modelBuilder)
@@ -906,6 +916,105 @@ public class ChronicisDbContext : DbContext
 
             entity.HasIndex(s => new { s.ArcId, s.SessionDate })
                 .HasDatabaseName("IX_Sessions_ArcId_SessionDate");
+        });
+    }
+
+    private static void ConfigureWorldMap(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<WorldMap>(entity =>
+        {
+            entity.HasKey(wm => wm.WorldMapId);
+
+            entity.Property(wm => wm.Name)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(wm => wm.BasemapBlobKey)
+                .HasMaxLength(1024);
+
+            entity.Property(wm => wm.BasemapContentType)
+                .HasMaxLength(100);
+
+            entity.Property(wm => wm.BasemapOriginalFilename)
+                .HasMaxLength(255);
+
+            // WorldMap -> World (no nav property on World)
+            entity.HasOne(wm => wm.World)
+                .WithMany()
+                .HasForeignKey(wm => wm.WorldId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(wm => wm.WorldId);
+        });
+    }
+
+    private static void ConfigureMapLayer(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<MapLayer>(entity =>
+        {
+            entity.HasKey(ml => ml.MapLayerId);
+
+            entity.Property(ml => ml.Name)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            // MapLayer -> WorldMap
+            entity.HasOne(ml => ml.WorldMap)
+                .WithMany(wm => wm.Layers)
+                .HasForeignKey(ml => ml.WorldMapId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Self-referencing hierarchy
+            entity.HasOne(ml => ml.Parent)
+                .WithMany(ml => ml.Children)
+                .HasForeignKey(ml => ml.ParentLayerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(ml => ml.WorldMapId);
+        });
+    }
+
+    private static void ConfigureWorldMapCampaign(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<WorldMapCampaign>(entity =>
+        {
+            entity.HasKey(wmc => new { wmc.WorldMapId, wmc.CampaignId });
+
+            // WorldMapCampaign -> WorldMap
+            entity.HasOne(wmc => wmc.WorldMap)
+                .WithMany(wm => wm.WorldMapCampaigns)
+                .HasForeignKey(wmc => wmc.WorldMapId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // WorldMapCampaign -> Campaign (no nav property on Campaign)
+            entity.HasOne(wmc => wmc.Campaign)
+                .WithMany()
+                .HasForeignKey(wmc => wmc.CampaignId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(wmc => wmc.CampaignId);
+        });
+    }
+
+    private static void ConfigureWorldMapArc(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<WorldMapArc>(entity =>
+        {
+            entity.HasKey(wma => new { wma.WorldMapId, wma.ArcId });
+
+            // WorldMapArc -> WorldMap
+            entity.HasOne(wma => wma.WorldMap)
+                .WithMany(wm => wm.WorldMapArcs)
+                .HasForeignKey(wma => wma.WorldMapId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // WorldMapArc -> Arc (no nav property on Arc)
+            entity.HasOne(wma => wma.Arc)
+                .WithMany()
+                .HasForeignKey(wma => wma.ArcId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(wma => wma.ArcId);
         });
     }
 }

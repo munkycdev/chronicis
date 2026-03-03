@@ -31,7 +31,7 @@ Constraints:
 
 ---
 
-## P0-02 Define EF Entities (No Code)
+## P0-02 Define EF Entities (No Code) ✓ COMPLETE
 
 Task:
 

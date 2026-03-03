@@ -4,22 +4,26 @@
 
 ### WorldMap
 
-* WorldMapId
+* WorldMapId (Guid, PK)
+* WorldId (Guid, FK → World)
+* Name (string, required)
+* BasemapBlobKey (string?, nullable until uploaded)
+* BasemapContentType (string?, e.g. image/png)
+* BasemapOriginalFilename (string?)
+* CreatedUtc (DateTime)
+* UpdatedUtc (DateTime)
+
+Indexes:
 * WorldId
-* Name
-* BasemapBlobKey
-* BasemapContentType
-* BasemapOriginalFilename
-* CreatedUtc / UpdatedUtc
 
 ### MapLayer
 
-* MapLayerId
-* WorldMapId
-* ParentLayerId (nullable)
-* Name
-* SortOrder
-* IsEnabled
+* MapLayerId (Guid, PK)
+* WorldMapId (Guid, FK → WorldMap)
+* ParentLayerId (Guid?, nullable self-reference)
+* Name (string, e.g. "World", "Campaign", "Arc")
+* SortOrder (int)
+* IsEnabled (bool)
 
 Default layers created on map creation:
 
@@ -29,21 +33,43 @@ Default layers created on map creation:
 
 Layers are hidden in MVP.
 
+Indexes:
+* WorldMapId
+
 ### MapFeature (MVP: Point only)
 
-* MapFeatureId
-* WorldMapId
-* MapLayerId
+* MapFeatureId (Guid, PK)
+* WorldMapId (Guid, FK → WorldMap)
+* MapLayerId (Guid, FK → MapLayer)
 * X (float, normalized 0..1)
 * Y (float, normalized 0..1)
-* LinkedArticleId
-* GeometryBlobKey (reserved for future)
-* GeometryETag (reserved for future)
+* LinkedArticleId (Guid?)
+* GeometryBlobKey (string?, reserved for future)
+* GeometryETag (string?, reserved for future)
+
+Indexes:
+* WorldMapId
+* MapLayerId
 
 ### Join Tables
 
-* WorldMapCampaign (WorldMapId, CampaignId)
-* WorldMapArc (WorldMapId, ArcId)
+#### WorldMapCampaign
+
+* WorldMapId (Guid, FK → WorldMap)
+* CampaignId (Guid, FK → Campaign)
+
+Indexes:
+* Composite PK: (WorldMapId, CampaignId)
+* CampaignId (reverse lookup)
+
+#### WorldMapArc
+
+* WorldMapId (Guid, FK → WorldMap)
+* ArcId (Guid, FK → Arc)
+
+Indexes:
+* Composite PK: (WorldMapId, ArcId)
+* ArcId (reverse lookup)
 
 ### Entity File Paths
 
