@@ -77,6 +77,19 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## 2026 Q1 Architecture Test Guardrails (Step 8)
+
+- Added architecture guardrail suite: `Step8ArchitectureGuardrailTests`
+- Enforced no direct `ChronicisDbContext` dependency in API controllers
+- Enforced continued `IReadAccessPolicyService` injection across key read services
+- Enforced continued shared parity seam usage in public/auth path reads:
+- `ArticleSlugPathResolver.ResolveAsync`
+- `ArticleReadModelProjection.ArticleDetail`
+- Added canonical session-flow regression assertion in `SessionServiceTests`
+- Guarded against reintroduction of legacy `ArticleType.Session` writes in session creation paths
+
+---
+
 ## 2026 Q1 Session Entity Refactor (Phase 7)
 
 - Finalized quest session FK cutover to Session entities and removed the legacy quest article-session FK bridge column

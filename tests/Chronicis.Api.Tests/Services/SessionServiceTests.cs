@@ -178,6 +178,36 @@ public class SessionServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateSessionAsync_DoesNotCreateLegacySessionArticle()
+    {
+        var dto = new SessionCreateDto
+        {
+            Name = "Canonical Session",
+            SessionDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc)
+        };
+
+        var result = await _service.CreateSessionAsync(
+            TestHelpers.FixedIds.Arc1,
+            dto,
+            TestHelpers.FixedIds.User1,
+            "GM User");
+
+        Assert.Equal(ServiceStatus.Success, result.Status);
+        Assert.NotNull(result.Value);
+
+        var createdSessionId = result.Value!.Id;
+
+        var legacySessionArticles = await _context.Articles
+            .Where(a => a.Type == ArticleType.Session)
+            .ToListAsync();
+
+        Assert.DoesNotContain(legacySessionArticles, a => a.Id == createdSessionId);
+        Assert.DoesNotContain(legacySessionArticles, a =>
+            a.ArcId == TestHelpers.FixedIds.Arc1 &&
+            string.Equals(a.Title, dto.Name, StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task GenerateAiSummaryAsync_UsesOnlyPublicSessionSources()
     {
         var sessionId = Guid.NewGuid();

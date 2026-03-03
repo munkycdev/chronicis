@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-03-01
 
-## 0) Step 1-7 Execution Status
+## 0) Step 1-8 Execution Status
 - Step 1 (`Baseline and Ownership`): completed.
 - Step 2 (`Data-Access Policy Definition`): completed.
 - Step 3 (`Data-Access Boundary Migration`): completed.
@@ -10,6 +10,7 @@ Last reviewed: 2026-03-01
 - Step 5 (`Session Convergence Execution`): completed.
 - Step 6 (`Unified Access-Policy Architecture`): completed.
 - Step 7 (`Read-Model Parity Hardening`): completed.
+- Step 8 (`Architecture Test Guardrails`): completed.
 - Verification evidence:
 - `dotnet build Chronicis.CI.sln` passes with 0 warnings and 0 errors.
 - `dotnet test Chronicis.CI.sln` passes.
@@ -174,9 +175,30 @@ Step 7 acceptance criteria:
 - Full repo verification gate passes (`.\scripts\verify.ps1`). `Status: complete`.
 
 ### Step 8: Architecture Test Guardrails
-- Add architectural tests that enforce the new data-access boundary rules.
-- Add regression tests that enforce canonical session flow usage.
-- Add policy parity tests that protect public/auth access-rule equivalence.
+- Status: completed.
+- Added architecture guardrails in:
+- `tests/Chronicis.ArchitecturalTests/Step8ArchitectureGuardrailTests.cs`
+- Guardrails enforce:
+- API controllers must not directly depend on `ChronicisDbContext`.
+- key read services must continue injecting `IReadAccessPolicyService`.
+- public/auth path reads must continue using shared parity seams (`ArticleSlugPathResolver`, `ArticleReadModelProjection`).
+- `SessionService` must not reintroduce legacy `ArticleType.Session` write behavior.
+- Added canonical session regression coverage in:
+- `tests/Chronicis.Api.Tests/Services/SessionServiceTests.cs`
+- Added policy parity regression baseline in Step 7 suite:
+- `tests/Chronicis.Api.Tests/Services/ReadModelParityTests.cs`
+
+Step 8 deliverables:
+- Architecture test suite that blocks controller-level data-access boundary regressions.
+- Architecture test suite that blocks parity-seam regressions in public/auth read paths.
+- Regression coverage that enforces canonical `Session` + `SessionNote` creation flow with no legacy `ArticleType.Session` writes.
+- Updated architecture/changelog/fix-plan documentation for Step 8 completion.
+
+Step 8 acceptance criteria:
+- Data-access boundary rules are enforced by automated architecture tests. `Status: complete`.
+- Canonical session flow regressions fail test gates. `Status: complete`.
+- Policy parity protections remain under automated regression coverage. `Status: complete`.
+- Full repo verification gate passes (`.\scripts\verify.ps1`). `Status: complete`.
 
 ### Step 9: Rollout and Risk Control
 - Release each workstream behind scoped rollout controls where needed.

@@ -573,5 +573,22 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - any unplanned public/auth read divergence is a release blocker.
 - any planned divergence must be documented and protected by regression tests.
 
+### 10.15 Architecture Test Guardrails (Step 8)
+- Data-access boundary guardrails:
+- `tests/Chronicis.ArchitecturalTests/Step8ArchitectureGuardrailTests.cs` enforces that API controllers do not directly depend on `ChronicisDbContext` (constructor, field, or property).
+- Read-policy continuity guardrails:
+- the same suite enforces continued `IReadAccessPolicyService` injection for key read services:
+- `PublicWorldService`, `ArticleService`, `ArticleDataAccessService`, `SummaryAccessService`, `SearchReadService`.
+- Parity seam guardrails:
+- the same suite enforces continued shared parity seam usage in public/auth path reads:
+- `ArticleSlugPathResolver.ResolveAsync`
+- `ArticleReadModelProjection.ArticleDetail`
+- Canonical session-flow guardrails:
+- `SessionService` is guarded against reintroducing legacy `ArticleType.Session` write behavior.
+- Runtime regression coverage:
+- `tests/Chronicis.Api.Tests/Services/SessionServiceTests.cs` includes canonical flow regression assertions for session creation.
+- Release policy:
+- any guardrail failure is a release blocker and must be resolved or explicitly redesigned with updated tests/docs.
+
 ## 11) Out of Scope
 - `Chronicis.CaptureApp` architecture is intentionally excluded.
