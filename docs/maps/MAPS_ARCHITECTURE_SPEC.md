@@ -45,6 +45,15 @@ Layers are hidden in MVP.
 * WorldMapCampaign (WorldMapId, CampaignId)
 * WorldMapArc (WorldMapId, ArcId)
 
+### Entity File Paths
+
+EF entity models live in Chronicis.Shared/Models/ (matching Article.cs, Campaign.cs, World.cs convention):
+
+* src/Chronicis.Shared/Models/WorldMap.cs
+* src/Chronicis.Shared/Models/MapLayer.cs
+* src/Chronicis.Shared/Models/WorldMapCampaign.cs
+* src/Chronicis.Shared/Models/WorldMapArc.cs
+
 ---
 
 ## Blob Storage

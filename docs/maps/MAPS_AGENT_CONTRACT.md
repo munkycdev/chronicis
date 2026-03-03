@@ -12,9 +12,13 @@
 
 ## Folder Structure Expectations
 
-API:
+API (flat layered layout — no Features/ folder exists):
 
-* Features/Maps/*
+* Controllers/MapsController.cs
+* Services/IWorldMapService.cs
+* Services/WorldMapService.cs
+* Services/IMapBlobStore.cs
+* Services/AzureBlobMapBlobStore.cs
 
 Client:
 
@@ -23,7 +27,11 @@ Client:
 
 Shared:
 
-* Shared/Maps/*
+* Models/WorldMap.cs
+* Models/MapLayer.cs
+* Models/WorldMapCampaign.cs
+* Models/WorldMapArc.cs
+* DTOs/Maps/MapDTOs.cs
 
 ---
 
