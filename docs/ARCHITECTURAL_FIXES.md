@@ -2,13 +2,14 @@
 
 Last reviewed: 2026-03-01
 
-## 0) Step 1-6 Execution Status
+## 0) Step 1-7 Execution Status
 - Step 1 (`Baseline and Ownership`): completed.
 - Step 2 (`Data-Access Policy Definition`): completed.
 - Step 3 (`Data-Access Boundary Migration`): completed.
 - Step 4 (`Session Model Canonicalization Plan`): completed.
 - Step 5 (`Session Convergence Execution`): completed.
 - Step 6 (`Unified Access-Policy Architecture`): completed.
+- Step 7 (`Read-Model Parity Hardening`): completed.
 - Verification evidence:
 - `dotnet build Chronicis.CI.sln` passes with 0 warnings and 0 errors.
 - `dotnet test Chronicis.CI.sln` passes.
@@ -145,9 +146,32 @@ Step 6 acceptance criteria:
 - Full repo verification gate passes (`.\scripts\verify.ps1`). `Status: complete`.
 
 ### Step 7: Read-Model Parity Hardening
-- Consolidate duplicate rule logic into shared projections or shared policy inputs.
-- Add parity checks that compare public/auth behavior under equivalent visibility constraints.
-- Track and resolve divergences as release blockers.
+- Status: completed.
+- Shared parity seams introduced for read-model stability:
+- `ArticleReadModelProjection` for shared `ArticleDto` materialization.
+- `ArticleSlugPathResolver` for shared slug-chain path traversal.
+- Public and authenticated path reads now consume shared slug-walk behavior:
+- `PublicWorldService.GetPublicArticleAsync`
+- `ArticleService.TryResolveWorldArticleByPathAsync`
+- `ArticleService.TryResolveTutorialArticleByPathAsync`
+- Public/auth parity coverage is enforced in:
+- `tests/Chronicis.Api.Tests/Services/ReadModelParityTests.cs`
+- Intentional divergences are explicitly tracked as test-protected behaviors:
+- private owner-only authenticated reads;
+- legacy public session compatibility path resolution.
+
+Step 7 deliverables:
+- Shared `ArticleDto` projection used across public/auth read services for parity-sensitive article detail reads.
+- Shared slug-chain resolver used by both public and authenticated path-resolution flows.
+- Service-level parity tests for equivalent public/auth visibility outcomes.
+- Service-level divergence tests for approved non-equivalent behavior boundaries.
+- Updated architecture/changelog/fix-plan documentation for Step 7 completion.
+
+Step 7 acceptance criteria:
+- Duplicate parity-sensitive slug-chain path walk logic is consolidated. `Status: complete`.
+- Public/auth parity checks cover equivalent visibility constraints in automated tests. `Status: complete`.
+- Intentional divergence scenarios are explicit and regression-protected. `Status: complete`.
+- Full repo verification gate passes (`.\scripts\verify.ps1`). `Status: complete`.
 
 ### Step 8: Architecture Test Guardrails
 - Add architectural tests that enforce the new data-access boundary rules.

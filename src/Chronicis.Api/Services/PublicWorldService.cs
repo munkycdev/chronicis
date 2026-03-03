@@ -503,107 +503,55 @@ public class PublicWorldService : IPublicWorldService
         if (slugs.Length == 0)
             return null;
 
-        // Walk down the tree using slugs
-        Guid? currentParentId = null;
-        Guid? articleId = null;
-        ArticleType? currentArticleType = null;
-
-        for (int i = 0; i < slugs.Length; i++)
-        {
-            var slug = slugs[i];
-            var isRootLevel = (i == 0);
-
-            (Guid Id, ArticleType Type)? foundArticle = null;
-
-            if (isRootLevel)
+        var resolvedArticle = await ArticleSlugPathResolver.ResolveAsync(
+            slugs,
+            async (slug, parentId, isRootLevel) =>
             {
-                // Root-level article: filter by WorldId and ParentId = null
-                var rootArticle = await _readAccessPolicy
+                var query = _readAccessPolicy
                     .ApplyPublicArticleFilter(_context.Articles.AsNoTracking(), world.Id)
-                    .Where(a => a.Slug == slug &&
-                                a.ParentId == null)
+                    .Where(a => a.Slug == slug);
+
+                query = isRootLevel
+                    ? query.Where(a => a.ParentId == null)
+                    : query.Where(a => a.ParentId == parentId);
+
+                var article = await query
                     .Select(a => new { a.Id, a.Type })
                     .FirstOrDefaultAsync();
-                if (rootArticle != null)
-                {
-                    foundArticle = (rootArticle.Id, rootArticle.Type);
-                }
-            }
-            else
+
+                return article == null
+                    ? null
+                    : (article.Id, article.Type);
+            },
+            async (slug, parentId, currentType) =>
             {
-                // Child article: filter by ParentId
-                var childArticle = await _readAccessPolicy
-                    .ApplyPublicArticleFilter(_context.Articles.AsNoTracking(), world.Id)
-                    .Where(a => a.Slug == slug &&
-                                a.ParentId == currentParentId)
-                    .Select(a => new { a.Id, a.Type })
-                    .FirstOrDefaultAsync();
-                if (childArticle != null)
+                if (currentType == ArticleType.Session)
                 {
-                    foundArticle = (childArticle.Id, childArticle.Type);
+                    return await TryResolveCompatibilitySessionRootNoteAsync(world.Id, slug, parentId);
                 }
 
-                if (foundArticle == null && currentArticleType == ArticleType.Session)
-                {
-                    foundArticle = await TryResolveCompatibilitySessionRootNoteAsync(
-                        world.Id,
-                        slug,
-                        currentParentId);
-                }
-            }
-
-            if (foundArticle == null)
-            {
-                _logger.LogDebugSanitized("Public article not found for slug '{Slug}' in path '{Path}' for world '{PublicSlug}'",
-                    slug, articlePath, normalizedSlug);
                 return null;
-            }
+            });
 
-            articleId = foundArticle.Value.Id;
-            currentParentId = foundArticle.Value.Id;
-            currentArticleType = foundArticle.Value.Type;
+        if (resolvedArticle == null)
+        {
+            _logger.LogDebugSanitized("Public article not found for path '{Path}' in world '{PublicSlug}'",
+                articlePath, normalizedSlug);
+            return null;
         }
 
         // Found the article, now get full details
-        if (!articleId.HasValue)
-            return null;
-
         var article = await _readAccessPolicy
             .ApplyPublicArticleFilter(_context.Articles.AsNoTracking(), world.Id)
-            .Where(a => a.Id == articleId.Value)
-            .Select(a => new ArticleDto
-            {
-                Id = a.Id,
-                Title = a.Title,
-                Slug = a.Slug,
-                ParentId = a.ParentId,
-                WorldId = a.WorldId,
-                CampaignId = a.CampaignId,
-                ArcId = a.ArcId,
-                SessionId = a.SessionId,
-                Body = a.Body ?? string.Empty,
-                Type = a.Type,
-                Visibility = a.Visibility,
-                CreatedAt = a.CreatedAt,
-                ModifiedAt = a.ModifiedAt,
-                EffectiveDate = a.EffectiveDate,
-                CreatedBy = a.CreatedBy,
-                LastModifiedBy = a.LastModifiedBy,
-                IconEmoji = a.IconEmoji,
-                SessionDate = a.SessionDate,
-                InGameDate = a.InGameDate,
-                PlayerId = a.PlayerId,
-                AISummary = a.AISummary,
-                AISummaryGeneratedAt = a.AISummaryGeneratedAt,
-                Breadcrumbs = new List<BreadcrumbDto>()
-            })
+            .Where(a => a.Id == resolvedArticle.Value.Id)
+            .Select(ArticleReadModelProjection.ArticleDetail)
             .FirstOrDefaultAsync();
 
         if (article == null)
             return null;
 
         // Build breadcrumbs (only including public articles) using centralised hierarchy service
-        article.Breadcrumbs = await _hierarchyService.BuildBreadcrumbsAsync(articleId.Value, new HierarchyWalkOptions
+        article.Breadcrumbs = await _hierarchyService.BuildBreadcrumbsAsync(resolvedArticle.Value.Id, new HierarchyWalkOptions
         {
             PublicOnly = true,
             IncludeWorldBreadcrumb = true,

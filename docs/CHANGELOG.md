@@ -61,6 +61,22 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## 2026 Q1 Read-Model Parity Hardening (Step 7)
+
+- Added shared `ArticleDto` read projection seam: `ArticleReadModelProjection.ArticleDetail`
+- Added shared slug-chain resolver seam: `ArticleSlugPathResolver.ResolveAsync`
+- Consolidated duplicate path-walk logic across:
+- `PublicWorldService.GetPublicArticleAsync`
+- `ArticleService.TryResolveWorldArticleByPathAsync`
+- `ArticleService.TryResolveTutorialArticleByPathAsync`
+- Added parity/difference regression suite: `ReadModelParityTests`
+- Protected equivalent public/auth read outcomes for public hierarchy and private-visibility denial scenarios
+- Explicitly documented and test-protected intentional divergences:
+- authenticated private-owner reads beyond anonymous public scope
+- legacy public session compatibility URL behavior
+
+---
+
 ## 2026 Q1 Session Entity Refactor (Phase 7)
 
 - Finalized quest session FK cutover to Session entities and removed the legacy quest article-session FK bridge column

@@ -176,33 +176,7 @@ namespace Chronicis.Api.Services
             var article = await GetReadableArticles(userId)
                 .AsNoTracking()
                 .Where(a => a.Id == id)
-                .Select(a => new ArticleDto
-                {
-                    Id = a.Id,
-                    Title = a.Title,
-                    Slug = a.Slug,
-                    ParentId = a.ParentId,
-                    WorldId = a.WorldId,
-                    CampaignId = a.CampaignId,
-                    ArcId = a.ArcId,
-                    SessionId = a.SessionId,
-                    Body = a.Body ?? string.Empty,
-                    Type = a.Type,
-                    Visibility = a.Visibility,
-                    CreatedAt = a.CreatedAt,
-                    ModifiedAt = a.ModifiedAt,
-                    EffectiveDate = a.EffectiveDate,
-                    CreatedBy = a.CreatedBy,
-                    LastModifiedBy = a.LastModifiedBy,
-                    IconEmoji = a.IconEmoji,
-                    SessionDate = a.SessionDate,
-                    InGameDate = a.InGameDate,
-                    PlayerId = a.PlayerId,
-                    AISummary = a.AISummary,
-                    AISummaryGeneratedAt = a.AISummaryGeneratedAt,
-                    Breadcrumbs = new List<BreadcrumbDto>(),  // Will populate separately
-                    Aliases = new List<ArticleAliasDto>()
-                })
+                .Select(ArticleReadModelProjection.ArticleDetail)
                 .FirstOrDefaultAsync();
 
             if (article == null)
@@ -561,84 +535,59 @@ namespace Chronicis.Api.Services
                 return null;
             }
 
-            Guid? currentParentId = null;
-            Guid? articleId = null;
-
-            for (int i = 1; i < slugs.Length; i++)
-            {
-                var slug = slugs[i];
-                var isRootLevel = (i == 1);
-
-                Article? article;
-                if (isRootLevel)
+            var resolvedArticle = await ArticleSlugPathResolver.ResolveAsync(
+                slugs.Skip(1).ToArray(),
+                async (slug, parentId, isRootLevel) =>
                 {
-                    article = await GetAccessibleArticles(userId)
+                    var query = GetAccessibleArticles(userId)
                         .AsNoTracking()
-                        .Where(a => a.Slug == slug &&
-                                    a.ParentId == null &&
-                                    a.WorldId == resolvedWorld.Id)
+                        .Where(a => a.Slug == slug);
+
+                    query = isRootLevel
+                        ? query.Where(a => a.ParentId == null && a.WorldId == resolvedWorld.Id)
+                        : query.Where(a => a.ParentId == parentId);
+
+                    var article = await query
+                        .Select(a => new { a.Id, a.Type })
                         .FirstOrDefaultAsync();
-                }
-                else
-                {
-                    article = await GetAccessibleArticles(userId)
-                        .AsNoTracking()
-                        .Where(a => a.Slug == slug &&
-                                    a.ParentId == currentParentId)
-                        .FirstOrDefaultAsync();
-                }
 
-                if (article == null)
-                {
-                    return null;
-                }
+                    return article == null
+                        ? null
+                        : (article.Id, article.Type);
+                });
 
-                articleId = article.Id;
-                currentParentId = article.Id;
-            }
-
-            return articleId.HasValue
-                ? await GetArticleDetailAsync(articleId.Value, userId)
+            return resolvedArticle.HasValue
+                ? await GetArticleDetailAsync(resolvedArticle.Value.Id, userId)
                 : null;
         }
 
         private async Task<ArticleDto?> TryResolveTutorialArticleByPathAsync(string[] slugs, Guid userId)
         {
-            if (slugs.Length == 0)
-            {
-                return null;
-            }
-
-            Guid? currentParentId = null;
-            Guid? articleId = null;
-
-            for (int i = 0; i < slugs.Length; i++)
-            {
-                var slug = slugs[i];
-                var isRootLevel = (i == 0);
-
-                var query = _context.Articles
-                    .AsNoTracking()
-                    .Where(a => a.Type == ArticleType.Tutorial &&
-                                a.WorldId == Guid.Empty &&
-                                a.Slug == slug);
-
-                query = isRootLevel
-                    ? query.Where(a => a.ParentId == null)
-                    : query.Where(a => a.ParentId == currentParentId);
-
-                var article = await query.FirstOrDefaultAsync();
-                if (article == null)
+            var resolvedArticle = await ArticleSlugPathResolver.ResolveAsync(
+                slugs,
+                async (slug, parentId, isRootLevel) =>
                 {
-                    return null;
-                }
+                    var query = _context.Articles
+                        .AsNoTracking()
+                        .Where(a => a.Type == ArticleType.Tutorial &&
+                                    a.WorldId == Guid.Empty &&
+                                    a.Slug == slug);
 
-                articleId = article.Id;
-                currentParentId = article.Id;
-            }
+                    query = isRootLevel
+                        ? query.Where(a => a.ParentId == null)
+                        : query.Where(a => a.ParentId == parentId);
 
-            return articleId.HasValue
-                ? await GetArticleDetailAsync(articleId.Value, userId)
+                    var article = await query
+                        .Select(a => new { a.Id, a.Type })
+                        .FirstOrDefaultAsync();
+
+                    return article == null
+                        ? null
+                        : (article.Id, article.Type);
+                });
+
+            return resolvedArticle.HasValue
+                ? await GetArticleDetailAsync(resolvedArticle.Value.Id, userId)
                 : null;
         }
     }

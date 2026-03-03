@@ -556,5 +556,22 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - `tests/Chronicis.Api.Tests/Services/ReadAccessPolicyServiceTests.cs` covers policy matrix behavior.
 - Service-level regressions validate adoption in public/auth read paths.
 
+### 10.14 Read-Model Parity Hardening (Step 7)
+- Shared projection seam:
+- `ArticleReadModelProjection.ArticleDetail` is the canonical `ArticleDto` read projection for parity-sensitive public/auth article detail reads.
+- Shared path-resolution seam:
+- `ArticleSlugPathResolver.ResolveAsync` is the canonical slug-chain traversal primitive used by:
+- `PublicWorldService.GetPublicArticleAsync`
+- `ArticleService.TryResolveWorldArticleByPathAsync`
+- `ArticleService.TryResolveTutorialArticleByPathAsync`
+- Parity validation:
+- `tests/Chronicis.Api.Tests/Services/ReadModelParityTests.cs` compares public/auth read behavior under equivalent visibility constraints.
+- Intentional divergence boundaries (test-protected):
+- authenticated private-owner access is broader than anonymous public reads.
+- legacy public session compatibility URL resolution remains public-read specific.
+- Release policy:
+- any unplanned public/auth read divergence is a release blocker.
+- any planned divergence must be documented and protected by regression tests.
+
 ## 11) Out of Scope
 - `Chronicis.CaptureApp` architecture is intentionally excluded.
