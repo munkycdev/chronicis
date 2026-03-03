@@ -40,7 +40,12 @@ public enum TreeNodeType
     /// <summary>
     /// An external link (URL to external resource like Roll20, D&D Beyond, etc.).
     /// </summary>
-    ExternalLink
+    ExternalLink,
+
+    /// <summary>
+    /// A WorldMap entity.
+    /// </summary>
+    Map
 }
 
 /// <summary>
@@ -53,5 +58,6 @@ public enum VirtualGroupType
     PlayerCharacters,
     Wiki,
     Links,
-    Uncategorized
+    Uncategorized,
+    Maps
 }

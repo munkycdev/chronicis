@@ -2,6 +2,7 @@ using Blazored.LocalStorage;
 using Chronicis.Client.Models;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -343,11 +344,13 @@ public class TreeStateServiceTests
         var campaignApi = Substitute.For<ICampaignApiService>();
         var arcApi = Substitute.For<IArcApiService>();
         var sessionApi = Substitute.For<ISessionApiService>();
+        var mapApi = Substitute.For<IMapApiService>();
         arcApi.GetArcsByCampaignAsync(campaignId).Returns(new List<ArcDto>
         {
             new() { Id = arcId, CampaignId = campaignId, Name = "Arc", SortOrder = 0 }
         });
         sessionApi.GetSessionsByArcAsync(arcId).Returns(new List<SessionTreeDto>());
+        mapApi.ListMapsForWorldAsync(worldId).Returns(new List<MapSummaryDto>());
 
         var appContext = Substitute.For<IAppContextService>();
         appContext.CurrentWorldId.Returns(worldId);
@@ -361,6 +364,7 @@ public class TreeStateServiceTests
             campaignApi,
             arcApi,
             sessionApi,
+            mapApi,
             appContext,
             storage,
             NullLogger<TreeStateService>.Instance);

@@ -1,0 +1,526 @@
+@page "/world/{WorldId:guid}/maps"
+@attribute [Authorize]
+@using Chronicis.Shared.DTOs
+@using Chronicis.Shared.DTOs.Maps
+@using Chronicis.Shared.Enums
+@using Microsoft.AspNetCore.Components.Forms
+@inject IMapApiService MapApi
+@inject IWorldApiService WorldApi
+@inject IArcApiService ArcApi
+
+@if (_isLoading)
+{
+    <LoadingSkeleton />
+}
+else if (_hasLoadFailure)
+{
+    <MudAlert Severity="Severity.Error">
+        World not found or access denied.
+    </MudAlert>
+}
+else
+{
+    <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
+        <MudText Typo="Typo.h4" Class="mb-1">
+            @($"{_worldName} Maps")
+        </MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+            Maps grouped by world, campaign, and arc scope.
+        </MudText>
+
+        <MudPaper Outlined="true" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h6" Class="mb-2">Create map</MudText>
+            <MudStack Spacing="2">
+                <MudTextField @bind-Value="_newMapName"
+                              Label="Map name"
+                              Variant="Variant.Outlined"
+                              Required="true"
+                              Disabled="_isCreatingMap" />
+
+                <InputFile id="mapBasemapFileInput"
+                           OnChange="OnBasemapFileSelected"
+                           accept="image/png,image/jpeg,image/webp"
+                           disabled="@_isCreatingMap"
+                           style="display: none;" />
+
+                <label for="mapBasemapFileInput" style="cursor: pointer;">
+                    <MudPaper Outlined="true" Class="pa-3">
+                        <MudText Typo="Typo.body2">
+                            @(_selectedBasemapFile == null ? "Choose basemap image" : _selectedBasemapFile.Name)
+                        </MudText>
+                    </MudPaper>
+                </label>
+
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    Supported types: image/png, image/jpeg, image/webp
+                </MudText>
+
+                @if (!string.IsNullOrWhiteSpace(_createError))
+                {
+                    <MudAlert Severity="Severity.Error">@_createError</MudAlert>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_createSuccess))
+                {
+                    <MudAlert Severity="Severity.Success">@_createSuccess</MudAlert>
+                }
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="CreateMapWithBasemapAsync"
+                           Disabled="_isCreatingMap">
+                    @(_isCreatingMap ? "Uploading..." : "Create map")
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+
+        @if (!_maps.Any())
+        {
+            <MudAlert Severity="Severity.Info">
+                No maps found for this world.
+            </MudAlert>
+        }
+        else
+        {
+            @if (_worldScopedMaps.Any())
+            {
+                <MudText Typo="Typo.h6" Class="mb-2">World-scoped</MudText>
+                @foreach (var map in _worldScopedMaps)
+                {
+                    <div class="mb-1">
+                        <MudLink Href="@GetMapRoute(map.WorldMapId)">
+                            @GetDisplayName(map.Name, "Untitled Map")
+                        </MudLink>
+                    </div>
+                }
+                <MudDivider Class="my-4" />
+            }
+
+            @if (_campaignScopedGroups.Any())
+            {
+                <MudText Typo="Typo.h6" Class="mb-2">Campaign-scoped</MudText>
+                @foreach (var campaignGroup in _campaignScopedGroups)
+                {
+                    <MudText Typo="Typo.subtitle1" Class="mb-1">
+                        @campaignGroup.CampaignName
+                    </MudText>
+                    @foreach (var map in campaignGroup.Maps)
+                    {
+                        <div class="mb-1 ml-4">
+                            <MudLink Href="@GetMapRoute(map.WorldMapId)">
+                                @GetDisplayName(map.Name, "Untitled Map")
+                            </MudLink>
+                        </div>
+                    }
+                    <div class="mb-3"></div>
+                }
+                <MudDivider Class="my-4" />
+            }
+
+            @if (_arcScopedCampaignGroups.Any())
+            {
+                <MudText Typo="Typo.h6" Class="mb-2">Arc-scoped</MudText>
+                @foreach (var campaignGroup in _arcScopedCampaignGroups)
+                {
+                    <MudText Typo="Typo.subtitle1" Class="mb-1">
+                        @campaignGroup.CampaignName
+                    </MudText>
+                    @foreach (var arcGroup in campaignGroup.ArcGroups)
+                    {
+                        <MudText Typo="Typo.subtitle2" Class="mb-1 ml-4">
+                            @arcGroup.ArcName
+                        </MudText>
+                        @foreach (var map in arcGroup.Maps)
+                        {
+                            <div class="mb-1 ml-8">
+                                <MudLink Href="@GetMapRoute(map.WorldMapId)">
+                                    @GetDisplayName(map.Name, "Untitled Map")
+                                </MudLink>
+                            </div>
+                        }
+                    }
+                    <div class="mb-3"></div>
+                }
+            }
+        }
+    </MudPaper>
+}
+
+@code {
+    [Parameter]
+    public Guid WorldId { get; set; }
+
+    private bool _isLoading = true;
+    private bool _hasLoadFailure;
+    private string _worldName = "World";
+    private List<MapSummaryDto> _maps = [];
+    private List<MapSummaryDto> _worldScopedMaps = [];
+    private List<CampaignMapGroup> _campaignScopedGroups = [];
+    private List<ArcCampaignGroup> _arcScopedCampaignGroups = [];
+    private string _newMapName = string.Empty;
+    private IBrowserFile? _selectedBasemapFile;
+    private byte[]? _selectedBasemapBytes;
+    private bool _isCreatingMap;
+    private string _createError = string.Empty;
+    private string _createSuccess = string.Empty;
+
+    private const long MaxBasemapSizeBytes = 50 * 1024 * 1024;
+    private static readonly HashSet<string> AllowedBasemapContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/png",
+        "image/jpeg",
+        "image/webp"
+    };
+
+    private sealed class CampaignMapGroup
+    {
+        public Guid CampaignId { get; init; }
+        public string CampaignName { get; init; } = string.Empty;
+        public List<MapSummaryDto> Maps { get; init; } = [];
+    }
+
+    private sealed class ArcMapGroup
+    {
+        public Guid ArcId { get; init; }
+        public string ArcName { get; init; } = string.Empty;
+        public List<MapSummaryDto> Maps { get; init; } = [];
+    }
+
+    private sealed class ArcCampaignGroup
+    {
+        public Guid CampaignId { get; init; }
+        public string CampaignName { get; init; } = string.Empty;
+        public List<ArcMapGroup> ArcGroups { get; init; } = [];
+    }
+
+    private sealed class ArcLookupItem
+    {
+        public Guid CampaignId { get; init; }
+        public string ArcName { get; init; } = string.Empty;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _hasLoadFailure = false;
+        _maps = [];
+        _worldScopedMaps = [];
+        _campaignScopedGroups = [];
+        _arcScopedCampaignGroups = [];
+
+        try
+        {
+            var world = await WorldApi.GetWorldAsync(WorldId);
+            if (world == null)
+            {
+                _hasLoadFailure = true;
+                return;
+            }
+
+            _worldName = GetDisplayName(world.Name, "World");
+            _maps = await MapApi.ListMapsForWorldAsync(WorldId);
+
+            var campaignLookup = world.Campaigns
+                .GroupBy(c => c.Id)
+                .ToDictionary(
+                    g => g.Key,
+                    g => GetDisplayName(g.First().Name, "Untitled Campaign"));
+
+            var arcLookup = await BuildArcLookupAsync(campaignLookup.Keys.ToList());
+
+            BuildGroupings(campaignLookup, arcLookup);
+        }
+        catch
+        {
+            _hasLoadFailure = true;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OnBasemapFileSelected(InputFileChangeEventArgs e)
+    {
+        _createError = string.Empty;
+        _createSuccess = string.Empty;
+        _selectedBasemapFile = e.File;
+        _selectedBasemapBytes = null;
+
+        if (_selectedBasemapFile == null)
+        {
+            return;
+        }
+
+        if (!AllowedBasemapContentTypes.Contains(_selectedBasemapFile.ContentType))
+        {
+            _createError = "Unsupported file type. Use image/png, image/jpeg, or image/webp.";
+            _selectedBasemapFile = null;
+            return;
+        }
+
+        try
+        {
+            using var stream = _selectedBasemapFile.OpenReadStream(MaxBasemapSizeBytes);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            _selectedBasemapBytes = memoryStream.ToArray();
+        }
+        catch (Exception ex)
+        {
+            _createError = $"Failed to read selected file: {ex.Message}";
+            _selectedBasemapFile = null;
+            _selectedBasemapBytes = null;
+        }
+    }
+
+    private async Task CreateMapWithBasemapAsync()
+    {
+        _createError = string.Empty;
+        _createSuccess = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(_newMapName))
+        {
+            _createError = "Map name is required.";
+            return;
+        }
+
+        if (_selectedBasemapFile == null || _selectedBasemapBytes == null)
+        {
+            _createError = "Basemap file is required.";
+            return;
+        }
+
+        if (!AllowedBasemapContentTypes.Contains(_selectedBasemapFile.ContentType))
+        {
+            _createError = "Unsupported file type. Use image/png, image/jpeg, or image/webp.";
+            return;
+        }
+
+        _isCreatingMap = true;
+
+        try
+        {
+            var map = await MapApi.CreateMapAsync(
+                WorldId,
+                new MapCreateDto { Name = _newMapName.Trim() });
+
+            if (map == null)
+            {
+                _createError = "Failed to create map record.";
+                return;
+            }
+
+            var uploadRequest = new RequestBasemapUploadDto
+            {
+                FileName = _selectedBasemapFile.Name,
+                ContentType = _selectedBasemapFile.ContentType
+            };
+
+            var uploadResponse = await MapApi.RequestBasemapUploadAsync(WorldId, map.WorldMapId, uploadRequest);
+            if (uploadResponse == null || string.IsNullOrWhiteSpace(uploadResponse.UploadUrl))
+            {
+                _createError = "Failed to request basemap upload URL.";
+                return;
+            }
+
+            using (var uploadContent = new ByteArrayContent(_selectedBasemapBytes))
+            {
+                uploadContent.Headers.ContentType =
+                    new System.Net.Http.Headers.MediaTypeHeaderValue(_selectedBasemapFile.ContentType);
+                uploadContent.Headers.Add("x-ms-blob-type", "BlockBlob");
+
+                using var uploadHttpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
+                var uploadResult = await uploadHttpClient.PutAsync(uploadResponse.UploadUrl, uploadContent);
+                if (!uploadResult.IsSuccessStatusCode)
+                {
+                    var errorBody = await uploadResult.Content.ReadAsStringAsync();
+                    _createError = $"Basemap upload failed ({uploadResult.StatusCode}): {errorBody}";
+                    return;
+                }
+            }
+
+            var confirmResult = await MapApi.ConfirmBasemapUploadAsync(
+                WorldId,
+                map.WorldMapId,
+                $"maps/{map.WorldMapId}/basemap/{_selectedBasemapFile.Name}",
+                _selectedBasemapFile.ContentType,
+                _selectedBasemapFile.Name);
+
+            if (confirmResult == null)
+            {
+                _createError = "Failed to confirm basemap upload.";
+                return;
+            }
+
+            _createSuccess = $"Map '{confirmResult.Name}' created.";
+            _newMapName = string.Empty;
+            _selectedBasemapFile = null;
+            _selectedBasemapBytes = null;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _createError = $"Failed to create map: {ex.Message}";
+        }
+        finally
+        {
+            _isCreatingMap = false;
+        }
+    }
+
+    private async Task<Dictionary<Guid, ArcLookupItem>> BuildArcLookupAsync(List<Guid> campaignIds)
+    {
+        var lookup = new Dictionary<Guid, ArcLookupItem>();
+        var distinctCampaignIds = campaignIds.Distinct().ToList();
+
+        if (distinctCampaignIds.Count == 0)
+        {
+            return lookup;
+        }
+
+        var arcTasks = distinctCampaignIds
+            .Select(campaignId => ArcApi.GetArcsByCampaignAsync(campaignId))
+            .ToList();
+
+        await Task.WhenAll(arcTasks);
+
+        for (int i = 0; i < distinctCampaignIds.Count; i++)
+        {
+            var campaignId = distinctCampaignIds[i];
+            var arcs = arcTasks[i].Result;
+
+            foreach (var arc in arcs)
+            {
+                if (!lookup.ContainsKey(arc.Id))
+                {
+                    lookup[arc.Id] = new ArcLookupItem
+                    {
+                        CampaignId = campaignId,
+                        ArcName = GetDisplayName(arc.Name, "Untitled Arc")
+                    };
+                }
+            }
+        }
+
+        return lookup;
+    }
+
+    private void BuildGroupings(
+        Dictionary<Guid, string> campaignLookup,
+        Dictionary<Guid, ArcLookupItem> arcLookup)
+    {
+        _worldScopedMaps = _maps
+            .Where(map => ResolveScope(map) == MapScope.WorldScoped)
+            .OrderBy(map => map.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(map => map.WorldMapId)
+            .ToList();
+
+        _campaignScopedGroups = _maps
+            .Where(map => ResolveScope(map) == MapScope.CampaignScoped)
+            .SelectMany(map => map.CampaignIds.Distinct().Select(campaignId => new { campaignId, map }))
+            .GroupBy(x => x.campaignId)
+            .Select(group => new CampaignMapGroup
+            {
+                CampaignId = group.Key,
+                CampaignName = campaignLookup.TryGetValue(group.Key, out var campaignName)
+                    ? campaignName
+                    : $"Unknown Campaign ({group.Key})",
+                Maps = group
+                    .Select(x => x.map)
+                    .DistinctBy(x => x.WorldMapId)
+                    .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(x => x.WorldMapId)
+                    .ToList()
+            })
+            .OrderBy(group => group.CampaignName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(group => group.CampaignId)
+            .ToList();
+
+        _arcScopedCampaignGroups = _maps
+            .Where(map => ResolveScope(map) == MapScope.ArcScoped)
+            .SelectMany(map => map.ArcIds.Distinct().Select(arcId =>
+            {
+                if (arcLookup.TryGetValue(arcId, out var arc))
+                {
+                    var campaignName = campaignLookup.TryGetValue(arc.CampaignId, out var name)
+                        ? name
+                        : $"Unknown Campaign ({arc.CampaignId})";
+
+                    return new
+                    {
+                        CampaignId = arc.CampaignId,
+                        CampaignName = campaignName,
+                        ArcId = arcId,
+                        ArcName = arc.ArcName,
+                        Map = map
+                    };
+                }
+
+                return new
+                {
+                    CampaignId = Guid.Empty,
+                    CampaignName = "Unknown Campaign",
+                    ArcId = arcId,
+                    ArcName = $"Unknown Arc ({arcId})",
+                    Map = map
+                };
+            }))
+            .GroupBy(x => new { x.CampaignId, x.CampaignName })
+            .Select(campaignGroup => new ArcCampaignGroup
+            {
+                CampaignId = campaignGroup.Key.CampaignId,
+                CampaignName = campaignGroup.Key.CampaignName,
+                ArcGroups = campaignGroup
+                    .GroupBy(x => new { x.ArcId, x.ArcName })
+                    .Select(arcGroup => new ArcMapGroup
+                    {
+                        ArcId = arcGroup.Key.ArcId,
+                        ArcName = arcGroup.Key.ArcName,
+                        Maps = arcGroup
+                            .Select(x => x.Map)
+                            .DistinctBy(x => x.WorldMapId)
+                            .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                            .ThenBy(x => x.WorldMapId)
+                            .ToList()
+                    })
+                    .OrderBy(group => group.ArcName, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(group => group.ArcId)
+                    .ToList()
+            })
+            .OrderBy(group => group.CampaignName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(group => group.CampaignId)
+            .ToList();
+    }
+
+    private static MapScope ResolveScope(MapSummaryDto map)
+    {
+        var derivedScope = DeriveScope(map);
+        return map.Scope == derivedScope ? map.Scope : derivedScope;
+    }
+
+    private static MapScope DeriveScope(MapSummaryDto map)
+    {
+        if (map.ArcIds.Count > 0)
+        {
+            return MapScope.ArcScoped;
+        }
+
+        if (map.CampaignIds.Count > 0)
+        {
+            return MapScope.CampaignScoped;
+        }
+
+        return MapScope.WorldScoped;
+    }
+
+    private string GetMapRoute(Guid mapId) => $"/world/{WorldId}/maps/{mapId}";
+
+    private static string GetDisplayName(string? value, string fallback)
+        => string.IsNullOrWhiteSpace(value) ? fallback : value;
+}

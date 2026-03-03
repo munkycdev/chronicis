@@ -139,6 +139,7 @@ public class TreeNode
         TreeNodeType.Arc => true,
         TreeNodeType.Session => true,
         TreeNodeType.ExternalLink => true, // Opens in new tab
+        TreeNodeType.Map => true,
         _ => false
     };
 
@@ -154,6 +155,8 @@ public class TreeNode
             VirtualGroupType.Campaigns => false, // TODO: Enable when campaign creation dialog is ready
             // Links are managed via WorldDetail page, not tree
             VirtualGroupType.Links => false,
+            // Maps are managed via the Maps Detail page, not tree
+            VirtualGroupType.Maps => false,
             _ => true
         },
         TreeNodeType.Campaign => false, // Add arcs via separate flow
@@ -161,6 +164,7 @@ public class TreeNode
         TreeNodeType.Session => false, // SessionNotes are created via session workflows
         TreeNodeType.Article => true,
         TreeNodeType.ExternalLink => false, // Links don't have children
+        TreeNodeType.Map => false,
         _ => false
     };
 
@@ -182,9 +186,12 @@ public class TreeNode
             VirtualGroupType.Campaigns => false,
             // Links group holds external links, not articles
             VirtualGroupType.Links => false,
+            // Maps group holds Map entities, not articles
+            VirtualGroupType.Maps => false,
             // Other groups can accept article drops
             _ => true
         },
+        TreeNodeType.Map => false,
         _ => false
     };
 
@@ -195,6 +202,7 @@ public class TreeNode
         VirtualGroupType.Wiki => "Wiki",
         VirtualGroupType.Links => "External Resources",
         VirtualGroupType.Uncategorized => "Uncategorized",
+        VirtualGroupType.Maps => "Maps",
         _ => Title
     };
 
@@ -211,12 +219,14 @@ public class TreeNode
             VirtualGroupType.Wiki => "fa-solid fa-book-atlas",
             VirtualGroupType.Links => "fa-solid fa-link",
             VirtualGroupType.Uncategorized => "fa-solid fa-folder-open",
+            VirtualGroupType.Maps => "fa-solid fa-map",
             _ => "fa-solid fa-folder"
         },
         TreeNodeType.Campaign => "fa-solid fa-dungeon",
         TreeNodeType.Arc => "fa-solid fa-book-open",
         TreeNodeType.Session => "fa-solid fa-calendar-day",
         TreeNodeType.ExternalLink => "fa-solid fa-external-link-alt",
+        TreeNodeType.Map => "fa-solid fa-map-location-dot",
         TreeNodeType.Article => ArticleType switch
         {
             Shared.Enums.ArticleType.Character => "fa-solid fa-user",

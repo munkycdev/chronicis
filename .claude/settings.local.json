@@ -1,11 +1,20 @@
 {
   "permissions": {
-    "defaultMode": "acceptEdits",
     "allow": [
       "Bash(xargs grep -l \"DbSet<\")",
       "Bash(dotnet ef migrations add *)",
       "Bash(./scripts/*)",
-      "Bash(dotnet build *)"
-    ]
+      "Bash(powershell -File scripts/verify.ps1)",
+      "Bash(dotnet build *)",
+      "Bash(dotnet test *)",
+      "Bash(python3 -c \":*)",
+      "Bash(node -e \":*)",
+      "Bash(node coverage_check.js)",
+      "Bash(dotnet format Chronicis.CI.sln)",
+      "Bash(pwsh ./scripts/verify.ps1)",
+      "Bash(pwsh -NoProfile ./scripts/verify.ps1)",
+      "Bash(dotnet format z:/repos/chronicis/Chronicis.CI.sln)"
+    ],
+    "defaultMode": "acceptEdits"
   }
 }

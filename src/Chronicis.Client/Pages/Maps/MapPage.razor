@@ -1,0 +1,107 @@
+@page "/world/{WorldId:guid}/maps/{MapId:guid}"
+@attribute [Authorize]
+@using Chronicis.Shared.DTOs.Maps
+@inject IMapApiService MapApi
+
+@if (_isLoading)
+{
+    <LoadingSkeleton />
+}
+else if (_state == MapPageState.NotFound)
+{
+    <MudAlert Severity="Severity.Error">Map not found.</MudAlert>
+}
+else if (_state == MapPageState.Unauthorized)
+{
+    <MudAlert Severity="Severity.Error">You do not have access to this map.</MudAlert>
+}
+else if (_state == MapPageState.BasemapMissing)
+{
+    <MudAlert Severity="Severity.Warning">Basemap is missing for this map.</MudAlert>
+}
+else
+{
+    <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
+        <img src="@_basemapReadUrl"
+             alt="@_mapName"
+             style="display:block;max-width:100%;height:auto;" />
+    </MudPaper>
+}
+
+@code {
+    [Parameter]
+    public Guid WorldId { get; set; }
+
+    [Parameter]
+    public Guid MapId { get; set; }
+
+    private bool _isLoading = true;
+    private MapPageState _state = MapPageState.Loaded;
+    private string _mapName = "Map";
+    private string _basemapReadUrl = string.Empty;
+
+    private enum MapPageState
+    {
+        Loaded,
+        NotFound,
+        Unauthorized,
+        BasemapMissing,
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _state = MapPageState.Loaded;
+        _mapName = "Map";
+        _basemapReadUrl = string.Empty;
+
+        var mapResult = await MapApi.GetMapAsync(WorldId, MapId);
+        if (!string.IsNullOrWhiteSpace(mapResult.Map?.Name))
+        {
+            _mapName = mapResult.Map.Name;
+        }
+
+        var basemapResult = await MapApi.GetBasemapReadUrlAsync(WorldId, MapId);
+
+        if (IsUnauthorized(mapResult.StatusCode) || IsUnauthorized(basemapResult.StatusCode))
+        {
+            _state = MapPageState.Unauthorized;
+        }
+        else if (IsBasemapMissing(basemapResult.StatusCode, basemapResult.Error))
+        {
+            _state = MapPageState.BasemapMissing;
+        }
+        else if (mapResult.Map == null || basemapResult.StatusCode == 404)
+        {
+            _state = MapPageState.NotFound;
+        }
+        else if (string.IsNullOrWhiteSpace(basemapResult.Basemap?.ReadUrl))
+        {
+            _state = MapPageState.BasemapMissing;
+        }
+        else
+        {
+            _basemapReadUrl = basemapResult.Basemap.ReadUrl;
+            _state = MapPageState.Loaded;
+        }
+
+        _isLoading = false;
+    }
+
+    private static bool IsUnauthorized(int? statusCode) => statusCode == 401 || statusCode == 403;
+
+    private static bool IsBasemapMissing(int? statusCode, string? error)
+    {
+        if (statusCode != 404 || string.IsNullOrWhiteSpace(error))
+        {
+            return false;
+        }
+
+        return error.Contains("basemap", StringComparison.OrdinalIgnoreCase);
+    }
+}

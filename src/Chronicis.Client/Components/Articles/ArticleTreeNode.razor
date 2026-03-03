@@ -237,8 +237,10 @@
                 VirtualGroupType.PlayerCharacters => Icons.Material.Filled.Group,
                 VirtualGroupType.Wiki => Icons.Material.Filled.MenuBook,
                 VirtualGroupType.Uncategorized => Icons.Material.Filled.FolderOpen,
+                VirtualGroupType.Maps => Icons.Material.Filled.Map,
                 _ => Icons.Material.Filled.Folder
             },
+            TreeNodeType.Map => Icons.Material.Filled.Map,
             TreeNodeType.Campaign => Icons.Material.Filled.AutoStories,
             TreeNodeType.Arc => Icons.Material.Filled.Bookmark,
             TreeNodeType.Session => Icons.Material.Filled.EventNote,
@@ -309,6 +311,10 @@
                 }
                 break;
                 
+            case TreeNodeType.Map:
+                Navigation.NavigateTo($"/world/{Node.WorldId}/maps/{Node.Id}");
+                break;
+
             case TreeNodeType.VirtualGroup:
                 // Just toggle expand for virtual groups
                 await OnToggle.InvokeAsync(Node.Id);

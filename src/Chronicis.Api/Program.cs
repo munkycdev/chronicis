@@ -225,6 +225,8 @@ internal class Program
             builder.Services.AddScoped<ICharacterClaimService, CharacterClaimService>();
             builder.Services.AddScoped<IPublicWorldService, PublicWorldService>();
             builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+            builder.Services.AddScoped<IMapBlobStore, AzureBlobMapBlobStore>();
+            builder.Services.AddScoped<IWorldMapService, WorldMapService>();
             builder.Services.AddScoped<IImageAccessService, ImageAccessService>();
             builder.Services.AddScoped<IWorldDocumentService, WorldDocumentService>();
             builder.Services.AddScoped<IExportService, ExportService>();

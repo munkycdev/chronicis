@@ -1,5 +1,6 @@
 using Chronicis.Client.Models;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 
@@ -16,6 +17,7 @@ internal sealed class TreeDataBuilder
     private readonly ICampaignApiService _campaignApi;
     private readonly IArcApiService _arcApi;
     private readonly ISessionApiService _sessionApi;
+    private readonly IMapApiService _mapApi;
     private readonly ILogger _logger;
 
     public TreeDataBuilder(
@@ -24,6 +26,7 @@ internal sealed class TreeDataBuilder
         ICampaignApiService campaignApi,
         IArcApiService arcApi,
         ISessionApiService sessionApi,
+        IMapApiService mapApi,
         ILogger logger)
     {
         _articleApi = articleApi;
@@ -31,6 +34,7 @@ internal sealed class TreeDataBuilder
         _campaignApi = campaignApi;
         _arcApi = arcApi;
         _sessionApi = sessionApi;
+        _mapApi = mapApi;
         _logger = logger;
     }
 
@@ -92,11 +96,13 @@ internal sealed class TreeDataBuilder
         var arcTasks = allCampaigns.Select(c => _arcApi.GetArcsByCampaignAsync(c.Id)).ToList();
         var linkTasks = worlds.Select(w => _worldApi.GetWorldLinksAsync(w.Id)).ToList();
         var documentTasks = worlds.Select(w => _worldApi.GetWorldDocumentsAsync(w.Id)).ToList();
+        var mapTasks = worlds.Select(w => _mapApi.ListMapsForWorldAsync(w.Id)).ToList();
 
         await Task.WhenAll(
             Task.WhenAll(arcTasks),
             Task.WhenAll(linkTasks),
-            Task.WhenAll(documentTasks)
+            Task.WhenAll(documentTasks),
+            Task.WhenAll(mapTasks)
         );
 
         var arcResults = arcTasks.Select(t => t.Result).ToArray();
@@ -111,6 +117,12 @@ internal sealed class TreeDataBuilder
         for (int i = 0; i < worlds.Count; i++)
         {
             documentsByWorld[worlds[i].Id] = documentTasks[i].Result;
+        }
+
+        var mapsByWorld = new Dictionary<Guid, List<MapSummaryDto>>();
+        for (int i = 0; i < worlds.Count; i++)
+        {
+            mapsByWorld[worlds[i].Id] = mapTasks[i].Result;
         }
 
         var arcsByCampaign = new Dictionary<Guid, List<ArcDto>>();
@@ -149,6 +161,8 @@ internal sealed class TreeDataBuilder
             var worldLinks = linksByWorld[world.Id];
             var worldDocuments = documentsByWorld[world.Id];
 
+            var worldMaps = mapsByWorld[world.Id];
+
             var worldNode = BuildWorldNode(
                 world,
                 worldDetail,
@@ -158,6 +172,7 @@ internal sealed class TreeDataBuilder
                 sessionsByArc,
                 worldLinks,
                 worldDocuments,
+                worldMaps,
                 nodeIndex);
 
             nodeIndex.AddRootNode(worldNode);
@@ -207,6 +222,7 @@ internal sealed class TreeDataBuilder
         Dictionary<Guid, List<SessionTreeDto>> sessionsByArc,
         List<WorldLinkDto> worldLinks,
         List<WorldDocumentDto> worldDocuments,
+        List<MapSummaryDto> worldMaps,
         TreeNodeIndex nodeIndex)
     {
         var worldNode = new TreeNode
@@ -302,6 +318,22 @@ internal sealed class TreeDataBuilder
         }
         linksGroup.ChildCount = linksGroup.Children.Count;
 
+        // Build Maps group
+        var mapsGroup = CreateVirtualGroupNode(VirtualGroupType.Maps, "Maps", world.Id);
+        foreach (var map in worldMaps.OrderBy(m => m.Name))
+        {
+            var mapNode = new TreeNode
+            {
+                Id = map.WorldMapId,
+                NodeType = TreeNodeType.Map,
+                Title = map.Name,
+                WorldId = world.Id
+            };
+            mapsGroup.Children.Add(mapNode);
+            nodeIndex.AddNode(mapNode);
+        }
+        mapsGroup.ChildCount = mapsGroup.Children.Count;
+
         // Build Uncategorized group
         var uncategorizedArticles = worldArticles
             .Where(a => a.ParentId == null &&
@@ -327,6 +359,9 @@ internal sealed class TreeDataBuilder
 
         worldNode.Children.Add(wikiGroup);
         nodeIndex.AddNode(wikiGroup);
+
+        worldNode.Children.Add(mapsGroup);
+        nodeIndex.AddNode(mapsGroup);
 
         if (linksGroup.Children.Any())
         {

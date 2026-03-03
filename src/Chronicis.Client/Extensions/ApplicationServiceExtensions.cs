@@ -45,6 +45,7 @@ public static class ApplicationServiceExtensions
         services.AddChronicisApiService<IResourceProviderApiService, ResourceProviderApiService>();
         services.AddChronicisApiService<IAdminApiService, AdminApiService>();
         services.AddChronicisApiService<ITutorialApiService, TutorialApiService>();
+        services.AddChronicisApiService<IMapApiService, MapApiService>();
 
         // API services with special dependencies
         services.AddChronicisApiServiceWithSnackbar<IQuestApiService, QuestApiService>();
