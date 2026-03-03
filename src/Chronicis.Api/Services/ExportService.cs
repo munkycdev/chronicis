@@ -30,7 +30,7 @@ public partial class ExportService : IExportService
         // Verify user has access to the world
         if (!await _membershipService.UserHasAccessAsync(worldId, userId))
         {
-            _logger.LogWarning("User {UserId} attempted to export world {WorldId} without access", userId, worldId);
+            _logger.LogWarningSanitized("User {UserId} attempted to export world {WorldId} without access", userId, worldId);
             return null;
         }
 
@@ -40,11 +40,11 @@ public partial class ExportService : IExportService
 
         if (world == null)
         {
-            _logger.LogWarning("World {WorldId} not found for export", worldId);
+            _logger.LogWarningSanitized("World {WorldId} not found for export", worldId);
             return null;
         }
 
-        _logger.LogDebug("Starting export of world {WorldId} ({WorldName}) for user {UserId}",
+        _logger.LogTraceSanitized("Starting export of world {WorldId} ({WorldName}) for user {UserId}",
             worldId, world.Name, userId);
 
         // Get all articles for this world with their hierarchy info
@@ -144,7 +144,7 @@ public partial class ExportService : IExportService
         memoryStream.Position = 0;
         var result = memoryStream.ToArray();
 
-        _logger.LogDebug("Export completed for world {WorldId}. Archive size: {Size} bytes",
+        _logger.LogTraceSanitized("Export completed for world {WorldId}. Archive size: {Size} bytes",
             worldId, result.Length);
 
         return result;

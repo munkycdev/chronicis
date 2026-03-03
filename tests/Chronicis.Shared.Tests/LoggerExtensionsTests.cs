@@ -131,6 +131,40 @@ public class LoggerExtensionsTests
             Arg.Any<Func<object, Exception?, string>>());
     }
 
+    [Fact]
+    public void LogWarningSanitized_WithException_LogsCorrectly()
+    {
+        var logger = Substitute.For<ILogger>();
+        logger.IsEnabled(LogLevel.Warning).Returns(true);
+        var exception = new InvalidOperationException("Warning exception");
+
+        logger.LogWarningSanitized(exception, "Warning with exception: {0}", "Low memory");
+
+        logger.Received(1).Log(
+            LogLevel.Warning,
+            Arg.Any<EventId>(),
+            Arg.Any<object>(),
+            Arg.Is<Exception>(ex => ex == exception),
+            Arg.Any<Func<object, Exception?, string>>());
+    }
+
+    [Fact]
+    public void LogWarningSanitized_WithException_WhenNotEnabled_DoesNotLog()
+    {
+        var logger = Substitute.For<ILogger>();
+        logger.IsEnabled(LogLevel.Warning).Returns(false);
+        var exception = new InvalidOperationException("Warning exception");
+
+        logger.LogWarningSanitized(exception, "Warning with exception: {0}", "Low memory");
+
+        logger.DidNotReceive().Log(
+            Arg.Any<LogLevel>(),
+            Arg.Any<EventId>(),
+            Arg.Any<object>(),
+            Arg.Any<Exception>(),
+            Arg.Any<Func<object, Exception?, string>>());
+    }
+
     // ────────────────────────────────────────────────────────────────
     //  LogErrorSanitized (without exception)
     // ────────────────────────────────────────────────────────────────
@@ -285,6 +319,40 @@ public class LoggerExtensionsTests
         logger.IsEnabled(LogLevel.Trace).Returns(false);
 
         logger.LogTraceSanitized("Trace: {0}", "entering method");
+
+        logger.DidNotReceive().Log(
+            Arg.Any<LogLevel>(),
+            Arg.Any<EventId>(),
+            Arg.Any<object>(),
+            Arg.Any<Exception>(),
+            Arg.Any<Func<object, Exception?, string>>());
+    }
+
+    [Fact]
+    public void LogTraceSanitized_WithException_LogsCorrectly()
+    {
+        var logger = Substitute.For<ILogger>();
+        logger.IsEnabled(LogLevel.Trace).Returns(true);
+        var exception = new InvalidOperationException("Trace exception");
+
+        logger.LogTraceSanitized(exception, "Trace with exception: {0}", "entering method");
+
+        logger.Received(1).Log(
+            LogLevel.Trace,
+            Arg.Any<EventId>(),
+            Arg.Any<object>(),
+            Arg.Is<Exception>(ex => ex == exception),
+            Arg.Any<Func<object, Exception?, string>>());
+    }
+
+    [Fact]
+    public void LogTraceSanitized_WithException_WhenNotEnabled_DoesNotLog()
+    {
+        var logger = Substitute.For<ILogger>();
+        logger.IsEnabled(LogLevel.Trace).Returns(false);
+        var exception = new InvalidOperationException("Trace exception");
+
+        logger.LogTraceSanitized(exception, "Trace with exception: {0}", "entering method");
 
         logger.DidNotReceive().Log(
             Arg.Any<LogLevel>(),

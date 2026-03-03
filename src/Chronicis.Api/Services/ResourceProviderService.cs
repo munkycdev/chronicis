@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
 using Chronicis.Api.Repositories;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,7 +43,7 @@ public class ResourceProviderService : IResourceProviderService
 
         if (world == null)
         {
-            _logger.LogWarning("World {WorldId} not found", worldId);
+            _logger.LogWarningSanitized("World {WorldId} not found", worldId);
             throw new KeyNotFoundException($"World {worldId} not found");
         }
 
@@ -55,7 +54,7 @@ public class ResourceProviderService : IResourceProviderService
 
         if (!isOwner && !isMember)
         {
-            _logger.LogWarning("User {UserId} unauthorized to access world {WorldId}", userId, worldId);
+            _logger.LogWarningSanitized("User {UserId} unauthorized to access world {WorldId}", userId, worldId);
             throw new UnauthorizedAccessException($"User does not have access to world {worldId}");
         }
 
@@ -72,14 +71,14 @@ public class ResourceProviderService : IResourceProviderService
 
         if (world == null)
         {
-            _logger.LogWarning("World {WorldId} not found", worldId);
+            _logger.LogWarningSanitized("World {WorldId} not found", worldId);
             throw new KeyNotFoundException($"World {worldId} not found");
         }
 
         // Check if user is the owner (only owners can modify settings)
         if (world.OwnerId != userId)
         {
-            _logger.LogWarning("User {UserId} is not owner of world {WorldId}", userId, worldId);
+            _logger.LogWarningSanitized("User {UserId} is not owner of world {WorldId}", userId, worldId);
             throw new UnauthorizedAccessException($"Only the world owner can modify resource provider settings");
         }
 
@@ -89,7 +88,7 @@ public class ResourceProviderService : IResourceProviderService
 
         if (!providerExists)
         {
-            _logger.LogWarning("Provider {ProviderCode} not found or inactive", providerCode);
+            _logger.LogWarningSanitized("Provider {ProviderCode} not found or inactive", providerCode);
             throw new KeyNotFoundException($"Resource provider '{providerCode}' not found or inactive");
         }
 
@@ -139,11 +138,11 @@ public class ResourceProviderService : IResourceProviderService
 
         if (!result)
         {
-            _logger.LogWarning("Provider {ProviderCode} not found or inactive", providerCode);
+            _logger.LogWarningSanitized("Provider {ProviderCode} not found or inactive", providerCode);
             throw new KeyNotFoundException($"Resource provider '{providerCode}' not found or inactive");
         }
 
-        _logger.LogDebugSanitized(
+        _logger.LogTraceSanitized(
             "User {UserId} {Action} provider {ProviderCode} for world {WorldId}",
             userId,
             enabled ? "enabled" : "disabled",

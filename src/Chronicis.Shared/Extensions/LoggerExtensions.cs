@@ -36,6 +36,19 @@ public static class LoggerExtensions
     }
 
     /// <summary>
+    /// Logs a warning message with exception and sanitized arguments.
+    /// Use this when logging user-provided data along with an exception.
+    /// </summary>
+    public static void LogWarningSanitized(this ILogger logger, Exception exception, string message, params object?[] args)
+    {
+        if (!logger.IsEnabled(LogLevel.Warning))
+            return;
+
+        var sanitizedArgs = args.Select(arg => Utilities.LogSanitizer.SanitizeObject(arg)).ToArray();
+        logger.LogWarning(exception, message, sanitizedArgs);
+    }
+
+    /// <summary>
     /// Logs an error message with sanitized arguments.
     /// Use this when logging user-provided data.
     /// </summary>
@@ -86,6 +99,19 @@ public static class LoggerExtensions
 
         var sanitizedArgs = args.Select(arg => Utilities.LogSanitizer.SanitizeObject(arg)).ToArray();
         logger.LogTrace(message, sanitizedArgs);
+    }
+
+    /// <summary>
+    /// Logs a trace message with exception and sanitized arguments.
+    /// Use this when logging user-provided data along with an exception.
+    /// </summary>
+    public static void LogTraceSanitized(this ILogger logger, Exception exception, string message, params object?[] args)
+    {
+        if (!logger.IsEnabled(LogLevel.Trace))
+            return;
+
+        var sanitizedArgs = args.Select(arg => Utilities.LogSanitizer.SanitizeObject(arg)).ToArray();
+        logger.LogTrace(exception, message, sanitizedArgs);
     }
 
     /// <summary>

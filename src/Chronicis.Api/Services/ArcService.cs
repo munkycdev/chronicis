@@ -50,7 +50,7 @@ public class ArcService : IArcService
         // Verify user has access to the campaign via world membership
         if (!await UserHasCampaignAccessAsync(campaignId, userId))
         {
-            _logger.LogWarning("Campaign {CampaignId} not found or user {UserId} doesn't have access", campaignId, userId);
+            _logger.LogWarningSanitized("Campaign {CampaignId} not found or user {UserId} doesn't have access", campaignId, userId);
             return new List<ArcDto>();
         }
 
@@ -106,7 +106,7 @@ public class ArcService : IArcService
         // Only GMs can create arcs
         if (!await UserIsCampaignGMAsync(dto.CampaignId, userId))
         {
-            _logger.LogWarning("Campaign {CampaignId} not found or user {UserId} is not a GM", dto.CampaignId, userId);
+            _logger.LogWarningSanitized("Campaign {CampaignId} not found or user {UserId} is not a GM", dto.CampaignId, userId);
             return null;
         }
 
@@ -134,7 +134,7 @@ public class ArcService : IArcService
         _context.Arcs.Add(arc);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Created arc {ArcId} '{ArcName}' in campaign {CampaignId}",
+        _logger.LogTraceSanitized("Created arc {ArcId} '{ArcName}' in campaign {CampaignId}",
             arc.Id, arc.Name, arc.CampaignId);
 
         return new ArcDto
@@ -160,13 +160,13 @@ public class ArcService : IArcService
 
         if (arc == null)
         {
-            _logger.LogWarning("Arc {ArcId} not found", arcId);
+            _logger.LogWarningSanitized("Arc {ArcId} not found", arcId);
             return null;
         }
 
         if (!await UserIsCampaignOwnerOrGMAsync(arc.CampaignId, userId))
         {
-            _logger.LogWarning("User {UserId} is not authorized to update arc {ArcId}", userId, arcId);
+            _logger.LogWarningSanitized("User {UserId} is not authorized to update arc {ArcId}", userId, arcId);
             return null;
         }
 
@@ -181,7 +181,7 @@ public class ArcService : IArcService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Updated arc {ArcId} '{ArcName}'", arc.Id, arc.Name);
+        _logger.LogTraceSanitized("Updated arc {ArcId} '{ArcName}'", arc.Id, arc.Name);
 
         var sessionCount = await _context.Articles.CountAsync(a => a.ArcId == arcId);
 
@@ -208,13 +208,13 @@ public class ArcService : IArcService
 
         if (arc == null)
         {
-            _logger.LogWarning("Arc {ArcId} not found", arcId);
+            _logger.LogWarningSanitized("Arc {ArcId} not found", arcId);
             return false;
         }
 
         if (!await UserIsCampaignGMAsync(arc.CampaignId, userId))
         {
-            _logger.LogWarning("User {UserId} is not a GM for arc {ArcId}", userId, arcId);
+            _logger.LogWarningSanitized("User {UserId} is not a GM for arc {ArcId}", userId, arcId);
             return false;
         }
 
@@ -222,14 +222,14 @@ public class ArcService : IArcService
         var hasContent = await _context.Articles.AnyAsync(a => a.ArcId == arcId);
         if (hasContent)
         {
-            _logger.LogWarning("Cannot delete arc {ArcId} - it has sessions", arcId);
+            _logger.LogWarningSanitized("Cannot delete arc {ArcId} - it has sessions", arcId);
             return false;
         }
 
         _context.Arcs.Remove(arc);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Deleted arc {ArcId}", arcId);
+        _logger.LogTraceSanitized("Deleted arc {ArcId}", arcId);
         return true;
     }
 
@@ -264,7 +264,7 @@ public class ArcService : IArcService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Activated arc {ArcId} in campaign {CampaignId}", arcId, arc.CampaignId);
+        _logger.LogTraceSanitized("Activated arc {ArcId} in campaign {CampaignId}", arcId, arc.CampaignId);
 
         return true;
     }

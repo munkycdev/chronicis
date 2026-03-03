@@ -31,7 +31,7 @@ public class AdminService : IAdminService
     {
         await ThrowIfNotSysAdminAsync();
 
-        _logger.LogDebug("SysAdmin fetching all world summaries");
+        _logger.LogTraceSanitized("SysAdmin fetching all world summaries");
 
         return await BuildWorldSummaryQueryAsync();
     }
@@ -44,11 +44,11 @@ public class AdminService : IAdminService
         var world = await _context.Worlds.FindAsync(worldId);
         if (world == null)
         {
-            _logger.LogDebug("SysAdmin delete: world {WorldId} not found", worldId);
+            _logger.LogTraceSanitized("SysAdmin delete: world {WorldId} not found", worldId);
             return false;
         }
 
-        _logger.LogWarning("SysAdmin permanently deleting world {WorldId} ({WorldName})",
+        _logger.LogWarningSanitized("SysAdmin permanently deleting world {WorldId} ({WorldName})",
             worldId, world.Name);
 
         await DeleteWorldDataAsync(worldId);
@@ -56,7 +56,7 @@ public class AdminService : IAdminService
         _context.Worlds.Remove(world);
         await _context.SaveChangesAsync();
 
-        _logger.LogWarning("SysAdmin permanently deleted world {WorldId}", worldId);
+        _logger.LogWarningSanitized("SysAdmin permanently deleted world {WorldId}", worldId);
         return true;
     }
 

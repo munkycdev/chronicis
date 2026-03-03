@@ -108,7 +108,7 @@ public class ArticleHierarchyService : IArticleHierarchyService
             // Cycle detection
             if (!visited.Add(currentId.Value))
             {
-                _logger.LogError(
+                _logger.LogErrorSanitized(
                     "Cycle detected in article hierarchy at {ArticleId}. Visited: {Visited}",
                     currentId.Value, string.Join(", ", visited));
                 break;
@@ -117,7 +117,7 @@ public class ArticleHierarchyService : IArticleHierarchyService
             // Hard depth limit
             if (visited.Count > MaxDepth)
             {
-                _logger.LogError(
+                _logger.LogErrorSanitized(
                     "Max hierarchy depth ({MaxDepth}) exceeded walking from article {ArticleId}",
                     MaxDepth, articleId);
                 break;

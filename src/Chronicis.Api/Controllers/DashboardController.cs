@@ -35,7 +35,7 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<DashboardDto>> GetDashboard()
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("Getting dashboard for user {UserId}", user.Id);
+        _logger.LogTraceSanitized("Getting dashboard for user {UserId}", user.Id);
         var dashboard = await _dashboardReadService.GetDashboardAsync(user.Id, user.DisplayName);
         return Ok(dashboard);
     }

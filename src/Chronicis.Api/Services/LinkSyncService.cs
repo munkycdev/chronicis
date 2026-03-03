@@ -69,7 +69,7 @@ public class LinkSyncService : ILinkSyncService
         await _context.SaveChangesAsync();
 
         // Step 5: Log metrics
-        _logger.LogDebug(
+        _logger.LogTraceSanitized(
             "Synced links for article {ArticleId}: {RemovedCount} removed, {AddedCount} added",
             sourceArticleId,
             removedCount,

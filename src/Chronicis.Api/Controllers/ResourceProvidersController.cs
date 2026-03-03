@@ -1,7 +1,6 @@
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -64,12 +63,12 @@ public class ResourceProvidersController : ControllerBase
         }
         catch (KeyNotFoundException ex)
         {
-            _logger.LogWarning(ex, "World {WorldId} not found", worldId);
+            _logger.LogWarningSanitized(ex, "World {WorldId} not found", worldId);
             return NotFound(new { message = ex.Message });
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogWarning(ex, "Unauthorized access to world {WorldId}", worldId);
+            _logger.LogWarningSanitized(ex, "Unauthorized access to world {WorldId}", worldId);
             return Forbid();
         }
     }
@@ -106,17 +105,17 @@ public class ResourceProvidersController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogWarning(ex, "Unauthorized attempt to modify world {WorldId}", worldId);
+            _logger.LogWarningSanitized(ex, "Unauthorized attempt to modify world {WorldId}", worldId);
             return Forbid();
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Invalid provider configuration for world {WorldId} and provider {ProviderCode}", worldId, providerCode);
+            _logger.LogWarningSanitized(ex, "Invalid provider configuration for world {WorldId} and provider {ProviderCode}", worldId, providerCode);
             return BadRequest(new { message = ex.Message });
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning(ex, "Invalid provider lookup key for world {WorldId} and provider {ProviderCode}", worldId, providerCode);
+            _logger.LogWarningSanitized(ex, "Invalid provider lookup key for world {WorldId} and provider {ProviderCode}", worldId, providerCode);
             return BadRequest(new { message = ex.Message });
         }
     }

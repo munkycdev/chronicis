@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Chronicis.Shared.Extensions;
 using static Chronicis.Api.Services.ExternalLinks.Open5eJsonHelpers;
 
 namespace Chronicis.Api.Services.ExternalLinks;
@@ -77,7 +76,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         try
         {
             var url = $"/v2/{strategy.Endpoint}/{itemKey}/";
-            _logger.LogDebugSanitized("Fetching Open5e content: {Url}", url);
+            _logger.LogTraceSanitized("Fetching Open5e content: {Url}", url);
 
             using var response = await client.GetAsync(url, ct);
             if (!response.IsSuccessStatusCode)

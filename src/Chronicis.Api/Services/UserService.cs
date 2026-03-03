@@ -56,13 +56,13 @@ public class UserService : IUserService
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            _logger.LogDebug("Created new user {UserId} for Auth0 ID {Auth0UserId}", user.Id, auth0UserId);
+            _logger.LogTraceSanitized("Created new user {UserId} for Auth0 ID {Auth0UserId}", user.Id, auth0UserId);
 
             try
             {
                 if (!await TryCloneTutorialWorldFromTemplateAsync(user.Id))
                 {
-                    _logger.LogWarning(
+                    _logger.LogWarningSanitized(
                         "Tutorial template world {TemplateWorldId} was not found. Falling back to generated default tutorial world for user {UserId}",
                         TutorialTemplateWorldId,
                         user.Id);
@@ -73,7 +73,7 @@ public class UserService : IUserService
             catch (Exception ex)
             {
                 // Do not block login if tutorial provisioning fails.
-                _logger.LogError(ex, "Failed to provision tutorial world for new user {UserId}", user.Id);
+                _logger.LogErrorSanitized(ex, "Failed to provision tutorial world for new user {UserId}", user.Id);
             }
         }
         else
@@ -152,7 +152,7 @@ public class UserService : IUserService
         var user = await _context.Users.FindAsync(userId);
         if (user == null)
         {
-            _logger.LogWarning("Attempted to complete onboarding for non-existent user {UserId}", userId);
+            _logger.LogWarningSanitized("Attempted to complete onboarding for non-existent user {UserId}", userId);
             return false;
         }
 
@@ -160,7 +160,7 @@ public class UserService : IUserService
         {
             user.HasCompletedOnboarding = true;
             await _context.SaveChangesAsync();
-            _logger.LogDebug("User {UserId} completed onboarding", userId);
+            _logger.LogTraceSanitized("User {UserId} completed onboarding", userId);
         }
 
         return true;
@@ -172,7 +172,7 @@ public class UserService : IUserService
     /// </summary>
     private async Task CreateDefaultWorldAsync(Guid userId, bool isTutorial = false)
     {
-        _logger.LogDebug("Creating default world for user {UserId}", userId);
+        _logger.LogTraceSanitized("Creating default world for user {UserId}", userId);
 
         var createDto = new WorldCreateDto
         {
@@ -280,7 +280,7 @@ public class UserService : IUserService
             .CountAsync(d => d.WorldId == templateWorld.Id);
         if (skippedDocumentCount > 0)
         {
-            _logger.LogWarning(
+            _logger.LogWarningSanitized(
                 "Tutorial template world {TemplateWorldId} contains {DocumentCount} world documents. Document rows are not cloned by user provisioning because blob files are not copied",
                 TutorialTemplateWorldId,
                 skippedDocumentCount);
@@ -561,7 +561,7 @@ public class UserService : IUserService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug(
+        _logger.LogTraceSanitized(
             "Provisioned tutorial world {WorldId} from template {TemplateWorldId} for user {UserId} (Campaigns={CampaignCount}, Arcs={ArcCount}, Sessions={SessionCount}, Articles={ArticleCount})",
             newWorldId,
             TutorialTemplateWorldId,

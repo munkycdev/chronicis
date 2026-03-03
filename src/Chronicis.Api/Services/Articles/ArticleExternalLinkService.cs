@@ -50,7 +50,7 @@ public partial class ArticleExternalLinkService : IArticleExternalLinkService
             // Extract external links from HTML
             var extractedLinks = ExtractExternalLinksFromHtml(htmlContent);
 
-            _logger.LogDebug(
+            _logger.LogTraceSanitized(
                 "Extracted {Count} external links from article {ArticleId}",
                 extractedLinks.Count,
                 articleId);
@@ -63,7 +63,7 @@ public partial class ArticleExternalLinkService : IArticleExternalLinkService
             if (existingLinks.Any())
             {
                 _context.ArticleExternalLinks.RemoveRange(existingLinks);
-                _logger.LogDebug(
+                _logger.LogTraceSanitized(
                     "Removed {Count} existing external links for article {ArticleId}",
                     existingLinks.Count,
                     articleId);
@@ -83,7 +83,7 @@ public partial class ArticleExternalLinkService : IArticleExternalLinkService
 
                 await _context.ArticleExternalLinks.AddRangeAsync(newLinks);
 
-                _logger.LogDebug(
+                _logger.LogTraceSanitized(
                     "Added {Count} new external links for article {ArticleId}",
                     newLinks.Count,
                     articleId);
@@ -93,7 +93,7 @@ public partial class ArticleExternalLinkService : IArticleExternalLinkService
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            _logger.LogErrorSanitized(
                 ex,
                 "Error syncing external links for article {ArticleId}",
                 articleId);
@@ -119,7 +119,7 @@ public partial class ArticleExternalLinkService : IArticleExternalLinkService
                 })
                 .ToListAsync();
 
-            _logger.LogDebug(
+            _logger.LogTraceSanitized(
                 "Retrieved {Count} external links for article {ArticleId}",
                 links.Count,
                 articleId);
@@ -128,7 +128,7 @@ public partial class ArticleExternalLinkService : IArticleExternalLinkService
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            _logger.LogErrorSanitized(
                 ex,
                 "Error retrieving external links for article {ArticleId}",
                 articleId);

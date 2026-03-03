@@ -1,7 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
-using Chronicis.Shared.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
@@ -48,11 +47,11 @@ public class PublicWorldService : IPublicWorldService
 
         if (world == null)
         {
-            _logger.LogDebugSanitized("Public world not found for slug '{PublicSlug}'", normalizedSlug);
+            _logger.LogTraceSanitized("Public world not found for slug '{PublicSlug}'", normalizedSlug);
             return null;
         }
 
-        _logger.LogDebugSanitized("Public world '{WorldName}' accessed via slug '{PublicSlug}'",
+        _logger.LogTraceSanitized("Public world '{WorldName}' accessed via slug '{PublicSlug}'",
             world.Name, normalizedSlug);
 
         return new WorldDetailDto
@@ -100,7 +99,7 @@ public class PublicWorldService : IPublicWorldService
 
         if (world == null)
         {
-            _logger.LogDebugSanitized("Public world not found for slug '{PublicSlug}'", normalizedSlug);
+            _logger.LogTraceSanitized("Public world not found for slug '{PublicSlug}'", normalizedSlug);
             return new List<ArticleTreeDto>();
         }
 
@@ -327,7 +326,7 @@ public class PublicWorldService : IPublicWorldService
             result.Add(uncategorizedGroup);
         }
 
-        _logger.LogDebugSanitized("Retrieved {Count} public articles for world '{PublicSlug}' in {GroupCount} groups",
+        _logger.LogTraceSanitized("Retrieved {Count} public articles for world '{PublicSlug}' in {GroupCount} groups",
             allPublicArticles.Count, normalizedSlug, result.Count);
 
         return result;
@@ -394,13 +393,13 @@ public class PublicWorldService : IPublicWorldService
 
         if (world == null)
         {
-            _logger.LogDebugSanitized("Public world not found for slug '{PublicSlug}'", normalizedSlug);
+            _logger.LogTraceSanitized("Public world not found for slug '{PublicSlug}'", normalizedSlug);
             return null;
         }
 
         if (string.IsNullOrWhiteSpace(articlePath))
         {
-            _logger.LogDebugSanitized("Empty article path for public world '{PublicSlug}'", normalizedSlug);
+            _logger.LogTraceSanitized("Empty article path for public world '{PublicSlug}'", normalizedSlug);
             return null;
         }
 
@@ -432,7 +431,7 @@ public class PublicWorldService : IPublicWorldService
 
         if (resolvedArticle == null)
         {
-            _logger.LogDebugSanitized("Public article not found for path '{Path}' in world '{PublicSlug}'",
+            _logger.LogTraceSanitized("Public article not found for path '{Path}' in world '{PublicSlug}'",
                 articlePath, normalizedSlug);
             return null;
         }
@@ -456,7 +455,7 @@ public class PublicWorldService : IPublicWorldService
             World = new WorldContext { Id = world.Id, Name = world.Name, Slug = world.Slug }
         });
 
-        _logger.LogDebugSanitized("Public article '{Title}' accessed in world '{PublicSlug}'",
+        _logger.LogTraceSanitized("Public article '{Title}' accessed in world '{PublicSlug}'",
             article.Title, normalizedSlug);
 
         return article;
@@ -478,7 +477,7 @@ public class PublicWorldService : IPublicWorldService
 
         if (world == null)
         {
-            _logger.LogDebugSanitized("Public world not found for slug '{PublicSlug}'", normalizedSlug);
+            _logger.LogTraceSanitized("Public world not found for slug '{PublicSlug}'", normalizedSlug);
             return null;
         }
 
@@ -491,7 +490,7 @@ public class PublicWorldService : IPublicWorldService
 
         if (article == null)
         {
-            _logger.LogDebugSanitized("Public article {ArticleId} not found in world '{PublicSlug}'", articleId, normalizedSlug);
+            _logger.LogTraceSanitized("Public article {ArticleId} not found in world '{PublicSlug}'", articleId, normalizedSlug);
             return null;
         }
 
@@ -511,7 +510,7 @@ public class PublicWorldService : IPublicWorldService
             if (parentArticle == null)
             {
                 // Parent is not public - this article's path is broken
-                _logger.LogDebug("Parent article not public in chain for article {ArticleId}", articleId);
+                _logger.LogTraceSanitized("Parent article not public in chain for article {ArticleId}", articleId);
                 return null;
             }
 
@@ -520,7 +519,7 @@ public class PublicWorldService : IPublicWorldService
         }
 
         var path = string.Join("/", slugs);
-        _logger.LogDebugSanitized("Resolved article {ArticleId} to path '{Path}' in world '{PublicSlug}'",
+        _logger.LogTraceSanitized("Resolved article {ArticleId} to path '{Path}' in world '{PublicSlug}'",
             articleId, path, normalizedSlug);
 
         return path;

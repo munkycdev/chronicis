@@ -194,7 +194,7 @@ public class SummaryService : ISummaryService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating AI summary for article {ArticleId}", articleId);
+            _logger.LogErrorSanitized(ex, "Error generating AI summary for article {ArticleId}", articleId);
             return new SummaryGenerationDto
             {
                 Success = false,
@@ -401,7 +401,7 @@ public class SummaryService : ISummaryService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating AI summary for campaign {CampaignId}", campaignId);
+            _logger.LogErrorSanitized(ex, "Error generating AI summary for campaign {CampaignId}", campaignId);
             return new SummaryGenerationDto
             {
                 Success = false,
@@ -572,7 +572,7 @@ public class SummaryService : ISummaryService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating AI summary for arc {ArcId}", arcId);
+            _logger.LogErrorSanitized(ex, "Error generating AI summary for arc {ArcId}", arcId);
             return new SummaryGenerationDto
             {
                 Success = false,
@@ -678,7 +678,7 @@ public class SummaryService : ISummaryService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating AI summary for session '{SessionName}'", sessionName);
+            _logger.LogErrorSanitized(ex, "Error generating AI summary for session '{SessionName}'", sessionName);
             return new SummaryGenerationDto
             {
                 Success = false,
@@ -858,7 +858,7 @@ Based on the source materials above and following the custom instructions, provi
         var maxInputTokens = int.Parse(_configuration["AzureOpenAI:MaxInputTokens"] ?? "8000");
         if (prompt.Length / CharsPerToken > maxInputTokens)
         {
-            _logger.LogWarning("Prompt exceeds max input tokens, truncating content");
+            _logger.LogWarningSanitized("Prompt exceeds max input tokens, truncating content");
             var maxContentLength = maxInputTokens * CharsPerToken - (promptTemplate.Length + entityName.Length + 200);
             var truncatedSourceContent = sourceContent.Substring(0, Math.Min(sourceContent.Length, maxContentLength));
             prompt = BuildPrompt(promptTemplate, entityName, truncatedSourceContent, webContent);

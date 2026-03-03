@@ -38,7 +38,7 @@ public class QuestUpdatesController : ControllerBase
         [FromQuery] int take = 20)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("Getting quest updates for quest {QuestId} (skip: {Skip}, take: {Take}) for user {UserId}",
+        _logger.LogTraceSanitized("Getting quest updates for quest {QuestId} (skip: {Skip}, take: {Take}) for user {UserId}",
             questId, skip, take, user.Id);
 
         var result = await _questUpdateService.GetQuestUpdatesAsync(questId, user.Id, skip, take);
@@ -68,7 +68,7 @@ public class QuestUpdatesController : ControllerBase
             return BadRequest(new { error = "Request body is required" });
         }
 
-        _logger.LogDebug("Creating quest update for quest {QuestId} by user {UserId}", questId, user.Id);
+        _logger.LogTraceSanitized("Creating quest update for quest {QuestId} by user {UserId}", questId, user.Id);
 
         var result = await _questUpdateService.CreateQuestUpdateAsync(questId, dto, user.Id);
 
@@ -93,7 +93,7 @@ public class QuestUpdatesController : ControllerBase
     public async Task<IActionResult> DeleteQuestUpdate(Guid questId, Guid updateId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("Deleting quest update {UpdateId} from quest {QuestId} for user {UserId}",
+        _logger.LogTraceSanitized("Deleting quest update {UpdateId} from quest {QuestId} for user {UserId}",
             updateId, questId, user.Id);
 
         var result = await _questUpdateService.DeleteQuestUpdateAsync(questId, updateId, user.Id);

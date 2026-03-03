@@ -37,7 +37,7 @@ public class SysAdminTutorialsController : ControllerBase
         }
         catch (UnauthorizedAccessException)
         {
-            _logger.LogWarning("Unauthorized attempt to list tutorial mappings");
+            _logger.LogWarningSanitized("Unauthorized attempt to list tutorial mappings");
             return Forbid();
         }
     }
@@ -55,7 +55,7 @@ public class SysAdminTutorialsController : ControllerBase
         }
         catch (UnauthorizedAccessException)
         {
-            _logger.LogWarning("Unauthorized attempt to create tutorial mapping");
+            _logger.LogWarningSanitized("Unauthorized attempt to create tutorial mapping");
             return Forbid();
         }
         catch (ArgumentException ex)
@@ -86,7 +86,7 @@ public class SysAdminTutorialsController : ControllerBase
         }
         catch (UnauthorizedAccessException)
         {
-            _logger.LogWarning("Unauthorized attempt to update tutorial mapping {MappingId}", id);
+            _logger.LogWarningSanitized("Unauthorized attempt to update tutorial mapping {MappingId}", id);
             return Forbid();
         }
         catch (ArgumentException ex)
@@ -112,7 +112,7 @@ public class SysAdminTutorialsController : ControllerBase
         }
         catch (UnauthorizedAccessException)
         {
-            _logger.LogWarning("Unauthorized attempt to delete tutorial mapping {MappingId}", id);
+            _logger.LogWarningSanitized("Unauthorized attempt to delete tutorial mapping {MappingId}", id);
             return Forbid();
         }
     }

@@ -35,7 +35,7 @@ public abstract class HealthCheckServiceBase : IHealthCheckService
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Health check failed for {ServiceName}", serviceName);
+            _logger.LogErrorSanitized(ex, "Health check failed for {ServiceName}", serviceName);
 
             return new ServiceHealthDto
             {

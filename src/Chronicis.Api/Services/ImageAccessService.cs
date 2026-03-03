@@ -42,7 +42,7 @@ public class ImageAccessService : IImageAccessService
 
         if (!document.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogWarning("Non-image document {DocumentId} requested via image proxy", documentId);
+            _logger.LogWarningSanitized("Non-image document {DocumentId} requested via image proxy", documentId);
             return ServiceResult<string>.ValidationError("Document is not an image");
         }
 

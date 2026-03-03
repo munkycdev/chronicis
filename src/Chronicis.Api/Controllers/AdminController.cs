@@ -37,7 +37,7 @@ public class AdminController : ControllerBase
         }
         catch (UnauthorizedAccessException)
         {
-            _logger.LogWarning("Unauthorized attempt to access admin world listing");
+            _logger.LogWarningSanitized("Unauthorized attempt to access admin world listing");
             return Forbid();
         }
     }
@@ -55,7 +55,7 @@ public class AdminController : ControllerBase
         }
         catch (UnauthorizedAccessException)
         {
-            _logger.LogWarning("Unauthorized attempt to delete world {WorldId}", id);
+            _logger.LogWarningSanitized("Unauthorized attempt to delete world {WorldId}", id);
             return Forbid();
         }
     }

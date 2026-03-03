@@ -140,7 +140,7 @@ public class TutorialService : ITutorialService
         _context.TutorialPages.Add(mapping);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation(
+        _logger.LogTraceSanitized(
             "SysAdmin created tutorial mapping {PageType} -> article {ArticleId}",
             mapping.PageType,
             mapping.ArticleId);
@@ -192,7 +192,7 @@ public class TutorialService : ITutorialService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation(
+        _logger.LogTraceSanitized(
             "SysAdmin updated tutorial mapping {MappingId} ({PageType}) -> article {ArticleId}",
             mapping.Id,
             mapping.PageType,
@@ -223,7 +223,7 @@ public class TutorialService : ITutorialService
         _context.TutorialPages.Remove(mapping);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("SysAdmin deleted tutorial mapping {MappingId}", id);
+        _logger.LogTraceSanitized("SysAdmin deleted tutorial mapping {MappingId}", id);
         return true;
     }
 

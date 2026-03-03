@@ -1,4 +1,4 @@
-# Chronicis Rollout Runbook (Step 9)
+# Chronicis Rollout Runbook
 
 ## Purpose
 

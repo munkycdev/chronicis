@@ -1,7 +1,6 @@
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -37,7 +36,7 @@ public class SearchController : ControllerBase
     public async Task<ActionResult<GlobalSearchResultsDto>> Search([FromQuery] string query)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebugSanitized("Searching for '{Query}' for user {UserId}", query, user.Id);
+        _logger.LogTraceSanitized("Searching for '{Query}' for user {UserId}", query, user.Id);
         var response = await _searchReadService.SearchAsync(query, user.Id);
         return Ok(response);
     }

@@ -188,7 +188,7 @@ public class QuestUpdateService : IQuestUpdateService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Created quest update for quest {QuestId} by user {UserId}", questId, userId);
+        _logger.LogTraceSanitized("Created quest update for quest {QuestId} by user {UserId}", questId, userId);
 
         // Fetch creator details for DTO
         var creator = await _context.Users.FindAsync(userId);
@@ -249,7 +249,7 @@ public class QuestUpdateService : IQuestUpdateService
         _context.QuestUpdates.Remove(questUpdate);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Deleted quest update {UpdateId} from quest {QuestId} by user {UserId}",
+        _logger.LogTraceSanitized("Deleted quest update {UpdateId} from quest {QuestId} by user {UserId}",
             updateId, questId, userId);
 
         return ServiceResult<bool>.Success(true);

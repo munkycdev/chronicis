@@ -1,5 +1,5 @@
 {
-  "name": "step9-read-model-rollout",
+  "name": "read-model-rollout",
   "environment": "staging",
   "apiBaseUrl": "https://api.chronicis.app",
   "healthEndpoint": "/health/status",

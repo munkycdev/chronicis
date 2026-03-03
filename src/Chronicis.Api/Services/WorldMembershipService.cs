@@ -81,7 +81,7 @@ public class WorldMembershipService : IWorldMembershipService
 
             if (gmCount <= 1)
             {
-                _logger.LogWarning("Cannot demote the last GM of world {WorldId}", worldId);
+                _logger.LogWarningSanitized("Cannot demote the last GM of world {WorldId}", worldId);
                 return null;
             }
         }
@@ -89,7 +89,7 @@ public class WorldMembershipService : IWorldMembershipService
         member.Role = dto.Role;
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Updated member {MemberId} role to {Role} in world {WorldId}",
+        _logger.LogTraceSanitized("Updated member {MemberId} role to {Role} in world {WorldId}",
             memberId, dto.Role, worldId);
 
         return new WorldMemberDto
@@ -128,7 +128,7 @@ public class WorldMembershipService : IWorldMembershipService
 
             if (gmCount <= 1)
             {
-                _logger.LogWarning("Cannot remove the last GM of world {WorldId}", worldId);
+                _logger.LogWarningSanitized("Cannot remove the last GM of world {WorldId}", worldId);
                 return false;
             }
         }
@@ -136,7 +136,7 @@ public class WorldMembershipService : IWorldMembershipService
         _context.WorldMembers.Remove(member);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Removed member {MemberId} from world {WorldId}", memberId, worldId);
+        _logger.LogTraceSanitized("Removed member {MemberId} from world {WorldId}", memberId, worldId);
 
         return true;
     }

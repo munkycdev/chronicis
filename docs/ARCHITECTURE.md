@@ -444,6 +444,10 @@ Chronicis.Shared  ---->  (no project references)
 - Public visibility/public slug rule condition hits in key read-path services/controllers (`PublicWorldService`, `WorldService`, `SessionService`, `SummaryService`, `PublicController`): `48`.
 - Shared read-policy consumers:
 - `PublicWorldService`, `ArticleService`, `ArticleDataAccessService`, `SummaryAccessService`, `SearchReadService`.
+- Logging hygiene (API):
+- `LogDebug*` call sites: `0`.
+- `LogInformation*` call sites: `0`.
+- Direct non-sanitized `LogWarning/LogError/LogCritical/LogTrace` call sites: `0`.
 
 ### 10.7 Measurement Commands (Repeatable)
 ```powershell
@@ -474,6 +478,10 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
   src/Chronicis.Api/Services/ArticleDataAccessService.cs `
   src/Chronicis.Api/Services/SummaryAccessService.cs `
   src/Chronicis.Api/Services/SearchReadService.cs
+
+# Logging hygiene checks (API source)
+rg -n "\.Log(Debug|Information)(Sanitized)?\(" src/Chronicis.Api --glob "**/*.cs"
+rg -n "\.Log(Warning|Error|Critical|Trace)\(" src/Chronicis.Api --glob "**/*.cs"
 ```
 
 ### 10.8 Compliance Metrics and Release Gates
@@ -482,10 +490,13 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - Gate: count must not increase release-over-release; temporary exceptions must be tracked.
 - Session architecture metric:
 - Measure: number of legacy `ArticleType.Session` references outside migrations/tests.
-- Gate: count must stay at or below the Step 10 retirement baseline and trend to full retirement.
+- Gate: count must stay at or below the retirement baseline and trend to full retirement.
 - Access-policy parity metric:
 - Measure: duplicated visibility/public-slug rule paths outside shared policy inputs.
 - Gate: duplicated rule logic must trend down; divergences block release sign-off.
+- Logging hygiene metric:
+- Measure: API direct `LogDebug*`/`LogInformation*` call count and direct non-sanitized logger call count.
+- Gate: both counts remain at `0`; any increase blocks release.
 
 ### 10.9 Data-Access Boundary Operating Model
 - Domain boundary unit:
@@ -515,7 +526,7 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - Collaboration and progression domains are implemented through service-owned boundaries for `Campaigns`, `Arcs`, `Sessions`, `WorldMembership`, `WorldInvitation`, and `WorldDocuments`.
 - Supporting domains are implemented through service-owned boundaries for `Summary`, `Admin`, `Tutorial`, `Health`, and edge endpoints.
 
-### 10.12 Session Model Canonicalization (Step 4)
+### 10.12 Session Model Canonicalization
 - Canonical session model:
 - `Session` entity (`Chronicis.Shared.Models.Session`) is the only model for new session workflows.
 - `ArticleType.Session` is non-canonical and retained only for constrained legacy-model interop.
@@ -537,13 +548,13 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - `Compatibility-only`: legacy references are read/interop only; no legacy write paths are allowed.
 - `Retirement`: legacy references and data paths removed after parity and migration exit criteria are satisfied.
 - Current state:
-- Step 10 retired public legacy session-prefix URL compatibility shims.
+- Retired public legacy session-prefix URL compatibility shims.
 - Guardrails:
 - `tests/Chronicis.ArchitecturalTests/SessionModelGuardrailTests.cs` enforces:
 - no expansion of boundary file set for API/client.
 - no increase above baseline legacy-reference counts (`API <= 2`, `Client <= 8`).
 
-### 10.13 Unified Access-Policy Architecture (Step 6)
+### 10.13 Unified Access-Policy Architecture
 - Shared policy contract:
 - `IReadAccessPolicyService` defines canonical read-policy inputs for:
 - public world lookup, public article visibility, tutorial readability, and authenticated world/article/campaign/arc access.
@@ -558,7 +569,7 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - `tests/Chronicis.Api.Tests/Services/ReadAccessPolicyServiceTests.cs` covers policy matrix behavior.
 - Service-level regressions validate adoption in public/auth read paths.
 
-### 10.14 Read-Model Parity Hardening (Step 7)
+### 10.14 Read-Model Parity Hardening
 - Shared projection seam:
 - `ArticleReadModelProjection.ArticleDetail` is the canonical `ArticleDto` read projection for parity-sensitive public/auth article detail reads.
 - Shared path-resolution seam:
@@ -574,9 +585,9 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - any unplanned public/auth read divergence is a release blocker.
 - any planned divergence must be documented and protected by regression tests.
 
-### 10.15 Architecture Test Guardrails (Step 8)
+### 10.15 Architecture Test Guardrails
 - Data-access boundary guardrails:
-- `tests/Chronicis.ArchitecturalTests/Step8ArchitectureGuardrailTests.cs` enforces that API controllers do not directly depend on `ChronicisDbContext` (constructor, field, or property).
+- `tests/Chronicis.ArchitecturalTests/ArchitectureGuardrailTests.cs` enforces that API controllers do not directly depend on `ChronicisDbContext` (constructor, field, or property).
 - Read-policy continuity guardrails:
 - the same suite enforces continued `IReadAccessPolicyService` injection for key read services:
 - `PublicWorldService`, `ArticleService`, `ArticleDataAccessService`, `SummaryAccessService`, `SearchReadService`.
@@ -591,7 +602,7 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - Release policy:
 - any guardrail failure is a release blocker and must be resolved or explicitly redesigned with updated tests/docs.
 
-### 10.16 Rollout and Risk Control (Step 9)
+### 10.16 Rollout and Risk Control
 - Rollout control model:
 - staged revision rollout with checkpoints at `10%`, `50%`, and `100%` traffic.
 - progression to the next stage is blocked unless the current stage checkpoint passes.
@@ -612,7 +623,7 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - any failed checkpoint or threshold breach is a release blocker.
 - rollback to the previous stable revision is required before further progression.
 
-### 10.17 Closure and Debt Retirement (Step 10)
+### 10.17 Closure and Debt Retirement
 - Retirement actions:
 - Removed public read-path compatibility shims that resolved legacy session-prefixed URLs for root `SessionNote` articles.
 - Public path generation now emits canonical root-note paths with no legacy session slug prefix insertion.
@@ -623,6 +634,20 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - Reduce remaining API/client `ArticleType.Session` references to full retirement.
 - Remove/rename remaining legacy model comments and helper names after DTO/public-contract migration windows.
 - Re-run legacy-data validation checks in staged rollout checkpoints before final boundary removal.
+
+### 10.18 Logging Hygiene
+- Logging policy for API source:
+- no `LogInformation*` calls.
+- no `LogDebug*` calls.
+- logger calls must use `*Sanitized` extension methods.
+- Extension support:
+- `LoggerExtensions` includes warning/error/critical/trace sanitized overloads, including exception variants required by API call sites.
+- Architecture guardrails:
+- `tests/Chronicis.ArchitecturalTests/LoggingHygieneTests.cs` enforces:
+- zero debug/information logger calls in API source;
+- zero direct non-sanitized warning/error/critical/trace logger calls in API source.
+- Release policy:
+- any logging hygiene guardrail failure is a release blocker.
 
 ## 11) Out of Scope
 - `Chronicis.CaptureApp` architecture is intentionally excluded.

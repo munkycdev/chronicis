@@ -1,5 +1,4 @@
 using Chronicis.Api.Repositories;
-using Chronicis.Shared.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Chronicis.Api.Services.ExternalLinks;
@@ -56,7 +55,7 @@ public class ExternalLinkService : IExternalLinkService
 
             if (enabledProvider == default)
             {
-                _logger.LogDebugSanitized(
+                _logger.LogTraceSanitized(
                     "Provider {Source} is not enabled for world {WorldId}", source, worldId);
                 return Array.Empty<ExternalLinkSuggestion>();
             }

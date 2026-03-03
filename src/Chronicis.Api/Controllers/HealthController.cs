@@ -38,7 +38,7 @@ public class HealthController : ControllerBase
     [HttpGet]
     public IActionResult GetHealth()
     {
-        _logger.LogInformation("Health Endpoint Called");
+        _logger.LogTraceSanitized("Health Endpoint Called");
         return Ok(new
         {
             status = "healthy",
@@ -59,7 +59,7 @@ public class HealthController : ControllerBase
             var readiness = await _healthReadinessService.GetReadinessAsync();
             if (!readiness.IsHealthy)
             {
-                _logger.LogWarning("Health check failed: Cannot connect to database");
+                _logger.LogWarningSanitized("Health check failed: Cannot connect to database");
                 return StatusCode(503, new
                 {
                     status = "unhealthy",
@@ -76,7 +76,7 @@ public class HealthController : ControllerBase
             var maskedConnStr = MaskConnectionString(connStr);
 
 
-            _logger.LogInformation("Readiness endpoint succeeded");
+            _logger.LogTraceSanitized("Readiness endpoint succeeded");
 
             return Ok(new
             {
@@ -92,7 +92,7 @@ public class HealthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Health check failed with exception");
+            _logger.LogErrorSanitized(ex, "Health check failed with exception");
             return StatusCode(503, new
             {
                 status = "unhealthy",
@@ -109,7 +109,7 @@ public class HealthController : ControllerBase
     [HttpGet("status")]
     public async Task<ActionResult<SystemHealthStatusDto>> GetSystemStatus()
     {
-        _logger.LogInformation("System health status endpoint called");
+        _logger.LogTraceSanitized("System health status endpoint called");
 
         var systemHealth = await _systemHealthService.GetSystemHealthAsync();
         systemHealth.ApiVersion = GetApiVersion();

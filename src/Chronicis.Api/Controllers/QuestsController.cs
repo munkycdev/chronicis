@@ -2,7 +2,6 @@ using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Models;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs.Quests;
-using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -36,7 +35,7 @@ public class QuestsController : ControllerBase
     public async Task<ActionResult<List<QuestDto>>> GetQuestsByArc(Guid arcId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("Getting quests for arc {ArcId} for user {UserId}", arcId, user.Id);
+        _logger.LogTraceSanitized("Getting quests for arc {ArcId} for user {UserId}", arcId, user.Id);
 
         var result = await _questService.GetQuestsByArcAsync(arcId, user.Id);
 
@@ -62,7 +61,7 @@ public class QuestsController : ControllerBase
             return BadRequest(new { error = "Request body is required" });
         }
 
-        _logger.LogDebugSanitized("Creating quest '{Title}' in arc {ArcId} for user {UserId}",
+        _logger.LogTraceSanitized("Creating quest '{Title}' in arc {ArcId} for user {UserId}",
             dto.Title, arcId, user.Id);
 
         var result = await _questService.CreateQuestAsync(arcId, dto, user.Id);
@@ -87,7 +86,7 @@ public class QuestsController : ControllerBase
     public async Task<ActionResult<QuestDto>> GetQuest(Guid questId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("Getting quest {QuestId} for user {UserId}", questId, user.Id);
+        _logger.LogTraceSanitized("Getting quest {QuestId} for user {UserId}", questId, user.Id);
 
         var result = await _questService.GetQuestAsync(questId, user.Id);
 
@@ -113,7 +112,7 @@ public class QuestsController : ControllerBase
             return BadRequest(new { error = "Request body is required" });
         }
 
-        _logger.LogDebug("Updating quest {QuestId} for user {UserId}", questId, user.Id);
+        _logger.LogTraceSanitized("Updating quest {QuestId} for user {UserId}", questId, user.Id);
 
         var result = await _questService.UpdateQuestAsync(questId, dto, user.Id);
 
@@ -139,7 +138,7 @@ public class QuestsController : ControllerBase
     public async Task<IActionResult> DeleteQuest(Guid questId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("Deleting quest {QuestId} for user {UserId}", questId, user.Id);
+        _logger.LogTraceSanitized("Deleting quest {QuestId} for user {UserId}", questId, user.Id);
 
         var result = await _questService.DeleteQuestAsync(questId, user.Id);
 

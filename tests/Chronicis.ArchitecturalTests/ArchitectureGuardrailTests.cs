@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Chronicis.ArchitecturalTests;
 
 [ExcludeFromCodeCoverage]
-public sealed class Step8ArchitectureGuardrailTests
+public sealed class ArchitectureGuardrailTests
 {
     private static readonly Assembly ApiAssembly = typeof(Api.Services.ArticleService).Assembly;
     private static readonly string RepoRoot = ResolveRepoRoot();

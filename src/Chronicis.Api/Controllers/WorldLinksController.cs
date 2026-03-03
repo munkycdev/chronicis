@@ -2,7 +2,6 @@ using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Models;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -37,7 +36,7 @@ public class WorldLinksController : ControllerBase
     public async Task<ActionResult<IEnumerable<WorldLinkDto>>> GetWorldLinks(Guid worldId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("Getting links for world {WorldId} by user {UserId}", worldId, user.Id);
+        _logger.LogTraceSanitized("Getting links for world {WorldId} by user {UserId}", worldId, user.Id);
         var result = await _worldLinkService.GetWorldLinksAsync(worldId, user.Id);
         return result.Status == ServiceStatus.NotFound
             ? NotFound(new { error = result.ErrorMessage })
@@ -64,7 +63,7 @@ public class WorldLinksController : ControllerBase
             return BadRequest(new { error = "Invalid URL format. Must be a valid http or https URL." });
         }
 
-        _logger.LogDebugSanitized("Creating link '{Title}' for world {WorldId} by user {UserId}",
+        _logger.LogTraceSanitized("Creating link '{Title}' for world {WorldId} by user {UserId}",
             dto.Title, worldId, user.Id);
 
         var result = await _worldLinkService.CreateWorldLinkAsync(worldId, dto, user.Id);
@@ -96,7 +95,7 @@ public class WorldLinksController : ControllerBase
             return BadRequest(new { error = "Invalid URL format. Must be a valid http or https URL." });
         }
 
-        _logger.LogDebug("Updating link {LinkId} for world {WorldId} by user {UserId}", linkId, worldId, user.Id);
+        _logger.LogTraceSanitized("Updating link {LinkId} for world {WorldId} by user {UserId}", linkId, worldId, user.Id);
 
         var result = await _worldLinkService.UpdateWorldLinkAsync(worldId, linkId, dto, user.Id);
         return result.Status == ServiceStatus.NotFound
@@ -112,7 +111,7 @@ public class WorldLinksController : ControllerBase
     {
         var user = await _currentUserService.GetRequiredUserAsync();
 
-        _logger.LogDebug("Deleting link {LinkId} for world {WorldId} by user {UserId}",
+        _logger.LogTraceSanitized("Deleting link {LinkId} for world {WorldId} by user {UserId}",
             linkId, worldId, user.Id);
         var result = await _worldLinkService.DeleteWorldLinkAsync(worldId, linkId, user.Id);
         return result.Status == ServiceStatus.NotFound

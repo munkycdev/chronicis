@@ -3,7 +3,6 @@ using Chronicis.Api.Models;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Sessions;
-using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -83,7 +82,7 @@ public class SessionsController : ControllerBase
             return BadRequest(new { error = "Request body is required" });
         }
 
-        _logger.LogDebugSanitized("Creating session '{Name}' in arc {ArcId} for user {UserId}",
+        _logger.LogTraceSanitized("Creating session '{Name}' in arc {ArcId} for user {UserId}",
             dto.Name, arcId, user.Id);
 
         var result = await _sessionService.CreateSessionAsync(arcId, dto, user.Id, user.DisplayName);
@@ -111,7 +110,7 @@ public class SessionsController : ControllerBase
             return BadRequest(new { error = "Request body is required" });
         }
 
-        _logger.LogDebug("Updating session {SessionId} by user {UserId}", sessionId, user.Id);
+        _logger.LogTraceSanitized("Updating session {SessionId} by user {UserId}", sessionId, user.Id);
 
         var result = await _sessionService.UpdateSessionNotesAsync(sessionId, dto, user.Id);
 
@@ -133,7 +132,7 @@ public class SessionsController : ControllerBase
     {
         var user = await _currentUserService.GetRequiredUserAsync();
 
-        _logger.LogDebug("Deleting session {SessionId} by user {UserId}", sessionId, user.Id);
+        _logger.LogTraceSanitized("Deleting session {SessionId} by user {UserId}", sessionId, user.Id);
 
         var result = await _sessionService.DeleteSessionAsync(sessionId, user.Id);
 
@@ -154,7 +153,7 @@ public class SessionsController : ControllerBase
     {
         var user = await _currentUserService.GetRequiredUserAsync();
 
-        _logger.LogDebug("Generating AI summary for session {SessionId} by user {UserId}", sessionId, user.Id);
+        _logger.LogTraceSanitized("Generating AI summary for session {SessionId} by user {UserId}", sessionId, user.Id);
 
         var result = await _sessionService.GenerateAiSummaryAsync(sessionId, user.Id);
 
@@ -176,7 +175,7 @@ public class SessionsController : ControllerBase
     {
         var user = await _currentUserService.GetRequiredUserAsync();
 
-        _logger.LogDebug("Clearing AI summary for session {SessionId} by user {UserId}", sessionId, user.Id);
+        _logger.LogTraceSanitized("Clearing AI summary for session {SessionId} by user {UserId}", sessionId, user.Id);
 
         var result = await _sessionService.ClearAiSummaryAsync(sessionId, user.Id);
 

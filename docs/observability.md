@@ -106,7 +106,7 @@ Expected response:
 3. Look for `chronicis-api` service
 4. Verify traces are appearing for HTTP requests
 
-#### 4. Step 9 Rollout Checkpoint Inputs
+#### 4. Rollout Checkpoint Inputs
 
 During staged rollout checkpoints, capture and record these values in the checkpoint config:
 

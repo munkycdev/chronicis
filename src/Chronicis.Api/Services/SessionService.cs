@@ -178,7 +178,7 @@ public class SessionService : ISessionService
         _context.Articles.Add(defaultNote);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Created session {SessionId} in arc {ArcId} with default note {NoteId}",
+        _logger.LogTraceSanitized("Created session {SessionId} in arc {ArcId} with default note {NoteId}",
             session.Id, arc.Id, defaultNote.Id);
 
         return ServiceResult<SessionDto>.Success(MapDto(session));
@@ -257,7 +257,7 @@ public class SessionService : ISessionService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Updated session {SessionId}", sessionId);
+        _logger.LogTraceSanitized("Updated session {SessionId}", sessionId);
 
         return ServiceResult<SessionDto>.Success(MapDto(session));
     }
@@ -322,7 +322,7 @@ public class SessionService : ISessionService
         _context.Sessions.Remove(session);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug(
+        _logger.LogTraceSanitized(
             "Deleted session {SessionId} with {QuestUpdateCount} quest updates and {AttachedArticleCount} attached session articles",
             sessionId,
             sessionQuestUpdates.Count,
@@ -417,7 +417,7 @@ public class SessionService : ISessionService
 
         generation.GeneratedDate = generatedAt;
 
-        _logger.LogDebug("Generated AI summary for session {SessionId}", sessionId);
+        _logger.LogTraceSanitized("Generated AI summary for session {SessionId}", sessionId);
 
         return ServiceResult<SummaryGenerationDto>.Success(generation);
     }
@@ -448,7 +448,7 @@ public class SessionService : ISessionService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Cleared AI summary for session {SessionId}", sessionId);
+        _logger.LogTraceSanitized("Cleared AI summary for session {SessionId}", sessionId);
 
         return ServiceResult<bool>.Success(true);
     }

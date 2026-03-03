@@ -34,7 +34,7 @@ public class WorldDocumentsController : ControllerBase
     public async Task<ActionResult<IEnumerable<WorldDocumentDto>>> GetWorldDocuments(Guid worldId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("User {UserId} getting documents for world {WorldId}", user.Id, worldId);
+        _logger.LogTraceSanitized("User {UserId} getting documents for world {WorldId}", user.Id, worldId);
 
         try
         {
@@ -43,7 +43,7 @@ public class WorldDocumentsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogWarning(ex, "Unauthorized access to world documents");
+            _logger.LogWarningSanitized(ex, "Unauthorized access to world documents");
             return StatusCode(403, new { error = ex.Message });
         }
     }
@@ -56,7 +56,7 @@ public class WorldDocumentsController : ControllerBase
     public async Task<ActionResult<WorldDocumentDownloadDto>> GetDocumentContentAsync(Guid documentId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("User {UserId} requesting download URL for document {DocumentId}", user.Id, documentId);
+        _logger.LogTraceSanitized("User {UserId} requesting download URL for document {DocumentId}", user.Id, documentId);
 
         try
         {
@@ -72,22 +72,22 @@ public class WorldDocumentsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogWarning(ex, "Unauthorized document content request");
+            _logger.LogWarningSanitized(ex, "Unauthorized document content request");
             return StatusCode(403, new { error = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Document not found for content request");
+            _logger.LogWarningSanitized(ex, "Document not found for content request");
             return NotFound(new { error = ex.Message });
         }
         catch (FileNotFoundException ex)
         {
-            _logger.LogDebug(ex, "File not found in storage");
+            _logger.LogTraceSanitized(ex, "File not found in storage");
             return NotFound(new { error = "File not found in storage" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating download URL");
+            _logger.LogErrorSanitized(ex, "Error generating download URL");
             return StatusCode(500, new { error = "Failed to generate download URL" });
         }
     }
@@ -101,7 +101,7 @@ public class WorldDocumentsController : ControllerBase
         [FromBody] WorldDocumentUploadRequestDto request)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("User {UserId} requesting document upload for world {WorldId}", user.Id, worldId);
+        _logger.LogTraceSanitized("User {UserId} requesting document upload for world {WorldId}", user.Id, worldId);
 
         if (request == null)
         {
@@ -115,12 +115,12 @@ public class WorldDocumentsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogWarning(ex, "Unauthorized upload request");
+            _logger.LogWarningSanitized(ex, "Unauthorized upload request");
             return StatusCode(403, new { error = ex.Message });
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning(ex, "Invalid upload request");
+            _logger.LogWarningSanitized(ex, "Invalid upload request");
             return BadRequest(new { error = ex.Message });
         }
     }
@@ -132,7 +132,7 @@ public class WorldDocumentsController : ControllerBase
     public async Task<ActionResult<WorldDocumentDto>> ConfirmDocumentUpload(Guid worldId, Guid documentId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("User {UserId} confirming document upload {DocumentId}", user.Id, documentId);
+        _logger.LogTraceSanitized("User {UserId} confirming document upload {DocumentId}", user.Id, documentId);
 
         try
         {
@@ -141,12 +141,12 @@ public class WorldDocumentsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogWarning(ex, "Unauthorized confirm upload");
+            _logger.LogWarningSanitized(ex, "Unauthorized confirm upload");
             return StatusCode(403, new { error = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Invalid confirm upload request");
+            _logger.LogWarningSanitized(ex, "Invalid confirm upload request");
             return NotFound(new { error = ex.Message });
         }
     }
@@ -161,7 +161,7 @@ public class WorldDocumentsController : ControllerBase
         [FromBody] WorldDocumentUpdateDto update)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("User {UserId} updating document {DocumentId}", user.Id, documentId);
+        _logger.LogTraceSanitized("User {UserId} updating document {DocumentId}", user.Id, documentId);
 
         if (update == null)
         {
@@ -175,12 +175,12 @@ public class WorldDocumentsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogWarning(ex, "Unauthorized update request");
+            _logger.LogWarningSanitized(ex, "Unauthorized update request");
             return StatusCode(403, new { error = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Document not found for update");
+            _logger.LogWarningSanitized(ex, "Document not found for update");
             return NotFound(new { error = ex.Message });
         }
     }
@@ -192,7 +192,7 @@ public class WorldDocumentsController : ControllerBase
     public async Task<IActionResult> DeleteWorldDocument(Guid worldId, Guid documentId)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("User {UserId} deleting document {DocumentId}", user.Id, documentId);
+        _logger.LogTraceSanitized("User {UserId} deleting document {DocumentId}", user.Id, documentId);
 
         try
         {
@@ -201,12 +201,12 @@ public class WorldDocumentsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogWarning(ex, "Unauthorized delete request");
+            _logger.LogWarningSanitized(ex, "Unauthorized delete request");
             return StatusCode(403, new { error = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Document not found for deletion");
+            _logger.LogWarningSanitized(ex, "Document not found for deletion");
             return NotFound(new { error = ex.Message });
         }
     }

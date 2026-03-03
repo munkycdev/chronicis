@@ -1,7 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
@@ -181,7 +180,7 @@ namespace Chronicis.Api.Services
 
             if (article == null)
             {
-                _logger.LogWarning("Article {ArticleId} not found", id);
+                _logger.LogWarningSanitized("Article {ArticleId} not found", id);
                 return null;
             }
 
@@ -215,7 +214,7 @@ namespace Chronicis.Api.Services
 
             if (article == null)
             {
-                _logger.LogWarning("Article {ArticleId} not found for user {UserId}", articleId, userId);
+                _logger.LogWarningSanitized("Article {ArticleId} not found for user {UserId}", articleId, userId);
                 return (false, "Article not found");
             }
 
@@ -237,14 +236,14 @@ namespace Chronicis.Api.Services
 
                 if (targetParent == null)
                 {
-                    _logger.LogWarning("Target parent {NewParentId} not found for user {UserId}", newParentId, userId);
+                    _logger.LogWarningSanitized("Target parent {NewParentId} not found for user {UserId}", newParentId, userId);
                     return (false, "Target parent article not found");
                 }
 
                 // 4. Check for circular reference - cannot move an article to be a child of itself or its descendants
                 if (await WouldCreateCircularReferenceAsync(articleId, newParentId.Value, userId))
                 {
-                    _logger.LogWarning("Moving article {ArticleId} to {NewParentId} would create circular reference",
+                    _logger.LogWarningSanitized("Moving article {ArticleId} to {NewParentId} would create circular reference",
                         articleId, newParentId);
                     return (false, "Cannot move an article to be a child of itself or its descendants");
                 }
@@ -326,7 +325,7 @@ namespace Chronicis.Api.Services
                 // Prevent infinite loops (shouldn't happen with valid data, but safety first)
                 if (visited.Contains(currentId.Value))
                 {
-                    _logger.LogError("Detected existing circular reference in hierarchy at article {ArticleId}", currentId.Value);
+                    _logger.LogErrorSanitized("Detected existing circular reference in hierarchy at article {ArticleId}", currentId.Value);
                     return true;
                 }
                 visited.Add(currentId.Value);

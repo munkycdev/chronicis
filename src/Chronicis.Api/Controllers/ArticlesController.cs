@@ -3,7 +3,6 @@ using Chronicis.Api.Services;
 using Chronicis.Api.Services.Articles;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
 using Microsoft.AspNetCore.Authorization;
@@ -66,7 +65,7 @@ public class ArticlesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching root articles");
+            _logger.LogErrorSanitized(ex, "Error fetching root articles");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -86,7 +85,7 @@ public class ArticlesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching all articles");
+            _logger.LogErrorSanitized(ex, "Error fetching all articles");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -112,7 +111,7 @@ public class ArticlesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching article {ArticleId}", id);
+            _logger.LogErrorSanitized(ex, "Error fetching article {ArticleId}", id);
             return StatusCode(500, "Internal server error");
         }
     }
@@ -132,7 +131,7 @@ public class ArticlesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching children for article {ParentId}", id);
+            _logger.LogErrorSanitized(ex, "Error fetching children for article {ParentId}", id);
             return StatusCode(500, "Internal server error");
         }
     }
@@ -273,7 +272,7 @@ public class ArticlesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating article");
+            _logger.LogErrorSanitized(ex, "Error creating article");
             return StatusCode(500, $"Error creating article: {ex.Message}");
         }
     }
@@ -390,7 +389,7 @@ public class ArticlesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating article {ArticleId}", id);
+            _logger.LogErrorSanitized(ex, "Error updating article {ArticleId}", id);
             return StatusCode(500, $"Error updating article: {ex.Message}");
         }
     }
@@ -424,7 +423,7 @@ public class ArticlesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting article {ArticleId}", id);
+            _logger.LogErrorSanitized(ex, "Error deleting article {ArticleId}", id);
             return StatusCode(500, $"Error deleting article: {ex.Message}");
         }
     }
@@ -457,7 +456,7 @@ public class ArticlesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error moving article {ArticleId}", id);
+            _logger.LogErrorSanitized(ex, "Error moving article {ArticleId}", id);
             return StatusCode(500, $"Error moving article: {ex.Message}");
         }
     }
@@ -511,7 +510,7 @@ public class ArticlesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating aliases for article {ArticleId}", id);
+            _logger.LogErrorSanitized(ex, "Error updating aliases for article {ArticleId}", id);
             return StatusCode(500, $"Error updating aliases: {ex.Message}");
         }
     }
@@ -545,7 +544,7 @@ public class ArticlesController : ControllerBase
     public async Task<ActionResult<BacklinksResponseDto>> GetBacklinks(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("Getting backlinks for article {ArticleId}", id);
+        _logger.LogTraceSanitized("Getting backlinks for article {ArticleId}", id);
 
         var article = await _articleDataAccessService.FindReadableArticleAsync(id, user.Id);
 
@@ -573,7 +572,7 @@ public class ArticlesController : ControllerBase
     public async Task<ActionResult<BacklinksResponseDto>> GetOutgoingLinks(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("Getting outgoing links for article {ArticleId}", id);
+        _logger.LogTraceSanitized("Getting outgoing links for article {ArticleId}", id);
 
         var article = await _articleDataAccessService.FindReadableArticleAsync(id, user.Id);
 
@@ -607,7 +606,7 @@ public class ArticlesController : ControllerBase
             return Ok(new LinkResolutionResponseDto { Articles = new Dictionary<Guid, ResolvedLinkDto>() });
         }
 
-        _logger.LogDebug("Resolving {Count} article links", request.ArticleIds.Count);
+        _logger.LogTraceSanitized("Resolving {Count} article links", request.ArticleIds.Count);
 
         // Get all requested articles that the user has access to
         var articles = await _articleDataAccessService.ResolveReadableLinksAsync(request.ArticleIds, user.Id);
@@ -655,7 +654,7 @@ public class ArticlesController : ControllerBase
             return BadRequest(new { error = "Body content is required" });
         }
 
-        _logger.LogDebug("Auto-linking article {ArticleId}", id);
+        _logger.LogTraceSanitized("Auto-linking article {ArticleId}", id);
 
         // Get article and verify access
         var articleContext = await _articleDataAccessService.TryGetReadableArticleWorldAsync(id, user.Id);

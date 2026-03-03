@@ -46,7 +46,7 @@ public class ArticleSummaryController : ControllerBase
             return NotFound(new { error = "Article not found or access denied" });
         }
 
-        _logger.LogDebug("Getting summary for article {ArticleId}", articleId);
+        _logger.LogTraceSanitized("Getting summary for article {ArticleId}", articleId);
 
         var summary = await _summaryService.GetArticleSummaryAsync(articleId);
 
@@ -72,7 +72,7 @@ public class ArticleSummaryController : ControllerBase
             return NotFound(new { error = "Article not found or access denied" });
         }
 
-        _logger.LogDebug("Getting summary preview for article {ArticleId}", articleId);
+        _logger.LogTraceSanitized("Getting summary preview for article {ArticleId}", articleId);
 
         var preview = await _summaryService.GetArticleSummaryPreviewAsync(articleId);
 
@@ -98,7 +98,7 @@ public class ArticleSummaryController : ControllerBase
             return NotFound(new { error = "Article not found or access denied" });
         }
 
-        _logger.LogDebug("Getting summary estimate for article {ArticleId}", articleId);
+        _logger.LogTraceSanitized("Getting summary estimate for article {ArticleId}", articleId);
 
         var estimate = await _summaryService.EstimateArticleSummaryAsync(articleId);
         return Ok(estimate);
@@ -120,7 +120,7 @@ public class ArticleSummaryController : ControllerBase
             return NotFound(new { error = "Article not found or access denied" });
         }
 
-        _logger.LogDebug("Generating summary for article {ArticleId}", articleId);
+        _logger.LogTraceSanitized("Generating summary for article {ArticleId}", articleId);
 
         var result = await _summaryService.GenerateArticleSummaryAsync(articleId, request);
 
@@ -146,7 +146,7 @@ public class ArticleSummaryController : ControllerBase
             return NotFound(new { error = "Article not found or access denied" });
         }
 
-        _logger.LogDebug("Clearing summary for article {ArticleId}", articleId);
+        _logger.LogTraceSanitized("Clearing summary for article {ArticleId}", articleId);
 
         var success = await _summaryService.ClearArticleSummaryAsync(articleId);
 
@@ -202,7 +202,7 @@ public class CampaignSummaryController : ControllerBase
             return NotFound(new { error = "Campaign not found or access denied" });
         }
 
-        _logger.LogDebug("Getting summary for campaign {CampaignId}", campaignId);
+        _logger.LogTraceSanitized("Getting summary for campaign {CampaignId}", campaignId);
 
         var summary = await _summaryService.GetCampaignSummaryAsync(campaignId);
 
@@ -227,7 +227,7 @@ public class CampaignSummaryController : ControllerBase
             return NotFound(new { error = "Campaign not found or access denied" });
         }
 
-        _logger.LogDebug("Getting summary estimate for campaign {CampaignId}", campaignId);
+        _logger.LogTraceSanitized("Getting summary estimate for campaign {CampaignId}", campaignId);
 
         var estimate = await _summaryService.EstimateCampaignSummaryAsync(campaignId);
         return Ok(estimate);
@@ -248,7 +248,7 @@ public class CampaignSummaryController : ControllerBase
             return NotFound(new { error = "Campaign not found or access denied" });
         }
 
-        _logger.LogDebug("Generating summary for campaign {CampaignId}", campaignId);
+        _logger.LogTraceSanitized("Generating summary for campaign {CampaignId}", campaignId);
 
         var result = await _summaryService.GenerateCampaignSummaryAsync(campaignId, request);
 
@@ -273,7 +273,7 @@ public class CampaignSummaryController : ControllerBase
             return NotFound(new { error = "Campaign not found or access denied" });
         }
 
-        _logger.LogDebug("Clearing summary for campaign {CampaignId}", campaignId);
+        _logger.LogTraceSanitized("Clearing summary for campaign {CampaignId}", campaignId);
 
         var success = await _summaryService.ClearCampaignSummaryAsync(campaignId);
 
@@ -329,7 +329,7 @@ public class ArcSummaryController : ControllerBase
             return NotFound(new { error = "Arc not found or access denied" });
         }
 
-        _logger.LogDebug("Getting summary for arc {ArcId}", arcId);
+        _logger.LogTraceSanitized("Getting summary for arc {ArcId}", arcId);
 
         var summary = await _summaryService.GetArcSummaryAsync(arcId);
 
@@ -354,7 +354,7 @@ public class ArcSummaryController : ControllerBase
             return NotFound(new { error = "Arc not found or access denied" });
         }
 
-        _logger.LogDebug("Getting summary estimate for arc {ArcId}", arcId);
+        _logger.LogTraceSanitized("Getting summary estimate for arc {ArcId}", arcId);
 
         var estimate = await _summaryService.EstimateArcSummaryAsync(arcId);
         return Ok(estimate);
@@ -375,7 +375,7 @@ public class ArcSummaryController : ControllerBase
             return NotFound(new { error = "Arc not found or access denied" });
         }
 
-        _logger.LogDebug("Generating summary for arc {ArcId}", arcId);
+        _logger.LogTraceSanitized("Generating summary for arc {ArcId}", arcId);
 
         var result = await _summaryService.GenerateArcSummaryAsync(arcId, request);
 
@@ -400,7 +400,7 @@ public class ArcSummaryController : ControllerBase
             return NotFound(new { error = "Arc not found or access denied" });
         }
 
-        _logger.LogDebug("Clearing summary for arc {ArcId}", arcId);
+        _logger.LogTraceSanitized("Clearing summary for arc {ArcId}", arcId);
 
         var success = await _summaryService.ClearArcSummaryAsync(arcId);
 

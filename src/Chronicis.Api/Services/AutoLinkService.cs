@@ -171,14 +171,14 @@ public class AutoLinkService : IAutoLinkService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to create regex for term: {Term}", term.Term);
+                _logger.LogWarningSanitized(ex, "Failed to create regex for term: {Term}", term.Term);
             }
         }
 
         // Sort matches by position for consistent display in confirmation dialog
         allMatches = allMatches.OrderBy(m => m.StartIndex).ToList();
 
-        _logger.LogDebug(
+        _logger.LogTraceSanitized(
             "Auto-link found {Count} matches for article {ArticleId}",
             allMatches.Count,
             articleId);

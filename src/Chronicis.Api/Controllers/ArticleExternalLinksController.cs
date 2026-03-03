@@ -40,7 +40,7 @@ public class ArticleExternalLinksController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving external links for article {ArticleId}", articleId);
+            _logger.LogErrorSanitized(ex, "Error retrieving external links for article {ArticleId}", articleId);
             return StatusCode(
                 StatusCodes.Status500InternalServerError,
                 "An error occurred while retrieving external links.");

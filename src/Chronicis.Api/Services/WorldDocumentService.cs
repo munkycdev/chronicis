@@ -1,6 +1,5 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -56,7 +55,7 @@ public class WorldDocumentService : IWorldDocumentService
         Guid userId,
         WorldDocumentUploadRequestDto request)
     {
-        _logger.LogDebugSanitized("User {UserId} requesting upload for world {WorldId}: {FileName}",
+        _logger.LogTraceSanitized("User {UserId} requesting upload for world {WorldId}: {FileName}",
             userId, worldId, request.FileName);
 
         // Verify user owns the world
@@ -105,7 +104,7 @@ public class WorldDocumentService : IWorldDocumentService
         _db.WorldDocuments.Add(document);
         await _db.SaveChangesAsync();
 
-        _logger.LogDebug("Created pending document {DocumentId} for world {WorldId}",
+        _logger.LogTraceSanitized("Created pending document {DocumentId} for world {WorldId}",
             document.Id, worldId);
 
         return new WorldDocumentUploadResponseDto
@@ -121,7 +120,7 @@ public class WorldDocumentService : IWorldDocumentService
         Guid documentId,
         Guid userId)
     {
-        _logger.LogDebug("User {UserId} confirming upload for document {DocumentId}",
+        _logger.LogTraceSanitized("User {UserId} confirming upload for document {DocumentId}",
             userId, documentId);
 
         // Get the pending document
@@ -157,7 +156,7 @@ public class WorldDocumentService : IWorldDocumentService
 
         await _db.SaveChangesAsync();
 
-        _logger.LogDebug("Confirmed upload for document {DocumentId}, size: {SizeBytes} bytes",
+        _logger.LogTraceSanitized("Confirmed upload for document {DocumentId}, size: {SizeBytes} bytes",
             documentId, metadata.SizeBytes);
 
         return MapToDto(document);
@@ -165,7 +164,7 @@ public class WorldDocumentService : IWorldDocumentService
 
     public async Task<List<WorldDocumentDto>> GetWorldDocumentsAsync(Guid worldId, Guid userId)
     {
-        _logger.LogDebug("User {UserId} getting documents for world {WorldId}",
+        _logger.LogTraceSanitized("User {UserId} getting documents for world {WorldId}",
             userId, worldId);
 
         // Verify user has access to the world (owner or member)
@@ -190,7 +189,7 @@ public class WorldDocumentService : IWorldDocumentService
 
     public async Task<DocumentContentResult> GetDocumentContentAsync(Guid documentId, Guid userId)
     {
-        _logger.LogDebug("User {UserId} requesting document download URL for {DocumentId}",
+        _logger.LogTraceSanitized("User {UserId} requesting document download URL for {DocumentId}",
             userId, documentId);
 
         var document = await GetAuthorizedDocumentAsync(documentId, userId);
@@ -214,7 +213,7 @@ public class WorldDocumentService : IWorldDocumentService
         Guid userId,
         WorldDocumentUpdateDto update)
     {
-        _logger.LogDebug("User {UserId} updating document {DocumentId}",
+        _logger.LogTraceSanitized("User {UserId} updating document {DocumentId}",
             userId, documentId);
 
         var document = await _db.WorldDocuments
@@ -244,14 +243,14 @@ public class WorldDocumentService : IWorldDocumentService
 
         await _db.SaveChangesAsync();
 
-        _logger.LogDebug("Updated document {DocumentId}", documentId);
+        _logger.LogTraceSanitized("Updated document {DocumentId}", documentId);
 
         return MapToDto(document);
     }
 
     public async Task DeleteDocumentAsync(Guid worldId, Guid documentId, Guid userId)
     {
-        _logger.LogDebug("User {UserId} deleting document {DocumentId}",
+        _logger.LogTraceSanitized("User {UserId} deleting document {DocumentId}",
             userId, documentId);
 
         var document = await _db.WorldDocuments
@@ -285,7 +284,7 @@ public class WorldDocumentService : IWorldDocumentService
         _db.WorldDocuments.Remove(document);
         await _db.SaveChangesAsync();
 
-        _logger.LogDebug("Deleted document {DocumentId}", documentId);
+        _logger.LogTraceSanitized("Deleted document {DocumentId}", documentId);
     }
 
     /// <inheritdoc />
@@ -298,7 +297,7 @@ public class WorldDocumentService : IWorldDocumentService
         if (documents.Count == 0)
             return;
 
-        _logger.LogDebug("Deleting {Count} images for article {ArticleId}", documents.Count, articleId);
+        _logger.LogTraceSanitized("Deleting {Count} images for article {ArticleId}", documents.Count, articleId);
 
         foreach (var document in documents)
         {
@@ -308,7 +307,7 @@ public class WorldDocumentService : IWorldDocumentService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to delete blob {BlobPath} for document {DocumentId}",
+                _logger.LogWarningSanitized(ex, "Failed to delete blob {BlobPath} for document {DocumentId}",
                     document.BlobPath, document.Id);
             }
         }
@@ -316,7 +315,7 @@ public class WorldDocumentService : IWorldDocumentService
         _db.WorldDocuments.RemoveRange(documents);
         await _db.SaveChangesAsync();
 
-        _logger.LogDebug("Deleted {Count} images for article {ArticleId}", documents.Count, articleId);
+        _logger.LogTraceSanitized("Deleted {Count} images for article {ArticleId}", documents.Count, articleId);
     }
 
     // ===== Private Helper Methods =====
@@ -394,7 +393,7 @@ public class WorldDocumentService : IWorldDocumentService
             }
         }
 
-        _logger.LogDebugSanitized("Generated unique title for {FileName}: {Title}", fileName, title);
+        _logger.LogTraceSanitized("Generated unique title for {FileName}: {Title}", fileName, title);
         return title;
     }
 

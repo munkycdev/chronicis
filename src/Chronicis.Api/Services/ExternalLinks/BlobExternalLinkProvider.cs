@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Azure.Storage.Blobs;
-using Chronicis.Shared.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Chronicis.Api.Services.ExternalLinks;
@@ -31,7 +30,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         var blobServiceClient = new BlobServiceClient(_options.ConnectionString);
         _containerClient = blobServiceClient.GetBlobContainerClient(_options.ContainerName);
 
-        _logger.LogDebug(
+        _logger.LogTraceSanitized(
             "Initialized BlobExternalLinkProvider: Key={Key}, DisplayName={DisplayName}, RootPrefix={RootPrefix}",
             _options.Key, _options.DisplayName, _options.RootPrefix);
     }
@@ -114,7 +113,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
 
         results.AddRange(fileSuggestions);
 
-        _logger.LogDebugSanitized(
+        _logger.LogTraceSanitized(
             "Drill-down search - Provider={Key}, Path={Path}, Trailing={Trailing}, Folders={FolderCount}, Files={FileCount}",
             _options.Key, pathPrefix, trailingText, folderSuggestions.Count, fileSuggestions.Count);
 
@@ -146,7 +145,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         var cacheKey = BuildCacheKey("Content", id);
         if (_cache.TryGetValue<ExternalLinkContent>(cacheKey, out var cached) && cached != null)
         {
-            _logger.LogDebugSanitized("Content cache hit - Provider={Key}, Id={Id}", _options.Key, id);
+            _logger.LogTraceSanitized("Content cache hit - Provider={Key}, Id={Id}", _options.Key, id);
             return cached;
         }
 
@@ -204,7 +203,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
                 AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_options.ContentCacheTtl)
             });
 
-            _logger.LogDebugSanitized(
+            _logger.LogTraceSanitized(
                 "Content retrieved and rendered - Provider={Key}, Id={Id}, BlobName={BlobName}",
                 _options.Key, id, item.BlobName);
 
@@ -355,7 +354,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
             AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_options.CategoriesCacheTtl)
         });
 
-        _logger.LogDebugSanitized(
+        _logger.LogTraceSanitized(
             "Children discovered - Provider={Key}, Path={Path}, BlobPath={BlobPath}, Folders={FolderCount}, Files={FileCount}",
             _options.Key, normalizedPath, blobPath, childFolders.Count, childFiles.Count);
 
@@ -612,7 +611,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
 
         results.AddRange(itemResults.Take(_options.MaxSuggestions - results.Count));
 
-        _logger.LogDebugSanitized(
+        _logger.LogTraceSanitized(
             "Cross-category search - Provider={Key}, Query={Query}, LeafCategories={LeafCount}, ItemMatches={ItemCount}",
             _options.Key, query, leafCategories.Count, itemResults.Count);
 
@@ -641,7 +640,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         leaves.Sort(StringComparer.OrdinalIgnoreCase);
 
         sw.Stop();
-        _logger.LogDebug(
+        _logger.LogTraceSanitized(
             "Leaf categories discovered - Provider={Key}, Count={Count}, Elapsed={Elapsed}ms",
             _options.Key, leaves.Count, sw.ElapsedMilliseconds);
 
@@ -719,7 +718,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         var children = await GetChildrenAtPathAsync(category, ct);
         if (children == null)
         {
-            _logger.LogDebugSanitized(
+            _logger.LogTraceSanitized(
                 "Category index empty (path not found) - Provider={Key}, Category={Category}",
                 _options.Key, category);
             return new List<CategoryItem>();
@@ -728,7 +727,7 @@ public class BlobExternalLinkProvider : IExternalLinkProvider
         // The ChildFiles are already sorted and have correct lowercase IDs
         var items = children.ChildFiles;
 
-        _logger.LogDebugSanitized(
+        _logger.LogTraceSanitized(
             "Category index built (via children) - Provider={Key}, Category={Category}, Count={Count}",
             _options.Key, category, items.Count);
 

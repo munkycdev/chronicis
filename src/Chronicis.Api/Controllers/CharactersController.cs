@@ -36,7 +36,7 @@ public class CharactersController : ControllerBase
     public async Task<ActionResult<List<ClaimedCharacterDto>>> GetClaimedCharacters()
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("Getting claimed characters for user {UserId}", user.Id);
+        _logger.LogTraceSanitized("Getting claimed characters for user {UserId}", user.Id);
         var claimedCharacters = await _characterClaimService.GetClaimedCharactersAsync(user.Id);
         return Ok(claimedCharacters);
     }
@@ -48,7 +48,7 @@ public class CharactersController : ControllerBase
     public async Task<ActionResult<CharacterClaimStatusDto>> GetClaimStatus(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("Getting claim status for character {CharacterId}", id);
+        _logger.LogTraceSanitized("Getting claim status for character {CharacterId}", id);
 
         var result = await _characterClaimService.GetClaimStatusAsync(id);
         if (!result.Found)
@@ -74,7 +74,7 @@ public class CharactersController : ControllerBase
     public async Task<IActionResult> ClaimCharacter(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("User {UserId} claiming character {CharacterId}", user.Id, id);
+        _logger.LogTraceSanitized("User {UserId} claiming character {CharacterId}", user.Id, id);
         var result = await _characterClaimService.ClaimCharacterAsync(id, user.Id);
         return result.Status switch
         {
@@ -91,7 +91,7 @@ public class CharactersController : ControllerBase
     public async Task<IActionResult> UnclaimCharacter(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("User {UserId} unclaiming character {CharacterId}", user.Id, id);
+        _logger.LogTraceSanitized("User {UserId} unclaiming character {CharacterId}", user.Id, id);
         var result = await _characterClaimService.UnclaimCharacterAsync(id, user.Id);
         return result.Status == ServiceStatus.NotFound
             ? NotFound(new { error = result.ErrorMessage })

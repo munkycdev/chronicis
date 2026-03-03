@@ -2,7 +2,6 @@ using Chronicis.Api.Data;
 using Chronicis.Api.Models;
 using Chronicis.Shared.DTOs.Quests;
 using Chronicis.Shared.Enums;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -79,7 +78,7 @@ public class QuestService : IQuestService
             })
             .ToListAsync();
 
-        _logger.LogDebug("Retrieved {Count} quests for arc {ArcId} for user {UserId} (GM: {IsGM})",
+        _logger.LogTraceSanitized("Retrieved {Count} quests for arc {ArcId} for user {UserId} (GM: {IsGM})",
             quests.Count, arcId, userId, isGM);
 
         return ServiceResult<List<QuestDto>>.Success(quests);
@@ -198,7 +197,7 @@ public class QuestService : IQuestService
         _context.Quests.Add(quest);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebugSanitized("Created quest '{Title}' in arc {ArcId} for user {UserId}",
+        _logger.LogTraceSanitized("Created quest '{Title}' in arc {ArcId} for user {UserId}",
             dto.Title, arcId, userId);
 
         // Fetch creator name for DTO
@@ -315,7 +314,7 @@ public class QuestService : IQuestService
         {
             await _context.SaveChangesAsync();
 
-            _logger.LogDebug("Updated quest {QuestId} for user {UserId}", questId, userId);
+            _logger.LogTraceSanitized("Updated quest {QuestId} for user {UserId}", questId, userId);
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -341,7 +340,7 @@ public class QuestService : IQuestService
                 UpdateCount = updateCount
             };
 
-            _logger.LogWarning("Concurrency conflict updating quest {QuestId}", questId);
+            _logger.LogWarningSanitized("Concurrency conflict updating quest {QuestId}", questId);
 
             return ServiceResult<QuestDto>.Conflict(
                 "Quest was modified by another user. Please reload and try again.",
@@ -401,7 +400,7 @@ public class QuestService : IQuestService
         _context.Quests.Remove(quest);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Deleted quest {QuestId} and its updates for user {UserId}", questId, userId);
+        _logger.LogTraceSanitized("Deleted quest {QuestId} and its updates for user {UserId}", questId, userId);
 
         return ServiceResult<bool>.Success(true);
     }

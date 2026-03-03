@@ -32,7 +32,7 @@ public class SystemHealthService : ISystemHealthService
     public async Task<SystemHealthStatusDto> GetSystemHealthAsync()
     {
         var timestamp = DateTime.UtcNow;
-        _logger.LogInformation("Starting system health check");
+        _logger.LogTraceSanitized("Starting system health check");
 
         // Run all health checks in parallel
         var healthCheckTasks = new[]
@@ -60,7 +60,7 @@ public class SystemHealthService : ISystemHealthService
         // Determine overall status
         var overallStatus = DetermineOverallStatus(results);
 
-        _logger.LogInformation("System health check completed. Overall status: {Status}", overallStatus);
+        _logger.LogTraceSanitized("System health check completed. Overall status: {Status}", overallStatus);
 
         return new SystemHealthStatusDto
         {

@@ -1,7 +1,6 @@
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -36,7 +35,7 @@ public class CampaignsController : ControllerBase
     public async Task<ActionResult<CampaignDto>> GetCampaign(Guid id)
     {
         var user = await _currentUserService.GetRequiredUserAsync();
-        _logger.LogDebug("Getting campaign {CampaignId} for user {UserId}", id, user.Id);
+        _logger.LogTraceSanitized("Getting campaign {CampaignId} for user {UserId}", id, user.Id);
 
         var campaign = await _campaignService.GetCampaignAsync(id, user.Id);
 
@@ -66,7 +65,7 @@ public class CampaignsController : ControllerBase
             return BadRequest(new { error = "WorldId is required" });
         }
 
-        _logger.LogDebugSanitized("Creating campaign '{Name}' in world {WorldId} for user {UserId}",
+        _logger.LogTraceSanitized("Creating campaign '{Name}' in world {WorldId} for user {UserId}",
             dto.Name, dto.WorldId, user.Id);
 
         try
@@ -97,7 +96,7 @@ public class CampaignsController : ControllerBase
             return BadRequest(new { error = "Name is required" });
         }
 
-        _logger.LogDebug("Updating campaign {CampaignId} for user {UserId}", id, user.Id);
+        _logger.LogTraceSanitized("Updating campaign {CampaignId} for user {UserId}", id, user.Id);
 
         var campaign = await _campaignService.UpdateCampaignAsync(id, dto, user.Id);
 
@@ -117,7 +116,7 @@ public class CampaignsController : ControllerBase
     {
         var user = await _currentUserService.GetRequiredUserAsync();
 
-        _logger.LogDebug("Activating campaign {CampaignId} for user {UserId}", id, user.Id);
+        _logger.LogTraceSanitized("Activating campaign {CampaignId} for user {UserId}", id, user.Id);
 
         var success = await _campaignService.ActivateCampaignAsync(id, user.Id);
 
@@ -160,7 +159,7 @@ public class WorldActiveContextController : ControllerBase
     {
         var user = await _currentUserService.GetRequiredUserAsync();
 
-        _logger.LogDebug("Getting active context for world {WorldId} for user {UserId}", worldId, user.Id);
+        _logger.LogTraceSanitized("Getting active context for world {WorldId} for user {UserId}", worldId, user.Id);
 
         var activeContext = await _campaignService.GetActiveContextAsync(worldId, user.Id);
         return Ok(activeContext);

@@ -1,7 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
@@ -77,7 +76,7 @@ public class WorldService : IWorldService
         if (user == null)
             throw new InvalidOperationException("User not found");
 
-        _logger.LogDebugSanitized("Creating world '{Name}' for user {UserId}", dto.Name, userId);
+        _logger.LogTraceSanitized("Creating world '{Name}' for user {UserId}", dto.Name, userId);
 
         var now = DateTime.UtcNow;
 
@@ -217,7 +216,7 @@ public class WorldService : IWorldService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Created world {WorldId} with default content for user {UserId}", world.Id, userId);
+        _logger.LogTraceSanitized("Created world {WorldId} with default content for user {UserId}", world.Id, userId);
 
         world.Owner = user;
         return MapToDto(world);
@@ -261,7 +260,7 @@ public class WorldService : IWorldService
                 // Making world public - require a valid public slug
                 if (string.IsNullOrWhiteSpace(dto.PublicSlug))
                 {
-                    _logger.LogWarning("Attempted to make world {WorldId} public without a public slug", worldId);
+                    _logger.LogWarningSanitized("Attempted to make world {WorldId} public without a public slug", worldId);
                     return null;
                 }
 
@@ -286,7 +285,7 @@ public class WorldService : IWorldService
                 world.IsPublic = true;
                 world.PublicSlug = normalizedSlug;
 
-                _logger.LogDebugSanitized("World {WorldId} is now public with slug '{PublicSlug}'", worldId, normalizedSlug);
+                _logger.LogTraceSanitized("World {WorldId} is now public with slug '{PublicSlug}'", worldId, normalizedSlug);
             }
             else
             {
@@ -294,13 +293,13 @@ public class WorldService : IWorldService
                 world.IsPublic = false;
                 world.PublicSlug = null;
 
-                _logger.LogDebug("World {WorldId} is now private", worldId);
+                _logger.LogTraceSanitized("World {WorldId} is now private", worldId);
             }
         }
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Updated world {WorldId}", worldId);
+        _logger.LogTraceSanitized("Updated world {WorldId}", worldId);
 
         return MapToDto(world);
     }

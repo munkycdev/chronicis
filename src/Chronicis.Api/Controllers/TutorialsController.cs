@@ -40,7 +40,7 @@ public class TutorialsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error resolving tutorial for page type {PageType}", pageType);
+            _logger.LogErrorSanitized(ex, "Error resolving tutorial for page type {PageType}", pageType);
             return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
         }
     }

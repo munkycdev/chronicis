@@ -1,7 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
-using Chronicis.Shared.Extensions;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -72,7 +71,7 @@ public class WorldInvitationService : IWorldInvitationService
 
         if (attempts >= 10)
         {
-            _logger.LogError("Failed to generate unique invitation code after 10 attempts");
+            _logger.LogErrorSanitized("Failed to generate unique invitation code after 10 attempts");
             return null;
         }
 
@@ -93,7 +92,7 @@ public class WorldInvitationService : IWorldInvitationService
         _context.WorldInvitations.Add(invitation);
         await _context.SaveChangesAsync();
 
-        _logger.LogDebugSanitized("Created invitation {Code} for world {WorldId} by user {UserId}",
+        _logger.LogTraceSanitized("Created invitation {Code} for world {WorldId} by user {UserId}",
             code, worldId, userId);
 
         var creator = await _context.Users.FindAsync(userId);
@@ -132,7 +131,7 @@ public class WorldInvitationService : IWorldInvitationService
         invitation.IsActive = false;
         await _context.SaveChangesAsync();
 
-        _logger.LogDebug("Revoked invitation {InvitationId} for world {WorldId}", invitationId, worldId);
+        _logger.LogTraceSanitized("Revoked invitation {InvitationId} for world {WorldId}", invitationId, worldId);
 
         return true;
     }
@@ -214,7 +213,7 @@ public class WorldInvitationService : IWorldInvitationService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogDebugSanitized("User {UserId} joined world {WorldId} via invitation {Code}",
+        _logger.LogTraceSanitized("User {UserId} joined world {WorldId} via invitation {Code}",
             userId, invitation.WorldId, normalizedCode);
 
         return new WorldJoinResultDto

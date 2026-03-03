@@ -2,7 +2,6 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
-using Chronicis.Shared.Extensions;
 
 namespace Chronicis.Api.Services;
 
@@ -29,7 +28,7 @@ public class BlobStorageService : IBlobStorageService
 
         if (string.IsNullOrEmpty(connectionString))
         {
-            _logger.LogError("BlobStorage:ConnectionString not configured. Check Azure app settings.");
+            _logger.LogErrorSanitized("BlobStorage:ConnectionString not configured. Check Azure app settings.");
             throw new InvalidOperationException("BlobStorage:ConnectionString not configured. Please add BlobStorage__ConnectionString to Azure configuration.");
         }
 
@@ -43,7 +42,7 @@ public class BlobStorageService : IBlobStorageService
 
         if (!string.IsNullOrEmpty(_customDomain))
         {
-            _logger.LogDebug("Using custom domain for blob URLs: {CustomDomain}", _customDomain);
+            _logger.LogTraceSanitized("Using custom domain for blob URLs: {CustomDomain}", _customDomain);
         }
 
         try
@@ -54,11 +53,11 @@ public class BlobStorageService : IBlobStorageService
             var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
             containerClient.CreateIfNotExists(PublicAccessType.None);
 
-            _logger.LogDebug("BlobStorageService initialized with container: {ContainerName}", _containerName);
+            _logger.LogTraceSanitized("BlobStorageService initialized with container: {ContainerName}", _containerName);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to initialize BlobStorageService. Connection string may be invalid.");
+            _logger.LogErrorSanitized(ex, "Failed to initialize BlobStorageService. Connection string may be invalid.");
             throw;
         }
     }
@@ -96,7 +95,7 @@ public class BlobStorageService : IBlobStorageService
 
         var sasUrl = BuildSasUrl(blobClient, sasBuilder);
 
-        _logger.LogDebugSanitized("Generated upload SAS URL for blob: {BlobPath}", blobPath);
+        _logger.LogTraceSanitized("Generated upload SAS URL for blob: {BlobPath}", blobPath);
 
         return Task.FromResult(sasUrl);
     }
@@ -154,7 +153,7 @@ public class BlobStorageService : IBlobStorageService
 
             await blobClient.DeleteIfExistsAsync();
 
-            _logger.LogDebugSanitized("Deleted blob: {BlobPath}", blobPath);
+            _logger.LogTraceSanitized("Deleted blob: {BlobPath}", blobPath);
         }
         catch (RequestFailedException ex)
         {
@@ -183,7 +182,7 @@ public class BlobStorageService : IBlobStorageService
 
         var sasUrl = BuildSasUrl(blobClient, sasBuilder);
 
-        _logger.LogDebugSanitized("Generated download SAS URL for blob: {BlobPath}", blobPath);
+        _logger.LogTraceSanitized("Generated download SAS URL for blob: {BlobPath}", blobPath);
 
         return Task.FromResult(sasUrl);
     }
