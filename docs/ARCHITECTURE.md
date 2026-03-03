@@ -1,6 +1,6 @@
 # Chronicis Architecture Inventory
 
-Last reviewed: 2026-03-01
+Last reviewed: 2026-03-02
 
 ## 1) Scope
 - Projects covered:
@@ -431,13 +431,13 @@ Chronicis.Shared  ---->  (no project references)
 - Existing repository seam:
 - `IResourceProviderRepository` / `ResourceProviderRepository` is the primary explicit repository abstraction path.
 
-### 10.6 Current Implementation Inventory (As Of 2026-03-01)
+### 10.6 Current Implementation Inventory (As Of 2026-03-02)
 - Data-access boundaries:
 - Services with direct `ChronicisDbContext` field injection: `33`.
 - Controllers with direct `ChronicisDbContext` field injection: `0`.
 - Session model:
-- Legacy `ArticleType.Session` references in API controllers/services (excluding migrations/tests): `6`.
-- Distribution: `ArticleValidationService` (`1`), `PublicWorldService` (`5`).
+- Legacy `ArticleType.Session` references in API controllers/services (excluding migrations/tests): `2`.
+- Distribution: `ArticleValidationService` (`1`), `PublicWorldService` (`1`).
 - Legacy `ArticleType.Session` references in client source (`.cs` + `.razor`): `8`.
 - Distribution: `TutorialPageTypes` (`1`), `ArticleMetadataDrawer` (`2`), `QuestDrawer` (`2`), `TreeNode` (`1`), `PublicWorldPageViewModel` (`1`), `TreeDataBuilder` (`1`).
 - Access-policy enforcement:
@@ -482,7 +482,7 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - Gate: count must not increase release-over-release; temporary exceptions must be tracked.
 - Session architecture metric:
 - Measure: number of legacy `ArticleType.Session` references outside migrations/tests.
-- Gate: count must trend down until only approved compatibility boundaries remain.
+- Gate: count must stay at or below the Step 10 retirement baseline and trend to full retirement.
 - Access-policy parity metric:
 - Measure: duplicated visibility/public-slug rule paths outside shared policy inputs.
 - Gate: duplicated rule logic must trend down; divergences block release sign-off.
@@ -518,12 +518,12 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 ### 10.12 Session Model Canonicalization (Step 4)
 - Canonical session model:
 - `Session` entity (`Chronicis.Shared.Models.Session`) is the only model for new session workflows.
-- `ArticleType.Session` is non-canonical and exists only for compatibility with legacy data/read paths.
-- Compatibility boundary policy:
-- Allowed compatibility-only API files:
+- `ArticleType.Session` is non-canonical and retained only for constrained legacy-model interop.
+- Legacy reference boundary policy:
+- Allowed API files:
 - `src/Chronicis.Api/Services/ArticleValidationService.cs` (rejection guard for new legacy session articles)
-- `src/Chronicis.Api/Services/PublicWorldService.cs` (public read-path compatibility)
-- Allowed compatibility-only client files:
+- `src/Chronicis.Api/Services/PublicWorldService.cs` (session virtual-group projection only; legacy URL compatibility retired)
+- Allowed client files:
 - `src/Chronicis.Client/Components/Admin/TutorialPageTypes.cs`
 - `src/Chronicis.Client/Components/Articles/ArticleMetadataDrawer.razor`
 - `src/Chronicis.Client/Components/Quests/QuestDrawer.razor.cs`
@@ -531,15 +531,17 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - `src/Chronicis.Client/ViewModels/PublicWorldPageViewModel.cs`
 - `src/Chronicis.Client/Services/Tree/TreeDataBuilder.cs`
 - Freeze rule:
-- No new `ArticleType.Session` references may be introduced outside the compatibility boundary allowlist.
+- No new `ArticleType.Session` references may be introduced outside the allowlist.
 - Transition states:
 - `Coexistence`: canonical and legacy models both exist; all new write paths remain canonical.
 - `Compatibility-only`: legacy references are read/interop only; no legacy write paths are allowed.
 - `Retirement`: legacy references and data paths removed after parity and migration exit criteria are satisfied.
+- Current state:
+- Step 10 retired public legacy session-prefix URL compatibility shims.
 - Guardrails:
 - `tests/Chronicis.ArchitecturalTests/SessionModelGuardrailTests.cs` enforces:
-- no expansion of compatibility boundary file set for API/client.
-- no increase above baseline legacy-reference counts (`API <= 6`, `Client <= 8`).
+- no expansion of boundary file set for API/client.
+- no increase above baseline legacy-reference counts (`API <= 2`, `Client <= 8`).
 
 ### 10.13 Unified Access-Policy Architecture (Step 6)
 - Shared policy contract:
@@ -568,7 +570,6 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - `tests/Chronicis.Api.Tests/Services/ReadModelParityTests.cs` compares public/auth read behavior under equivalent visibility constraints.
 - Intentional divergence boundaries (test-protected):
 - authenticated private-owner access is broader than anonymous public reads.
-- legacy public session compatibility URL resolution remains public-read specific.
 - Release policy:
 - any unplanned public/auth read divergence is a release blocker.
 - any planned divergence must be documented and protected by regression tests.
@@ -589,6 +590,39 @@ rg -n "IReadAccessPolicyService|ApplyPublic|ApplyAuthenticated" `
 - `tests/Chronicis.Api.Tests/Services/SessionServiceTests.cs` includes canonical flow regression assertions for session creation.
 - Release policy:
 - any guardrail failure is a release blocker and must be resolved or explicitly redesigned with updated tests/docs.
+
+### 10.16 Rollout and Risk Control (Step 9)
+- Rollout control model:
+- staged revision rollout with checkpoints at `10%`, `50%`, and `100%` traffic.
+- progression to the next stage is blocked unless the current stage checkpoint passes.
+- Checkpoint execution:
+- `scripts/rollout-checkpoint.ps1` evaluates:
+- API readiness (`/health/ready`);
+- system health (`/health/status`);
+- operational indicators (`p95LatencyMs`, `errorRatePercent`, `authDenialsPercent`, `dataConsistencyDelta`) supplied from observability dashboards and validation checks.
+- Checkpoint configuration:
+- `scripts/rollout-checkpoint.sample.json` defines stage name and rollback thresholds.
+- Result semantics:
+- exit code `0` = proceed;
+- exit code `1` = rollback.
+- Operational process:
+- `docs/ROLLOUT_RUNBOOK.md` defines stage sequence, rollback actions, and required evidence per checkpoint.
+- `docs/OBSERVABILITY.md` defines how to collect and map indicator values into checkpoint inputs.
+- Release policy:
+- any failed checkpoint or threshold breach is a release blocker.
+- rollback to the previous stable revision is required before further progression.
+
+### 10.17 Closure and Debt Retirement (Step 10)
+- Retirement actions:
+- Removed public read-path compatibility shims that resolved legacy session-prefixed URLs for root `SessionNote` articles.
+- Public path generation now emits canonical root-note paths with no legacy session slug prefix insertion.
+- Public/auth parity now expects legacy session-prefixed paths to fail in both models.
+- Baseline updates:
+- Architecture inventory and architecture-guardrail baselines were updated to the post-shim retirement counts.
+- Follow-up backlog (non-blocking):
+- Reduce remaining API/client `ArticleType.Session` references to full retirement.
+- Remove/rename remaining legacy model comments and helper names after DTO/public-contract migration windows.
+- Re-run legacy-data validation checks in staged rollout checkpoints before final boundary removal.
 
 ## 11) Out of Scope
 - `Chronicis.CaptureApp` architecture is intentionally excluded.

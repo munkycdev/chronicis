@@ -1,6 +1,6 @@
 # Chronicis Feature Inventory
 
-Last reviewed: 2026-03-01
+Last reviewed: 2026-03-02
 
 Scope:
 - Included: `src/Chronicis.Api`, `src/Chronicis.Client`
@@ -156,7 +156,7 @@ Scope:
 - Public world landing page by slug.
 - Public article tree navigation.
 - Public article-by-path viewing.
-- Public compatibility routing for legacy session-article URL segments when resolving session-note paths.
+- Public session-note routing uses canonical note-slug paths; legacy session-prefixed compatibility URLs are retired.
 - Public breadcrumbs and path-aware navigation.
 - Public rendering of visible article content only.
 - Public read-only behavior for shared content.

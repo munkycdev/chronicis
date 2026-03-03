@@ -112,7 +112,7 @@ public class ReadModelParityTests
     }
 
     [Fact]
-    public async Task LegacySessionCompatibilityPath_IsIntentionalPublicOnlyDivergence()
+    public async Task LegacySessionPrefixPath_IsRetired_ForPublicAndAuthenticatedReads()
     {
         using var db = RemainingApiBranchCoverageTestHelpers.CreateDbContext();
         var (publicService, articleService) = CreateServices(db);
@@ -176,14 +176,18 @@ public class ReadModelParityTests
                 $"{seed.World.Slug}/session-1/root-session-note",
                 seed.Owner.Id);
 
+        var publicCanonicalPathArticle =
+            await publicService.GetPublicArticleAsync(seed.World.PublicSlug!, "root-session-note");
+
         var authenticatedCanonicalPathArticle =
             await articleService.GetArticleByPathAsync(
                 $"{seed.World.Slug}/root-session-note",
                 seed.Owner.Id);
 
-        Assert.NotNull(publicCompatibilityPathArticle);
-        Assert.Equal(rootSessionNote.Id, publicCompatibilityPathArticle!.Id);
+        Assert.Null(publicCompatibilityPathArticle);
         Assert.Null(authenticatedCompatibilityPathArticle);
+        Assert.NotNull(publicCanonicalPathArticle);
+        Assert.Equal(rootSessionNote.Id, publicCanonicalPathArticle!.Id);
         Assert.NotNull(authenticatedCanonicalPathArticle);
         Assert.Equal(rootSessionNote.Id, authenticatedCanonicalPathArticle!.Id);
     }

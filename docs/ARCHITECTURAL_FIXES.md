@@ -1,8 +1,8 @@
 # Chronicis Architectural Fixes Plan
 
-Last reviewed: 2026-03-01
+Last reviewed: 2026-03-02
 
-## 0) Step 1-8 Execution Status
+## 0) Step 1-10 Execution Status
 - Step 1 (`Baseline and Ownership`): completed.
 - Step 2 (`Data-Access Policy Definition`): completed.
 - Step 3 (`Data-Access Boundary Migration`): completed.
@@ -11,6 +11,8 @@ Last reviewed: 2026-03-01
 - Step 6 (`Unified Access-Policy Architecture`): completed.
 - Step 7 (`Read-Model Parity Hardening`): completed.
 - Step 8 (`Architecture Test Guardrails`): completed.
+- Step 9 (`Rollout and Risk Control`): completed.
+- Step 10 (`Closure and Debt Retirement`): completed.
 - Verification evidence:
 - `dotnet build Chronicis.CI.sln` passes with 0 warnings and 0 errors.
 - `dotnet test Chronicis.CI.sln` passes.
@@ -159,7 +161,7 @@ Step 6 acceptance criteria:
 - `tests/Chronicis.Api.Tests/Services/ReadModelParityTests.cs`
 - Intentional divergences are explicitly tracked as test-protected behaviors:
 - private owner-only authenticated reads;
-- legacy public session compatibility path resolution.
+- legacy public session compatibility path resolution (retired in Step 10).
 
 Step 7 deliverables:
 - Shared `ArticleDto` projection used across public/auth read services for parity-sensitive article detail reads.
@@ -201,14 +203,59 @@ Step 8 acceptance criteria:
 - Full repo verification gate passes (`.\scripts\verify.ps1`). `Status: complete`.
 
 ### Step 9: Rollout and Risk Control
-- Release each workstream behind scoped rollout controls where needed.
-- Monitor operational indicators (error rates, latency, authorization denials, data consistency signals).
-- Use staged rollout checkpoints with explicit rollback criteria.
+- Status: completed.
+- Scoped rollout controls defined and documented:
+- infrastructure revision/traffic controls with staged progression (`10%`, `50%`, `100%`);
+- checkpoint control via `scripts/rollout-checkpoint.ps1`.
+- Operational indicator capture is documented and standardized:
+- error rate, p95 latency, authorization denials, and data consistency delta.
+- Stage checkpoint runbook and execution artifacts are documented in:
+- `docs/ROLLOUT_RUNBOOK.md`
+- `docs/OBSERVABILITY.md`
+- Checkpoint script and sample config added:
+- `scripts/rollout-checkpoint.ps1`
+- `scripts/rollout-checkpoint.sample.json`
+
+Step 9 deliverables:
+- Documented staged rollout flow with explicit go/no-go checkpoint criteria.
+- Repeatable checkpoint script that evaluates readiness/health/operational thresholds and returns proceed/rollback exit codes.
+- Operational runbook describing rollback actions and required evidence per stage.
+- Updated architecture/changelog/fix-plan documentation for Step 9 completion.
+
+Step 9 acceptance criteria:
+- Every architecture workstream can be progressed through staged rollout checkpoints with explicit thresholds. `Status: complete`.
+- Rollback criteria are executable and unambiguous via a repeatable checkpoint command. `Status: complete`.
+- Operational indicator collection requirements are defined and linked to checkpoint execution. `Status: complete`.
+- Full repo verification gate passes (`.\scripts\verify.ps1`). `Status: complete`.
 
 ### Step 10: Closure and Debt Retirement
-- Remove temporary compatibility shims once migration exit criteria are met.
-- Update architecture docs to reflect the post-fix target state as the new baseline.
-- Record follow-up backlog items for remaining non-critical cleanup.
+- Status: completed.
+- Retired temporary compatibility shims in `PublicWorldService` for legacy session-prefixed public URL resolution.
+- Updated architecture baselines/guardrails to post-retirement counts and constraints.
+- Recorded post-Step-10 backlog items for remaining non-critical legacy reference cleanup.
+
+Step 10 deliverables:
+- Removed `PublicWorldService` compatibility helper paths that resolved legacy `session-slug/note-slug` public URLs.
+- Public article-path generation for root `SessionNote` articles now emits canonical note-slug paths.
+- Updated parity/regression coverage to enforce legacy session-prefix path retirement in both public and authenticated reads.
+- Updated architecture/fix-plan/feature/changelog documentation for the Step 10 baseline.
+- Updated architecture guardrail API legacy-reference baseline from `6` to `2`.
+
+Step 10 follow-up backlog (non-blocking):
+- Drive remaining API `ArticleType.Session` references from `2` to `0` in a dedicated retirement slice.
+- Reduce client allowlisted `ArticleType.Session` references from `8` toward full retirement with UI vocabulary migration.
+- Revisit `ArticleType`/DTO naming cleanup after compatibility contract windows close.
+
+Step 10 acceptance criteria:
+- Temporary public compatibility shims are removed and no longer resolve legacy session-prefixed note URLs. `Status: complete`.
+- Architecture docs reflect post-fix baseline metrics and boundary constraints. `Status: complete`.
+- Follow-up backlog items are explicitly captured for remaining non-critical cleanup. `Status: complete`.
+- Full repo verification gate passes (`.\scripts\verify.ps1`). `Status: complete`.
+
+### Step 11: Logging Hygiene
+- Remove extraneous logging - Information logs eliminated
+- Remove debug logging 
+- All logging calls us the *Sanitized extension methods
 
 ## 5) Recommended Execution Order
 1. Step 1 to Step 3 (data-access consistency foundation).

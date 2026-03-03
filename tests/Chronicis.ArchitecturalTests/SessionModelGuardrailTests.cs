@@ -6,7 +6,7 @@ namespace Chronicis.ArchitecturalTests;
 [ExcludeFromCodeCoverage]
 public sealed class SessionModelGuardrailTests
 {
-    private const int ApiLegacyReferenceBaseline = 6;
+    private const int ApiLegacyReferenceBaseline = 2;
     private const int ClientLegacyReferenceBaseline = 8;
     private static readonly string RepoRoot = ResolveRepoRoot();
     private static readonly Regex LegacySessionPattern = new(@"\bArticleType\.Session\b", RegexOptions.CultureInvariant);

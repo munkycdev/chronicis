@@ -90,6 +90,26 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## 2026 Q1 Rollout and Risk Control (Step 9)
+
+- Added rollout checkpoint script: `scripts/rollout-checkpoint.ps1`
+- Added sample checkpoint config: `scripts/rollout-checkpoint.sample.json`
+- Added staged rollout runbook with rollback actions: `docs/ROLLOUT_RUNBOOK.md`
+- Extended observability guide with checkpoint signal capture workflow
+- Standardized staged rollout gates at `10%`, `50%`, and `100%` traffic with explicit proceed/rollback exit semantics
+
+---
+
+## 2026 Q1 Closure and Debt Retirement (Step 10)
+
+- Removed legacy public compatibility shims in `PublicWorldService` for session-prefixed session-note URLs
+- Public article lookup/path generation now uses canonical root session-note slugs (no legacy session prefix injection)
+- Updated parity regressions so public/auth reads both reject retired legacy session-prefixed paths
+- Reduced architecture guardrail API legacy-session baseline from `6` to `2`
+- Updated architecture/feature/fix-plan docs to the post-Step-10 baseline and captured follow-up legacy-cleanup backlog
+
+---
+
 ## 2026 Q1 Session Entity Refactor (Phase 7)
 
 - Finalized quest session FK cutover to Session entities and removed the legacy quest article-session FK bridge column

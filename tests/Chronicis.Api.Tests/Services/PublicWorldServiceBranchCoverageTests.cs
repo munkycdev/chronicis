@@ -65,28 +65,36 @@ public class PublicWorldServiceBranchCoverageTests
     }
 
     [Fact]
-    public void PublicWorldService_AttachRootSessionNotesToLegacySessionNode_InitializesChildren_WhenNull()
+    public void PublicWorldService_GetRootSessionNotesForSession_TreatsExternalParentAsRoot_AndSortsByTitle()
     {
-        var attachRootNotes = RemainingApiBranchCoverageTestHelpers.GetMethod(typeof(PublicWorldService), "AttachRootSessionNotesToLegacySessionNode");
-        var legacySessionArticle = new ArticleTreeDto
+        var getRootNotes = RemainingApiBranchCoverageTestHelpers.GetMethod(typeof(PublicWorldService), "GetRootSessionNotesForSession");
+        var sessionId = Guid.NewGuid();
+        var rootA = new ArticleTreeDto
         {
             Id = Guid.NewGuid(),
-            Title = "Session 1",
-            Children = null
+            Title = "A Root"
         };
-        var rootNote = new ArticleTreeDto
+        var rootBWithExternalParent = new ArticleTreeDto
         {
             Id = Guid.NewGuid(),
-            Title = "Note A"
+            Title = "B External Parent",
+            ParentId = Guid.NewGuid()
+        };
+        var nested = new ArticleTreeDto
+        {
+            Id = Guid.NewGuid(),
+            Title = "C Nested",
+            ParentId = rootA.Id
+        };
+        var notesBySession = new Dictionary<Guid, List<ArticleTreeDto>>
+        {
+            [sessionId] = new List<ArticleTreeDto> { nested, rootBWithExternalParent, rootA }
         };
 
-        attachRootNotes.Invoke(null, [legacySessionArticle, new List<ArticleTreeDto> { rootNote }, true]);
+        var result = (List<ArticleTreeDto>)getRootNotes.Invoke(null, [notesBySession, sessionId])!;
 
-        Assert.True(legacySessionArticle.HasAISummary);
-        Assert.NotNull(legacySessionArticle.Children);
-        Assert.Single(legacySessionArticle.Children!);
-        Assert.Equal(rootNote.Id, legacySessionArticle.Children!.Single().Id);
-        Assert.True(legacySessionArticle.HasChildren);
-        Assert.Equal(1, legacySessionArticle.ChildCount);
+        Assert.Equal(2, result.Count);
+        Assert.Equal(rootA.Id, result[0].Id);
+        Assert.Equal(rootBWithExternalParent.Id, result[1].Id);
     }
 }

@@ -1,0 +1,30 @@
+{
+  "name": "step9-read-model-rollout",
+  "environment": "staging",
+  "apiBaseUrl": "https://api.chronicis.app",
+  "healthEndpoint": "/health/status",
+  "readinessEndpoint": "/health/ready",
+  "rollbackThresholds": {
+    "maxUnhealthyServices": 0,
+    "maxDegradedServices": 1,
+    "maxP95LatencyMs": 800,
+    "maxErrorRatePercent": 2.0,
+    "maxAuthDenialsPercent": 5.0,
+    "maxDataConsistencyDelta": 0
+  },
+  "operationalSignals": {
+    "p95LatencyMs": 275,
+    "errorRatePercent": 0.2,
+    "authDenialsPercent": 0.8,
+    "dataConsistencyDelta": 0
+  },
+  "checkpoint": {
+    "stage": "10%",
+    "requiredChecks": [
+      "health-ready",
+      "health-status",
+      "operational-signals",
+      "data-consistency"
+    ]
+  }
+}

@@ -106,6 +106,23 @@ Expected response:
 3. Look for `chronicis-api` service
 4. Verify traces are appearing for HTTP requests
 
+#### 4. Step 9 Rollout Checkpoint Inputs
+
+During staged rollout checkpoints, capture and record these values in the checkpoint config:
+
+- `operationalSignals.p95LatencyMs` from Datadog service latency view.
+- `operationalSignals.errorRatePercent` from Datadog error-rate view.
+- `operationalSignals.authDenialsPercent` from Datadog status-code split (`401`/`403`).
+- `operationalSignals.dataConsistencyDelta` from post-deploy validation queries/parity checks.
+
+Then run:
+
+```powershell
+.\scripts\rollout-checkpoint.ps1 -ConfigPath .\scripts\rollout-checkpoint.sample.json
+```
+
+The command returns `0` for proceed and `1` for rollback.
+
 ### What Gets Traced
 
 With the current configuration, the following are automatically traced:

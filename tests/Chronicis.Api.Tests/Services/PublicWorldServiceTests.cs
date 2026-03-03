@@ -96,7 +96,7 @@ public sealed class PublicWorldServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetPublicArticleTreeAsync_LegacySessionArticle_AttachesRootSessionNotesBySessionId()
+    public async Task GetPublicArticleTreeAsync_LegacySessionArticlePresent_UsesCanonicalVirtualSessionNode()
     {
         var seed = await SeedWorldWithSessionAsync(includeLegacySessionArticle: true);
 
@@ -121,12 +121,12 @@ public sealed class PublicWorldServiceTests : IDisposable
         var arcNode = Assert.Single(campaignNode.Children!);
         var sessionNode = arcNode.Children!.Single(c => c.Id == seed.Session.Id);
 
-        Assert.False(sessionNode.IsVirtualGroup);
+        Assert.True(sessionNode.IsVirtualGroup);
         Assert.Contains(sessionNode.Children!, c => c.Id == rootNote.Id);
     }
 
     [Fact]
-    public async Task GetPublicArticleAsync_AllowsLegacySessionPath_ToRootSessionNoteAttachedBySessionId()
+    public async Task GetPublicArticleAsync_LegacySessionPrefixPath_IsRetired_AndCanonicalPathResolves()
     {
         var seed = await SeedWorldWithSessionAsync(includeLegacySessionArticle: true);
 
@@ -144,16 +144,20 @@ public sealed class PublicWorldServiceTests : IDisposable
         _context.Articles.Add(rootNote);
         await _context.SaveChangesAsync();
 
-        var article = await _sut.GetPublicArticleAsync(
+        var legacyPathArticle = await _sut.GetPublicArticleAsync(
             seed.World.PublicSlug!,
             $"{seed.LegacySessionArticleSlug}/{rootNote.Slug}");
+        var canonicalPathArticle = await _sut.GetPublicArticleAsync(
+            seed.World.PublicSlug!,
+            rootNote.Slug);
 
-        Assert.NotNull(article);
-        Assert.Equal(rootNote.Id, article!.Id);
+        Assert.Null(legacyPathArticle);
+        Assert.NotNull(canonicalPathArticle);
+        Assert.Equal(rootNote.Id, canonicalPathArticle!.Id);
     }
 
     [Fact]
-    public async Task GetPublicArticlePathAsync_RootSessionNoteWithLegacySessionPrefix_ReturnsSessionSegment()
+    public async Task GetPublicArticlePathAsync_RootSessionNoteWithLegacySessionArticle_ReturnsCanonicalNoteSlug()
     {
         var seed = await SeedWorldWithSessionAsync(includeLegacySessionArticle: true);
 
@@ -173,7 +177,7 @@ public sealed class PublicWorldServiceTests : IDisposable
 
         var path = await _sut.GetPublicArticlePathAsync(seed.World.PublicSlug!, rootNote.Id);
 
-        Assert.Equal($"{seed.LegacySessionArticleSlug}/{rootNote.Slug}", path);
+        Assert.Equal(rootNote.Slug, path);
     }
 
     [Fact]
