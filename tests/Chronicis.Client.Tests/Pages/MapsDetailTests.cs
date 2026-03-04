@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using Bunit;
+using Chronicis.Client.Models;
 using Chronicis.Client.Pages.Maps;
 using Chronicis.Client.Services;
 using Chronicis.Client.Tests.Components;
@@ -10,6 +11,7 @@ using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.Enums;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Xunit;
@@ -21,12 +23,14 @@ public class MapsDetailTests : MudBlazorTestContext
     private readonly IMapApiService _mapApi = Substitute.For<IMapApiService>();
     private readonly IWorldApiService _worldApi = Substitute.For<IWorldApiService>();
     private readonly IArcApiService _arcApi = Substitute.For<IArcApiService>();
+    private readonly ITreeStateService _treeState = Substitute.For<ITreeStateService>();
 
     public MapsDetailTests()
     {
         Services.AddSingleton(_mapApi);
         Services.AddSingleton(_worldApi);
         Services.AddSingleton(_arcApi);
+        Services.AddSingleton(_treeState);
 
         _worldApi.GetWorldAsync(Arg.Any<Guid>()).Returns(call =>
         {
@@ -40,6 +44,9 @@ public class MapsDetailTests : MudBlazorTestContext
         });
         _mapApi.ListMapsForWorldAsync(Arg.Any<Guid>()).Returns(new List<MapSummaryDto>());
         _arcApi.GetArcsByCampaignAsync(Arg.Any<Guid>()).Returns(new List<ArcDto>());
+        _treeState.RootNodes.Returns(new List<TreeNode>());
+        _treeState.IsLoading.Returns(false);
+        _treeState.InitializeAsync().Returns(Task.CompletedTask);
     }
 
     [Fact]
@@ -182,6 +189,37 @@ public class MapsDetailTests : MudBlazorTestContext
             Assert.Contains($"Unknown Arc ({arcUnknownId})", cut.Markup, StringComparison.OrdinalIgnoreCase);
             Assert.Contains($"/world/{worldId}/maps/{knownWorldMapId}", cut.Markup, StringComparison.OrdinalIgnoreCase);
         });
+    }
+
+    [Fact]
+    public void MapsDetail_OnLoad_ExpandsMapsGroupInTree()
+    {
+        var worldId = Guid.NewGuid();
+        var mapsGroupId = Guid.NewGuid();
+
+        _treeState.RootNodes.Returns(new List<TreeNode>
+        {
+            new()
+            {
+                Id = worldId,
+                NodeType = TreeNodeType.World,
+                Children =
+                [
+                    new TreeNode
+                    {
+                        Id = mapsGroupId,
+                        NodeType = TreeNodeType.VirtualGroup,
+                        VirtualGroupType = VirtualGroupType.Maps,
+                        Title = "Maps"
+                    }
+                ]
+            }
+        });
+
+        var cut = RenderMapsDetail(worldId);
+
+        cut.WaitForAssertion(() => Assert.False(GetField<bool>(cut.Instance, "_isLoading")));
+        _treeState.Received(1).ExpandPathToAndSelect(mapsGroupId);
     }
 
     [Fact]
@@ -416,6 +454,45 @@ public class MapsDetailTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task DeleteMapAsync_WhenDeleteFails_SetsErrorAndClearsDeleteState()
+    {
+        var cut = RenderLoadedComponent();
+        var worldId = cut.Instance.WorldId;
+        var mapId = Guid.NewGuid();
+
+        _mapApi.DeleteMapAsync(worldId, mapId).Returns(false);
+
+        await InvokePrivateOnRendererAsync(cut, "DeleteMapAsync", mapId, "Failed Map");
+
+        Assert.Contains("Failed to delete map 'Failed Map'.", GetField<string>(cut.Instance, "_createError"), StringComparison.Ordinal);
+        Assert.DoesNotContain(mapId, GetField<HashSet<Guid>>(cut.Instance, "_mapsBeingDeleted"));
+        await _mapApi.Received(1).DeleteMapAsync(worldId, mapId);
+    }
+
+    [Fact]
+    public async Task DeleteMapAsync_WhenSuccessful_SetsSuccessAndReloadsMaps()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+
+        _worldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto { Id = worldId, Name = "World", Campaigns = [] });
+        _mapApi.ListMapsForWorldAsync(worldId).Returns(
+            [new MapSummaryDto { WorldMapId = mapId, Name = "Delete Me", Scope = MapScope.WorldScoped }],
+            new List<MapSummaryDto>());
+        _mapApi.DeleteMapAsync(worldId, mapId).Returns(true);
+
+        var cut = RenderMapsDetail(worldId);
+        cut.WaitForAssertion(() => Assert.False(GetField<bool>(cut.Instance, "_isLoading")));
+
+        await InvokePrivateOnRendererAsync(cut, "DeleteMapAsync", mapId, "Delete Me");
+
+        Assert.Equal("Map 'Delete Me' deleted permanently.", GetField<string>(cut.Instance, "_createSuccess"));
+        Assert.DoesNotContain(mapId, GetField<HashSet<Guid>>(cut.Instance, "_mapsBeingDeleted"));
+        await _mapApi.Received(1).DeleteMapAsync(worldId, mapId);
+        await _mapApi.Received(2).ListMapsForWorldAsync(worldId);
+    }
+
+    [Fact]
     public void PrivateHelpers_CoverScopeAndDisplayBranches()
     {
         var detailType = typeof(MapsDetail);
@@ -462,6 +539,131 @@ public class MapsDetailTests : MudBlazorTestContext
         var cut = RenderLoadedComponent();
         var route = (string)getMapRoute!.Invoke(cut.Instance, [Guid.Empty])!;
         Assert.Equal($"/world/{cut.Instance.WorldId}/maps/{Guid.Empty}", route);
+    }
+
+    [Fact]
+    public async Task BasemapDropzoneHelpers_UpdateStateAndClasses()
+    {
+        var cut = RenderLoadedComponent();
+        var detailType = typeof(MapsDetail);
+        var dragEnter = detailType.GetMethod("OnBasemapDragEnter", BindingFlags.Instance | BindingFlags.NonPublic);
+        var dragOver = detailType.GetMethod("OnBasemapDragOver", BindingFlags.Instance | BindingFlags.NonPublic);
+        var dragLeave = detailType.GetMethod("OnBasemapDragLeave", BindingFlags.Instance | BindingFlags.NonPublic);
+        var drop = detailType.GetMethod("OnBasemapDrop", BindingFlags.Instance | BindingFlags.NonPublic);
+        var dropClass = detailType.GetMethod("GetBasemapDropZoneClass", BindingFlags.Instance | BindingFlags.NonPublic);
+        var inputStyle = detailType.GetMethod("GetBasemapInputStyle", BindingFlags.Instance | BindingFlags.NonPublic);
+        var isFileDrag = detailType.GetMethod("IsFileDragEvent", BindingFlags.Static | BindingFlags.NonPublic);
+
+        Assert.NotNull(dragEnter);
+        Assert.NotNull(dragOver);
+        Assert.NotNull(dragLeave);
+        Assert.NotNull(drop);
+        Assert.NotNull(dropClass);
+        Assert.NotNull(inputStyle);
+        Assert.NotNull(isFileDrag);
+
+        var fileArgs = new DragEventArgs
+        {
+            DataTransfer = new DataTransfer
+            {
+                Types = ["Files"],
+                Files = ["map.png"]
+            }
+        };
+        var nonFileArgs = new DragEventArgs
+        {
+            DataTransfer = new DataTransfer
+            {
+                Types = ["text/plain"]
+            }
+        };
+        var typedFilesArgs = new DragEventArgs
+        {
+            DataTransfer = new DataTransfer
+            {
+                Types = ["files"],
+                Files = []
+            }
+        };
+        var emptyTransferArgs = new DragEventArgs
+        {
+            DataTransfer = new DataTransfer
+            {
+                Files = []
+            }
+        };
+        var nullTransferArgs = new DragEventArgs
+        {
+            DataTransfer = new DataTransfer
+            {
+                Files = null!,
+                Types = null!
+            }
+        };
+
+        var defaultClass = (string)dropClass!.Invoke(cut.Instance, null)!;
+        Assert.Contains("maps-basemap-dropzone", defaultClass, StringComparison.Ordinal);
+        Assert.DoesNotContain("maps-basemap-dropzone--dragover", defaultClass, StringComparison.Ordinal);
+        var pointerStyle = (string)inputStyle!.Invoke(cut.Instance, null)!;
+        Assert.Contains("cursor:pointer", pointerStyle, StringComparison.Ordinal);
+
+        await cut.InvokeAsync(() => dragEnter!.Invoke(cut.Instance, [fileArgs]));
+        Assert.True(GetField<bool>(cut.Instance, "_isBasemapDragOver"));
+        Assert.Equal("copy", fileArgs.DataTransfer!.DropEffect);
+        Assert.Equal("copy", fileArgs.DataTransfer.EffectAllowed);
+
+        var dragOverClass = (string)dropClass.Invoke(cut.Instance, null)!;
+        Assert.Contains("maps-basemap-dropzone--dragover", dragOverClass, StringComparison.Ordinal);
+        Assert.Contains("maps-basemap-dropzone--copy", dragOverClass, StringComparison.Ordinal);
+        var copyStyle = (string)inputStyle.Invoke(cut.Instance, null)!;
+        Assert.Contains("cursor:copy", copyStyle, StringComparison.Ordinal);
+
+        var emptyArgs = new DragEventArgs();
+        await cut.InvokeAsync(() => dragOver.Invoke(cut.Instance, [emptyArgs]));
+        Assert.False(GetField<bool>(cut.Instance, "_isBasemapDragOver"));
+
+        await cut.InvokeAsync(() => dragEnter.Invoke(cut.Instance, [nonFileArgs]));
+        Assert.False(GetField<bool>(cut.Instance, "_isBasemapDragOver"));
+
+        await cut.InvokeAsync(() => dragEnter.Invoke(cut.Instance, [nullTransferArgs]));
+        Assert.False(GetField<bool>(cut.Instance, "_isBasemapDragOver"));
+
+        await cut.InvokeAsync(() => dragEnter.Invoke(cut.Instance, [typedFilesArgs]));
+        Assert.True(GetField<bool>(cut.Instance, "_isBasemapDragOver"));
+        Assert.Equal("copy", typedFilesArgs.DataTransfer!.DropEffect);
+        Assert.Equal("copy", typedFilesArgs.DataTransfer.EffectAllowed);
+
+        SetField(cut.Instance, "_isBasemapDragOver", false);
+        SetField(cut.Instance, "_isCreatingMap", true);
+
+        await cut.InvokeAsync(() => dragEnter.Invoke(cut.Instance, [fileArgs]));
+        Assert.False(GetField<bool>(cut.Instance, "_isBasemapDragOver"));
+
+        await cut.InvokeAsync(() => dragOver!.Invoke(cut.Instance, [fileArgs]));
+        Assert.False(GetField<bool>(cut.Instance, "_isBasemapDragOver"));
+
+        var disabledClass = (string)dropClass.Invoke(cut.Instance, null)!;
+        Assert.Contains("maps-basemap-dropzone--disabled", disabledClass, StringComparison.Ordinal);
+
+        SetField(cut.Instance, "_isCreatingMap", false);
+        await cut.InvokeAsync(() => dragOver.Invoke(cut.Instance, [fileArgs]));
+        Assert.True(GetField<bool>(cut.Instance, "_isBasemapDragOver"));
+        Assert.Equal("copy", fileArgs.DataTransfer.DropEffect);
+        Assert.Equal("copy", fileArgs.DataTransfer.EffectAllowed);
+
+        await cut.InvokeAsync(() => dragLeave!.Invoke(cut.Instance, [fileArgs]));
+        Assert.False(GetField<bool>(cut.Instance, "_isBasemapDragOver"));
+
+        SetField(cut.Instance, "_isBasemapDragOver", true);
+        await cut.InvokeAsync(() => drop!.Invoke(cut.Instance, [fileArgs]));
+        Assert.False(GetField<bool>(cut.Instance, "_isBasemapDragOver"));
+
+        Assert.True((bool)isFileDrag!.Invoke(null, [fileArgs])!);
+        Assert.False((bool)isFileDrag.Invoke(null, [nonFileArgs])!);
+        Assert.True((bool)isFileDrag.Invoke(null, [typedFilesArgs])!);
+        Assert.False((bool)isFileDrag.Invoke(null, [emptyTransferArgs])!);
+        Assert.False((bool)isFileDrag.Invoke(null, [nullTransferArgs])!);
+        Assert.False((bool)isFileDrag.Invoke(null, [emptyArgs])!);
     }
 
     private IRenderedComponent<MapsDetail> RenderLoadedComponent()

@@ -98,6 +98,33 @@ public class WorldMapService : IWorldMapService
     }
 
     /// <inheritdoc/>
+    public async Task<MapDto> UpdateMapAsync(Guid worldId, Guid mapId, Guid userId, MapUpdateDto dto)
+    {
+        _logger.LogTraceSanitized("User {UserId} updating map {MapId} in world {WorldId}", userId, mapId, worldId);
+
+        var map = await _db.WorldMaps
+            .Include(m => m.World)
+            .FirstOrDefaultAsync(m => m.WorldMapId == mapId && m.WorldId == worldId);
+
+        if (map == null)
+        {
+            throw new InvalidOperationException("Map not found");
+        }
+
+        if (map.World.OwnerId != userId)
+        {
+            throw new UnauthorizedAccessException("Only the world owner can update maps");
+        }
+
+        map.Name = dto.Name.Trim();
+        map.UpdatedUtc = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+
+        return ToMapDto(map);
+    }
+
+    /// <inheritdoc/>
     public async Task<List<MapSummaryDto>> ListMapsForWorldAsync(Guid worldId, Guid userId)
     {
         _logger.LogTraceSanitized("User {UserId} listing maps for world {WorldId}", userId, worldId);
@@ -224,6 +251,31 @@ public class WorldMapService : IWorldMapService
 
         var readUrl = await _mapBlobStore.GenerateReadSasUrlAsync(map.BasemapBlobKey);
         return new GetBasemapReadUrlResponseDto { ReadUrl = readUrl };
+    }
+
+    /// <inheritdoc/>
+    public async Task DeleteMapAsync(Guid worldId, Guid mapId, Guid userId)
+    {
+        _logger.LogTraceSanitized("User {UserId} deleting map {MapId} in world {WorldId}", userId, mapId, worldId);
+
+        var map = await _db.WorldMaps
+            .Include(m => m.World)
+            .FirstOrDefaultAsync(m => m.WorldMapId == mapId && m.WorldId == worldId);
+
+        if (map == null)
+        {
+            throw new InvalidOperationException("Map not found");
+        }
+
+        if (map.World.OwnerId != userId)
+        {
+            throw new UnauthorizedAccessException("Only the world owner can delete maps");
+        }
+
+        await _mapBlobStore.DeleteMapFolderAsync(mapId);
+
+        _db.WorldMaps.Remove(map);
+        await _db.SaveChangesAsync();
     }
 
     internal static MapScope ComputeScope(WorldMap map)

@@ -23,6 +23,11 @@ public interface IMapApiService
     Task<(MapDto? Map, int? StatusCode, string? Error)> GetMapAsync(Guid worldId, Guid mapId);
 
     /// <summary>
+    /// Updates map metadata.
+    /// </summary>
+    Task<MapDto?> UpdateMapAsync(Guid worldId, Guid mapId, MapUpdateDto dto);
+
+    /// <summary>
     /// Requests a basemap upload SAS URL for the map.
     /// </summary>
     Task<RequestBasemapUploadResponseDto?> RequestBasemapUploadAsync(
@@ -47,4 +52,9 @@ public interface IMapApiService
     Task<(GetBasemapReadUrlResponseDto? Basemap, int? StatusCode, string? Error)> GetBasemapReadUrlAsync(
         Guid worldId,
         Guid mapId);
+
+    /// <summary>
+    /// Permanently deletes a map and all associated data.
+    /// </summary>
+    Task<bool> DeleteMapAsync(Guid worldId, Guid mapId);
 }

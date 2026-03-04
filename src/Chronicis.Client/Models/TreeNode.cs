@@ -140,6 +140,7 @@ public class TreeNode
         TreeNodeType.Session => true,
         TreeNodeType.ExternalLink => true, // Opens in new tab
         TreeNodeType.Map => true,
+        TreeNodeType.VirtualGroup => VirtualGroupType == VirtualGroupType.Maps,
         _ => false
     };
 

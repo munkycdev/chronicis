@@ -20,6 +20,11 @@ public interface IWorldMapService
     Task<MapDto?> GetMapAsync(Guid mapId, Guid userId);
 
     /// <summary>
+    /// Update editable map metadata. Only the world owner may update map details.
+    /// </summary>
+    Task<MapDto> UpdateMapAsync(Guid worldId, Guid mapId, Guid userId, MapUpdateDto dto);
+
+    /// <summary>
     /// List all maps for a world, sorted by name, with scope data for grouping.
     /// Throws <see cref="UnauthorizedAccessException"/> if the user has no access.
     /// </summary>
@@ -45,4 +50,10 @@ public interface IWorldMapService
     /// Enforces world membership.
     /// </summary>
     Task<GetBasemapReadUrlResponseDto> GetBasemapReadUrlAsync(Guid worldId, Guid mapId, Guid userId);
+
+    /// <summary>
+    /// Permanently deletes a map, all related metadata, and all blobs under the map folder.
+    /// Only the world owner may delete maps.
+    /// </summary>
+    Task DeleteMapAsync(Guid worldId, Guid mapId, Guid userId);
 }

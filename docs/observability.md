@@ -131,6 +131,16 @@ With the current configuration, the following are automatically traced:
 - **Outbound HTTP calls** - Via `HttpClient` / `IHttpClientFactory`
 - **Database queries** - Entity Framework Core / SQL Server (via automatic instrumentation)
 
+### Maps v3.0 Monitoring Focus
+
+For the Maps release, pay specific attention to these traces and error slices:
+
+- `POST /world/{worldId}/maps` and `DELETE /world/{worldId}/maps/{mapId}` for create/delete success rate.
+- `POST /world/{worldId}/maps/{mapId}/request-basemap-upload` and `/confirm-basemap-upload` for upload request/confirm failures.
+- `GET /world/{worldId}/maps/{mapId}/basemap` for read URL latency and `404` spikes.
+- `403` rates on map update/delete/upload endpoints to catch permission regression.
+- Latency distribution for map list/detail requests under normal world navigation load.
+
 ### Log Correlation
 
 With `DD_LOGS_INJECTION=true`, Serilog logs will include trace context:

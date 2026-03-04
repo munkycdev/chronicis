@@ -1,7 +1,11 @@
 @page "/world/{WorldId:guid}/maps/{MapId:guid}"
 @attribute [Authorize]
+@using Chronicis.Client.Components.Shared
 @using Chronicis.Shared.DTOs.Maps
 @inject IMapApiService MapApi
+@inject IWorldApiService WorldApi
+@inject IUserApiService UserApi
+@inject ITreeStateService TreeState
 
 @if (_isLoading)
 {
@@ -22,9 +26,42 @@ else if (_state == MapPageState.BasemapMissing)
 else
 {
     <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
-        <img src="@_basemapReadUrl"
-             alt="@_mapName"
-             style="display:block;max-width:100%;height:auto;" />
+        <DetailPageHeader Breadcrumbs="_breadcrumbs"
+                          Icon="@Icons.Material.Filled.Map"
+                          Title="@_editMapName"
+                          TitleChanged="OnMapTitleChanged"
+                          OnTitleEdited="OnMapTitleEdited"
+                          OnEnterPressed="SaveMapNameAsync"
+                          Placeholder="Map"
+                          ReadOnly="@(!_canManageMap)" />
+
+        @if (_canManageMap)
+        {
+            <div class="chronicis-flex-between mb-4">
+                <SaveStatusIndicator IsSaving="_isSavingMap"
+                                     HasUnsavedChanges="_hasUnsavedMapChanges" />
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="SaveMapNameAsync"
+                           Disabled="@(_isSavingMap || !_hasUnsavedMapChanges)"
+                           StartIcon="@Icons.Material.Filled.Save">
+                    @(_isSavingMap ? "Saving..." : "Save")
+                </MudButton>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_mapSaveError))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_mapSaveError</MudAlert>
+        }
+
+        <div class="map-page__image-shell" style="width:100%;max-width:100%;">
+            <img src="@_basemapReadUrl"
+                 alt="@_mapName"
+                 style="display:block;width:100%;max-width:100%;height:auto;"
+                 class="map-page__image" />
+        </div>
     </MudPaper>
 }
 
@@ -36,9 +73,22 @@ else
     public Guid MapId { get; set; }
 
     private bool _isLoading = true;
+    private bool _isSavingMap;
+    private bool _hasUnsavedMapChanges;
+    private bool _canManageMap;
     private MapPageState _state = MapPageState.Loaded;
+    private string _worldName = "World";
     private string _mapName = "Map";
+    private string _editMapName = "Map";
+    private string _mapSaveError = string.Empty;
     private string _basemapReadUrl = string.Empty;
+    private List<BreadcrumbItem> _breadcrumbs =
+    [
+        new("Dashboard", href: "/dashboard"),
+        new("World", href: null, disabled: true),
+        new("Maps", href: null, disabled: true),
+        new("Map", href: null, disabled: true)
+    ];
 
     private enum MapPageState
     {
@@ -56,15 +106,40 @@ else
     private async Task LoadAsync()
     {
         _isLoading = true;
+        _isSavingMap = false;
+        _hasUnsavedMapChanges = false;
+        _canManageMap = false;
         _state = MapPageState.Loaded;
+        _worldName = "World";
         _mapName = "Map";
+        _editMapName = "Map";
+        _mapSaveError = string.Empty;
         _basemapReadUrl = string.Empty;
+        BuildBreadcrumbs();
+
+        var worldTask = WorldApi.GetWorldAsync(WorldId);
+        var userProfileTask = UserApi.GetUserProfileAsync();
+        await Task.WhenAll(worldTask, userProfileTask);
+
+        var world = await worldTask;
+        if (!string.IsNullOrWhiteSpace(world?.Name))
+        {
+            _worldName = world.Name;
+        }
+        _canManageMap = world != null
+            && (await userProfileTask)?.Id == world.OwnerId;
 
         var mapResult = await MapApi.GetMapAsync(WorldId, MapId);
         if (!string.IsNullOrWhiteSpace(mapResult.Map?.Name))
         {
             _mapName = mapResult.Map.Name;
+            _editMapName = mapResult.Map.Name;
         }
+        if (mapResult.Map != null)
+        {
+            TreeState.ExpandPathToAndSelect(MapId);
+        }
+        UpdateMapDirtyState();
 
         var basemapResult = await MapApi.GetBasemapReadUrlAsync(WorldId, MapId);
 
@@ -88,9 +163,82 @@ else
         {
             _basemapReadUrl = basemapResult.Basemap.ReadUrl;
             _state = MapPageState.Loaded;
+            BuildBreadcrumbs();
         }
 
         _isLoading = false;
+    }
+
+    private Task OnMapTitleChanged(string value)
+    {
+        _editMapName = value;
+        return Task.CompletedTask;
+    }
+
+    private Task OnMapTitleEdited()
+    {
+        _mapSaveError = string.Empty;
+        UpdateMapDirtyState();
+        return Task.CompletedTask;
+    }
+
+    private async Task SaveMapNameAsync()
+    {
+        if (!_canManageMap || _isSavingMap)
+        {
+            return;
+        }
+
+        var trimmedName = (_editMapName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(trimmedName))
+        {
+            _mapSaveError = "Map name is required.";
+            return;
+        }
+
+        if (trimmedName.Length > 200)
+        {
+            _mapSaveError = "Map name must be 200 characters or fewer.";
+            return;
+        }
+
+        if (!_hasUnsavedMapChanges)
+        {
+            return;
+        }
+
+        _isSavingMap = true;
+        _mapSaveError = string.Empty;
+
+        try
+        {
+            var updated = await MapApi.UpdateMapAsync(WorldId, MapId, new MapUpdateDto { Name = trimmedName });
+            if (updated == null)
+            {
+                _mapSaveError = "Failed to save map name.";
+                return;
+            }
+
+            _mapName = updated.Name;
+            _editMapName = updated.Name;
+            TreeState.UpdateNodeDisplay(MapId, updated.Name, null);
+            UpdateMapDirtyState();
+            BuildBreadcrumbs();
+        }
+        catch (Exception ex)
+        {
+            _mapSaveError = $"Failed to save map name: {ex.Message}";
+        }
+        finally
+        {
+            _isSavingMap = false;
+        }
+    }
+
+    private void UpdateMapDirtyState()
+    {
+        _hasUnsavedMapChanges = _canManageMap
+            && !string.Equals(_editMapName ?? string.Empty, _mapName ?? string.Empty, StringComparison.Ordinal);
     }
 
     private static bool IsUnauthorized(int? statusCode) => statusCode == 401 || statusCode == 403;
@@ -103,5 +251,16 @@ else
         }
 
         return error.Contains("basemap", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void BuildBreadcrumbs()
+    {
+        _breadcrumbs =
+        [
+            new("Dashboard", href: "/dashboard"),
+            new(_worldName, href: $"/world/{WorldId}"),
+            new("Maps", href: $"/world/{WorldId}/maps"),
+            new(_mapName, href: null, disabled: true)
+        ];
     }
 }

@@ -87,6 +87,60 @@ public class MapsControllerCoverageSmokeTests
         Assert.IsType<OkObjectResult>(result.Result);
     }
 
+    // ── UpdateMap ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateMap_NullDto_ReturnsBadRequest()
+    {
+        var result = await CreateSut().UpdateMap(Guid.NewGuid(), Guid.NewGuid(), null!);
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateMap_EmptyName_ReturnsBadRequest()
+    {
+        var result = await CreateSut().UpdateMap(Guid.NewGuid(), Guid.NewGuid(), new MapUpdateDto { Name = "  " });
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateMap_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdateMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapUpdateDto>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).UpdateMap(Guid.NewGuid(), Guid.NewGuid(), new MapUpdateDto { Name = "Renamed" });
+
+        var status = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateMap_NotFound_Returns404()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdateMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapUpdateDto>())
+            .ThrowsAsync(new InvalidOperationException("Map not found"));
+
+        var result = await CreateSut(service).UpdateMap(Guid.NewGuid(), Guid.NewGuid(), new MapUpdateDto { Name = "Renamed" });
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateMap_Success_ReturnsOk()
+    {
+        var mapId = Guid.NewGuid();
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdateMapAsync(Arg.Any<Guid>(), mapId, Arg.Any<Guid>(), Arg.Any<MapUpdateDto>())
+            .Returns(new MapDto { WorldMapId = mapId, Name = "Renamed" });
+
+        var result = await CreateSut(service).UpdateMap(Guid.NewGuid(), mapId, new MapUpdateDto { Name = "Renamed" });
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
     // ── ListMapsForWorld ──────────────────────────────────────────────────────
 
     [Fact]
@@ -112,6 +166,45 @@ public class MapsControllerCoverageSmokeTests
         var result = await CreateSut(service).ListMapsForWorld(Guid.NewGuid());
 
         Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    // ── DeleteMap ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task DeleteMap_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.DeleteMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).DeleteMap(Guid.NewGuid(), Guid.NewGuid());
+
+        var status = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteMap_NotFound_Returns404()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.DeleteMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new InvalidOperationException("Map not found"));
+
+        var result = await CreateSut(service).DeleteMap(Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task DeleteMap_Success_ReturnsNoContent()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.DeleteMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateSut(service).DeleteMap(Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<NoContentResult>(result);
     }
 
     // ── RequestBasemapUpload ──────────────────────────────────────────────────

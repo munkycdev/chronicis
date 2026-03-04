@@ -31,6 +31,8 @@ public static class TutorialPageTypes
             new("Page:Dashboard", "Dashboard"),
             new("Page:Settings", "Settings"),
             new("Page:WorldDetail", "World Detail"),
+            new("Page:MapListing", "World Map Listing"),
+            new("Page:MapPage", "Map Page"),
             new("Page:CampaignDetail", "Campaign Detail"),
             new("Page:ArcDetail", "Arc Detail"),
             new("Page:SessionDetail", "Session Detail"),

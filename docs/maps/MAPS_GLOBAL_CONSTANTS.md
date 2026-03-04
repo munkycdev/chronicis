@@ -5,6 +5,14 @@
 * Maps Detail: `/world/{worldId}/maps`
 * Map Page: `/world/{worldId}/maps/{mapId}`
 
+## Tree Behavior Constants
+
+* Maps virtual group type: `VirtualGroupType.Maps`
+* Maps virtual group is selectable and navigable to Maps Detail.
+* Map node type: `TreeNodeType.Map`
+* Map nodes are selectable and navigable to Map Page.
+* Maps virtual group has no tree add-child action.
+
 ## Blob Container
 
 * chronicis-maps
@@ -37,3 +45,17 @@
 * image/png
 * image/jpeg
 * image/webp
+
+## Basemap Upload Limits
+
+* Max basemap upload size: `50 * 1024 * 1024` bytes (50 MB)
+
+## Map Name Constraints
+
+* Name required.
+* Max length: 200 characters.
+
+## Delete Semantics
+
+* Delete is permanent.
+* Deletes map metadata and all blobs under `maps/{mapId}/`.

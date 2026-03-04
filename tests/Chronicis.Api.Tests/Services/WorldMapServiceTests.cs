@@ -32,6 +32,7 @@ public class WorldMapServiceTests : IDisposable
 
         _db = new ChronicisDbContext(options);
         _blobStore = Substitute.For<IMapBlobStore>();
+        _blobStore.DeleteMapFolderAsync(Arg.Any<Guid>()).Returns(Task.CompletedTask);
         _sut = new WorldMapService(_db, _blobStore, NullLogger<WorldMapService>.Instance);
 
         SeedWorld();
@@ -145,6 +146,41 @@ public class WorldMapServiceTests : IDisposable
 
         Assert.NotNull(result);
         Assert.Equal("Member Map", result.Name);
+    }
+
+    // ── UpdateMapAsync ───────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateMap_Throws_WhenMapNotFound()
+    {
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.UpdateMapAsync(_worldId, Guid.NewGuid(), _ownerId, new MapUpdateDto { Name = "Renamed" }));
+    }
+
+    [Fact]
+    public async Task UpdateMap_Throws_WhenUserIsNotOwner()
+    {
+        var map = await CreateTestMap("Protected Name");
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.UpdateMapAsync(_worldId, map.WorldMapId, _memberId, new MapUpdateDto { Name = "Renamed" }));
+    }
+
+    [Fact]
+    public async Task UpdateMap_Success_UpdatesNameAndTimestamp()
+    {
+        var map = await CreateTestMap("Old Name");
+        var originalUpdatedUtc = map.UpdatedUtc;
+
+        await Task.Delay(5);
+        var result = await _sut.UpdateMapAsync(_worldId, map.WorldMapId, _ownerId, new MapUpdateDto { Name = "  New Name  " });
+
+        Assert.Equal("New Name", result.Name);
+
+        var updated = await _db.WorldMaps.FindAsync(map.WorldMapId);
+        Assert.NotNull(updated);
+        Assert.Equal("New Name", updated!.Name);
+        Assert.True(updated.UpdatedUtc > originalUpdatedUtc);
     }
 
     // ── ListMapsForWorldAsync ─────────────────────────────────────────────────
@@ -333,6 +369,83 @@ public class WorldMapServiceTests : IDisposable
         var result = await _sut.GetBasemapReadUrlAsync(_worldId, map.WorldMapId, _ownerId);
 
         Assert.Equal(expectedReadUrl, result.ReadUrl);
+    }
+
+    // ── DeleteMapAsync ───────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task DeleteMap_Throws_WhenMapNotFound()
+    {
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.DeleteMapAsync(_worldId, Guid.NewGuid(), _ownerId));
+    }
+
+    [Fact]
+    public async Task DeleteMap_Throws_WhenUserIsNotOwner()
+    {
+        var map = await CreateTestMap("Protected");
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.DeleteMapAsync(_worldId, map.WorldMapId, _memberId));
+    }
+
+    [Fact]
+    public async Task DeleteMap_Success_DeletesMapAndRelatedMetadataAndBlobFolder()
+    {
+        var campaignId = Guid.NewGuid();
+        var arcId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+
+        var campaign = new Campaign
+        {
+            Id = campaignId,
+            WorldId = _worldId,
+            OwnerId = _ownerId,
+            Name = "Campaign",
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        var arc = new Arc
+        {
+            Id = arcId,
+            CampaignId = campaignId,
+            Name = "Arc",
+            SortOrder = 0,
+            CreatedBy = _ownerId,
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        var map = new WorldMap
+        {
+            WorldMapId = mapId,
+            WorldId = _worldId,
+            Name = "Delete Me",
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow,
+            BasemapBlobKey = $"maps/{mapId}/basemap/delete-me.png",
+        };
+
+        _db.Campaigns.Add(campaign);
+        _db.Arcs.Add(arc);
+        _db.WorldMaps.Add(map);
+        _db.MapLayers.Add(new MapLayer
+        {
+            MapLayerId = Guid.NewGuid(),
+            WorldMapId = mapId,
+            Name = "World",
+            SortOrder = 0,
+        });
+        _db.WorldMapCampaigns.Add(new WorldMapCampaign { WorldMapId = mapId, CampaignId = campaignId });
+        _db.WorldMapArcs.Add(new WorldMapArc { WorldMapId = mapId, ArcId = arcId });
+        await _db.SaveChangesAsync();
+
+        await _sut.DeleteMapAsync(_worldId, mapId, _ownerId);
+
+        await _blobStore.Received(1).DeleteMapFolderAsync(mapId);
+        Assert.False(await _db.WorldMaps.AnyAsync(m => m.WorldMapId == mapId));
+        Assert.False(await _db.MapLayers.AnyAsync(l => l.WorldMapId == mapId));
+        Assert.False(await _db.WorldMapCampaigns.AnyAsync(c => c.WorldMapId == mapId));
+        Assert.False(await _db.WorldMapArcs.AnyAsync(a => a.WorldMapId == mapId));
     }
 
     // ── ComputeScope (internal static) ────────────────────────────────────────

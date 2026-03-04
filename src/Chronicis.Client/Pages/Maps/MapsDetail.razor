@@ -1,12 +1,19 @@
 @page "/world/{WorldId:guid}/maps"
 @attribute [Authorize]
+@implements IAsyncDisposable
+@using Chronicis.Client.Components.Shared
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.DTOs.Maps
 @using Chronicis.Shared.Enums
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
 @inject IMapApiService MapApi
 @inject IWorldApiService WorldApi
 @inject IArcApiService ArcApi
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject ITreeStateService TreeState
 
 @if (_isLoading)
 {
@@ -21,15 +28,21 @@ else if (_hasLoadFailure)
 else
 {
     <MudPaper Elevation="2" Class="chronicis-article-card chronicis-fade-in">
-        <MudText Typo="Typo.h4" Class="mb-1">
-            @($"{_worldName} Maps")
-        </MudText>
+        <DetailPageHeader Breadcrumbs="_breadcrumbs"
+                          Icon="@Icons.Material.Filled.Map"
+                          Title="@_mapsTitle"
+                          Placeholder="Maps"
+                          ReadOnly="true" />
+
         <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
             Maps grouped by world, campaign, and arc scope.
         </MudText>
 
-        <MudPaper Outlined="true" Class="pa-4 mb-4">
-            <MudText Typo="Typo.h6" Class="mb-2">Create map</MudText>
+        <MudPaper Outlined="true" Class="pa-4 mb-4 maps-create-card">
+            <MudText Typo="Typo.h6" Class="mb-2">
+                <MudIcon Icon="@Icons.Material.Filled.AddPhotoAlternate" Size="Size.Small" Class="mr-2" />
+                Create map
+            </MudText>
             <MudStack Spacing="2">
                 <MudTextField @bind-Value="_newMapName"
                               Label="Map name"
@@ -37,19 +50,32 @@ else
                               Required="true"
                               Disabled="_isCreatingMap" />
 
-                <InputFile id="mapBasemapFileInput"
-                           OnChange="OnBasemapFileSelected"
-                           accept="image/png,image/jpeg,image/webp"
-                           disabled="@_isCreatingMap"
-                           style="display: none;" />
-
-                <label for="mapBasemapFileInput" style="cursor: pointer;">
-                    <MudPaper Outlined="true" Class="pa-3">
-                        <MudText Typo="Typo.body2">
+                <div class="@GetBasemapDropZoneClass()"
+                     style="position: relative;"
+                     @ondragenter="OnBasemapDragEnter"
+                     @ondragenter:preventDefault="true"
+                     @ondragleave="OnBasemapDragLeave"
+                     @ondragover="OnBasemapDragOver"
+                     @ondragover:preventDefault="true"
+                     @ondragover:stopPropagation="true"
+                     @ondrop="OnBasemapDrop"
+                     @ondrop:stopPropagation="true">
+                    <InputFile id="mapBasemapFileInput"
+                               OnChange="OnBasemapFileSelected"
+                               accept="image/png,image/jpeg,image/webp"
+                               disabled="@_isCreatingMap"
+                               style="@GetBasemapInputStyle()"
+                               class="maps-basemap-dropzone__input" />
+                    <label for="mapBasemapFileInput" class="maps-basemap-dropzone__label">
+                        <MudIcon Icon="@Icons.Material.Filled.UploadFile" Size="Size.Large" Class="mb-2" />
+                        <MudText Typo="Typo.body1" Class="maps-basemap-dropzone__title">
                             @(_selectedBasemapFile == null ? "Choose basemap image" : _selectedBasemapFile.Name)
                         </MudText>
-                    </MudPaper>
-                </label>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            Click to browse or drag an image file here
+                        </MudText>
+                    </label>
+                </div>
 
                 <MudText Typo="Typo.caption" Class="mud-text-secondary">
                     Supported types: image/png, image/jpeg, image/webp
@@ -84,75 +110,139 @@ else
         {
             @if (_worldScopedMaps.Any())
             {
-                <MudText Typo="Typo.h6" Class="mb-2">World-scoped</MudText>
-                @foreach (var map in _worldScopedMaps)
-                {
-                    <div class="mb-1">
-                        <MudLink Href="@GetMapRoute(map.WorldMapId)">
-                            @GetDisplayName(map.Name, "Untitled Map")
-                        </MudLink>
-                    </div>
-                }
-                <MudDivider Class="my-4" />
-            }
-
-            @if (_campaignScopedGroups.Any())
-            {
-                <MudText Typo="Typo.h6" Class="mb-2">Campaign-scoped</MudText>
-                @foreach (var campaignGroup in _campaignScopedGroups)
-                {
-                    <MudText Typo="Typo.subtitle1" Class="mb-1">
-                        @campaignGroup.CampaignName
+                <MudPaper Outlined="true" Class="pa-4 mb-4 maps-scope-card">
+                    <MudText Typo="Typo.h6" Class="mb-2 maps-scope-title">
+                        <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Small" Class="mr-2" />
+                        World-scoped
                     </MudText>
-                    @foreach (var map in campaignGroup.Maps)
+                    @foreach (var map in _worldScopedMaps)
                     {
-                        <div class="mb-1 ml-4">
-                            <MudLink Href="@GetMapRoute(map.WorldMapId)">
-                                @GetDisplayName(map.Name, "Untitled Map")
-                            </MudLink>
-                        </div>
-                    }
-                    <div class="mb-3"></div>
-                }
-                <MudDivider Class="my-4" />
-            }
-
-            @if (_arcScopedCampaignGroups.Any())
-            {
-                <MudText Typo="Typo.h6" Class="mb-2">Arc-scoped</MudText>
-                @foreach (var campaignGroup in _arcScopedCampaignGroups)
-                {
-                    <MudText Typo="Typo.subtitle1" Class="mb-1">
-                        @campaignGroup.CampaignName
-                    </MudText>
-                    @foreach (var arcGroup in campaignGroup.ArcGroups)
-                    {
-                        <MudText Typo="Typo.subtitle2" Class="mb-1 ml-4">
-                            @arcGroup.ArcName
-                        </MudText>
-                        @foreach (var map in arcGroup.Maps)
-                        {
-                            <div class="mb-1 ml-8">
+                        <div class="maps-list-row">
+                            <div class="maps-list-row__main">
+                                <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" Class="maps-list-row__icon" />
                                 <MudLink Href="@GetMapRoute(map.WorldMapId)">
                                     @GetDisplayName(map.Name, "Untitled Map")
                                 </MudLink>
                             </div>
-                        }
+                            <MudButton Variant="Variant.Text"
+                                       Color="Color.Error"
+                                       Size="Size.Small"
+                                       OnClick="@(() => OpenDeleteDialogAsync(map))"
+                                       Disabled="@IsDeleteInProgress(map.WorldMapId)"
+                                       StartIcon="@Icons.Material.Filled.Delete"
+                                       Class="maps-list-row__delete">
+                                @(IsDeleteInProgress(map.WorldMapId) ? "Deleting..." : "Delete")
+                            </MudButton>
+                        </div>
                     }
-                    <div class="mb-3"></div>
-                }
+                </MudPaper>
+            }
+
+            @if (_campaignScopedGroups.Any())
+            {
+                <MudPaper Outlined="true" Class="pa-4 mb-4 maps-scope-card">
+                    <MudText Typo="Typo.h6" Class="mb-2 maps-scope-title">
+                        <MudIcon Icon="@Icons.Material.Filled.AutoStories" Size="Size.Small" Class="mr-2" />
+                        Campaign-scoped
+                    </MudText>
+                    @foreach (var campaignGroup in _campaignScopedGroups)
+                    {
+                        <div class="maps-group-block">
+                            <MudText Typo="Typo.subtitle1" Class="mb-1 maps-group-heading">
+                                @campaignGroup.CampaignName
+                            </MudText>
+                            @foreach (var map in campaignGroup.Maps)
+                            {
+                                <div class="maps-list-row maps-list-row--nested">
+                                    <div class="maps-list-row__main">
+                                        <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" Class="maps-list-row__icon" />
+                                        <MudLink Href="@GetMapRoute(map.WorldMapId)">
+                                            @GetDisplayName(map.Name, "Untitled Map")
+                                        </MudLink>
+                                    </div>
+                                    <MudButton Variant="Variant.Text"
+                                               Color="Color.Error"
+                                               Size="Size.Small"
+                                               OnClick="@(() => OpenDeleteDialogAsync(map))"
+                                               Disabled="@IsDeleteInProgress(map.WorldMapId)"
+                                               StartIcon="@Icons.Material.Filled.Delete"
+                                               Class="maps-list-row__delete">
+                                        @(IsDeleteInProgress(map.WorldMapId) ? "Deleting..." : "Delete")
+                                    </MudButton>
+                                </div>
+                            }
+                        </div>
+                    }
+                </MudPaper>
+            }
+
+            @if (_arcScopedCampaignGroups.Any())
+            {
+                <MudPaper Outlined="true" Class="pa-4 maps-scope-card">
+                    <MudText Typo="Typo.h6" Class="mb-2 maps-scope-title">
+                        <MudIcon Icon="@Icons.Material.Filled.Bookmark" Size="Size.Small" Class="mr-2" />
+                        Arc-scoped
+                    </MudText>
+                    @foreach (var campaignGroup in _arcScopedCampaignGroups)
+                    {
+                        <div class="maps-group-block">
+                            <MudText Typo="Typo.subtitle1" Class="mb-1 maps-group-heading">
+                                @campaignGroup.CampaignName
+                            </MudText>
+                            @foreach (var arcGroup in campaignGroup.ArcGroups)
+                            {
+                                <MudText Typo="Typo.subtitle2" Class="mb-1 maps-arc-heading">
+                                    @arcGroup.ArcName
+                                </MudText>
+                                @foreach (var map in arcGroup.Maps)
+                                {
+                                    <div class="maps-list-row maps-list-row--deep">
+                                        <div class="maps-list-row__main">
+                                            <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" Class="maps-list-row__icon" />
+                                            <MudLink Href="@GetMapRoute(map.WorldMapId)">
+                                                @GetDisplayName(map.Name, "Untitled Map")
+                                            </MudLink>
+                                        </div>
+                                        <MudButton Variant="Variant.Text"
+                                                   Color="Color.Error"
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => OpenDeleteDialogAsync(map))"
+                                                   Disabled="@IsDeleteInProgress(map.WorldMapId)"
+                                                   StartIcon="@Icons.Material.Filled.Delete"
+                                                   Class="maps-list-row__delete">
+                                            @(IsDeleteInProgress(map.WorldMapId) ? "Deleting..." : "Delete")
+                                        </MudButton>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                </MudPaper>
             }
         }
     </MudPaper>
 }
 
 @code {
+    private static readonly DialogOptions _deleteDialogOptions = new()
+    {
+        CloseOnEscapeKey = true,
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+    };
+
     [Parameter]
     public Guid WorldId { get; set; }
 
     private bool _isLoading = true;
     private bool _hasLoadFailure;
     private string _worldName = "World";
+    private List<BreadcrumbItem> _breadcrumbs =
+    [
+        new("Dashboard", href: "/dashboard"),
+        new("World", href: null, disabled: true),
+        new("Maps", href: null, disabled: true)
+    ];
     private List<MapSummaryDto> _maps = [];
     private List<MapSummaryDto> _worldScopedMaps = [];
     private List<CampaignMapGroup> _campaignScopedGroups = [];
@@ -160,9 +250,13 @@ else
     private string _newMapName = string.Empty;
     private IBrowserFile? _selectedBasemapFile;
     private byte[]? _selectedBasemapBytes;
+    private bool _isBasemapDragOver;
     private bool _isCreatingMap;
+    private bool _isDropGuardEnabled;
+    private readonly HashSet<Guid> _mapsBeingDeleted = [];
     private string _createError = string.Empty;
     private string _createSuccess = string.Empty;
+    private string _mapsTitle => $"{_worldName} Maps";
 
     private const long MaxBasemapSizeBytes = 50 * 1024 * 1024;
     private static readonly HashSet<string> AllowedBasemapContentTypes = new(StringComparer.OrdinalIgnoreCase)
@@ -204,6 +298,24 @@ else
         await LoadAsync();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("chronicisMapsDropGuard.enable", ".maps-basemap-dropzone");
+            _isDropGuardEnabled = true;
+        }
+        catch (JSDisconnectedException)
+        {
+            // Navigation/disposal race; ignore.
+        }
+    }
+
     private async Task LoadAsync()
     {
         _isLoading = true;
@@ -212,6 +324,12 @@ else
         _worldScopedMaps = [];
         _campaignScopedGroups = [];
         _arcScopedCampaignGroups = [];
+        _breadcrumbs =
+        [
+            new("Dashboard", href: "/dashboard"),
+            new("World", href: null, disabled: true),
+            new("Maps", href: null, disabled: true)
+        ];
 
         try
         {
@@ -223,6 +341,15 @@ else
             }
 
             _worldName = GetDisplayName(world.Name, "World");
+            _breadcrumbs =
+            [
+                new("Dashboard", href: "/dashboard"),
+                new(_worldName, href: $"/world/{WorldId}"),
+                new("Maps", href: null, disabled: true)
+            ];
+
+            await SyncTreeSelectionAsync();
+
             _maps = await MapApi.ListMapsForWorldAsync(WorldId);
 
             var campaignLookup = world.Campaigns
@@ -247,6 +374,7 @@ else
 
     private async Task OnBasemapFileSelected(InputFileChangeEventArgs e)
     {
+        _isBasemapDragOver = false;
         _createError = string.Empty;
         _createSuccess = string.Empty;
         _selectedBasemapFile = e.File;
@@ -278,6 +406,168 @@ else
             _selectedBasemapBytes = null;
         }
     }
+
+    private void OnBasemapDragEnter(DragEventArgs e)
+    {
+        if (_isCreatingMap)
+        {
+            return;
+        }
+
+        _isBasemapDragOver = IsFileDragEvent(e);
+        if (_isBasemapDragOver && e.DataTransfer != null)
+        {
+            e.DataTransfer.DropEffect = "copy";
+            e.DataTransfer.EffectAllowed = "copy";
+        }
+    }
+
+    private void OnBasemapDragOver(DragEventArgs e)
+    {
+        if (_isCreatingMap)
+        {
+            return;
+        }
+
+        _isBasemapDragOver = IsFileDragEvent(e);
+        if (_isBasemapDragOver && e.DataTransfer != null)
+        {
+            e.DataTransfer.DropEffect = "copy";
+            e.DataTransfer.EffectAllowed = "copy";
+        }
+    }
+
+    private void OnBasemapDragLeave(DragEventArgs _)
+    {
+        _isBasemapDragOver = false;
+    }
+
+    private void OnBasemapDrop(DragEventArgs _)
+    {
+        _isBasemapDragOver = false;
+    }
+
+    private string GetBasemapDropZoneClass()
+    {
+        var classes = new List<string> { "maps-basemap-dropzone" };
+        if (_isBasemapDragOver)
+        {
+            classes.Add("maps-basemap-dropzone--dragover");
+            classes.Add("maps-basemap-dropzone--copy");
+        }
+
+        if (_isCreatingMap)
+        {
+            classes.Add("maps-basemap-dropzone--disabled");
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetBasemapInputStyle()
+        => $"position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:{(_isBasemapDragOver ? "copy" : "pointer")};z-index:2;";
+
+    private static bool IsFileDragEvent(DragEventArgs e)
+    {
+        var dataTransfer = e.DataTransfer;
+        if (dataTransfer == null)
+        {
+            return false;
+        }
+
+        if (dataTransfer.Files != null && dataTransfer.Files.Length > 0)
+        {
+            return true;
+        }
+
+        if (dataTransfer.Types == null)
+        {
+            return false;
+        }
+
+        foreach (var dataType in dataTransfer.Types)
+        {
+            if (string.Equals(dataType, "Files", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!_isDropGuardEnabled)
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("chronicisMapsDropGuard.disable");
+        }
+        catch (JSDisconnectedException)
+        {
+            // Browser disconnected; nothing to clean up.
+        }
+    }
+
+    private async Task OpenDeleteDialogAsync(MapSummaryDto map)
+    {
+        var mapName = GetDisplayName(map.Name, "Untitled Map");
+
+        if (IsDeleteInProgress(map.WorldMapId))
+        {
+            return;
+        }
+
+        var parameters = new DialogParameters<DeleteMapDialog>
+        {
+            { x => x.MapName, mapName }
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteMapDialog>(
+            $"Delete \"{mapName}\"",
+            parameters,
+            _deleteDialogOptions);
+
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            await DeleteMapAsync(map.WorldMapId, mapName);
+        }
+    }
+
+    private async Task DeleteMapAsync(Guid mapId, string mapName)
+    {
+        _createError = string.Empty;
+        _createSuccess = string.Empty;
+        _mapsBeingDeleted.Add(mapId);
+
+        try
+        {
+            var deleted = await MapApi.DeleteMapAsync(WorldId, mapId);
+            if (!deleted)
+            {
+                _createError = $"Failed to delete map '{mapName}'.";
+                return;
+            }
+
+            _createSuccess = $"Map '{mapName}' deleted permanently.";
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _createError = $"Failed to delete map '{mapName}': {ex.Message}";
+        }
+        finally
+        {
+            _mapsBeingDeleted.Remove(mapId);
+        }
+    }
+
+    private bool IsDeleteInProgress(Guid mapId) => _mapsBeingDeleted.Contains(mapId);
 
     private async Task CreateMapWithBasemapAsync()
     {
@@ -523,4 +813,32 @@ else
 
     private static string GetDisplayName(string? value, string fallback)
         => string.IsNullOrWhiteSpace(value) ? fallback : value;
+
+    private async Task SyncTreeSelectionAsync()
+    {
+        try
+        {
+            if (!TreeState.RootNodes.Any() && !TreeState.IsLoading)
+            {
+                await TreeState.InitializeAsync();
+            }
+
+            var worldNode = TreeState.RootNodes.FirstOrDefault(n =>
+                n.NodeType == TreeNodeType.World &&
+                n.Id == WorldId);
+
+            var mapsGroupNode = worldNode?.Children.FirstOrDefault(n =>
+                n.NodeType == TreeNodeType.VirtualGroup &&
+                n.VirtualGroupType == VirtualGroupType.Maps);
+
+            if (mapsGroupNode != null)
+            {
+                TreeState.ExpandPathToAndSelect(mapsGroupNode.Id);
+            }
+        }
+        catch
+        {
+            // Tree sync failures should not block page rendering.
+        }
+    }
 }

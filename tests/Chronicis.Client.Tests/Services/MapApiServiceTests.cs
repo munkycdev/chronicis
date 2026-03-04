@@ -1,5 +1,6 @@
 using System.Net;
 using Chronicis.Client.Services;
+using Chronicis.Shared.DTOs.Maps;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -145,5 +146,51 @@ public class MapApiServiceTests
         Assert.Null(result.Map);
         Assert.Null(result.StatusCode);
         Assert.Equal("network", result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateMapAsync_UsesExpectedRoute()
+    {
+        var calls = new List<string>();
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            calls.Add($"{req.Method} {req.RequestUri!.PathAndQuery.TrimStart('/')}");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    $$"""{"worldMapId":"{{mapId}}","worldId":"{{worldId}}","name":"Renamed","hasBasemap":true}""")
+            });
+        });
+
+        var sut = CreateSut(handler);
+        var result = await sut.UpdateMapAsync(worldId, mapId, new MapUpdateDto { Name = "Renamed" });
+
+        Assert.NotNull(result);
+        Assert.Equal("Renamed", result!.Name);
+        Assert.Contains(calls, c => c == $"PUT world/{worldId}/maps/{mapId}");
+    }
+
+    [Fact]
+    public async Task DeleteMapAsync_UsesExpectedRoute()
+    {
+        var calls = new List<string>();
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            calls.Add($"{req.Method} {req.RequestUri!.PathAndQuery.TrimStart('/')}");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+        });
+
+        var sut = CreateSut(handler);
+
+        var result = await sut.DeleteMapAsync(worldId, mapId);
+
+        Assert.True(result);
+        Assert.Contains(calls, c => c == $"DELETE world/{worldId}/maps/{mapId}");
     }
 }

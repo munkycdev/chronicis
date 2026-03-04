@@ -158,6 +158,26 @@ public class TreeUiStateTests
     }
 
     [Fact]
+    public void SelectNode_OnMap_ShouldSelectMapNode()
+    {
+        var nodeIndex = new TreeNodeIndex();
+        var mapNode = new TreeNode
+        {
+            Id = Guid.NewGuid(),
+            NodeType = TreeNodeType.Map,
+            Title = "Ambria",
+            IsVisible = true
+        };
+        nodeIndex.AddNode(mapNode);
+        _uiState.SetNodeIndex(nodeIndex);
+
+        _uiState.SelectNode(mapNode.Id);
+
+        Assert.True(mapNode.IsSelected);
+        Assert.Equal(mapNode.Id, _uiState.SelectedNodeId);
+    }
+
+    [Fact]
     public void SelectNode_OnVirtualGroup_ShouldToggleExpandInsteadOfSelect()
     {
         // Arrange
@@ -172,6 +192,20 @@ public class TreeUiStateTests
         // Assert
         Assert.Null(_uiState.SelectedNodeId); // Virtual groups don't get selected
         Assert.True(virtualGroup.IsExpanded); // They toggle expansion instead
+    }
+
+    [Fact]
+    public void SelectNode_OnMapsVirtualGroup_ShouldSelectNode()
+    {
+        var nodeIndex = new TreeNodeIndex();
+        var mapsGroup = CreateVirtualGroupNode(VirtualGroupType.Maps, "Maps");
+        nodeIndex.AddNode(mapsGroup);
+        _uiState.SetNodeIndex(nodeIndex);
+
+        _uiState.SelectNode(mapsGroup.Id);
+
+        Assert.Equal(mapsGroup.Id, _uiState.SelectedNodeId);
+        Assert.True(mapsGroup.IsSelected);
     }
 
     [Fact]

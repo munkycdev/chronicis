@@ -1,0 +1,19 @@
+.map-page__image-shell {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 14%, transparent 86%);
+    background: color-mix(in srgb, var(--mud-palette-surface) 86%, black 14%);
+}
+
+.map-page__image {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    max-inline-size: 100%;
+    max-block-size: 100%;
+    height: auto;
+    object-fit: contain;
+}

@@ -1,6 +1,6 @@
 # Chronicis Architecture Inventory
 
-Last reviewed: 2026-03-02
+Last reviewed: 2026-03-03
 
 ## 1) Scope
 - Projects covered:
@@ -18,7 +18,7 @@ Last reviewed: 2026-03-02
 - Browser-hosted Blazor WebAssembly app (`Chronicis.Client`) serves UI and user interaction workflows.
 - ASP.NET Core API (`Chronicis.Api`) provides authenticated and public endpoints.
 - SQL Server (via EF Core) stores application state and relational graph.
-- Azure Blob Storage stores world documents and inline article images.
+- Azure Blob Storage stores world documents, inline article images, and map basemap files.
 - Azure OpenAI provides summary generation.
 - External content providers (Open5e + blob-backed SRD/ROS datasets) provide third-party reference content.
 
@@ -73,6 +73,8 @@ Chronicis.Shared  ---->  (no project references)
 - `SummaryService` with article/campaign/arc/session summary pipelines.
 - File/export module:
 - `BlobStorageService`, `WorldDocumentService`, `ExportService` (+ markdown builder partials).
+- Maps module:
+- `WorldMapService` + `IMapBlobStore`/`AzureBlobMapBlobStore` handle map metadata, basemap SAS flows, and destructive map-folder cleanup.
 - Public read model module:
 - `PublicWorldService` for anonymous world/article/document access projections.
 - Admin/tutorial module:
@@ -121,6 +123,7 @@ Chronicis.Shared  ---->  (no project references)
 - World collaboration entities (`WorldMember`, `WorldInvitation`) are world-scoped.
 - Link graph entities (`ArticleLink`, `ArticleExternalLink`, `ArticleAlias`) attach to articles.
 - Document entities (`WorldDocument`) are world-scoped with optional article association.
+- Map entities (`WorldMap`, `MapLayer`, `WorldMapCampaign`, `WorldMapArc`) are world-scoped with optional campaign/arc scoping pivots.
 - Quest entities are arc-scoped with quest-update timeline entities and optional session reference.
 - Constraint architecture:
 - Unique indexes for identity/business constraints (e.g., owner+slug, public slug, invitation code, sibling slug uniqueness).
@@ -207,6 +210,9 @@ Chronicis.Shared  ---->  (no project references)
 - `TreeNodeIndex` (indexed graph storage)
 - `TreeUiState` (selection/expansion/search/persistence)
 - `TreeMutations` (create/move/delete/update + refresh callback orchestration)
+- Tree map integration:
+- `TreeDataBuilder` hydrates a virtual `Maps` group plus map nodes per world using `IMapApiService`.
+- Tree selection/expansion supports map routes and map-node display updates after rename.
 - Drawer coordination:
 - `DrawerCoordinator` enforces mutually-exclusive right-side drawers with forced-open support.
 - Quest/metadata/tutorial drawers wrap coordinator APIs with focused behaviors/events.
@@ -234,6 +240,7 @@ Chronicis.Shared  ---->  (no project references)
 - `wikiLinkAutocomplete.js`
 - `wikiLinkExtension.js`
 - `imageUpload.js`
+- `mapsDropGuard.js`
 - Navigation/interaction interop modules:
 - `keyboardShortcuts.js`
 - `publicWikiLinks.js`
@@ -265,6 +272,7 @@ Chronicis.Shared  ---->  (no project references)
 - User/world/collaboration: `User`, `World`, `WorldMember`, `WorldInvitation`
 - Narrative hierarchy: `Campaign`, `Arc`, `Session`, `Article`
 - Linking/resource entities: `ArticleLink`, `ArticleAlias`, `ArticleExternalLink`, `WorldLink`, `WorldDocument`
+- Map entities: `WorldMap`, `MapLayer`, `WorldMapCampaign`, `WorldMapArc`
 - Questing: `Quest`, `QuestUpdate`
 - Configuration/content templates: `SummaryTemplate`, `TutorialPage`, `ResourceProvider`, `WorldResourceProvider`
 
@@ -308,6 +316,7 @@ Chronicis.Shared  ---->  (no project references)
 ### 6.4 Artifact Storage
 - `WorldDocument` records map metadata/state for blob-backed files.
 - Optional `ArticleId` supports inline content image association.
+- `WorldMap` stores basemap metadata (`BasemapBlobKey`, content type, original filename) for blob-backed map imagery.
 
 ### 6.5 Progress Tracking
 - Quests are arc-scoped.

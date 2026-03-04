@@ -100,6 +100,26 @@ public class AzureBlobMapBlobStore : IMapBlobStore
         return Task.FromResult(sasUrl);
     }
 
+    /// <inheritdoc/>
+    public async Task DeleteMapFolderAsync(Guid mapId)
+    {
+        var prefix = $"maps/{mapId}/";
+        var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
+        var deletedCount = 0;
+
+        await foreach (var blobItem in containerClient.GetBlobsAsync(prefix: prefix))
+        {
+            var blobClient = containerClient.GetBlobClient(blobItem.Name);
+            await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots);
+            deletedCount++;
+        }
+
+        _logger.LogTraceSanitized(
+            "Deleted {DeletedCount} blob(s) for map folder prefix {Prefix}",
+            deletedCount,
+            prefix);
+    }
+
     private static string SanitizeFileName(string fileName)
     {
         var invalidChars = Path.GetInvalidFileNameChars();

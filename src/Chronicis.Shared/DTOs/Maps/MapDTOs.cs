@@ -16,6 +16,18 @@ public class MapCreateDto
 }
 
 /// <summary>
+/// Request DTO for updating a WorldMap.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class MapUpdateDto
+{
+    /// <summary>
+    /// Updated display name for the map.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// Full metadata DTO for a WorldMap.
 /// </summary>
 [ExcludeFromCodeCoverage]

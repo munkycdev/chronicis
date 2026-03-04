@@ -1,0 +1,120 @@
+.maps-detail__header .mud-icon-root {
+    color: var(--chronicis-beige-gold);
+}
+
+.maps-create-card {
+    background: color-mix(in srgb, var(--mud-palette-surface) 88%, var(--chronicis-beige-gold) 12%);
+}
+
+.maps-basemap-dropzone {
+    position: relative;
+    border: 1.5px dashed color-mix(in srgb, var(--mud-palette-text-primary) 30%, transparent 70%);
+    border-radius: 10px;
+    min-height: 132px;
+    background: color-mix(in srgb, var(--mud-palette-surface) 92%, var(--mud-palette-primary) 8%);
+    transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.maps-basemap-dropzone:hover {
+    border-color: color-mix(in srgb, var(--mud-palette-primary) 58%, transparent 42%);
+}
+
+.maps-basemap-dropzone--dragover {
+    border-color: var(--mud-palette-primary);
+    background: color-mix(in srgb, var(--mud-palette-surface) 84%, var(--mud-palette-primary) 16%);
+}
+
+.maps-basemap-dropzone--copy,
+.maps-basemap-dropzone--copy .maps-basemap-dropzone__label {
+    cursor: copy;
+}
+
+.maps-basemap-dropzone--disabled {
+    opacity: 0.72;
+}
+
+.maps-basemap-dropzone ::deep .maps-basemap-dropzone__input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.maps-basemap-dropzone__label {
+    height: 100%;
+    min-height: 132px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+}
+
+.maps-basemap-dropzone__title {
+    font-weight: 600;
+}
+
+.maps-scope-card {
+    border-color: color-mix(in srgb, var(--mud-palette-text-primary) 18%, transparent 82%);
+}
+
+.maps-scope-title {
+    color: var(--chronicis-beige-gold);
+}
+
+.maps-group-block {
+    margin-bottom: 0.9rem;
+}
+
+.maps-group-block:last-child {
+    margin-bottom: 0;
+}
+
+.maps-group-heading {
+    font-weight: 600;
+}
+
+.maps-arc-heading {
+    margin-left: 1.25rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+.maps-list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.42rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 9%, transparent 91%);
+}
+
+.maps-list-row:last-child {
+    border-bottom: none;
+}
+
+.maps-list-row__main {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.maps-list-row__icon {
+    color: color-mix(in srgb, var(--mud-palette-primary) 70%, var(--mud-palette-text-primary) 30%);
+}
+
+.maps-list-row__delete {
+    flex-shrink: 0;
+}
+
+.maps-list-row--nested {
+    margin-left: 1.25rem;
+}
+
+.maps-list-row--deep {
+    margin-left: 2.5rem;
+}

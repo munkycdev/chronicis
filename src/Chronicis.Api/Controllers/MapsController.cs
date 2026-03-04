@@ -74,6 +74,38 @@ public class MapsController : ControllerBase
     }
 
     /// <summary>
+    /// PUT /world/{worldId}/maps/{mapId} — Update map metadata.
+    /// </summary>
+    [HttpPut("{mapId:guid}")]
+    public async Task<ActionResult<MapDto>> UpdateMap(Guid worldId, Guid mapId, [FromBody] MapUpdateDto dto)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (dto == null || string.IsNullOrWhiteSpace(dto.Name))
+        {
+            return BadRequest(new { error = "Name is required" });
+        }
+
+        _logger.LogTraceSanitized("User {UserId} updating map {MapId}", user.Id, mapId);
+
+        try
+        {
+            var updated = await _worldMapService.UpdateMapAsync(worldId, mapId, user.Id, dto);
+            return Ok(updated);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized map update");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Map update target not found");
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// GET /world/{worldId}/maps — List all maps for a world, sorted by name.
     /// </summary>
     [HttpGet]
@@ -91,6 +123,32 @@ public class MapsController : ControllerBase
         {
             _logger.LogWarningSanitized(ex, "Unauthorized map list");
             return StatusCode(403, new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// DELETE /world/{worldId}/maps/{mapId} — Permanently delete map metadata and all map blobs.
+    /// </summary>
+    [HttpDelete("{mapId:guid}")]
+    public async Task<IActionResult> DeleteMap(Guid worldId, Guid mapId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+        _logger.LogTraceSanitized("User {UserId} deleting map {MapId}", user.Id, mapId);
+
+        try
+        {
+            await _worldMapService.DeleteMapAsync(worldId, mapId, user.Id);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized map delete");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Map delete target not found");
+            return NotFound(new { error = ex.Message });
         }
     }
 

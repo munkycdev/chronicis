@@ -105,6 +105,26 @@ Maps are NOT WorldDocuments.
 
 ---
 
+## API Surface (Implemented)
+
+* `POST /world/{worldId}/maps`
+  * Create map metadata + default layers.
+* `GET /world/{worldId}/maps`
+  * List maps for world (grouping metadata driven by join rows).
+* `GET /world/{worldId}/maps/{mapId}`
+  * Get single map metadata.
+* `PUT /world/{worldId}/maps/{mapId}`
+  * Update map metadata (currently name).
+  * Owner-only.
+* `DELETE /world/{worldId}/maps/{mapId}`
+  * Permanently deletes map metadata and all blobs under the map folder.
+  * Owner-only.
+* `POST /world/{worldId}/maps/{mapId}/request-basemap-upload`
+* `POST /world/{worldId}/maps/{mapId}/confirm-basemap-upload`
+* `GET /world/{worldId}/maps/{mapId}/basemap-read-url`
+
+---
+
 ## Map Discovery Rules
 
 Maps Detail shows all maps in the world.
@@ -115,6 +135,32 @@ Grouping logic:
 * Arc rows = arc-scoped
 
 Sorted by Name ascending.
+
+---
+
+## Tree Integration (Implemented)
+
+* The world tree includes a `Maps` virtual group under each world.
+* The `Maps` group navigates to `/world/{worldId}/maps`.
+* Map nodes navigate to `/world/{worldId}/maps/{mapId}`.
+* `Maps` virtual group does not expose tree-based create actions.
+* On Maps Detail load:
+  * world + Maps group path is expanded
+  * Maps group is selected
+* On Map Page load:
+  * world + Maps group path is expanded
+  * current map node is selected
+* On map rename save:
+  * tree node display title is updated in-memory immediately.
+
+---
+
+## Client Upload UX (Implemented)
+
+* Basemap upload uses `InputFile` with drop-zone styling.
+* Drag/drop is supported in the upload zone.
+* A JS drop guard prevents default browser file-open behavior when dragging files over maps upload UI.
+* Cursor and visual state switch to copy-mode when file drag is active over the drop zone.
 
 ---
 
@@ -132,6 +178,7 @@ When creating a pin:
 
 All endpoints must enforce world membership.
 Blob access must use short-lived SAS URLs.
+Map rename and delete require world owner authorization.
 
 ---
 

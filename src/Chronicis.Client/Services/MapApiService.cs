@@ -43,6 +43,15 @@ public class MapApiService : IMapApiService
             $"map {mapId}");
     }
 
+    public async Task<MapDto?> UpdateMapAsync(Guid worldId, Guid mapId, MapUpdateDto dto)
+    {
+        return await _http.PutEntityAsync<MapDto>(
+            $"world/{worldId}/maps/{mapId}",
+            dto,
+            _logger,
+            $"map {mapId}");
+    }
+
     public async Task<RequestBasemapUploadResponseDto?> RequestBasemapUploadAsync(
         Guid worldId,
         Guid mapId,
@@ -83,6 +92,14 @@ public class MapApiService : IMapApiService
         return await GetEntityWithStatusAsync<GetBasemapReadUrlResponseDto>(
             $"world/{worldId}/maps/{mapId}/basemap",
             $"basemap read URL for map {mapId}");
+    }
+
+    public async Task<bool> DeleteMapAsync(Guid worldId, Guid mapId)
+    {
+        return await _http.DeleteEntityAsync(
+            $"world/{worldId}/maps/{mapId}",
+            _logger,
+            $"map {mapId}");
     }
 
     private async Task<(T? Entity, int? StatusCode, string? Error)> GetEntityWithStatusAsync<T>(

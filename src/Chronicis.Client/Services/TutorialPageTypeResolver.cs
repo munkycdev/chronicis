@@ -71,6 +71,11 @@ public class TutorialPageTypeResolver
             return "Default";
         }
 
+        if (TryResolveMapsPageName(segments, out var mapsPageName))
+        {
+            return mapsPageName;
+        }
+
         if (segments[0].Equals("admin", StringComparison.OrdinalIgnoreCase))
         {
             if (segments.Length >= 2 && RoutePageNames.TryGetValue($"{segments[0]}/{segments[1]}", out var adminPageName))
@@ -89,6 +94,29 @@ public class TutorialPageTypeResolver
         }
 
         return ToPascalCase(segments[0]);
+    }
+
+    private static bool TryResolveMapsPageName(string[] segments, out string pageName)
+    {
+        pageName = string.Empty;
+
+        if (segments.Length < 3)
+        {
+            return false;
+        }
+
+        if (!segments[0].Equals("world", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!segments[2].Equals("maps", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        pageName = segments.Length == 3 ? "MapListing" : "MapPage";
+        return true;
     }
 
     private static bool TryGetPathSegments(string uri, out string[] segments)

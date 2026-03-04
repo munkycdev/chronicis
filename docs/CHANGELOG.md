@@ -4,7 +4,50 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [3.0.0] - 2026-02-26
+## [3.0.0] - 2026-03-03
+
+### Maps and Basemap Image Workflow
+
+**Added:**
+- World-level Maps feature with dedicated routes:
+  - `/world/{worldId}/maps` (Maps Detail)
+  - `/world/{worldId}/maps/{mapId}` (Map Page)
+- Maps virtual group in the world tree; clicking **Maps** opens Maps Detail instead of creating an uncategorized wiki article.
+- Map creation flow with required map name plus basemap image upload.
+- Basemap upload supports file picker and drag/drop in the Maps Detail create panel.
+- Browser drag/drop guard to prevent dropped image files from opening in a new tab outside the drop zone.
+- Map page header with inline map-name editing and explicit save controls (session-style save pattern).
+- Breadcrumbs on both maps pages:
+  - `Dashboard / {world name} / Maps`
+  - `Dashboard / {world name} / Maps / {map name}`
+- World-owner delete workflow with typed-name confirmation, matching Session Detail destructive-delete safety pattern.
+
+**Changed:**
+- Map page basemap rendering is constrained to its content container to prevent horizontal overflow blowout.
+- Tree behavior now expands/selects Maps and active map nodes when navigating maps routes.
+- Map rename updates map node label in the tree immediately.
+
+**Removed:**
+- "Add Item" action from the Maps virtual group.
+
+**API Endpoints:**
+- `POST /world/{worldId}/maps`
+- `GET /world/{worldId}/maps`
+- `GET /world/{worldId}/maps/{mapId}`
+- `PUT /world/{worldId}/maps/{mapId}`
+- `DELETE /world/{worldId}/maps/{mapId}`
+- `POST /world/{worldId}/maps/{mapId}/request-basemap-upload`
+- `POST /world/{worldId}/maps/{mapId}/confirm-basemap-upload`
+- `GET /world/{worldId}/maps/{mapId}/basemap`
+
+**Storage and Data:**
+- New maps tables for map metadata, layer defaults, and campaign/arc scoping pivots.
+- Basemap binaries stored in blob storage under map-scoped folders.
+- Delete map permanently removes metadata records and the full map blob folder (no restoration path).
+
+---
+
+## [2.12.0] - 2026-02-26
 
 ### Collaborative Sessions, Tutorial World, Contextual Onboarding & GM Private Notes
 

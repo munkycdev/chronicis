@@ -1,6 +1,6 @@
 # Chronicis Feature Inventory
 
-Last reviewed: 2026-03-02
+Last reviewed: 2026-03-03
 
 Scope:
 - Included: `src/Chronicis.Api`, `src/Chronicis.Client`
@@ -183,5 +183,18 @@ Scope:
 - Licenses page.
 - Change log page.
 
-## 17) Explicitly Out of Scope
+## 17) Maps and Spatial Navigation
+- Maps virtual group in world navigation with route-driven selection behavior.
+- Maps detail page at `/world/{worldId}/maps` with grouped listing by world, campaign, and arc scope.
+- Map creation workflow with required map name and basemap image upload.
+- Basemap upload via file picker and drag/drop target in the create flow.
+- Drag/drop guard to prevent browser "open in new tab" behavior during map image uploads.
+- Dedicated map page at `/world/{worldId}/maps/{mapId}` with constrained basemap rendering.
+- Editable map-name header on map page with dirty tracking, save status indicator, and explicit save action.
+- Breadcrumbs for maps detail (`Dashboard / {world} / Maps`) and map page (`Dashboard / {world} / Maps / {map}`).
+- World-owner destructive map delete flow with typed-name confirmation.
+- Map delete removes map metadata and map blob folder (no restore path).
+- Navigation tree sync for maps routes (expanded Maps group, selected map node, live label update after rename).
+
+## 18) Explicitly Out of Scope
 - `src/Chronicis.CaptureApp` features are intentionally excluded from this inventory.

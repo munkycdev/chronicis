@@ -117,7 +117,7 @@
     }
     
     @* Empty state for virtual groups *@
-    @if (Node.NodeType == TreeNodeType.VirtualGroup && Node.IsExpanded && Node.Children.Count == 0)
+    @if (Node.NodeType == TreeNodeType.VirtualGroup && Node.IsExpanded && Node.Children.Count == 0 && Node.CanAddChildren)
     {
         <div class="tree-node__children">
             <div class="tree-node__empty-group">
@@ -316,8 +316,15 @@
                 break;
 
             case TreeNodeType.VirtualGroup:
-                // Just toggle expand for virtual groups
-                await OnToggle.InvokeAsync(Node.Id);
+                if (Node.VirtualGroupType == VirtualGroupType.Maps && Node.WorldId.HasValue)
+                {
+                    Navigation.NavigateTo($"/world/{Node.WorldId.Value}/maps");
+                }
+                else
+                {
+                    // Just toggle expand for virtual groups
+                    await OnToggle.InvokeAsync(Node.Id);
+                }
                 break;
         }
     }

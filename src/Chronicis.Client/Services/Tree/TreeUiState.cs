@@ -164,12 +164,17 @@ internal sealed class TreeUiState
 
         if (_nodeIndex.TryGetNode(nodeId, out var node) && node != null)
         {
-            // Selectable node types: Article, World, Campaign, Arc, Session
+            var isMapsVirtualGroup = node.NodeType == TreeNodeType.VirtualGroup &&
+                                     node.VirtualGroupType == VirtualGroupType.Maps;
+
+            // Selectable node types: Article, World, Campaign, Arc, Session, Map, Maps virtual group
             if (node.NodeType == TreeNodeType.Article ||
                 node.NodeType == TreeNodeType.World ||
                 node.NodeType == TreeNodeType.Campaign ||
                 node.NodeType == TreeNodeType.Arc ||
-                node.NodeType == TreeNodeType.Session)
+                node.NodeType == TreeNodeType.Session ||
+                node.NodeType == TreeNodeType.Map ||
+                isMapsVirtualGroup)
             {
                 node.IsSelected = true;
                 _selectedNodeId = nodeId;

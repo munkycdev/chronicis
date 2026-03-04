@@ -7,6 +7,10 @@
 * Do not introduce layer UI in MVP 0 or MVP 1.
 * Do not implement non-point geometry.
 * Do not reuse WorldDocument services.
+* Keep Maps tree behavior aligned with current UX contract:
+  * Maps group navigates to Maps Detail.
+  * Maps group does not show "Add Item".
+  * Maps and Map nodes must remain selectable for tree state sync.
 
 ---
 
@@ -23,7 +27,9 @@ API (flat layered layout — no Features/ folder exists):
 Client:
 
 * Pages/Maps/*
-* Services/Maps/*
+* Services/IMapApiService.cs
+* Services/MapApiService.cs
+* wwwroot/js/mapsDropGuard.js
 
 Shared:
 
@@ -43,6 +49,11 @@ Shared:
   * Map grouping rules
   * Pin layer selection rule
   * Authorization enforcement
+  * Map rename endpoint/service behavior
+  * Map delete endpoint/service behavior
+  * Tree sync behavior on map routes
+  * Tree label updates on map rename
+  * Drag/drop upload helper behavior and guard interactions
 
 All tests must pass `./scripts/verify.ps1`.
 
@@ -60,6 +71,7 @@ All tests must pass `./scripts/verify.ps1`.
 * No tree system rewrites.
 * No new global abstractions unless required.
 * No breaking changes to existing routes.
+* No restore/undo semantics for map delete (delete remains permanent by contract).
 
 ---
 
@@ -68,3 +80,7 @@ All tests must pass `./scripts/verify.ps1`.
 * Builds clean.
 * Tests pass.
 * Manual test checklist in phase doc is satisfied.
+* Maps route UX verified:
+  * `/world/{worldId}/maps` expands/selects Maps in tree.
+  * `/world/{worldId}/maps/{mapId}` expands/selects active map.
+  * Renaming a map updates nav tree title without full refresh.

@@ -28,4 +28,10 @@ public interface IMapBlobStore
     /// <param name="blobKey">The blob key to generate a read URL for.</param>
     /// <returns>SAS URL valid for 15 minutes with read-only permissions.</returns>
     Task<string> GenerateReadSasUrlAsync(string blobKey);
+
+    /// <summary>
+    /// Deletes all blobs under the map folder prefix (maps/{mapId}/...).
+    /// </summary>
+    /// <param name="mapId">The map ID whose blob folder should be deleted.</param>
+    Task DeleteMapFolderAsync(Guid mapId);
 }
