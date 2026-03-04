@@ -34,6 +34,7 @@ public class ChronicisDbContext : DbContext
     // ===== Maps =====
     public DbSet<WorldMap> WorldMaps { get; set; } = null!;
     public DbSet<MapLayer> MapLayers { get; set; } = null!;
+    public DbSet<MapFeature> MapFeatures { get; set; } = null!;
     public DbSet<WorldMapCampaign> WorldMapCampaigns { get; set; } = null!;
     public DbSet<WorldMapArc> WorldMapArcs { get; set; } = null!;
 
@@ -66,6 +67,7 @@ public class ChronicisDbContext : DbContext
         ConfigureSession(modelBuilder);
         ConfigureWorldMap(modelBuilder);
         ConfigureMapLayer(modelBuilder);
+        ConfigureMapFeature(modelBuilder);
         ConfigureWorldMapCampaign(modelBuilder);
         ConfigureWorldMapArc(modelBuilder);
     }
@@ -971,6 +973,42 @@ public class ChronicisDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(ml => ml.WorldMapId);
+        });
+    }
+
+    private static void ConfigureMapFeature(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<MapFeature>(entity =>
+        {
+            entity.HasKey(mf => mf.MapFeatureId);
+
+            // MapFeature -> WorldMap
+            entity.HasOne<WorldMap>()
+                .WithMany()
+                .HasForeignKey(mf => mf.WorldMapId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // MapFeature -> MapLayer
+            entity.HasOne<MapLayer>()
+                .WithMany()
+                .HasForeignKey(mf => mf.MapLayerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // MapFeature -> Article (optional)
+            entity.HasOne<Article>()
+                .WithMany()
+                .HasForeignKey(mf => mf.LinkedArticleId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            var linkedArticleProperty = entity.Property(mf => mf.LinkedArticleId).Metadata;
+            var linkedArticleIndex = entity.Metadata.FindIndex(linkedArticleProperty);
+            if (linkedArticleIndex is not null)
+            {
+                entity.Metadata.RemoveIndex(linkedArticleIndex);
+            }
+
+            entity.HasIndex(mf => mf.WorldMapId);
+            entity.HasIndex(mf => mf.MapLayerId);
         });
     }
 
