@@ -168,6 +168,202 @@ public class MapsControllerCoverageSmokeTests
         Assert.IsType<OkObjectResult>(result.Result);
     }
 
+    // ── Pins ──────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreatePin_NullDto_ReturnsBadRequest()
+    {
+        var result = await CreateSut().CreatePin(Guid.NewGuid(), Guid.NewGuid(), null!);
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreatePin_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreatePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinCreateDto>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service)
+            .CreatePin(Guid.NewGuid(), Guid.NewGuid(), new MapPinCreateDto { X = 0.2f, Y = 0.3f });
+
+        var status = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreatePin_InvalidInput_ReturnsBadRequest()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreatePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinCreateDto>())
+            .ThrowsAsync(new ArgumentException("invalid"));
+
+        var result = await CreateSut(service)
+            .CreatePin(Guid.NewGuid(), Guid.NewGuid(), new MapPinCreateDto { X = -1f, Y = 0.3f });
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreatePin_MapNotFound_Returns404()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreatePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinCreateDto>())
+            .ThrowsAsync(new InvalidOperationException("Map not found"));
+
+        var result = await CreateSut(service)
+            .CreatePin(Guid.NewGuid(), Guid.NewGuid(), new MapPinCreateDto { X = 0.2f, Y = 0.3f });
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreatePin_Success_ReturnsOk()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreatePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinCreateDto>())
+            .Returns(new MapPinResponseDto { PinId = Guid.NewGuid() });
+
+        var result = await CreateSut(service)
+            .CreatePin(Guid.NewGuid(), Guid.NewGuid(), new MapPinCreateDto { X = 0.2f, Y = 0.3f });
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task ListPins_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ListPinsForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).ListPins(Guid.NewGuid(), Guid.NewGuid());
+
+        var status = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListPins_NotFound_Returns404()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ListPinsForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new InvalidOperationException("Map not found"));
+
+        var result = await CreateSut(service).ListPins(Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task ListPins_Success_ReturnsOk()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ListPinsForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(new List<MapPinResponseDto>());
+
+        var result = await CreateSut(service).ListPins(Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdatePinPosition_NullDto_ReturnsBadRequest()
+    {
+        var result = await CreateSut().UpdatePinPosition(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null!);
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdatePinPosition_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdatePinPositionAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinPositionUpdateDto>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service)
+            .UpdatePinPosition(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new MapPinPositionUpdateDto { X = 0.1f, Y = 0.2f });
+
+        var status = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdatePinPosition_InvalidInput_ReturnsBadRequest()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdatePinPositionAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinPositionUpdateDto>())
+            .ThrowsAsync(new ArgumentException("invalid"));
+
+        var result = await CreateSut(service)
+            .UpdatePinPosition(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new MapPinPositionUpdateDto { X = 2f, Y = 0.2f });
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdatePinPosition_NotFound_Returns404()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdatePinPositionAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinPositionUpdateDto>())
+            .ThrowsAsync(new InvalidOperationException("Pin not found"));
+
+        var result = await CreateSut(service)
+            .UpdatePinPosition(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new MapPinPositionUpdateDto { X = 0.1f, Y = 0.2f });
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdatePinPosition_Success_ReturnsOk()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdatePinPositionAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinPositionUpdateDto>())
+            .Returns(new MapPinResponseDto { PinId = Guid.NewGuid(), X = 0.7f, Y = 0.8f });
+
+        var result = await CreateSut(service)
+            .UpdatePinPosition(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new MapPinPositionUpdateDto { X = 0.7f, Y = 0.8f });
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task DeletePin_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.DeletePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).DeletePin(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        var status = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeletePin_NotFound_Returns404()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.DeletePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new InvalidOperationException("Pin not found"));
+
+        var result = await CreateSut(service).DeletePin(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task DeletePin_Success_ReturnsNoContent()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.DeletePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateSut(service).DeletePin(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<NoContentResult>(result);
+    }
+
     // ── DeleteMap ─────────────────────────────────────────────────────────────
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs.Maps;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -171,6 +172,115 @@ public class MapApiServiceTests
         Assert.NotNull(result);
         Assert.Equal("Renamed", result!.Name);
         Assert.Contains(calls, c => c == $"PUT world/{worldId}/maps/{mapId}");
+    }
+
+    [Fact]
+    public async Task CreatePinAsync_UsesExpectedRouteAndBody()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var request = new MapPinCreateDto
+        {
+            X = 0.25f,
+            Y = 0.75f,
+            LinkedArticleId = Guid.NewGuid(),
+        };
+
+        var handler = new TestHttpMessageHandler(async (req, cancellationToken) =>
+        {
+            Assert.Equal(HttpMethod.Post, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/pins", req.RequestUri!.PathAndQuery.TrimStart('/'));
+
+            var body = await req.Content!.ReadAsStringAsync(cancellationToken);
+            using var json = JsonDocument.Parse(body);
+            Assert.Equal(request.X, (float)json.RootElement.GetProperty("x").GetDouble());
+            Assert.Equal(request.Y, (float)json.RootElement.GetProperty("y").GetDouble());
+            Assert.Equal(request.LinkedArticleId, json.RootElement.GetProperty("linkedArticleId").GetGuid());
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"pinId":"00000000-0000-0000-0000-000000000001"}""")
+            };
+        });
+
+        var sut = CreateSut(handler);
+
+        _ = await sut.CreatePinAsync(worldId, mapId, request);
+    }
+
+    [Fact]
+    public async Task ListPinsForMapAsync_UsesExpectedRouteAndNoBody()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            Assert.Equal(HttpMethod.Get, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/pins", req.RequestUri!.PathAndQuery.TrimStart('/'));
+            Assert.Null(req.Content);
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]")
+            });
+        });
+
+        var sut = CreateSut(handler);
+
+        _ = await sut.ListPinsForMapAsync(worldId, mapId);
+    }
+
+    [Fact]
+    public async Task UpdatePinPositionAsync_UsesExpectedRouteAndBody()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var pinId = Guid.NewGuid();
+        var request = new MapPinPositionUpdateDto { X = 0.4f, Y = 0.6f };
+
+        var handler = new TestHttpMessageHandler(async (req, cancellationToken) =>
+        {
+            Assert.Equal(HttpMethod.Patch, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/pins/{pinId}", req.RequestUri!.PathAndQuery.TrimStart('/'));
+
+            var body = await req.Content!.ReadAsStringAsync(cancellationToken);
+            using var json = JsonDocument.Parse(body);
+            Assert.Equal(request.X, (float)json.RootElement.GetProperty("x").GetDouble());
+            Assert.Equal(request.Y, (float)json.RootElement.GetProperty("y").GetDouble());
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{}")
+            };
+        });
+
+        var sut = CreateSut(handler);
+
+        var success = await sut.UpdatePinPositionAsync(worldId, mapId, pinId, request);
+        Assert.True(success);
+    }
+
+    [Fact]
+    public async Task DeletePinAsync_UsesExpectedRouteAndNoBody()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var pinId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            Assert.Equal(HttpMethod.Delete, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/pins/{pinId}", req.RequestUri!.PathAndQuery.TrimStart('/'));
+            Assert.Null(req.Content);
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+        });
+
+        var sut = CreateSut(handler);
+
+        var success = await sut.DeletePinAsync(worldId, mapId, pinId);
+        Assert.True(success);
     }
 
     [Fact]

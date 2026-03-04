@@ -77,6 +77,53 @@ public class MapSummaryDto
 }
 
 /// <summary>
+/// Request DTO for creating a pin on a map.
+/// Coordinates are normalized to the 0..1 range.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class MapPinCreateDto
+{
+    public float X { get; set; }
+    public float Y { get; set; }
+    public Guid? LinkedArticleId { get; set; }
+}
+
+/// <summary>
+/// Minimal linked article metadata for map pin responses.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class LinkedArticleSummaryDto
+{
+    public Guid ArticleId { get; set; }
+    public string Title { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Response DTO used for map pin create/list/update responses.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class MapPinResponseDto
+{
+    public Guid PinId { get; set; }
+    public Guid MapId { get; set; }
+    public Guid LayerId { get; set; }
+    public float X { get; set; }
+    public float Y { get; set; }
+    public LinkedArticleSummaryDto? LinkedArticle { get; set; }
+}
+
+/// <summary>
+/// Request DTO for updating pin position.
+/// Coordinates are normalized to the 0..1 range.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class MapPinPositionUpdateDto
+{
+    public float X { get; set; }
+    public float Y { get; set; }
+}
+
+/// <summary>
 /// Request DTO to initiate a basemap upload. Returns a SAS URL for direct
 /// client-to-blob upload.
 /// </summary>

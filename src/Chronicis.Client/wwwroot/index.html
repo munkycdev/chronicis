@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chronicis — Campaign Notes for Tabletop RPGs</title>
     <base href="/" />
-    
+
     <meta name="description" content="Chronicis is the knowledge base built for tabletop RPGs. Organize your world, link your lore, and let AI help you remember what happened three sessions ago." />
 
     <!-- Fonts -->
@@ -22,6 +22,7 @@
     <!-- Chronicis Theme (must load after MudBlazor) -->
     <link href="/css/chronicis-theme.css" rel="stylesheet" />
     <link href="/css/app.css" rel="stylesheet" />
+    <link href="Chronicis.Client.styles.css" rel="stylesheet" />
 
     <!-- Chronicis Components -->
     <link href="/css/chronicis-public.css" rel="stylesheet" />
@@ -35,8 +36,7 @@
     <link href="/css/chronicis-wiki-links.css" rel="stylesheet" />
     <link href="/css/chronicis-detail-panel.css" rel="stylesheet" />
     <link href="/css/tipTapStyles.css" rel="stylesheet" />
-    <link href="/css/chronicis-image-upload.css" rel="stylesheet" />
-    
+
     <!-- Chronicis Page-Specific Styles -->
     <link href="/css/chronicis-dashboard.css" rel="stylesheet" />
     <link href="/css/chronicis-onboarding.css" rel="stylesheet" />
@@ -55,7 +55,7 @@
             d=o.createElement(u);d.async=1;d.src=n
             n=o.getElementsByTagName(u)[0];n.parentNode.insertBefore(d,n)
         })(window,document,'script','https://www.datadoghq-browser-agent.com/us1/v5/datadog-rum.js','DD_RUM')
-        
+
         window.DD_RUM.onReady(function() {
             window.DD_RUM.init({
                 clientToken: 'pubb03589c4fa34c0602e4968f6867aa522',
@@ -138,6 +138,7 @@
     <script src="/js/emojiPickerInterop.js?v=2"></script>
     <script src="/js/publicWikiLinks.js?v=2"></script>
     <script src="/js/mapsDropGuard.js?v=1"></script>
+    <script type="module" src="/js/mapPageInterop.js?v=2"></script>
     <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
 </body>
 

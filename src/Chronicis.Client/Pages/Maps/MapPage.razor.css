@@ -1,4 +1,5 @@
 .map-page__image-shell {
+    position: relative;
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -16,4 +17,101 @@
     max-block-size: 100%;
     height: auto;
     object-fit: contain;
+}
+
+.map-page__pins-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.map-page__pins-overlay--create {
+    pointer-events: auto;
+    cursor: crosshair;
+    background: color-mix(in srgb, var(--mud-palette-primary) 6%, transparent 94%);
+}
+
+.map-page__pin {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--mud-palette-surface);
+    background: var(--mud-palette-primary);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.map-page__pin--interactive {
+    pointer-events: auto;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--mud-palette-text-primary) 28%, transparent 72%);
+}
+
+.map-page__pin--selected {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--mud-palette-warning) 72%, white 28%);
+}
+
+.map-page__pins-overlay--create .map-page__pin {
+    pointer-events: none;
+}
+
+.map-page__pin-delete-intent {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: none;
+    border-radius: 999px;
+    transform: translate(10%, -115%);
+    background: color-mix(in srgb, var(--mud-palette-error) 78%, black 22%);
+    color: var(--mud-palette-white);
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 4;
+    padding: 0;
+}
+
+.map-page__pin-delete-intent--selected {
+    box-shadow: 0 0 0 1px var(--mud-palette-surface);
+}
+
+.map-page__pin-delete-confirm {
+    position: absolute;
+    transform: translate(12px, -34px);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.45rem;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--mud-palette-surface) 94%, black 6%);
+    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 20%, transparent 80%);
+    pointer-events: auto;
+    z-index: 5;
+    font-size: 0.72rem;
+}
+
+.map-page__pin-delete-confirm-button {
+    border: none;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--mud-palette-error) 80%, black 20%);
+    color: var(--mud-palette-white);
+    padding: 0.2rem 0.45rem;
+    cursor: pointer;
+    font-size: 0.72rem;
+}
+
+.map-page__pin-delete-confirm-button--cancel {
+    background: color-mix(in srgb, var(--mud-palette-text-primary) 16%, transparent 84%);
+    color: var(--mud-palette-text-primary);
+}
+
+.map-page__create-pin-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
 }

@@ -5,6 +5,9 @@
 @inject IMapApiService MapApi
 @inject IWorldApiService WorldApi
 @inject IUserApiService UserApi
+@inject IArticleApiService ArticleApi
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 @inject ITreeStateService TreeState
 
 @if (_isLoading)
@@ -56,11 +59,109 @@ else
             <MudAlert Severity="Severity.Error" Class="mb-4">@_mapSaveError</MudAlert>
         }
 
-        <div class="map-page__image-shell" style="width:100%;max-width:100%;">
-            <img src="@_basemapReadUrl"
+        <div class="map-page__create-pin-controls">
+            <MudButton Variant="@(_isCreatePinMode ? Variant.Filled : Variant.Outlined)"
+                       Color="Color.Primary"
+                       OnClick="ToggleCreatePinMode"
+                       Disabled="@_isCreatingPin"
+                       StartIcon="@Icons.Material.Filled.AddLocationAlt">
+                @(_isCreatePinMode ? "Create Pin: ON" : "Create Pin")
+            </MudButton>
+
+            <MudTextField T="string"
+                          Label="Linked Article Id (optional)"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Value="@_createPinArticleIdInput"
+                          ValueChanged="OnCreatePinArticleIdChanged"
+                          Disabled="@_isCreatingPin"
+                          Immediate="true" />
+
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Default"
+                       OnClick="ClearCreatePinArticleId"
+                       Disabled="@(_isCreatingPin || string.IsNullOrWhiteSpace(_createPinArticleIdInput))">
+                Clear
+            </MudButton>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_createPinError))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_createPinError</MudAlert>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_pinDeleteError))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_pinDeleteError</MudAlert>
+        }
+
+        <div @ref="_mapImageShellRef"
+             class="map-page__image-shell"
+             style="width:100%;max-width:100%;"
+             @onclick="OnMapImageShellClick">
+            <img @ref="_mapImageRef"
+                 src="@_basemapReadUrl"
                  alt="@_mapName"
                  style="display:block;width:100%;max-width:100%;height:auto;"
                  class="map-page__image" />
+            <div @ref="_pinsOverlayRef"
+                 class="map-page__pins-overlay @(_isCreatePinMode ? "map-page__pins-overlay--create" : string.Empty)"
+                 aria-hidden="false">
+                @foreach (var pin in _pins)
+                {
+                    @if (pin.LinkedArticle is not null)
+                    {
+                        <button type="button"
+                                class="@($"map-page__pin map-page__pin--interactive {(_selectedPinId == pin.PinId ? "map-page__pin--selected" : string.Empty)}")"
+                                style="@GetPinStyle(pin)"
+                                title="@pin.LinkedArticle.Title"
+                                aria-label="@($"Open article: {pin.LinkedArticle.Title}")"
+                                @onclick="() => NavigateToLinkedArticleAsync(pin.LinkedArticle.ArticleId)">
+                        </button>
+                    }
+                    else
+                    {
+                        <div class="@($"map-page__pin {(_selectedPinId == pin.PinId ? "map-page__pin--selected" : string.Empty)}")"
+                             style="@GetPinStyle(pin)"
+                             aria-hidden="true">
+                        </div>
+                    }
+
+                    @if (!_isCreatePinMode)
+                    {
+                        <button type="button"
+                                class="@($"map-page__pin-delete-intent {(_selectedPinId == pin.PinId ? "map-page__pin-delete-intent--selected" : string.Empty)}")"
+                                style="@GetPinStyle(pin)"
+                                title="Delete pin"
+                                aria-label="Delete pin"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => SelectPinForDelete(pin.PinId)">
+                            x
+                        </button>
+                    }
+                }
+
+                @if (!_isCreatePinMode && SelectedPin is { } selectedPin)
+                {
+                    <div class="map-page__pin-delete-confirm"
+                         style="@GetPinStyle(selectedPin)"
+                         @onclick:stopPropagation="true">
+                        <span>Delete?</span>
+                        <button type="button"
+                                class="map-page__pin-delete-confirm-button"
+                                disabled="@_isDeletingPin"
+                                @onclick="ConfirmDeleteSelectedPinAsync">
+                            @(_isDeletingPin ? "..." : "Confirm")
+                        </button>
+                        <button type="button"
+                                class="map-page__pin-delete-confirm-button map-page__pin-delete-confirm-button--cancel"
+                                disabled="@_isDeletingPin"
+                                @onclick="CancelDeletePinSelection">
+                            Cancel
+                        </button>
+                    </div>
+                }
+            </div>
         </div>
     </MudPaper>
 }
@@ -76,12 +177,24 @@ else
     private bool _isSavingMap;
     private bool _hasUnsavedMapChanges;
     private bool _canManageMap;
+    private bool _isCreatePinMode;
+    private bool _isCreatingPin;
+    private bool _isDeletingPin;
     private MapPageState _state = MapPageState.Loaded;
     private string _worldName = "World";
     private string _mapName = "Map";
     private string _editMapName = "Map";
     private string _mapSaveError = string.Empty;
+    private string _createPinError = string.Empty;
+    private string _pinDeleteError = string.Empty;
+    private string _createPinArticleIdInput = string.Empty;
     private string _basemapReadUrl = string.Empty;
+    private List<MapPinResponseDto> _pins = [];
+    private Guid? _selectedPinId;
+    private ElementReference _pinsOverlayRef;
+    private ElementReference _mapImageShellRef;
+    private ElementReference _mapImageRef;
+    private IJSObjectReference? _mapInteropModule;
     private List<BreadcrumbItem> _breadcrumbs =
     [
         new("Dashboard", href: "/dashboard"),
@@ -114,7 +227,15 @@ else
         _mapName = "Map";
         _editMapName = "Map";
         _mapSaveError = string.Empty;
+        _createPinError = string.Empty;
+        _pinDeleteError = string.Empty;
+        _createPinArticleIdInput = string.Empty;
+        _isCreatePinMode = false;
+        _isCreatingPin = false;
+        _isDeletingPin = false;
         _basemapReadUrl = string.Empty;
+        _pins = [];
+        _selectedPinId = null;
         BuildBreadcrumbs();
 
         var worldTask = WorldApi.GetWorldAsync(WorldId);
@@ -162,6 +283,7 @@ else
         else
         {
             _basemapReadUrl = basemapResult.Basemap.ReadUrl;
+            _pins = await MapApi.ListPinsForMapAsync(WorldId, MapId);
             _state = MapPageState.Loaded;
             BuildBreadcrumbs();
         }
@@ -243,6 +365,219 @@ else
 
     private static bool IsUnauthorized(int? statusCode) => statusCode == 401 || statusCode == 403;
 
+    private void ToggleCreatePinMode()
+    {
+        _createPinError = string.Empty;
+        _selectedPinId = null;
+        _isCreatePinMode = !_isCreatePinMode;
+    }
+
+    private Task OnCreatePinArticleIdChanged(string value)
+    {
+        _createPinArticleIdInput = value;
+        return Task.CompletedTask;
+    }
+
+    private Task ClearCreatePinArticleId()
+    {
+        _createPinArticleIdInput = string.Empty;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnMapImageShellClick(MouseEventArgs args)
+    {
+        if (!_isCreatePinMode || _isCreatingPin)
+        {
+            return;
+        }
+
+        _createPinError = string.Empty;
+
+        if (!TryParseLinkedArticleId(_createPinArticleIdInput, out var linkedArticleId))
+        {
+            _createPinError = "Linked Article Id must be a valid GUID.";
+            return;
+        }
+
+        _isCreatingPin = true;
+        try
+        {
+            var rect = await GetMapPlacementRectAsync();
+            if (rect == null || rect.Width <= 0 || rect.Height <= 0)
+            {
+                _createPinError = "Could not determine map bounds for pin placement.";
+                return;
+            }
+
+            var x = Clamp01((args.ClientX - rect.Left) / rect.Width);
+            var y = Clamp01((args.ClientY - rect.Top) / rect.Height);
+
+            var created = await MapApi.CreatePinAsync(
+                WorldId,
+                MapId,
+                new MapPinCreateDto
+                {
+                    X = (float)x,
+                    Y = (float)y,
+                    LinkedArticleId = linkedArticleId,
+                });
+
+            if (created == null)
+            {
+                _createPinError = "Failed to create pin.";
+                return;
+            }
+
+            _pins = _pins
+                .Append(created)
+                .OrderBy(p => p.PinId)
+                .ToList();
+        }
+        catch (JSException)
+        {
+            _createPinError = "Could not determine map bounds for pin placement.";
+        }
+        finally
+        {
+            _isCreatingPin = false;
+        }
+    }
+
+    private async Task<MapElementRect?> GetMapPlacementRectAsync()
+    {
+        var shellRect = await GetElementRectAsync(_mapImageShellRef);
+        if (HasUsableBounds(shellRect))
+        {
+            return shellRect;
+        }
+
+        var imageRect = await GetElementRectAsync(_mapImageRef);
+        if (HasUsableBounds(imageRect))
+        {
+            return imageRect;
+        }
+
+        return await GetElementRectAsync(_pinsOverlayRef);
+    }
+
+    private async Task<MapElementRect?> GetElementRectAsync(ElementReference elementRef)
+    {
+        if (_mapInteropModule == null)
+        {
+            try
+            {
+                _mapInteropModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/js/mapPageInterop.js?v=2");
+            }
+            catch (JSException)
+            {
+                // Keep backward compatibility with global script registration.
+                return await JSRuntime.InvokeAsync<MapElementRect?>("chronicisMapPage.getElementRect", elementRef);
+            }
+        }
+
+        try
+        {
+            var rect = await _mapInteropModule.InvokeAsync<MapElementRect?>("getElementRect", elementRef);
+            if (HasUsableBounds(rect))
+            {
+                return rect;
+            }
+        }
+        catch (JSException)
+        {
+            // Fall through to global interop fallback.
+        }
+
+        return await JSRuntime.InvokeAsync<MapElementRect?>("chronicisMapPage.getElementRect", elementRef);
+    }
+
+    private void SelectPinForDelete(Guid pinId)
+    {
+        _pinDeleteError = string.Empty;
+        _selectedPinId = _selectedPinId == pinId ? null : pinId;
+    }
+
+    private void CancelDeletePinSelection()
+    {
+        _selectedPinId = null;
+    }
+
+    private async Task ConfirmDeleteSelectedPinAsync()
+    {
+        if (!_selectedPinId.HasValue || _isDeletingPin)
+        {
+            return;
+        }
+
+        _pinDeleteError = string.Empty;
+        _isDeletingPin = true;
+
+        try
+        {
+            var pinId = _selectedPinId.Value;
+            var success = await MapApi.DeletePinAsync(WorldId, MapId, pinId);
+            if (!success)
+            {
+                _pinDeleteError = "Failed to delete pin.";
+                return;
+            }
+
+            _pins = _pins.Where(p => p.PinId != pinId).ToList();
+            _selectedPinId = null;
+        }
+        finally
+        {
+            _isDeletingPin = false;
+        }
+    }
+
+    private async Task NavigateToLinkedArticleAsync(Guid articleId)
+    {
+        var article = await ArticleApi.GetArticleDetailAsync(articleId);
+        if (article == null || !article.Breadcrumbs.Any())
+        {
+            return;
+        }
+
+        var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
+        Navigation.NavigateTo($"/article/{path}");
+    }
+
+    private static string GetPinStyle(MapPinResponseDto pin) =>
+        $"left:{pin.X * 100:F4}%;top:{pin.Y * 100:F4}%;";
+
+    private static bool TryParseLinkedArticleId(string value, out Guid? linkedArticleId)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            linkedArticleId = null;
+            return true;
+        }
+
+        if (Guid.TryParse(value.Trim(), out var parsed))
+        {
+            linkedArticleId = parsed;
+            return true;
+        }
+
+        linkedArticleId = null;
+        return false;
+    }
+
+    private static double Clamp01(double value) =>
+        value < 0d ? 0d : value > 1d ? 1d : value;
+
+    private static bool HasUsableBounds(MapElementRect? rect) =>
+        rect != null && rect.Width > 0 && rect.Height > 0;
+
+    private sealed class MapElementRect
+    {
+        public double Left { get; set; }
+        public double Top { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+    }
+
     private static bool IsBasemapMissing(int? statusCode, string? error)
     {
         if (statusCode != 404 || string.IsNullOrWhiteSpace(error))
@@ -263,4 +598,9 @@ else
             new(_mapName, href: null, disabled: true)
         ];
     }
+
+    private MapPinResponseDto? SelectedPin =>
+        _selectedPinId.HasValue
+            ? _pins.FirstOrDefault(p => p.PinId == _selectedPinId.Value)
+            : null;
 }

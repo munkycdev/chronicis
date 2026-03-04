@@ -230,6 +230,297 @@ public class WorldMapServiceTests : IDisposable
         Assert.Equal(MapScope.WorldScoped, result[2].Scope);
     }
 
+    // ── Pins (P1) ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreatePin_SelectsArcLayer_WhenMapHasArcAssociation()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Arc Scoped");
+        var layers = await GetMapLayersByNameAsync(map.WorldMapId);
+
+        var campaignId = await CreateCampaignAsync(_worldId);
+        var arcId = await CreateArcAsync(campaignId);
+        _db.WorldMapCampaigns.Add(new WorldMapCampaign { WorldMapId = map.WorldMapId, CampaignId = campaignId });
+        _db.WorldMapArcs.Add(new WorldMapArc { WorldMapId = map.WorldMapId, ArcId = arcId });
+        await _db.SaveChangesAsync();
+
+        var created = await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto { X = 0.25f, Y = 0.75f });
+
+        Assert.Equal(layers["Arc"], created.LayerId);
+    }
+
+    [Fact]
+    public async Task CreatePin_SelectsCampaignLayer_WhenMapHasCampaignAssociationButNoArc()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Campaign Scoped");
+        var layers = await GetMapLayersByNameAsync(map.WorldMapId);
+
+        var campaignId = await CreateCampaignAsync(_worldId);
+        _db.WorldMapCampaigns.Add(new WorldMapCampaign { WorldMapId = map.WorldMapId, CampaignId = campaignId });
+        await _db.SaveChangesAsync();
+
+        var created = await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto { X = 0.10f, Y = 0.20f });
+
+        Assert.Equal(layers["Campaign"], created.LayerId);
+    }
+
+    [Fact]
+    public async Task CreatePin_SelectsWorldLayer_WhenMapHasNoCampaignOrArcAssociations()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("World Scoped");
+        var layers = await GetMapLayersByNameAsync(map.WorldMapId);
+
+        var created = await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto { X = 0.60f, Y = 0.40f });
+
+        Assert.Equal(layers["World"], created.LayerId);
+    }
+
+    [Fact]
+    public async Task CreatePin_Throws_WhenUserIsNotWorldMember()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("No Access");
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.CreatePinAsync(
+                _worldId,
+                map.WorldMapId,
+                _outsiderId,
+                new MapPinCreateDto { X = 0.5f, Y = 0.5f }));
+    }
+
+    [Fact]
+    public async Task CreatePin_Throws_WhenMapNotFound()
+    {
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.CreatePinAsync(
+                _worldId,
+                Guid.NewGuid(),
+                _memberId,
+                new MapPinCreateDto { X = 0.5f, Y = 0.5f }));
+    }
+
+    [Fact]
+    public async Task CreatePin_Throws_WhenDefaultLayerMissing()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Missing Layer");
+        _db.MapLayers.RemoveRange(_db.MapLayers.Where(l => l.WorldMapId == map.WorldMapId && l.Name == "World"));
+        await _db.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.CreatePinAsync(
+                _worldId,
+                map.WorldMapId,
+                _memberId,
+                new MapPinCreateDto { X = 0.5f, Y = 0.5f }));
+    }
+
+    public static IEnumerable<object[]> InvalidCoordinates =>
+    [
+        [ -0.001f, 0.5f ],
+        [ 1.001f, 0.5f ],
+        [ 0.5f, -0.001f ],
+        [ 0.5f, 1.001f ],
+        [ float.NaN, 0.5f ],
+        [ 0.5f, float.NaN ],
+        [ float.PositiveInfinity, 0.5f ],
+        [ 0.5f, float.NegativeInfinity ],
+    ];
+
+    [Theory]
+    [MemberData(nameof(InvalidCoordinates))]
+    public async Task CreatePin_Throws_WhenCoordinatesInvalid_AndDoesNotWriteToDb(float x, float y)
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Validate Create");
+        var beforeCount = await _db.MapFeatures.CountAsync();
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.CreatePinAsync(
+                _worldId,
+                map.WorldMapId,
+                _memberId,
+                new MapPinCreateDto { X = x, Y = y }));
+
+        var afterCount = await _db.MapFeatures.CountAsync();
+        Assert.Equal(beforeCount, afterCount);
+    }
+
+    [Fact]
+    public async Task CreatePin_WithLinkedArticleIdButMissingArticle_ReturnsNullLinkedArticle()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Linked Missing");
+        var missingArticleId = Guid.NewGuid();
+
+        var created = await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto { X = 0.2f, Y = 0.8f, LinkedArticleId = missingArticleId });
+
+        Assert.Null(created.LinkedArticle);
+    }
+
+    [Fact]
+    public async Task ListPinsForMap_Throws_WhenUserIsNotWorldMember()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("List Access");
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.ListPinsForMapAsync(_worldId, map.WorldMapId, _outsiderId));
+    }
+
+    [Fact]
+    public async Task ListPinsForMap_Throws_WhenMapNotInWorld()
+    {
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.ListPinsForMapAsync(_worldId, Guid.NewGuid(), _memberId));
+    }
+
+    [Fact]
+    public async Task UpdatePinPosition_Throws_WhenUserIsNotWorldMember()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Update Access");
+        var pin = await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto { X = 0.2f, Y = 0.3f });
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.UpdatePinPositionAsync(
+                _worldId,
+                map.WorldMapId,
+                pin.PinId,
+                _outsiderId,
+                new MapPinPositionUpdateDto { X = 0.4f, Y = 0.5f }));
+    }
+
+    [Fact]
+    public async Task UpdatePinPosition_Throws_WhenPinNotFound()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Update Missing Pin");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.UpdatePinPositionAsync(
+                _worldId,
+                map.WorldMapId,
+                Guid.NewGuid(),
+                _memberId,
+                new MapPinPositionUpdateDto { X = 0.4f, Y = 0.5f }));
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidCoordinates))]
+    public async Task UpdatePinPosition_Throws_WhenCoordinatesInvalid_AndDoesNotMutateDb(float x, float y)
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Validate Update");
+        var pin = await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto { X = 0.3f, Y = 0.6f });
+        var before = await _db.MapFeatures.AsNoTracking().FirstAsync(mf => mf.MapFeatureId == pin.PinId);
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.UpdatePinPositionAsync(
+                _worldId,
+                map.WorldMapId,
+                pin.PinId,
+                _memberId,
+                new MapPinPositionUpdateDto { X = x, Y = y }));
+
+        var after = await _db.MapFeatures.AsNoTracking().FirstAsync(mf => mf.MapFeatureId == pin.PinId);
+        Assert.Equal(before.X, after.X);
+        Assert.Equal(before.Y, after.Y);
+    }
+
+    [Fact]
+    public async Task DeletePin_Throws_WhenUserIsNotWorldMember()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Delete Access");
+        var pin = await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto { X = 0.2f, Y = 0.3f });
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.DeletePinAsync(_worldId, map.WorldMapId, pin.PinId, _outsiderId));
+    }
+
+    [Fact]
+    public async Task DeletePin_Throws_WhenPinNotFound()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Delete Missing Pin");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.DeletePinAsync(_worldId, map.WorldMapId, Guid.NewGuid(), _memberId));
+    }
+
+    [Fact]
+    public async Task PinCrud_HappyPath_IsDeterministicAndPersistsExpectedState()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("CRUD");
+        var article = await CreateArticleAsync(_worldId, "Waterdeep");
+
+        var createdA = await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto { X = 0.10f, Y = 0.20f, LinkedArticleId = article.Id });
+        var createdB = await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto { X = 0.80f, Y = 0.70f });
+        var createdC = await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto { X = 0.40f, Y = 0.50f });
+
+        var listed = await _sut.ListPinsForMapAsync(_worldId, map.WorldMapId, _memberId);
+        var actualOrder = listed.Select(p => p.PinId).ToList();
+        var expectedOrder = actualOrder.OrderBy(id => id).ToList();
+        Assert.Equal(expectedOrder, actualOrder);
+
+        var linkedPin = listed.Single(p => p.PinId == createdA.PinId);
+        Assert.NotNull(linkedPin.LinkedArticle);
+        Assert.Equal(article.Id, linkedPin.LinkedArticle!.ArticleId);
+        Assert.Equal("Waterdeep", linkedPin.LinkedArticle.Title);
+
+        var updated = await _sut.UpdatePinPositionAsync(
+            _worldId,
+            map.WorldMapId,
+            createdB.PinId,
+            _memberId,
+            new MapPinPositionUpdateDto { X = 0.33f, Y = 0.66f });
+
+        Assert.Equal(0.33f, updated.X);
+        Assert.Equal(0.66f, updated.Y);
+
+        var updatedEntity = await _db.MapFeatures.AsNoTracking().FirstAsync(mf => mf.MapFeatureId == createdB.PinId);
+        Assert.Equal(0.33f, updatedEntity.X);
+        Assert.Equal(0.66f, updatedEntity.Y);
+
+        await _sut.DeletePinAsync(_worldId, map.WorldMapId, createdC.PinId, _memberId);
+
+        Assert.False(await _db.MapFeatures.AnyAsync(mf => mf.MapFeatureId == createdC.PinId));
+        var remainingPins = await _sut.ListPinsForMapAsync(_worldId, map.WorldMapId, _memberId);
+        Assert.Equal(2, remainingPins.Count);
+    }
+
     // ── RequestBasemapUploadAsync ─────────────────────────────────────────────
 
     [Fact]
@@ -506,5 +797,69 @@ public class WorldMapServiceTests : IDisposable
         _db.WorldMaps.Add(map);
         await _db.SaveChangesAsync();
         return map;
+    }
+
+    private async Task<WorldMap> CreateMapWithDefaultLayersAsync(string name)
+    {
+        var created = await _sut.CreateMapAsync(_worldId, _ownerId, new MapCreateDto { Name = name });
+        var map = await _db.WorldMaps.FirstAsync(m => m.WorldMapId == created.WorldMapId);
+        return map;
+    }
+
+    private async Task<Dictionary<string, Guid>> GetMapLayersByNameAsync(Guid mapId)
+    {
+        return await _db.MapLayers
+            .Where(l => l.WorldMapId == mapId)
+            .ToDictionaryAsync(l => l.Name, l => l.MapLayerId);
+    }
+
+    private async Task<Guid> CreateCampaignAsync(Guid worldId)
+    {
+        var campaign = new Campaign
+        {
+            Id = Guid.NewGuid(),
+            WorldId = worldId,
+            OwnerId = _ownerId,
+            Name = "Campaign Scope",
+            CreatedAt = DateTime.UtcNow,
+        };
+        _db.Campaigns.Add(campaign);
+        await _db.SaveChangesAsync();
+        return campaign.Id;
+    }
+
+    private async Task<Guid> CreateArcAsync(Guid campaignId)
+    {
+        var arc = new Arc
+        {
+            Id = Guid.NewGuid(),
+            CampaignId = campaignId,
+            Name = "Arc Scope",
+            SortOrder = 0,
+            CreatedBy = _ownerId,
+            CreatedAt = DateTime.UtcNow,
+        };
+        _db.Arcs.Add(arc);
+        await _db.SaveChangesAsync();
+        return arc.Id;
+    }
+
+    private async Task<Article> CreateArticleAsync(Guid worldId, string title)
+    {
+        var article = new Article
+        {
+            Id = Guid.NewGuid(),
+            WorldId = worldId,
+            Title = title,
+            Slug = title.ToLowerInvariant().Replace(' ', '-'),
+            Type = ArticleType.WikiArticle,
+            Visibility = ArticleVisibility.Public,
+            CreatedBy = _ownerId,
+            CreatedAt = DateTime.UtcNow,
+            EffectiveDate = DateTime.UtcNow,
+        };
+        _db.Articles.Add(article);
+        await _db.SaveChangesAsync();
+        return article;
     }
 }

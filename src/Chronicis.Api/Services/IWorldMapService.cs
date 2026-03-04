@@ -31,6 +31,31 @@ public interface IWorldMapService
     Task<List<MapSummaryDto>> ListMapsForWorldAsync(Guid worldId, Guid userId);
 
     /// <summary>
+    /// Create a pin for a map, selecting the default layer using Arc > Campaign > World.
+    /// Requires world membership.
+    /// </summary>
+    Task<MapPinResponseDto> CreatePinAsync(Guid worldId, Guid mapId, Guid userId, MapPinCreateDto dto);
+
+    /// <summary>
+    /// List pins for a map.
+    /// Requires world membership.
+    /// </summary>
+    Task<List<MapPinResponseDto>> ListPinsForMapAsync(Guid worldId, Guid mapId, Guid userId);
+
+    /// <summary>
+    /// Update a pin position.
+    /// Requires world membership.
+    /// </summary>
+    Task<MapPinResponseDto> UpdatePinPositionAsync(
+        Guid worldId, Guid mapId, Guid pinId, Guid userId, MapPinPositionUpdateDto dto);
+
+    /// <summary>
+    /// Delete a pin from a map.
+    /// Requires world membership.
+    /// </summary>
+    Task DeletePinAsync(Guid worldId, Guid mapId, Guid pinId, Guid userId);
+
+    /// <summary>
     /// Validate the upload request, persist the blob key / filename / content-type,
     /// and return a short-lived SAS URL for a direct client-to-blob upload.
     /// Only the world owner may upload basemaps.

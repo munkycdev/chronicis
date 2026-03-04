@@ -151,6 +151,133 @@ public class WorldMapService : IWorldMapService
     }
 
     /// <inheritdoc/>
+    public async Task<MapPinResponseDto> CreatePinAsync(Guid worldId, Guid mapId, Guid userId, MapPinCreateDto dto)
+    {
+        _logger.LogTraceSanitized("User {UserId} creating pin on map {MapId}", userId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        ValidateNormalizedCoordinates(dto.X, dto.Y);
+
+        var layerId = await ResolveDefaultLayerIdAsync(worldId, mapId);
+        var pin = new MapFeature
+        {
+            MapFeatureId = Guid.NewGuid(),
+            WorldMapId = mapId,
+            MapLayerId = layerId,
+            X = dto.X,
+            Y = dto.Y,
+            LinkedArticleId = dto.LinkedArticleId,
+        };
+
+        _db.MapFeatures.Add(pin);
+        await _db.SaveChangesAsync();
+
+        return await GetMapPinResponseAsync(pin.MapFeatureId, mapId);
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<MapPinResponseDto>> ListPinsForMapAsync(Guid worldId, Guid mapId, Guid userId)
+    {
+        _logger.LogTraceSanitized("User {UserId} listing pins for map {MapId}", userId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        await EnsureMapInWorldAsync(worldId, mapId);
+
+        var pins = await _db.MapFeatures
+            .AsNoTracking()
+            .Where(mf => mf.WorldMapId == mapId)
+            .OrderBy(mf => mf.MapFeatureId)
+            .Select(mf => new
+            {
+                mf.MapFeatureId,
+                mf.WorldMapId,
+                mf.MapLayerId,
+                X = mf.X,
+                Y = mf.Y,
+                mf.LinkedArticleId,
+            })
+            .ToListAsync();
+
+        var linkedArticleIds = pins
+            .Where(p => p.LinkedArticleId.HasValue)
+            .Select(p => p.LinkedArticleId!.Value)
+            .Distinct()
+            .ToList();
+
+        var linkedArticles = linkedArticleIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await _db.Articles
+                .AsNoTracking()
+                .Where(a => linkedArticleIds.Contains(a.Id))
+                .ToDictionaryAsync(a => a.Id, a => a.Title);
+
+        return pins
+            .Select(pin => new MapPinResponseDto
+            {
+                PinId = pin.MapFeatureId,
+                MapId = pin.WorldMapId,
+                LayerId = pin.MapLayerId,
+                X = pin.X,
+                Y = pin.Y,
+                LinkedArticle = pin.LinkedArticleId.HasValue
+                    && linkedArticles.TryGetValue(pin.LinkedArticleId.Value, out var title)
+                    ? new LinkedArticleSummaryDto
+                    {
+                        ArticleId = pin.LinkedArticleId.Value,
+                        Title = title,
+                    }
+                    : null,
+            })
+            .ToList();
+    }
+
+    /// <inheritdoc/>
+    public async Task<MapPinResponseDto> UpdatePinPositionAsync(
+        Guid worldId, Guid mapId, Guid pinId, Guid userId, MapPinPositionUpdateDto dto)
+    {
+        _logger.LogTraceSanitized("User {UserId} updating pin {PinId} on map {MapId}", userId, pinId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        await EnsureMapInWorldAsync(worldId, mapId);
+        ValidateNormalizedCoordinates(dto.X, dto.Y);
+
+        var pin = await _db.MapFeatures
+            .FirstOrDefaultAsync(mf => mf.MapFeatureId == pinId && mf.WorldMapId == mapId);
+
+        if (pin == null)
+        {
+            throw new InvalidOperationException("Pin not found");
+        }
+
+        pin.X = dto.X;
+        pin.Y = dto.Y;
+
+        await _db.SaveChangesAsync();
+
+        return await GetMapPinResponseAsync(pin.MapFeatureId, mapId);
+    }
+
+    /// <inheritdoc/>
+    public async Task DeletePinAsync(Guid worldId, Guid mapId, Guid pinId, Guid userId)
+    {
+        _logger.LogTraceSanitized("User {UserId} deleting pin {PinId} on map {MapId}", userId, pinId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        await EnsureMapInWorldAsync(worldId, mapId);
+
+        var pin = await _db.MapFeatures
+            .FirstOrDefaultAsync(mf => mf.MapFeatureId == pinId && mf.WorldMapId == mapId);
+
+        if (pin == null)
+        {
+            throw new InvalidOperationException("Pin not found");
+        }
+
+        _db.MapFeatures.Remove(pin);
+        await _db.SaveChangesAsync();
+    }
+
+    /// <inheritdoc/>
     public async Task<RequestBasemapUploadResponseDto> RequestBasemapUploadAsync(
         Guid worldId, Guid mapId, Guid userId, RequestBasemapUploadDto dto)
     {
@@ -276,6 +403,128 @@ public class WorldMapService : IWorldMapService
 
         _db.WorldMaps.Remove(map);
         await _db.SaveChangesAsync();
+    }
+
+    private async Task EnsureWorldMembershipAsync(Guid worldId, Guid userId)
+    {
+        var hasAccess = await _db.Worlds
+            .AsNoTracking()
+            .AnyAsync(w => w.Id == worldId
+                && (w.OwnerId == userId || w.Members.Any(m => m.UserId == userId)));
+
+        if (!hasAccess)
+        {
+            throw new UnauthorizedAccessException("World not found or access denied");
+        }
+    }
+
+    private async Task EnsureMapInWorldAsync(Guid worldId, Guid mapId)
+    {
+        var mapExists = await _db.WorldMaps
+            .AsNoTracking()
+            .AnyAsync(m => m.WorldMapId == mapId && m.WorldId == worldId);
+
+        if (!mapExists)
+        {
+            throw new InvalidOperationException("Map not found");
+        }
+    }
+
+    private async Task<Guid> ResolveDefaultLayerIdAsync(Guid worldId, Guid mapId)
+    {
+        var scopeData = await _db.WorldMaps
+            .AsNoTracking()
+            .Where(m => m.WorldMapId == mapId && m.WorldId == worldId)
+            .Select(m => new
+            {
+                HasArcScope = m.WorldMapArcs.Any(),
+                HasCampaignScope = m.WorldMapCampaigns.Any(),
+            })
+            .FirstOrDefaultAsync();
+
+        if (scopeData == null)
+        {
+            throw new InvalidOperationException("Map not found");
+        }
+
+        var defaultLayerName = scopeData.HasArcScope
+            ? "Arc"
+            : scopeData.HasCampaignScope
+                ? "Campaign"
+                : "World";
+
+        var layer = await _db.MapLayers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.WorldMapId == mapId && l.Name == defaultLayerName);
+
+        if (layer == null)
+        {
+            throw new InvalidOperationException($"Default layer '{defaultLayerName}' not found");
+        }
+
+        return layer.MapLayerId;
+    }
+
+    private static void ValidateNormalizedCoordinates(float x, float y)
+    {
+        if (!IsNormalizedCoordinate(x) || !IsNormalizedCoordinate(y))
+        {
+            throw new ArgumentException("X and Y must be normalized between 0 and 1");
+        }
+    }
+
+    private static bool IsNormalizedCoordinate(float value) =>
+        !float.IsNaN(value) && !float.IsInfinity(value) && value >= 0f && value <= 1f;
+
+    private async Task<MapPinResponseDto> GetMapPinResponseAsync(Guid pinId, Guid mapId)
+    {
+        var pin = await _db.MapFeatures
+            .AsNoTracking()
+            .Where(mf => mf.MapFeatureId == pinId && mf.WorldMapId == mapId)
+            .Select(mf => new
+            {
+                mf.MapFeatureId,
+                mf.WorldMapId,
+                mf.MapLayerId,
+                mf.X,
+                mf.Y,
+                mf.LinkedArticleId,
+            })
+            .FirstOrDefaultAsync();
+
+        if (pin == null)
+        {
+            throw new InvalidOperationException("Pin not found");
+        }
+
+        LinkedArticleSummaryDto? linkedArticle = null;
+        if (pin.LinkedArticleId.HasValue)
+        {
+            var article = await _db.Articles
+                .AsNoTracking()
+                .Where(a => a.Id == pin.LinkedArticleId.Value)
+                .Select(a => new { a.Id, a.Title })
+                .FirstOrDefaultAsync();
+
+            if (article != null)
+            {
+                linkedArticle = new LinkedArticleSummaryDto
+                {
+                    ArticleId = article.Id,
+                    Title = article.Title,
+                };
+            }
+        }
+
+        return new MapPinResponseDto
+        {
+            PinId = pin.MapFeatureId,
+            MapId = pin.WorldMapId,
+            LayerId = pin.MapLayerId,
+            X = pin.X,
+            Y = pin.Y,
+            LinkedArticle = linkedArticle,
+        };
     }
 
     internal static MapScope ComputeScope(WorldMap map)

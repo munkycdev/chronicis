@@ -23,6 +23,26 @@ public interface IMapApiService
     Task<(MapDto? Map, int? StatusCode, string? Error)> GetMapAsync(Guid worldId, Guid mapId);
 
     /// <summary>
+    /// Lists all pins for the given map.
+    /// </summary>
+    Task<List<MapPinResponseDto>> ListPinsForMapAsync(Guid worldId, Guid mapId);
+
+    /// <summary>
+    /// Creates a new pin on the given map.
+    /// </summary>
+    Task<MapPinResponseDto?> CreatePinAsync(Guid worldId, Guid mapId, MapPinCreateDto dto);
+
+    /// <summary>
+    /// Deletes a pin from the given map.
+    /// </summary>
+    Task<bool> DeletePinAsync(Guid worldId, Guid mapId, Guid pinId);
+
+    /// <summary>
+    /// Updates a pin's normalized position on the given map.
+    /// </summary>
+    Task<bool> UpdatePinPositionAsync(Guid worldId, Guid mapId, Guid pinId, MapPinPositionUpdateDto dto);
+
+    /// <summary>
     /// Updates map metadata.
     /// </summary>
     Task<MapDto?> UpdateMapAsync(Guid worldId, Guid mapId, MapUpdateDto dto);

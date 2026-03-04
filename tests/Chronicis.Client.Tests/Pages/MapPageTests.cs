@@ -17,6 +17,7 @@ public class MapPageTests : MudBlazorTestContext
     private readonly IMapApiService _mapApi = Substitute.For<IMapApiService>();
     private readonly IWorldApiService _worldApi = Substitute.For<IWorldApiService>();
     private readonly IUserApiService _userApi = Substitute.For<IUserApiService>();
+    private readonly IArticleApiService _articleApi = Substitute.For<IArticleApiService>();
     private readonly ITreeStateService _treeState = Substitute.For<ITreeStateService>();
     private readonly Guid _worldOwnerId = Guid.Parse("33000000-0000-0000-0000-000000000001");
     private readonly Guid _nonOwnerId = Guid.Parse("33000000-0000-0000-0000-000000000002");
@@ -26,6 +27,7 @@ public class MapPageTests : MudBlazorTestContext
         Services.AddSingleton(_mapApi);
         Services.AddSingleton(_worldApi);
         Services.AddSingleton(_userApi);
+        Services.AddSingleton(_articleApi);
         Services.AddSingleton(_treeState);
 
         _worldApi.GetWorldAsync(Arg.Any<Guid>()).Returns(call =>
@@ -46,6 +48,9 @@ public class MapPageTests : MudBlazorTestContext
             Email = "player@test.com",
             DisplayName = "Player"
         });
+
+        _mapApi.ListPinsForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(new List<MapPinResponseDto>());
     }
 
     [Fact]
@@ -326,11 +331,144 @@ public class MapPageTests : MudBlazorTestContext
         Assert.True(GetField<bool>(cut.Instance, "_hasUnsavedMapChanges"));
     }
 
+    [Fact]
+    public async Task ToggleCreatePinMode_ClearsErrorAndSelection_AndToggles()
+    {
+        var cut = RenderLoadedPage();
+        SetField(cut.Instance, "_createPinError", "bad");
+        SetField(cut.Instance, "_selectedPinId", Guid.NewGuid());
+        SetField(cut.Instance, "_isCreatePinMode", false);
+
+        await InvokePrivateOnRendererAsync(cut, "ToggleCreatePinMode");
+        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_createPinError"));
+        Assert.Null(GetField<Guid?>(cut.Instance, "_selectedPinId"));
+        Assert.True(GetField<bool>(cut.Instance, "_isCreatePinMode"));
+
+        await InvokePrivateOnRendererAsync(cut, "ToggleCreatePinMode");
+        Assert.False(GetField<bool>(cut.Instance, "_isCreatePinMode"));
+    }
+
+    [Fact]
+    public async Task CreatePinArticleIdMethods_UpdateAndClearInput()
+    {
+        var cut = RenderLoadedPage();
+        var articleIdText = Guid.NewGuid().ToString();
+
+        await InvokePrivateOnRendererAsync(cut, "OnCreatePinArticleIdChanged", articleIdText);
+        Assert.Equal(articleIdText, GetField<string>(cut.Instance, "_createPinArticleIdInput"));
+
+        await InvokePrivateOnRendererAsync(cut, "ClearCreatePinArticleId");
+        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_createPinArticleIdInput"));
+    }
+
+    [Fact]
+    public async Task DeleteSelectionMethods_ToggleAndClearSelection()
+    {
+        var cut = RenderLoadedPage();
+        var pinId = Guid.NewGuid();
+        SetField(cut.Instance, "_pinDeleteError", "bad");
+        SetField(cut.Instance, "_selectedPinId", null);
+
+        await InvokePrivateOnRendererAsync(cut, "SelectPinForDelete", pinId);
+        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_pinDeleteError"));
+        Assert.Equal(pinId, GetField<Guid?>(cut.Instance, "_selectedPinId"));
+
+        await InvokePrivateOnRendererAsync(cut, "SelectPinForDelete", pinId);
+        Assert.Null(GetField<Guid?>(cut.Instance, "_selectedPinId"));
+
+        SetField(cut.Instance, "_selectedPinId", pinId);
+        await InvokePrivateOnRendererAsync(cut, "CancelDeletePinSelection");
+        Assert.Null(GetField<Guid?>(cut.Instance, "_selectedPinId"));
+    }
+
+    [Fact]
+    public void GetPinStyle_FormatsNormalizedCoordinatesAsPercentages()
+    {
+        var method = typeof(MapPage).GetMethod("GetPinStyle", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var style = (string?)method!.Invoke(null, new object?[] { new MapPinResponseDto { X = 0.1234f, Y = 0.5678f } });
+
+        Assert.Equal("left:12.3400%;top:56.7800%;", style);
+    }
+
+    [Fact]
+    public void TryParseLinkedArticleId_CoversBlankValidAndInvalidBranches()
+    {
+        var method = typeof(MapPage).GetMethod("TryParseLinkedArticleId", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var blankArgs = new object?[] { "   ", null };
+        var blankResult = (bool)method!.Invoke(null, blankArgs)!;
+        Assert.True(blankResult);
+        Assert.Null((Guid?)blankArgs[1]);
+
+        var validId = Guid.NewGuid();
+        var validArgs = new object?[] { validId.ToString(), null };
+        var validResult = (bool)method.Invoke(null, validArgs)!;
+        Assert.True(validResult);
+        Assert.Equal(validId, (Guid?)validArgs[1]);
+
+        var invalidArgs = new object?[] { "not-a-guid", null };
+        var invalidResult = (bool)method.Invoke(null, invalidArgs)!;
+        Assert.False(invalidResult);
+        Assert.Null((Guid?)invalidArgs[1]);
+    }
+
+    [Fact]
+    public void Clamp01_ClampsLowAndHighAndReturnsMiddle()
+    {
+        var method = typeof(MapPage).GetMethod("Clamp01", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var low = (double)method!.Invoke(null, new object?[] { -0.5d })!;
+        var middle = (double)method.Invoke(null, new object?[] { 0.25d })!;
+        var high = (double)method.Invoke(null, new object?[] { 1.5d })!;
+
+        Assert.Equal(0d, low);
+        Assert.Equal(0.25d, middle);
+        Assert.Equal(1d, high);
+    }
+
+    [Fact]
+    public void SelectedPin_ReturnsPinWhenSelectedIdExists_ElseNull()
+    {
+        var cut = RenderLoadedPage();
+        var pin = new MapPinResponseDto { PinId = Guid.NewGuid(), MapId = Guid.NewGuid(), LayerId = Guid.NewGuid(), X = 0.3f, Y = 0.4f };
+        SetField(cut.Instance, "_pins", new List<MapPinResponseDto> { pin });
+        SetField(cut.Instance, "_selectedPinId", pin.PinId);
+
+        var selectedPinProperty = cut.Instance.GetType()
+            .GetProperty("SelectedPin", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(selectedPinProperty);
+
+        var selected = (MapPinResponseDto?)selectedPinProperty!.GetValue(cut.Instance);
+        Assert.NotNull(selected);
+        Assert.Equal(pin.PinId, selected!.PinId);
+
+        SetField(cut.Instance, "_selectedPinId", null);
+        var none = (MapPinResponseDto?)selectedPinProperty.GetValue(cut.Instance);
+        Assert.Null(none);
+    }
+
     private IRenderedComponent<MapPage> RenderPage(Guid worldId, Guid mapId)
     {
         return RenderComponent<MapPage>(parameters => parameters
             .Add(p => p.WorldId, worldId)
             .Add(p => p.MapId, mapId));
+    }
+
+    private IRenderedComponent<MapPage> RenderLoadedPage()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Loaded Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Contains("<img", cut.Markup, StringComparison.OrdinalIgnoreCase));
+        return cut;
     }
 
     private static T GetField<T>(object instance, string fieldName)

@@ -43,6 +43,40 @@ public class MapApiService : IMapApiService
             $"map {mapId}");
     }
 
+    public async Task<List<MapPinResponseDto>> ListPinsForMapAsync(Guid worldId, Guid mapId)
+    {
+        return await _http.GetListAsync<MapPinResponseDto>(
+            $"world/{worldId}/maps/{mapId}/pins",
+            _logger,
+            $"pins for map {mapId}");
+    }
+
+    public async Task<MapPinResponseDto?> CreatePinAsync(Guid worldId, Guid mapId, MapPinCreateDto dto)
+    {
+        return await _http.PostEntityAsync<MapPinResponseDto>(
+            $"world/{worldId}/maps/{mapId}/pins",
+            dto,
+            _logger,
+            $"pin for map {mapId}");
+    }
+
+    public async Task<bool> DeletePinAsync(Guid worldId, Guid mapId, Guid pinId)
+    {
+        return await _http.DeleteEntityAsync(
+            $"world/{worldId}/maps/{mapId}/pins/{pinId}",
+            _logger,
+            $"pin {pinId} for map {mapId}");
+    }
+
+    public async Task<bool> UpdatePinPositionAsync(Guid worldId, Guid mapId, Guid pinId, MapPinPositionUpdateDto dto)
+    {
+        return await _http.PatchEntityAsync(
+            $"world/{worldId}/maps/{mapId}/pins/{pinId}",
+            dto,
+            _logger,
+            $"pin {pinId} for map {mapId}");
+    }
+
     public async Task<MapDto?> UpdateMapAsync(Guid worldId, Guid mapId, MapUpdateDto dto)
     {
         return await _http.PutEntityAsync<MapDto>(

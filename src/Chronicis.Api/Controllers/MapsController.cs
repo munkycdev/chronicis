@@ -127,6 +127,134 @@ public class MapsController : ControllerBase
     }
 
     /// <summary>
+    /// POST /world/{worldId}/maps/{mapId}/pins — Create a pin on a map.
+    /// </summary>
+    [HttpPost("{mapId:guid}/pins")]
+    public async Task<ActionResult<MapPinResponseDto>> CreatePin(
+        Guid worldId, Guid mapId, [FromBody] MapPinCreateDto dto)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (dto == null)
+        {
+            return BadRequest(new { error = "Invalid request body" });
+        }
+
+        _logger.LogTraceSanitized("User {UserId} creating pin on map {MapId}", user.Id, mapId);
+
+        try
+        {
+            var pin = await _worldMapService.CreatePinAsync(worldId, mapId, user.Id, dto);
+            return Ok(pin);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized pin create");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Invalid pin create request");
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Pin create target not found");
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// GET /world/{worldId}/maps/{mapId}/pins — List pins for a map.
+    /// </summary>
+    [HttpGet("{mapId:guid}/pins")]
+    public async Task<ActionResult<IEnumerable<MapPinResponseDto>>> ListPins(Guid worldId, Guid mapId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+        _logger.LogTraceSanitized("User {UserId} listing pins for map {MapId}", user.Id, mapId);
+
+        try
+        {
+            var pins = await _worldMapService.ListPinsForMapAsync(worldId, mapId, user.Id);
+            return Ok(pins);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized pin list");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Pin list target not found");
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// PATCH /world/{worldId}/maps/{mapId}/pins/{pinId} — Update pin position.
+    /// </summary>
+    [HttpPatch("{mapId:guid}/pins/{pinId:guid}")]
+    public async Task<ActionResult<MapPinResponseDto>> UpdatePinPosition(
+        Guid worldId, Guid mapId, Guid pinId, [FromBody] MapPinPositionUpdateDto dto)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (dto == null)
+        {
+            return BadRequest(new { error = "Invalid request body" });
+        }
+
+        _logger.LogTraceSanitized("User {UserId} updating pin {PinId} on map {MapId}", user.Id, pinId, mapId);
+
+        try
+        {
+            var pin = await _worldMapService.UpdatePinPositionAsync(worldId, mapId, pinId, user.Id, dto);
+            return Ok(pin);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized pin update");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Invalid pin update request");
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Pin update target not found");
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// DELETE /world/{worldId}/maps/{mapId}/pins/{pinId} — Delete a pin from a map.
+    /// </summary>
+    [HttpDelete("{mapId:guid}/pins/{pinId:guid}")]
+    public async Task<IActionResult> DeletePin(Guid worldId, Guid mapId, Guid pinId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+        _logger.LogTraceSanitized("User {UserId} deleting pin {PinId} on map {MapId}", user.Id, pinId, mapId);
+
+        try
+        {
+            await _worldMapService.DeletePinAsync(worldId, mapId, pinId, user.Id);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized pin delete");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Pin delete target not found");
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// DELETE /world/{worldId}/maps/{mapId} — Permanently delete map metadata and all map blobs.
     /// </summary>
     [HttpDelete("{mapId:guid}")]
