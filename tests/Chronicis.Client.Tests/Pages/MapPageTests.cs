@@ -5,6 +5,7 @@ using Chronicis.Client.Services;
 using Chronicis.Client.Tests.Components;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Maps;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
@@ -338,27 +339,213 @@ public class MapPageTests : MudBlazorTestContext
         SetField(cut.Instance, "_createPinError", "bad");
         SetField(cut.Instance, "_selectedPinId", Guid.NewGuid());
         SetField(cut.Instance, "_isCreatePinMode", false);
+        SetField(cut.Instance, "_isCreatePinDialogOpen", false);
+        SetField(cut.Instance, "_pendingCreatePinX", null);
+        SetField(cut.Instance, "_pendingCreatePinY", null);
 
         await InvokePrivateOnRendererAsync(cut, "ToggleCreatePinMode");
         Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_createPinError"));
         Assert.Null(GetField<Guid?>(cut.Instance, "_selectedPinId"));
         Assert.True(GetField<bool>(cut.Instance, "_isCreatePinMode"));
 
+        SetField(cut.Instance, "_isCreatePinDialogOpen", true);
+        SetField(cut.Instance, "_pendingCreatePinX", 0.25f);
+        SetField(cut.Instance, "_pendingCreatePinY", 0.75f);
         await InvokePrivateOnRendererAsync(cut, "ToggleCreatePinMode");
         Assert.False(GetField<bool>(cut.Instance, "_isCreatePinMode"));
+        Assert.False(GetField<bool>(cut.Instance, "_isCreatePinDialogOpen"));
+        Assert.Null(GetField<float?>(cut.Instance, "_pendingCreatePinX"));
+        Assert.Null(GetField<float?>(cut.Instance, "_pendingCreatePinY"));
     }
 
     [Fact]
-    public async Task CreatePinArticleIdMethods_UpdateAndClearInput()
+    public async Task CreatePinInputMethods_UpdateAndClearInput()
     {
         var cut = RenderLoadedPage();
         var articleIdText = Guid.NewGuid().ToString();
+        const string pinName = "Tavern";
 
         await InvokePrivateOnRendererAsync(cut, "OnCreatePinArticleIdChanged", articleIdText);
         Assert.Equal(articleIdText, GetField<string>(cut.Instance, "_createPinArticleIdInput"));
 
+        await InvokePrivateOnRendererAsync(cut, "OnCreatePinNameChanged", pinName);
+        Assert.Equal(pinName, GetField<string>(cut.Instance, "_createPinNameInput"));
+
         await InvokePrivateOnRendererAsync(cut, "ClearCreatePinArticleId");
         Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_createPinArticleIdInput"));
+
+        await InvokePrivateOnRendererAsync(cut, "OnCreatePinNameInput", new ChangeEventArgs { Value = "Harbor" });
+        Assert.Equal("Harbor", GetField<string>(cut.Instance, "_createPinNameInput"));
+
+        await InvokePrivateOnRendererAsync(cut, "OnCreatePinArticleIdInput", new ChangeEventArgs { Value = articleIdText });
+        Assert.Equal(articleIdText, GetField<string>(cut.Instance, "_createPinArticleIdInput"));
+
+        await InvokePrivateOnRendererAsync(cut, "OnCreatePinNameInput", new ChangeEventArgs { Value = null });
+        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_createPinNameInput"));
+
+        await InvokePrivateOnRendererAsync(cut, "OnCreatePinArticleIdInput", new ChangeEventArgs { Value = null });
+        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_createPinArticleIdInput"));
+    }
+
+    [Fact]
+    public async Task CancelCreatePinDialog_ClosesDialogAndClearsPendingCoordinates()
+    {
+        var cut = RenderLoadedPage();
+        SetField(cut.Instance, "_isCreatePinDialogOpen", true);
+        SetField(cut.Instance, "_pendingCreatePinX", 0.15f);
+        SetField(cut.Instance, "_pendingCreatePinY", 0.85f);
+
+        await InvokePrivateOnRendererAsync(cut, "CancelCreatePinDialog");
+
+        Assert.False(GetField<bool>(cut.Instance, "_isCreatePinDialogOpen"));
+        Assert.Null(GetField<float?>(cut.Instance, "_pendingCreatePinX"));
+        Assert.Null(GetField<float?>(cut.Instance, "_pendingCreatePinY"));
+    }
+
+    [Fact]
+    public async Task OnMapImageShellClick_WhenDialogAlreadyOpen_ReturnsEarly()
+    {
+        var cut = RenderLoadedPage();
+        SetField(cut.Instance, "_isCreatePinMode", true);
+        SetField(cut.Instance, "_isCreatePinDialogOpen", true);
+
+        await InvokePrivateOnRendererAsync(cut, "OnMapImageShellClick", new MouseEventArgs { ClientX = 10, ClientY = 10 });
+
+        await _mapApi.DidNotReceive().CreatePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinCreateDto>());
+    }
+
+    [Fact]
+    public async Task ConfirmCreatePinFromDialogAsync_WhenLinkedArticleIdInvalid_SetsValidationError()
+    {
+        var cut = RenderLoadedPage();
+        SetField(cut.Instance, "_isCreatePinDialogOpen", true);
+        SetField(cut.Instance, "_pendingCreatePinX", 0.2f);
+        SetField(cut.Instance, "_pendingCreatePinY", 0.3f);
+        SetField(cut.Instance, "_createPinArticleIdInput", "not-a-guid");
+
+        await InvokePrivateOnRendererAsync(cut, "ConfirmCreatePinFromDialogAsync");
+
+        Assert.Equal("Linked Article Id must be a valid GUID.", GetField<string>(cut.Instance, "_createPinError"));
+        await _mapApi.DidNotReceive().CreatePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinCreateDto>());
+    }
+
+    [Fact]
+    public async Task ConfirmCreatePinFromDialogAsync_WhenPendingCoordinatesMissing_SetsBoundsError()
+    {
+        var cut = RenderLoadedPage();
+        SetField(cut.Instance, "_isCreatePinDialogOpen", true);
+        SetField(cut.Instance, "_createPinArticleIdInput", string.Empty);
+        SetField(cut.Instance, "_pendingCreatePinX", null);
+        SetField(cut.Instance, "_pendingCreatePinY", null);
+
+        await InvokePrivateOnRendererAsync(cut, "ConfirmCreatePinFromDialogAsync");
+
+        Assert.Equal("Could not determine map bounds for pin placement.", GetField<string>(cut.Instance, "_createPinError"));
+        await _mapApi.DidNotReceive().CreatePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinCreateDto>());
+    }
+
+    [Fact]
+    public async Task ConfirmCreatePinFromDialogAsync_WhenApiReturnsNull_SetsCreateErrorAndKeepsDialogOpen()
+    {
+        var cut = RenderLoadedPage();
+        _mapApi.CreatePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinCreateDto>())
+            .Returns((MapPinResponseDto?)null);
+        SetField(cut.Instance, "_isCreatePinDialogOpen", true);
+        SetField(cut.Instance, "_pendingCreatePinX", 0.2f);
+        SetField(cut.Instance, "_pendingCreatePinY", 0.3f);
+        SetField(cut.Instance, "_createPinArticleIdInput", string.Empty);
+        SetField(cut.Instance, "_createPinNameInput", "Harbor");
+
+        await InvokePrivateOnRendererAsync(cut, "ConfirmCreatePinFromDialogAsync");
+
+        Assert.Equal("Failed to create pin.", GetField<string>(cut.Instance, "_createPinError"));
+        Assert.True(GetField<bool>(cut.Instance, "_isCreatePinDialogOpen"));
+    }
+
+    [Fact]
+    public async Task ConfirmCreatePinFromDialogAsync_WhenSuccessful_CreatesPinAndClosesDialog()
+    {
+        var cut = RenderLoadedPage();
+        var linkedArticleId = Guid.NewGuid();
+        var createdPin = new MapPinResponseDto
+        {
+            PinId = Guid.NewGuid(),
+            MapId = Guid.NewGuid(),
+            LayerId = Guid.NewGuid(),
+            Name = "Harbor",
+            X = 0.2f,
+            Y = 0.3f
+        };
+
+        _mapApi.CreatePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinCreateDto>())
+            .Returns(createdPin);
+
+        SetField(cut.Instance, "_isCreatePinDialogOpen", true);
+        SetField(cut.Instance, "_pendingCreatePinX", 0.2f);
+        SetField(cut.Instance, "_pendingCreatePinY", 0.3f);
+        SetField(cut.Instance, "_createPinArticleIdInput", linkedArticleId.ToString());
+        SetField(cut.Instance, "_createPinNameInput", "Harbor");
+        SetField(cut.Instance, "_pins", new List<MapPinResponseDto>());
+
+        await InvokePrivateOnRendererAsync(cut, "ConfirmCreatePinFromDialogAsync");
+
+        var pins = GetField<List<MapPinResponseDto>>(cut.Instance, "_pins");
+        Assert.Single(pins);
+        Assert.Equal(createdPin.PinId, pins[0].PinId);
+        Assert.False(GetField<bool>(cut.Instance, "_isCreatePinDialogOpen"));
+        Assert.Null(GetField<float?>(cut.Instance, "_pendingCreatePinX"));
+        Assert.Null(GetField<float?>(cut.Instance, "_pendingCreatePinY"));
+        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_createPinArticleIdInput"));
+        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_createPinNameInput"));
+
+        await _mapApi.Received(1).CreatePinAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Is<MapPinCreateDto>(dto =>
+                dto.Name == "Harbor"
+                && dto.X == 0.2f
+                && dto.Y == 0.3f
+                && dto.LinkedArticleId == linkedArticleId));
+    }
+
+    [Fact]
+    public async Task OnCreatePinPopupKeyDown_WhenEnter_CreatesPin()
+    {
+        var cut = RenderLoadedPage();
+        var createdPin = new MapPinResponseDto
+        {
+            PinId = Guid.NewGuid(),
+            MapId = Guid.NewGuid(),
+            LayerId = Guid.NewGuid(),
+            X = 0.22f,
+            Y = 0.33f
+        };
+
+        _mapApi.CreatePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinCreateDto>())
+            .Returns(createdPin);
+
+        SetField(cut.Instance, "_isCreatePinDialogOpen", true);
+        SetField(cut.Instance, "_pendingCreatePinX", 0.22f);
+        SetField(cut.Instance, "_pendingCreatePinY", 0.33f);
+        SetField(cut.Instance, "_pins", new List<MapPinResponseDto>());
+
+        await InvokePrivateOnRendererAsync(cut, "OnCreatePinPopupKeyDown", new KeyboardEventArgs { Key = "Enter" });
+
+        Assert.Single(GetField<List<MapPinResponseDto>>(cut.Instance, "_pins"));
+        await _mapApi.Received(1).CreatePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinCreateDto>());
+    }
+
+    [Fact]
+    public async Task OnCreatePinPopupKeyDown_WhenNotEnter_DoesNotCreatePin()
+    {
+        var cut = RenderLoadedPage();
+        SetField(cut.Instance, "_isCreatePinDialogOpen", true);
+        SetField(cut.Instance, "_pendingCreatePinX", 0.22f);
+        SetField(cut.Instance, "_pendingCreatePinY", 0.33f);
+
+        await InvokePrivateOnRendererAsync(cut, "OnCreatePinPopupKeyDown", new KeyboardEventArgs { Key = "Escape" });
+
+        await _mapApi.DidNotReceive().CreatePinAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapPinCreateDto>());
     }
 
     [Fact]
@@ -390,6 +577,60 @@ public class MapPageTests : MudBlazorTestContext
         var style = (string?)method!.Invoke(null, new object?[] { new MapPinResponseDto { X = 0.1234f, Y = 0.5678f } });
 
         Assert.Equal("left:12.3400%;top:56.7800%;", style);
+    }
+
+    [Fact]
+    public void GetCreatePinPopupStyle_UsesPendingCoordinatesOrCenterFallback()
+    {
+        var cut = RenderLoadedPage();
+        var method = typeof(MapPage).GetMethod("GetCreatePinPopupStyle", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        SetField(cut.Instance, "_pendingCreatePinX", null);
+        SetField(cut.Instance, "_pendingCreatePinY", null);
+        var fallback = (string?)method!.Invoke(cut.Instance, null);
+        Assert.Equal("left:50.0000%;top:50.0000%;", fallback);
+
+        SetField(cut.Instance, "_pendingCreatePinX", 0.12f);
+        SetField(cut.Instance, "_pendingCreatePinY", 0.34f);
+        var exact = (string?)method.Invoke(cut.Instance, null);
+        Assert.Equal("left:12.0000%;top:34.0000%;", exact);
+    }
+
+    [Fact]
+    public void PinLabelAndTooltipHelpers_CoverNameAndArticleFallbackBranches()
+    {
+        var hasPinLabelMethod = typeof(MapPage).GetMethod("HasPinLabel", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var getPinLabelStyleMethod = typeof(MapPage).GetMethod("GetPinLabelStyle", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var getPinTooltipMethod = typeof(MapPage).GetMethod("GetPinTooltip", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var getPinAriaLabelMethod = typeof(MapPage).GetMethod("GetPinAriaLabel", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(hasPinLabelMethod);
+        Assert.NotNull(getPinLabelStyleMethod);
+        Assert.NotNull(getPinTooltipMethod);
+        Assert.NotNull(getPinAriaLabelMethod);
+
+        var namedPin = new MapPinResponseDto { Name = "Harbor", X = 0.2f, Y = 0.4f };
+        var articlePin = new MapPinResponseDto
+        {
+            LinkedArticle = new LinkedArticleSummaryDto { ArticleId = Guid.NewGuid(), Title = "Waterdeep" },
+            X = 0.3f,
+            Y = 0.6f
+        };
+        var barePin = new MapPinResponseDto { X = 0.5f, Y = 0.7f };
+
+        Assert.True((bool)hasPinLabelMethod!.Invoke(null, new object?[] { namedPin })!);
+        Assert.False((bool)hasPinLabelMethod.Invoke(null, new object?[] { articlePin })!);
+        Assert.False((bool)hasPinLabelMethod.Invoke(null, new object?[] { barePin })!);
+
+        var labelStyle = (string?)getPinLabelStyleMethod!.Invoke(null, new object?[] { namedPin });
+        Assert.Equal("left:20.0000%;top:40.0000%;", labelStyle);
+
+        Assert.Equal("Harbor", (string?)getPinTooltipMethod!.Invoke(null, new object?[] { namedPin }));
+        Assert.Equal("Waterdeep", (string?)getPinTooltipMethod.Invoke(null, new object?[] { articlePin }));
+        Assert.Equal("Map pin", (string?)getPinTooltipMethod.Invoke(null, new object?[] { barePin }));
+
+        Assert.Equal("Open article: Waterdeep", (string?)getPinAriaLabelMethod!.Invoke(null, new object?[] { articlePin }));
+        Assert.Equal("Pin: Map pin", (string?)getPinAriaLabelMethod.Invoke(null, new object?[] { barePin }));
     }
 
     [Fact]
@@ -428,6 +669,32 @@ public class MapPageTests : MudBlazorTestContext
         Assert.Equal(0d, low);
         Assert.Equal(0.25d, middle);
         Assert.Equal(1d, high);
+    }
+
+    [Fact]
+    public void HasUsableBounds_CoversNullWidthHeightAndValidBranches()
+    {
+        var method = typeof(MapPage).GetMethod("HasUsableBounds", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var rectType = typeof(MapPage).GetNestedType("MapElementRect", System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+        Assert.NotNull(rectType);
+
+        Assert.False((bool)method!.Invoke(null, new object?[] { null })!);
+
+        var noWidth = Activator.CreateInstance(rectType!);
+        rectType!.GetProperty("Width")!.SetValue(noWidth, 0d);
+        rectType.GetProperty("Height")!.SetValue(noWidth, 10d);
+        Assert.False((bool)method.Invoke(null, new[] { noWidth })!);
+
+        var noHeight = Activator.CreateInstance(rectType);
+        rectType.GetProperty("Width")!.SetValue(noHeight, 10d);
+        rectType.GetProperty("Height")!.SetValue(noHeight, 0d);
+        Assert.False((bool)method.Invoke(null, new[] { noHeight })!);
+
+        var valid = Activator.CreateInstance(rectType);
+        rectType.GetProperty("Width")!.SetValue(valid, 10d);
+        rectType.GetProperty("Height")!.SetValue(valid, 20d);
+        Assert.True((bool)method.Invoke(null, new[] { valid })!);
     }
 
     [Fact]

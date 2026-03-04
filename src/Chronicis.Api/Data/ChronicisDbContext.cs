@@ -982,6 +982,9 @@ public class ChronicisDbContext : DbContext
         {
             entity.HasKey(mf => mf.MapFeatureId);
 
+            entity.Property(mf => mf.Name)
+                .HasMaxLength(200);
+
             // MapFeature -> WorldMap
             entity.HasOne<WorldMap>()
                 .WithMany()

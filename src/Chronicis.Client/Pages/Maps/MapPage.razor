@@ -68,21 +68,11 @@ else
                 @(_isCreatePinMode ? "Create Pin: ON" : "Create Pin")
             </MudButton>
 
-            <MudTextField T="string"
-                          Label="Linked Article Id (optional)"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Value="@_createPinArticleIdInput"
-                          ValueChanged="OnCreatePinArticleIdChanged"
-                          Disabled="@_isCreatingPin"
-                          Immediate="true" />
-
-            <MudButton Variant="Variant.Text"
-                       Color="Color.Default"
-                       OnClick="ClearCreatePinArticleId"
-                       Disabled="@(_isCreatingPin || string.IsNullOrWhiteSpace(_createPinArticleIdInput))">
-                Clear
-            </MudButton>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                @(_isCreatePinMode
+                    ? "Click on the map to choose pin details."
+                    : "Enable Create Pin, then click map to place a pin.")
+            </MudText>
         </div>
 
         @if (!string.IsNullOrWhiteSpace(_createPinError))
@@ -114,8 +104,8 @@ else
                         <button type="button"
                                 class="@($"map-page__pin map-page__pin--interactive {(_selectedPinId == pin.PinId ? "map-page__pin--selected" : string.Empty)}")"
                                 style="@GetPinStyle(pin)"
-                                title="@pin.LinkedArticle.Title"
-                                aria-label="@($"Open article: {pin.LinkedArticle.Title}")"
+                                title="@GetPinTooltip(pin)"
+                                aria-label="@GetPinAriaLabel(pin)"
                                 @onclick="() => NavigateToLinkedArticleAsync(pin.LinkedArticle.ArticleId)">
                         </button>
                     }
@@ -123,7 +113,16 @@ else
                     {
                         <div class="@($"map-page__pin {(_selectedPinId == pin.PinId ? "map-page__pin--selected" : string.Empty)}")"
                              style="@GetPinStyle(pin)"
+                             title="@GetPinTooltip(pin)"
+                             aria-label="@GetPinAriaLabel(pin)"
                              aria-hidden="true">
+                        </div>
+                    }
+
+                    @if (HasPinLabel(pin))
+                    {
+                        <div class="map-page__pin-name" style="@GetPinLabelStyle(pin)" aria-hidden="true">
+                            @pin.Name
                         </div>
                     }
 
@@ -162,6 +161,53 @@ else
                     </div>
                 }
             </div>
+
+            @if (_isCreatePinDialogOpen)
+            {
+                <div class="map-page__pin-popup"
+                     style="@GetCreatePinPopupStyle()"
+                     role="dialog"
+                     aria-modal="false"
+                     aria-label="Create pin popup"
+                     @onclick:stopPropagation="true">
+                    <div class="map-page__pin-popup-title">Create pin</div>
+
+                    <label class="map-page__pin-popup-label" for="map-pin-name-input">Name (optional)</label>
+                    <input id="map-pin-name-input"
+                           class="map-page__pin-popup-input"
+                           placeholder="Pin name"
+                           value="@_createPinNameInput"
+                           @oninput="OnCreatePinNameInput"
+                           @onkeydown="OnCreatePinPopupKeyDown"
+                           disabled="@_isCreatingPin"
+                           autofocus
+                           onfocus="this.select();" />
+
+                    <label class="map-page__pin-popup-label" for="map-pin-article-input">Linked Article Id (optional)</label>
+                    <input id="map-pin-article-input"
+                           class="map-page__pin-popup-input"
+                           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                           value="@_createPinArticleIdInput"
+                           @oninput="OnCreatePinArticleIdInput"
+                           @onkeydown="OnCreatePinPopupKeyDown"
+                           disabled="@_isCreatingPin" />
+
+                    <div class="map-page__pin-popup-actions">
+                        <button type="button"
+                                class="map-page__pin-popup-button map-page__pin-popup-button--cancel"
+                                disabled="@_isCreatingPin"
+                                @onclick="CancelCreatePinDialog">
+                            Cancel
+                        </button>
+                        <button type="button"
+                                class="map-page__pin-popup-button"
+                                disabled="@_isCreatingPin"
+                                @onclick="ConfirmCreatePinFromDialogAsync">
+                            @(_isCreatingPin ? "Creating..." : "Save")
+                        </button>
+                    </div>
+                </div>
+            }
         </div>
     </MudPaper>
 }
@@ -180,6 +226,7 @@ else
     private bool _isCreatePinMode;
     private bool _isCreatingPin;
     private bool _isDeletingPin;
+    private bool _isCreatePinDialogOpen;
     private MapPageState _state = MapPageState.Loaded;
     private string _worldName = "World";
     private string _mapName = "Map";
@@ -188,7 +235,10 @@ else
     private string _createPinError = string.Empty;
     private string _pinDeleteError = string.Empty;
     private string _createPinArticleIdInput = string.Empty;
+    private string _createPinNameInput = string.Empty;
     private string _basemapReadUrl = string.Empty;
+    private float? _pendingCreatePinX;
+    private float? _pendingCreatePinY;
     private List<MapPinResponseDto> _pins = [];
     private Guid? _selectedPinId;
     private ElementReference _pinsOverlayRef;
@@ -230,10 +280,14 @@ else
         _createPinError = string.Empty;
         _pinDeleteError = string.Empty;
         _createPinArticleIdInput = string.Empty;
+        _createPinNameInput = string.Empty;
         _isCreatePinMode = false;
         _isCreatingPin = false;
         _isDeletingPin = false;
+        _isCreatePinDialogOpen = false;
         _basemapReadUrl = string.Empty;
+        _pendingCreatePinX = null;
+        _pendingCreatePinY = null;
         _pins = [];
         _selectedPinId = null;
         BuildBreadcrumbs();
@@ -370,11 +424,33 @@ else
         _createPinError = string.Empty;
         _selectedPinId = null;
         _isCreatePinMode = !_isCreatePinMode;
+        if (!_isCreatePinMode)
+        {
+            CancelCreatePinDialog();
+        }
     }
 
     private Task OnCreatePinArticleIdChanged(string value)
     {
         _createPinArticleIdInput = value;
+        return Task.CompletedTask;
+    }
+
+    private Task OnCreatePinNameChanged(string value)
+    {
+        _createPinNameInput = value;
+        return Task.CompletedTask;
+    }
+
+    private Task OnCreatePinNameInput(ChangeEventArgs args)
+    {
+        _createPinNameInput = args.Value?.ToString() ?? string.Empty;
+        return Task.CompletedTask;
+    }
+
+    private Task OnCreatePinArticleIdInput(ChangeEventArgs args)
+    {
+        _createPinArticleIdInput = args.Value?.ToString() ?? string.Empty;
         return Task.CompletedTask;
     }
 
@@ -386,7 +462,51 @@ else
 
     private async Task OnMapImageShellClick(MouseEventArgs args)
     {
-        if (!_isCreatePinMode || _isCreatingPin)
+        if (!_isCreatePinMode || _isCreatingPin || _isCreatePinDialogOpen)
+        {
+            return;
+        }
+
+        _createPinError = string.Empty;
+        try
+        {
+            var rect = await GetMapPlacementRectAsync();
+            if (rect == null || rect.Width <= 0 || rect.Height <= 0)
+            {
+                _createPinError = "Could not determine map bounds for pin placement.";
+                return;
+            }
+
+            var x = Clamp01((args.ClientX - rect.Left) / rect.Width);
+            var y = Clamp01((args.ClientY - rect.Top) / rect.Height);
+            _pendingCreatePinX = (float)x;
+            _pendingCreatePinY = (float)y;
+            _isCreatePinDialogOpen = true;
+        }
+        catch (JSException)
+        {
+            _createPinError = "Could not determine map bounds for pin placement.";
+        }
+    }
+
+    private void CancelCreatePinDialog()
+    {
+        _isCreatePinDialogOpen = false;
+        _pendingCreatePinX = null;
+        _pendingCreatePinY = null;
+    }
+
+    private async Task OnCreatePinPopupKeyDown(KeyboardEventArgs args)
+    {
+        if (string.Equals(args.Key, "Enter", StringComparison.Ordinal))
+        {
+            await ConfirmCreatePinFromDialogAsync();
+        }
+    }
+
+    private async Task ConfirmCreatePinFromDialogAsync()
+    {
+        if (!_isCreatePinDialogOpen || _isCreatingPin)
         {
             return;
         }
@@ -399,26 +519,23 @@ else
             return;
         }
 
+        if (!_pendingCreatePinX.HasValue || !_pendingCreatePinY.HasValue)
+        {
+            _createPinError = "Could not determine map bounds for pin placement.";
+            return;
+        }
+
         _isCreatingPin = true;
         try
         {
-            var rect = await GetMapPlacementRectAsync();
-            if (rect == null || rect.Width <= 0 || rect.Height <= 0)
-            {
-                _createPinError = "Could not determine map bounds for pin placement.";
-                return;
-            }
-
-            var x = Clamp01((args.ClientX - rect.Left) / rect.Width);
-            var y = Clamp01((args.ClientY - rect.Top) / rect.Height);
-
             var created = await MapApi.CreatePinAsync(
                 WorldId,
                 MapId,
                 new MapPinCreateDto
                 {
-                    X = (float)x,
-                    Y = (float)y,
+                    Name = _createPinNameInput,
+                    X = _pendingCreatePinX.Value,
+                    Y = _pendingCreatePinY.Value,
                     LinkedArticleId = linkedArticleId,
                 });
 
@@ -432,10 +549,10 @@ else
                 .Append(created)
                 .OrderBy(p => p.PinId)
                 .ToList();
-        }
-        catch (JSException)
-        {
-            _createPinError = "Could not determine map bounds for pin placement.";
+
+            _createPinArticleIdInput = string.Empty;
+            _createPinNameInput = string.Empty;
+            CancelCreatePinDialog();
         }
         finally
         {
@@ -545,6 +662,42 @@ else
 
     private static string GetPinStyle(MapPinResponseDto pin) =>
         $"left:{pin.X * 100:F4}%;top:{pin.Y * 100:F4}%;";
+
+    private static string GetPinLabelStyle(MapPinResponseDto pin) =>
+        $"left:{pin.X * 100:F4}%;top:{pin.Y * 100:F4}%;";
+
+    private static bool HasPinLabel(MapPinResponseDto pin) =>
+        !string.IsNullOrWhiteSpace(pin.Name);
+
+    private static string GetPinTooltip(MapPinResponseDto pin)
+    {
+        if (!string.IsNullOrWhiteSpace(pin.Name))
+        {
+            return pin.Name;
+        }
+
+        if (pin.LinkedArticle is not null)
+        {
+            return pin.LinkedArticle.Title;
+        }
+
+        return "Map pin";
+    }
+
+    private static string GetPinAriaLabel(MapPinResponseDto pin)
+    {
+        var label = GetPinTooltip(pin);
+        return pin.LinkedArticle is not null
+            ? $"Open article: {label}"
+            : $"Pin: {label}";
+    }
+
+    private string GetCreatePinPopupStyle()
+    {
+        var x = _pendingCreatePinX ?? 0.5f;
+        var y = _pendingCreatePinY ?? 0.5f;
+        return $"left:{x * 100:F4}%;top:{y * 100:F4}%;";
+    }
 
     private static bool TryParseLinkedArticleId(string value, out Guid? linkedArticleId)
     {

@@ -366,9 +366,28 @@ public class WorldMapServiceTests : IDisposable
             _worldId,
             map.WorldMapId,
             _memberId,
-            new MapPinCreateDto { X = 0.2f, Y = 0.8f, LinkedArticleId = missingArticleId });
+            new MapPinCreateDto { Name = "  Dock Ward  ", X = 0.2f, Y = 0.8f, LinkedArticleId = missingArticleId });
 
+        Assert.Equal("Dock Ward", created.Name);
         Assert.Null(created.LinkedArticle);
+    }
+
+    [Fact]
+    public async Task CreatePin_Throws_WhenNameTooLong_AndDoesNotWriteToDb()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Validate Pin Name");
+        var beforeCount = await _db.MapFeatures.CountAsync();
+        var tooLongName = new string('x', 201);
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.CreatePinAsync(
+                _worldId,
+                map.WorldMapId,
+                _memberId,
+                new MapPinCreateDto { Name = tooLongName, X = 0.2f, Y = 0.3f }));
+
+        var afterCount = await _db.MapFeatures.CountAsync();
+        Assert.Equal(beforeCount, afterCount);
     }
 
     [Fact]
@@ -483,7 +502,7 @@ public class WorldMapServiceTests : IDisposable
             _worldId,
             map.WorldMapId,
             _memberId,
-            new MapPinCreateDto { X = 0.80f, Y = 0.70f });
+            new MapPinCreateDto { Name = "Tavern", X = 0.80f, Y = 0.70f });
         var createdC = await _sut.CreatePinAsync(
             _worldId,
             map.WorldMapId,
@@ -509,10 +528,12 @@ public class WorldMapServiceTests : IDisposable
 
         Assert.Equal(0.33f, updated.X);
         Assert.Equal(0.66f, updated.Y);
+        Assert.Equal("Tavern", updated.Name);
 
         var updatedEntity = await _db.MapFeatures.AsNoTracking().FirstAsync(mf => mf.MapFeatureId == createdB.PinId);
         Assert.Equal(0.33f, updatedEntity.X);
         Assert.Equal(0.66f, updatedEntity.Y);
+        Assert.Equal("Tavern", updatedEntity.Name);
 
         await _sut.DeletePinAsync(_worldId, map.WorldMapId, createdC.PinId, _memberId);
 

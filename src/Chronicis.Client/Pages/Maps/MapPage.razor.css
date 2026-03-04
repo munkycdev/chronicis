@@ -53,6 +53,24 @@
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--mud-palette-warning) 72%, white 28%);
 }
 
+.map-page__pin-name {
+    position: absolute;
+    transform: translate(10px, -130%);
+    background: color-mix(in srgb, var(--mud-palette-surface) 92%, black 8%);
+    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 20%, transparent 80%);
+    border-radius: 8px;
+    color: var(--mud-palette-text-primary);
+    font-size: 0.72rem;
+    line-height: 1.2;
+    padding: 0.1rem 0.35rem;
+    max-width: 12rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    z-index: 4;
+}
+
 .map-page__pins-overlay--create .map-page__pin {
     pointer-events: none;
 }
@@ -114,4 +132,75 @@
     gap: 0.75rem;
     margin-bottom: 1rem;
     flex-wrap: wrap;
+}
+
+.map-page__pin-popup {
+    position: absolute;
+    z-index: 6;
+    transform: translate(10px, 8px);
+    width: min(17rem, calc(100% - 1rem));
+    padding: 0.55rem;
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 18%, transparent 82%);
+    background: color-mix(in srgb, var(--mud-palette-surface) 97%, black 3%);
+    box-shadow: 0 8px 18px color-mix(in srgb, black 22%, transparent 78%);
+    pointer-events: auto;
+}
+
+.map-page__pin-popup-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.map-page__pin-popup-label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--mud-palette-text-secondary);
+    margin: 0.25rem 0 0.2rem;
+}
+
+.map-page__pin-popup-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 20%, transparent 80%);
+    border-radius: 6px;
+    background: var(--mud-palette-background-grey);
+    color: var(--mud-palette-text-primary);
+    padding: 0.32rem 0.46rem;
+    font-size: 0.78rem;
+    line-height: 1.2;
+}
+
+.map-page__pin-popup-input:focus {
+    outline: 2px solid color-mix(in srgb, var(--mud-palette-primary) 35%, transparent 65%);
+    outline-offset: 0;
+}
+
+.map-page__pin-popup-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+}
+
+.map-page__pin-popup-button {
+    border: none;
+    border-radius: 6px;
+    padding: 0.24rem 0.5rem;
+    font-size: 0.74rem;
+    cursor: pointer;
+    color: var(--mud-palette-white);
+    background: color-mix(in srgb, var(--mud-palette-primary) 82%, black 18%);
+}
+
+.map-page__pin-popup-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.map-page__pin-popup-button--cancel {
+    background: color-mix(in srgb, var(--mud-palette-text-primary) 18%, transparent 82%);
+    color: var(--mud-palette-text-primary);
 }

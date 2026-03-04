@@ -83,6 +83,7 @@ public class MapSummaryDto
 [ExcludeFromCodeCoverage]
 public class MapPinCreateDto
 {
+    public string? Name { get; set; }
     public float X { get; set; }
     public float Y { get; set; }
     public Guid? LinkedArticleId { get; set; }
@@ -107,6 +108,7 @@ public class MapPinResponseDto
     public Guid PinId { get; set; }
     public Guid MapId { get; set; }
     public Guid LayerId { get; set; }
+    public string? Name { get; set; }
     public float X { get; set; }
     public float Y { get; set; }
     public LinkedArticleSummaryDto? LinkedArticle { get; set; }

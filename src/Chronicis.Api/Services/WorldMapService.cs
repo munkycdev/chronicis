@@ -14,6 +14,7 @@ public class WorldMapService : IWorldMapService
     private readonly ChronicisDbContext _db;
     private readonly IMapBlobStore _mapBlobStore;
     private readonly ILogger<WorldMapService> _logger;
+    private const int MaxPinNameLength = 200;
 
     internal static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -157,6 +158,7 @@ public class WorldMapService : IWorldMapService
 
         await EnsureWorldMembershipAsync(worldId, userId);
         ValidateNormalizedCoordinates(dto.X, dto.Y);
+        var pinName = NormalizePinName(dto.Name);
 
         var layerId = await ResolveDefaultLayerIdAsync(worldId, mapId);
         var pin = new MapFeature
@@ -164,6 +166,7 @@ public class WorldMapService : IWorldMapService
             MapFeatureId = Guid.NewGuid(),
             WorldMapId = mapId,
             MapLayerId = layerId,
+            Name = pinName,
             X = dto.X,
             Y = dto.Y,
             LinkedArticleId = dto.LinkedArticleId,
@@ -192,6 +195,7 @@ public class WorldMapService : IWorldMapService
                 mf.MapFeatureId,
                 mf.WorldMapId,
                 mf.MapLayerId,
+                mf.Name,
                 X = mf.X,
                 Y = mf.Y,
                 mf.LinkedArticleId,
@@ -217,6 +221,7 @@ public class WorldMapService : IWorldMapService
                 PinId = pin.MapFeatureId,
                 MapId = pin.WorldMapId,
                 LayerId = pin.MapLayerId,
+                Name = pin.Name,
                 X = pin.X,
                 Y = pin.Y,
                 LinkedArticle = pin.LinkedArticleId.HasValue
@@ -476,6 +481,22 @@ public class WorldMapService : IWorldMapService
     private static bool IsNormalizedCoordinate(float value) =>
         !float.IsNaN(value) && !float.IsInfinity(value) && value >= 0f && value <= 1f;
 
+    private static string? NormalizePinName(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        if (trimmed.Length > MaxPinNameLength)
+        {
+            throw new ArgumentException($"Pin name must be {MaxPinNameLength} characters or fewer");
+        }
+
+        return trimmed;
+    }
+
     private async Task<MapPinResponseDto> GetMapPinResponseAsync(Guid pinId, Guid mapId)
     {
         var pin = await _db.MapFeatures
@@ -486,6 +507,7 @@ public class WorldMapService : IWorldMapService
                 mf.MapFeatureId,
                 mf.WorldMapId,
                 mf.MapLayerId,
+                mf.Name,
                 mf.X,
                 mf.Y,
                 mf.LinkedArticleId,
@@ -521,6 +543,7 @@ public class WorldMapService : IWorldMapService
             PinId = pin.MapFeatureId,
             MapId = pin.WorldMapId,
             LayerId = pin.MapLayerId,
+            Name = pin.Name,
             X = pin.X,
             Y = pin.Y,
             LinkedArticle = linkedArticle,
