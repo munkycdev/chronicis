@@ -14,6 +14,7 @@
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject ITreeStateService TreeState
+@inject NavigationManager Navigation
 
 @if (_isLoading)
 {
@@ -115,26 +116,22 @@ else
                         <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Small" Class="mr-2" />
                         World-scoped
                     </MudText>
-                    @foreach (var map in _worldScopedMaps)
-                    {
-                        <div class="maps-list-row">
-                            <div class="maps-list-row__main">
-                                <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" Class="maps-list-row__icon" />
-                                <MudLink Href="@GetMapRoute(map.WorldMapId)">
-                                    @GetDisplayName(map.Name, "Untitled Map")
-                                </MudLink>
-                            </div>
-                            <MudButton Variant="Variant.Text"
-                                       Color="Color.Error"
-                                       Size="Size.Small"
-                                       OnClick="@(() => OpenDeleteDialogAsync(map))"
-                                       Disabled="@IsDeleteInProgress(map.WorldMapId)"
-                                       StartIcon="@Icons.Material.Filled.Delete"
-                                       Class="maps-list-row__delete">
-                                @(IsDeleteInProgress(map.WorldMapId) ? "Deleting..." : "Delete")
-                            </MudButton>
-                        </div>
-                    }
+                    <MudList T="MapSummaryDto" Dense="true">
+                        @foreach (var map in _worldScopedMaps)
+                        {
+                            <EntityListItem Icon="@Icons.Material.Filled.Map"
+                                            Title="@GetDisplayName(map.Name, "Untitled Map")"
+                                            OnClick="@(() => NavigateToMap(map.WorldMapId))">
+                                <span @onclick:stopPropagation="true">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Color="Color.Error"
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => OpenDeleteDialogAsync(map))"
+                                                   Disabled="@IsDeleteInProgress(map.WorldMapId)" />
+                                </span>
+                            </EntityListItem>
+                        }
+                    </MudList>
                 </MudPaper>
             }
 
@@ -151,26 +148,22 @@ else
                             <MudText Typo="Typo.subtitle1" Class="mb-1 maps-group-heading">
                                 @campaignGroup.CampaignName
                             </MudText>
-                            @foreach (var map in campaignGroup.Maps)
-                            {
-                                <div class="maps-list-row maps-list-row--nested">
-                                    <div class="maps-list-row__main">
-                                        <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" Class="maps-list-row__icon" />
-                                        <MudLink Href="@GetMapRoute(map.WorldMapId)">
-                                            @GetDisplayName(map.Name, "Untitled Map")
-                                        </MudLink>
-                                    </div>
-                                    <MudButton Variant="Variant.Text"
-                                               Color="Color.Error"
-                                               Size="Size.Small"
-                                               OnClick="@(() => OpenDeleteDialogAsync(map))"
-                                               Disabled="@IsDeleteInProgress(map.WorldMapId)"
-                                               StartIcon="@Icons.Material.Filled.Delete"
-                                               Class="maps-list-row__delete">
-                                        @(IsDeleteInProgress(map.WorldMapId) ? "Deleting..." : "Delete")
-                                    </MudButton>
-                                </div>
-                            }
+                            <MudList T="MapSummaryDto" Dense="true">
+                                @foreach (var map in campaignGroup.Maps)
+                                {
+                                    <EntityListItem Icon="@Icons.Material.Filled.Map"
+                                                    Title="@GetDisplayName(map.Name, "Untitled Map")"
+                                                    OnClick="@(() => NavigateToMap(map.WorldMapId))">
+                                        <span @onclick:stopPropagation="true">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                           Color="Color.Error"
+                                                           Size="Size.Small"
+                                                           OnClick="@(() => OpenDeleteDialogAsync(map))"
+                                                           Disabled="@IsDeleteInProgress(map.WorldMapId)" />
+                                        </span>
+                                    </EntityListItem>
+                                }
+                            </MudList>
                         </div>
                     }
                 </MudPaper>
@@ -194,26 +187,22 @@ else
                                 <MudText Typo="Typo.subtitle2" Class="mb-1 maps-arc-heading">
                                     @arcGroup.ArcName
                                 </MudText>
-                                @foreach (var map in arcGroup.Maps)
-                                {
-                                    <div class="maps-list-row maps-list-row--deep">
-                                        <div class="maps-list-row__main">
-                                            <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" Class="maps-list-row__icon" />
-                                            <MudLink Href="@GetMapRoute(map.WorldMapId)">
-                                                @GetDisplayName(map.Name, "Untitled Map")
-                                            </MudLink>
-                                        </div>
-                                        <MudButton Variant="Variant.Text"
-                                                   Color="Color.Error"
-                                                   Size="Size.Small"
-                                                   OnClick="@(() => OpenDeleteDialogAsync(map))"
-                                                   Disabled="@IsDeleteInProgress(map.WorldMapId)"
-                                                   StartIcon="@Icons.Material.Filled.Delete"
-                                                   Class="maps-list-row__delete">
-                                            @(IsDeleteInProgress(map.WorldMapId) ? "Deleting..." : "Delete")
-                                        </MudButton>
-                                    </div>
-                                }
+                                <MudList T="MapSummaryDto" Dense="true">
+                                    @foreach (var map in arcGroup.Maps)
+                                    {
+                                        <EntityListItem Icon="@Icons.Material.Filled.Map"
+                                                        Title="@GetDisplayName(map.Name, "Untitled Map")"
+                                                        OnClick="@(() => NavigateToMap(map.WorldMapId))">
+                                            <span @onclick:stopPropagation="true">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                               Color="Color.Error"
+                                                               Size="Size.Small"
+                                                               OnClick="@(() => OpenDeleteDialogAsync(map))"
+                                                               Disabled="@IsDeleteInProgress(map.WorldMapId)" />
+                                            </span>
+                                        </EntityListItem>
+                                    }
+                                </MudList>
                             }
                         </div>
                     }
@@ -810,6 +799,8 @@ else
     }
 
     private string GetMapRoute(Guid mapId) => $"/world/{WorldId}/maps/{mapId}";
+
+    private void NavigateToMap(Guid mapId) => Navigation.NavigateTo(GetMapRoute(mapId));
 
     private static string GetDisplayName(string? value, string fallback)
         => string.IsNullOrWhiteSpace(value) ? fallback : value;
