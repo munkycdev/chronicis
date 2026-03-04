@@ -1,7 +1,7 @@
 @* EntityListItem.razor - Reusable clickable list item for entity lists *@
 @* Used for arcs, sessions, and similar entity lists *@
 
-<MudListItem T="string" OnClick="OnClick" Class="chronicis-list-item">
+<MudListItem T="string" OnClick="OnClick" Href="@Href" Class="chronicis-list-item">
     <div class="d-flex align-center justify-space-between" style="width: 100%;">
         <div class="d-flex align-center">
             <MudIcon Icon="@Icon" 
@@ -35,6 +35,12 @@
     /// </summary>
     [Parameter]
     public EventCallback OnClick { get; set; }
+
+    /// <summary>
+    /// Optional href for rendering as a navigable link.
+    /// </summary>
+    [Parameter]
+    public string? Href { get; set; }
 
     /// <summary>
     /// Optional content to display on the right side (e.g., a chip with count).

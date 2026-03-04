@@ -121,7 +121,7 @@ else
                         {
                             <EntityListItem Icon="@Icons.Material.Filled.Map"
                                             Title="@GetDisplayName(map.Name, "Untitled Map")"
-                                            OnClick="@(() => NavigateToMap(map.WorldMapId))">
+                                            Href="@GetMapRoute(map.WorldMapId)">
                                 <span @onclick:stopPropagation="true">
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                    Color="Color.Error"
@@ -153,7 +153,7 @@ else
                                 {
                                     <EntityListItem Icon="@Icons.Material.Filled.Map"
                                                     Title="@GetDisplayName(map.Name, "Untitled Map")"
-                                                    OnClick="@(() => NavigateToMap(map.WorldMapId))">
+                                                    Href="@GetMapRoute(map.WorldMapId)">
                                         <span @onclick:stopPropagation="true">
                                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                            Color="Color.Error"
@@ -192,7 +192,7 @@ else
                                     {
                                         <EntityListItem Icon="@Icons.Material.Filled.Map"
                                                         Title="@GetDisplayName(map.Name, "Untitled Map")"
-                                                        OnClick="@(() => NavigateToMap(map.WorldMapId))">
+                                                        Href="@GetMapRoute(map.WorldMapId)">
                                             <span @onclick:stopPropagation="true">
                                                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                Color="Color.Error"
@@ -799,8 +799,6 @@ else
     }
 
     private string GetMapRoute(Guid mapId) => $"/world/{WorldId}/maps/{mapId}";
-
-    private void NavigateToMap(Guid mapId) => Navigation.NavigateTo(GetMapRoute(mapId));
 
     private static string GetDisplayName(string? value, string fallback)
         => string.IsNullOrWhiteSpace(value) ? fallback : value;

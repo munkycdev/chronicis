@@ -13,7 +13,13 @@
       "Bash(dotnet format Chronicis.CI.sln)",
       "Bash(pwsh ./scripts/verify.ps1)",
       "Bash(pwsh -NoProfile ./scripts/verify.ps1)",
-      "Bash(dotnet format z:/repos/chronicis/Chronicis.CI.sln)"
+      "Bash(dotnet format z:/repos/chronicis/Chronicis.CI.sln)",
+      "Bash(taskkill /PID 25392 /F)",
+      "Bash(powershell -Command \"Stop-Process -Id 25392 -Force -ErrorAction SilentlyContinue; Write-Host Done\")",
+      "Bash(dotnet run --project tests/Chronicis.Client.Tests)",
+      "Bash(ildasm)",
+      "Bash(ls z:/repos/chronicis/tests/Chronicis.Client.Tests/bin/Debug/net9.0/Chronicis*.dll)",
+      "Bash(xxd)"
     ],
     "defaultMode": "acceptEdits"
   }
