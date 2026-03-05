@@ -359,6 +359,355 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
+    public void GetMapViewportClass_CoversCreateDragPanAndDefaultBranches()
+    {
+        var cut = RenderLoadedPage();
+        var method = typeof(MapPage).GetMethod("GetMapViewportClass", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        SetField(cut.Instance, "_isCreatePinMode", true);
+        var createClass = (string?)method!.Invoke(cut.Instance, null);
+        Assert.Equal("map-page__viewport map-page__viewport--create", createClass);
+
+        SetField(cut.Instance, "_isCreatePinMode", false);
+        SetField(cut.Instance, "_isMapDragging", true);
+        var dragClass = (string?)method.Invoke(cut.Instance, null);
+        Assert.Equal("map-page__viewport map-page__viewport--dragging", dragClass);
+
+        SetField(cut.Instance, "_isMapDragging", false);
+        SetField(cut.Instance, "_hasMapViewportLayout", true);
+        SetField(cut.Instance, "_mapMinZoom", 1d);
+        SetField(cut.Instance, "_mapZoom", 2d);
+        var panClass = (string?)method.Invoke(cut.Instance, null);
+        Assert.Equal("map-page__viewport map-page__viewport--pan", panClass);
+
+        SetField(cut.Instance, "_mapZoom", 1d);
+        var defaultClass = (string?)method.Invoke(cut.Instance, null);
+        Assert.Equal("map-page__viewport", defaultClass);
+    }
+
+    [Fact]
+    public void GetMapStageStyle_CoversFallbackAndFormattedTransform()
+    {
+        var cut = RenderLoadedPage();
+        var method = typeof(MapPage).GetMethod("GetMapStageStyle", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        SetField(cut.Instance, "_hasMapViewportLayout", false);
+        var fallback = (string?)method!.Invoke(cut.Instance, null);
+        Assert.Equal("width:100%;height:auto;transform:translate(0px,0px) scale(1);", fallback);
+
+        SetField(cut.Instance, "_hasMapViewportLayout", true);
+        SetField(cut.Instance, "_mapBaseWidth", 500d);
+        SetField(cut.Instance, "_mapBaseHeight", 400d);
+        SetField(cut.Instance, "_mapPanX", 12.3d);
+        SetField(cut.Instance, "_mapPanY", -9.8d);
+        SetField(cut.Instance, "_mapZoom", 1.25d);
+        var transform = (string?)method.Invoke(cut.Instance, null);
+        Assert.Equal("width:500.00px;height:400.00px;transform:translate(12.30px,-9.80px) scale(1.2500);", transform);
+    }
+
+    [Fact]
+    public void GetMapImageClass_CoversPreAndPostLayoutBranches()
+    {
+        var cut = RenderLoadedPage();
+        var method = typeof(MapPage).GetMethod("GetMapImageClass", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        SetField(cut.Instance, "_hasMapViewportLayout", false);
+        var beforeLayout = (string?)method!.Invoke(cut.Instance, null);
+        Assert.Equal("map-page__image", beforeLayout);
+
+        SetField(cut.Instance, "_hasMapViewportLayout", true);
+        var afterLayout = (string?)method.Invoke(cut.Instance, null);
+        Assert.Equal("map-page__image map-page__image--stage", afterLayout);
+    }
+
+    [Fact]
+    public void GetMapShellStyle_CoversFallbackAndComputedHeightBranches()
+    {
+        var cut = RenderLoadedPage();
+        var method = typeof(MapPage).GetMethod("GetMapShellStyle", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        SetField(cut.Instance, "_mapPreferredViewportHeightPx", null);
+        var fallback = (string?)method!.Invoke(cut.Instance, null);
+        Assert.Equal("height:clamp(24rem, calc(100vh - 16rem), 78vh);", fallback);
+
+        SetField(cut.Instance, "_mapPreferredViewportHeightPx", 640d);
+        var computed = (string?)method.Invoke(cut.Instance, null);
+        Assert.Equal("height:min(78vh, max(24rem, 640.00px));", computed);
+    }
+
+    [Fact]
+    public void ZoomSliderHelpers_CoverClampsAndDegenerateRanges()
+    {
+        var sliderMethod = typeof(MapPage).GetMethod("GetSliderValueForZoom", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var zoomMethod = typeof(MapPage).GetMethod("GetZoomForSliderValue", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(sliderMethod);
+        Assert.NotNull(zoomMethod);
+
+        var midSlider = (int)sliderMethod!.Invoke(null, new object?[] { 3d, 1d, 5d })!;
+        Assert.Equal(50, midSlider);
+
+        var lowSlider = (int)sliderMethod.Invoke(null, new object?[] { 0.5d, 1d, 5d })!;
+        Assert.Equal(0, lowSlider);
+
+        var degenerateSlider = (int)sliderMethod.Invoke(null, new object?[] { 2d, 2d, 2d })!;
+        Assert.Equal(0, degenerateSlider);
+
+        var midZoom = (double)zoomMethod!.Invoke(null, new object?[] { 50d, 1d, 5d })!;
+        Assert.Equal(3d, midZoom, 10);
+
+        var clampedZoom = (double)zoomMethod.Invoke(null, new object?[] { 300d, 1d, 5d })!;
+        Assert.Equal(5d, clampedZoom, 10);
+
+        var degenerateZoom = (double)zoomMethod.Invoke(null, new object?[] { 50d, 2d, 2d })!;
+        Assert.Equal(2d, degenerateZoom, 10);
+    }
+
+    [Fact]
+    public void ClampPanAxis_CoversAllBranches()
+    {
+        var method = typeof(MapPage).GetMethod("ClampPanAxis", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var noViewport = (double)method!.Invoke(null, new object?[] { 10d, 0d, 100d })!;
+        Assert.Equal(0d, noViewport);
+
+        var noScaledSize = (double)method.Invoke(null, new object?[] { 10d, 100d, 0d })!;
+        Assert.Equal(0d, noScaledSize);
+
+        var centered = (double)method.Invoke(null, new object?[] { 10d, 120d, 100d })!;
+        Assert.Equal(10d, centered, 10);
+
+        var clampedLow = (double)method.Invoke(null, new object?[] { -200d, 100d, 180d })!;
+        Assert.Equal(-80d, clampedLow, 10);
+
+        var clampedHigh = (double)method.Invoke(null, new object?[] { 25d, 100d, 180d })!;
+        Assert.Equal(0d, clampedHigh, 10);
+    }
+
+    [Fact]
+    public void TryReadDouble_CoversValidAndInvalidInput()
+    {
+        var method = typeof(MapPage).GetMethod("TryReadDouble", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var validArgs = new object?[] { "12.5", 0d };
+        var valid = (bool)method!.Invoke(null, validArgs)!;
+        Assert.True(valid);
+        Assert.Equal(12.5d, (double)validArgs[1]!, 10);
+
+        var invalidArgs = new object?[] { "x", 0d };
+        var invalid = (bool)method.Invoke(null, invalidArgs)!;
+        Assert.False(invalid);
+        Assert.Equal(0d, (double)invalidArgs[1]!, 10);
+
+        var nullArgs = new object?[] { null, 0d };
+        var nullResult = (bool)method.Invoke(null, nullArgs)!;
+        Assert.False(nullResult);
+        Assert.Equal(0d, (double)nullArgs[1]!, 10);
+    }
+
+    [Fact]
+    public void TryMapClientPointToPinCoordinates_CoversValidationAndCoordinateMath()
+    {
+        var cut = RenderLoadedPage();
+        var method = typeof(MapPage).GetMethod("TryMapClientPointToPinCoordinates", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        SetField(cut.Instance, "_hasMapViewportLayout", false);
+        var missingLayoutArgs = new object?[] { 300d, 250d, 0f, 0f, 0f, 0f };
+        var missingLayout = (bool)method!.Invoke(cut.Instance, missingLayoutArgs)!;
+        Assert.False(missingLayout);
+
+        SetField(cut.Instance, "_hasMapViewportLayout", true);
+        SetField(cut.Instance, "_mapBaseWidth", 1000d);
+        SetField(cut.Instance, "_mapBaseHeight", 500d);
+        SetField(cut.Instance, "_mapZoom", 2d);
+        SetField(cut.Instance, "_mapPanX", -100d);
+        SetField(cut.Instance, "_mapPanY", -50d);
+        SetField(cut.Instance, "_mapViewportWidth", 800d);
+        SetField(cut.Instance, "_mapViewportHeight", 600d);
+
+        var negativeArgs = new object?[] { -1d, 100d, 0f, 0f, 0f, 0f };
+        var negative = (bool)method.Invoke(cut.Instance, negativeArgs)!;
+        Assert.False(negative);
+
+        var validArgs = new object?[] { 300d, 250d, 0f, 0f, 0f, 0f };
+        var valid = (bool)method.Invoke(cut.Instance, validArgs)!;
+        Assert.True(valid);
+        Assert.Equal(0.2f, (float)validArgs[2]!, 3);
+        Assert.Equal(0.3f, (float)validArgs[3]!, 3);
+        Assert.Equal(0.375f, (float)validArgs[4]!, 3);
+        Assert.Equal(0.4167f, (float)validArgs[5]!, 3);
+    }
+
+    [Fact]
+    public async Task SetZoomLevelAndPanHandlers_CoverClampAndDragFlow()
+    {
+        var cut = RenderLoadedPage();
+
+        SetField(cut.Instance, "_hasMapViewportLayout", false);
+        SetField(cut.Instance, "_mapZoom", 1d);
+        await InvokePrivateOnRendererAsync(cut, "SetZoomLevel", 3d);
+        Assert.Equal(1d, GetField<double>(cut.Instance, "_mapZoom"), 10);
+
+        SetField(cut.Instance, "_hasMapViewportLayout", true);
+        SetField(cut.Instance, "_mapBaseWidth", 1000d);
+        SetField(cut.Instance, "_mapBaseHeight", 600d);
+        SetField(cut.Instance, "_mapViewportWidth", 800d);
+        SetField(cut.Instance, "_mapViewportHeight", 500d);
+        SetField(cut.Instance, "_mapMinZoom", 1d);
+        SetField(cut.Instance, "_mapMaxZoom", 4d);
+        SetField(cut.Instance, "_mapZoom", 1d);
+        SetField(cut.Instance, "_mapPanX", -100d);
+        SetField(cut.Instance, "_mapPanY", -50d);
+
+        await InvokePrivateOnRendererAsync(cut, "SetZoomLevel", 1d);
+        Assert.Equal(1d, GetField<double>(cut.Instance, "_mapZoom"), 10);
+
+        await InvokePrivateOnRendererAsync(cut, "SetZoomLevel", 2d);
+        Assert.Equal(2d, GetField<double>(cut.Instance, "_mapZoom"), 10);
+        Assert.Equal(-600d, GetField<double>(cut.Instance, "_mapPanX"), 10);
+        Assert.Equal(-350d, GetField<double>(cut.Instance, "_mapPanY"), 10);
+
+        await InvokePrivateOnRendererAsync(cut, "SetZoomLevel", 10d);
+        Assert.Equal(4d, GetField<double>(cut.Instance, "_mapZoom"), 10);
+
+        SetField(cut.Instance, "_mapZoom", 2d);
+        SetField(cut.Instance, "_mapPanX", -600d);
+        SetField(cut.Instance, "_mapPanY", -350d);
+        SetField(cut.Instance, "_isCreatePinMode", false);
+
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseDown", new MouseEventArgs { Button = 1, ClientX = 100, ClientY = 100 });
+        Assert.False(GetField<bool>(cut.Instance, "_isMapPointerDown"));
+
+        SetField(cut.Instance, "_mapZoom", 1d);
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseDown", new MouseEventArgs { Button = 0, ClientX = 100, ClientY = 100 });
+        Assert.False(GetField<bool>(cut.Instance, "_isMapPointerDown"));
+
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseMove", new MouseEventArgs { ClientX = 120, ClientY = 120 });
+        Assert.False(GetField<bool>(cut.Instance, "_isMapDragging"));
+
+        SetField(cut.Instance, "_mapZoom", 2d);
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseDown", new MouseEventArgs { Button = 0, ClientX = 100, ClientY = 100 });
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseMove", new MouseEventArgs { ClientX = 101, ClientY = 101 });
+        Assert.False(GetField<bool>(cut.Instance, "_isMapDragging"));
+        Assert.Equal(-600d, GetField<double>(cut.Instance, "_mapPanX"), 10);
+
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseMove", new MouseEventArgs { ClientX = 130, ClientY = 125 });
+        Assert.True(GetField<bool>(cut.Instance, "_isMapDragging"));
+        Assert.Equal(-570d, GetField<double>(cut.Instance, "_mapPanX"), 10);
+        Assert.Equal(-325d, GetField<double>(cut.Instance, "_mapPanY"), 10);
+
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseMove", new MouseEventArgs { ClientX = 140, ClientY = 130 });
+        Assert.Equal(-560d, GetField<double>(cut.Instance, "_mapPanX"), 10);
+        Assert.Equal(-320d, GetField<double>(cut.Instance, "_mapPanY"), 10);
+
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseUp", new MouseEventArgs());
+        Assert.False(GetField<bool>(cut.Instance, "_isMapPointerDown"));
+        Assert.False(GetField<bool>(cut.Instance, "_isMapDragging"));
+        Assert.True(GetField<bool>(cut.Instance, "_suppressCreatePinClick"));
+    }
+
+    [Fact]
+    public async Task RecenterMapPan_CentersAndClampsStage()
+    {
+        var cut = RenderLoadedPage();
+        SetField(cut.Instance, "_mapBaseWidth", 1000d);
+        SetField(cut.Instance, "_mapBaseHeight", 600d);
+        SetField(cut.Instance, "_mapViewportWidth", 800d);
+        SetField(cut.Instance, "_mapViewportHeight", 500d);
+        SetField(cut.Instance, "_mapZoom", 1.5d);
+        SetField(cut.Instance, "_mapPanX", 999d);
+        SetField(cut.Instance, "_mapPanY", -999d);
+
+        await InvokePrivateOnRendererAsync(cut, "RecenterMapPan");
+
+        Assert.Equal(-350d, GetField<double>(cut.Instance, "_mapPanX"), 10);
+        Assert.Equal(-200d, GetField<double>(cut.Instance, "_mapPanY"), 10);
+    }
+
+    [Fact]
+    public async Task OnZoomSliderInput_CoversNoLayoutInvalidAndValidPaths()
+    {
+        var cut = RenderLoadedPage();
+
+        SetField(cut.Instance, "_hasMapViewportLayout", false);
+        SetField(cut.Instance, "_mapZoom", 1d);
+        await InvokePrivateOnRendererAsync(cut, "OnZoomSliderInput", new ChangeEventArgs { Value = "50" });
+        Assert.Equal(1d, GetField<double>(cut.Instance, "_mapZoom"), 10);
+
+        SetField(cut.Instance, "_hasMapViewportLayout", true);
+        SetField(cut.Instance, "_mapBaseWidth", 1000d);
+        SetField(cut.Instance, "_mapBaseHeight", 600d);
+        SetField(cut.Instance, "_mapViewportWidth", 800d);
+        SetField(cut.Instance, "_mapViewportHeight", 500d);
+        SetField(cut.Instance, "_mapMinZoom", 1d);
+        SetField(cut.Instance, "_mapMaxZoom", 5d);
+        SetField(cut.Instance, "_mapZoom", 1d);
+        SetField(cut.Instance, "_mapPanX", 0d);
+        SetField(cut.Instance, "_mapPanY", 0d);
+
+        await InvokePrivateOnRendererAsync(cut, "OnZoomSliderInput", new ChangeEventArgs { Value = "invalid" });
+        Assert.Equal(1d, GetField<double>(cut.Instance, "_mapZoom"), 10);
+
+        await InvokePrivateOnRendererAsync(cut, "OnZoomSliderInput", new ChangeEventArgs { Value = "50" });
+        Assert.Equal(3d, GetField<double>(cut.Instance, "_mapZoom"), 10);
+    }
+
+    [Fact]
+    public async Task ZoomButtons_CoverAvailabilityAndClickHandlers()
+    {
+        var cut = RenderLoadedPage();
+        var canZoomInMethod = typeof(MapPage).GetMethod("CanZoomIn", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var canZoomOutMethod = typeof(MapPage).GetMethod("CanZoomOut", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(canZoomInMethod);
+        Assert.NotNull(canZoomOutMethod);
+
+        SetField(cut.Instance, "_hasMapViewportLayout", false);
+        SetField(cut.Instance, "_mapZoom", 1d);
+        Assert.False((bool)canZoomInMethod!.Invoke(cut.Instance, null)!);
+        Assert.False((bool)canZoomOutMethod!.Invoke(cut.Instance, null)!);
+
+        await InvokePrivateOnRendererAsync(cut, "ZoomInFromButton");
+        await InvokePrivateOnRendererAsync(cut, "ZoomOutFromButton");
+        Assert.Equal(1d, GetField<double>(cut.Instance, "_mapZoom"), 10);
+
+        SetField(cut.Instance, "_hasMapViewportLayout", true);
+        SetField(cut.Instance, "_mapBaseWidth", 1000d);
+        SetField(cut.Instance, "_mapBaseHeight", 600d);
+        SetField(cut.Instance, "_mapViewportWidth", 800d);
+        SetField(cut.Instance, "_mapViewportHeight", 500d);
+        SetField(cut.Instance, "_mapMinZoom", 1d);
+        SetField(cut.Instance, "_mapMaxZoom", 5d);
+        SetField(cut.Instance, "_mapPanX", 0d);
+        SetField(cut.Instance, "_mapPanY", 0d);
+
+        SetField(cut.Instance, "_mapZoom", 1d);
+        Assert.True((bool)canZoomInMethod.Invoke(cut.Instance, null)!);
+        Assert.False((bool)canZoomOutMethod.Invoke(cut.Instance, null)!);
+
+        await InvokePrivateOnRendererAsync(cut, "ZoomOutFromButton");
+        Assert.Equal(1d, GetField<double>(cut.Instance, "_mapZoom"), 10);
+
+        await InvokePrivateOnRendererAsync(cut, "ZoomInFromButton");
+        Assert.Equal(1.4d, GetField<double>(cut.Instance, "_mapZoom"), 10);
+
+        SetField(cut.Instance, "_mapZoom", 5d);
+        Assert.False((bool)canZoomInMethod.Invoke(cut.Instance, null)!);
+        Assert.True((bool)canZoomOutMethod.Invoke(cut.Instance, null)!);
+
+        await InvokePrivateOnRendererAsync(cut, "ZoomInFromButton");
+        Assert.Equal(5d, GetField<double>(cut.Instance, "_mapZoom"), 10);
+
+        await InvokePrivateOnRendererAsync(cut, "ZoomOutFromButton");
+        Assert.Equal(4.6d, GetField<double>(cut.Instance, "_mapZoom"), 10);
+    }
+
+    [Fact]
     public async Task CreatePinInputMethods_UpdateAndClearInput()
     {
         var cut = RenderLoadedPage();
@@ -394,12 +743,16 @@ public class MapPageTests : MudBlazorTestContext
         SetField(cut.Instance, "_isCreatePinDialogOpen", true);
         SetField(cut.Instance, "_pendingCreatePinX", 0.15f);
         SetField(cut.Instance, "_pendingCreatePinY", 0.85f);
+        SetField(cut.Instance, "_pendingCreatePinViewportX", 0.2f);
+        SetField(cut.Instance, "_pendingCreatePinViewportY", 0.8f);
 
         await InvokePrivateOnRendererAsync(cut, "CancelCreatePinDialog");
 
         Assert.False(GetField<bool>(cut.Instance, "_isCreatePinDialogOpen"));
         Assert.Null(GetField<float?>(cut.Instance, "_pendingCreatePinX"));
         Assert.Null(GetField<float?>(cut.Instance, "_pendingCreatePinY"));
+        Assert.Null(GetField<float?>(cut.Instance, "_pendingCreatePinViewportX"));
+        Assert.Null(GetField<float?>(cut.Instance, "_pendingCreatePinViewportY"));
     }
 
     [Fact]
@@ -586,13 +939,13 @@ public class MapPageTests : MudBlazorTestContext
         var method = typeof(MapPage).GetMethod("GetCreatePinPopupStyle", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
 
-        SetField(cut.Instance, "_pendingCreatePinX", null);
-        SetField(cut.Instance, "_pendingCreatePinY", null);
+        SetField(cut.Instance, "_pendingCreatePinViewportX", null);
+        SetField(cut.Instance, "_pendingCreatePinViewportY", null);
         var fallback = (string?)method!.Invoke(cut.Instance, null);
         Assert.Equal("left:50.0000%;top:50.0000%;", fallback);
 
-        SetField(cut.Instance, "_pendingCreatePinX", 0.12f);
-        SetField(cut.Instance, "_pendingCreatePinY", 0.34f);
+        SetField(cut.Instance, "_pendingCreatePinViewportX", 0.12f);
+        SetField(cut.Instance, "_pendingCreatePinViewportY", 0.34f);
         var exact = (string?)method.Invoke(cut.Instance, null);
         Assert.Equal("left:12.0000%;top:34.0000%;", exact);
     }

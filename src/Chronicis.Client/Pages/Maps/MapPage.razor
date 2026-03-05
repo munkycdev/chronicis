@@ -1,5 +1,6 @@
 @page "/world/{WorldId:guid}/maps/{MapId:guid}"
 @attribute [Authorize]
+@using System.Globalization
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Shared.DTOs.Maps
 @inject IMapApiService MapApi
@@ -85,129 +86,163 @@ else
             <MudAlert Severity="Severity.Error" Class="mb-4">@_pinDeleteError</MudAlert>
         }
 
-        <div @ref="_mapImageShellRef"
-             class="map-page__image-shell"
-             style="width:100%;max-width:100%;"
-             @onclick="OnMapImageShellClick">
-            <img @ref="_mapImageRef"
-                 src="@_basemapReadUrl"
-                 alt="@_mapName"
-                 style="display:block;width:100%;max-width:100%;height:auto;"
-                 class="map-page__image" />
-            <div @ref="_pinsOverlayRef"
-                 class="map-page__pins-overlay @(_isCreatePinMode ? "map-page__pins-overlay--create" : string.Empty)"
-                 aria-hidden="false">
-                @foreach (var pin in _pins)
+        <div class="map-page__image-shell" style="@GetMapShellStyle()">
+            <div @ref="_mapViewportRef"
+                 class="@GetMapViewportClass()"
+                 aria-hidden="false"
+                 @onclick="OnMapImageShellClick"
+                 @onmousedown="OnMapViewportMouseDown"
+                 @onmousemove="OnMapViewportMouseMove"
+                 @onmouseup="OnMapViewportMouseUp"
+                 @onmouseleave="OnMapViewportMouseUp">
+                <div class="map-page__map-stage" style="@GetMapStageStyle()">
+                    <img @ref="_mapImageRef"
+                         src="@_basemapReadUrl"
+                         alt="@_mapName"
+                         class="@GetMapImageClass()"
+                         @onload="OnMapImageLoaded"
+                         draggable="false" />
+                    <div class="map-page__pins-overlay @(_isCreatePinMode ? "map-page__pins-overlay--create" : string.Empty)"
+                         aria-hidden="false">
+                        @foreach (var pin in _pins)
+                        {
+                            @if (pin.LinkedArticle is not null)
+                            {
+                                <button type="button"
+                                        class="@($"map-page__pin map-page__pin--interactive {(_selectedPinId == pin.PinId ? "map-page__pin--selected" : string.Empty)}")"
+                                        style="@GetPinStyle(pin)"
+                                        title="@GetPinTooltip(pin)"
+                                        aria-label="@GetPinAriaLabel(pin)"
+                                        @onclick="() => NavigateToLinkedArticleAsync(pin.LinkedArticle.ArticleId)">
+                                </button>
+                            }
+                            else
+                            {
+                                <div class="@($"map-page__pin {(_selectedPinId == pin.PinId ? "map-page__pin--selected" : string.Empty)}")"
+                                     style="@GetPinStyle(pin)"
+                                     title="@GetPinTooltip(pin)"
+                                     aria-label="@GetPinAriaLabel(pin)"
+                                     aria-hidden="true">
+                                </div>
+                            }
+
+                            @if (HasPinLabel(pin))
+                            {
+                                <div class="map-page__pin-name" style="@GetPinLabelStyle(pin)" aria-hidden="true">
+                                    @pin.Name
+                                </div>
+                            }
+
+                            @if (!_isCreatePinMode)
+                            {
+                                <button type="button"
+                                        class="@($"map-page__pin-delete-intent {(_selectedPinId == pin.PinId ? "map-page__pin-delete-intent--selected" : string.Empty)}")"
+                                        style="@GetPinStyle(pin)"
+                                        title="Delete pin"
+                                        aria-label="Delete pin"
+                                        @onclick:stopPropagation="true"
+                                        @onclick="() => SelectPinForDelete(pin.PinId)">
+                                    x
+                                </button>
+                            }
+                        }
+
+                        @if (!_isCreatePinMode && SelectedPin is { } selectedPin)
+                        {
+                            <div class="map-page__pin-delete-confirm"
+                                 style="@GetPinStyle(selectedPin)"
+                                 @onclick:stopPropagation="true">
+                                <span>Delete?</span>
+                                <button type="button"
+                                        class="map-page__pin-delete-confirm-button"
+                                        disabled="@_isDeletingPin"
+                                        @onclick="ConfirmDeleteSelectedPinAsync">
+                                    @(_isDeletingPin ? "..." : "Confirm")
+                                </button>
+                                <button type="button"
+                                        class="map-page__pin-delete-confirm-button map-page__pin-delete-confirm-button--cancel"
+                                        disabled="@_isDeletingPin"
+                                        @onclick="CancelDeletePinSelection">
+                                    Cancel
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @if (_isCreatePinDialogOpen)
                 {
-                    @if (pin.LinkedArticle is not null)
-                    {
-                        <button type="button"
-                                class="@($"map-page__pin map-page__pin--interactive {(_selectedPinId == pin.PinId ? "map-page__pin--selected" : string.Empty)}")"
-                                style="@GetPinStyle(pin)"
-                                title="@GetPinTooltip(pin)"
-                                aria-label="@GetPinAriaLabel(pin)"
-                                @onclick="() => NavigateToLinkedArticleAsync(pin.LinkedArticle.ArticleId)">
-                        </button>
-                    }
-                    else
-                    {
-                        <div class="@($"map-page__pin {(_selectedPinId == pin.PinId ? "map-page__pin--selected" : string.Empty)}")"
-                             style="@GetPinStyle(pin)"
-                             title="@GetPinTooltip(pin)"
-                             aria-label="@GetPinAriaLabel(pin)"
-                             aria-hidden="true">
-                        </div>
-                    }
-
-                    @if (HasPinLabel(pin))
-                    {
-                        <div class="map-page__pin-name" style="@GetPinLabelStyle(pin)" aria-hidden="true">
-                            @pin.Name
-                        </div>
-                    }
-
-                    @if (!_isCreatePinMode)
-                    {
-                        <button type="button"
-                                class="@($"map-page__pin-delete-intent {(_selectedPinId == pin.PinId ? "map-page__pin-delete-intent--selected" : string.Empty)}")"
-                                style="@GetPinStyle(pin)"
-                                title="Delete pin"
-                                aria-label="Delete pin"
-                                @onclick:stopPropagation="true"
-                                @onclick="() => SelectPinForDelete(pin.PinId)">
-                            x
-                        </button>
-                    }
-                }
-
-                @if (!_isCreatePinMode && SelectedPin is { } selectedPin)
-                {
-                    <div class="map-page__pin-delete-confirm"
-                         style="@GetPinStyle(selectedPin)"
+                    <div class="map-page__pin-popup"
+                         style="@GetCreatePinPopupStyle()"
+                         role="dialog"
+                         aria-modal="false"
+                         aria-label="Create pin popup"
                          @onclick:stopPropagation="true">
-                        <span>Delete?</span>
-                        <button type="button"
-                                class="map-page__pin-delete-confirm-button"
-                                disabled="@_isDeletingPin"
-                                @onclick="ConfirmDeleteSelectedPinAsync">
-                            @(_isDeletingPin ? "..." : "Confirm")
-                        </button>
-                        <button type="button"
-                                class="map-page__pin-delete-confirm-button map-page__pin-delete-confirm-button--cancel"
-                                disabled="@_isDeletingPin"
-                                @onclick="CancelDeletePinSelection">
-                            Cancel
-                        </button>
+                        <div class="map-page__pin-popup-title">Create pin</div>
+
+                        <label class="map-page__pin-popup-label" for="map-pin-name-input">Name (optional)</label>
+                        <input id="map-pin-name-input"
+                               class="map-page__pin-popup-input"
+                               placeholder="Pin name"
+                               value="@_createPinNameInput"
+                               @oninput="OnCreatePinNameInput"
+                               @onkeydown="OnCreatePinPopupKeyDown"
+                               disabled="@_isCreatingPin"
+                               autofocus
+                               onfocus="this.select();" />
+
+                        <label class="map-page__pin-popup-label" for="map-pin-article-input">Linked Article Id (optional)</label>
+                        <input id="map-pin-article-input"
+                               class="map-page__pin-popup-input"
+                               placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                               value="@_createPinArticleIdInput"
+                               @oninput="OnCreatePinArticleIdInput"
+                               @onkeydown="OnCreatePinPopupKeyDown"
+                               disabled="@_isCreatingPin" />
+
+                        <div class="map-page__pin-popup-actions">
+                            <button type="button"
+                                    class="map-page__pin-popup-button map-page__pin-popup-button--cancel"
+                                    disabled="@_isCreatingPin"
+                                    @onclick="CancelCreatePinDialog">
+                                Cancel
+                            </button>
+                            <button type="button"
+                                    class="map-page__pin-popup-button"
+                                    disabled="@_isCreatingPin"
+                                    @onclick="ConfirmCreatePinFromDialogAsync">
+                                @(_isCreatingPin ? "Creating..." : "Save")
+                            </button>
+                        </div>
                     </div>
                 }
             </div>
 
-            @if (_isCreatePinDialogOpen)
-            {
-                <div class="map-page__pin-popup"
-                     style="@GetCreatePinPopupStyle()"
-                     role="dialog"
-                     aria-modal="false"
-                     aria-label="Create pin popup"
-                     @onclick:stopPropagation="true">
-                    <div class="map-page__pin-popup-title">Create pin</div>
-
-                    <label class="map-page__pin-popup-label" for="map-pin-name-input">Name (optional)</label>
-                    <input id="map-pin-name-input"
-                           class="map-page__pin-popup-input"
-                           placeholder="Pin name"
-                           value="@_createPinNameInput"
-                           @oninput="OnCreatePinNameInput"
-                           @onkeydown="OnCreatePinPopupKeyDown"
-                           disabled="@_isCreatingPin"
-                           autofocus
-                           onfocus="this.select();" />
-
-                    <label class="map-page__pin-popup-label" for="map-pin-article-input">Linked Article Id (optional)</label>
-                    <input id="map-pin-article-input"
-                           class="map-page__pin-popup-input"
-                           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                           value="@_createPinArticleIdInput"
-                           @oninput="OnCreatePinArticleIdInput"
-                           @onkeydown="OnCreatePinPopupKeyDown"
-                           disabled="@_isCreatingPin" />
-
-                    <div class="map-page__pin-popup-actions">
-                        <button type="button"
-                                class="map-page__pin-popup-button map-page__pin-popup-button--cancel"
-                                disabled="@_isCreatingPin"
-                                @onclick="CancelCreatePinDialog">
-                            Cancel
-                        </button>
-                        <button type="button"
-                                class="map-page__pin-popup-button"
-                                disabled="@_isCreatingPin"
-                                @onclick="ConfirmCreatePinFromDialogAsync">
-                            @(_isCreatingPin ? "Creating..." : "Save")
-                        </button>
-                    </div>
-                </div>
-            }
+            <div class="map-page__zoom-control" aria-label="Map zoom controls">
+                <button type="button"
+                        class="map-page__zoom-button"
+                        disabled="@(!CanZoomIn())"
+                        aria-label="Zoom in"
+                        @onclick="ZoomInFromButton">
+                    +
+                </button>
+                <input type="range"
+                       class="map-page__zoom-slider"
+                       min="0"
+                       max="100"
+                       step="1"
+                       value="@GetZoomSliderValue()"
+                       @oninput="OnZoomSliderInput"
+                       disabled="@(!_hasMapViewportLayout)"
+                       aria-label="Map zoom level" />
+                <button type="button"
+                        class="map-page__zoom-button"
+                        disabled="@(!CanZoomOut())"
+                        aria-label="Zoom out"
+                        @onclick="ZoomOutFromButton">
+                    -
+                </button>
+            </div>
         </div>
     </MudPaper>
 }
@@ -218,6 +253,12 @@ else
 
     [Parameter]
     public Guid MapId { get; set; }
+
+    private const double ZoomRangeSliderMax = 100d;
+    private const double ZoomButtonSliderStep = 10d;
+    private const double ZoomRangeMultiplier = 5d;
+    private const double PanDragThresholdPx = 3d;
+    private const double PanEnableZoomDelta = 0.0001d;
 
     private bool _isLoading = true;
     private bool _isSavingMap;
@@ -239,10 +280,29 @@ else
     private string _basemapReadUrl = string.Empty;
     private float? _pendingCreatePinX;
     private float? _pendingCreatePinY;
+    private float? _pendingCreatePinViewportX;
+    private float? _pendingCreatePinViewportY;
     private List<MapPinResponseDto> _pins = [];
     private Guid? _selectedPinId;
-    private ElementReference _pinsOverlayRef;
-    private ElementReference _mapImageShellRef;
+    private bool _hasMapViewportLayout;
+    private double? _mapPreferredViewportHeightPx;
+    private double _mapBaseWidth;
+    private double _mapBaseHeight;
+    private double _mapViewportWidth;
+    private double _mapViewportHeight;
+    private double _mapMinZoom = 1d;
+    private double _mapMaxZoom = 1d;
+    private double _mapZoom = 1d;
+    private double _mapPanX;
+    private double _mapPanY;
+    private bool _isMapPointerDown;
+    private bool _isMapDragging;
+    private bool _suppressCreatePinClick;
+    private double _dragStartClientX;
+    private double _dragStartClientY;
+    private double _dragStartPanX;
+    private double _dragStartPanY;
+    private ElementReference _mapViewportRef;
     private ElementReference _mapImageRef;
     private IJSObjectReference? _mapInteropModule;
     private List<BreadcrumbItem> _breadcrumbs =
@@ -288,8 +348,28 @@ else
         _basemapReadUrl = string.Empty;
         _pendingCreatePinX = null;
         _pendingCreatePinY = null;
+        _pendingCreatePinViewportX = null;
+        _pendingCreatePinViewportY = null;
         _pins = [];
         _selectedPinId = null;
+        _hasMapViewportLayout = false;
+        _mapPreferredViewportHeightPx = null;
+        _mapBaseWidth = 0d;
+        _mapBaseHeight = 0d;
+        _mapViewportWidth = 0d;
+        _mapViewportHeight = 0d;
+        _mapMinZoom = 1d;
+        _mapMaxZoom = 1d;
+        _mapZoom = 1d;
+        _mapPanX = 0d;
+        _mapPanY = 0d;
+        _isMapPointerDown = false;
+        _isMapDragging = false;
+        _suppressCreatePinClick = false;
+        _dragStartClientX = 0d;
+        _dragStartClientY = 0d;
+        _dragStartPanX = 0d;
+        _dragStartPanY = 0d;
         BuildBreadcrumbs();
 
         var worldTask = WorldApi.GetWorldAsync(WorldId);
@@ -428,6 +508,324 @@ else
         {
             CancelCreatePinDialog();
         }
+        else
+        {
+            _isMapPointerDown = false;
+            _isMapDragging = false;
+        }
+    }
+
+    private string GetMapViewportClass()
+    {
+        if (_isCreatePinMode)
+        {
+            return "map-page__viewport map-page__viewport--create";
+        }
+
+        if (_isMapDragging)
+        {
+            return "map-page__viewport map-page__viewport--dragging";
+        }
+
+        if (CanPanMap())
+        {
+            return "map-page__viewport map-page__viewport--pan";
+        }
+
+        return "map-page__viewport";
+    }
+
+    private string GetMapStageStyle()
+    {
+        if (!_hasMapViewportLayout)
+        {
+            return "width:100%;height:auto;transform:translate(0px,0px) scale(1);";
+        }
+
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"width:{_mapBaseWidth:F2}px;height:{_mapBaseHeight:F2}px;transform:translate({_mapPanX:F2}px,{_mapPanY:F2}px) scale({_mapZoom:F4});");
+    }
+
+    private string GetMapShellStyle()
+    {
+        if (!_mapPreferredViewportHeightPx.HasValue)
+        {
+            return "height:clamp(24rem, calc(100vh - 16rem), 78vh);";
+        }
+
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"height:min(78vh, max(24rem, {_mapPreferredViewportHeightPx.Value:F2}px));");
+    }
+
+    private string GetMapImageClass() =>
+        _hasMapViewportLayout
+            ? "map-page__image map-page__image--stage"
+            : "map-page__image";
+
+    private int GetZoomSliderValue() =>
+        GetSliderValueForZoom(_mapZoom, _mapMinZoom, _mapMaxZoom);
+
+    private Task OnZoomSliderInput(ChangeEventArgs args)
+    {
+        if (!_hasMapViewportLayout || !TryReadDouble(args.Value, out var sliderValue))
+        {
+            return Task.CompletedTask;
+        }
+
+        var clampedSliderValue = Clamp(sliderValue, 0d, ZoomRangeSliderMax);
+        SetZoomLevel(GetZoomForSliderValue(clampedSliderValue, _mapMinZoom, _mapMaxZoom));
+        return Task.CompletedTask;
+    }
+
+    private bool CanZoomIn() =>
+        _hasMapViewportLayout
+        && _mapZoom < _mapMaxZoom - PanEnableZoomDelta;
+
+    private bool CanZoomOut() =>
+        _hasMapViewportLayout
+        && _mapZoom > _mapMinZoom + PanEnableZoomDelta;
+
+    private void ZoomInFromButton()
+    {
+        if (!CanZoomIn())
+        {
+            return;
+        }
+
+        var nextSliderValue = Clamp(GetZoomSliderValue() + ZoomButtonSliderStep, 0d, ZoomRangeSliderMax);
+        SetZoomLevel(GetZoomForSliderValue(nextSliderValue, _mapMinZoom, _mapMaxZoom));
+    }
+
+    private void ZoomOutFromButton()
+    {
+        if (!CanZoomOut())
+        {
+            return;
+        }
+
+        var nextSliderValue = Clamp(GetZoomSliderValue() - ZoomButtonSliderStep, 0d, ZoomRangeSliderMax);
+        SetZoomLevel(GetZoomForSliderValue(nextSliderValue, _mapMinZoom, _mapMaxZoom));
+    }
+
+    private void OnMapViewportMouseDown(MouseEventArgs args)
+    {
+        if (args.Button != 0 || !CanPanMap())
+        {
+            return;
+        }
+
+        _isMapPointerDown = true;
+        _isMapDragging = false;
+        _dragStartClientX = args.ClientX;
+        _dragStartClientY = args.ClientY;
+        _dragStartPanX = _mapPanX;
+        _dragStartPanY = _mapPanY;
+    }
+
+    private void OnMapViewportMouseMove(MouseEventArgs args)
+    {
+        if (!_isMapPointerDown)
+        {
+            return;
+        }
+
+        var deltaX = args.ClientX - _dragStartClientX;
+        var deltaY = args.ClientY - _dragStartClientY;
+
+        if (!_isMapDragging && Math.Abs(deltaX) < PanDragThresholdPx && Math.Abs(deltaY) < PanDragThresholdPx)
+        {
+            return;
+        }
+
+        _isMapDragging = true;
+        _mapPanX = _dragStartPanX + deltaX;
+        _mapPanY = _dragStartPanY + deltaY;
+        ClampPanToBounds();
+    }
+
+    private void OnMapViewportMouseUp(MouseEventArgs _)
+    {
+        if (_isMapDragging)
+        {
+            _suppressCreatePinClick = true;
+        }
+
+        _isMapPointerDown = false;
+        _isMapDragging = false;
+    }
+
+    private async Task OnMapImageLoaded()
+    {
+        await InitializeMapViewportLayoutAsync();
+    }
+
+    private async Task InitializeMapViewportLayoutAsync()
+    {
+        var viewportRect = await GetElementRectAsync(_mapViewportRef);
+        var imageRect = await GetElementRectAsync(_mapImageRef);
+
+        if (!HasUsableBounds(viewportRect) || !HasUsableBounds(imageRect))
+        {
+            return;
+        }
+
+        _mapViewportWidth = viewportRect!.Width;
+        _mapViewportHeight = viewportRect.Height;
+        _mapBaseWidth = imageRect!.Width;
+        _mapBaseHeight = imageRect.Height;
+
+        var preferredViewportHeight = _mapViewportWidth * (_mapBaseHeight / _mapBaseWidth);
+        var preferredHeightChanged = !_mapPreferredViewportHeightPx.HasValue
+            || Math.Abs(_mapPreferredViewportHeightPx.Value - preferredViewportHeight) > 0.5d;
+        _mapPreferredViewportHeightPx = preferredViewportHeight;
+
+        if (preferredHeightChanged)
+        {
+            await InvokeAsync(StateHasChanged);
+            var updatedViewportRect = await GetElementRectAsync(_mapViewportRef);
+            if (HasUsableBounds(updatedViewportRect))
+            {
+                _mapViewportWidth = updatedViewportRect!.Width;
+                _mapViewportHeight = updatedViewportRect.Height;
+            }
+        }
+
+        if (_mapBaseWidth <= 0d || _mapBaseHeight <= 0d || _mapViewportWidth <= 0d || _mapViewportHeight <= 0d)
+        {
+            _hasMapViewportLayout = false;
+            return;
+        }
+
+        _mapMinZoom = Math.Max(_mapViewportWidth / _mapBaseWidth, _mapViewportHeight / _mapBaseHeight);
+        _mapMaxZoom = Math.Max(_mapMinZoom, _mapMinZoom * ZoomRangeMultiplier);
+        _mapZoom = _mapMinZoom;
+        _hasMapViewportLayout = true;
+        RecenterMapPan();
+    }
+
+    private bool CanPanMap() =>
+        _hasMapViewportLayout
+        && !_isCreatePinMode
+        && _mapZoom > _mapMinZoom + PanEnableZoomDelta;
+
+    private void SetZoomLevel(double targetZoom)
+    {
+        if (!_hasMapViewportLayout)
+        {
+            return;
+        }
+
+        var nextZoom = Clamp(targetZoom, _mapMinZoom, _mapMaxZoom);
+        if (Math.Abs(nextZoom - _mapZoom) < PanEnableZoomDelta)
+        {
+            return;
+        }
+
+        var centerX = _mapViewportWidth / 2d;
+        var centerY = _mapViewportHeight / 2d;
+        var mapCenterX = (centerX - _mapPanX) / _mapZoom;
+        var mapCenterY = (centerY - _mapPanY) / _mapZoom;
+
+        _mapZoom = nextZoom;
+        _mapPanX = centerX - (mapCenterX * _mapZoom);
+        _mapPanY = centerY - (mapCenterY * _mapZoom);
+        ClampPanToBounds();
+    }
+
+    private void RecenterMapPan()
+    {
+        var scaledWidth = _mapBaseWidth * _mapZoom;
+        var scaledHeight = _mapBaseHeight * _mapZoom;
+
+        _mapPanX = (_mapViewportWidth - scaledWidth) / 2d;
+        _mapPanY = (_mapViewportHeight - scaledHeight) / 2d;
+        ClampPanToBounds();
+    }
+
+    private void ClampPanToBounds()
+    {
+        var scaledWidth = _mapBaseWidth * _mapZoom;
+        var scaledHeight = _mapBaseHeight * _mapZoom;
+        _mapPanX = ClampPanAxis(_mapPanX, _mapViewportWidth, scaledWidth);
+        _mapPanY = ClampPanAxis(_mapPanY, _mapViewportHeight, scaledHeight);
+    }
+
+    private static double ClampPanAxis(double pan, double viewportSize, double scaledSize)
+    {
+        if (viewportSize <= 0d || scaledSize <= 0d)
+        {
+            return 0d;
+        }
+
+        if (scaledSize <= viewportSize)
+        {
+            return (viewportSize - scaledSize) / 2d;
+        }
+
+        return Clamp(pan, viewportSize - scaledSize, 0d);
+    }
+
+    private static int GetSliderValueForZoom(double zoom, double minZoom, double maxZoom)
+    {
+        if (maxZoom <= minZoom)
+        {
+            return 0;
+        }
+
+        var normalized = (zoom - minZoom) / (maxZoom - minZoom);
+        return (int)Math.Round(Clamp(normalized * ZoomRangeSliderMax, 0d, ZoomRangeSliderMax), MidpointRounding.AwayFromZero);
+    }
+
+    private static double GetZoomForSliderValue(double sliderValue, double minZoom, double maxZoom)
+    {
+        if (maxZoom <= minZoom)
+        {
+            return minZoom;
+        }
+
+        var normalized = Clamp(sliderValue / ZoomRangeSliderMax, 0d, 1d);
+        return minZoom + ((maxZoom - minZoom) * normalized);
+    }
+
+    private static bool TryReadDouble(object? value, out double result) =>
+        double.TryParse(
+            value?.ToString() ?? string.Empty,
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out result);
+
+    private static double Clamp(double value, double min, double max) =>
+        value < min ? min : value > max ? max : value;
+
+    private bool TryMapClientPointToPinCoordinates(double clientX, double clientY, out float x, out float y, out float viewportX, out float viewportY)
+    {
+        x = 0f;
+        y = 0f;
+        viewportX = 0.5f;
+        viewportY = 0.5f;
+
+        if (!_hasMapViewportLayout || _mapBaseWidth <= 0d || _mapBaseHeight <= 0d || _mapZoom <= 0d)
+        {
+            return false;
+        }
+
+        var localX = clientX;
+        var localY = clientY;
+        if (localX < 0d || localY < 0d)
+        {
+            return false;
+        }
+
+        var pinX = Clamp01(((localX - _mapPanX) / _mapZoom) / _mapBaseWidth);
+        var pinY = Clamp01(((localY - _mapPanY) / _mapZoom) / _mapBaseHeight);
+
+        x = (float)pinX;
+        y = (float)pinY;
+        viewportX = (float)Clamp01(localX / _mapViewportWidth);
+        viewportY = (float)Clamp01(localY / _mapViewportHeight);
+        return true;
     }
 
     private Task OnCreatePinArticleIdChanged(string value)
@@ -462,6 +860,12 @@ else
 
     private async Task OnMapImageShellClick(MouseEventArgs args)
     {
+        if (_suppressCreatePinClick)
+        {
+            _suppressCreatePinClick = false;
+            return;
+        }
+
         if (!_isCreatePinMode || _isCreatingPin || _isCreatePinDialogOpen)
         {
             return;
@@ -470,17 +874,28 @@ else
         _createPinError = string.Empty;
         try
         {
-            var rect = await GetMapPlacementRectAsync();
-            if (rect == null || rect.Width <= 0 || rect.Height <= 0)
+            var rect = await GetElementRectAsync(_mapViewportRef);
+            if (!HasUsableBounds(rect))
             {
                 _createPinError = "Could not determine map bounds for pin placement.";
                 return;
             }
 
-            var x = Clamp01((args.ClientX - rect.Left) / rect.Width);
-            var y = Clamp01((args.ClientY - rect.Top) / rect.Height);
-            _pendingCreatePinX = (float)x;
-            _pendingCreatePinY = (float)y;
+            _mapViewportWidth = rect!.Width;
+            _mapViewportHeight = rect.Height;
+
+            var localX = args.ClientX - rect.Left;
+            var localY = args.ClientY - rect.Top;
+            if (!TryMapClientPointToPinCoordinates(localX, localY, out var pinX, out var pinY, out var viewportX, out var viewportY))
+            {
+                _createPinError = "Could not determine map bounds for pin placement.";
+                return;
+            }
+
+            _pendingCreatePinX = pinX;
+            _pendingCreatePinY = pinY;
+            _pendingCreatePinViewportX = viewportX;
+            _pendingCreatePinViewportY = viewportY;
             _isCreatePinDialogOpen = true;
         }
         catch (JSException)
@@ -494,6 +909,8 @@ else
         _isCreatePinDialogOpen = false;
         _pendingCreatePinX = null;
         _pendingCreatePinY = null;
+        _pendingCreatePinViewportX = null;
+        _pendingCreatePinViewportY = null;
     }
 
     private async Task OnCreatePinPopupKeyDown(KeyboardEventArgs args)
@@ -558,23 +975,6 @@ else
         {
             _isCreatingPin = false;
         }
-    }
-
-    private async Task<MapElementRect?> GetMapPlacementRectAsync()
-    {
-        var shellRect = await GetElementRectAsync(_mapImageShellRef);
-        if (HasUsableBounds(shellRect))
-        {
-            return shellRect;
-        }
-
-        var imageRect = await GetElementRectAsync(_mapImageRef);
-        if (HasUsableBounds(imageRect))
-        {
-            return imageRect;
-        }
-
-        return await GetElementRectAsync(_pinsOverlayRef);
     }
 
     private async Task<MapElementRect?> GetElementRectAsync(ElementReference elementRef)
@@ -694,8 +1094,8 @@ else
 
     private string GetCreatePinPopupStyle()
     {
-        var x = _pendingCreatePinX ?? 0.5f;
-        var y = _pendingCreatePinY ?? 0.5f;
+        var x = _pendingCreatePinViewportX ?? 0.5f;
+        var y = _pendingCreatePinViewportY ?? 0.5f;
         return $"left:{x * 100:F4}%;top:{y * 100:F4}%;";
     }
 
