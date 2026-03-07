@@ -254,3 +254,11 @@ This vocabulary document establishes the *desired* terminology. The codebase cur
 ## Questions or Feedback?
 
 If terminology is unclear or you discover edge cases not covered here, please update this document or raise the issue in the team discussion.
+
+## Phase Discipline
+
+When implementing features defined in ai-pipeline/phases:
+
+- implement only the current phase
+- do not implement later phases
+- ensure compilation and tests pass before moving forward

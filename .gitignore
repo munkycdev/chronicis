@@ -71,6 +71,11 @@ mono_crash.*
 ############################################################
 # Project specifics (Chronicis)
 ############################################################
+# AI Automation Pipeline working files
+ai-pipeline/node_modules/*
+ai-pipeline/state/*
+ai-pipeline/phases/*
+ai-pipeline/prompts/*
 
 # Docs and local scratch areas
 /docs/legacy/
