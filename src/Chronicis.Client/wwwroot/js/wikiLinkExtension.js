@@ -58,6 +58,30 @@ function createWikiLinkExtension() {
                         }
                         return {};
                     }
+                },
+                mapId: {
+                    default: null,
+                    parseHTML: element => element.getAttribute('data-map-id'),
+                    renderHTML: attributes => {
+                        if (attributes.mapId) {
+                            return {
+                                'data-map-id': attributes.mapId
+                            };
+                        }
+                        return {};
+                    }
+                },
+                mapName: {
+                    default: null,
+                    parseHTML: element => element.getAttribute('data-map-name'),
+                    renderHTML: attributes => {
+                        if (attributes.mapName) {
+                            return {
+                                'data-map-name': attributes.mapName
+                            };
+                        }
+                        return {};
+                    }
                 }
             };
         },
@@ -71,6 +95,22 @@ function createWikiLinkExtension() {
         },
 
         renderHTML({ node, HTMLAttributes }) {
+            if (node.attrs.mapId) {
+                const mapName = node.attrs.mapName || node.attrs.displayText || 'Map';
+
+                return [
+                    'span',
+                    {
+                        'data-type': 'wiki-link',
+                        class: 'wiki-link-node map-link-node',
+                        ...HTMLAttributes
+                    },
+                    ['span', { class: 'map-link-badge' }, 'MAP'],
+                    ['span', { class: 'map-link-text' }, mapName],
+                    ['i', { class: 'map-link-icon fa-solid fa-map', 'aria-hidden': 'true' }]
+                ];
+            }
+
             const displayText = node.attrs.displayText || 'Loading...';
             
             return [

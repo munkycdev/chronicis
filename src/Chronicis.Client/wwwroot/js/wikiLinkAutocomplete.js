@@ -260,6 +260,74 @@ function insertExternalLinkToken(editorId, source, id, title) {
 }
 
 /**
+ * Insert a map link chip at the current cursor position.
+ * Uses the existing wiki-link node type with map-specific attributes.
+ * @param {string} editorId - The editor container ID
+ * @param {string} mapId - The map GUID
+ * @param {string} mapName - The map display name
+ */
+function insertMapLinkToken(editorId, mapId, mapName) {
+    const editor = window.tipTapEditors[editorId];
+    if (!editor) {
+        console.error('Editor not found:', editorId);
+        return;
+    }
+
+    if (!mapId || !mapName) {
+        console.error('Map link token missing map id or name');
+        return;
+    }
+
+    const finalMapName = mapName.trim();
+    if (!finalMapName) {
+        console.error('Map link token missing map name');
+        return;
+    }
+
+    window._wikiLinkCustomDisplayText = null;
+    if (window._setAutocompleteVisible) window._setAutocompleteVisible(false);
+
+    const { from } = editor.state.selection;
+    const doc = editor.state.doc;
+    let bracketPos = -1;
+
+    for (let pos = from - 1; pos >= Math.max(0, from - 100); pos--) {
+        try {
+            const char1 = doc.textBetween(pos, pos + 1, '');
+            const char2 = pos > 0 ? doc.textBetween(pos - 1, pos, '') : '';
+            if (char2 === '[' && char1 === '[') {
+                bracketPos = pos - 1;
+                break;
+            }
+        } catch (e) {
+            continue;
+        }
+    }
+
+    if (bracketPos === -1) {
+        console.error('Could not find [[ before cursor');
+        return;
+    }
+
+    editor
+        .chain()
+        .focus()
+        .deleteRange({ from: bracketPos, to: from })
+        .insertContent({
+            type: 'wikiLink',
+            attrs: {
+                targetArticleId: mapId,
+                displayText: finalMapName,
+                broken: false,
+                mapId: mapId,
+                mapName: finalMapName
+            }
+        })
+        .insertContent(' ')
+        .run();
+}
+
+/**
  * Update the autocomplete text (for category selection).
  * @param {string} editorId - The editor container ID
  * @param {string} newText - The new text to insert (e.g., "srd/spells/")
@@ -373,6 +441,7 @@ function escapeHtmlAttr(text) {
 window.initializeWikiLinkAutocomplete = initializeWikiLinkAutocomplete;
 window.insertWikiLink = insertWikiLink;
 window.insertExternalLinkToken = insertExternalLinkToken;
+window.insertMapLinkToken = insertMapLinkToken;
 window.updateAutocompleteText = updateAutocompleteText;
 window.insertWikiLinksAtPositions = insertWikiLinksAtPositions;
 window.getTipTapContent = getTipTapContent;

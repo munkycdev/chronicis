@@ -41,13 +41,13 @@ Out of scope:
 ### Chip
 
 * Shows map name
-* Stores mapId (and optionally map name for display)
 * Click opens modal
 
 ### Modal
 
 * Title: map name
-* Content: basemap image only
+* Content: basemap and pins. May be zoomed and panned in the same manner as the map page.
+* Size: fills the browser window with enough margin to make it clear that it is a modal box
 * Close: Esc and top-right close button
 * Loading and error states
 

@@ -77,6 +77,16 @@ public class MapSummaryDto
 }
 
 /// <summary>
+/// Minimal map DTO for editor autocomplete lookups.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class MapAutocompleteDto
+{
+    public Guid MapId { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// Request DTO for creating a pin on a map.
 /// Coordinates are normalized to the 0..1 range.
 /// </summary>

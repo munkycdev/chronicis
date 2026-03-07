@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Maps;
 
 namespace Chronicis.Client.Components.Articles;
 
@@ -16,6 +17,7 @@ public sealed class WikiLinkAutocompleteItem
     public string? SecondaryText { get; private init; }
     public string? Source { get; private init; }
     public Guid? ArticleId { get; private init; }
+    public Guid? MapId { get; private init; }
     public string? ExternalId { get; private init; }
     public string? CategoryKey { get; private init; }
     public string? Icon { get; private init; }
@@ -65,6 +67,19 @@ public sealed class WikiLinkAutocompleteItem
             CategoryKey = isCategory ? suggestion.Id?.Replace("_category/", "") : null,
             Icon = suggestion.Icon,
             MatchedAlias = null // External links don't have aliases
+        };
+    }
+
+    public static WikiLinkAutocompleteItem FromMapAutocomplete(MapAutocompleteDto suggestion)
+    {
+        return new WikiLinkAutocompleteItem
+        {
+            IsExternal = false,
+            IsCategory = false,
+            Title = suggestion.Name,
+            SecondaryText = "Map",
+            MapId = suggestion.MapId,
+            MatchedAlias = null
         };
     }
 }

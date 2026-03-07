@@ -127,6 +127,27 @@ public class MapsController : ControllerBase
     }
 
     /// <summary>
+    /// GET /world/{worldId}/maps/autocomplete?query=... — List minimal map suggestions for editor autocomplete.
+    /// </summary>
+    [HttpGet("autocomplete")]
+    public async Task<ActionResult<IEnumerable<MapAutocompleteDto>>> AutocompleteMaps(Guid worldId, [FromQuery] string? query = null)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+        _logger.LogTraceSanitized("User {UserId} requesting map autocomplete for world {WorldId}", user.Id, worldId);
+
+        try
+        {
+            var maps = await _worldMapService.SearchMapsForWorldAsync(worldId, user.Id, query);
+            return Ok(maps);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized map autocomplete request");
+            return StatusCode(403, new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// POST /world/{worldId}/maps/{mapId}/pins — Create a pin on a map.
     /// </summary>
     [HttpPost("{mapId:guid}/pins")]

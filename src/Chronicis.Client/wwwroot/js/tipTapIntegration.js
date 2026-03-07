@@ -412,6 +412,39 @@ window.disposeTipTapTableControls = disposeTipTapTableControls;
 // EDITOR INITIALIZATION
 // ================================================
 
+const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function tryGetMapIdFromHref(href) {
+    if (!href || typeof href !== 'string') {
+        return null;
+    }
+
+    let url;
+    try {
+        url = new URL(href, window.location.origin);
+    } catch {
+        return null;
+    }
+
+    const segments = url.pathname.split('/').filter(Boolean);
+    for (let i = 0; i <= segments.length - 4; i++) {
+        if (!segments[i] || !segments[i + 2]) {
+            continue;
+        }
+
+        if (segments[i].toLowerCase() !== 'world' || segments[i + 2].toLowerCase() !== 'maps') {
+            continue;
+        }
+
+        const mapId = segments[i + 3];
+        if (guidPattern.test(mapId)) {
+            return mapId;
+        }
+    }
+
+    return null;
+}
+
 async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
     // Check if TipTap is loaded
     if (!window.TipTap || !window.TipTap.Editor) {
@@ -430,6 +463,12 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
     // Build extensions array
     const extensions = [
         window.TipTap.StarterKit.configure({
+            // Keep StarterKit lean to avoid keyed-plugin collisions from CDN module variants.
+            dropcursor: false,
+            gapcursor: false,
+            undoRedo: false,
+            trailingNode: false,
+            listKeymap: false,
             heading: {
                 levels: [1, 2, 3, 4, 5, 6]
             },
@@ -515,10 +554,34 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
 
     // Add click handler for wiki links
     container.addEventListener('click', (e) => {
+        const mapAnchor = e.target.closest('a[href]');
+        if (mapAnchor) {
+            const mapIdFromHref = tryGetMapIdFromHref(mapAnchor.getAttribute('href'));
+            if (mapIdFromHref) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const mapName = (mapAnchor.textContent || '').trim();
+                dotNetHelper.invokeMethodAsync('OnMapLinkClicked', mapIdFromHref, mapName);
+                return;
+            }
+        }
+
         const wikiLink = e.target.closest('span[data-type="wiki-link"]');
         if (wikiLink) {
             e.preventDefault();
             e.stopPropagation();
+
+            const mapId = wikiLink.getAttribute('data-map-id');
+            if (mapId) {
+                const mapName = wikiLink.getAttribute('data-map-name')
+                    || wikiLink.getAttribute('data-display')
+                    || wikiLink.textContent
+                    || '';
+                dotNetHelper.invokeMethodAsync('OnMapLinkClicked', mapId, mapName);
+                return;
+            }
+
             const targetArticleId = wikiLink.getAttribute('data-target-id');
             const isBroken = wikiLink.getAttribute('data-broken') === 'true';
 

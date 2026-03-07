@@ -1,0 +1,195 @@
+.session-map-viewer-modal__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: color-mix(in srgb, black 42%, transparent 58%);
+}
+
+.session-map-viewer-modal {
+    width: min(96vw, 1400px);
+    height: min(92vh, 900px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 18%, transparent 82%);
+    background: var(--mud-palette-surface);
+    box-shadow: 0 24px 64px color-mix(in srgb, black 36%, transparent 64%);
+    overflow: hidden;
+    outline: none;
+}
+
+.session-map-viewer-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.65rem 0.85rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 15%, transparent 85%);
+}
+
+.session-map-viewer-modal__title {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 2rem;
+    font-weight:600;
+}
+
+.session-map-viewer-modal__close {
+    flex: 0 0 auto;
+}
+
+.session-map-viewer-modal__content {
+    flex: 1;
+    min-height: 0;
+    padding: 0.75rem;
+}
+
+.session-map-viewer-modal__state {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.session-map-viewer-modal__image-shell {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    background: color-mix(in srgb, var(--mud-palette-surface) 86%, black 14%);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.session-map-viewer-modal__viewport {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    user-select: none;
+}
+
+.session-map-viewer-modal__viewport--pan {
+    cursor: grab;
+}
+
+.session-map-viewer-modal__viewport--dragging {
+    cursor: grabbing;
+}
+
+.session-map-viewer-modal__map-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: top left;
+    will-change: transform;
+}
+
+.session-map-viewer-modal__image {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.session-map-viewer-modal__image--stage {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    max-width: none;
+    max-inline-size: none;
+    max-block-size: none;
+    pointer-events: none;
+}
+
+.session-map-viewer-modal__pins-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.session-map-viewer-modal__pin {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--mud-palette-surface);
+    background: var(--mud-palette-primary);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.session-map-viewer-modal__pin-name {
+    position: absolute;
+    transform: translate(10px, -130%);
+    background: color-mix(in srgb, var(--mud-palette-surface) 92%, black 8%);
+    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 20%, transparent 80%);
+    border-radius: 8px;
+    color: var(--mud-palette-text-primary);
+    font-size: 0.72rem;
+    line-height: 1.2;
+    padding: 0.1rem 0.35rem;
+    max-width: 12rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    z-index: 4;
+}
+
+.session-map-viewer-modal__zoom-control {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    z-index: 7;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.45rem 0.35rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 22%, transparent 78%);
+    background: color-mix(in srgb, var(--mud-palette-surface) 90%, black 10%);
+    backdrop-filter: blur(3px);
+}
+
+.session-map-viewer-modal__zoom-button {
+    width: 1.1rem;
+    height: 1.1rem;
+    border: none;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--mud-palette-text-primary) 16%, transparent 84%);
+    cursor: pointer;
+    text-align: center;
+    font-size: 0.8rem;
+    line-height: 1;
+    color: var(--mud-palette-text-secondary);
+    font-weight: 700;
+    padding: 0;
+}
+
+.session-map-viewer-modal__zoom-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.session-map-viewer-modal__zoom-slider {
+    width: 1rem;
+    height: 10.25rem;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    accent-color: var(--mud-palette-primary);
+}
+
+.session-map-viewer-modal__zoom-slider:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

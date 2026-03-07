@@ -8,6 +8,7 @@ using Chronicis.Client.Services;
 using Chronicis.Client.Tests.Components;
 using Chronicis.Client.ViewModels;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +40,7 @@ public class SessionDetailTests : MudBlazorTestContext
         IKeyboardShortcutService KeyboardShortcuts,
         ILinkApiService LinkApi,
         IExternalLinkApiService ExternalLinkApi,
+        IMapApiService MapApi,
         IWikiLinkService WikiLinkService,
         IAppContextService AppContext,
         IArticleCacheService ArticleCache,
@@ -62,6 +64,7 @@ public class SessionDetailTests : MudBlazorTestContext
         var keyboardShortcuts = new KeyboardShortcutService();
         var linkApi = Substitute.For<ILinkApiService>();
         var externalLinkApi = Substitute.For<IExternalLinkApiService>();
+        var mapApi = Substitute.For<IMapApiService>();
         var wikiLinkService = Substitute.For<IWikiLinkService>();
         var appContext = Substitute.For<IAppContextService>();
         var articleCache = Substitute.For<IArticleCacheService>();
@@ -100,6 +103,7 @@ public class SessionDetailTests : MudBlazorTestContext
             keyboardShortcuts,
             linkApi,
             externalLinkApi,
+            mapApi,
             wikiLinkService,
             appContext,
             articleCache,
@@ -116,6 +120,7 @@ public class SessionDetailTests : MudBlazorTestContext
         Services.AddSingleton(d.WorldApi);
         Services.AddSingleton(d.LinkApi);
         Services.AddSingleton(d.ExternalLinkApi);
+        Services.AddSingleton(d.MapApi);
         Services.AddSingleton(d.WikiLinkService);
         Services.AddSingleton(d.AppContext);
         Services.AddSingleton(d.ArticleCache);
@@ -197,6 +202,313 @@ public class SessionDetailTests : MudBlazorTestContext
             Assert.DoesNotContain("Private Notes", playerCut.Markup, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("No public notes yet", playerCut.Markup, StringComparison.OrdinalIgnoreCase);
         });
+    }
+
+    [Fact]
+    public async Task SessionDetail_MapAutocomplete_UsesMapsPrefixPath_AndPassesParsedQuery()
+    {
+        var d = CreatePageDeps();
+        var sessionId = Guid.NewGuid();
+        ConfigureLoadedSession(d, sessionId, isGm: true, publicNotes: "<p>pub</p>", privateNotes: "<p>priv</p>");
+        var cut = RenderPage(d, sessionId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Instance));
+
+        var pageType = typeof(SessionDetail);
+        var editorKindType = pageType.GetNestedType("SessionEditorKind", BindingFlags.NonPublic);
+        Assert.NotNull(editorKindType);
+        var publicKind = Enum.Parse(editorKindType!, "Public");
+        var worldId = d.ViewModel.World!.Id;
+
+        d.MapApi.GetMapAutocompleteAsync(worldId, null).Returns(new List<MapAutocompleteDto>());
+        d.MapApi.GetMapAutocompleteAsync(worldId, "Sword").Returns(new List<MapAutocompleteDto>());
+        d.MapApi.GetMapAutocompleteAsync(worldId, "amb").Returns(new List<MapAutocompleteDto>());
+
+        await InvokeNonPublicTask(cut.Instance, "HandleAutocompleteTriggeredAsync", publicKind, "maps/   ", 10d, 20d);
+        await InvokeNonPublicTask(cut.Instance, "HandleAutocompleteTriggeredAsync", publicKind, "maps/ Sword ", 10d, 20d);
+        await InvokeNonPublicTask(cut.Instance, "HandleAutocompleteTriggeredAsync", publicKind, "maps/amb", 10d, 20d);
+
+        await d.MapApi.Received(1).GetMapAutocompleteAsync(worldId, null);
+        await d.MapApi.Received(1).GetMapAutocompleteAsync(worldId, "Sword");
+        await d.MapApi.Received(1).GetMapAutocompleteAsync(worldId, "amb");
+        await d.ExternalLinkApi.DidNotReceive().GetSuggestionsAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task SessionDetail_MapAutocomplete_PrefersSessionWorldId_WhenAppContextIsDifferent()
+    {
+        var d = CreatePageDeps();
+        var sessionId = Guid.NewGuid();
+        ConfigureLoadedSession(d, sessionId, isGm: true, publicNotes: "<p>pub</p>", privateNotes: "<p>priv</p>");
+        var cut = RenderPage(d, sessionId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Instance));
+
+        var pageType = typeof(SessionDetail);
+        var editorKindType = pageType.GetNestedType("SessionEditorKind", BindingFlags.NonPublic);
+        Assert.NotNull(editorKindType);
+        var publicKind = Enum.Parse(editorKindType!, "Public");
+
+        var sessionWorldId = d.ViewModel.World!.Id;
+        var staleWorldId = Guid.NewGuid();
+        d.AppContext.CurrentWorldId.Returns((Guid?)staleWorldId);
+        d.MapApi.GetMapAutocompleteAsync(sessionWorldId, null).Returns(new List<MapAutocompleteDto>());
+
+        await InvokeNonPublicTask(cut.Instance, "HandleAutocompleteTriggeredAsync", publicKind, "maps/", 10d, 20d);
+
+        await d.MapApi.Received(1).GetMapAutocompleteAsync(sessionWorldId, null);
+        await d.MapApi.DidNotReceive().GetMapAutocompleteAsync(staleWorldId, Arg.Any<string?>());
+    }
+
+    [Fact]
+    public async Task SessionDetail_MapAutocomplete_MapsSuggestionsAndPreservesMapId()
+    {
+        var d = CreatePageDeps();
+        var sessionId = Guid.NewGuid();
+        ConfigureLoadedSession(d, sessionId, isGm: true, publicNotes: "<p>pub</p>");
+        var cut = RenderPage(d, sessionId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Instance));
+
+        var pageType = typeof(SessionDetail);
+        var editorKindType = pageType.GetNestedType("SessionEditorKind", BindingFlags.NonPublic);
+        Assert.NotNull(editorKindType);
+        var publicKind = Enum.Parse(editorKindType!, "Public");
+        var worldId = d.ViewModel.World!.Id;
+        var mapId = Guid.NewGuid();
+
+        d.MapApi.GetMapAutocompleteAsync(worldId, null).Returns(new List<MapAutocompleteDto>
+        {
+            new() { MapId = mapId, Name = "Sword Coast" }
+        });
+
+        await InvokeNonPublicTask(cut.Instance, "HandleAutocompleteTriggeredAsync", publicKind, "maps/", 10d, 20d);
+
+        var suggestions = Assert.IsType<List<Chronicis.Client.Components.Articles.WikiLinkAutocompleteItem>>(
+            GetField(cut.Instance, "_autocompleteSuggestions"));
+        Assert.Single(suggestions);
+        Assert.Equal("Sword Coast", suggestions[0].Title);
+        Assert.Equal("Map", suggestions[0].SecondaryText);
+        Assert.Equal(mapId, suggestions[0].MapId);
+    }
+
+    [Fact]
+    public async Task SessionDetail_MapAutocomplete_Select_InsertsMapTokenWithMapIdentity()
+    {
+        var d = CreatePageDeps();
+        var sessionId = Guid.NewGuid();
+        ConfigureLoadedSession(d, sessionId, isGm: true, publicNotes: "<p>pub</p>");
+        var cut = RenderPage(d, sessionId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Instance));
+
+        var mapId = Guid.NewGuid();
+        var suggestion = Chronicis.Client.Components.Articles.WikiLinkAutocompleteItem.FromMapAutocomplete(
+            new MapAutocompleteDto
+            {
+                MapId = mapId,
+                Name = "Sword Coast"
+            });
+
+        JSInterop.SetupVoid("insertMapLinkToken", _ => true).SetVoidResult();
+
+        await InvokeNonPublicTask(cut.Instance, "OnAutocompleteSelect", suggestion);
+
+        var invocation = Assert.Single(JSInterop.Invocations.Where(i => i.Identifier == "insertMapLinkToken"));
+        Assert.Equal($"session-public-editor-{sessionId}", invocation.Arguments[0]?.ToString());
+        Assert.Equal(mapId.ToString(), invocation.Arguments[1]?.ToString());
+        Assert.Equal("Sword Coast", invocation.Arguments[2]?.ToString());
+    }
+
+    [Fact]
+    public async Task SessionDetail_MapChipCallback_OpensModal_WithMapIdentity()
+    {
+        var d = CreatePageDeps();
+        var sessionId = Guid.NewGuid();
+        ConfigureLoadedSession(d, sessionId, isGm: true, publicNotes: "<p>pub</p>");
+        var mapId = Guid.NewGuid();
+        d.MapApi.GetBasemapReadUrlAsync(Arg.Any<Guid>(), mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob.example.com/read" }, 200, null));
+
+        var cut = RenderPage(d, sessionId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Instance));
+
+        var bridge = GetField(cut.Instance, "_publicEditorBridge");
+        Assert.NotNull(bridge);
+
+        await cut.InvokeAsync(() => InvokeAnyTask(bridge!, "OnMapLinkClicked", mapId.ToString(), "Sword Coast"));
+
+        Assert.True((bool)GetField(cut.Instance, "_isMapModalOpen")!);
+        Assert.Equal(mapId, (Guid)GetField(cut.Instance, "_selectedMapId")!);
+        Assert.Equal("Sword Coast", GetField(cut.Instance, "_selectedMapName"));
+        cut.WaitForAssertion(() =>
+            Assert.Contains("session-map-viewer-modal", cut.Markup, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task SessionDetail_MapChipCallback_InvalidMapId_DoesNotOpenModal()
+    {
+        var d = CreatePageDeps();
+        var sessionId = Guid.NewGuid();
+        ConfigureLoadedSession(d, sessionId, isGm: true, publicNotes: "<p>pub</p>");
+        var cut = RenderPage(d, sessionId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Instance));
+
+        var bridge = GetField(cut.Instance, "_publicEditorBridge");
+        Assert.NotNull(bridge);
+
+        await cut.InvokeAsync(() => InvokeAnyTask(bridge!, "OnMapLinkClicked", "not-a-guid", "Sword Coast"));
+
+        Assert.False((bool)GetField(cut.Instance, "_isMapModalOpen")!);
+        Assert.Equal(Guid.Empty, (Guid)GetField(cut.Instance, "_selectedMapId")!);
+        Assert.Null(GetField(cut.Instance, "_selectedMapName"));
+    }
+
+    [Fact]
+    public async Task SessionDetail_MapChipCallback_WhitespaceName_NormalizesToNull()
+    {
+        var d = CreatePageDeps();
+        var sessionId = Guid.NewGuid();
+        ConfigureLoadedSession(d, sessionId, isGm: true, publicNotes: "<p>pub</p>");
+        var mapId = Guid.NewGuid();
+        d.MapApi.GetBasemapReadUrlAsync(Arg.Any<Guid>(), mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob.example.com/read" }, 200, null));
+        var cut = RenderPage(d, sessionId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Instance));
+
+        var bridge = GetField(cut.Instance, "_publicEditorBridge");
+        Assert.NotNull(bridge);
+
+        await cut.InvokeAsync(() => InvokeAnyTask(bridge!, "OnMapLinkClicked", mapId.ToString(), "   "));
+
+        Assert.True((bool)GetField(cut.Instance, "_isMapModalOpen")!);
+        Assert.Equal(mapId, (Guid)GetField(cut.Instance, "_selectedMapId")!);
+        Assert.Null(GetField(cut.Instance, "_selectedMapName"));
+    }
+
+    [Fact]
+    public void SessionDetail_CurrentWorldId_PrefersWorld_ThenAppContext_ThenEmpty()
+    {
+        var d = CreatePageDeps();
+        var sessionId = Guid.NewGuid();
+        ConfigureLoadedSession(d, sessionId, isGm: true, publicNotes: "<p>pub</p>");
+        var cut = RenderPage(d, sessionId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Instance));
+
+        var currentWorldIdProperty = typeof(SessionDetail).GetProperty("CurrentWorldId", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(currentWorldIdProperty);
+
+        var appContextWorldId = Guid.NewGuid();
+        d.AppContext.CurrentWorldId.Returns((Guid?)appContextWorldId);
+        Assert.Equal(d.ViewModel.World!.Id, (Guid)currentWorldIdProperty!.GetValue(cut.Instance)!);
+
+        SetField(d.ViewModel, "_world", null);
+        d.AppContext.CurrentWorldId.Returns((Guid?)null);
+        Assert.Equal(Guid.Empty, (Guid)currentWorldIdProperty.GetValue(cut.Instance)!);
+
+        d.AppContext.CurrentWorldId.Returns((Guid?)appContextWorldId);
+        Assert.Equal(appContextWorldId, (Guid)currentWorldIdProperty.GetValue(cut.Instance)!);
+    }
+
+    [Fact]
+    public async Task SessionDetail_MapModal_Close_ClearsState_AndHidesModal()
+    {
+        var d = CreatePageDeps();
+        var sessionId = Guid.NewGuid();
+        ConfigureLoadedSession(d, sessionId, isGm: true, publicNotes: "<p>pub</p>");
+        var mapId = Guid.NewGuid();
+        d.MapApi.GetBasemapReadUrlAsync(Arg.Any<Guid>(), mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob.example.com/read" }, 200, null));
+
+        var cut = RenderPage(d, sessionId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Instance));
+
+        var bridge = GetField(cut.Instance, "_publicEditorBridge");
+        Assert.NotNull(bridge);
+        await cut.InvokeAsync(() => InvokeAnyTask(bridge!, "OnMapLinkClicked", mapId.ToString(), "Sword Coast"));
+
+        cut.WaitForAssertion(() =>
+            Assert.Contains("session-map-viewer-modal", cut.Markup, StringComparison.OrdinalIgnoreCase));
+
+        cut.Find(".session-map-viewer-modal__close").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.False((bool)GetField(cut.Instance, "_isMapModalOpen")!);
+            Assert.Equal(Guid.Empty, (Guid)GetField(cut.Instance, "_selectedMapId")!);
+            Assert.Null(GetField(cut.Instance, "_selectedMapName"));
+            Assert.DoesNotContain("session-map-viewer-modal", cut.Markup, StringComparison.OrdinalIgnoreCase);
+        });
+    }
+
+    [Fact]
+    public async Task SessionDetail_WikiLinkClick_StillNavigatesToArticle()
+    {
+        var d = CreatePageDeps();
+        var sessionId = Guid.NewGuid();
+        ConfigureLoadedSession(d, sessionId, isGm: true, publicNotes: "<p>pub</p>");
+        var articleId = Guid.NewGuid();
+        const string articlePath = "world/wiki/castle-ward";
+        d.ArticleCache.GetNavigationPathAsync(articleId).Returns(articlePath);
+
+        var cut = RenderPage(d, sessionId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Instance));
+
+        var bridge = GetField(cut.Instance, "_publicEditorBridge");
+        Assert.NotNull(bridge);
+
+        await cut.InvokeAsync(() => InvokeAnyTask(bridge!, "OnWikiLinkClicked", articleId.ToString()));
+
+        var navigation = Services.GetRequiredService<FakeNavigationManager>();
+        Assert.EndsWith($"/article/{articlePath}", navigation.Uri, StringComparison.OrdinalIgnoreCase);
+        Assert.False((bool)GetField(cut.Instance, "_isMapModalOpen")!);
+    }
+
+    [Fact]
+    public async Task SessionDetail_NonMapAutocomplete_PathRemainsUnchanged()
+    {
+        var d = CreatePageDeps();
+        var sessionId = Guid.NewGuid();
+        ConfigureLoadedSession(d, sessionId, isGm: true, publicNotes: "<p>pub</p>", privateNotes: "<p>priv</p>");
+        var cut = RenderPage(d, sessionId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Instance));
+
+        var pageType = typeof(SessionDetail);
+        var editorKindType = pageType.GetNestedType("SessionEditorKind", BindingFlags.NonPublic);
+        Assert.NotNull(editorKindType);
+        var publicKind = Enum.Parse(editorKindType!, "Public");
+        var worldId = d.ViewModel.World!.Id;
+
+        d.LinkApi.GetSuggestionsAsync(worldId, "castle").Returns(new List<LinkSuggestionDto>
+        {
+            new()
+            {
+                ArticleId = Guid.NewGuid(),
+                Title = "Castle Ward",
+                Slug = "castle-ward",
+                DisplayPath = "Waterdeep/Castle Ward"
+            }
+        });
+
+        d.ExternalLinkApi.GetSuggestionsAsync(worldId, "srd", "fire", Arg.Any<CancellationToken>())
+            .Returns(new List<ExternalLinkSuggestionDto>
+            {
+                new()
+                {
+                    Source = "srd",
+                    Id = "spells/fireball",
+                    Title = "Fireball",
+                    Subtitle = "Spell",
+                    Category = "spell"
+                }
+            });
+
+        await InvokeNonPublicTask(cut.Instance, "HandleAutocompleteTriggeredAsync", publicKind, "castle", 10d, 20d);
+        await InvokeNonPublicTask(cut.Instance, "HandleAutocompleteTriggeredAsync", publicKind, "srd/fire", 10d, 20d);
+
+        await d.LinkApi.Received(1).GetSuggestionsAsync(worldId, "castle");
+        await d.ExternalLinkApi.Received(1).GetSuggestionsAsync(worldId, "srd", "fire", Arg.Any<CancellationToken>());
+        await d.MapApi.DidNotReceive().GetMapAutocompleteAsync(Arg.Any<Guid>(), Arg.Any<string?>());
     }
 
     [Fact]

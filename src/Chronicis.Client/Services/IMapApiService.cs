@@ -13,6 +13,11 @@ public interface IMapApiService
     Task<List<MapSummaryDto>> ListMapsForWorldAsync(Guid worldId);
 
     /// <summary>
+    /// Gets map autocomplete suggestions for the given world.
+    /// </summary>
+    Task<List<MapAutocompleteDto>> GetMapAutocompleteAsync(Guid worldId, string? query);
+
+    /// <summary>
     /// Creates a map in the specified world.
     /// </summary>
     Task<MapDto?> CreateMapAsync(Guid worldId, MapCreateDto dto);

@@ -1,0 +1,652 @@
+@using System.Globalization
+@using Chronicis.Shared.DTOs.Maps
+@inject IMapApiService MapApi
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+@if (IsOpen)
+{
+    <div class="session-map-viewer-modal__backdrop">
+        <section class="session-map-viewer-modal"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-label="Map viewer"
+                 tabindex="0"
+                 autofocus
+                 @onkeydown="HandleKeyDown">
+            <header class="session-map-viewer-modal__header">
+                <MudText Typo="Typo.h6" Class="session-map-viewer-modal__title">
+                    @ViewerTitle
+                </MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                               Color="Color.Default"
+                               aria-label="Close map viewer"
+                               Class="session-map-viewer-modal__close"
+                               OnClick="CloseAsync" />
+            </header>
+
+            <div class="session-map-viewer-modal__content">
+                @if (_isLoading)
+                {
+                    <div class="session-map-viewer-modal__state">
+                        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+                        <MudText Typo="Typo.body2" Class="mt-3">Loading map...</MudText>
+                    </div>
+                }
+                else if (_state == SessionMapViewerState.Unauthorized)
+                {
+                    <MudAlert Severity="Severity.Error">You do not have access to this map.</MudAlert>
+                }
+                else if (_state == SessionMapViewerState.NotFound)
+                {
+                    <MudAlert Severity="Severity.Error">Map not found.</MudAlert>
+                }
+                else if (_state == SessionMapViewerState.BasemapMissing)
+                {
+                    <MudAlert Severity="Severity.Warning">Basemap is missing for this map.</MudAlert>
+                }
+                else if (_state == SessionMapViewerState.Loaded)
+                {
+                    <div class="session-map-viewer-modal__image-shell">
+                        <div @ref="_mapViewportRef"
+                             class="@GetMapViewportClass()"
+                             @onmousedown="OnMapViewportMouseDown"
+                             @onmousemove="OnMapViewportMouseMove"
+                             @onmouseup="OnMapViewportMouseUp"
+                             @onmouseleave="OnMapViewportMouseUp"
+                             @onwheel="OnMapViewportWheel"
+                             @onwheel:preventDefault="true">
+                            <div class="session-map-viewer-modal__map-stage" style="@GetMapStageStyle()">
+                                <img @ref="_mapImageRef"
+                                     src="@_basemapReadUrl"
+                                     alt="@ViewerTitle"
+                                     class="@GetMapImageClass()"
+                                     @onload="OnMapImageLoaded"
+                                     draggable="false" />
+                                <div class="session-map-viewer-modal__pins-overlay" aria-hidden="true">
+                                    @foreach (var pin in _pins)
+                                    {
+                                        <div class="session-map-viewer-modal__pin"
+                                             style="@GetPinStyle(pin)"
+                                             title="@GetPinTooltip(pin)">
+                                        </div>
+
+                                        @if (HasPinLabel(pin))
+                                        {
+                                            <div class="session-map-viewer-modal__pin-name"
+                                                 style="@GetPinLabelStyle(pin)"
+                                                 title="@pin.Name">
+                                                @pin.Name
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="session-map-viewer-modal__zoom-control" aria-label="Map zoom controls">
+                            <button type="button"
+                                    class="session-map-viewer-modal__zoom-button"
+                                    disabled="@(!CanZoomIn())"
+                                    aria-label="Zoom in"
+                                    @onclick="ZoomInFromButton">
+                                +
+                            </button>
+                            <input type="range"
+                                   class="session-map-viewer-modal__zoom-slider"
+                                   min="0"
+                                   max="100"
+                                   step="1"
+                                   value="@GetZoomSliderValue()"
+                                   @oninput="OnZoomSliderInput"
+                                   disabled="@(!_hasMapViewportLayout)"
+                                   aria-label="Map zoom level" />
+                            <button type="button"
+                                    class="session-map-viewer-modal__zoom-button"
+                                    disabled="@(!CanZoomOut())"
+                                    aria-label="Zoom out"
+                                    @onclick="ZoomOutFromButton">
+                                -
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+}
+
+@code {
+    private bool _lastIsOpen;
+    private bool _isLoading;
+    private string _basemapReadUrl = string.Empty;
+    private List<MapPinResponseDto> _pins = [];
+    private SessionMapViewerState _state;
+    private Guid _activeWorldId;
+    private Guid _activeMapId;
+    private bool _hasActiveTarget;
+    private int _loadVersion;
+    private const double ZoomRangeSliderMax = 100d;
+    private const double ZoomButtonSliderStep = 10d;
+    private const double ZoomRangeMultiplier = 5d;
+    private const double ZoomWheelSliderStep = 4d;
+    private const double PanDragThresholdPx = 3d;
+    private const double PanEnableZoomDelta = 0.0001d;
+    private bool _hasMapViewportLayout;
+    private double _mapBaseWidth;
+    private double _mapBaseHeight;
+    private double _mapViewportWidth;
+    private double _mapViewportHeight;
+    private double _mapMinZoom = 1d;
+    private double _mapMaxZoom = 1d;
+    private double _mapZoom = 1d;
+    private double _mapPanX;
+    private double _mapPanY;
+    private bool _isMapPointerDown;
+    private bool _isMapDragging;
+    private double _dragStartClientX;
+    private double _dragStartClientY;
+    private double _dragStartPanX;
+    private double _dragStartPanY;
+    private ElementReference _mapViewportRef;
+    private ElementReference _mapImageRef;
+    private IJSObjectReference? _mapInteropModule;
+
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public Guid WorldId { get; set; }
+
+    [Parameter]
+    public Guid MapId { get; set; }
+
+    [Parameter]
+    public string? MapName { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!IsOpen)
+        {
+            _lastIsOpen = false;
+            return;
+        }
+
+        var modalJustOpened = !_lastIsOpen;
+        var targetChangedWhileOpen = _lastIsOpen
+            && (!_hasActiveTarget || _activeWorldId != WorldId || _activeMapId != MapId);
+
+        if (modalJustOpened || targetChangedWhileOpen)
+        {
+            _activeWorldId = WorldId;
+            _activeMapId = MapId;
+            _hasActiveTarget = true;
+            await LoadBasemapAsync(WorldId, MapId);
+        }
+
+        _lastIsOpen = true;
+    }
+
+    private async Task LoadBasemapAsync(Guid worldId, Guid mapId)
+    {
+        var requestVersion = ++_loadVersion;
+        _isLoading = true;
+        _basemapReadUrl = string.Empty;
+        _pins = [];
+        ResetMapViewportState();
+        _state = SessionMapViewerState.None;
+        await InvokeAsync(StateHasChanged);
+
+        var basemapResult = await MapApi.GetBasemapReadUrlAsync(worldId, mapId);
+        if (requestVersion != _loadVersion || !IsOpen || WorldId != worldId || MapId != mapId)
+        {
+            return;
+        }
+
+        if (IsUnauthorized(basemapResult.StatusCode))
+        {
+            _state = SessionMapViewerState.Unauthorized;
+        }
+        else if (IsBasemapMissing(basemapResult.StatusCode, basemapResult.Error))
+        {
+            _state = SessionMapViewerState.BasemapMissing;
+        }
+        else if (basemapResult.StatusCode == 404)
+        {
+            _state = SessionMapViewerState.NotFound;
+        }
+        else if (string.IsNullOrWhiteSpace(basemapResult.Basemap?.ReadUrl))
+        {
+            _state = SessionMapViewerState.BasemapMissing;
+        }
+        else
+        {
+            _basemapReadUrl = basemapResult.Basemap.ReadUrl;
+            var pins = await TryLoadPinsAsync(worldId, mapId);
+            if (requestVersion != _loadVersion || !IsOpen || WorldId != worldId || MapId != mapId)
+            {
+                return;
+            }
+
+            _pins = pins;
+            _state = SessionMapViewerState.Loaded;
+        }
+
+        _isLoading = false;
+    }
+
+    private async Task<List<MapPinResponseDto>> TryLoadPinsAsync(Guid worldId, Guid mapId)
+    {
+        try
+        {
+            var pinsTask = MapApi.ListPinsForMapAsync(worldId, mapId);
+            if (pinsTask is null)
+            {
+                return [];
+            }
+
+            return await pinsTask ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private string GetMapViewportClass()
+    {
+        if (_isMapDragging)
+        {
+            return "session-map-viewer-modal__viewport session-map-viewer-modal__viewport--dragging";
+        }
+
+        if (CanPanMap())
+        {
+            return "session-map-viewer-modal__viewport session-map-viewer-modal__viewport--pan";
+        }
+
+        return "session-map-viewer-modal__viewport";
+    }
+
+    private string GetMapStageStyle()
+    {
+        if (!_hasMapViewportLayout)
+        {
+            return "width:100%;height:auto;transform:translate(0px,0px) scale(1);";
+        }
+
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"width:{_mapBaseWidth:F2}px;height:{_mapBaseHeight:F2}px;transform:translate({_mapPanX:F2}px,{_mapPanY:F2}px) scale({_mapZoom:F4});");
+    }
+
+    private string GetMapImageClass() =>
+        _hasMapViewportLayout
+            ? "session-map-viewer-modal__image session-map-viewer-modal__image--stage"
+            : "session-map-viewer-modal__image";
+
+    private int GetZoomSliderValue() =>
+        GetSliderValueForZoom(_mapZoom, _mapMinZoom, _mapMaxZoom);
+
+    private Task OnZoomSliderInput(ChangeEventArgs args)
+    {
+        if (!_hasMapViewportLayout || !TryReadDouble(args.Value, out var sliderValue))
+        {
+            return Task.CompletedTask;
+        }
+
+        var clampedSliderValue = Clamp(sliderValue, 0d, ZoomRangeSliderMax);
+        SetZoomLevel(GetZoomForSliderValue(clampedSliderValue, _mapMinZoom, _mapMaxZoom));
+        return Task.CompletedTask;
+    }
+
+    private bool CanZoomIn() =>
+        _hasMapViewportLayout
+        && _mapZoom < _mapMaxZoom - PanEnableZoomDelta;
+
+    private bool CanZoomOut() =>
+        _hasMapViewportLayout
+        && _mapZoom > _mapMinZoom + PanEnableZoomDelta;
+
+    private void ZoomInFromButton()
+    {
+        if (!CanZoomIn())
+        {
+            return;
+        }
+
+        var nextSliderValue = Clamp(GetZoomSliderValue() + ZoomButtonSliderStep, 0d, ZoomRangeSliderMax);
+        SetZoomLevel(GetZoomForSliderValue(nextSliderValue, _mapMinZoom, _mapMaxZoom));
+    }
+
+    private void ZoomOutFromButton()
+    {
+        if (!CanZoomOut())
+        {
+            return;
+        }
+
+        var nextSliderValue = Clamp(GetZoomSliderValue() - ZoomButtonSliderStep, 0d, ZoomRangeSliderMax);
+        SetZoomLevel(GetZoomForSliderValue(nextSliderValue, _mapMinZoom, _mapMaxZoom));
+    }
+
+    private void OnMapViewportWheel(WheelEventArgs args)
+    {
+        if (!_hasMapViewportLayout)
+        {
+            return;
+        }
+
+        var step = args.DeltaY < 0d ? ZoomWheelSliderStep : -ZoomWheelSliderStep;
+        var nextSliderValue = Clamp(GetZoomSliderValue() + step, 0d, ZoomRangeSliderMax);
+        SetZoomLevel(GetZoomForSliderValue(nextSliderValue, _mapMinZoom, _mapMaxZoom));
+    }
+
+    private void OnMapViewportMouseDown(MouseEventArgs args)
+    {
+        if (args.Button != 0 || !CanPanMap())
+        {
+            return;
+        }
+
+        _isMapPointerDown = true;
+        _isMapDragging = false;
+        _dragStartClientX = args.ClientX;
+        _dragStartClientY = args.ClientY;
+        _dragStartPanX = _mapPanX;
+        _dragStartPanY = _mapPanY;
+    }
+
+    private void OnMapViewportMouseMove(MouseEventArgs args)
+    {
+        if (!_isMapPointerDown)
+        {
+            return;
+        }
+
+        var deltaX = args.ClientX - _dragStartClientX;
+        var deltaY = args.ClientY - _dragStartClientY;
+
+        if (!_isMapDragging && Math.Abs(deltaX) < PanDragThresholdPx && Math.Abs(deltaY) < PanDragThresholdPx)
+        {
+            return;
+        }
+
+        _isMapDragging = true;
+        _mapPanX = _dragStartPanX + deltaX;
+        _mapPanY = _dragStartPanY + deltaY;
+        ClampPanToBounds();
+    }
+
+    private void OnMapViewportMouseUp(MouseEventArgs _)
+    {
+        _isMapPointerDown = false;
+        _isMapDragging = false;
+    }
+
+    private async Task OnMapImageLoaded()
+    {
+        await InitializeMapViewportLayoutAsync();
+    }
+
+    private async Task InitializeMapViewportLayoutAsync()
+    {
+        var viewportRect = await GetElementRectAsync(_mapViewportRef);
+        var imageRect = await GetElementRectAsync(_mapImageRef);
+
+        if (!HasUsableBounds(viewportRect) || !HasUsableBounds(imageRect))
+        {
+            return;
+        }
+
+        _mapViewportWidth = viewportRect!.Width;
+        _mapViewportHeight = viewportRect.Height;
+        _mapBaseWidth = imageRect!.Width;
+        _mapBaseHeight = imageRect.Height;
+
+        if (_mapBaseWidth <= 0d || _mapBaseHeight <= 0d || _mapViewportWidth <= 0d || _mapViewportHeight <= 0d)
+        {
+            _hasMapViewportLayout = false;
+            return;
+        }
+
+        _mapMinZoom = Math.Max(_mapViewportWidth / _mapBaseWidth, _mapViewportHeight / _mapBaseHeight);
+        _mapMaxZoom = Math.Max(_mapMinZoom, _mapMinZoom * ZoomRangeMultiplier);
+        _mapZoom = _mapMinZoom;
+        _hasMapViewportLayout = true;
+        RecenterMapPan();
+    }
+
+    private bool CanPanMap() =>
+        _hasMapViewportLayout
+        && _mapZoom > _mapMinZoom + PanEnableZoomDelta;
+
+    private void SetZoomLevel(double targetZoom)
+    {
+        if (!_hasMapViewportLayout)
+        {
+            return;
+        }
+
+        var nextZoom = Clamp(targetZoom, _mapMinZoom, _mapMaxZoom);
+        if (Math.Abs(nextZoom - _mapZoom) < PanEnableZoomDelta)
+        {
+            return;
+        }
+
+        var centerX = _mapViewportWidth / 2d;
+        var centerY = _mapViewportHeight / 2d;
+        var mapCenterX = (centerX - _mapPanX) / _mapZoom;
+        var mapCenterY = (centerY - _mapPanY) / _mapZoom;
+
+        _mapZoom = nextZoom;
+        _mapPanX = centerX - (mapCenterX * _mapZoom);
+        _mapPanY = centerY - (mapCenterY * _mapZoom);
+        ClampPanToBounds();
+    }
+
+    private void RecenterMapPan()
+    {
+        var scaledWidth = _mapBaseWidth * _mapZoom;
+        var scaledHeight = _mapBaseHeight * _mapZoom;
+
+        _mapPanX = (_mapViewportWidth - scaledWidth) / 2d;
+        _mapPanY = (_mapViewportHeight - scaledHeight) / 2d;
+        ClampPanToBounds();
+    }
+
+    private void ClampPanToBounds()
+    {
+        var scaledWidth = _mapBaseWidth * _mapZoom;
+        var scaledHeight = _mapBaseHeight * _mapZoom;
+        _mapPanX = ClampPanAxis(_mapPanX, _mapViewportWidth, scaledWidth);
+        _mapPanY = ClampPanAxis(_mapPanY, _mapViewportHeight, scaledHeight);
+    }
+
+    private static double ClampPanAxis(double pan, double viewportSize, double scaledSize)
+    {
+        if (viewportSize <= 0d || scaledSize <= 0d)
+        {
+            return 0d;
+        }
+
+        if (scaledSize <= viewportSize)
+        {
+            return (viewportSize - scaledSize) / 2d;
+        }
+
+        return Clamp(pan, viewportSize - scaledSize, 0d);
+    }
+
+    private static int GetSliderValueForZoom(double zoom, double minZoom, double maxZoom)
+    {
+        if (maxZoom <= minZoom)
+        {
+            return 0;
+        }
+
+        var normalized = (zoom - minZoom) / (maxZoom - minZoom);
+        return (int)Math.Round(Clamp(normalized * ZoomRangeSliderMax, 0d, ZoomRangeSliderMax), MidpointRounding.AwayFromZero);
+    }
+
+    private static double GetZoomForSliderValue(double sliderValue, double minZoom, double maxZoom)
+    {
+        if (maxZoom <= minZoom)
+        {
+            return minZoom;
+        }
+
+        var normalized = Clamp(sliderValue / ZoomRangeSliderMax, 0d, 1d);
+        return minZoom + ((maxZoom - minZoom) * normalized);
+    }
+
+    private static bool TryReadDouble(object? value, out double result) =>
+        double.TryParse(
+            value?.ToString() ?? string.Empty,
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out result);
+
+    private static double Clamp(double value, double min, double max) =>
+        value < min ? min : value > max ? max : value;
+
+    private async Task<MapElementRect?> GetElementRectAsync(ElementReference elementRef)
+    {
+        if (_mapInteropModule == null)
+        {
+            try
+            {
+                _mapInteropModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/js/mapPageInterop.js?v=2");
+            }
+            catch (JSException)
+            {
+                return await JSRuntime.InvokeAsync<MapElementRect?>("chronicisMapPage.getElementRect", elementRef);
+            }
+        }
+
+        try
+        {
+            var rect = await _mapInteropModule.InvokeAsync<MapElementRect?>("getElementRect", elementRef);
+            if (HasUsableBounds(rect))
+            {
+                return rect;
+            }
+        }
+        catch (JSException)
+        {
+            // Fall through to global interop fallback.
+        }
+
+        return await JSRuntime.InvokeAsync<MapElementRect?>("chronicisMapPage.getElementRect", elementRef);
+    }
+
+    private void ResetMapViewportState()
+    {
+        _hasMapViewportLayout = false;
+        _mapBaseWidth = 0d;
+        _mapBaseHeight = 0d;
+        _mapViewportWidth = 0d;
+        _mapViewportHeight = 0d;
+        _mapMinZoom = 1d;
+        _mapMaxZoom = 1d;
+        _mapZoom = 1d;
+        _mapPanX = 0d;
+        _mapPanY = 0d;
+        _isMapPointerDown = false;
+        _isMapDragging = false;
+        _dragStartClientX = 0d;
+        _dragStartClientY = 0d;
+        _dragStartPanX = 0d;
+        _dragStartPanY = 0d;
+    }
+
+    private static bool HasUsableBounds(MapElementRect? rect) =>
+        rect != null && rect.Width > 0d && rect.Height > 0d;
+
+    private static string GetPinStyle(MapPinResponseDto pin) =>
+        $"left:{pin.X * 100:F4}%;top:{pin.Y * 100:F4}%;";
+
+    private static string GetPinLabelStyle(MapPinResponseDto pin) =>
+        $"left:{pin.X * 100:F4}%;top:{pin.Y * 100:F4}%;";
+
+    private static bool HasPinLabel(MapPinResponseDto pin) =>
+        !string.IsNullOrWhiteSpace(pin.Name);
+
+    private static string GetPinTooltip(MapPinResponseDto pin)
+    {
+        if (!string.IsNullOrWhiteSpace(pin.Name))
+        {
+            return pin.Name;
+        }
+
+        if (pin.LinkedArticle is not null)
+        {
+            return pin.LinkedArticle.Title;
+        }
+
+        return "Map pin";
+    }
+
+    private sealed class MapElementRect
+    {
+        public double Left { get; set; }
+        public double Top { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+    }
+
+    private async Task CloseAsync()
+    {
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+
+    private Task HandleKeyDown(KeyboardEventArgs args) =>
+        string.Equals(args.Key, "Escape", StringComparison.Ordinal)
+            ? CloseAsync()
+            : Task.CompletedTask;
+
+    private string ViewerTitle =>
+        string.IsNullOrWhiteSpace(MapName) ? "Map" : MapName.Trim();
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_mapInteropModule is not null)
+        {
+            try
+            {
+                await _mapInteropModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // No-op on teardown.
+            }
+        }
+    }
+
+    private static bool IsUnauthorized(int? statusCode) => statusCode == 401 || statusCode == 403;
+
+    private static bool IsBasemapMissing(int? statusCode, string? error)
+    {
+        if (statusCode != 404 || string.IsNullOrWhiteSpace(error))
+        {
+            return false;
+        }
+
+        return error.Contains("basemap", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private enum SessionMapViewerState
+    {
+        None,
+        Loaded,
+        Unauthorized,
+        NotFound,
+        BasemapMissing
+    }
+}

@@ -1,4 +1,5 @@
 @using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Components.Maps
 @using Chronicis.Client.Components.Characters
 @using Chronicis.Client.Components.Drawers
 @using Chronicis.Client.Services
@@ -13,6 +14,7 @@
 @inject IArticleApiService ArticleApi
 @inject ILinkApiService LinkApiService
 @inject IExternalLinkApiService ExternalLinkApiService
+@inject IMapApiService MapApi
 @inject IWikiLinkService WikiLinkService
 @inject IAISummaryApiService SummaryApi
 @inject IMarkdownService MarkdownService
@@ -168,6 +170,15 @@ else
                                            Query="@_autocompleteQuery"
                                            IsExternalQuery="@_autocompleteIsExternalQuery" />
     }
+
+    @if (_isMapModalOpen)
+    {
+        <SessionMapViewerModal IsOpen="_isMapModalOpen"
+                               WorldId="CurrentWorldId"
+                               MapId="_selectedMapId"
+                               MapName="@_selectedMapName"
+                               OnClose="CloseMapModalAsync" />
+    }
 }
 
 @code {
@@ -213,8 +224,12 @@ else
     private string? _externalPreviewId;
     private string? _externalPreviewTitle;
     private readonly Dictionary<string, ExternalLinkContentDto> _externalLinkCache = new(StringComparer.OrdinalIgnoreCase);
+    private bool _isMapModalOpen;
+    private Guid _selectedMapId;
+    private string? _selectedMapName;
 
     private const string LastArticlePathKey = "chronicis_last_article_path";
+    private Guid CurrentWorldId => AppContext.CurrentWorldId ?? _article?.WorldId ?? Guid.Empty;
 
     #region Lifecycle
 
@@ -636,25 +651,53 @@ else
     [JSInvokable]
     public async Task OnAutocompleteTriggered(string query, double x, double y)
     {
+        var normalizedQuery = query?.TrimStart() ?? string.Empty;
         _autocompletePosition = (x, y);
         _showAutocomplete = true;
         _autocompleteSelectedIndex = 0;
+        var isMapAutocomplete = normalizedQuery.StartsWith("maps/", StringComparison.OrdinalIgnoreCase);
+        string? mapSearch = null;
 
-        _autocompleteIsExternalQuery = TryParseExternalAutocompleteQuery(query, out var sourceKey, out var remainder);
-        _autocompleteExternalSourceKey = _autocompleteIsExternalQuery ? sourceKey : null;
-        _autocompleteQuery = _autocompleteIsExternalQuery ? remainder : query;
-
-        // For external queries (like srd/...), we have different length requirements:
-        // - Empty or short remainder: show categories (handled by server)
-        // - Any length after category selected: search immediately
-        // For internal queries: require 3 characters minimum
-        var minLength = _autocompleteIsExternalQuery ? 0 : 3;
-
-        if (_autocompleteQuery.Length < minLength)
+        if (isMapAutocomplete)
         {
-            _autocompleteSuggestions = new();
-            StateHasChanged();
-            return;
+            var remainder = normalizedQuery.Substring("maps/".Length);
+            mapSearch = string.IsNullOrWhiteSpace(remainder) ? null : remainder.Trim();
+            _autocompleteIsExternalQuery = false;
+            _autocompleteExternalSourceKey = null;
+            _autocompleteQuery = mapSearch ?? string.Empty;
+        }
+        else
+        {
+            _autocompleteIsExternalQuery = TryParseExternalAutocompleteQuery(normalizedQuery, out var sourceKey, out var remainder);
+            var mapsExternalSource = _autocompleteIsExternalQuery
+                && string.Equals(sourceKey, "maps", StringComparison.OrdinalIgnoreCase);
+
+            if (mapsExternalSource)
+            {
+                isMapAutocomplete = true;
+                mapSearch = string.IsNullOrWhiteSpace(remainder) ? null : remainder.Trim();
+                _autocompleteIsExternalQuery = false;
+                _autocompleteExternalSourceKey = null;
+                _autocompleteQuery = mapSearch ?? string.Empty;
+            }
+            else
+            {
+                _autocompleteExternalSourceKey = _autocompleteIsExternalQuery ? sourceKey : null;
+                _autocompleteQuery = _autocompleteIsExternalQuery ? remainder : normalizedQuery;
+            }
+
+            // For external queries (like srd/...), we have different length requirements:
+            // - Empty or short remainder: show categories (handled by server)
+            // - Any length after category selected: search immediately
+            // For internal queries: require 3 characters minimum
+            var minLength = _autocompleteIsExternalQuery ? 0 : 3;
+
+            if (!isMapAutocomplete && _autocompleteQuery.Length < minLength)
+            {
+                _autocompleteSuggestions = new();
+                StateHasChanged();
+                return;
+            }
         }
 
         _autocompleteLoading = true;
@@ -664,7 +707,14 @@ else
         {
             var worldId = AppContext.CurrentWorldId ?? _article?.WorldId ?? Guid.Empty;
 
-            if (_autocompleteIsExternalQuery)
+            if (isMapAutocomplete)
+            {
+                var mapSuggestions = await MapApi.GetMapAutocompleteAsync(worldId, mapSearch);
+                _autocompleteSuggestions = mapSuggestions
+                    .Select(WikiLinkAutocompleteItem.FromMapAutocomplete)
+                    .ToList();
+            }
+            else if (_autocompleteIsExternalQuery)
             {
                 var externalSuggestions = await ExternalLinkApiService.GetSuggestionsAsync(
                     worldId,
@@ -761,7 +811,15 @@ else
                 return;
             }
 
-            if (suggestion.IsExternal)
+            if (suggestion.MapId.HasValue)
+            {
+                await JSRuntime.InvokeVoidAsync(
+                    "insertMapLinkToken",
+                    $"tiptap-editor-{_article.Id}",
+                    suggestion.MapId.Value.ToString(),
+                    suggestion.Title);
+            }
+            else if (suggestion.IsExternal)
             {
                 if (string.IsNullOrWhiteSpace(suggestion.Source) || string.IsNullOrWhiteSpace(suggestion.ExternalId))
                 {
@@ -865,6 +923,34 @@ else
         remainder = query.Substring(slashIndex + 1);
 
         return !string.IsNullOrWhiteSpace(sourceKey);
+    }
+
+    [JSInvokable]
+    public Task OnMapLinkClicked(string mapId, string? mapName)
+    {
+        if (!Guid.TryParse(mapId, out var parsedMapId))
+        {
+            return Task.CompletedTask;
+        }
+
+        if (CurrentWorldId == Guid.Empty)
+        {
+            Snackbar.Add("Unable to open map: missing world context.", Severity.Warning);
+            return Task.CompletedTask;
+        }
+
+        _selectedMapId = parsedMapId;
+        _selectedMapName = string.IsNullOrWhiteSpace(mapName) ? null : mapName.Trim();
+        _isMapModalOpen = true;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task CloseMapModalAsync()
+    {
+        _isMapModalOpen = false;
+        _selectedMapId = Guid.Empty;
+        _selectedMapName = null;
+        return InvokeAsync(StateHasChanged);
     }
 
     [JSInvokable]

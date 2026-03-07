@@ -230,6 +230,69 @@ public class WorldMapServiceTests : IDisposable
         Assert.Equal(MapScope.WorldScoped, result[2].Scope);
     }
 
+    // ── SearchMapsForWorldAsync (P2) ─────────────────────────────────────────
+
+    [Fact]
+    public async Task SearchMaps_Throws_WhenUserHasNoAccess()
+    {
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.SearchMapsForWorldAsync(_worldId, _outsiderId, null));
+    }
+
+    [Fact]
+    public async Task SearchMaps_ReturnsOnlyMatchingNames_WhenQueryProvided()
+    {
+        _db.WorldMaps.AddRange(
+            new WorldMap { WorldMapId = Guid.NewGuid(), WorldId = _worldId, Name = "Waterdeep", CreatedUtc = DateTime.UtcNow, UpdatedUtc = DateTime.UtcNow },
+            new WorldMap { WorldMapId = Guid.NewGuid(), WorldId = _worldId, Name = "Neverwinter", CreatedUtc = DateTime.UtcNow, UpdatedUtc = DateTime.UtcNow },
+            new WorldMap { WorldMapId = Guid.NewGuid(), WorldId = _worldId, Name = "Waterfall", CreatedUtc = DateTime.UtcNow, UpdatedUtc = DateTime.UtcNow });
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.SearchMapsForWorldAsync(_worldId, _ownerId, "Water");
+
+        Assert.Equal(2, result.Count);
+        Assert.All(result, item => Assert.Contains("Water", item.Name));
+    }
+
+    [Fact]
+    public async Task SearchMaps_MatchesNames_CaseInsensitively()
+    {
+        _db.WorldMaps.AddRange(
+            new WorldMap { WorldMapId = Guid.NewGuid(), WorldId = _worldId, Name = "Ambria", CreatedUtc = DateTime.UtcNow, UpdatedUtc = DateTime.UtcNow },
+            new WorldMap { WorldMapId = Guid.NewGuid(), WorldId = _worldId, Name = "Zanbar", CreatedUtc = DateTime.UtcNow, UpdatedUtc = DateTime.UtcNow });
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.SearchMapsForWorldAsync(_worldId, _ownerId, "amb");
+
+        Assert.Single(result);
+        Assert.Equal("Ambria", result[0].Name);
+    }
+
+    [Fact]
+    public async Task SearchMaps_ReturnsSortedResults_AndLimitsToSpecifiedWorld()
+    {
+        var otherWorldId = Guid.NewGuid();
+        _db.Worlds.Add(new World
+        {
+            Id = otherWorldId,
+            OwnerId = _ownerId,
+            Name = "Other World",
+            Slug = "other-world",
+        });
+
+        _db.WorldMaps.AddRange(
+            new WorldMap { WorldMapId = Guid.NewGuid(), WorldId = _worldId, Name = "Zebra", CreatedUtc = DateTime.UtcNow, UpdatedUtc = DateTime.UtcNow },
+            new WorldMap { WorldMapId = Guid.NewGuid(), WorldId = _worldId, Name = "Alpha", CreatedUtc = DateTime.UtcNow, UpdatedUtc = DateTime.UtcNow },
+            new WorldMap { WorldMapId = Guid.NewGuid(), WorldId = otherWorldId, Name = "Aardvark", CreatedUtc = DateTime.UtcNow, UpdatedUtc = DateTime.UtcNow });
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.SearchMapsForWorldAsync(_worldId, _ownerId, null);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Alpha", result[0].Name);
+        Assert.Equal("Zebra", result[1].Name);
+    }
+
     // ── Pins (P1) ─────────────────────────────────────────────────────────────
 
     [Fact]

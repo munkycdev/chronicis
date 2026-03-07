@@ -27,6 +27,20 @@ public class MapApiService : IMapApiService
             $"maps for world {worldId}");
     }
 
+    public async Task<List<MapAutocompleteDto>> GetMapAutocompleteAsync(Guid worldId, string? query)
+    {
+        var route = $"world/{worldId}/maps/autocomplete";
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            route = $"{route}?query={Uri.EscapeDataString(query)}";
+        }
+
+        return await _http.GetListAsync<MapAutocompleteDto>(
+            route,
+            _logger,
+            $"map autocomplete for world {worldId}");
+    }
+
     public async Task<MapDto?> CreateMapAsync(Guid worldId, MapCreateDto dto)
     {
         return await _http.PostEntityAsync<MapDto>(

@@ -168,6 +168,33 @@ public class MapsControllerCoverageSmokeTests
         Assert.IsType<OkObjectResult>(result.Result);
     }
 
+    // ── AutocompleteMaps ──────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AutocompleteMaps_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.SearchMapsForWorldAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string?>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).AutocompleteMaps(Guid.NewGuid(), "map");
+
+        var status = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task AutocompleteMaps_Success_ReturnsOk()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.SearchMapsForWorldAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string?>())
+            .Returns(new List<MapAutocompleteDto>());
+
+        var result = await CreateSut(service).AutocompleteMaps(Guid.NewGuid(), "map");
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
     // ── Pins ──────────────────────────────────────────────────────────────────
 
     [Fact]

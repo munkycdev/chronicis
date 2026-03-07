@@ -31,6 +31,49 @@ span[data-type="wiki-link"]:active {
     background-color: rgba(37, 99, 235, 0.2);
 }
 
+/* Map chip variant rendered via the wiki-link extension with map attributes. */
+span[data-type="wiki-link"][data-map-id] {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid #1F2A33;
+    background: #1F2A33;
+    color: #F4F0EA;
+    font-weight: 600;
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+span[data-type="wiki-link"][data-map-id]:hover {
+    background: #3A4750;
+    border-color: #3A4750;
+}
+
+.map-link-badge {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1px 5px;
+    border-radius: 6px;
+    background: #C4AF8E;
+    border: 1px solid #C4AF8E;
+    color: #1F2A33;
+}
+
+.map-link-text {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.map-link-icon {
+    font-size: 11px;
+    color: #F4F0EA;
+}
+
 /* ============================================
    BROKEN WIKI LINKS
    ============================================ */
@@ -236,17 +279,20 @@ span[data-type="external-link"]:hover {
 }
 
 @media (prefers-color-scheme: dark) {
-    span[data-type="external-link"] {
+    span[data-type="external-link"],
+    span[data-type="wiki-link"][data-map-id] {
         color: #F4F0EA;
         background: #1F2A33;
         border-color: #1F2A33;
     }
 
-    span[data-type="external-link"]:hover {
+    span[data-type="external-link"]:hover,
+    span[data-type="wiki-link"][data-map-id]:hover {
         background: #3A4750;
         border-color: #3A4750;
     }
 
+    .map-link-badge,
     .external-link-badge,
     .external-link-preview-source {
         color: #1F2A33;
@@ -254,6 +300,7 @@ span[data-type="external-link"]:hover {
         border-color: #C4AF8E;
     }
 
+    .map-link-icon,
     .external-link-icon {
         color: #F4F0EA;
     }

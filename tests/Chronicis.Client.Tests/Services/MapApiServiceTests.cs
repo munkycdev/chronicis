@@ -35,6 +35,68 @@ public class MapApiServiceTests
     }
 
     [Fact]
+    public async Task GetMapAutocompleteAsync_NoQuery_UsesExpectedRoute()
+    {
+        var calls = new List<string>();
+        var worldId = Guid.NewGuid();
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            calls.Add($"{req.Method} {req.RequestUri!.PathAndQuery.TrimStart('/')}");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]")
+            });
+        });
+
+        var sut = CreateSut(handler);
+
+        _ = await sut.GetMapAutocompleteAsync(worldId, null);
+
+        Assert.Contains(calls, c => c == $"GET world/{worldId}/maps/autocomplete");
+    }
+
+    [Fact]
+    public async Task GetMapAutocompleteAsync_WithQuery_UsesExpectedRoute()
+    {
+        var calls = new List<string>();
+        var worldId = Guid.NewGuid();
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            calls.Add($"{req.Method} {req.RequestUri!.PathAndQuery.TrimStart('/')}");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]")
+            });
+        });
+
+        var sut = CreateSut(handler);
+
+        _ = await sut.GetMapAutocompleteAsync(worldId, "test");
+
+        Assert.Contains(calls, c => c == $"GET world/{worldId}/maps/autocomplete?query=test");
+    }
+
+    [Fact]
+    public async Task GetMapAutocompleteAsync_DeserializesDtoList()
+    {
+        var mapId = Guid.NewGuid();
+        var worldId = Guid.NewGuid();
+        var handler = new TestHttpMessageHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent($$"""[{"mapId":"{{mapId}}","name":"Sword Coast"}]""")
+            }));
+
+        var sut = CreateSut(handler);
+
+        var result = await sut.GetMapAutocompleteAsync(worldId, "swo");
+
+        Assert.Single(result);
+        Assert.Equal(mapId, result[0].MapId);
+        Assert.Equal("Sword Coast", result[0].Name);
+    }
+
+    [Fact]
     public async Task GetMapAsync_Success_UsesRouteAndReturnsDto()
     {
         var worldId = Guid.NewGuid();

@@ -152,6 +152,34 @@ public class WorldMapService : IWorldMapService
     }
 
     /// <inheritdoc/>
+    public async Task<List<MapAutocompleteDto>> SearchMapsForWorldAsync(Guid worldId, Guid userId, string? query)
+    {
+        _logger.LogTraceSanitized("User {UserId} searching map autocomplete for world {WorldId}", userId, worldId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+
+        var normalizedQuery = query?.Trim();
+        var mapsQuery = _db.WorldMaps
+            .AsNoTracking()
+            .Where(m => m.WorldId == worldId);
+
+        if (!string.IsNullOrWhiteSpace(normalizedQuery))
+        {
+            var normalizedQueryLower = normalizedQuery.ToLower();
+            mapsQuery = mapsQuery.Where(m => m.Name.ToLower().Contains(normalizedQueryLower));
+        }
+
+        return await mapsQuery
+            .OrderBy(m => m.Name)
+            .Select(m => new MapAutocompleteDto
+            {
+                MapId = m.WorldMapId,
+                Name = m.Name,
+            })
+            .ToListAsync();
+    }
+
+    /// <inheritdoc/>
     public async Task<MapPinResponseDto> CreatePinAsync(Guid worldId, Guid mapId, Guid userId, MapPinCreateDto dto)
     {
         _logger.LogTraceSanitized("User {UserId} creating pin on map {MapId}", userId, mapId);
