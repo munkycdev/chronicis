@@ -1,3 +1,4 @@
+using System.Reflection;
 using Bunit;
 using Chronicis.Client.Components.Maps;
 using Chronicis.Client.Services;
@@ -5,6 +6,7 @@ using Chronicis.Shared.DTOs.Maps;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.JSInterop;
 using NSubstitute;
 using Xunit;
 
@@ -204,5 +206,272 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
         cut.Find(".session-map-viewer-modal").KeyDown(new KeyboardEventArgs { Key = "Enter" });
 
         Assert.Equal(0, closeCount);
+    }
+
+    [Fact]
+    public async Task Modal_PrivatePanZoomAndHelperBranches_AreCovered()
+    {
+        _mapApi.GetBasemapReadUrlAsync(_worldId, _mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob.example.com/read" }, 200, null));
+
+        var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.WorldId, _worldId)
+            .Add(x => x.MapId, _mapId)
+            .Add(x => x.MapName, "  Realm Map  "));
+
+        cut.WaitForAssertion(() => Assert.Contains("Realm Map", cut.Markup, StringComparison.Ordinal));
+        var instance = cut.Instance;
+
+        Assert.Equal("session-map-viewer-modal__viewport", (string)InvokePrivate(instance, "GetMapViewportClass")!);
+
+        SetField(instance, "_isMapDragging", true);
+        Assert.Contains("--dragging", (string)InvokePrivate(instance, "GetMapViewportClass")!, StringComparison.Ordinal);
+
+        SetField(instance, "_isMapDragging", false);
+        SetField(instance, "_hasMapViewportLayout", true);
+        SetField(instance, "_mapMinZoom", 1d);
+        SetField(instance, "_mapZoom", 2d);
+        Assert.Contains("--pan", (string)InvokePrivate(instance, "GetMapViewportClass")!, StringComparison.Ordinal);
+
+        SetField(instance, "_hasMapViewportLayout", false);
+        Assert.Equal(
+            "width:100%;height:auto;transform:translate(0px,0px) scale(1);",
+            (string)InvokePrivate(instance, "GetMapStageStyle")!);
+
+        SetField(instance, "_hasMapViewportLayout", true);
+        SetField(instance, "_mapBaseWidth", 400d);
+        SetField(instance, "_mapBaseHeight", 300d);
+        SetField(instance, "_mapPanX", 12.345d);
+        SetField(instance, "_mapPanY", -8.9d);
+        SetField(instance, "_mapZoom", 1.25d);
+        var stageStyle = (string)InvokePrivate(instance, "GetMapStageStyle")!;
+        Assert.Contains("width:400.00px", stageStyle, StringComparison.Ordinal);
+        Assert.Contains("height:300.00px", stageStyle, StringComparison.Ordinal);
+        Assert.Contains("translate(12.35px,-8.90px)", stageStyle, StringComparison.Ordinal);
+        Assert.Contains("scale(1.2500)", stageStyle, StringComparison.Ordinal);
+
+        Assert.Equal(
+            "session-map-viewer-modal__image session-map-viewer-modal__image--stage",
+            (string)InvokePrivate(instance, "GetMapImageClass")!);
+        SetField(instance, "_hasMapViewportLayout", false);
+        Assert.Equal("session-map-viewer-modal__image", (string)InvokePrivate(instance, "GetMapImageClass")!);
+
+        SetField(instance, "_hasMapViewportLayout", true);
+        SetField(instance, "_mapViewportWidth", 300d);
+        SetField(instance, "_mapViewportHeight", 200d);
+        SetField(instance, "_mapBaseWidth", 100d);
+        SetField(instance, "_mapBaseHeight", 80d);
+        SetField(instance, "_mapMinZoom", 1d);
+        SetField(instance, "_mapMaxZoom", 5d);
+        SetField(instance, "_mapZoom", 1d);
+        SetField(instance, "_mapPanX", 0d);
+        SetField(instance, "_mapPanY", 0d);
+
+        SetField(instance, "_hasMapViewportLayout", false);
+        await InvokePrivateTask(instance, "OnZoomSliderInput", new ChangeEventArgs { Value = "50" });
+        SetField(instance, "_hasMapViewportLayout", true);
+
+        await InvokePrivateTask(instance, "OnZoomSliderInput", new ChangeEventArgs { Value = "bad" });
+        Assert.Equal(1d, (double)GetField(instance, "_mapZoom")!);
+
+        await InvokePrivateTask(instance, "OnZoomSliderInput", new ChangeEventArgs { Value = "100" });
+        Assert.Equal(5d, Math.Round((double)GetField(instance, "_mapZoom")!, 4));
+
+        SetField(instance, "_mapZoom", 5d);
+        Assert.False((bool)InvokePrivate(instance, "CanZoomIn")!);
+        InvokePrivate(instance, "ZoomInFromButton");
+        Assert.Equal(5d, (double)GetField(instance, "_mapZoom")!);
+        SetField(instance, "_mapZoom", 1d);
+        Assert.False((bool)InvokePrivate(instance, "CanZoomOut")!);
+
+        InvokePrivate(instance, "ZoomOutFromButton");
+        Assert.Equal(1d, (double)GetField(instance, "_mapZoom")!);
+
+        InvokePrivate(instance, "ZoomInFromButton");
+        Assert.True((double)GetField(instance, "_mapZoom")! > 1d);
+
+        SetField(instance, "_mapZoom", 3d);
+        InvokePrivate(instance, "ZoomOutFromButton");
+        Assert.True((double)GetField(instance, "_mapZoom")! < 3d);
+
+        SetField(instance, "_hasMapViewportLayout", false);
+        var noWheelZoom = (double)GetField(instance, "_mapZoom")!;
+        InvokePrivate(instance, "OnMapViewportWheel", new WheelEventArgs { DeltaY = -120d });
+        Assert.Equal(noWheelZoom, (double)GetField(instance, "_mapZoom")!);
+
+        SetField(instance, "_hasMapViewportLayout", true);
+        SetField(instance, "_mapZoom", 2d);
+        InvokePrivate(instance, "OnMapViewportWheel", new WheelEventArgs { DeltaY = -120d });
+        var wheelZoom = (double)GetField(instance, "_mapZoom")!;
+        InvokePrivate(instance, "OnMapViewportWheel", new WheelEventArgs { DeltaY = 120d });
+        Assert.True((double)GetField(instance, "_mapZoom")! < wheelZoom);
+
+        SetField(instance, "_mapZoom", 1d);
+        InvokePrivate(instance, "OnMapViewportMouseDown", new MouseEventArgs { Button = 0, ClientX = 10d, ClientY = 10d });
+        Assert.False((bool)GetField(instance, "_isMapPointerDown")!);
+
+        SetField(instance, "_mapZoom", 2d);
+        InvokePrivate(instance, "OnMapViewportMouseDown", new MouseEventArgs { Button = 1, ClientX = 10d, ClientY = 10d });
+        Assert.False((bool)GetField(instance, "_isMapPointerDown")!);
+
+        InvokePrivate(instance, "OnMapViewportMouseDown", new MouseEventArgs { Button = 0, ClientX = 10d, ClientY = 10d });
+        Assert.True((bool)GetField(instance, "_isMapPointerDown")!);
+
+        InvokePrivate(instance, "OnMapViewportMouseMove", new MouseEventArgs { ClientX = 11d, ClientY = 11d });
+        Assert.False((bool)GetField(instance, "_isMapDragging")!);
+
+        InvokePrivate(instance, "OnMapViewportMouseMove", new MouseEventArgs { ClientX = 20d, ClientY = 18d });
+        Assert.True((bool)GetField(instance, "_isMapDragging")!);
+
+        InvokePrivate(instance, "OnMapViewportMouseUp", new MouseEventArgs());
+        Assert.False((bool)GetField(instance, "_isMapPointerDown")!);
+        Assert.False((bool)GetField(instance, "_isMapDragging")!);
+
+        SetField(instance, "_isMapPointerDown", false);
+        var panBeforeNoPointerMove = (double)GetField(instance, "_mapPanX")!;
+        InvokePrivate(instance, "OnMapViewportMouseMove", new MouseEventArgs { ClientX = 40d, ClientY = 40d });
+        Assert.Equal(panBeforeNoPointerMove, (double)GetField(instance, "_mapPanX")!);
+
+        SetField(instance, "_hasMapViewportLayout", false);
+        InvokePrivate(instance, "SetZoomLevel", 4d);
+
+        SetField(instance, "_hasMapViewportLayout", true);
+        SetField(instance, "_mapZoom", 2d);
+        SetField(instance, "_mapMinZoom", 1d);
+        SetField(instance, "_mapMaxZoom", 5d);
+        SetField(instance, "_mapViewportWidth", 300d);
+        SetField(instance, "_mapViewportHeight", 200d);
+        SetField(instance, "_mapBaseWidth", 100d);
+        SetField(instance, "_mapBaseHeight", 80d);
+        SetField(instance, "_mapPanX", 0d);
+        SetField(instance, "_mapPanY", 0d);
+        InvokePrivate(instance, "SetZoomLevel", 2d);
+        InvokePrivate(instance, "SetZoomLevel", 4d);
+        Assert.Equal(4d, Math.Round((double)GetField(instance, "_mapZoom")!, 4));
+
+        InvokePrivate(instance, "RecenterMapPan");
+        InvokePrivate(instance, "ClampPanToBounds");
+        InvokePrivate(instance, "ResetMapViewportState");
+        Assert.False((bool)GetField(instance, "_hasMapViewportLayout")!);
+        Assert.Equal(1d, (double)GetField(instance, "_mapZoom")!);
+
+        Assert.False((bool)InvokeStatic("HasUsableBounds", (object?)null)!);
+        Assert.True((bool)InvokeStatic("HasUsableBounds", CreateMapElementRect(100d, 50d))!);
+        Assert.Equal(0d, (double)InvokeStatic("ClampPanAxis", 10d, 0d, 100d)!);
+        Assert.Equal(20d, (double)InvokeStatic("ClampPanAxis", 0d, 100d, 60d)!);
+        Assert.Equal(-50d, (double)InvokeStatic("ClampPanAxis", -80d, 50d, 100d)!);
+        Assert.Equal(0, (int)InvokeStatic("GetSliderValueForZoom", 1d, 2d, 2d)!);
+        Assert.Equal(50, (int)InvokeStatic("GetSliderValueForZoom", 3d, 1d, 5d)!);
+        Assert.Equal(1d, (double)InvokeStatic("GetZoomForSliderValue", 50d, 1d, 1d)!);
+        Assert.Equal(2d, (double)InvokeStatic("GetZoomForSliderValue", 50d, 1d, 3d)!);
+
+        var parseArgs = new object?[] { "12.5", null };
+        Assert.True((bool)InvokeStatic("TryReadDouble", parseArgs)!);
+        Assert.Equal(12.5d, (double)parseArgs[1]!);
+        var parseNullArgs = new object?[] { null, null };
+        Assert.False((bool)InvokeStatic("TryReadDouble", parseNullArgs)!);
+        var parseFailArgs = new object?[] { "oops", null };
+        Assert.False((bool)InvokeStatic("TryReadDouble", parseFailArgs)!);
+
+        Assert.Equal(0d, (double)InvokeStatic("Clamp", -1d, 0d, 10d)!);
+        Assert.Equal(5d, (double)InvokeStatic("Clamp", 5d, 0d, 10d)!);
+        Assert.Equal(10d, (double)InvokeStatic("Clamp", 11d, 0d, 10d)!);
+
+        var pinWithName = new MapPinResponseDto { Name = "Castle", X = 0.25f, Y = 0.5f };
+        Assert.Equal("left:25.0000%;top:50.0000%;", (string)InvokeStatic("GetPinStyle", pinWithName)!);
+        Assert.Equal("left:25.0000%;top:50.0000%;", (string)InvokeStatic("GetPinLabelStyle", pinWithName)!);
+        Assert.True((bool)InvokeStatic("HasPinLabel", pinWithName)!);
+        Assert.Equal("Castle", (string)InvokeStatic("GetPinTooltip", pinWithName)!);
+
+        var pinWithArticle = new MapPinResponseDto
+        {
+            Name = " ",
+            LinkedArticle = new LinkedArticleSummaryDto { ArticleId = Guid.NewGuid(), Title = "Linked" }
+        };
+        Assert.Equal("Linked", (string)InvokeStatic("GetPinTooltip", pinWithArticle)!);
+
+        var pinWithoutName = new MapPinResponseDto { Name = " " };
+        Assert.False((bool)InvokeStatic("HasPinLabel", pinWithoutName)!);
+        Assert.Equal("Map pin", (string)InvokeStatic("GetPinTooltip", pinWithoutName)!);
+
+        await InvokePrivateTask(instance, "CloseAsync");
+    }
+
+    [Fact]
+    public async Task Modal_DisposeAsync_WithDisconnectedModule_DoesNotThrow()
+    {
+        var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
+            .Add(x => x.IsOpen, false)
+            .Add(x => x.WorldId, _worldId)
+            .Add(x => x.MapId, _mapId));
+
+        var instance = cut.Instance;
+        var fakeModule = new FakeJsObjectReference(throwDisconnectedOnDispose: true);
+        SetField(instance, "_mapInteropModule", fakeModule);
+
+        await instance.DisposeAsync();
+
+        Assert.True(fakeModule.DisposeCalled);
+    }
+
+    private static object? InvokePrivate(object instance, string methodName, params object?[]? args)
+        => instance.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(instance, args);
+
+    private static async Task InvokePrivateTask(object instance, string methodName, params object?[] args)
+    {
+        var result = InvokePrivate(instance, methodName, args);
+        if (result is Task task)
+        {
+            await task;
+        }
+    }
+
+    private static object? InvokeStatic(string methodName, params object?[]? args)
+        => typeof(SessionMapViewerModal).GetMethod(methodName, BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, args);
+
+    private static object? GetField(object instance, string name)
+        => instance.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(instance);
+
+    private static void SetField(object instance, string name, object? value)
+        => instance.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(instance, value);
+
+    private static object CreateMapElementRect(double width, double height, double left = 0d, double top = 0d)
+    {
+        var rectType = typeof(SessionMapViewerModal).GetNestedType("MapElementRect", BindingFlags.NonPublic);
+        Assert.NotNull(rectType);
+
+        var rect = Activator.CreateInstance(rectType!);
+        Assert.NotNull(rect);
+
+        rectType.GetProperty("Left", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(rect, left);
+        rectType.GetProperty("Top", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(rect, top);
+        rectType.GetProperty("Width", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(rect, width);
+        rectType.GetProperty("Height", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(rect, height);
+        return rect;
+    }
+
+    private sealed class FakeJsObjectReference(bool throwDisconnectedOnDispose) : IJSObjectReference
+    {
+        public bool DisposeCalled { get; private set; }
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
+            => new(default(TValue)!);
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
+            => InvokeAsync<TValue>(identifier, args);
+
+        public ValueTask DisposeAsync()
+        {
+            DisposeCalled = true;
+            if (throwDisconnectedOnDispose)
+            {
+                throw new JSDisconnectedException("Simulated disconnect");
+            }
+
+            return ValueTask.CompletedTask;
+        }
     }
 }

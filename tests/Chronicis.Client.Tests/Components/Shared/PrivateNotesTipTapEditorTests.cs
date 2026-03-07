@@ -2,9 +2,11 @@ using System.Reflection;
 using Bunit;
 using Bunit.TestDoubles;
 using Chronicis.Client.Components.Articles;
+using Chronicis.Client.Components.Maps;
 using Chronicis.Client.Components.Shared;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Maps;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -22,6 +24,7 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
     private sealed record Deps(
         ILinkApiService LinkApi,
         IExternalLinkApiService ExternalLinkApi,
+        IMapApiService MapApi,
         IWikiLinkService WikiLinkService,
         IArticleCacheService ArticleCache,
         IAISummaryApiService SummaryApi,
@@ -32,6 +35,7 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
     {
         var linkApi = Substitute.For<ILinkApiService>();
         var externalLinkApi = Substitute.For<IExternalLinkApiService>();
+        var mapApi = Substitute.For<IMapApiService>();
         var wikiLinkService = Substitute.For<IWikiLinkService>();
         var articleCache = Substitute.For<IArticleCacheService>();
         var summaryApi = Substitute.For<IAISummaryApiService>();
@@ -40,6 +44,7 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
 
         Services.AddSingleton(linkApi);
         Services.AddSingleton(externalLinkApi);
+        Services.AddSingleton(mapApi);
         Services.AddSingleton(wikiLinkService);
         Services.AddSingleton(articleCache);
         Services.AddSingleton(summaryApi);
@@ -49,6 +54,7 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
 
         ComponentFactories.AddStub<ArticleDetailWikiLinkAutocomplete>();
         ComponentFactories.AddStub<ExternalLinkDetailPanel>();
+        ComponentFactories.AddStub<SessionMapViewerModal>();
 
         if (!_providersRendered)
         {
@@ -58,7 +64,7 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
             _providersRendered = true;
         }
 
-        return new Deps(linkApi, externalLinkApi, wikiLinkService, articleCache, summaryApi, worldApi, drawerCoordinator);
+        return new Deps(linkApi, externalLinkApi, mapApi, wikiLinkService, articleCache, summaryApi, worldApi, drawerCoordinator);
     }
 
     [Fact]
@@ -104,6 +110,14 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
             {
                 new() { Source = "srd", Id = "acid-arrow", Title = "Acid Arrow" }
             });
+        d.MapApi.GetMapAutocompleteAsync(worldId, null).Returns(new List<MapAutocompleteDto>
+        {
+            new() { MapId = Guid.NewGuid(), Name = "Ambria" }
+        });
+        d.MapApi.GetMapAutocompleteAsync(worldId, "amb").Returns(new List<MapAutocompleteDto>
+        {
+            new() { MapId = Guid.NewGuid(), Name = "Ambria" }
+        });
 
         var cut = RenderComponent<PrivateNotesTipTapEditor>(p => p
             .Add(x => x.WorldId, worldId)
@@ -161,6 +175,17 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
         await instance.OnAutocompleteTriggered("ab", 1d, 2d);
         Assert.True((bool)GetField(instance, "_showAutocomplete")!);
 
+        // Autocomplete trigger: map query path
+        await instance.OnAutocompleteTriggered("maps/", 2d, 3d);
+        await d.MapApi.Received(1).GetMapAutocompleteAsync(worldId, null);
+        Assert.Contains(
+            (IEnumerable<ArticleWikiLinkAutocompleteItem>)GetField(instance, "_autocompleteSuggestions")!,
+            x => x.MapId.HasValue && string.Equals(x.Title, "Ambria", StringComparison.Ordinal));
+
+        // Autocomplete trigger: map source parsed from external-like form
+        await instance.OnAutocompleteTriggered("maps /amb", 3d, 4d);
+        await d.MapApi.Received(1).GetMapAutocompleteAsync(worldId, "amb");
+
         // Autocomplete trigger: external query + success
         await instance.OnAutocompleteTriggered("srd/acid", 3d, 4d);
         Assert.True((bool)GetField(instance, "_autocompleteIsExternalQuery")!);
@@ -194,6 +219,30 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
 
         // Enter -> select current suggestion
         await instance.OnAutocompleteEnter();
+
+        // Map link click branches
+        await instance.OnMapLinkClicked("not-a-guid", "Ambria");
+        Assert.False((bool)GetField(instance, "_isMapModalOpen")!);
+
+        var emptyWorldCut = RenderComponent<PrivateNotesTipTapEditor>(p => p
+            .Add(x => x.WorldId, Guid.Empty)
+            .Add(x => x.Value, ""));
+        await emptyWorldCut.Instance.OnMapLinkClicked(Guid.NewGuid().ToString(), "Ambria");
+        Assert.False((bool)GetField(emptyWorldCut.Instance, "_isMapModalOpen")!);
+
+        var selectedMapId = Guid.NewGuid();
+        await instance.OnMapLinkClicked(selectedMapId.ToString(), "  The Kingdom of Ambria  ");
+        Assert.True((bool)GetField(instance, "_isMapModalOpen")!);
+        Assert.Equal(selectedMapId, (Guid)GetField(instance, "_selectedMapId")!);
+        Assert.Equal("The Kingdom of Ambria", (string?)GetField(instance, "_selectedMapName"));
+
+        await instance.OnMapLinkClicked(selectedMapId.ToString(), "   ");
+        Assert.Null((string?)GetField(instance, "_selectedMapName"));
+
+        await InvokePrivateTask(instance, "CloseMapModalAsync");
+        Assert.False((bool)GetField(instance, "_isMapModalOpen")!);
+        Assert.Equal(Guid.Empty, (Guid)GetField(instance, "_selectedMapId")!);
+        Assert.Null((string?)GetField(instance, "_selectedMapName"));
 
         // Wiki link navigation branches
         await instance.OnWikiLinkClicked("not-a-guid");
@@ -259,9 +308,6 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
         Assert.Null(await instance.GetArticleSummaryPreview(articleId.ToString()));
 
         // Image upload lifecycle helpers
-        var emptyWorldCut = RenderComponent<PrivateNotesTipTapEditor>(p => p
-            .Add(x => x.WorldId, Guid.Empty)
-            .Add(x => x.Value, ""));
         Assert.Null(await emptyWorldCut.Instance.OnImageUploadRequested("a.png", "image/png", 10));
 
         d.WorldApi.RequestDocumentUploadAsync(worldId, Arg.Any<WorldDocumentUploadRequestDto>())
@@ -336,6 +382,14 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
             MatchedAlias = "Alias"
         });
         await InvokePrivateTask(instance, "OnAutocompleteSelect", validInternalSuggestion);
+
+        var mapSuggestion = ArticleWikiLinkAutocompleteItem.FromMapAutocomplete(new MapAutocompleteDto
+        {
+            MapId = Guid.NewGuid(),
+            Name = "Map Suggestion"
+        });
+        await InvokePrivateTask(instance, "OnAutocompleteSelect", mapSuggestion);
+        Assert.Contains(JSInterop.Invocations, invocation => invocation.Identifier == "insertMapLinkToken");
 
         JSInterop.SetupVoid("insertWikiLink", _ => true).SetException(new InvalidOperationException("js fail"));
         await InvokePrivateTask(instance, "OnAutocompleteSelect", validInternalSuggestion);

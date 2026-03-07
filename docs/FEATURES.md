@@ -190,6 +190,7 @@ Scope:
 - Basemap upload via file picker and drag/drop target in the create flow.
 - Drag/drop guard to prevent browser "open in new tab" behavior during map image uploads.
 - Dedicated map page at `/world/{worldId}/maps/{mapId}` with constrained basemap rendering.
+- Session Note map linking via `[[maps/` autocomplete, inline map chips, and click-to-open modal map viewer (basemap + pins with pan/zoom).
 - Editable map-name header on map page with dirty tracking, save status indicator, and explicit save action.
 - Breadcrumbs for maps detail (`Dashboard / {world} / Maps`) and map page (`Dashboard / {world} / Maps / {map}`).
 - World-owner destructive map delete flow with typed-name confirmation.

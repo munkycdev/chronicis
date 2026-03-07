@@ -21,6 +21,10 @@ All notable changes to this project are documented in this file.
   - `Dashboard / {world name} / Maps`
   - `Dashboard / {world name} / Maps / {map name}`
 - World-owner delete workflow with typed-name confirmation, matching Session Detail destructive-delete safety pattern.
+- Session Note map linking:
+  - Type `[[maps/` in Session Notes to autocomplete maps from the current world.
+  - Selecting a suggestion inserts an inline map chip.
+  - Clicking the chip opens the map in a modal viewer with basemap + pins and pan/zoom support.
 
 **Changed:**
 - Map page basemap rendering is constrained to its content container to prevent horizontal overflow blowout.
