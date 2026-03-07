@@ -28,6 +28,16 @@ public interface IMapApiService
     Task<(MapDto? Map, int? StatusCode, string? Error)> GetMapAsync(Guid worldId, Guid mapId);
 
     /// <summary>
+    /// Lists map layers for the given map.
+    /// </summary>
+    Task<List<MapLayerDto>> GetLayersForMapAsync(Guid worldId, Guid mapId);
+
+    /// <summary>
+    /// Creates a custom map layer for the given map.
+    /// </summary>
+    Task<MapLayerDto> CreateLayerAsync(Guid worldId, Guid mapId, string name);
+
+    /// <summary>
     /// Lists all pins for the given map.
     /// </summary>
     Task<List<MapPinResponseDto>> ListPinsForMapAsync(Guid worldId, Guid mapId);
@@ -51,6 +61,26 @@ public interface IMapApiService
     /// Updates map metadata.
     /// </summary>
     Task<MapDto?> UpdateMapAsync(Guid worldId, Guid mapId, MapUpdateDto dto);
+
+    /// <summary>
+    /// Updates map layer visibility.
+    /// </summary>
+    Task UpdateLayerVisibilityAsync(Guid worldId, Guid mapId, Guid layerId, bool isEnabled);
+
+    /// <summary>
+    /// Reorders map layers using the provided ordered layer ID list.
+    /// </summary>
+    Task ReorderLayersAsync(Guid worldId, Guid mapId, IList<Guid> layerIds);
+
+    /// <summary>
+    /// Renames a map layer.
+    /// </summary>
+    Task RenameLayerAsync(Guid worldId, Guid mapId, Guid layerId, string name);
+
+    /// <summary>
+    /// Deletes a map layer.
+    /// </summary>
+    Task DeleteLayerAsync(Guid worldId, Guid mapId, Guid layerId);
 
     /// <summary>
     /// Requests a basemap upload SAS URL for the map.

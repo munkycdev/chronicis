@@ -4,10 +4,10 @@
     max-width: 100%;
     height: clamp(24rem, calc(100vh - 16rem), 78vh);
     min-width: 0;
-    border-radius: 10px;
+    border-radius: var(--chronicis-radius-lg);
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 14%, transparent 86%);
-    background: color-mix(in srgb, var(--mud-palette-surface) 86%, black 14%);
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 28%, transparent 72%);
+    background: color-mix(in srgb, var(--chronicis-background-dark) 92%, var(--chronicis-secondary) 8%);
 }
 
 .map-page__viewport {
@@ -64,7 +64,7 @@
 .map-page__pins-overlay--create {
     pointer-events: auto;
     cursor: crosshair;
-    background: color-mix(in srgb, var(--mud-palette-primary) 6%, transparent 94%);
+    background: color-mix(in srgb, var(--chronicis-secondary) 6%, transparent 94%);
 }
 
 .map-page__pin {
@@ -72,8 +72,8 @@
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    border: 2px solid var(--mud-palette-surface);
-    background: var(--mud-palette-primary);
+    border: 2px solid var(--chronicis-background-light);
+    background: var(--chronicis-secondary);
     transform: translate(-50%, -50%);
     pointer-events: none;
 }
@@ -81,20 +81,25 @@
 .map-page__pin--interactive {
     pointer-events: auto;
     cursor: pointer;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--mud-palette-text-primary) 28%, transparent 72%);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--chronicis-primary) 40%, transparent 60%);
+}
+
+.map-page__pin--interactive:hover {
+    box-shadow: var(--chronicis-glow-secondary);
+    filter: brightness(1.15);
 }
 
 .map-page__pin--selected {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--mud-palette-warning) 72%, white 28%);
+    box-shadow: 0 0 0 2px var(--chronicis-secondary), var(--chronicis-glow-secondary);
 }
 
 .map-page__pin-name {
     position: absolute;
     transform: translate(10px, -130%);
-    background: color-mix(in srgb, var(--mud-palette-surface) 92%, black 8%);
-    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 20%, transparent 80%);
-    border-radius: 8px;
-    color: var(--mud-palette-text-primary);
+    background: color-mix(in srgb, var(--chronicis-background-dark) 94%, var(--chronicis-secondary) 6%);
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 30%, transparent 70%);
+    border-radius: var(--chronicis-radius-md);
+    color: var(--chronicis-text-on-dark);
     font-size: 0.72rem;
     line-height: 1.2;
     padding: 0.1rem 0.35rem;
@@ -117,8 +122,8 @@
     border: none;
     border-radius: 999px;
     transform: translate(10%, -115%);
-    background: color-mix(in srgb, var(--mud-palette-error) 78%, black 22%);
-    color: var(--mud-palette-white);
+    background: color-mix(in srgb, var(--chronicis-error) 78%, black 22%);
+    color: #fff;
     font-size: 10px;
     line-height: 1;
     cursor: pointer;
@@ -128,7 +133,7 @@
 }
 
 .map-page__pin-delete-intent--selected {
-    box-shadow: 0 0 0 1px var(--mud-palette-surface);
+    box-shadow: 0 0 0 1px var(--chronicis-background-light);
 }
 
 .map-page__pin-delete-confirm {
@@ -138,28 +143,239 @@
     align-items: center;
     gap: 0.35rem;
     padding: 0.3rem 0.45rem;
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--mud-palette-surface) 94%, black 6%);
-    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 20%, transparent 80%);
+    border-radius: var(--chronicis-radius-md);
+    background: color-mix(in srgb, var(--chronicis-background-dark) 96%, var(--chronicis-secondary) 4%);
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 30%, transparent 70%);
     pointer-events: auto;
     z-index: 5;
     font-size: 0.72rem;
+    color: var(--chronicis-text-on-dark);
+    box-shadow: var(--chronicis-shadow-md);
 }
 
 .map-page__pin-delete-confirm-button {
     border: none;
-    border-radius: 6px;
-    background: color-mix(in srgb, var(--mud-palette-error) 80%, black 20%);
-    color: var(--mud-palette-white);
+    border-radius: var(--chronicis-radius-sm);
+    background: color-mix(in srgb, var(--chronicis-error) 80%, black 20%);
+    color: #fff;
     padding: 0.2rem 0.45rem;
     cursor: pointer;
     font-size: 0.72rem;
+    transition: filter var(--chronicis-transition-fast);
+}
+
+.map-page__pin-delete-confirm-button:hover {
+    filter: brightness(1.1);
 }
 
 .map-page__pin-delete-confirm-button--cancel {
-    background: color-mix(in srgb, var(--mud-palette-text-primary) 16%, transparent 84%);
-    color: var(--mud-palette-text-primary);
+    background: color-mix(in srgb, var(--chronicis-secondary) 18%, transparent 82%);
+    color: var(--chronicis-text-on-dark);
 }
+
+.map-page__pin-delete-confirm-button--cancel:hover {
+    background: color-mix(in srgb, var(--chronicis-secondary) 28%, transparent 72%);
+    filter: none;
+}
+
+/* ---- Layers Panel ---- */
+
+.map-page__layers-panel {
+    display: grid;
+    gap: 0.3rem;
+    margin-bottom: 0.75rem;
+    padding: 0.6rem;
+    border-radius: var(--chronicis-radius-lg);
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 30%, transparent 70%);
+    background: var(--chronicis-background-light);
+}
+
+.map-page__layer-add-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.map-page__layer-add-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 40%, transparent 60%);
+    border-radius: var(--chronicis-radius-md);
+    background: var(--chronicis-surface);
+    color: var(--chronicis-text-primary);
+    padding: 0.3rem 0.45rem;
+    font-size: 0.78rem;
+    line-height: 1.2;
+    outline: none;
+    transition: border-color var(--chronicis-transition-fast), box-shadow var(--chronicis-transition-fast);
+}
+
+.map-page__layer-add-input:focus {
+    border-color: var(--chronicis-secondary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--chronicis-secondary) 20%, transparent 80%);
+}
+
+.map-page__layer-add-input::placeholder {
+    color: color-mix(in srgb, var(--chronicis-primary) 45%, transparent 55%);
+}
+
+.map-page__layer-add-button {
+    border: none;
+    border-radius: var(--chronicis-radius-md);
+    padding: 0.26rem 0.65rem;
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--chronicis-background-dark);
+    background: var(--chronicis-secondary);
+    cursor: pointer;
+    transition: filter var(--chronicis-transition-fast), box-shadow var(--chronicis-transition-fast);
+}
+
+.map-page__layer-add-button:hover:not(:disabled) {
+    filter: brightness(1.1);
+    box-shadow: var(--chronicis-glow-secondary);
+}
+
+.map-page__layer-add-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.map-page__layer-add-error {
+    color: var(--chronicis-error);
+    font-size: 0.74rem;
+    line-height: 1.2;
+}
+
+.map-page__layer-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.82rem;
+    line-height: 1.2;
+    border-radius: var(--chronicis-radius-md);
+    padding: 0.2rem 0.3rem;
+    cursor: grab;
+    color: var(--chronicis-text-primary);
+    transition: background-color var(--chronicis-transition-fast), outline-color var(--chronicis-transition-fast);
+    animation: map-page__layer-row-settle 140ms ease-out;
+}
+
+.map-page__layer-row--hoverable:not(.layer-row-selected):hover {
+    background: color-mix(in srgb, var(--chronicis-secondary) 12%, transparent 88%);
+}
+
+.map-page__layer-row--dragging {
+    opacity: 0.65;
+    cursor: grabbing;
+    transition: none;
+}
+
+.map-page__layer-row--drop-target {
+    background: color-mix(in srgb, var(--chronicis-secondary) 14%, transparent 86%);
+    outline: 1px dashed color-mix(in srgb, var(--chronicis-secondary) 60%, transparent 40%);
+}
+
+.layer-row-selected {
+    background: color-mix(in srgb, var(--chronicis-secondary) 18%, transparent 82%);
+    border-radius: var(--chronicis-radius-md);
+}
+
+.map-page__layer-row--enabled .map-page__layer-name {
+    color: var(--chronicis-text-primary);
+}
+
+.map-page__layer-row--disabled .map-page__layer-name {
+    color: color-mix(in srgb, var(--chronicis-text-primary) 40%, transparent 60%);
+}
+
+.map-page__layer-toggle {
+    margin: 0;
+    inline-size: 0.95rem;
+    block-size: 0.95rem;
+    accent-color: var(--chronicis-secondary);
+    cursor: pointer;
+}
+
+.map-page__layer-drag-handle {
+    inline-size: 0.7rem;
+    text-align: center;
+    letter-spacing: -0.05rem;
+    color: color-mix(in srgb, var(--chronicis-primary) 45%, transparent 55%);
+    user-select: none;
+    pointer-events: none;
+}
+
+.map-page__layer-name {
+    user-select: none;
+}
+
+.map-page__layer-actions {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.map-page__layer-action-button {
+    border: none;
+    border-radius: var(--chronicis-radius-sm);
+    padding: 0.18rem 0.42rem;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    cursor: pointer;
+    color: var(--chronicis-primary);
+    background: color-mix(in srgb, var(--chronicis-primary) 12%, transparent 88%);
+    transition: background-color var(--chronicis-transition-fast), filter var(--chronicis-transition-fast);
+}
+
+.map-page__layer-action-button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--chronicis-primary) 20%, transparent 80%);
+}
+
+.map-page__layer-action-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.map-page__layer-action-button--danger {
+    color: #fff;
+    background: color-mix(in srgb, var(--chronicis-error) 82%, black 18%);
+}
+
+.map-page__layer-action-button--danger:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.map-page__layer-action-button--cancel {
+    background: color-mix(in srgb, var(--chronicis-primary) 8%, transparent 92%);
+    color: color-mix(in srgb, var(--chronicis-primary) 70%, transparent 30%);
+}
+
+.map-page__layer-rename-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 40%, transparent 60%);
+    border-radius: var(--chronicis-radius-md);
+    background: var(--chronicis-surface);
+    color: var(--chronicis-text-primary);
+    padding: 0.24rem 0.38rem;
+    font-size: 0.74rem;
+    line-height: 1.2;
+    outline: none;
+}
+
+.map-page__layer-rename-input:focus {
+    border-color: var(--chronicis-secondary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--chronicis-secondary) 20%, transparent 80%);
+}
+
+@keyframes map-page__layer-row-settle {
+    from { transform: translateY(2px); }
+    to   { transform: translateY(0); }
+}
+
+/* ---- Create Pin Controls ---- */
 
 .map-page__create-pin-controls {
     display: flex;
@@ -169,48 +385,59 @@
     flex-wrap: wrap;
 }
 
+/* ---- Create Pin Popup ---- */
+
 .map-page__pin-popup {
     position: absolute;
     z-index: 6;
     transform: translate(10px, 8px);
     width: min(17rem, calc(100% - 1rem));
-    padding: 0.55rem;
-    border-radius: 8px;
-    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 18%, transparent 82%);
-    background: color-mix(in srgb, var(--mud-palette-surface) 97%, black 3%);
-    box-shadow: 0 8px 18px color-mix(in srgb, black 22%, transparent 78%);
+    padding: 0.65rem;
+    border-radius: var(--chronicis-radius-lg);
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 35%, transparent 65%);
+    background: color-mix(in srgb, var(--chronicis-background-dark) 96%, var(--chronicis-secondary) 4%);
+    box-shadow: var(--chronicis-shadow-lg), var(--chronicis-glow-secondary);
     pointer-events: auto;
+    color: var(--chronicis-text-on-dark);
 }
 
 .map-page__pin-popup-title {
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     font-weight: 600;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.4rem;
+    color: var(--chronicis-secondary);
+    font-family: var(--chronicis-font-heading);
 }
 
 .map-page__pin-popup-label {
     display: block;
     font-size: 0.7rem;
-    color: var(--mud-palette-text-secondary);
-    margin: 0.25rem 0 0.2rem;
+    color: color-mix(in srgb, var(--chronicis-secondary) 70%, transparent 30%);
+    margin: 0.28rem 0 0.2rem;
 }
 
 .map-page__pin-popup-input {
     display: block;
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 20%, transparent 80%);
-    border-radius: 6px;
-    background: var(--mud-palette-background-grey);
-    color: var(--mud-palette-text-primary);
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 35%, transparent 65%);
+    border-radius: var(--chronicis-radius-md);
+    background: color-mix(in srgb, var(--chronicis-background-dark) 70%, transparent 30%);
+    color: var(--chronicis-text-on-dark);
     padding: 0.32rem 0.46rem;
     font-size: 0.78rem;
     line-height: 1.2;
+    outline: none;
+    transition: border-color var(--chronicis-transition-fast), box-shadow var(--chronicis-transition-fast);
+}
+
+.map-page__pin-popup-input::placeholder {
+    color: color-mix(in srgb, var(--chronicis-secondary) 35%, transparent 65%);
 }
 
 .map-page__pin-popup-input:focus {
-    outline: 2px solid color-mix(in srgb, var(--mud-palette-primary) 35%, transparent 65%);
-    outline-offset: 0;
+    border-color: var(--chronicis-secondary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--chronicis-secondary) 20%, transparent 80%);
 }
 
 .map-page__pin-popup-actions {
@@ -222,23 +449,38 @@
 
 .map-page__pin-popup-button {
     border: none;
-    border-radius: 6px;
-    padding: 0.24rem 0.5rem;
+    border-radius: var(--chronicis-radius-md);
+    padding: 0.26rem 0.6rem;
     font-size: 0.74rem;
+    font-weight: 500;
     cursor: pointer;
-    color: var(--mud-palette-white);
-    background: color-mix(in srgb, var(--mud-palette-primary) 82%, black 18%);
+    color: var(--chronicis-background-dark);
+    background: var(--chronicis-secondary);
+    transition: filter var(--chronicis-transition-fast), box-shadow var(--chronicis-transition-fast);
+}
+
+.map-page__pin-popup-button:hover:not(:disabled) {
+    filter: brightness(1.1);
+    box-shadow: var(--chronicis-glow-secondary);
 }
 
 .map-page__pin-popup-button:disabled {
     cursor: not-allowed;
-    opacity: 0.65;
+    opacity: 0.55;
 }
 
 .map-page__pin-popup-button--cancel {
-    background: color-mix(in srgb, var(--mud-palette-text-primary) 18%, transparent 82%);
-    color: var(--mud-palette-text-primary);
+    background: color-mix(in srgb, var(--chronicis-secondary) 15%, transparent 85%);
+    color: var(--chronicis-text-on-dark);
 }
+
+.map-page__pin-popup-button--cancel:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--chronicis-secondary) 25%, transparent 75%);
+    box-shadow: none;
+    filter: none;
+}
+
+/* ---- Zoom Control ---- */
 
 .map-page__zoom-control {
     position: absolute;
@@ -252,9 +494,10 @@
     gap: 0.3rem;
     padding: 0.45rem 0.35rem;
     border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 22%, transparent 78%);
-    background: color-mix(in srgb, var(--mud-palette-surface) 90%, black 10%);
-    backdrop-filter: blur(3px);
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 35%, transparent 65%);
+    background: color-mix(in srgb, var(--chronicis-background-dark) 88%, var(--chronicis-secondary) 12%);
+    backdrop-filter: blur(4px);
+    box-shadow: var(--chronicis-shadow-md);
 }
 
 .map-page__zoom-button {
@@ -262,18 +505,25 @@
     height: 1.1rem;
     border: none;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--mud-palette-text-primary) 16%, transparent 84%);
+    background: color-mix(in srgb, var(--chronicis-secondary) 22%, transparent 78%);
     cursor: pointer;
     text-align: center;
     font-size: 0.8rem;
     line-height: 1;
-    color: var(--mud-palette-text-secondary);
+    color: var(--chronicis-text-on-dark);
     font-weight: 700;
     padding: 0;
+    transition: background-color var(--chronicis-transition-fast), box-shadow var(--chronicis-transition-fast);
+}
+
+.map-page__zoom-button:hover:not(:disabled) {
+    background: var(--chronicis-secondary);
+    color: var(--chronicis-background-dark);
+    box-shadow: var(--chronicis-glow-secondary);
 }
 
 .map-page__zoom-button:disabled {
-    opacity: 0.45;
+    opacity: 0.35;
     cursor: not-allowed;
 }
 
@@ -283,10 +533,10 @@
     width: 1rem;
     height: 10.25rem;
     writing-mode: bt-lr;
-    accent-color: var(--mud-palette-primary);
+    accent-color: var(--chronicis-secondary);
 }
 
 .map-page__zoom-slider:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
 }

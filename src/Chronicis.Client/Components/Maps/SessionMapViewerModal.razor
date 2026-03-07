@@ -6,8 +6,9 @@
 
 @if (IsOpen)
 {
-    <div class="session-map-viewer-modal__backdrop">
+    <div class="session-map-viewer-modal__backdrop" @onclick="CloseAsync">
         <section class="session-map-viewer-modal"
+                 @onclick:stopPropagation="true"
                  role="dialog"
                  aria-modal="true"
                  aria-label="Map viewer"
@@ -47,67 +48,81 @@
                 }
                 else if (_state == SessionMapViewerState.Loaded)
                 {
-                    <div class="session-map-viewer-modal__image-shell">
-                        <div @ref="_mapViewportRef"
-                             class="@GetMapViewportClass()"
-                             @onmousedown="OnMapViewportMouseDown"
-                             @onmousemove="OnMapViewportMouseMove"
-                             @onmouseup="OnMapViewportMouseUp"
-                             @onmouseleave="OnMapViewportMouseUp"
-                             @onwheel="OnMapViewportWheel"
-                             @onwheel:preventDefault="true">
-                            <div class="session-map-viewer-modal__map-stage" style="@GetMapStageStyle()">
-                                <img @ref="_mapImageRef"
-                                     src="@_basemapReadUrl"
-                                     alt="@ViewerTitle"
-                                     class="@GetMapImageClass()"
-                                     @onload="OnMapImageLoaded"
-                                     draggable="false" />
-                                <div class="session-map-viewer-modal__pins-overlay" aria-hidden="true">
-                                    @foreach (var pin in _pins)
-                                    {
-                                        <div class="session-map-viewer-modal__pin"
-                                             style="@GetPinStyle(pin)"
-                                             title="@GetPinTooltip(pin)">
-                                        </div>
+                    <div class="session-map-viewer-modal__layout">
+                        <aside class="session-map-viewer-modal__layers" aria-label="Map layers">
+                            @foreach (var layer in _layers)
+                            {
+                                <label class="@GetLayerRowClass(layer)">
+                                    <input type="checkbox"
+                                           class="session-map-viewer-modal__layer-toggle"
+                                           checked="@layer.IsEnabled"
+                                           @onchange="@(args => OnLayerToggleChangedAsync(layer.MapLayerId, args))" />
+                                    <span class="session-map-viewer-modal__layer-name">@layer.Name</span>
+                                </label>
+                            }
+                        </aside>
 
-                                        @if (HasPinLabel(pin))
+                        <div class="session-map-viewer-modal__image-shell">
+                            <div @ref="_mapViewportRef"
+                                 class="@GetMapViewportClass()"
+                                 @onmousedown="OnMapViewportMouseDown"
+                                 @onmousemove="OnMapViewportMouseMove"
+                                 @onmouseup="OnMapViewportMouseUp"
+                                 @onmouseleave="OnMapViewportMouseUp"
+>
+                                <div class="session-map-viewer-modal__map-stage" style="@GetMapStageStyle()">
+                                    <img @ref="_mapImageRef"
+                                         src="@_basemapReadUrl"
+                                         alt="@ViewerTitle"
+                                         class="@GetMapImageClass()"
+                                         @onload="OnMapImageLoaded"
+                                         draggable="false" />
+                                    <div class="session-map-viewer-modal__pins-overlay" aria-hidden="true">
+                                        @foreach (var pin in GetVisiblePins())
                                         {
-                                            <div class="session-map-viewer-modal__pin-name"
-                                                 style="@GetPinLabelStyle(pin)"
-                                                 title="@pin.Name">
-                                                @pin.Name
+                                            <div class="session-map-viewer-modal__pin"
+                                                 style="@GetPinStyle(pin)"
+                                                 title="@GetPinTooltip(pin)">
                                             </div>
+
+                                            @if (HasPinLabel(pin))
+                                            {
+                                                <div class="session-map-viewer-modal__pin-name"
+                                                     style="@GetPinLabelStyle(pin)"
+                                                     title="@pin.Name">
+                                                    @pin.Name
+                                                </div>
+                                            }
                                         }
-                                    }
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="session-map-viewer-modal__zoom-control" aria-label="Map zoom controls">
-                            <button type="button"
-                                    class="session-map-viewer-modal__zoom-button"
-                                    disabled="@(!CanZoomIn())"
-                                    aria-label="Zoom in"
-                                    @onclick="ZoomInFromButton">
-                                +
-                            </button>
-                            <input type="range"
-                                   class="session-map-viewer-modal__zoom-slider"
-                                   min="0"
-                                   max="100"
-                                   step="1"
-                                   value="@GetZoomSliderValue()"
-                                   @oninput="OnZoomSliderInput"
-                                   disabled="@(!_hasMapViewportLayout)"
-                                   aria-label="Map zoom level" />
-                            <button type="button"
-                                    class="session-map-viewer-modal__zoom-button"
-                                    disabled="@(!CanZoomOut())"
-                                    aria-label="Zoom out"
-                                    @onclick="ZoomOutFromButton">
-                                -
-                            </button>
+                            <div class="session-map-viewer-modal__zoom-control" aria-label="Map zoom controls">
+                                <button type="button"
+                                        class="session-map-viewer-modal__zoom-button"
+                                        disabled="@(!CanZoomIn())"
+                                        aria-label="Zoom in"
+                                        @onclick="ZoomInFromButton">
+                                    +
+                                </button>
+                                <input type="range"
+                                       class="session-map-viewer-modal__zoom-slider"
+                                       min="0"
+                                       max="100"
+                                       step="1"
+                                       value="@GetZoomSliderValue()"
+                                       @oninput="OnZoomSliderInput"
+                                       disabled="@(!_hasMapViewportLayout)"
+                                       aria-label="Map zoom level" />
+                                <button type="button"
+                                        class="session-map-viewer-modal__zoom-button"
+                                        disabled="@(!CanZoomOut())"
+                                        aria-label="Zoom out"
+                                        @onclick="ZoomOutFromButton">
+                                    -
+                                </button>
+                            </div>
                         </div>
                     </div>
                 }
@@ -121,6 +136,7 @@
     private bool _isLoading;
     private string _basemapReadUrl = string.Empty;
     private List<MapPinResponseDto> _pins = [];
+    private List<MapLayerDto> _layers = [];
     private SessionMapViewerState _state;
     private Guid _activeWorldId;
     private Guid _activeMapId;
@@ -151,6 +167,7 @@
     private ElementReference _mapViewportRef;
     private ElementReference _mapImageRef;
     private IJSObjectReference? _mapInteropModule;
+    private DotNetObjectReference<SessionMapViewerModal>? _dotNetRef;
 
     [Parameter]
     public bool IsOpen { get; set; }
@@ -196,6 +213,7 @@
         _isLoading = true;
         _basemapReadUrl = string.Empty;
         _pins = [];
+        _layers = [];
         ResetMapViewportState();
         _state = SessionMapViewerState.None;
         await InvokeAsync(StateHasChanged);
@@ -225,12 +243,18 @@
         else
         {
             _basemapReadUrl = basemapResult.Basemap.ReadUrl;
+            var layers = await TryLoadLayersAsync(worldId, mapId);
             var pins = await TryLoadPinsAsync(worldId, mapId);
             if (requestVersion != _loadVersion || !IsOpen || WorldId != worldId || MapId != mapId)
             {
                 return;
             }
 
+            _layers = SortLayersByOrder(layers);
+            foreach (var layer in _layers)
+            {
+                layer.IsEnabled = true;
+            }
             _pins = pins;
             _state = SessionMapViewerState.Loaded;
         }
@@ -253,6 +277,48 @@
         catch
         {
             return [];
+        }
+    }
+
+    private async Task<List<MapLayerDto>> TryLoadLayersAsync(Guid worldId, Guid mapId)
+    {
+        try
+        {
+            var layersTask = MapApi.GetLayersForMapAsync(worldId, mapId);
+            if (layersTask is null)
+            {
+                return [];
+            }
+
+            return await layersTask ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private async Task OnLayerToggleChangedAsync(Guid layerId, ChangeEventArgs args)
+    {
+        var layerIndex = _layers.FindIndex(layer => layer.MapLayerId == layerId);
+        if (layerIndex < 0 || !TryReadBool(args.Value, out var isEnabled))
+        {
+            return;
+        }
+
+        if (_layers[layerIndex].IsEnabled == isEnabled)
+        {
+            return;
+        }
+
+        try
+        {
+            await MapApi.UpdateLayerVisibilityAsync(WorldId, MapId, layerId, isEnabled);
+            _layers[layerIndex].IsEnabled = isEnabled;
+        }
+        catch
+        {
+            // Keep local state unchanged when update fails.
         }
     }
 
@@ -333,17 +399,6 @@
         SetZoomLevel(GetZoomForSliderValue(nextSliderValue, _mapMinZoom, _mapMaxZoom));
     }
 
-    private void OnMapViewportWheel(WheelEventArgs args)
-    {
-        if (!_hasMapViewportLayout)
-        {
-            return;
-        }
-
-        var step = args.DeltaY < 0d ? ZoomWheelSliderStep : -ZoomWheelSliderStep;
-        var nextSliderValue = Clamp(GetZoomSliderValue() + step, 0d, ZoomRangeSliderMax);
-        SetZoomLevel(GetZoomForSliderValue(nextSliderValue, _mapMinZoom, _mapMaxZoom));
-    }
 
     private void OnMapViewportMouseDown(MouseEventArgs args)
     {
@@ -413,11 +468,34 @@
             return;
         }
 
-        _mapMinZoom = Math.Max(_mapViewportWidth / _mapBaseWidth, _mapViewportHeight / _mapBaseHeight);
+        _mapMinZoom = Math.Min(_mapViewportWidth / _mapBaseWidth, _mapViewportHeight / _mapBaseHeight);
         _mapMaxZoom = Math.Max(_mapMinZoom, _mapMinZoom * ZoomRangeMultiplier);
         _mapZoom = _mapMinZoom;
         _hasMapViewportLayout = true;
         RecenterMapPan();
+        await SetupWheelInterceptorAsync();
+    }
+
+    private async Task SetupWheelInterceptorAsync()
+    {
+        try
+        {
+            var module = await EnsureModuleAsync();
+            if (module == null) return;
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+            await module.InvokeVoidAsync("setupWheelInterceptor", _mapViewportRef, _dotNetRef);
+        }
+        catch (JSException) { }
+    }
+
+    [JSInvokable]
+    public void OnWheelZoom(double deltaY)
+    {
+        if (!_hasMapViewportLayout) return;
+        var step = deltaY < 0d ? ZoomWheelSliderStep : -ZoomWheelSliderStep;
+        var nextSliderValue = Clamp(GetZoomSliderValue() + step, 0d, ZoomRangeSliderMax);
+        SetZoomLevel(GetZoomForSliderValue(nextSliderValue, _mapMinZoom, _mapMaxZoom));
+        InvokeAsync(StateHasChanged);
     }
 
     private bool CanPanMap() =>
@@ -510,35 +588,71 @@
             CultureInfo.InvariantCulture,
             out result);
 
+    private static bool TryReadBool(object? value, out bool result)
+    {
+        if (value is bool boolValue)
+        {
+            result = boolValue;
+            return true;
+        }
+
+        return bool.TryParse(value?.ToString(), out result);
+    }
+
     private static double Clamp(double value, double min, double max) =>
         value < min ? min : value > max ? max : value;
 
-    private async Task<MapElementRect?> GetElementRectAsync(ElementReference elementRef)
+    private static List<MapLayerDto> SortLayersByOrder(List<MapLayerDto> layers) =>
+        layers.OrderBy(layer => layer.SortOrder).ToList();
+
+    private IEnumerable<MapPinResponseDto> GetVisiblePins()
     {
-        if (_mapInteropModule == null)
+        if (_layers.Count == 0)
         {
-            try
-            {
-                _mapInteropModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/js/mapPageInterop.js?v=2");
-            }
-            catch (JSException)
-            {
-                return await JSRuntime.InvokeAsync<MapElementRect?>("chronicisMapPage.getElementRect", elementRef);
-            }
+            return _pins;
         }
 
+        var enabledLayerIds = GetEnabledLayerIds(_layers);
+        return _pins.Where(pin => enabledLayerIds.Contains(pin.LayerId));
+    }
+
+    private static HashSet<Guid> GetEnabledLayerIds(IEnumerable<MapLayerDto> layers) =>
+        layers
+            .Where(layer => layer.IsEnabled)
+            .Select(layer => layer.MapLayerId)
+            .ToHashSet();
+
+    private static string GetLayerRowClass(MapLayerDto layer) =>
+        layer.IsEnabled
+            ? "session-map-viewer-modal__layer-row"
+            : "session-map-viewer-modal__layer-row session-map-viewer-modal__layer-row--disabled";
+
+    private async Task<IJSObjectReference?> EnsureModuleAsync()
+    {
+        if (_mapInteropModule != null) return _mapInteropModule;
         try
         {
-            var rect = await _mapInteropModule.InvokeAsync<MapElementRect?>("getElementRect", elementRef);
-            if (HasUsableBounds(rect))
-            {
-                return rect;
-            }
+            _mapInteropModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/js/mapPageInterop.js?v=3");
+            return _mapInteropModule;
         }
         catch (JSException)
         {
-            // Fall through to global interop fallback.
+            return null;
         }
+    }
+
+    private async Task<MapElementRect?> GetElementRectAsync(ElementReference elementRef)
+    {
+        var module = await EnsureModuleAsync();
+        if (module == null)
+            return await JSRuntime.InvokeAsync<MapElementRect?>("chronicisMapPage.getElementRect", elementRef);
+
+        try
+        {
+            var rect = await module.InvokeAsync<MapElementRect?>("getElementRect", elementRef);
+            if (HasUsableBounds(rect)) return rect;
+        }
+        catch (JSException) { }
 
         return await JSRuntime.InvokeAsync<MapElementRect?>("chronicisMapPage.getElementRect", elementRef);
     }
@@ -616,17 +730,16 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (_mapInteropModule is not null)
+        try
         {
-            try
+            if (_mapInteropModule != null)
             {
+                await _mapInteropModule.InvokeVoidAsync("teardownWheelInterceptor", _mapViewportRef);
                 await _mapInteropModule.DisposeAsync();
             }
-            catch (JSDisconnectedException)
-            {
-                // No-op on teardown.
-            }
         }
+        catch (JSDisconnectedException) { }
+        _dotNetRef?.Dispose();
     }
 
     private static bool IsUnauthorized(int? statusCode) => statusCode == 401 || statusCode == 403;

@@ -20,6 +20,18 @@ public interface IWorldMapService
     Task<MapDto?> GetMapAsync(Guid mapId, Guid userId);
 
     /// <summary>
+    /// List layers for a map ordered by sort order.
+    /// Requires world membership.
+    /// </summary>
+    Task<List<MapLayerDto>> ListLayersForMapAsync(Guid worldId, Guid mapId, Guid userId);
+
+    /// <summary>
+    /// Create a custom layer for a map.
+    /// Requires world membership.
+    /// </summary>
+    Task<MapLayerDto> CreateLayer(Guid worldId, Guid mapId, Guid userId, string name);
+
+    /// <summary>
     /// Update editable map metadata. Only the world owner may update map details.
     /// </summary>
     Task<MapDto> UpdateMapAsync(Guid worldId, Guid mapId, Guid userId, MapUpdateDto dto);
@@ -55,6 +67,31 @@ public interface IWorldMapService
     /// </summary>
     Task<MapPinResponseDto> UpdatePinPositionAsync(
         Guid worldId, Guid mapId, Guid pinId, Guid userId, MapPinPositionUpdateDto dto);
+
+    /// <summary>
+    /// Update map layer visibility.
+    /// Requires world membership.
+    /// </summary>
+    Task UpdateLayerVisibility(
+        Guid worldId, Guid mapId, Guid layerId, Guid userId, bool isEnabled);
+
+    /// <summary>
+    /// Reorder map layers using the provided full ordered set of layer IDs.
+    /// Requires world membership.
+    /// </summary>
+    Task ReorderLayers(Guid worldId, Guid mapId, Guid userId, IList<Guid> layerIds);
+
+    /// <summary>
+    /// Rename a map layer.
+    /// Requires world membership.
+    /// </summary>
+    Task RenameLayer(Guid worldId, Guid mapId, Guid userId, Guid layerId, string name);
+
+    /// <summary>
+    /// Delete a map layer.
+    /// Requires world membership.
+    /// </summary>
+    Task DeleteLayer(Guid worldId, Guid mapId, Guid userId, Guid layerId);
 
     /// <summary>
     /// Delete a pin from a map.

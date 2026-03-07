@@ -1,5 +1,6 @@
 @page "/world/{WorldId:guid}/maps/{MapId:guid}"
 @attribute [Authorize]
+@implements IAsyncDisposable
 @using System.Globalization
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Shared.DTOs.Maps
@@ -60,6 +61,125 @@ else
             <MudAlert Severity="Severity.Error" Class="mb-4">@_mapSaveError</MudAlert>
         }
 
+        @if (_layers.Count > 0)
+        {
+            <div class="map-page__layers-panel" aria-label="Map layers">
+                <div class="map-page__layer-add-row">
+                    <input type="text"
+                           class="map-page__layer-add-input"
+                           placeholder="Add custom layer"
+                           value="@_newLayerNameInput"
+                           @oninput="OnNewLayerNameInput"
+                           @onkeydown="OnNewLayerNameKeyDown"
+                           disabled="@_isAddingLayer" />
+                    <button type="button"
+                            class="map-page__layer-add-button"
+                            disabled="@_isAddingLayer"
+                            @onclick="AddLayerAsync">
+                        @(_isAddingLayer ? "Adding..." : "Add")
+                    </button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_addLayerError))
+                {
+                    <div class="map-page__layer-add-error">@_addLayerError</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(_manageLayerError))
+                {
+                    <div class="map-page__layer-add-error">@_manageLayerError</div>
+                }
+
+                @for (var index = 0; index < _layers.Count; index++)
+                {
+                    var layer = _layers[index];
+                    var rowIndex = index;
+                    var isProtectedLayer = IsProtectedDefaultLayer(layer.MapLayerId);
+                    <div class="@($"map-page__layer-row map-page__layer-row--hoverable {(layer.IsEnabled ? "map-page__layer-row--enabled" : "map-page__layer-row--disabled")} {(SelectedLayerId == layer.MapLayerId ? "layer-row-selected" : string.Empty)} {(_draggedLayerId == layer.MapLayerId ? "map-page__layer-row--dragging" : string.Empty)} {(_dropTargetIndex == rowIndex ? "map-page__layer-row--drop-target" : string.Empty)}")"
+                         draggable="true"
+                         @ondragstart="args => OnLayerDragStart(layer.MapLayerId, args)"
+                         @ondragenter="() => OnLayerDragEnter(rowIndex)"
+                         @ondragover="() => OnLayerDragOver(rowIndex)"
+                         @ondragover:preventDefault="true"
+                         @ondrop="() => OnLayerDropAsync(rowIndex)"
+                         @ondrop:preventDefault="true"
+                         @ondragend="OnLayerDragEnd"
+                         @onclick="@(() => OnLayerRowSelected(layer.MapLayerId))">
+                        <span class="map-page__layer-drag-handle" aria-hidden="true">::</span>
+                        <input type="checkbox"
+                               class="map-page__layer-toggle"
+                               checked="@layer.IsEnabled"
+                               @onclick:stopPropagation="true"
+                               @onchange="args => OnLayerVisibilityChangedAsync(layer.MapLayerId, args)" />
+                        @if (IsEditingLayer(layer.MapLayerId))
+                        {
+                            <input type="text"
+                                   class="map-page__layer-rename-input"
+                                   value="@_renameLayerNameInput"
+                                   @onclick:stopPropagation="true"
+                                   @oninput="OnRenameLayerNameInput"
+                                   @onkeydown="args => OnRenameLayerNameKeyDown(layer.MapLayerId, args)"
+                                   disabled="@_isRenamingLayer" />
+                            <button type="button"
+                                    class="map-page__layer-action-button"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="() => ConfirmLayerRenameAsync(layer.MapLayerId)"
+                                    disabled="@_isRenamingLayer">
+                                @(_isRenamingLayer ? "Saving..." : "Save")
+                            </button>
+                            <button type="button"
+                                    class="map-page__layer-action-button map-page__layer-action-button--cancel"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="CancelLayerRename"
+                                    disabled="@_isRenamingLayer">
+                                Cancel
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="map-page__layer-name">@layer.Name</span>
+                        }
+
+                        @if (!isProtectedLayer && !IsEditingLayer(layer.MapLayerId))
+                        {
+                            <div class="map-page__layer-actions">
+                                @if (IsPendingDeleteLayer(layer.MapLayerId))
+                                {
+                                    <button type="button"
+                                            class="map-page__layer-action-button map-page__layer-action-button--danger"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => ConfirmLayerDeleteAsync(layer.MapLayerId)"
+                                            disabled="@_isDeletingLayer">
+                                        @(_isDeletingLayer ? "Deleting..." : "Confirm")
+                                    </button>
+                                    <button type="button"
+                                            class="map-page__layer-action-button map-page__layer-action-button--cancel"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="CancelLayerDelete"
+                                            disabled="@_isDeletingLayer">
+                                        Cancel
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button"
+                                            class="map-page__layer-action-button map-page__layer-rename-button"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => BeginLayerRename(layer.MapLayerId)">
+                                        Rename
+                                    </button>
+                                    <button type="button"
+                                            class="map-page__layer-action-button map-page__layer-delete-button"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => BeginLayerDelete(layer.MapLayerId)">
+                                        Delete
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
         <div class="map-page__create-pin-controls">
             <MudButton Variant="@(_isCreatePinMode ? Variant.Filled : Variant.Outlined)"
                        Color="Color.Primary"
@@ -104,7 +224,7 @@ else
                          draggable="false" />
                     <div class="map-page__pins-overlay @(_isCreatePinMode ? "map-page__pins-overlay--create" : string.Empty)"
                          aria-hidden="false">
-                        @foreach (var pin in _pins)
+                        @foreach (var pin in GetVisiblePins())
                         {
                             @if (pin.LinkedArticle is not null)
                             {
@@ -275,6 +395,10 @@ else
     private string _mapSaveError = string.Empty;
     private string _createPinError = string.Empty;
     private string _pinDeleteError = string.Empty;
+    private string _addLayerError = string.Empty;
+    private string _manageLayerError = string.Empty;
+    private string _newLayerNameInput = string.Empty;
+    private string _renameLayerNameInput = string.Empty;
     private string _createPinArticleIdInput = string.Empty;
     private string _createPinNameInput = string.Empty;
     private string _basemapReadUrl = string.Empty;
@@ -282,8 +406,18 @@ else
     private float? _pendingCreatePinY;
     private float? _pendingCreatePinViewportX;
     private float? _pendingCreatePinViewportY;
+    private Guid? SelectedLayerId;
+    private List<MapLayerDto> _layers = [];
+    private Guid? _draggedLayerId;
+    private int? _dropTargetIndex;
     private List<MapPinResponseDto> _pins = [];
     private Guid? _selectedPinId;
+    private bool _isAddingLayer;
+    private bool _isRenamingLayer;
+    private bool _isDeletingLayer;
+    private Guid? _editingLayerId;
+    private Guid? _pendingDeleteLayerId;
+    private readonly HashSet<Guid> _protectedDefaultLayerIds = [];
     private bool _hasMapViewportLayout;
     private double? _mapPreferredViewportHeightPx;
     private double _mapBaseWidth;
@@ -305,6 +439,7 @@ else
     private ElementReference _mapViewportRef;
     private ElementReference _mapImageRef;
     private IJSObjectReference? _mapInteropModule;
+    private DotNetObjectReference<MapPage>? _dotNetRef;
     private List<BreadcrumbItem> _breadcrumbs =
     [
         new("Dashboard", href: "/dashboard"),
@@ -339,6 +474,10 @@ else
         _mapSaveError = string.Empty;
         _createPinError = string.Empty;
         _pinDeleteError = string.Empty;
+        _addLayerError = string.Empty;
+        _manageLayerError = string.Empty;
+        _newLayerNameInput = string.Empty;
+        _renameLayerNameInput = string.Empty;
         _createPinArticleIdInput = string.Empty;
         _createPinNameInput = string.Empty;
         _isCreatePinMode = false;
@@ -350,6 +489,16 @@ else
         _pendingCreatePinY = null;
         _pendingCreatePinViewportX = null;
         _pendingCreatePinViewportY = null;
+        SelectedLayerId = null;
+        _layers = [];
+        _draggedLayerId = null;
+        _dropTargetIndex = null;
+        _isAddingLayer = false;
+        _isRenamingLayer = false;
+        _isDeletingLayer = false;
+        _editingLayerId = null;
+        _pendingDeleteLayerId = null;
+        _protectedDefaultLayerIds.Clear();
         _pins = [];
         _selectedPinId = null;
         _hasMapViewportLayout = false;
@@ -417,6 +566,17 @@ else
         else
         {
             _basemapReadUrl = basemapResult.Basemap.ReadUrl;
+            var layers = await MapApi.GetLayersForMapAsync(WorldId, MapId);
+            _layers = layers?.OrderBy(l => l.SortOrder).ToList() ?? [];
+            foreach (var layer in _layers)
+            {
+                layer.IsEnabled = true;
+            }
+            InitializeProtectedDefaultLayerIds(_layers);
+            if (SelectedLayerId == null)
+            {
+                SelectedLayerId = ResolveDefaultSelectedLayerId(_layers);
+            }
             _pins = await MapApi.ListPinsForMapAsync(WorldId, MapId);
             _state = MapPageState.Loaded;
             BuildBreadcrumbs();
@@ -498,6 +658,399 @@ else
     }
 
     private static bool IsUnauthorized(int? statusCode) => statusCode == 401 || statusCode == 403;
+
+    private static Guid? ResolveDefaultSelectedLayerId(List<MapLayerDto> layers)
+    {
+        if (layers.Count == 0)
+        {
+            return null;
+        }
+
+        return layers.FirstOrDefault(l => string.Equals(l.Name, "Arc", StringComparison.Ordinal))?.MapLayerId
+            ?? layers.FirstOrDefault(l => string.Equals(l.Name, "Campaign", StringComparison.Ordinal))?.MapLayerId
+            ?? layers.FirstOrDefault(l => string.Equals(l.Name, "World", StringComparison.Ordinal))?.MapLayerId
+            ?? layers[0].MapLayerId;
+    }
+
+    private void OnLayerRowSelected(Guid layerId)
+    {
+        SelectedLayerId = layerId;
+    }
+
+    private void InitializeProtectedDefaultLayerIds(IEnumerable<MapLayerDto> layers)
+    {
+        _protectedDefaultLayerIds.Clear();
+        foreach (var layer in layers.Where(layer =>
+                     string.Equals(layer.Name, "World", StringComparison.Ordinal)
+                     || string.Equals(layer.Name, "Campaign", StringComparison.Ordinal)
+                     || string.Equals(layer.Name, "Arc", StringComparison.Ordinal)))
+        {
+            _protectedDefaultLayerIds.Add(layer.MapLayerId);
+        }
+    }
+
+    private bool IsProtectedDefaultLayer(Guid layerId) =>
+        _protectedDefaultLayerIds.Contains(layerId);
+
+    private bool IsEditingLayer(Guid layerId) =>
+        _editingLayerId == layerId;
+
+    private bool IsPendingDeleteLayer(Guid layerId) =>
+        _pendingDeleteLayerId == layerId;
+
+    private void OnNewLayerNameInput(ChangeEventArgs args)
+    {
+        _newLayerNameInput = args.Value?.ToString() ?? string.Empty;
+        _addLayerError = string.Empty;
+    }
+
+    private Task OnNewLayerNameKeyDown(KeyboardEventArgs args)
+    {
+        if (string.Equals(args.Key, "Enter", StringComparison.Ordinal))
+        {
+            return AddLayerAsync();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task AddLayerAsync()
+    {
+        if (_isAddingLayer)
+        {
+            return;
+        }
+
+        var layerName = (_newLayerNameInput ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(layerName))
+        {
+            _addLayerError = "Layer name is required.";
+            return;
+        }
+
+        if (layerName.Length > 200)
+        {
+            _addLayerError = "Layer name must be 200 characters or fewer.";
+            return;
+        }
+
+        _isAddingLayer = true;
+        _addLayerError = string.Empty;
+        _manageLayerError = string.Empty;
+
+        try
+        {
+            var createdLayer = await MapApi.CreateLayerAsync(
+                WorldId,
+                MapId,
+                layerName);
+
+            _layers.Add(createdLayer);
+            _layers = _layers.OrderBy(l => l.SortOrder).ToList();
+            SelectedLayerId = createdLayer.MapLayerId;
+            _newLayerNameInput = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _addLayerError = $"Failed to add layer: {ex.Message}";
+        }
+        finally
+        {
+            _isAddingLayer = false;
+        }
+    }
+
+    private void BeginLayerRename(Guid layerId)
+    {
+        var layer = _layers.FirstOrDefault(existingLayer => existingLayer.MapLayerId == layerId);
+        if (layer == null || IsProtectedDefaultLayer(layerId))
+        {
+            return;
+        }
+
+        _editingLayerId = layerId;
+        _renameLayerNameInput = layer.Name;
+        _manageLayerError = string.Empty;
+        _pendingDeleteLayerId = null;
+    }
+
+    private void OnRenameLayerNameInput(ChangeEventArgs args)
+    {
+        _renameLayerNameInput = args.Value?.ToString() ?? string.Empty;
+        _manageLayerError = string.Empty;
+    }
+
+    private Task OnRenameLayerNameKeyDown(Guid layerId, KeyboardEventArgs args)
+    {
+        if (string.Equals(args.Key, "Enter", StringComparison.Ordinal))
+        {
+            return ConfirmLayerRenameAsync(layerId);
+        }
+
+        if (string.Equals(args.Key, "Escape", StringComparison.Ordinal))
+        {
+            CancelLayerRename();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void CancelLayerRename()
+    {
+        _editingLayerId = null;
+        _renameLayerNameInput = string.Empty;
+        _isRenamingLayer = false;
+    }
+
+    private async Task ConfirmLayerRenameAsync(Guid layerId)
+    {
+        if (_isRenamingLayer || !IsEditingLayer(layerId) || IsProtectedDefaultLayer(layerId))
+        {
+            return;
+        }
+
+        var layer = _layers.FirstOrDefault(existingLayer => existingLayer.MapLayerId == layerId);
+        if (layer == null)
+        {
+            return;
+        }
+
+        var nextName = (_renameLayerNameInput ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(nextName))
+        {
+            _manageLayerError = "Layer name is required.";
+            return;
+        }
+
+        if (nextName.Length > 200)
+        {
+            _manageLayerError = "Layer name must be 200 characters or fewer.";
+            return;
+        }
+
+        _isRenamingLayer = true;
+        _manageLayerError = string.Empty;
+
+        try
+        {
+            await MapApi.RenameLayerAsync(WorldId, MapId, layerId, nextName);
+            layer.Name = nextName;
+            _editingLayerId = null;
+            _renameLayerNameInput = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _manageLayerError = $"Failed to rename layer: {ex.Message}";
+        }
+        finally
+        {
+            _isRenamingLayer = false;
+        }
+    }
+
+    private void BeginLayerDelete(Guid layerId)
+    {
+        if (IsProtectedDefaultLayer(layerId))
+        {
+            return;
+        }
+
+        _pendingDeleteLayerId = layerId;
+        _manageLayerError = string.Empty;
+        _editingLayerId = null;
+        _renameLayerNameInput = string.Empty;
+    }
+
+    private void CancelLayerDelete()
+    {
+        _pendingDeleteLayerId = null;
+        _isDeletingLayer = false;
+    }
+
+    private async Task ConfirmLayerDeleteAsync(Guid layerId)
+    {
+        if (_isDeletingLayer || !IsPendingDeleteLayer(layerId) || IsProtectedDefaultLayer(layerId))
+        {
+            return;
+        }
+
+        _isDeletingLayer = true;
+        _manageLayerError = string.Empty;
+
+        try
+        {
+            await MapApi.DeleteLayerAsync(WorldId, MapId, layerId);
+            _layers.RemoveAll(layer => layer.MapLayerId == layerId);
+
+            if (SelectedLayerId == layerId)
+            {
+                SelectedLayerId = _layers.FirstOrDefault()?.MapLayerId;
+            }
+        }
+        catch (Exception ex)
+        {
+            _manageLayerError = $"Failed to delete layer: {ex.Message}";
+        }
+        finally
+        {
+            _isDeletingLayer = false;
+            _pendingDeleteLayerId = null;
+        }
+    }
+
+    private void OnLayerDragStart(Guid layerId, DragEventArgs args)
+    {
+        _draggedLayerId = layerId;
+        _dropTargetIndex = _layers.FindIndex(l => l.MapLayerId == layerId);
+
+        if (args.DataTransfer is null)
+        {
+            return;
+        }
+
+        args.DataTransfer.DropEffect = "move";
+        args.DataTransfer.EffectAllowed = "move";
+    }
+
+    private void OnLayerDragEnter(int targetIndex)
+    {
+        if (!_draggedLayerId.HasValue)
+        {
+            return;
+        }
+
+        _dropTargetIndex = targetIndex;
+    }
+
+    private void OnLayerDragOver(int targetIndex)
+    {
+        if (!_draggedLayerId.HasValue)
+        {
+            return;
+        }
+
+        _dropTargetIndex = targetIndex;
+    }
+
+    private async Task OnLayerDropAsync(int targetIndex)
+    {
+        if (!_draggedLayerId.HasValue)
+        {
+            ClearLayerDragState();
+            return;
+        }
+
+        var draggedLayerId = _draggedLayerId.Value;
+        var draggedIndex = _layers.FindIndex(l => l.MapLayerId == draggedLayerId);
+        if (draggedIndex < 0 || targetIndex < 0 || targetIndex >= _layers.Count || draggedIndex == targetIndex)
+        {
+            ClearLayerDragState();
+            return;
+        }
+
+        var previousLayerOrder = _layers
+            .Select(layer => layer.MapLayerId)
+            .ToList();
+
+        MoveLayer(_layers, draggedIndex, targetIndex);
+        var reorderedLayerIds = _layers
+            .Select(layer => layer.MapLayerId)
+            .ToList();
+        StateHasChanged();
+
+        try
+        {
+            await MapApi.ReorderLayersAsync(WorldId, MapId, reorderedLayerIds);
+        }
+        catch
+        {
+            _layers = RestoreLayerOrder(_layers, previousLayerOrder);
+            StateHasChanged();
+        }
+        finally
+        {
+            ClearLayerDragState();
+        }
+    }
+
+    private void OnLayerDragEnd(DragEventArgs _) => ClearLayerDragState();
+
+    private void ClearLayerDragState()
+    {
+        _draggedLayerId = null;
+        _dropTargetIndex = null;
+    }
+
+    private static void MoveLayer(List<MapLayerDto> layers, int fromIndex, int toIndex)
+    {
+        var movedLayer = layers[fromIndex];
+        layers.RemoveAt(fromIndex);
+        layers.Insert(toIndex, movedLayer);
+    }
+
+    private static List<MapLayerDto> RestoreLayerOrder(List<MapLayerDto> currentLayers, IReadOnlyList<Guid> orderedLayerIds)
+    {
+        var layersById = currentLayers.ToDictionary(layer => layer.MapLayerId);
+        var restored = orderedLayerIds
+            .Where(layersById.ContainsKey)
+            .Select(layerId => layersById[layerId])
+            .ToList();
+
+        if (restored.Count < currentLayers.Count)
+        {
+            restored.AddRange(currentLayers.Where(layer => !orderedLayerIds.Contains(layer.MapLayerId)));
+        }
+
+        return restored;
+    }
+
+    private IEnumerable<MapPinResponseDto> GetVisiblePins()
+    {
+        if (_layers.Count == 0)
+        {
+            return _pins;
+        }
+
+        var layerOrderById = _layers
+            .Select((layer, index) => new { layer.MapLayerId, Index = index })
+            .ToDictionary(x => x.MapLayerId, x => x.Index);
+
+        var enabledLayerIds = _layers
+            .Where(l => l.IsEnabled)
+            .Select(l => l.MapLayerId)
+            .ToHashSet();
+
+        return _pins
+            .Select((pin, index) => new { Pin = pin, Index = index })
+            .Where(x => enabledLayerIds.Contains(x.Pin.LayerId))
+            .OrderBy(x => layerOrderById[x.Pin.LayerId])
+            .ThenBy(x => x.Index)
+            .Select(x => x.Pin);
+    }
+
+    private async Task OnLayerVisibilityChangedAsync(Guid layerId, ChangeEventArgs args)
+    {
+        var layer = _layers.FirstOrDefault(l => l.MapLayerId == layerId);
+        if (layer == null)
+        {
+            return;
+        }
+
+        var isEnabled = args.Value switch
+        {
+            bool boolValue => boolValue,
+            string stringValue when bool.TryParse(stringValue, out var parsed) => parsed,
+            _ => layer.IsEnabled,
+        };
+
+        if (isEnabled == layer.IsEnabled)
+        {
+            return;
+        }
+
+        await MapApi.UpdateLayerVisibilityAsync(WorldId, MapId, layerId, isEnabled);
+        layer.IsEnabled = isEnabled;
+    }
 
     private void ToggleCreatePinMode()
     {
@@ -698,11 +1251,48 @@ else
             return;
         }
 
-        _mapMinZoom = Math.Max(_mapViewportWidth / _mapBaseWidth, _mapViewportHeight / _mapBaseHeight);
+        _mapMinZoom = Math.Min(_mapViewportWidth / _mapBaseWidth, _mapViewportHeight / _mapBaseHeight);
         _mapMaxZoom = Math.Max(_mapMinZoom, _mapMinZoom * ZoomRangeMultiplier);
         _mapZoom = _mapMinZoom;
         _hasMapViewportLayout = true;
         RecenterMapPan();
+        await SetupWheelInterceptorAsync();
+    }
+
+    private async Task SetupWheelInterceptorAsync()
+    {
+        try
+        {
+            var module = await EnsureModuleAsync();
+            if (module == null) return;
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+            await module.InvokeVoidAsync("setupWheelInterceptor", _mapViewportRef, _dotNetRef);
+        }
+        catch (JSException) { }
+    }
+
+    [JSInvokable]
+    public void OnWheelZoom(double deltaY)
+    {
+        if (!_hasMapViewportLayout) return;
+        const double step = 4d;
+        var nextSliderValue = Clamp(GetZoomSliderValue() + (deltaY < 0 ? step : -step), 0d, ZoomRangeSliderMax);
+        SetZoomLevel(GetZoomForSliderValue(nextSliderValue, _mapMinZoom, _mapMaxZoom));
+        InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_mapInteropModule != null)
+            {
+                await _mapInteropModule.InvokeVoidAsync("teardownWheelInterceptor", _mapViewportRef);
+                await _mapInteropModule.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException) { }
+        _dotNetRef?.Dispose();
     }
 
     private bool CanPanMap() =>
@@ -954,6 +1544,7 @@ else
                     X = _pendingCreatePinX.Value,
                     Y = _pendingCreatePinY.Value,
                     LinkedArticleId = linkedArticleId,
+                    LayerId = SelectedLayerId,
                 });
 
             if (created == null)
@@ -977,33 +1568,32 @@ else
         }
     }
 
-    private async Task<MapElementRect?> GetElementRectAsync(ElementReference elementRef)
+    private async Task<IJSObjectReference?> EnsureModuleAsync()
     {
-        if (_mapInteropModule == null)
-        {
-            try
-            {
-                _mapInteropModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/js/mapPageInterop.js?v=2");
-            }
-            catch (JSException)
-            {
-                // Keep backward compatibility with global script registration.
-                return await JSRuntime.InvokeAsync<MapElementRect?>("chronicisMapPage.getElementRect", elementRef);
-            }
-        }
-
+        if (_mapInteropModule != null) return _mapInteropModule;
         try
         {
-            var rect = await _mapInteropModule.InvokeAsync<MapElementRect?>("getElementRect", elementRef);
-            if (HasUsableBounds(rect))
-            {
-                return rect;
-            }
+            _mapInteropModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/js/mapPageInterop.js?v=3");
+            return _mapInteropModule;
         }
         catch (JSException)
         {
-            // Fall through to global interop fallback.
+            return null;
         }
+    }
+
+    private async Task<MapElementRect?> GetElementRectAsync(ElementReference elementRef)
+    {
+        var module = await EnsureModuleAsync();
+        if (module == null)
+            return await JSRuntime.InvokeAsync<MapElementRect?>("chronicisMapPage.getElementRect", elementRef);
+
+        try
+        {
+            var rect = await module.InvokeAsync<MapElementRect?>("getElementRect", elementRef);
+            if (HasUsableBounds(rect)) return rect;
+        }
+        catch (JSException) { }
 
         return await JSRuntime.InvokeAsync<MapElementRect?>("chronicisMapPage.getElementRect", elementRef);
     }

@@ -122,6 +122,81 @@ public class MapApiServiceTests
     }
 
     [Fact]
+    public async Task GetLayersForMapAsync_UsesExpectedRouteAndDeserializes()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var layerId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            Assert.Equal(HttpMethod.Get, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/layers", req.RequestUri!.PathAndQuery.TrimStart('/'));
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    $$"""[{"mapLayerId":"{{layerId}}","name":"World","sortOrder":0,"isEnabled":true}]""")
+            });
+        });
+
+        var sut = CreateSut(handler);
+        var result = await sut.GetLayersForMapAsync(worldId, mapId);
+
+        Assert.Single(result);
+        Assert.Equal(layerId, result[0].MapLayerId);
+        Assert.Equal("World", result[0].Name);
+        Assert.Equal(0, result[0].SortOrder);
+        Assert.True(result[0].IsEnabled);
+    }
+
+    [Fact]
+    public async Task CreateLayerAsync_UsesExpectedRouteVerbAndPayload()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var layerId = Guid.NewGuid();
+        const string layerName = "Cities";
+
+        var handler = new TestHttpMessageHandler(async (req, cancellationToken) =>
+        {
+            Assert.Equal(HttpMethod.Post, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/layers", req.RequestUri!.PathAndQuery.TrimStart('/'));
+
+            var body = await req.Content!.ReadAsStringAsync(cancellationToken);
+            using var json = JsonDocument.Parse(body);
+            Assert.Equal("Cities", json.RootElement.GetProperty("name").GetString());
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    $$"""{"mapLayerId":"{{layerId}}","name":"Cities","sortOrder":3,"isEnabled":true}""")
+            };
+        });
+
+        var sut = CreateSut(handler);
+        var result = await sut.CreateLayerAsync(worldId, mapId, layerName);
+
+        Assert.Equal(layerId, result.MapLayerId);
+        Assert.Equal("Cities", result.Name);
+        Assert.Equal(3, result.SortOrder);
+        Assert.True(result.IsEnabled);
+    }
+
+    [Fact]
+    public async Task CreateLayerAsync_WhenResponseBodyMissing_ThrowsInvalidOperationException()
+    {
+        var sut = CreateSut(new TestHttpMessageHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(string.Empty)
+            })));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.CreateLayerAsync(Guid.NewGuid(), Guid.NewGuid(), "Cities"));
+    }
+
+    [Fact]
     public async Task GetBasemapReadUrlAsync_NotFound_ReturnsStatusAndError()
     {
         var worldId = Guid.NewGuid();
@@ -234,6 +309,127 @@ public class MapApiServiceTests
         Assert.NotNull(result);
         Assert.Equal("Renamed", result!.Name);
         Assert.Contains(calls, c => c == $"PUT world/{worldId}/maps/{mapId}");
+    }
+
+    [Fact]
+    public async Task UpdateLayerVisibilityAsync_UsesExpectedRouteVerbAndPayload()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var layerId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler(async (req, cancellationToken) =>
+        {
+            Assert.Equal(HttpMethod.Put, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/layers/{layerId}", req.RequestUri!.PathAndQuery.TrimStart('/'));
+
+            var body = await req.Content!.ReadAsStringAsync(cancellationToken);
+            using var json = JsonDocument.Parse(body);
+            Assert.True(json.RootElement.TryGetProperty("isEnabled", out var isEnabled));
+            Assert.True(isEnabled.GetBoolean());
+
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+
+        var sut = CreateSut(handler);
+
+        await sut.UpdateLayerVisibilityAsync(worldId, mapId, layerId, true);
+    }
+
+    [Fact]
+    public async Task ReorderLayersAsync_UsesExpectedRouteVerbAndOrderedPayload()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var firstLayerId = Guid.NewGuid();
+        var secondLayerId = Guid.NewGuid();
+        var thirdLayerId = Guid.NewGuid();
+        IList<Guid> layerIds = new List<Guid> { secondLayerId, thirdLayerId, firstLayerId };
+
+        var handler = new TestHttpMessageHandler(async (req, cancellationToken) =>
+        {
+            Assert.Equal(HttpMethod.Put, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/layers/reorder", req.RequestUri!.PathAndQuery.TrimStart('/'));
+
+            var body = await req.Content!.ReadAsStringAsync(cancellationToken);
+            using var json = JsonDocument.Parse(body);
+            var payloadIds = json.RootElement
+                .GetProperty("layerIds")
+                .EnumerateArray()
+                .Select(element => element.GetGuid())
+                .ToList();
+
+            Assert.Equal(layerIds, payloadIds);
+
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+
+        var sut = CreateSut(handler);
+
+        await sut.ReorderLayersAsync(worldId, mapId, layerIds);
+    }
+
+    [Fact]
+    public async Task RenameLayerAsync_UsesExpectedRouteVerbAndPayload()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var layerId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler(async (req, cancellationToken) =>
+        {
+            Assert.Equal(HttpMethod.Put, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/layers/{layerId}/rename", req.RequestUri!.PathAndQuery.TrimStart('/'));
+
+            var body = await req.Content!.ReadAsStringAsync(cancellationToken);
+            using var json = JsonDocument.Parse(body);
+            Assert.Equal("Settlements", json.RootElement.GetProperty("name").GetString());
+
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+
+        var sut = CreateSut(handler);
+
+        await sut.RenameLayerAsync(worldId, mapId, layerId, "Settlements");
+    }
+
+    [Fact]
+    public async Task DeleteLayerAsync_UsesExpectedRouteAndVerb()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var layerId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            Assert.Equal(HttpMethod.Delete, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/layers/{layerId}", req.RequestUri!.PathAndQuery.TrimStart('/'));
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+        });
+
+        var sut = CreateSut(handler);
+
+        await sut.DeleteLayerAsync(worldId, mapId, layerId);
+    }
+
+    [Fact]
+    public async Task RenameLayerAsync_WhenRequestFails_ThrowsInvalidOperationException()
+    {
+        var sut = CreateSut(new TestHttpMessageHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest))));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.RenameLayerAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Settlements"));
+    }
+
+    [Fact]
+    public async Task DeleteLayerAsync_WhenRequestFails_ThrowsInvalidOperationException()
+    {
+        var sut = CreateSut(new TestHttpMessageHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest))));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.DeleteLayerAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
     }
 
     [Fact]

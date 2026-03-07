@@ -6,7 +6,7 @@ All notable changes to this project are documented in this file.
 
 ## [3.0.0] - 2026-03-03
 
-### Maps and Basemap Image Workflow
+### Maps, Layers, and Basemap Image Workflow
 
 **Added:**
 - World-level Maps feature with dedicated routes:
@@ -17,6 +17,10 @@ All notable changes to this project are documented in this file.
 - Basemap upload supports file picker and drag/drop in the Maps Detail create panel.
 - Browser drag/drop guard to prevent dropped image files from opening in a new tab outside the drop zone.
 - Map page header with inline map-name editing and explicit save controls (session-style save pattern).
+- Map layer management on map pages and modal viewers:
+  - Default World/Campaign/Arc layers plus custom layers.
+  - Layer visibility toggles with immediate pin filtering.
+  - Layer selection for pin placement, drag/drop reorder, and custom layer create/rename/delete controls.
 - Breadcrumbs on both maps pages:
   - `Dashboard / {world name} / Maps`
   - `Dashboard / {world name} / Maps / {map name}`

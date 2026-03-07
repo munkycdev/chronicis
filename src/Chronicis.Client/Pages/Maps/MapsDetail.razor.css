@@ -1,27 +1,30 @@
 .maps-detail__header .mud-icon-root {
-    color: var(--chronicis-beige-gold);
+    color: var(--chronicis-secondary);
 }
 
 .maps-create-card {
-    background: color-mix(in srgb, var(--mud-palette-surface) 88%, var(--chronicis-beige-gold) 12%);
+    background: color-mix(in srgb, var(--mud-palette-surface) 88%, var(--chronicis-secondary) 12%);
+    border-color: color-mix(in srgb, var(--chronicis-secondary) 25%, transparent 75%) !important;
 }
 
 .maps-basemap-dropzone {
     position: relative;
-    border: 1.5px dashed color-mix(in srgb, var(--mud-palette-text-primary) 30%, transparent 70%);
-    border-radius: 10px;
+    border: 1.5px dashed color-mix(in srgb, var(--chronicis-secondary) 40%, transparent 60%);
+    border-radius: var(--chronicis-radius-lg);
     min-height: 132px;
-    background: color-mix(in srgb, var(--mud-palette-surface) 92%, var(--mud-palette-primary) 8%);
-    transition: border-color 0.18s ease, background-color 0.18s ease;
+    background: color-mix(in srgb, var(--mud-palette-surface) 94%, var(--chronicis-secondary) 6%);
+    transition: border-color var(--chronicis-transition-fast), background-color var(--chronicis-transition-fast);
 }
 
 .maps-basemap-dropzone:hover {
-    border-color: color-mix(in srgb, var(--mud-palette-primary) 58%, transparent 42%);
+    border-color: color-mix(in srgb, var(--chronicis-secondary) 72%, transparent 28%);
+    background: color-mix(in srgb, var(--mud-palette-surface) 90%, var(--chronicis-secondary) 10%);
 }
 
 .maps-basemap-dropzone--dragover {
-    border-color: var(--mud-palette-primary);
-    background: color-mix(in srgb, var(--mud-palette-surface) 84%, var(--mud-palette-primary) 16%);
+    border-color: var(--chronicis-secondary);
+    background: color-mix(in srgb, var(--mud-palette-surface) 84%, var(--chronicis-secondary) 16%);
+    box-shadow: var(--chronicis-glow-secondary);
 }
 
 .maps-basemap-dropzone--copy,
@@ -52,18 +55,34 @@
     align-items: center;
     text-align: center;
     padding: 1rem;
+    color: var(--chronicis-primary);
+}
+
+.maps-basemap-dropzone__label .mud-icon-root {
+    color: var(--chronicis-secondary);
+    opacity: 0.7;
+}
+
+.maps-basemap-dropzone--dragover .maps-basemap-dropzone__label .mud-icon-root {
+    opacity: 1;
 }
 
 .maps-basemap-dropzone__title {
     font-weight: 600;
+    color: var(--chronicis-primary);
 }
 
 .maps-scope-card {
-    border-color: color-mix(in srgb, var(--mud-palette-text-primary) 18%, transparent 82%);
+    border-color: color-mix(in srgb, var(--chronicis-secondary) 22%, transparent 78%) !important;
 }
 
 .maps-scope-title {
-    color: var(--chronicis-beige-gold);
+    color: var(--chronicis-secondary);
+    font-family: var(--chronicis-font-heading);
+}
+
+.maps-scope-title .mud-icon-root {
+    color: var(--chronicis-secondary);
 }
 
 .maps-group-block {
@@ -76,6 +95,7 @@
 
 .maps-group-heading {
     font-weight: 600;
+    color: var(--chronicis-primary);
 }
 
 .maps-arc-heading {
@@ -89,7 +109,7 @@
     justify-content: space-between;
     gap: 0.75rem;
     padding: 0.42rem 0;
-    border-bottom: 1px solid color-mix(in srgb, var(--mud-palette-text-primary) 9%, transparent 91%);
+    border-bottom: 1px solid color-mix(in srgb, var(--chronicis-secondary) 12%, transparent 88%);
 }
 
 .maps-list-row:last-child {
@@ -104,7 +124,8 @@
 }
 
 .maps-list-row__icon {
-    color: color-mix(in srgb, var(--mud-palette-primary) 70%, var(--mud-palette-text-primary) 30%);
+    color: var(--chronicis-secondary);
+    opacity: 0.8;
 }
 
 .maps-list-row__delete {

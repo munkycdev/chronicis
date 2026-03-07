@@ -148,6 +148,339 @@ public class WorldMapServiceTests : IDisposable
         Assert.Equal("Member Map", result.Name);
     }
 
+    // ── ListLayersForMapAsync ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ListLayersForMap_ReturnsOrderedLayersWithVisibility()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Layered Map");
+        var worldLayer = await _db.MapLayers.FirstAsync(l => l.WorldMapId == map.WorldMapId && l.Name == "World");
+        worldLayer.IsEnabled = true;
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.ListLayersForMapAsync(_worldId, map.WorldMapId, _memberId);
+
+        Assert.Equal(3, result.Count);
+        Assert.Equal("World", result[0].Name);
+        Assert.Equal("Campaign", result[1].Name);
+        Assert.Equal("Arc", result[2].Name);
+        Assert.True(result[0].IsEnabled);
+        Assert.False(result[1].IsEnabled);
+        Assert.False(result[2].IsEnabled);
+    }
+
+    [Fact]
+    public async Task ListLayersForMap_Throws_WhenUserIsNotWorldMember()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("No Access Layers");
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.ListLayersForMapAsync(_worldId, map.WorldMapId, _outsiderId));
+    }
+
+    [Fact]
+    public async Task ListLayersForMap_Throws_WhenMapNotFound()
+    {
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.ListLayersForMapAsync(_worldId, Guid.NewGuid(), _memberId));
+    }
+
+    [Fact]
+    public async Task CreateLayer_Success_AddsEnabledLayerWithNextSortOrder()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Custom Layer Map");
+        var service = (IWorldMapService)_sut;
+
+        var created = await service.CreateLayer(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            "  Cities  ");
+
+        Assert.Equal("Cities", created.Name);
+        Assert.Equal(3, created.SortOrder);
+        Assert.True(created.IsEnabled);
+
+        var layers = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId)
+            .OrderBy(layer => layer.SortOrder)
+            .ToListAsync();
+
+        Assert.Equal(4, layers.Count);
+        Assert.Equal("Cities", layers[3].Name);
+        Assert.Equal(3, layers[3].SortOrder);
+        Assert.True(layers[3].IsEnabled);
+    }
+
+    [Fact]
+    public async Task CreateLayer_ThrowsArgumentException_WhenLayerNameAlreadyExistsInMap()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Duplicate Layer Name Map");
+
+        _ = await _sut.CreateLayerAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            "Cities");
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.CreateLayerAsync(
+                _worldId,
+                map.WorldMapId,
+                _memberId,
+                "  Cities  "));
+    }
+
+    [Fact]
+    public async Task CreateLayer_ThrowsArgumentException_WhenLayerNameInvalid()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Invalid Layer Name Map");
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.CreateLayerAsync(
+                _worldId,
+                map.WorldMapId,
+                _memberId,
+                "   "));
+    }
+
+    [Fact]
+    public async Task CreateLayer_ThrowsArgumentException_WhenLayerNameExceedsMaxLength()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Too Long Layer Name Map");
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.CreateLayerAsync(
+                _worldId,
+                map.WorldMapId,
+                _memberId,
+                new string('L', 201)));
+    }
+
+    [Fact]
+    public async Task CreateLayer_ThrowsArgumentException_WhenMapDoesNotExist()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.CreateLayerAsync(
+                _worldId,
+                Guid.NewGuid(),
+                _memberId,
+                "Cities"));
+    }
+
+    [Fact]
+    public async Task CreateLayer_ThrowsUnauthorizedAccessException_WhenUserNotWorldMember()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Unauthorized Layer Create");
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.CreateLayerAsync(
+                _worldId,
+                map.WorldMapId,
+                _outsiderId,
+                "Cities"));
+    }
+
+    [Fact]
+    public async Task RenameLayer_Succeeds_ForCustomLayer()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Rename Custom Layer");
+        var customLayer = await _sut.CreateLayerAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            "Cities");
+
+        var service = (IWorldMapService)_sut;
+        await service.RenameLayer(_worldId, map.WorldMapId, _memberId, customLayer.MapLayerId, "Settlements");
+
+        var renamed = await _db.MapLayers
+            .AsNoTracking()
+            .FirstAsync(layer => layer.MapLayerId == customLayer.MapLayerId);
+
+        Assert.Equal("Settlements", renamed.Name);
+    }
+
+    [Fact]
+    public async Task RenameLayer_ThrowsArgumentException_ForDefaultLayer()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Rename Default Layer");
+        var worldLayer = await _db.MapLayers
+            .AsNoTracking()
+            .FirstAsync(layer => layer.WorldMapId == map.WorldMapId && layer.Name == "World");
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.RenameLayer(_worldId, map.WorldMapId, _memberId, worldLayer.MapLayerId, "Renamed World"));
+    }
+
+    [Fact]
+    public async Task RenameLayer_ThrowsArgumentException_WhenMapDoesNotExist()
+    {
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.RenameLayer(_worldId, Guid.NewGuid(), _memberId, Guid.NewGuid(), "Settlements"));
+    }
+
+    [Fact]
+    public async Task RenameLayer_ThrowsArgumentException_WhenLayerDoesNotExist()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Rename Missing Layer");
+        var service = (IWorldMapService)_sut;
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.RenameLayer(_worldId, map.WorldMapId, _memberId, Guid.NewGuid(), "Settlements"));
+    }
+
+    [Fact]
+    public async Task RenameLayer_ThrowsArgumentException_WhenLayerBelongsToDifferentMap()
+    {
+        var firstMap = await CreateMapWithDefaultLayersAsync("Rename Source Map");
+        var secondMap = await CreateMapWithDefaultLayersAsync("Rename Target Map");
+        var customLayer = await _sut.CreateLayerAsync(
+            _worldId,
+            firstMap.WorldMapId,
+            _memberId,
+            "Cities");
+        var service = (IWorldMapService)_sut;
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.RenameLayer(_worldId, secondMap.WorldMapId, _memberId, customLayer.MapLayerId, "Settlements"));
+    }
+
+    [Fact]
+    public async Task RenameLayer_ThrowsUnauthorizedAccessException_WhenUserNotWorldMember()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Rename Unauthorized");
+        var customLayer = await _sut.CreateLayerAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            "Cities");
+        var service = (IWorldMapService)_sut;
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => service.RenameLayer(_worldId, map.WorldMapId, _outsiderId, customLayer.MapLayerId, "Settlements"));
+    }
+
+    [Fact]
+    public async Task DeleteLayer_Succeeds_ForCustomLayer_AndNormalizesSortOrder()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Delete Custom Layer");
+        var customA = await _sut.CreateLayerAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            "Cities");
+        _ = await _sut.CreateLayerAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            "Roads");
+
+        var service = (IWorldMapService)_sut;
+        await service.DeleteLayer(_worldId, map.WorldMapId, _memberId, customA.MapLayerId);
+
+        Assert.False(await _db.MapLayers.AnyAsync(layer => layer.MapLayerId == customA.MapLayerId));
+
+        var remaining = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId)
+            .OrderBy(layer => layer.SortOrder)
+            .ToListAsync();
+
+        Assert.Equal(new[] { 0, 1, 2, 3 }, remaining.Select(layer => layer.SortOrder).ToArray());
+    }
+
+    [Fact]
+    public async Task DeleteLayer_ThrowsArgumentException_WhenPinsReferenceLayer()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Delete Referenced Layer");
+        var customLayer = await _sut.CreateLayerAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            "Cities");
+
+        await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto
+            {
+                X = 0.4f,
+                Y = 0.6f,
+                LayerId = customLayer.MapLayerId,
+            });
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.DeleteLayer(_worldId, map.WorldMapId, _memberId, customLayer.MapLayerId));
+    }
+
+    [Fact]
+    public async Task DeleteLayer_ThrowsArgumentException_ForDefaultLayer()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Delete Default Layer");
+        var worldLayer = await _db.MapLayers
+            .AsNoTracking()
+            .FirstAsync(layer => layer.WorldMapId == map.WorldMapId && layer.Name == "World");
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.DeleteLayer(_worldId, map.WorldMapId, _memberId, worldLayer.MapLayerId));
+    }
+
+    [Fact]
+    public async Task DeleteLayer_ThrowsArgumentException_WhenMapDoesNotExist()
+    {
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.DeleteLayer(_worldId, Guid.NewGuid(), _memberId, Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task DeleteLayer_ThrowsArgumentException_WhenLayerDoesNotExist()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Delete Missing Layer");
+        var service = (IWorldMapService)_sut;
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.DeleteLayer(_worldId, map.WorldMapId, _memberId, Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task DeleteLayer_ThrowsArgumentException_WhenLayerBelongsToDifferentMap()
+    {
+        var firstMap = await CreateMapWithDefaultLayersAsync("Delete Source Map");
+        var secondMap = await CreateMapWithDefaultLayersAsync("Delete Target Map");
+        var customLayer = await _sut.CreateLayerAsync(
+            _worldId,
+            firstMap.WorldMapId,
+            _memberId,
+            "Cities");
+        var service = (IWorldMapService)_sut;
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.DeleteLayer(_worldId, secondMap.WorldMapId, _memberId, customLayer.MapLayerId));
+    }
+
+    [Fact]
+    public async Task DeleteLayer_ThrowsUnauthorizedAccessException_WhenUserNotWorldMember()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Delete Unauthorized");
+        var customLayer = await _sut.CreateLayerAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            "Cities");
+        var service = (IWorldMapService)_sut;
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => service.DeleteLayer(_worldId, map.WorldMapId, _outsiderId, customLayer.MapLayerId));
+    }
+
     // ── UpdateMapAsync ───────────────────────────────────────────────────────
 
     [Fact]
@@ -345,9 +678,64 @@ public class WorldMapServiceTests : IDisposable
             _worldId,
             map.WorldMapId,
             _memberId,
-            new MapPinCreateDto { X = 0.60f, Y = 0.40f });
+            new MapPinCreateDto { X = 0.60f, Y = 0.40f, LayerId = null });
 
         Assert.Equal(layers["World"], created.LayerId);
+
+        var persisted = await _db.MapFeatures
+            .AsNoTracking()
+            .FirstAsync(mf => mf.MapFeatureId == created.PinId);
+        Assert.Equal(layers["World"], persisted.MapLayerId);
+    }
+
+    [Fact]
+    public async Task CreatePin_UsesRequestedLayer_WhenLayerIdProvided()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Requested Layer");
+        var layers = await GetMapLayersByNameAsync(map.WorldMapId);
+        var requestedLayerId = layers["Campaign"];
+
+        var created = await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto { X = 0.42f, Y = 0.24f, LayerId = requestedLayerId });
+
+        Assert.Equal(requestedLayerId, created.LayerId);
+
+        var persisted = await _db.MapFeatures
+            .AsNoTracking()
+            .FirstAsync(mf => mf.MapFeatureId == created.PinId);
+        Assert.Equal(requestedLayerId, persisted.MapLayerId);
+    }
+
+    [Fact]
+    public async Task CreatePin_Throws_WhenProvidedLayerDoesNotExist()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Invalid Requested Layer");
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.CreatePinAsync(
+                _worldId,
+                map.WorldMapId,
+                _memberId,
+                new MapPinCreateDto { X = 0.33f, Y = 0.66f, LayerId = Guid.NewGuid() }));
+    }
+
+    [Fact]
+    public async Task CreatePin_Throws_WhenProvidedLayerBelongsToDifferentMap()
+    {
+        var targetMap = await CreateMapWithDefaultLayersAsync("Target Map");
+        var otherMap = await CreateMapWithDefaultLayersAsync("Other Map");
+        var otherMapLayers = await GetMapLayersByNameAsync(otherMap.WorldMapId);
+        var foreignLayerId = otherMapLayers["Arc"];
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.CreatePinAsync(
+                _worldId,
+                targetMap.WorldMapId,
+                _memberId,
+                new MapPinCreateDto { X = 0.12f, Y = 0.21f, LayerId = foreignLayerId }));
     }
 
     [Fact]
@@ -525,6 +913,180 @@ public class WorldMapServiceTests : IDisposable
         var after = await _db.MapFeatures.AsNoTracking().FirstAsync(mf => mf.MapFeatureId == pin.PinId);
         Assert.Equal(before.X, after.X);
         Assert.Equal(before.Y, after.Y);
+    }
+
+    [Fact]
+    public async Task UpdateLayerVisibility_Success_UpdatesIsEnabled()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Visibility Update");
+        var layer = await _db.MapLayers
+            .AsNoTracking()
+            .FirstAsync(l => l.WorldMapId == map.WorldMapId && l.Name == "World");
+
+        Assert.False(layer.IsEnabled);
+
+        var service = (IWorldMapService)_sut;
+        await service.UpdateLayerVisibility(_worldId, map.WorldMapId, layer.MapLayerId, _memberId, true);
+
+        var updated = await _db.MapLayers
+            .AsNoTracking()
+            .FirstAsync(l => l.MapLayerId == layer.MapLayerId);
+
+        Assert.True(updated.IsEnabled);
+    }
+
+    [Fact]
+    public async Task UpdateLayerVisibility_ThrowsArgumentException_WhenMapDoesNotExist()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.UpdateLayerVisibilityAsync(
+                _worldId,
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                _memberId,
+                true));
+    }
+
+    [Fact]
+    public async Task UpdateLayerVisibility_ThrowsArgumentException_WhenLayerDoesNotExist()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Missing Layer");
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.UpdateLayerVisibilityAsync(
+                _worldId,
+                map.WorldMapId,
+                Guid.NewGuid(),
+                _memberId,
+                true));
+    }
+
+    [Fact]
+    public async Task UpdateLayerVisibility_ThrowsArgumentException_WhenLayerBelongsToDifferentMap()
+    {
+        var firstMap = await CreateMapWithDefaultLayersAsync("First Map");
+        var secondMap = await CreateMapWithDefaultLayersAsync("Second Map");
+        var layerFromFirstMap = await _db.MapLayers
+            .AsNoTracking()
+            .FirstAsync(l => l.WorldMapId == firstMap.WorldMapId && l.Name == "World");
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.UpdateLayerVisibilityAsync(
+                _worldId,
+                secondMap.WorldMapId,
+                layerFromFirstMap.MapLayerId,
+                _memberId,
+                true));
+    }
+
+    [Fact]
+    public async Task UpdateLayerVisibility_ThrowsUnauthorizedAccessException_WhenUserNotWorldMember()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Unauthorized Visibility Update");
+        var layer = await _db.MapLayers
+            .AsNoTracking()
+            .FirstAsync(l => l.WorldMapId == map.WorldMapId && l.Name == "World");
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.UpdateLayerVisibilityAsync(
+                _worldId,
+                map.WorldMapId,
+                layer.MapLayerId,
+                _outsiderId,
+                true));
+    }
+
+    [Fact]
+    public async Task ReorderLayers_Success_PersistsSequentialSortOrder_AndPreservesIsEnabled()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Reorder Success");
+        var layers = await _db.MapLayers
+            .Where(l => l.WorldMapId == map.WorldMapId)
+            .ToListAsync();
+
+        var worldLayer = layers.First(l => l.Name == "World");
+        var campaignLayer = layers.First(l => l.Name == "Campaign");
+        var arcLayer = layers.First(l => l.Name == "Arc");
+
+        worldLayer.IsEnabled = true;
+        campaignLayer.IsEnabled = false;
+        arcLayer.IsEnabled = true;
+        await _db.SaveChangesAsync();
+
+        var submittedOrder = new List<Guid>
+        {
+            arcLayer.MapLayerId,
+            worldLayer.MapLayerId,
+            campaignLayer.MapLayerId,
+        };
+
+        var service = (IWorldMapService)_sut;
+        await service.ReorderLayers(_worldId, map.WorldMapId, _memberId, submittedOrder);
+
+        var reordered = await _db.MapLayers
+            .AsNoTracking()
+            .Where(l => l.WorldMapId == map.WorldMapId)
+            .OrderBy(l => l.SortOrder)
+            .ToListAsync();
+
+        Assert.Equal(submittedOrder, reordered.Select(l => l.MapLayerId).ToList());
+        Assert.Equal(new[] { 0, 1, 2 }, reordered.Select(l => l.SortOrder).ToArray());
+
+        Assert.True(reordered.Single(l => l.MapLayerId == worldLayer.MapLayerId).IsEnabled);
+        Assert.False(reordered.Single(l => l.MapLayerId == campaignLayer.MapLayerId).IsEnabled);
+        Assert.True(reordered.Single(l => l.MapLayerId == arcLayer.MapLayerId).IsEnabled);
+    }
+
+    [Fact]
+    public async Task ReorderLayers_ThrowsArgumentException_WhenLayerIdDoesNotBelongToMap()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Reorder Invalid Layer");
+        var layerIds = await _db.MapLayers
+            .AsNoTracking()
+            .Where(l => l.WorldMapId == map.WorldMapId)
+            .OrderBy(l => l.SortOrder)
+            .Select(l => l.MapLayerId)
+            .ToListAsync();
+
+        layerIds[0] = Guid.NewGuid();
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.ReorderLayers(_worldId, map.WorldMapId, _memberId, layerIds));
+    }
+
+    [Fact]
+    public async Task ReorderLayers_ThrowsArgumentException_WhenLayerIdsContainDuplicates()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Reorder Duplicates");
+        var layerIds = await _db.MapLayers
+            .AsNoTracking()
+            .Where(l => l.WorldMapId == map.WorldMapId)
+            .OrderBy(l => l.SortOrder)
+            .Select(l => l.MapLayerId)
+            .ToListAsync();
+
+        var duplicatePayload = new List<Guid> { layerIds[0], layerIds[0], layerIds[1] };
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.ReorderLayers(_worldId, map.WorldMapId, _memberId, duplicatePayload));
+    }
+
+    [Fact]
+    public async Task ReorderLayers_ThrowsUnauthorizedAccessException_WhenUserNotWorldMember()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Reorder Unauthorized");
+        var layerIds = await _db.MapLayers
+            .AsNoTracking()
+            .Where(l => l.WorldMapId == map.WorldMapId)
+            .OrderBy(l => l.SortOrder)
+            .Select(l => l.MapLayerId)
+            .ToListAsync();
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => service.ReorderLayers(_worldId, map.WorldMapId, _outsiderId, layerIds));
     }
 
     [Fact]

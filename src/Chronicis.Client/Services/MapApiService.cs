@@ -57,6 +57,35 @@ public class MapApiService : IMapApiService
             $"map {mapId}");
     }
 
+    public async Task<List<MapLayerDto>> GetLayersForMapAsync(Guid worldId, Guid mapId)
+    {
+        return await _http.GetListAsync<MapLayerDto>(
+            $"world/{worldId}/maps/{mapId}/layers",
+            _logger,
+            $"layers for map {mapId}");
+    }
+
+    public async Task<MapLayerDto> CreateLayerAsync(Guid worldId, Guid mapId, string name)
+    {
+        var request = new CreateLayerRequest
+        {
+            Name = name,
+        };
+
+        var createdLayer = await _http.PostEntityAsync<MapLayerDto>(
+            $"world/{worldId}/maps/{mapId}/layers",
+            request,
+            _logger,
+            $"layer for map {mapId}");
+
+        if (createdLayer == null)
+        {
+            throw new InvalidOperationException("Failed to create layer");
+        }
+
+        return createdLayer;
+    }
+
     public async Task<List<MapPinResponseDto>> ListPinsForMapAsync(Guid worldId, Guid mapId)
     {
         return await _http.GetListAsync<MapPinResponseDto>(
@@ -98,6 +127,66 @@ public class MapApiService : IMapApiService
             dto,
             _logger,
             $"map {mapId}");
+    }
+
+    public async Task UpdateLayerVisibilityAsync(Guid worldId, Guid mapId, Guid layerId, bool isEnabled)
+    {
+        var request = new UpdateLayerVisibilityRequest
+        {
+            IsEnabled = isEnabled,
+        };
+
+        _ = await _http.PutBoolAsync(
+            $"world/{worldId}/maps/{mapId}/layers/{layerId}",
+            request,
+            _logger,
+            $"layer {layerId} visibility for map {mapId}");
+    }
+
+    public async Task ReorderLayersAsync(Guid worldId, Guid mapId, IList<Guid> layerIds)
+    {
+        var request = new ReorderLayersRequest
+        {
+            LayerIds = layerIds,
+        };
+
+        _ = await _http.PutBoolAsync(
+            $"world/{worldId}/maps/{mapId}/layers/reorder",
+            request,
+            _logger,
+            $"layer reorder for map {mapId}");
+    }
+
+    public async Task RenameLayerAsync(Guid worldId, Guid mapId, Guid layerId, string name)
+    {
+        var request = new RenameLayerRequest
+        {
+            Name = name,
+        };
+
+        var success = await _http.PutBoolAsync(
+            $"world/{worldId}/maps/{mapId}/layers/{layerId}/rename",
+            request,
+            _logger,
+            $"rename layer {layerId} on map {mapId}");
+
+        if (!success)
+        {
+            throw new InvalidOperationException("Failed to rename layer");
+        }
+    }
+
+    public async Task DeleteLayerAsync(Guid worldId, Guid mapId, Guid layerId)
+    {
+        var success = await _http.DeleteEntityAsync(
+            $"world/{worldId}/maps/{mapId}/layers/{layerId}",
+            _logger,
+            $"delete layer {layerId} on map {mapId}");
+
+        if (!success)
+        {
+            throw new InvalidOperationException("Failed to delete layer");
+        }
     }
 
     public async Task<RequestBasemapUploadResponseDto?> RequestBasemapUploadAsync(

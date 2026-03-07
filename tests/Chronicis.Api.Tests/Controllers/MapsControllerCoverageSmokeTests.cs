@@ -87,6 +87,214 @@ public class MapsControllerCoverageSmokeTests
         Assert.IsType<OkObjectResult>(result.Result);
     }
 
+    [Fact]
+    public async Task ListLayers_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ListLayersForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).ListLayers(Guid.NewGuid(), Guid.NewGuid());
+
+        var status = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListLayers_NotFound_Returns404()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ListLayersForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new InvalidOperationException("Map not found"));
+
+        var result = await CreateSut(service).ListLayers(Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task ListLayers_Success_ReturnsOk()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ListLayersForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(new List<MapLayerDto>());
+
+        var result = await CreateSut(service).ListLayers(Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreateLayer_NullDto_ReturnsBadRequest()
+    {
+        var result = await CreateSut().CreateLayer(Guid.NewGuid(), Guid.NewGuid(), null!);
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreateLayer_EmptyName_ReturnsBadRequest()
+    {
+        var result = await CreateSut().CreateLayer(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new CreateLayerRequest { Name = "  " });
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreateLayer_Unauthorized_ReturnsForbidden()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).CreateLayer(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new CreateLayerRequest { Name = "Cities" });
+
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreateLayer_ArgumentException_ReturnsBadRequest()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
+            .ThrowsAsync(new ArgumentException("invalid"));
+
+        var result = await CreateSut(service).CreateLayer(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new CreateLayerRequest { Name = "Cities" });
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal(400, badRequest.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateLayer_Success_ReturnsOk()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
+            .Returns(new MapLayerDto { MapLayerId = Guid.NewGuid(), Name = "Cities", SortOrder = 3, IsEnabled = true });
+
+        var result = await CreateSut(service).CreateLayer(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new CreateLayerRequest { Name = "Cities" });
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task RenameLayer_Success_ReturnsNoContent()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.RenameLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateSut(service).RenameLayer(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new RenameLayerRequest { Name = "Settlements" });
+
+        var noContent = Assert.IsType<NoContentResult>(result);
+        Assert.Equal(204, noContent.StatusCode);
+    }
+
+    [Fact]
+    public async Task RenameLayer_NullRequest_ReturnsBadRequest()
+    {
+        var result = await CreateSut().RenameLayer(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null!);
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task RenameLayer_EmptyName_ReturnsBadRequest()
+    {
+        var result = await CreateSut().RenameLayer(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new RenameLayerRequest { Name = "   " });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task RenameLayer_ArgumentException_ReturnsBadRequest()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.RenameLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
+            .ThrowsAsync(new ArgumentException("invalid"));
+
+        var result = await CreateSut(service).RenameLayer(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new RenameLayerRequest { Name = "Settlements" });
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, badRequest.StatusCode);
+    }
+
+    [Fact]
+    public async Task RenameLayer_Unauthorized_ReturnsForbidden()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.RenameLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).RenameLayer(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new RenameLayerRequest { Name = "Settlements" });
+
+        Assert.IsType<ForbidResult>(result);
+    }
+
+    [Fact]
+    public async Task DeleteLayer_Success_ReturnsNoContent()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.DeleteLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateSut(service).DeleteLayer(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        var noContent = Assert.IsType<NoContentResult>(result);
+        Assert.Equal(204, noContent.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteLayer_ArgumentException_ReturnsBadRequest()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.DeleteLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new ArgumentException("invalid"));
+
+        var result = await CreateSut(service).DeleteLayer(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, badRequest.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteLayer_Unauthorized_ReturnsForbidden()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.DeleteLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).DeleteLayer(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<ForbidResult>(result);
+    }
+
     // ── UpdateMap ─────────────────────────────────────────────────────────────
 
     [Fact]
@@ -139,6 +347,103 @@ public class MapsControllerCoverageSmokeTests
         var result = await CreateSut(service).UpdateMap(Guid.NewGuid(), mapId, new MapUpdateDto { Name = "Renamed" });
 
         Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateLayerVisibility_Success_ReturnsNoContent()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdateLayerVisibility(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>())
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateSut(service).UpdateLayerVisibility(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new UpdateLayerVisibilityRequest { IsEnabled = true });
+
+        var noContent = Assert.IsType<NoContentResult>(result);
+        Assert.Equal(204, noContent.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateLayerVisibility_Unauthorized_ReturnsForbidden()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdateLayerVisibility(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).UpdateLayerVisibility(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new UpdateLayerVisibilityRequest { IsEnabled = false });
+
+        Assert.IsType<ForbidResult>(result);
+    }
+
+    [Fact]
+    public async Task UpdateLayerVisibility_ArgumentException_ReturnsBadRequest()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdateLayerVisibility(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>())
+            .ThrowsAsync(new ArgumentException("invalid"));
+
+        var result = await CreateSut(service).UpdateLayerVisibility(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new UpdateLayerVisibilityRequest { IsEnabled = false });
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, badRequest.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReorderLayers_Success_ReturnsNoContent()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ReorderLayers(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<IList<Guid>>())
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateSut(service).ReorderLayers(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new ReorderLayersRequest { LayerIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() } });
+
+        var noContent = Assert.IsType<NoContentResult>(result);
+        Assert.Equal(204, noContent.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReorderLayers_Unauthorized_ReturnsForbidden()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ReorderLayers(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<IList<Guid>>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).ReorderLayers(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new ReorderLayersRequest { LayerIds = new List<Guid> { Guid.NewGuid() } });
+
+        Assert.IsType<ForbidResult>(result);
+    }
+
+    [Fact]
+    public async Task ReorderLayers_ArgumentException_ReturnsBadRequest()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ReorderLayers(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<IList<Guid>>())
+            .ThrowsAsync(new ArgumentException("invalid"));
+
+        var result = await CreateSut(service).ReorderLayers(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new ReorderLayersRequest { LayerIds = new List<Guid> { Guid.NewGuid() } });
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, badRequest.StatusCode);
     }
 
     // ── ListMapsForWorld ──────────────────────────────────────────────────────

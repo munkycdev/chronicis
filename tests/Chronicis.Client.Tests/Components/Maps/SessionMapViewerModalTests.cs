@@ -21,8 +21,12 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
     public SessionMapViewerModalTests()
     {
         Services.AddSingleton(_mapApi);
+        _mapApi.GetLayersForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(new List<MapLayerDto>());
         _mapApi.ListPinsForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>())
             .Returns(new List<MapPinResponseDto>());
+        _mapApi.UpdateLayerVisibilityAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>())
+            .Returns(Task.CompletedTask);
     }
 
     [Fact]
@@ -49,6 +53,8 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
         cut.WaitForAssertion(() =>
             _mapApi.Received(1).GetBasemapReadUrlAsync(_worldId, _mapId));
         cut.WaitForAssertion(() =>
+            _mapApi.Received(1).GetLayersForMapAsync(_worldId, _mapId));
+        cut.WaitForAssertion(() =>
             _mapApi.Received(1).ListPinsForMapAsync(_worldId, _mapId));
 
         cut.SetParametersAndRender(parameters => parameters
@@ -58,6 +64,8 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
 
         cut.WaitForAssertion(() =>
             _mapApi.Received(1).GetBasemapReadUrlAsync(_worldId, secondMapId));
+        cut.WaitForAssertion(() =>
+            _mapApi.Received(1).GetLayersForMapAsync(_worldId, secondMapId));
         cut.WaitForAssertion(() =>
             _mapApi.Received(1).ListPinsForMapAsync(_worldId, secondMapId));
     }
@@ -112,6 +120,122 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
         {
             Assert.Single(cut.FindAll(".session-map-viewer-modal__pin"));
             Assert.Single(cut.FindAll(".session-map-viewer-modal__pin-name"));
+        });
+    }
+
+    [Fact]
+    public void Modal_LayersRenderInSortOrder()
+    {
+        const string readUrl = "https://blob.example.com/read";
+        _mapApi.GetBasemapReadUrlAsync(_worldId, _mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = readUrl }, 200, null));
+
+        var layerA = Guid.Parse("cf99ebef-e9f1-4e4d-a985-9b3fdcd9f152");
+        var layerB = Guid.Parse("557f2a83-8645-48e4-86ba-df8619e6c096");
+        var layerC = Guid.Parse("16cb18f7-9d2f-4e17-b530-92f1ac3f5380");
+        _mapApi.GetLayersForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapLayerDto>
+            {
+                new() { MapLayerId = layerA, Name = "Arc", SortOrder = 2, IsEnabled = true },
+                new() { MapLayerId = layerB, Name = "World", SortOrder = 0, IsEnabled = true },
+                new() { MapLayerId = layerC, Name = "Campaign", SortOrder = 1, IsEnabled = true }
+            });
+
+        var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.WorldId, _worldId)
+            .Add(x => x.MapId, _mapId));
+
+        cut.WaitForAssertion(() =>
+        {
+            var layerNames = cut.FindAll(".session-map-viewer-modal__layer-name")
+                .Select(x => x.TextContent.Trim())
+                .ToList();
+            Assert.Equal(["World", "Campaign", "Arc"], layerNames);
+        });
+    }
+
+    [Fact]
+    public void Modal_ToggleInvokesUpdateLayerVisibility()
+    {
+        const string readUrl = "https://blob.example.com/read";
+        var layerId = Guid.Parse("1fbd29a8-7449-4470-b101-e39f9b51d619");
+        _mapApi.GetBasemapReadUrlAsync(_worldId, _mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = readUrl }, 200, null));
+        _mapApi.GetLayersForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapLayerDto>
+            {
+                new() { MapLayerId = layerId, Name = "Arc", SortOrder = 0, IsEnabled = true }
+            });
+
+        var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.WorldId, _worldId)
+            .Add(x => x.MapId, _mapId));
+
+        cut.WaitForAssertion(() =>
+            Assert.Single(cut.FindAll(".session-map-viewer-modal__layer-toggle")));
+
+        cut.Find(".session-map-viewer-modal__layer-toggle").Change(false);
+
+        cut.WaitForAssertion(() =>
+            _mapApi.Received(1).UpdateLayerVisibilityAsync(_worldId, _mapId, layerId, false));
+    }
+
+    [Fact]
+    public void Modal_HiddenLayerPins_AreNotRendered()
+    {
+        const string readUrl = "https://blob.example.com/read";
+        var visibleLayerId = Guid.Parse("58977eba-cf26-4ff8-a5f8-970ea28bf8a4");
+        var hiddenLayerId = Guid.Parse("6d7f6081-fc5e-440d-935c-a8f2e63f95d0");
+
+        _mapApi.GetBasemapReadUrlAsync(_worldId, _mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = readUrl }, 200, null));
+        _mapApi.GetLayersForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapLayerDto>
+            {
+                new() { MapLayerId = visibleLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+                new() { MapLayerId = hiddenLayerId, Name = "Arc", SortOrder = 1, IsEnabled = true }
+            });
+        _mapApi.ListPinsForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapPinResponseDto>
+            {
+                new()
+                {
+                    PinId = Guid.Parse("896d266f-c2ca-4274-96d0-03c0d45f19fd"),
+                    MapId = _mapId,
+                    LayerId = visibleLayerId,
+                    Name = "Visible Pin",
+                    X = 0.2f,
+                    Y = 0.2f
+                },
+                new()
+                {
+                    PinId = Guid.Parse("96cf8fdb-0dd8-4132-a335-b4c1570fcc27"),
+                    MapId = _mapId,
+                    LayerId = hiddenLayerId,
+                    Name = "Hidden Pin",
+                    X = 0.6f,
+                    Y = 0.6f
+                }
+            });
+
+        var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.WorldId, _worldId)
+            .Add(x => x.MapId, _mapId));
+
+        // All layers default to visible on load; toggle the Arc layer off to hide its pin
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".session-map-viewer-modal__layer-toggle").Count));
+        cut.FindAll(".session-map-viewer-modal__layer-toggle")[1].Change(false);
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Single(cut.FindAll(".session-map-viewer-modal__pin"));
+            var pinNames = cut.FindAll(".session-map-viewer-modal__pin-name")
+                .Select(x => x.TextContent.Trim())
+                .ToList();
+            Assert.Equal(["Visible Pin"], pinNames);
         });
     }
 
@@ -297,14 +421,14 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
 
         SetField(instance, "_hasMapViewportLayout", false);
         var noWheelZoom = (double)GetField(instance, "_mapZoom")!;
-        InvokePrivate(instance, "OnMapViewportWheel", new WheelEventArgs { DeltaY = -120d });
+        instance.OnWheelZoom(-120d);
         Assert.Equal(noWheelZoom, (double)GetField(instance, "_mapZoom")!);
 
         SetField(instance, "_hasMapViewportLayout", true);
         SetField(instance, "_mapZoom", 2d);
-        InvokePrivate(instance, "OnMapViewportWheel", new WheelEventArgs { DeltaY = -120d });
+        instance.OnWheelZoom(-120d);
         var wheelZoom = (double)GetField(instance, "_mapZoom")!;
-        InvokePrivate(instance, "OnMapViewportWheel", new WheelEventArgs { DeltaY = 120d });
+        instance.OnWheelZoom(120d);
         Assert.True((double)GetField(instance, "_mapZoom")! < wheelZoom);
 
         SetField(instance, "_mapZoom", 1d);
@@ -373,6 +497,20 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
         Assert.False((bool)InvokeStatic("TryReadDouble", parseNullArgs)!);
         var parseFailArgs = new object?[] { "oops", null };
         Assert.False((bool)InvokeStatic("TryReadDouble", parseFailArgs)!);
+
+        var boolArgs = new object?[] { true, null };
+        Assert.True((bool)InvokeStatic("TryReadBool", boolArgs)!);
+        Assert.True((bool)boolArgs[1]!);
+
+        var boolStringArgs = new object?[] { "false", null };
+        Assert.True((bool)InvokeStatic("TryReadBool", boolStringArgs)!);
+        Assert.False((bool)boolStringArgs[1]!);
+
+        var boolFailArgs = new object?[] { "not-bool", null };
+        Assert.False((bool)InvokeStatic("TryReadBool", boolFailArgs)!);
+
+        var boolNullArgs = new object?[] { null, null };
+        Assert.False((bool)InvokeStatic("TryReadBool", boolNullArgs)!);
 
         Assert.Equal(0d, (double)InvokeStatic("Clamp", -1d, 0d, 10d)!);
         Assert.Equal(5d, (double)InvokeStatic("Clamp", 5d, 0d, 10d)!);

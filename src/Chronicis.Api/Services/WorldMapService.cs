@@ -15,6 +15,13 @@ public class WorldMapService : IWorldMapService
     private readonly IMapBlobStore _mapBlobStore;
     private readonly ILogger<WorldMapService> _logger;
     private const int MaxPinNameLength = 200;
+    private const int MaxLayerNameLength = 200;
+    private static readonly HashSet<string> ProtectedDefaultLayerNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "World",
+        "Campaign",
+        "Arc",
+    };
 
     internal static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -96,6 +103,86 @@ public class WorldMapService : IWorldMapService
         }
 
         return ToMapDto(map);
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<MapLayerDto>> ListLayersForMapAsync(Guid worldId, Guid mapId, Guid userId)
+    {
+        _logger.LogTraceSanitized("User {UserId} listing layers for map {MapId}", userId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        await EnsureMapInWorldAsync(worldId, mapId);
+
+        return await _db.MapLayers
+            .AsNoTracking()
+            .Where(l => l.WorldMapId == mapId)
+            .OrderBy(l => l.SortOrder)
+            .Select(l => new MapLayerDto
+            {
+                MapLayerId = l.MapLayerId,
+                Name = l.Name,
+                SortOrder = l.SortOrder,
+                IsEnabled = l.IsEnabled,
+            })
+            .ToListAsync();
+    }
+
+    Task<MapLayerDto> IWorldMapService.CreateLayer(Guid worldId, Guid mapId, Guid userId, string name) =>
+        CreateLayerAsync(worldId, mapId, userId, name);
+
+    public async Task<MapLayerDto> CreateLayerAsync(Guid worldId, Guid mapId, Guid userId, string name)
+    {
+        _logger.LogTraceSanitized("User {UserId} creating layer on map {MapId}", userId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+
+        var map = await _db.WorldMaps
+            .AsNoTracking()
+            .FirstOrDefaultAsync(existingMap => existingMap.WorldMapId == mapId && existingMap.WorldId == worldId);
+
+        if (map == null)
+        {
+            throw new ArgumentException("Map not found");
+        }
+
+        var normalizedName = NormalizeLayerName(name);
+        var normalizedNameLower = normalizedName.ToLowerInvariant();
+        var hasDuplicateName = await _db.MapLayers
+            .AsNoTracking()
+            .AnyAsync(layer =>
+                layer.WorldMapId == mapId
+                && layer.Name.ToLower() == normalizedNameLower);
+
+        if (hasDuplicateName)
+        {
+            throw new ArgumentException("Layer name already exists");
+        }
+
+        var nextSortOrder = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == mapId)
+            .Select(layer => (int?)layer.SortOrder)
+            .MaxAsync() ?? -1;
+
+        var createdLayer = new MapLayer
+        {
+            MapLayerId = Guid.NewGuid(),
+            WorldMapId = map.WorldMapId,
+            Name = normalizedName,
+            SortOrder = nextSortOrder + 1,
+            IsEnabled = true,
+        };
+
+        _db.MapLayers.Add(createdLayer);
+        await _db.SaveChangesAsync();
+
+        return new MapLayerDto
+        {
+            MapLayerId = createdLayer.MapLayerId,
+            Name = createdLayer.Name,
+            SortOrder = createdLayer.SortOrder,
+            IsEnabled = createdLayer.IsEnabled,
+        };
     }
 
     /// <inheritdoc/>
@@ -188,7 +275,32 @@ public class WorldMapService : IWorldMapService
         ValidateNormalizedCoordinates(dto.X, dto.Y);
         var pinName = NormalizePinName(dto.Name);
 
-        var layerId = await ResolveDefaultLayerIdAsync(worldId, mapId);
+        Guid layerId;
+        if (dto.LayerId.HasValue)
+        {
+            await EnsureMapInWorldAsync(worldId, mapId);
+
+            var layer = await _db.MapLayers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.MapLayerId == dto.LayerId.Value);
+
+            if (layer == null)
+            {
+                throw new ArgumentException("Layer not found");
+            }
+
+            if (layer.WorldMapId != mapId)
+            {
+                throw new ArgumentException("Layer does not belong to map");
+            }
+
+            layerId = layer.MapLayerId;
+        }
+        else
+        {
+            layerId = await ResolveDefaultLayerIdAsync(worldId, mapId);
+        }
+
         var pin = new MapFeature
         {
             MapFeatureId = Guid.NewGuid(),
@@ -288,6 +400,209 @@ public class WorldMapService : IWorldMapService
         await _db.SaveChangesAsync();
 
         return await GetMapPinResponseAsync(pin.MapFeatureId, mapId);
+    }
+
+    Task IWorldMapService.UpdateLayerVisibility(
+        Guid worldId, Guid mapId, Guid layerId, Guid userId, bool isEnabled) =>
+        UpdateLayerVisibilityAsync(worldId, mapId, layerId, userId, isEnabled);
+
+    public async Task UpdateLayerVisibilityAsync(
+        Guid worldId, Guid mapId, Guid layerId, Guid userId, bool isEnabled)
+    {
+        _logger.LogTraceSanitized(
+            "User {UserId} updating layer visibility for layer {LayerId} on map {MapId}",
+            userId,
+            layerId,
+            mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+
+        var map = await _db.WorldMaps
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.WorldMapId == mapId && m.WorldId == worldId);
+
+        if (map == null)
+        {
+            throw new ArgumentException("Map not found");
+        }
+
+        var layer = await _db.MapLayers
+            .FirstOrDefaultAsync(l => l.MapLayerId == layerId);
+
+        if (layer == null)
+        {
+            throw new ArgumentException("Layer not found");
+        }
+
+        if (layer.WorldMapId != map.WorldMapId)
+        {
+            throw new ArgumentException("Layer does not belong to map");
+        }
+
+        layer.IsEnabled = isEnabled;
+
+        await _db.SaveChangesAsync();
+    }
+
+    Task IWorldMapService.ReorderLayers(Guid worldId, Guid mapId, Guid userId, IList<Guid> layerIds) =>
+        ReorderLayersAsync(worldId, mapId, userId, layerIds);
+
+    private async Task ReorderLayersAsync(Guid worldId, Guid mapId, Guid userId, IList<Guid> layerIds)
+    {
+        _logger.LogTraceSanitized("User {UserId} reordering layers on map {MapId}", userId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+
+        if (layerIds == null || layerIds.Count == 0)
+        {
+            throw new ArgumentException("LayerIds are required");
+        }
+
+        var mapExists = await _db.WorldMaps
+            .AsNoTracking()
+            .AnyAsync(m => m.WorldMapId == mapId && m.WorldId == worldId);
+
+        if (!mapExists)
+        {
+            throw new ArgumentException("Map not found");
+        }
+
+        var mapLayers = await _db.MapLayers
+            .Where(l => l.WorldMapId == mapId)
+            .ToListAsync();
+
+        var mapLayerIds = mapLayers
+            .Select(l => l.MapLayerId)
+            .ToHashSet();
+
+        if (layerIds.Any(id => !mapLayerIds.Contains(id)))
+        {
+            throw new ArgumentException("Layer does not belong to map");
+        }
+
+        if (layerIds.Distinct().Count() != layerIds.Count)
+        {
+            throw new ArgumentException("Duplicate layer IDs are not allowed");
+        }
+
+        if (layerIds.Count != mapLayers.Count || !mapLayerIds.SetEquals(layerIds))
+        {
+            throw new ArgumentException("LayerIds must include all map layers");
+        }
+
+        var mapLayersById = mapLayers.ToDictionary(l => l.MapLayerId);
+        for (var index = 0; index < layerIds.Count; index++)
+        {
+            mapLayersById[layerIds[index]].SortOrder = index;
+        }
+
+        await _db.SaveChangesAsync();
+    }
+
+    Task IWorldMapService.RenameLayer(Guid worldId, Guid mapId, Guid userId, Guid layerId, string name) =>
+        RenameLayerAsync(worldId, mapId, userId, layerId, name);
+
+    public async Task RenameLayerAsync(Guid worldId, Guid mapId, Guid userId, Guid layerId, string name)
+    {
+        _logger.LogTraceSanitized("User {UserId} renaming layer {LayerId} on map {MapId}", userId, layerId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+
+        var mapExists = await _db.WorldMaps
+            .AsNoTracking()
+            .AnyAsync(m => m.WorldMapId == mapId && m.WorldId == worldId);
+
+        if (!mapExists)
+        {
+            throw new ArgumentException("Map not found");
+        }
+
+        var layer = await _db.MapLayers
+            .FirstOrDefaultAsync(l => l.MapLayerId == layerId);
+
+        if (layer == null)
+        {
+            throw new ArgumentException("Layer not found");
+        }
+
+        if (layer.WorldMapId != mapId)
+        {
+            throw new ArgumentException("Layer does not belong to map");
+        }
+
+        if (IsProtectedDefaultLayer(layer.Name))
+        {
+            throw new ArgumentException("Default layers cannot be renamed");
+        }
+
+        layer.Name = NormalizeLayerName(name);
+
+        await _db.SaveChangesAsync();
+    }
+
+    Task IWorldMapService.DeleteLayer(Guid worldId, Guid mapId, Guid userId, Guid layerId) =>
+        DeleteLayerAsync(worldId, mapId, userId, layerId);
+
+    public async Task DeleteLayerAsync(Guid worldId, Guid mapId, Guid userId, Guid layerId)
+    {
+        _logger.LogTraceSanitized("User {UserId} deleting layer {LayerId} on map {MapId}", userId, layerId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+
+        var mapExists = await _db.WorldMaps
+            .AsNoTracking()
+            .AnyAsync(m => m.WorldMapId == mapId && m.WorldId == worldId);
+
+        if (!mapExists)
+        {
+            throw new ArgumentException("Map not found");
+        }
+
+        var mapLayers = await _db.MapLayers
+            .Where(layer => layer.WorldMapId == mapId)
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.MapLayerId)
+            .ToListAsync();
+
+        var layer = await _db.MapLayers
+            .FirstOrDefaultAsync(l => l.MapLayerId == layerId);
+
+        if (layer == null)
+        {
+            throw new ArgumentException("Layer not found");
+        }
+
+        if (layer.WorldMapId != mapId)
+        {
+            throw new ArgumentException("Layer does not belong to map");
+        }
+
+        if (IsProtectedDefaultLayer(layer.Name))
+        {
+            throw new ArgumentException("Default layers cannot be deleted");
+        }
+
+        var hasPins = await _db.MapFeatures
+            .AsNoTracking()
+            .AnyAsync(feature => feature.MapLayerId == layerId);
+
+        if (hasPins)
+        {
+            throw new ArgumentException("Layer cannot be deleted while pins reference it");
+        }
+
+        _db.MapLayers.Remove(layer);
+
+        var remainingLayers = mapLayers
+            .Where(existingLayer => existingLayer.MapLayerId != layerId)
+            .ToList();
+
+        for (var index = 0; index < remainingLayers.Count; index++)
+        {
+            remainingLayers[index].SortOrder = index;
+        }
+
+        await _db.SaveChangesAsync();
     }
 
     /// <inheritdoc/>
@@ -524,6 +839,25 @@ public class WorldMapService : IWorldMapService
 
         return trimmed;
     }
+
+    private static string NormalizeLayerName(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("Layer name is required");
+        }
+
+        var trimmed = value.Trim();
+        if (trimmed.Length > MaxLayerNameLength)
+        {
+            throw new ArgumentException($"Layer name must be {MaxLayerNameLength} characters or fewer");
+        }
+
+        return trimmed;
+    }
+
+    private static bool IsProtectedDefaultLayer(string layerName) =>
+        ProtectedDefaultLayerNames.Contains(layerName);
 
     private async Task<MapPinResponseDto> GetMapPinResponseAsync(Guid pinId, Guid mapId)
     {

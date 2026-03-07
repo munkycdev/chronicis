@@ -87,6 +87,27 @@ public class MapAutocompleteDto
 }
 
 /// <summary>
+/// Layer DTO used for map layer listing and visibility state.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class MapLayerDto
+{
+    public Guid MapLayerId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+    public bool IsEnabled { get; set; }
+}
+
+/// <summary>
+/// Request DTO for creating a custom map layer.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class CreateLayerRequest
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// Request DTO for creating a pin on a map.
 /// Coordinates are normalized to the 0..1 range.
 /// </summary>
@@ -97,6 +118,7 @@ public class MapPinCreateDto
     public float X { get; set; }
     public float Y { get; set; }
     public Guid? LinkedArticleId { get; set; }
+    public Guid? LayerId { get; set; }
 }
 
 /// <summary>
@@ -133,6 +155,33 @@ public class MapPinPositionUpdateDto
 {
     public float X { get; set; }
     public float Y { get; set; }
+}
+
+/// <summary>
+/// Request DTO for toggling map layer visibility.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class UpdateLayerVisibilityRequest
+{
+    public bool IsEnabled { get; set; }
+}
+
+/// <summary>
+/// Request DTO for reordering map layers.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class ReorderLayersRequest
+{
+    public IList<Guid> LayerIds { get; set; } = new List<Guid>();
+}
+
+/// <summary>
+/// Request DTO for renaming a map layer.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class RenameLayerRequest
+{
+    public string Name { get; set; } = string.Empty;
 }
 
 /// <summary>

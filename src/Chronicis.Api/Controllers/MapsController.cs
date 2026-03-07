@@ -74,6 +74,129 @@ public class MapsController : ControllerBase
     }
 
     /// <summary>
+    /// GET /world/{worldId}/maps/{mapId}/layers — List map layers ordered by sort order.
+    /// </summary>
+    [HttpGet("{mapId:guid}/layers")]
+    public async Task<ActionResult<IEnumerable<MapLayerDto>>> ListLayers(Guid worldId, Guid mapId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+        _logger.LogTraceSanitized("User {UserId} listing layers for map {MapId}", user.Id, mapId);
+
+        try
+        {
+            var layers = await _worldMapService.ListLayersForMapAsync(worldId, mapId, user.Id);
+            return Ok(layers);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized layer list");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Layer list target not found");
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// POST /world/{worldId}/maps/{mapId}/layers — Create a custom map layer.
+    /// </summary>
+    [HttpPost("{mapId:guid}/layers")]
+    public async Task<ActionResult<MapLayerDto>> CreateLayer(
+        Guid worldId,
+        Guid mapId,
+        [FromBody] CreateLayerRequest request)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (request == null || string.IsNullOrWhiteSpace(request.Name))
+        {
+            return BadRequest(new { error = "Layer name is required" });
+        }
+
+        _logger.LogTraceSanitized("User {UserId} creating layer on map {MapId}", user.Id, mapId);
+
+        try
+        {
+            var created = await _worldMapService.CreateLayer(worldId, mapId, user.Id, request.Name);
+            return Ok(created);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Invalid create layer request");
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized create layer request");
+            return Forbid();
+        }
+    }
+
+    /// <summary>
+    /// PUT /world/{worldId}/maps/{mapId}/layers/{layerId}/rename — Rename a custom map layer.
+    /// </summary>
+    [HttpPut("{mapId:guid}/layers/{layerId:guid}/rename")]
+    public async Task<IActionResult> RenameLayer(
+        Guid worldId,
+        Guid mapId,
+        Guid layerId,
+        [FromBody] RenameLayerRequest request)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (request == null || string.IsNullOrWhiteSpace(request.Name))
+        {
+            return BadRequest(new { error = "Layer name is required" });
+        }
+
+        _logger.LogTraceSanitized("User {UserId} renaming layer {LayerId} on map {MapId}", user.Id, layerId, mapId);
+
+        try
+        {
+            await _worldMapService.RenameLayer(worldId, mapId, user.Id, layerId, request.Name);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Invalid rename layer request");
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized rename layer request");
+            return Forbid();
+        }
+    }
+
+    /// <summary>
+    /// DELETE /world/{worldId}/maps/{mapId}/layers/{layerId} — Delete a custom map layer.
+    /// </summary>
+    [HttpDelete("{mapId:guid}/layers/{layerId:guid}")]
+    public async Task<IActionResult> DeleteLayer(Guid worldId, Guid mapId, Guid layerId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+        _logger.LogTraceSanitized("User {UserId} deleting layer {LayerId} on map {MapId}", user.Id, layerId, mapId);
+
+        try
+        {
+            await _worldMapService.DeleteLayer(worldId, mapId, user.Id, layerId);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Invalid delete layer request");
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized delete layer request");
+            return Forbid();
+        }
+    }
+
+    /// <summary>
     /// PUT /world/{worldId}/maps/{mapId} — Update map metadata.
     /// </summary>
     [HttpPut("{mapId:guid}")]
@@ -102,6 +225,77 @@ public class MapsController : ControllerBase
         {
             _logger.LogWarningSanitized(ex, "Map update target not found");
             return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// PUT /world/{worldId}/maps/{mapId}/layers/{layerId} — Update layer visibility.
+    /// </summary>
+    [HttpPut("{mapId:guid}/layers/{layerId:guid}")]
+    public async Task<IActionResult> UpdateLayerVisibility(
+        Guid worldId,
+        Guid mapId,
+        Guid layerId,
+        [FromBody] UpdateLayerVisibilityRequest request)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (request == null)
+        {
+            return BadRequest(new { error = "Invalid request body" });
+        }
+
+        _logger.LogTraceSanitized("User {UserId} updating visibility for layer {LayerId} on map {MapId}", user.Id, layerId, mapId);
+
+        try
+        {
+            await _worldMapService.UpdateLayerVisibility(worldId, mapId, layerId, user.Id, request.IsEnabled);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Invalid layer visibility update request");
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized layer visibility update");
+            return Forbid();
+        }
+    }
+
+    /// <summary>
+    /// PUT /world/{worldId}/maps/{mapId}/layers/reorder — Reorder layers by full ordered layer ID list.
+    /// </summary>
+    [HttpPut("{mapId:guid}/layers/reorder")]
+    public async Task<IActionResult> ReorderLayers(
+        Guid worldId,
+        Guid mapId,
+        [FromBody] ReorderLayersRequest request)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (request == null)
+        {
+            return BadRequest(new { error = "Invalid request body" });
+        }
+
+        _logger.LogTraceSanitized("User {UserId} reordering layers on map {MapId}", user.Id, mapId);
+
+        try
+        {
+            await _worldMapService.ReorderLayers(worldId, mapId, user.Id, request.LayerIds);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Invalid layer reorder request");
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized layer reorder request");
+            return Forbid();
         }
     }
 
