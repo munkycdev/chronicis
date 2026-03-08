@@ -70,7 +70,7 @@ export async function createAndApprovePlan(
   futurePhaseNames,
   paths
 ) {
-  setTerminalTitle(`AI Pipeline - ${phaseName} - planning brief`);
+  setTerminalTitle(`AIP - ${phaseName} - planning brief`);
   logStep("Generating planning brief...");
   const planningBrief = await generatePlanningBrief(
     phaseSpec,
@@ -89,7 +89,7 @@ export async function createAndApprovePlan(
 
   for (let round = 1; round <= MAX_PLAN_REVIEW_ROUNDS; round += 1) {
     if (round === 1) {
-      setTerminalTitle(`AI Pipeline - ${phaseName} - Codex plan draft`);
+      setTerminalTitle(`AIP - ${phaseName} - Codex plan draft`);
       logStep(`Requesting Codex implementation plan draft (round ${round})...`);
       currentPlan = await runCodexPlanPrompt(
         buildCodexPlanDraftPrompt(
@@ -102,7 +102,7 @@ export async function createAndApprovePlan(
         )
       );
     } else {
-      setTerminalTitle(`AI Pipeline - ${phaseName} - Codex plan revision ${round}`);
+      setTerminalTitle(`AIP - ${phaseName} - Codex plan revision ${round}`);
       logStep(`Requesting Codex implementation plan revision (round ${round})...`);
       const previousPlan = readText(getCodexPlanDraftPath(paths.dir, round - 1));
 
@@ -125,7 +125,7 @@ export async function createAndApprovePlan(
     const planPath = getCodexPlanDraftPath(paths.dir, round);
     writeText(planPath, currentPlan);
 
-    setTerminalTitle(`AI Pipeline - ${phaseName} - ChatGPT review ${round}`);
+    setTerminalTitle(`AIP - ${phaseName} - ChatGPT review ${round}`);
     logStep(`Reviewing Codex plan with ChatGPT (round ${round})...`);
     const review = await reviewCodexPlan(
       phaseSpec,

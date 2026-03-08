@@ -15,7 +15,7 @@ export async function runVerifyWithRepairs({
   futurePhaseNames,
   verifyLogPath,
 }) {
-  setTerminalTitle(`AI Pipeline - ${phaseName} - verify`);
+  setTerminalTitle(`AIP - ${phaseName} - verify`);
   logStep("Running verification...");
   let verifyResult = await runVerify();
   writeText(
@@ -31,7 +31,7 @@ ${verifyResult.stderr}`
 
   while (verifyResult.code !== 0 && attempts < MAX_FIX_ATTEMPTS) {
     attempts += 1;
-    setTerminalTitle(`AI Pipeline - ${phaseName} - repair ${attempts}`);
+    setTerminalTitle(`AIP - ${phaseName} - repair ${attempts}`);
     logStep(`Verification failed, repair attempt ${attempts}/${MAX_FIX_ATTEMPTS}...`);
 
     const repairPrompt = buildRepairPrompt(
@@ -46,7 +46,7 @@ ${verifyResult.stderr}`
 
     await resumeCodex(repairPrompt);
 
-    setTerminalTitle(`AI Pipeline - ${phaseName} - verify after repair ${attempts}`);
+    setTerminalTitle(`AIP - ${phaseName} - verify after repair ${attempts}`);
     logStep("Running verification after repair attempt...");
     verifyResult = await runVerify();
     writeText(

@@ -15,7 +15,8 @@ export async function executePhase(phasePath, allPhasePaths, architecture, froze
 
   ensureDir(paths.dir);
 
-  setTerminalTitle(`AI Pipeline - Running Phase ${phaseName}`);
+  console.clear();
+  setTerminalTitle(`AIP - Running ${phaseName}`);
   console.log(`
 === Phase ${phaseName}: start ===`);
 
@@ -41,7 +42,7 @@ export async function executePhase(phasePath, allPhasePaths, architecture, froze
   );
   writeText(paths.task, codexTask);
 
-  setTerminalTitle(`AI Pipeline - ${phaseName} - Codex implementation`);
+  setTerminalTitle(`AIP - ${phaseName} - Codex implementation`);
   console.log("    Running Codex implementation...");
   await runCodex(codexTask);
 
