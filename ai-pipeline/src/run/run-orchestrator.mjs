@@ -16,6 +16,20 @@ import {
 } from "../phase-files.mjs";
 import { executePhase } from "../execution/execute-phase.mjs";
 import { timestamp, logBanner } from "../console-ui.mjs";
+import {
+  CREATE_FEATURE_BRANCH,
+  COMMIT_AFTER_EACH_PHASE,
+  FEATURE_BRANCH_PREFIX,
+  FEATURE_NAME,
+} from "../config.mjs";
+
+import {
+  buildFeatureBranchName,
+  ensureGitWorkingTreeIsUsable,
+  createAndSwitchToBranch,
+  getCurrentBranchName,
+} from "../git/git-branching.mjs";
+
 
 export async function run() {
   try {
@@ -61,6 +75,21 @@ export async function run() {
       console.log("No frozen assumptions document found. Continuing without it.");
     }
     console.log("");
+
+    let createdBranchName = "";
+    const startingBranch = await getCurrentBranchName();
+
+    if (CREATE_FEATURE_BRANCH) {
+    await ensureGitWorkingTreeIsUsable();
+
+    createdBranchName = buildFeatureBranchName(
+        FEATURE_BRANCH_PREFIX,
+        FEATURE_NAME
+    );
+
+    console.log(`Creating feature branch: ${createdBranchName}`);
+    await createAndSwitchToBranch(createdBranchName);
+    }
 
     for (const phasePath of phaseFiles) {
       const result = await executePhase(

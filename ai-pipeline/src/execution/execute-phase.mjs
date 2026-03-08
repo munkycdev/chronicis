@@ -6,6 +6,9 @@ import { createAndApprovePlan } from "../planning/plan-review-loop.mjs";
 import { buildCodexImplementationTask } from "../prompts/implementation-prompts.mjs";
 import { runCodex } from "../codex-cli.mjs";
 import { runVerifyWithRepairs } from "./repair-loop.mjs";
+import { COMMIT_AFTER_EACH_PHASE } from "../config.mjs";
+import { hasTrackedChanges, commitAllChanges } from "../git/git-commits.mjs";
+import { logStep } from "../console-ui.mjs";
 
 export async function executePhase(phasePath, allPhasePaths, architecture, frozenAssumptions) {
   const phaseFileName = path.basename(phasePath);
@@ -86,6 +89,17 @@ Generated at: ${timestamp()}
 
   console.log(`=== Phase ${phaseName}: passed ===`);
   console.log("");
+
+  if (COMMIT_AFTER_EACH_PHASE) {
+    const changed = await hasTrackedChanges();
+
+    if (changed) {
+        logStep(`Creating commit for successful phase ${phaseName}...`);
+        await commitAllChanges(`ai: complete ${phaseName}`);
+    } else {
+        logStep(`No changes detected after ${phaseName}; skipping commit.`);
+    }
+}
 
   return {
     phaseName,
