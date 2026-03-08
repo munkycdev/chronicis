@@ -65,11 +65,12 @@ public class MapApiService : IMapApiService
             $"layers for map {mapId}");
     }
 
-    public async Task<MapLayerDto> CreateLayerAsync(Guid worldId, Guid mapId, string name)
+    public async Task<MapLayerDto> CreateLayerAsync(Guid worldId, Guid mapId, string name, Guid? parentLayerId = null)
     {
         var request = new CreateLayerRequest
         {
             Name = name,
+            ParentLayerId = parentLayerId,
         };
 
         var createdLayer = await _http.PostEntityAsync<MapLayerDto>(
@@ -173,6 +174,25 @@ public class MapApiService : IMapApiService
         if (!success)
         {
             throw new InvalidOperationException("Failed to rename layer");
+        }
+    }
+
+    public async Task SetLayerParentAsync(Guid worldId, Guid mapId, Guid layerId, Guid? parentLayerId)
+    {
+        var request = new SetLayerParentRequest
+        {
+            ParentLayerId = parentLayerId,
+        };
+
+        var success = await _http.PutBoolAsync(
+            $"world/{worldId}/maps/{mapId}/layers/{layerId}/parent",
+            request,
+            _logger,
+            $"set parent for layer {layerId} on map {mapId}");
+
+        if (!success)
+        {
+            throw new InvalidOperationException("Failed to set layer parent");
         }
     }
 

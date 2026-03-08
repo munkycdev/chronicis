@@ -94,32 +94,56 @@ async function askModel(prompt) {
   return text;
 }
 
+function getCodexInvocationArgs(baseArgs) {
+  if (process.platform === "win32") {
+    return {
+      command: "cmd.exe",
+      args: ["/d", "/s", "/c", "codex", ...baseArgs],
+      shell: false,
+    };
+  }
+
+  return {
+    command: "codex",
+    args: baseArgs,
+    shell: false,
+  };
+}
+
 function runProcess(command, args, options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd ?? PIPELINE_DIR,
-      shell: true,
+      shell: options.shell ?? false,
       stdio: options.captureOutput
         ? ["pipe", "pipe", "pipe"]
         : ["pipe", "inherit", "inherit"],
+      windowsHide: true,
     });
 
     let stdout = "";
     let stderr = "";
 
-    if (options.stdinText) {
+    if (options.stdinText && child.stdin) {
       child.stdin.write(options.stdinText);
     }
-    child.stdin.end();
+
+    if (child.stdin) {
+      child.stdin.end();
+    }
 
     if (options.captureOutput) {
-      child.stdout.on("data", (data) => {
-        stdout += data.toString();
-      });
+      if (child.stdout) {
+        child.stdout.on("data", (data) => {
+          stdout += data.toString();
+        });
+      }
 
-      child.stderr.on("data", (data) => {
-        stderr += data.toString();
-      });
+      if (child.stderr) {
+        child.stderr.on("data", (data) => {
+          stderr += data.toString();
+        });
+      }
     }
 
     child.on("error", reject);
@@ -130,25 +154,32 @@ function runProcess(command, args, options = {}) {
   });
 }
 
+function getCodexCommand() {
+  if (process.platform === "win32") {
+    return "codex.cmd";
+  }
+
+  return "codex";
+}
+
 async function runCodex(taskText) {
-  console.log("Starting Codex implementation run...");
+
+  const invocation = getCodexInvocationArgs([
+    "exec",
+    "--cd",
+    REPO_ROOT,
+    "--full-auto",
+    "-"
+  ]);
 
   const result = await runProcess(
-    "codex",
-    [
-      "exec",
-      "--cd",
-      REPO_ROOT,
-      "--sandbox",
-      "workspace-write",
-      "--ask-for-approval",
-      "never",
-      "-",
-    ],
+    invocation.command,
+    invocation.args,
     {
       cwd: PIPELINE_DIR,
       stdinText: taskText,
       captureOutput: false,
+      shell: invocation.shell,
     }
   );
 
@@ -158,26 +189,25 @@ async function runCodex(taskText) {
 }
 
 async function resumeCodex(repairPrompt) {
-  console.log("Resuming Codex with repair prompt...");
+
+  const invocation = getCodexInvocationArgs([
+    "exec",
+    "resume",
+    "--last",
+    "--cd",
+    REPO_ROOT,
+    "--full-auto",
+    "-"
+  ]);
 
   const result = await runProcess(
-    "codex",
-    [
-      "exec",
-      "resume",
-      "--last",
-      "--cd",
-      REPO_ROOT,
-      "--sandbox",
-      "workspace-write",
-      "--ask-for-approval",
-      "never",
-      "-",
-    ],
+    invocation.command,
+    invocation.args,
     {
       cwd: PIPELINE_DIR,
       stdinText: repairPrompt,
       captureOutput: false,
+      shell: invocation.shell,
     }
   );
 
@@ -400,6 +430,7 @@ async function executePhase(phasePath, allPhasePaths, architecture) {
 
   const phaseSpec = readText(phasePath);
 
+  console.log(`    Generating implementation plan...`);
   const plan = await generatePlan(
     phaseSpec,
     architecture,
@@ -408,6 +439,7 @@ async function executePhase(phasePath, allPhasePaths, architecture) {
   );
   writeText(paths.plan, plan);
 
+  console.log(`    Generating critique of the plan...`);
   const critique = await generateCritique(
     phaseSpec,
     architecture,
@@ -427,8 +459,10 @@ async function executePhase(phasePath, allPhasePaths, architecture) {
   );
   writeText(paths.task, codexTask);
 
+  console.log(`    Running Codex implementation...`);
   await runCodex(codexTask);
 
+  console.log(`    Running verification...`);
   let verifyResult = await runVerify();
   writeText(
     paths.verifyLog,
@@ -440,7 +474,7 @@ async function executePhase(phasePath, allPhasePaths, architecture) {
   while (verifyResult.code !== 0 && attempts < MAX_FIX_ATTEMPTS) {
     attempts += 1;
     console.log(
-      `Phase ${phaseName}: verify failed, repair attempt ${attempts}/${MAX_FIX_ATTEMPTS}`
+      `    Verification failed, repair attempt ${attempts}/${MAX_FIX_ATTEMPTS}`
     );
 
     const repairPrompt = buildRepairPrompt(
@@ -453,6 +487,7 @@ async function executePhase(phasePath, allPhasePaths, architecture) {
 
     await resumeCodex(repairPrompt);
 
+    console.log(`    Running verification after repair attempt...`);
     verifyResult = await runVerify();
     writeText(
       paths.verifyLog,
@@ -481,14 +516,14 @@ ${
 
   writeText(paths.summary, phaseSummary);
 
-  console.log(`=== Phase ${phaseName}: ${passed ? "passed" : "failed"} ===`);
-
   if (!passed) {
     throw new Error(
       `Phase ${phaseName} failed verification after ${MAX_FIX_ATTEMPTS} repair attempts.`
     );
   }
 
+  console.log(`=== Phase ${phaseName}: ${passed ? "passed" : "failed"} ===`);
+  console.log('');
   return {
     phaseName,
     passed: true,
@@ -498,6 +533,8 @@ ${
 
 async function run() {
   try {
+
+    console.clear();
     if (!process.env.OPENAI_API_KEY) {
       throw new Error("OPENAI_API_KEY is not set in this shell.");
     }

@@ -210,7 +210,81 @@ public class WorldMapServiceTests : IDisposable
         Assert.Equal(4, layers.Count);
         Assert.Equal("Cities", layers[3].Name);
         Assert.Equal(3, layers[3].SortOrder);
+        Assert.Null(layers[3].ParentLayerId);
         Assert.True(layers[3].IsEnabled);
+    }
+
+    [Fact]
+    public async Task CreateLayer_WithParent_CreatesChild_WithSiblingLocalSortOrder()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Child Layer Map");
+        var parent = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent");
+        _ = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child A", parent.MapLayerId);
+        _ = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child B", parent.MapLayerId);
+        var otherParent = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Other Parent");
+        _ = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Other Child", otherParent.MapLayerId);
+        _ = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Root Peer");
+
+        var createdChild = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child C", parent.MapLayerId);
+
+        Assert.Equal(parent.MapLayerId, createdChild.ParentLayerId);
+        Assert.Equal(2, createdChild.SortOrder);
+        Assert.True(createdChild.IsEnabled);
+    }
+
+    [Fact]
+    public async Task CreateLayer_WithParent_WhenNoSiblings_UsesRootBaselineForFirstSortOrder()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("First Child Sort Baseline");
+        var parent = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent");
+
+        var createdChild = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "First Child", parent.MapLayerId);
+
+        Assert.Equal(0, createdChild.SortOrder);
+    }
+
+    [Fact]
+    public async Task CreateLayer_WithParent_RejectsWhenParentDoesNotExist()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Missing Parent");
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.CreateLayerAsync(
+                _worldId,
+                map.WorldMapId,
+                _memberId,
+                "Child",
+                Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task CreateLayer_WithParent_RejectsWhenParentIsInDifferentMap()
+    {
+        var firstMap = await CreateMapWithDefaultLayersAsync("Create Child A");
+        var secondMap = await CreateMapWithDefaultLayersAsync("Create Child B");
+        var parentInOtherMap = await _sut.CreateLayerAsync(_worldId, secondMap.WorldMapId, _memberId, "Foreign Parent");
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.CreateLayerAsync(
+                _worldId,
+                firstMap.WorldMapId,
+                _memberId,
+                "Child",
+                parentInOtherMap.MapLayerId));
+    }
+
+    [Fact]
+    public async Task CreateLayer_WithDisabledParent_CreatesEnabledChild()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Disabled Parent Child Create");
+        var parent = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent");
+        await _sut.UpdateLayerVisibilityAsync(_worldId, map.WorldMapId, parent.MapLayerId, _memberId, false);
+
+        var createdChild = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child", parent.MapLayerId);
+
+        Assert.True(createdChild.IsEnabled);
+        var persistedChild = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == createdChild.MapLayerId);
+        Assert.True(persistedChild.IsEnabled);
     }
 
     [Fact]
@@ -365,7 +439,220 @@ public class WorldMapServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteLayer_Succeeds_ForCustomLayer_AndNormalizesSortOrder()
+    public async Task SetLayerParent_Success_AssignsParent_WithoutMutatingOtherFields()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Set Parent Success");
+        var parent = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent Layer");
+        var child = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child Layer");
+
+        var before = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
+
+        var service = (IWorldMapService)_sut;
+        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
+
+        var updated = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
+        Assert.Equal(parent.MapLayerId, updated.ParentLayerId);
+        Assert.Equal(before.Name, updated.Name);
+        Assert.Equal(before.SortOrder, updated.SortOrder);
+        Assert.Equal(before.IsEnabled, updated.IsEnabled);
+        Assert.Equal(before.WorldMapId, updated.WorldMapId);
+    }
+
+    [Fact]
+    public async Task SetLayerParent_Success_ClearsParent()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Clear Parent Success");
+        var parent = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent");
+        var child = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child");
+
+        var service = (IWorldMapService)_sut;
+        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
+        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, null);
+
+        var updated = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
+        Assert.Null(updated.ParentLayerId);
+    }
+
+    [Fact]
+    public async Task SetLayerParent_Success_NoOp_WhenParentUnchanged()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Set Parent No-Op");
+        var parent = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent");
+        var child = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child");
+
+        var service = (IWorldMapService)_sut;
+        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
+        var before = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
+
+        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
+
+        var after = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
+        Assert.Equal(before.ParentLayerId, after.ParentLayerId);
+        Assert.Equal(before.Name, after.Name);
+        Assert.Equal(before.SortOrder, after.SortOrder);
+        Assert.Equal(before.IsEnabled, after.IsEnabled);
+    }
+
+    [Fact]
+    public async Task SetLayerParent_Success_NoOp_WhenAlreadyRootAndCleared()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Set Root No-Op");
+        var layer = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Standalone");
+        var before = await _db.MapLayers.AsNoTracking().FirstAsync(existing => existing.MapLayerId == layer.MapLayerId);
+
+        var service = (IWorldMapService)_sut;
+        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, layer.MapLayerId, null);
+
+        var after = await _db.MapLayers.AsNoTracking().FirstAsync(existing => existing.MapLayerId == layer.MapLayerId);
+        Assert.Null(after.ParentLayerId);
+        Assert.Equal(before.SortOrder, after.SortOrder);
+        Assert.Equal(before.Name, after.Name);
+        Assert.Equal(before.IsEnabled, after.IsEnabled);
+    }
+
+    [Fact]
+    public async Task SetLayerParent_ThrowsArgumentException_WhenTargetLayerNotFound()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Set Parent Missing Target");
+        var parent = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent");
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, Guid.NewGuid(), parent.MapLayerId));
+    }
+
+    [Fact]
+    public async Task SetLayerParent_ThrowsArgumentException_WhenTargetLayerInDifferentMap()
+    {
+        var firstMap = await CreateMapWithDefaultLayersAsync("Set Parent Source");
+        var secondMap = await CreateMapWithDefaultLayersAsync("Set Parent Target");
+        var layerInFirstMap = await _sut.CreateLayerAsync(_worldId, firstMap.WorldMapId, _memberId, "Layer A");
+        var parentInSecondMap = await _sut.CreateLayerAsync(_worldId, secondMap.WorldMapId, _memberId, "Layer B");
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.SetLayerParent(_worldId, secondMap.WorldMapId, _memberId, layerInFirstMap.MapLayerId, parentInSecondMap.MapLayerId));
+    }
+
+    [Fact]
+    public async Task SetLayerParent_ThrowsArgumentException_WhenParentLayerNotFound()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Set Parent Missing Parent");
+        var child = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child");
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task SetLayerParent_ThrowsArgumentException_WhenParentLayerInDifferentMap()
+    {
+        var firstMap = await CreateMapWithDefaultLayersAsync("Set Parent Cross Map A");
+        var secondMap = await CreateMapWithDefaultLayersAsync("Set Parent Cross Map B");
+        var child = await _sut.CreateLayerAsync(_worldId, firstMap.WorldMapId, _memberId, "Child");
+        var parentInOtherMap = await _sut.CreateLayerAsync(_worldId, secondMap.WorldMapId, _memberId, "Foreign Parent");
+        var original = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.SetLayerParent(_worldId, firstMap.WorldMapId, _memberId, child.MapLayerId, parentInOtherMap.MapLayerId));
+
+        var unchanged = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
+        Assert.Equal(original.ParentLayerId, unchanged.ParentLayerId);
+    }
+
+    [Fact]
+    public async Task SetLayerParent_ThrowsArgumentException_WhenSelfParentRequested()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Set Parent Self");
+        var layer = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Self Layer");
+        var original = await _db.MapLayers.AsNoTracking().FirstAsync(existing => existing.MapLayerId == layer.MapLayerId);
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, layer.MapLayerId, layer.MapLayerId));
+
+        var unchanged = await _db.MapLayers.AsNoTracking().FirstAsync(existing => existing.MapLayerId == layer.MapLayerId);
+        Assert.Equal(original.ParentLayerId, unchanged.ParentLayerId);
+    }
+
+    [Fact]
+    public async Task SetLayerParent_ThrowsArgumentException_WhenDirectCycleWouldBeCreated()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Set Parent Direct Cycle");
+        var parent = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent");
+        var child = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child");
+        var service = (IWorldMapService)_sut;
+
+        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, parent.MapLayerId, child.MapLayerId));
+    }
+
+    [Fact]
+    public async Task SetLayerParent_ThrowsArgumentException_WhenIndirectCycleWouldBeCreated()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Set Parent Indirect Cycle");
+        var layerA = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Layer A");
+        var layerB = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Layer B");
+        var layerC = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Layer C");
+        var service = (IWorldMapService)_sut;
+
+        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, layerB.MapLayerId, layerA.MapLayerId);
+        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, layerC.MapLayerId, layerB.MapLayerId);
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, layerA.MapLayerId, layerC.MapLayerId));
+    }
+
+    [Fact]
+    public async Task SetLayerParent_ThrowsArgumentException_WhenParentChainIsCorruptedCycle()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Set Parent Corrupt Cycle");
+        var target = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Target");
+        var badA = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Corrupt A");
+        var badB = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Corrupt B");
+
+        var badALayer = await _db.MapLayers.FirstAsync(layer => layer.MapLayerId == badA.MapLayerId);
+        var badBLayer = await _db.MapLayers.FirstAsync(layer => layer.MapLayerId == badB.MapLayerId);
+        badALayer.ParentLayerId = badBLayer.MapLayerId;
+        badBLayer.ParentLayerId = badALayer.MapLayerId;
+        await _db.SaveChangesAsync();
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, target.MapLayerId, badA.MapLayerId));
+    }
+
+    [Fact]
+    public async Task SetLayerParent_ThrowsArgumentException_ForDefaultLayerMutation()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Set Parent Default Restriction");
+        var worldLayer = await _db.MapLayers
+            .AsNoTracking()
+            .FirstAsync(layer => layer.WorldMapId == map.WorldMapId && layer.Name == "World");
+        var customParent = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent");
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, worldLayer.MapLayerId, customParent.MapLayerId));
+    }
+
+    [Fact]
+    public async Task SetLayerParent_ThrowsUnauthorizedAccessException_WhenUserNotWorldMember()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Set Parent Unauthorized");
+        var layer = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Layer");
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => service.SetLayerParent(_worldId, map.WorldMapId, _outsiderId, layer.MapLayerId, null));
+    }
+
+    [Fact]
+    public async Task DeleteLayer_Succeeds_ForCustomRootLayer_AndNormalizesRootSiblingSortOrder()
     {
         var map = await CreateMapWithDefaultLayersAsync("Delete Custom Layer");
         var customA = await _sut.CreateLayerAsync(
@@ -394,7 +681,133 @@ public class WorldMapServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteLayer_ThrowsArgumentException_WhenPinsReferenceLayer()
+    public async Task DeleteLayer_Succeeds_ForNestedLeaf_NormalizesOnlySiblingGroup_AndLeavesOtherBranchesAndMapsUnchanged()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Delete Nested Layer");
+        var parentA = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent A");
+        var parentB = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent B");
+        var childA1 = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child A1", parentA.MapLayerId);
+        var childA2 = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child A2", parentA.MapLayerId);
+        _ = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child B1", parentB.MapLayerId);
+        var secondMap = await CreateMapWithDefaultLayersAsync("Delete Nested Layer Second Map");
+        _ = await _sut.CreateLayerAsync(_worldId, secondMap.WorldMapId, _memberId, "Other Map Custom Layer");
+
+        var rootGroupBefore = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == null)
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.MapLayerId)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+        var parentBChildrenBefore = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == parentB.MapLayerId)
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.MapLayerId)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+        var secondMapRootBefore = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == secondMap.WorldMapId && layer.ParentLayerId == null)
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.MapLayerId)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+
+        var service = (IWorldMapService)_sut;
+        await service.DeleteLayer(_worldId, map.WorldMapId, _memberId, childA1.MapLayerId);
+
+        Assert.False(await _db.MapLayers.AnyAsync(layer => layer.MapLayerId == childA1.MapLayerId));
+
+        var parentAChildrenAfter = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == parentA.MapLayerId)
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.MapLayerId)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+        Assert.Single(parentAChildrenAfter);
+        Assert.Equal(childA2.MapLayerId, parentAChildrenAfter[0].MapLayerId);
+        Assert.Equal(0, parentAChildrenAfter[0].SortOrder);
+
+        var rootGroupAfter = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == null)
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.MapLayerId)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+        var parentBChildrenAfter = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == parentB.MapLayerId)
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.MapLayerId)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+        var secondMapRootAfter = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == secondMap.WorldMapId && layer.ParentLayerId == null)
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.MapLayerId)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+
+        Assert.Equal(rootGroupBefore, rootGroupAfter);
+        Assert.Equal(parentBChildrenBefore, parentBChildrenAfter);
+        Assert.Equal(secondMapRootBefore, secondMapRootAfter);
+    }
+
+    [Fact]
+    public async Task DeleteLayer_ThrowsArgumentException_WhenLayerHasChildren_AndDoesNotMutatePersistedState()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Delete Parent Layer");
+        var parentLayer = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent");
+        _ = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child A", parentLayer.MapLayerId);
+        _ = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child B", parentLayer.MapLayerId);
+        _ = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Root Peer");
+
+        var rootSiblingSortBefore = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == null)
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.MapLayerId)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+        var childCountBefore = await _db.MapLayers
+            .AsNoTracking()
+            .CountAsync(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == parentLayer.MapLayerId);
+        var layerCountBefore = await _db.MapLayers
+            .AsNoTracking()
+            .CountAsync(layer => layer.WorldMapId == map.WorldMapId);
+
+        var service = (IWorldMapService)_sut;
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+            () => service.DeleteLayer(_worldId, map.WorldMapId, _memberId, parentLayer.MapLayerId));
+
+        Assert.Contains("child layers", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.True(await _db.MapLayers.AsNoTracking().AnyAsync(layer => layer.MapLayerId == parentLayer.MapLayerId));
+
+        var rootSiblingSortAfter = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == null)
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.MapLayerId)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+        var childCountAfter = await _db.MapLayers
+            .AsNoTracking()
+            .CountAsync(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == parentLayer.MapLayerId);
+        var layerCountAfter = await _db.MapLayers
+            .AsNoTracking()
+            .CountAsync(layer => layer.WorldMapId == map.WorldMapId);
+
+        Assert.Equal(rootSiblingSortBefore, rootSiblingSortAfter);
+        Assert.Equal(childCountBefore, childCountAfter);
+        Assert.Equal(layerCountBefore, layerCountAfter);
+    }
+
+    [Fact]
+    public async Task DeleteLayer_ThrowsArgumentException_WhenPinsReferenceLayer_AndDoesNotMutatePersistedState()
     {
         var map = await CreateMapWithDefaultLayersAsync("Delete Referenced Layer");
         var customLayer = await _sut.CreateLayerAsync(
@@ -402,8 +815,13 @@ public class WorldMapServiceTests : IDisposable
             map.WorldMapId,
             _memberId,
             "Cities");
+        _ = await _sut.CreateLayerAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            "Roads");
 
-        await _sut.CreatePinAsync(
+        var firstPin = await _sut.CreatePinAsync(
             _worldId,
             map.WorldMapId,
             _memberId,
@@ -413,23 +831,78 @@ public class WorldMapServiceTests : IDisposable
                 Y = 0.6f,
                 LayerId = customLayer.MapLayerId,
             });
+        var secondPin = await _sut.CreatePinAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapPinCreateDto
+            {
+                X = 0.45f,
+                Y = 0.65f,
+                LayerId = customLayer.MapLayerId,
+            });
+
+        var rootSiblingSortBefore = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == null)
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.MapLayerId)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+        var layerCountBefore = await _db.MapLayers
+            .AsNoTracking()
+            .CountAsync(layer => layer.WorldMapId == map.WorldMapId);
+        var pinCountBefore = await _db.MapFeatures
+            .AsNoTracking()
+            .CountAsync(feature => feature.MapLayerId == customLayer.MapLayerId);
 
         var service = (IWorldMapService)_sut;
-        await Assert.ThrowsAsync<ArgumentException>(
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
             () => service.DeleteLayer(_worldId, map.WorldMapId, _memberId, customLayer.MapLayerId));
+
+        Assert.Contains("pins reference", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.True(await _db.MapLayers.AsNoTracking().AnyAsync(layer => layer.MapLayerId == customLayer.MapLayerId));
+        Assert.True(await _db.MapFeatures.AsNoTracking().AnyAsync(feature => feature.MapFeatureId == firstPin.PinId));
+        Assert.True(await _db.MapFeatures.AsNoTracking().AnyAsync(feature => feature.MapFeatureId == secondPin.PinId));
+
+        var rootSiblingSortAfter = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == null)
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.MapLayerId)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+        var layerCountAfter = await _db.MapLayers
+            .AsNoTracking()
+            .CountAsync(layer => layer.WorldMapId == map.WorldMapId);
+        var pinCountAfter = await _db.MapFeatures
+            .AsNoTracking()
+            .CountAsync(feature => feature.MapLayerId == customLayer.MapLayerId);
+
+        Assert.Equal(rootSiblingSortBefore, rootSiblingSortAfter);
+        Assert.Equal(layerCountBefore, layerCountAfter);
+        Assert.Equal(pinCountBefore, pinCountAfter);
     }
 
-    [Fact]
-    public async Task DeleteLayer_ThrowsArgumentException_ForDefaultLayer()
+    [Theory]
+    [InlineData("World")]
+    [InlineData("Campaign")]
+    [InlineData("Arc")]
+    public async Task DeleteLayer_ThrowsArgumentException_ForProtectedDefaultLayer(string layerName)
     {
         var map = await CreateMapWithDefaultLayersAsync("Delete Default Layer");
-        var worldLayer = await _db.MapLayers
+        var layer = await _db.MapLayers
             .AsNoTracking()
-            .FirstAsync(layer => layer.WorldMapId == map.WorldMapId && layer.Name == "World");
+            .FirstAsync(existingLayer => existingLayer.WorldMapId == map.WorldMapId && existingLayer.Name == layerName);
+        Assert.False(await _db.MapLayers.AsNoTracking().AnyAsync(existingLayer => existingLayer.ParentLayerId == layer.MapLayerId));
+        Assert.False(await _db.MapFeatures.AsNoTracking().AnyAsync(feature => feature.MapLayerId == layer.MapLayerId));
 
         var service = (IWorldMapService)_sut;
-        await Assert.ThrowsAsync<ArgumentException>(
-            () => service.DeleteLayer(_worldId, map.WorldMapId, _memberId, worldLayer.MapLayerId));
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+            () => service.DeleteLayer(_worldId, map.WorldMapId, _memberId, layer.MapLayerId));
+
+        Assert.Contains("cannot be deleted", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.True(await _db.MapLayers.AsNoTracking().AnyAsync(existingLayer => existingLayer.MapLayerId == layer.MapLayerId));
     }
 
     [Fact]
@@ -1038,9 +1511,74 @@ public class WorldMapServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task ReorderLayers_Success_ReordersChildSiblingsOnly()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Reorder Child Siblings");
+        var parent = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent");
+        var childA = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child A");
+        var childB = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child B");
+        var rootLayer = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Root Peer");
+
+        await _sut.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, childA.MapLayerId, parent.MapLayerId);
+        await _sut.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, childB.MapLayerId, parent.MapLayerId);
+
+        var originalRootSortOrder = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.MapLayerId == rootLayer.MapLayerId)
+            .Select(layer => layer.SortOrder)
+            .SingleAsync();
+
+        var service = (IWorldMapService)_sut;
+        await service.ReorderLayers(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new List<Guid> { childB.MapLayerId, childA.MapLayerId });
+
+        var reorderedChildren = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.ParentLayerId == parent.MapLayerId)
+            .OrderBy(layer => layer.SortOrder)
+            .Select(layer => layer.MapLayerId)
+            .ToListAsync();
+        Assert.Equal(new[] { childB.MapLayerId, childA.MapLayerId }, reorderedChildren);
+
+        var persistedRootSortOrder = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.MapLayerId == rootLayer.MapLayerId)
+            .Select(layer => layer.SortOrder)
+            .SingleAsync();
+        Assert.Equal(originalRootSortOrder, persistedRootSortOrder);
+    }
+
+    [Fact]
     public async Task ReorderLayers_ThrowsArgumentException_WhenLayerIdDoesNotBelongToMap()
     {
         var map = await CreateMapWithDefaultLayersAsync("Reorder Invalid Layer");
+        var otherMap = await CreateMapWithDefaultLayersAsync("Reorder Invalid Layer Other Map");
+        var layerIds = await _db.MapLayers
+            .AsNoTracking()
+            .Where(l => l.WorldMapId == map.WorldMapId)
+            .OrderBy(l => l.SortOrder)
+            .Select(l => l.MapLayerId)
+            .ToListAsync();
+        var foreignLayerId = await _db.MapLayers
+            .AsNoTracking()
+            .Where(l => l.WorldMapId == otherMap.WorldMapId)
+            .Select(l => l.MapLayerId)
+            .FirstAsync();
+
+        layerIds[0] = foreignLayerId;
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.ReorderLayers(_worldId, map.WorldMapId, _memberId, layerIds));
+    }
+
+    [Fact]
+    public async Task ReorderLayers_ThrowsArgumentException_WhenLayerIdIsUnknown()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Reorder Unknown Layer");
         var layerIds = await _db.MapLayers
             .AsNoTracking()
             .Where(l => l.WorldMapId == map.WorldMapId)
@@ -1071,6 +1609,92 @@ public class WorldMapServiceTests : IDisposable
         var service = (IWorldMapService)_sut;
         await Assert.ThrowsAsync<ArgumentException>(
             () => service.ReorderLayers(_worldId, map.WorldMapId, _memberId, duplicatePayload));
+    }
+
+    [Fact]
+    public async Task ReorderLayers_ThrowsArgumentException_WhenLayerIdsAreEmpty()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Reorder Empty Payload");
+        var service = (IWorldMapService)_sut;
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.ReorderLayers(_worldId, map.WorldMapId, _memberId, []));
+    }
+
+    [Fact]
+    public async Task ReorderLayers_ThrowsArgumentException_WhenLayerIdsSpanParentGroups_AndDoesNotMutate()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Reorder Mixed Parent Groups");
+        var parent = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Parent");
+        var child = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child");
+        await _sut.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
+
+        var worldLayerId = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId && layer.Name == "World")
+            .Select(layer => layer.MapLayerId)
+            .SingleAsync();
+
+        var rootOrdersBefore = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == null)
+            .OrderBy(layer => layer.SortOrder)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(() => service.ReorderLayers(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            [worldLayerId, child.MapLayerId]));
+
+        var rootOrdersAfter = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == map.WorldMapId && layer.ParentLayerId == null)
+            .OrderBy(layer => layer.SortOrder)
+            .Select(layer => new { layer.MapLayerId, layer.SortOrder })
+            .ToListAsync();
+        Assert.Equal(rootOrdersBefore, rootOrdersAfter);
+    }
+
+    [Fact]
+    public async Task ReorderLayers_ThrowsArgumentException_WhenLayerIdsDoNotIncludeAllSiblings()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Reorder Missing Siblings");
+        var layerIds = await _db.MapLayers
+            .AsNoTracking()
+            .Where(l => l.WorldMapId == map.WorldMapId)
+            .OrderBy(l => l.SortOrder)
+            .Select(l => l.MapLayerId)
+            .ToListAsync();
+
+        var partialSiblingPayload = layerIds.Take(2).ToList();
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.ReorderLayers(_worldId, map.WorldMapId, _memberId, partialSiblingPayload));
+    }
+
+    [Fact]
+    public async Task ReorderLayers_ThrowsArgumentException_WhenRootLayersSpanDifferentMaps()
+    {
+        var firstMap = await CreateMapWithDefaultLayersAsync("Reorder Root Map A");
+        var secondMap = await CreateMapWithDefaultLayersAsync("Reorder Root Map B");
+
+        var firstRootLayer = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == firstMap.WorldMapId && layer.Name == "World")
+            .Select(layer => layer.MapLayerId)
+            .SingleAsync();
+        var secondRootLayer = await _db.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == secondMap.WorldMapId && layer.Name == "World")
+            .Select(layer => layer.MapLayerId)
+            .SingleAsync();
+
+        var service = (IWorldMapService)_sut;
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.ReorderLayers(_worldId, firstMap.WorldMapId, _memberId, [firstRootLayer, secondRootLayer]));
     }
 
     [Fact]

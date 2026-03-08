@@ -66,6 +66,8 @@ public class MapPageTests : MudBlazorTestContext
             .Returns(Task.CompletedTask);
         _mapApi.RenameLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
             .Returns(Task.CompletedTask);
+        _mapApi.SetLayerParentAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
+            .Returns(Task.CompletedTask);
         _mapApi.DeleteLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
             .Returns(Task.CompletedTask);
     }
@@ -212,6 +214,20 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
+    public void MapPage_WhenSuccessful_RendersAddChildLayerActionForEachLayer()
+    {
+        var cut = RenderLoadedPage();
+
+        cut.WaitForAssertion(() =>
+        {
+            var addChildButtons = cut.FindAll(".map-page__layer-add-child-button");
+            Assert.Equal(3, addChildButtons.Count);
+            Assert.All(addChildButtons, button =>
+                Assert.Contains("Add Child Layer", button.TextContent, StringComparison.Ordinal));
+        });
+    }
+
+    [Fact]
     public async Task AddLayerAsync_CallsApi_AppendsLayerAndSelectsNewLayer()
     {
         var worldId = Guid.NewGuid();
@@ -221,7 +237,7 @@ public class MapPageTests : MudBlazorTestContext
         _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Add Layer Map" }, 200, null));
         _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
         _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
-        _mapApi.CreateLayerAsync(worldId, mapId, Arg.Any<string>())
+        _mapApi.CreateLayerAsync(worldId, mapId, Arg.Any<string>(), Arg.Any<Guid?>())
             .Returns(new MapLayerDto
             {
                 MapLayerId = customLayerId,
@@ -239,7 +255,8 @@ public class MapPageTests : MudBlazorTestContext
         await _mapApi.Received(1).CreateLayerAsync(
             worldId,
             mapId,
-            Arg.Is<string>(name => name == "Cities"));
+            Arg.Is<string>(name => name == "Cities"),
+            null);
 
         cut.WaitForAssertion(() =>
         {
@@ -253,6 +270,83 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task AddLayerAsync_FromAddChildAction_SendsParentAndRendersNestedChild()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var childLayerId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Child Layer Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+        _mapApi.CreateLayerAsync(worldId, mapId, Arg.Any<string>(), Arg.Any<Guid?>())
+            .Returns(new MapLayerDto
+            {
+                MapLayerId = childLayerId,
+                Name = "Child",
+                SortOrder = 0,
+                IsEnabled = true,
+                ParentLayerId = _worldLayerId,
+            });
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Equal(3, cut.FindAll(".map-page__layer-row").Count));
+
+        cut.FindAll(".map-page__layer-add-child-button")[0].Click();
+        cut.Find(".map-page__layer-add-input").Input("Child");
+        cut.Find(".map-page__layer-add-button").Click();
+
+        await _mapApi.Received(1).CreateLayerAsync(worldId, mapId, "Child", _worldLayerId);
+
+        cut.WaitForAssertion(() =>
+        {
+            var childRow = cut.FindAll(".map-page__layer-row")
+                .Single(row => row.TextContent.Contains("Child", StringComparison.Ordinal));
+            Assert.Equal("1", childRow.GetAttribute("data-layer-depth"));
+        });
+
+        Assert.Null(GetField<Guid?>(cut.Instance, "_addLayerParentLayerId"));
+    }
+
+    [Fact]
+    public async Task AddLayerAsync_AfterCancelChildCreate_SendsNullParentForRootCreate()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var rootLayerId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Root Create Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+        _mapApi.CreateLayerAsync(worldId, mapId, Arg.Any<string>(), Arg.Any<Guid?>())
+            .Returns(new MapLayerDto
+            {
+                MapLayerId = rootLayerId,
+                Name = "Settlements",
+                SortOrder = 3,
+                IsEnabled = true,
+                ParentLayerId = null,
+            });
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Equal(3, cut.FindAll(".map-page__layer-row").Count));
+
+        cut.FindAll(".map-page__layer-add-child-button")[0].Click();
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".map-page__layer-action-button--cancel")
+            .Where(button => button.TextContent.Contains("Cancel child", StringComparison.Ordinal))));
+
+        cut.FindAll(".map-page__layer-action-button--cancel")
+            .First(button => button.TextContent.Contains("Cancel child", StringComparison.Ordinal))
+            .Click();
+
+        cut.Find(".map-page__layer-add-input").Input("Settlements");
+        cut.Find(".map-page__layer-add-button").Click();
+
+        await _mapApi.Received(1).CreateLayerAsync(worldId, mapId, "Settlements", null);
+        Assert.Null(GetField<Guid?>(cut.Instance, "_addLayerParentLayerId"));
+    }
+
+    [Fact]
     public async Task AddLayerAsync_WhenNameBlank_SetsValidationErrorAndSkipsApi()
     {
         var cut = RenderLoadedPage();
@@ -260,7 +354,7 @@ public class MapPageTests : MudBlazorTestContext
         await InvokePrivateOnRendererAsync(cut, "AddLayerAsync");
 
         Assert.Equal("Layer name is required.", GetField<string>(cut.Instance, "_addLayerError"));
-        await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>());
+        await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>());
     }
 
     [Fact]
@@ -272,7 +366,7 @@ public class MapPageTests : MudBlazorTestContext
         await InvokePrivateOnRendererAsync(cut, "AddLayerAsync");
 
         Assert.Equal("Layer name must be 200 characters or fewer.", GetField<string>(cut.Instance, "_addLayerError"));
-        await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>());
+        await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>());
     }
 
     [Fact]
@@ -280,7 +374,7 @@ public class MapPageTests : MudBlazorTestContext
     {
         var cut = RenderLoadedPage();
         SetField(cut.Instance, "_newLayerNameInput", "Cities");
-        _mapApi.CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
+        _mapApi.CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>())
             .Returns(Task.FromException<MapLayerDto>(new InvalidOperationException("boom")));
 
         await InvokePrivateOnRendererAsync(cut, "AddLayerAsync");
@@ -297,7 +391,7 @@ public class MapPageTests : MudBlazorTestContext
 
         await InvokePrivateOnRendererAsync(cut, "AddLayerAsync");
 
-        await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>());
+        await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>());
     }
 
     [Fact]
@@ -305,7 +399,7 @@ public class MapPageTests : MudBlazorTestContext
     {
         var cut = RenderLoadedPage();
         SetField(cut.Instance, "_newLayerNameInput", "Cities");
-        _mapApi.CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
+        _mapApi.CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>())
             .Returns(new MapLayerDto
             {
                 MapLayerId = Guid.NewGuid(),
@@ -315,10 +409,10 @@ public class MapPageTests : MudBlazorTestContext
             });
 
         await InvokePrivateOnRendererAsync(cut, "OnNewLayerNameKeyDown", new KeyboardEventArgs { Key = "Escape" });
-        await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>());
+        await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>());
 
         await InvokePrivateOnRendererAsync(cut, "OnNewLayerNameKeyDown", new KeyboardEventArgs { Key = "Enter" });
-        await _mapApi.Received(1).CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>());
+        await _mapApi.Received(1).CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>());
     }
 
     [Fact]
@@ -486,6 +580,365 @@ public class MapPageTests : MudBlazorTestContext
             .Click();
 
         Assert.Equal(_worldLayerId, GetField<Guid?>(cut.Instance, "SelectedLayerId"));
+    }
+
+    [Fact]
+    public async Task LayerNest_Confirm_CallsApiAndRendersChildUnderParent()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var parentLayerId = Guid.NewGuid();
+        var childLayerId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Nest Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = parentLayerId, Name = "Parent", SortOrder = 3, IsEnabled = true },
+            new() { MapLayerId = childLayerId, Name = "Child", SortOrder = 4, IsEnabled = true },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Equal(5, cut.FindAll(".map-page__layer-row").Count));
+
+        var childRow = cut.Find($".map-page__layer-row[data-layer-id='{childLayerId}']");
+        childRow.Find(".map-page__layer-nest-button").Click();
+        cut.Find(".map-page__layer-parent-select").Change(parentLayerId.ToString());
+        cut.Find(".map-page__layer-parent-picker .map-page__layer-action-button:not(.map-page__layer-action-button--cancel)").Click();
+
+        await _mapApi.Received(1).SetLayerParentAsync(worldId, mapId, childLayerId, parentLayerId);
+
+        cut.WaitForAssertion(() =>
+        {
+            var updatedChildRow = cut.Find($".map-page__layer-row[data-layer-id='{childLayerId}']");
+            Assert.Equal("1", updatedChildRow.GetAttribute("data-layer-depth"));
+        });
+    }
+
+    [Fact]
+    public async Task LayerMoveToRoot_CallsApiWithNull_AndRemovesDepth()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var parentLayerId = Guid.NewGuid();
+        var childLayerId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Root Move Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = parentLayerId, Name = "Parent", SortOrder = 3, IsEnabled = true },
+            new() { MapLayerId = childLayerId, Name = "Child", SortOrder = 4, IsEnabled = true, ParentLayerId = parentLayerId },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() =>
+        {
+            var initialChildRow = cut.Find($".map-page__layer-row[data-layer-id='{childLayerId}']");
+            Assert.Equal("1", initialChildRow.GetAttribute("data-layer-depth"));
+        });
+
+        var childRow = cut.Find($".map-page__layer-row[data-layer-id='{childLayerId}']");
+        childRow.Find(".map-page__layer-root-button").Click();
+
+        await _mapApi.Received(1).SetLayerParentAsync(worldId, mapId, childLayerId, null);
+
+        cut.WaitForAssertion(() =>
+        {
+            var updatedChildRow = cut.Find($".map-page__layer-row[data-layer-id='{childLayerId}']");
+            Assert.Equal("0", updatedChildRow.GetAttribute("data-layer-depth"));
+        });
+    }
+
+    [Fact]
+    public async Task LayerMoveToRoot_WhenAlreadyRoot_DoesNotCallApi()
+    {
+        var cut = RenderLoadedPage();
+
+        await InvokePrivateOnRendererAsync(cut, "MoveLayerToRootAsync", _arcLayerId);
+
+        await _mapApi.DidNotReceive().SetLayerParentAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>());
+    }
+
+    [Fact]
+    public async Task LayerNest_Cancel_DoesNotCallApi()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var parentLayerId = Guid.NewGuid();
+        var childLayerId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Cancel Nest Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = parentLayerId, Name = "Parent", SortOrder = 3, IsEnabled = true },
+            new() { MapLayerId = childLayerId, Name = "Child", SortOrder = 4, IsEnabled = true },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Find($".map-page__layer-row[data-layer-id='{childLayerId}']")));
+
+        cut.Find($".map-page__layer-row[data-layer-id='{childLayerId}'] .map-page__layer-nest-button").Click();
+        cut.Find(".map-page__layer-parent-picker .map-page__layer-action-button--cancel").Click();
+
+        await _mapApi.DidNotReceive().SetLayerParentAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>());
+    }
+
+    [Fact]
+    public async Task LayerNest_WhenApiFails_PreservesParentSelectionAndDepth()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var parentLayerId = Guid.NewGuid();
+        var childLayerId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Nest Failure Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = parentLayerId, Name = "Parent", SortOrder = 3, IsEnabled = true },
+            new() { MapLayerId = childLayerId, Name = "Child", SortOrder = 4, IsEnabled = true },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+        _mapApi.SetLayerParentAsync(worldId, mapId, childLayerId, parentLayerId)
+            .Returns(Task.FromException(new InvalidOperationException("parent failed")));
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Equal(_arcLayerId, GetField<Guid?>(cut.Instance, "SelectedLayerId")));
+
+        cut.Find($".map-page__layer-row[data-layer-id='{childLayerId}']").Click();
+        Assert.Equal(childLayerId, GetField<Guid?>(cut.Instance, "SelectedLayerId"));
+
+        cut.Find($".map-page__layer-row[data-layer-id='{childLayerId}'] .map-page__layer-nest-button").Click();
+        cut.Find(".map-page__layer-parent-select").Change(parentLayerId.ToString());
+        cut.Find(".map-page__layer-parent-picker .map-page__layer-action-button:not(.map-page__layer-action-button--cancel)").Click();
+
+        Assert.Equal(childLayerId, GetField<Guid?>(cut.Instance, "SelectedLayerId"));
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Failed to move layer: parent failed", cut.Markup, StringComparison.Ordinal);
+            var childRow = cut.Find($".map-page__layer-row[data-layer-id='{childLayerId}']");
+            Assert.Equal("0", childRow.GetAttribute("data-layer-depth"));
+        });
+    }
+
+    [Fact]
+    public void LayerNest_ParentCandidates_ExcludeSelfAndDescendants_IncludeValidNonDescendants()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var layerA = Guid.NewGuid();
+        var layerB = Guid.NewGuid();
+        var layerC = Guid.NewGuid();
+        var layerD = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Candidate Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = layerA, Name = "A", SortOrder = 3, IsEnabled = true },
+            new() { MapLayerId = layerB, Name = "B", SortOrder = 4, IsEnabled = true, ParentLayerId = layerA },
+            new() { MapLayerId = layerC, Name = "C", SortOrder = 5, IsEnabled = true, ParentLayerId = layerB },
+            new() { MapLayerId = layerD, Name = "D", SortOrder = 6, IsEnabled = true },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Find($".map-page__layer-row[data-layer-id='{layerA}']")));
+
+        cut.Find($".map-page__layer-row[data-layer-id='{layerA}'] .map-page__layer-nest-button").Click();
+
+        var options = cut.FindAll(".map-page__layer-parent-select option")
+            .Select(option => option.GetAttribute("value"))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToList();
+
+        Assert.DoesNotContain(layerA.ToString(), options);
+        Assert.DoesNotContain(layerB.ToString(), options);
+        Assert.DoesNotContain(layerC.ToString(), options);
+        Assert.Contains(layerD.ToString(), options);
+    }
+
+    [Fact]
+    public async Task LayerParentChange_PreservesSelection_WhenMovingNonSelectedLayer()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var parentLayerId = Guid.NewGuid();
+        var movedLayerId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Selection NonSelected Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = parentLayerId, Name = "Parent", SortOrder = 3, IsEnabled = true },
+            new() { MapLayerId = movedLayerId, Name = "Moved", SortOrder = 4, IsEnabled = true },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Equal(_arcLayerId, GetField<Guid?>(cut.Instance, "SelectedLayerId")));
+
+        cut.Find($".map-page__layer-row[data-layer-id='{movedLayerId}'] .map-page__layer-nest-button").Click();
+        cut.Find(".map-page__layer-parent-select").Change(parentLayerId.ToString());
+        cut.Find(".map-page__layer-parent-picker .map-page__layer-action-button:not(.map-page__layer-action-button--cancel)").Click();
+
+        Assert.Equal(_arcLayerId, GetField<Guid?>(cut.Instance, "SelectedLayerId"));
+    }
+
+    [Fact]
+    public async Task LayerParentChange_PreservesSelection_WhenMovingSelectedLayer()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var parentLayerId = Guid.NewGuid();
+        var movedLayerId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Selection Selected Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = parentLayerId, Name = "Parent", SortOrder = 3, IsEnabled = true },
+            new() { MapLayerId = movedLayerId, Name = "Moved", SortOrder = 4, IsEnabled = true },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Find($".map-page__layer-row[data-layer-id='{movedLayerId}']")));
+
+        cut.Find($".map-page__layer-row[data-layer-id='{movedLayerId}']").Click();
+        Assert.Equal(movedLayerId, GetField<Guid?>(cut.Instance, "SelectedLayerId"));
+
+        cut.Find($".map-page__layer-row[data-layer-id='{movedLayerId}'] .map-page__layer-nest-button").Click();
+        cut.Find(".map-page__layer-parent-select").Change(parentLayerId.ToString());
+        cut.Find(".map-page__layer-parent-picker .map-page__layer-action-button:not(.map-page__layer-action-button--cancel)").Click();
+
+        Assert.Equal(movedLayerId, GetField<Guid?>(cut.Instance, "SelectedLayerId"));
+    }
+
+    [Fact]
+    public async Task LayerParentChange_DeterministicOrder_UsesSortOrderWithinSiblingGroups()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var layerA = Guid.NewGuid();
+        var layerB = Guid.NewGuid();
+        var layerC = Guid.NewGuid();
+        var layerChildLowSort = Guid.NewGuid();
+        var layerChildHighSort = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Order Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = layerA, Name = "A", SortOrder = 6, IsEnabled = true },
+            new() { MapLayerId = layerB, Name = "B", SortOrder = 5, IsEnabled = true },
+            new() { MapLayerId = layerC, Name = "C", SortOrder = 7, IsEnabled = true },
+            new() { MapLayerId = layerChildLowSort, Name = "ChildLow", SortOrder = 1, IsEnabled = true, ParentLayerId = layerA },
+            new() { MapLayerId = layerChildHighSort, Name = "ChildHigh", SortOrder = 2, IsEnabled = true, ParentLayerId = layerA },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+
+        cut.WaitForAssertion(() =>
+        {
+            var rootRows = cut.FindAll(".map-page__layer-row")
+                .Where(row => row.GetAttribute("data-layer-depth") == "0")
+                .Select(row => row.GetAttribute("data-layer-id"))
+                .ToList();
+
+            Assert.True(rootRows.IndexOf(layerB.ToString()) < rootRows.IndexOf(layerA.ToString()));
+
+            var childRows = cut.FindAll(".map-page__layer-row")
+                .Where(row => row.GetAttribute("data-layer-depth") == "1")
+                .Select(row => row.GetAttribute("data-layer-id"))
+                .ToList();
+
+            Assert.True(childRows.IndexOf(layerChildLowSort.ToString()) < childRows.IndexOf(layerChildHighSort.ToString()));
+        });
+    }
+
+    [Fact]
+    public async Task LayerParentChange_WhenParentUnchanged_DoesNotCallApi()
+    {
+        var cut = RenderLoadedPage();
+        var customLayerId = Guid.NewGuid();
+        var existingParentLayerId = Guid.NewGuid();
+        var layers = GetField<List<MapLayerDto>>(cut.Instance, "_layers");
+        layers.Add(new MapLayerDto
+        {
+            MapLayerId = existingParentLayerId,
+            Name = "Existing Parent",
+            SortOrder = 3,
+            IsEnabled = true,
+        });
+        layers.Add(new MapLayerDto
+        {
+            MapLayerId = customLayerId,
+            Name = "Custom Child",
+            SortOrder = 4,
+            IsEnabled = true,
+            ParentLayerId = existingParentLayerId,
+        });
+
+        await InvokePrivateOnRendererAsync(cut, "ApplyLayerParentChangeAsync", customLayerId, existingParentLayerId, false);
+
+        await _mapApi.DidNotReceive().SetLayerParentAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>());
+    }
+
+    [Fact]
+    public async Task DescendantTraversal_OnMalformedCycle_IsSafe()
+    {
+        var cut = RenderLoadedPage();
+        var layerA = Guid.NewGuid();
+        var layerB = Guid.NewGuid();
+        var layerC = Guid.NewGuid();
+
+        SetField(cut.Instance, "_layers", new List<MapLayerDto>
+        {
+            new() { MapLayerId = layerA, Name = "A", SortOrder = 0, IsEnabled = true, ParentLayerId = layerC },
+            new() { MapLayerId = layerB, Name = "B", SortOrder = 1, IsEnabled = true, ParentLayerId = layerA },
+            new() { MapLayerId = layerC, Name = "C", SortOrder = 2, IsEnabled = true, ParentLayerId = layerB },
+        });
+
+        await cut.InvokeAsync(() =>
+        {
+            var method = cut.Instance.GetType().GetMethod("GetDescendantLayerIds", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.NotNull(method);
+            var descendants = (HashSet<Guid>)method!.Invoke(cut.Instance, new object?[] { layerA })!;
+            Assert.Contains(layerB, descendants);
+            Assert.Contains(layerC, descendants);
+            Assert.DoesNotContain(layerA, descendants);
+        });
     }
 
     [Fact]
@@ -870,6 +1323,63 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task LayerDrop_ForChildSiblings_CallsReorderLayersAsync_WithSiblingGroupOnly()
+    {
+        var cut = RenderLoadedPage();
+        var parentId = Guid.NewGuid();
+        var childAId = Guid.NewGuid();
+        var childBId = Guid.NewGuid();
+        var rootPeerId = Guid.NewGuid();
+        SetField(cut.Instance, "_layers", new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = parentId, Name = "Parent", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = childAId, Name = "Child A", SortOrder = 2, IsEnabled = true, ParentLayerId = parentId },
+            new() { MapLayerId = childBId, Name = "Child B", SortOrder = 3, IsEnabled = true, ParentLayerId = parentId },
+            new() { MapLayerId = rootPeerId, Name = "Root Peer", SortOrder = 4, IsEnabled = true },
+        });
+
+        await InvokePrivateOnRendererAsync(cut, "OnLayerDragStart", childAId, new DragEventArgs());
+        await InvokePrivateOnRendererAsync(cut, "OnLayerDropAsync", 3);
+
+        await _mapApi.Received(1).ReorderLayersAsync(
+            cut.Instance.WorldId,
+            cut.Instance.MapId,
+            Arg.Is<IList<Guid>>(layerIds =>
+                layerIds.Count == 2
+                && layerIds[0] == childBId
+                && layerIds[1] == childAId));
+    }
+
+    [Fact]
+    public async Task LayerDrop_CrossParentDrop_DoesNotSubmitReorder_AndKeepsLayerOrder()
+    {
+        var cut = RenderLoadedPage();
+        var parentId = Guid.NewGuid();
+        var childId = Guid.NewGuid();
+        var rootPeerId = Guid.NewGuid();
+        var originalOrder = new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = parentId, Name = "Parent", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = childId, Name = "Child", SortOrder = 2, IsEnabled = true, ParentLayerId = parentId },
+            new() { MapLayerId = rootPeerId, Name = "Root Peer", SortOrder = 3, IsEnabled = true },
+        };
+        var originalOrderIds = originalOrder.Select(layer => layer.MapLayerId).ToList();
+        SetField(cut.Instance, "_layers", originalOrder);
+
+        await InvokePrivateOnRendererAsync(cut, "OnLayerDragStart", childId, new DragEventArgs());
+        await InvokePrivateOnRendererAsync(cut, "OnLayerDropAsync", 3);
+
+        await _mapApi.DidNotReceive().ReorderLayersAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<IList<Guid>>());
+
+        var resultingOrder = GetField<List<MapLayerDto>>(cut.Instance, "_layers")
+            .Select(layer => layer.MapLayerId)
+            .ToList();
+        Assert.Equal(originalOrderIds, resultingOrder);
+    }
+
+    [Fact]
     public async Task LayerDrop_WhenApiFails_RestoresPreviousLayerOrder()
     {
         var cut = RenderLoadedPage();
@@ -1080,34 +1590,152 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_HiddenLayerPins_AreNotRendered()
+    public async Task MapPage_InheritedVisibility_HiddenParentHidesAndReenableRestoresChildPin()
     {
-        var hiddenPinId = Guid.NewGuid();
-        var visiblePinId = Guid.NewGuid();
-
         var cut = RenderLoadedPage();
+        var parentLayerId = Guid.NewGuid();
+        var childLayerId = Guid.NewGuid();
+        var siblingLayerId = Guid.NewGuid();
         SetField(cut.Instance, "_layers", new List<MapLayerDto>
         {
-            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = false },
-            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
-            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = false },
+            new() { MapLayerId = parentLayerId, Name = "Parent", SortOrder = 0, IsEnabled = false },
+            new() { MapLayerId = childLayerId, Name = "Child", SortOrder = 1, IsEnabled = true, ParentLayerId = parentLayerId },
+            new() { MapLayerId = siblingLayerId, Name = "Sibling", SortOrder = 2, IsEnabled = true },
         });
         SetField(cut.Instance, "_pins", new List<MapPinResponseDto>
         {
-            new() { PinId = hiddenPinId, MapId = cut.Instance.MapId, LayerId = _worldLayerId, Name = "Hidden Pin", X = 0.2f, Y = 0.3f },
-            new() { PinId = visiblePinId, MapId = cut.Instance.MapId, LayerId = _campaignLayerId, Name = "Visible Pin", X = 0.5f, Y = 0.6f },
+            new() { PinId = Guid.NewGuid(), MapId = cut.Instance.MapId, LayerId = childLayerId, Name = "Child Pin", X = 0.2f, Y = 0.3f },
+            new() { PinId = Guid.NewGuid(), MapId = cut.Instance.MapId, LayerId = siblingLayerId, Name = "Sibling Pin", X = 0.5f, Y = 0.6f },
         });
 
-        var getVisiblePinsMethod = typeof(MapPage).GetMethod(
-            "GetVisiblePins",
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        Assert.NotNull(getVisiblePinsMethod);
+        cut.Render();
+        cut.WaitForAssertion(() =>
+        {
+            var pinNames = cut.FindAll(".map-page__pin-name")
+                .Select(pinName => pinName.TextContent.Trim())
+                .ToList();
+            Assert.Equal(["Sibling Pin"], pinNames);
+        });
 
-        var visiblePins = ((IEnumerable<MapPinResponseDto>)getVisiblePinsMethod!.Invoke(cut.Instance, null)!).ToList();
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnLayerVisibilityChangedAsync",
+            parentLayerId,
+            new ChangeEventArgs { Value = true });
 
-        Assert.Single(visiblePins);
-        Assert.Equal(visiblePinId, visiblePins[0].PinId);
-        Assert.DoesNotContain(visiblePins, pin => pin.PinId == hiddenPinId);
+        cut.WaitForAssertion(() =>
+        {
+            var pinNames = cut.FindAll(".map-page__pin-name")
+                .Select(pinName => pinName.TextContent.Trim())
+                .ToList();
+            Assert.Equal(["Child Pin", "Sibling Pin"], pinNames.OrderBy(name => name).ToList());
+        });
+
+        var layers = GetField<List<MapLayerDto>>(cut.Instance, "_layers");
+        Assert.True(layers.Single(layer => layer.MapLayerId == childLayerId).IsEnabled);
+    }
+
+    [Fact]
+    public async Task MapPage_InheritedVisibility_ExplicitlyDisabledChildRemainsHidden()
+    {
+        var cut = RenderLoadedPage();
+        var parentLayerId = Guid.NewGuid();
+        var childLayerId = Guid.NewGuid();
+        SetField(cut.Instance, "_layers", new List<MapLayerDto>
+        {
+            new() { MapLayerId = parentLayerId, Name = "Parent", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = childLayerId, Name = "Child", SortOrder = 1, IsEnabled = false, ParentLayerId = parentLayerId },
+        });
+        SetField(cut.Instance, "_pins", new List<MapPinResponseDto>
+        {
+            new() { PinId = Guid.NewGuid(), MapId = cut.Instance.MapId, LayerId = parentLayerId, Name = "Parent Pin", X = 0.1f, Y = 0.2f },
+            new() { PinId = Guid.NewGuid(), MapId = cut.Instance.MapId, LayerId = childLayerId, Name = "Child Pin", X = 0.3f, Y = 0.4f },
+        });
+
+        cut.Render();
+        cut.WaitForAssertion(() =>
+        {
+            var pinNames = cut.FindAll(".map-page__pin-name")
+                .Select(pinName => pinName.TextContent.Trim())
+                .ToList();
+            Assert.Equal(["Parent Pin"], pinNames);
+        });
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnLayerVisibilityChangedAsync",
+            parentLayerId,
+            new ChangeEventArgs { Value = false });
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnLayerVisibilityChangedAsync",
+            parentLayerId,
+            new ChangeEventArgs { Value = true });
+
+        cut.WaitForAssertion(() =>
+        {
+            var pinNames = cut.FindAll(".map-page__pin-name")
+                .Select(pinName => pinName.TextContent.Trim())
+                .ToList();
+            Assert.Equal(["Parent Pin"], pinNames);
+        });
+
+        var layers = GetField<List<MapLayerDto>>(cut.Instance, "_layers");
+        Assert.False(layers.Single(layer => layer.MapLayerId == childLayerId).IsEnabled);
+    }
+
+    [Fact]
+    public void MapPage_InheritedVisibility_DeepAncestorAndSiblingIsolation()
+    {
+        var cut = RenderLoadedPage();
+        var rootId = Guid.NewGuid();
+        var parentAId = Guid.NewGuid();
+        var childAId = Guid.NewGuid();
+        var parentBId = Guid.NewGuid();
+        var childBId = Guid.NewGuid();
+        SetField(cut.Instance, "_layers", new List<MapLayerDto>
+        {
+            new() { MapLayerId = rootId, Name = "Root", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = parentAId, Name = "Parent A", SortOrder = 1, IsEnabled = false, ParentLayerId = rootId },
+            new() { MapLayerId = childAId, Name = "Child A", SortOrder = 2, IsEnabled = true, ParentLayerId = parentAId },
+            new() { MapLayerId = parentBId, Name = "Parent B", SortOrder = 3, IsEnabled = true, ParentLayerId = rootId },
+            new() { MapLayerId = childBId, Name = "Child B", SortOrder = 4, IsEnabled = true, ParentLayerId = parentBId },
+        });
+        SetField(cut.Instance, "_pins", new List<MapPinResponseDto>
+        {
+            new() { PinId = Guid.NewGuid(), MapId = cut.Instance.MapId, LayerId = childAId, Name = "Child A Pin", X = 0.2f, Y = 0.3f },
+            new() { PinId = Guid.NewGuid(), MapId = cut.Instance.MapId, LayerId = childBId, Name = "Child B Pin", X = 0.4f, Y = 0.5f },
+        });
+
+        cut.Render();
+        cut.WaitForAssertion(() =>
+        {
+            var pinNames = cut.FindAll(".map-page__pin-name")
+                .Select(pinName => pinName.TextContent.Trim())
+                .ToList();
+            Assert.Equal(["Child B Pin"], pinNames);
+        });
+    }
+
+    [Fact]
+    public void MapPage_InheritedVisibility_MissingParentAndSelfCycleAreHiddenWithoutThrowing()
+    {
+        var cut = RenderLoadedPage();
+        var missingParentChildId = Guid.NewGuid();
+        var selfCycleId = Guid.NewGuid();
+        SetField(cut.Instance, "_layers", new List<MapLayerDto>
+        {
+            new() { MapLayerId = missingParentChildId, Name = "Orphan", SortOrder = 0, IsEnabled = true, ParentLayerId = Guid.NewGuid() },
+            new() { MapLayerId = selfCycleId, Name = "Cycle", SortOrder = 1, IsEnabled = true, ParentLayerId = selfCycleId },
+        });
+        SetField(cut.Instance, "_pins", new List<MapPinResponseDto>
+        {
+            new() { PinId = Guid.NewGuid(), MapId = cut.Instance.MapId, LayerId = missingParentChildId, Name = "Orphan Pin", X = 0.2f, Y = 0.3f },
+            new() { PinId = Guid.NewGuid(), MapId = cut.Instance.MapId, LayerId = selfCycleId, Name = "Cycle Pin", X = 0.4f, Y = 0.5f },
+        });
+
+        cut.Render();
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".map-page__pin-name")));
     }
 
     [Fact]

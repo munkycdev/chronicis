@@ -35,7 +35,7 @@ public interface IMapApiService
     /// <summary>
     /// Creates a custom map layer for the given map.
     /// </summary>
-    Task<MapLayerDto> CreateLayerAsync(Guid worldId, Guid mapId, string name);
+    Task<MapLayerDto> CreateLayerAsync(Guid worldId, Guid mapId, string name, Guid? parentLayerId = null);
 
     /// <summary>
     /// Lists all pins for the given map.
@@ -76,6 +76,11 @@ public interface IMapApiService
     /// Renames a map layer.
     /// </summary>
     Task RenameLayerAsync(Guid worldId, Guid mapId, Guid layerId, string name);
+
+    /// <summary>
+    /// Assigns or clears a parent for a map layer.
+    /// </summary>
+    Task SetLayerParentAsync(Guid worldId, Guid mapId, Guid layerId, Guid? parentLayerId);
 
     /// <summary>
     /// Deletes a map layer.

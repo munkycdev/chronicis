@@ -146,7 +146,7 @@ public class MapsControllerCoverageSmokeTests
     public async Task CreateLayer_Unauthorized_ReturnsForbidden()
     {
         var service = Substitute.For<IWorldMapService>();
-        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
+        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>())
             .ThrowsAsync(new UnauthorizedAccessException("denied"));
 
         var result = await CreateSut(service).CreateLayer(
@@ -161,7 +161,7 @@ public class MapsControllerCoverageSmokeTests
     public async Task CreateLayer_ArgumentException_ReturnsBadRequest()
     {
         var service = Substitute.For<IWorldMapService>();
-        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
+        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>())
             .ThrowsAsync(new ArgumentException("invalid"));
 
         var result = await CreateSut(service).CreateLayer(
@@ -174,10 +174,48 @@ public class MapsControllerCoverageSmokeTests
     }
 
     [Fact]
+    public async Task CreateLayer_NonexistentParent_ReturnsBadRequest()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>())
+            .ThrowsAsync(new ArgumentException("Parent layer not found"));
+
+        var result = await CreateSut(service).CreateLayer(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new CreateLayerRequest
+            {
+                Name = "Child",
+                ParentLayerId = Guid.NewGuid(),
+            });
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreateLayer_CrossMapParent_ReturnsBadRequest()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>())
+            .ThrowsAsync(new ArgumentException("Parent layer does not belong to map"));
+
+        var result = await CreateSut(service).CreateLayer(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new CreateLayerRequest
+            {
+                Name = "Child",
+                ParentLayerId = Guid.NewGuid(),
+            });
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
     public async Task CreateLayer_Success_ReturnsOk()
     {
         var service = Substitute.For<IWorldMapService>();
-        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
+        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>())
             .Returns(new MapLayerDto { MapLayerId = Guid.NewGuid(), Name = "Cities", SortOrder = 3, IsEnabled = true });
 
         var result = await CreateSut(service).CreateLayer(
@@ -186,6 +224,48 @@ public class MapsControllerCoverageSmokeTests
             new CreateLayerRequest { Name = "Cities" });
 
         Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreateLayer_WithoutParentId_PassesNullParentToService()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>())
+            .Returns(new MapLayerDto { MapLayerId = Guid.NewGuid(), Name = "Cities", SortOrder = 3, IsEnabled = true });
+
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var result = await CreateSut(service).CreateLayer(
+            worldId,
+            mapId,
+            new CreateLayerRequest { Name = "Cities" });
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        await service.Received(1).CreateLayer(worldId, mapId, Arg.Any<Guid>(), "Cities", null);
+    }
+
+    [Fact]
+    public async Task CreateLayer_WithParentId_PassesParentToService()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreateLayer(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>())
+            .Returns(new MapLayerDto { MapLayerId = Guid.NewGuid(), Name = "Child", SortOrder = 0, IsEnabled = true });
+
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var parentId = Guid.NewGuid();
+
+        var result = await CreateSut(service).CreateLayer(
+            worldId,
+            mapId,
+            new CreateLayerRequest
+            {
+                Name = "Child",
+                ParentLayerId = parentId,
+            });
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        await service.Received(1).CreateLayer(worldId, mapId, Arg.Any<Guid>(), "Child", parentId);
     }
 
     [Fact]
@@ -255,6 +335,91 @@ public class MapsControllerCoverageSmokeTests
             new RenameLayerRequest { Name = "Settlements" });
 
         Assert.IsType<ForbidResult>(result);
+    }
+
+    [Fact]
+    public async Task SetLayerParent_NullRequest_ReturnsBadRequest()
+    {
+        var result = await CreateSut().SetLayerParent(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null!);
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task SetLayerParent_ArgumentException_ReturnsBadRequest()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.SetLayerParent(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
+            .ThrowsAsync(new ArgumentException("invalid"));
+
+        var result = await CreateSut(service).SetLayerParent(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new SetLayerParentRequest { ParentLayerId = Guid.NewGuid() });
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, badRequest.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetLayerParent_Unauthorized_ReturnsForbidden()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.SetLayerParent(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).SetLayerParent(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            new SetLayerParentRequest { ParentLayerId = Guid.NewGuid() });
+
+        Assert.IsType<ForbidResult>(result);
+    }
+
+    [Fact]
+    public async Task SetLayerParent_Success_WithParentId_ReturnsNoContent()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.SetLayerParent(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
+            .Returns(Task.CompletedTask);
+
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var layerId = Guid.NewGuid();
+        var parentId = Guid.NewGuid();
+
+        var result = await CreateSut(service).SetLayerParent(
+            worldId,
+            mapId,
+            layerId,
+            new SetLayerParentRequest { ParentLayerId = parentId });
+
+        Assert.IsType<NoContentResult>(result);
+        await service.Received(1)
+            .SetLayerParent(worldId, mapId, Arg.Any<Guid>(), layerId, parentId);
+    }
+
+    [Fact]
+    public async Task SetLayerParent_Success_WithNullParent_ReturnsNoContent()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.SetLayerParent(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
+            .Returns(Task.CompletedTask);
+
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var layerId = Guid.NewGuid();
+
+        var result = await CreateSut(service).SetLayerParent(
+            worldId,
+            mapId,
+            layerId,
+            new SetLayerParentRequest { ParentLayerId = null });
+
+        Assert.IsType<NoContentResult>(result);
+        await service.Received(1)
+            .SetLayerParent(worldId, mapId, Arg.Any<Guid>(), layerId, null);
     }
 
     [Fact]

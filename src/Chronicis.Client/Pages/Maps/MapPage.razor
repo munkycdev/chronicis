@@ -3,6 +3,7 @@
 @implements IAsyncDisposable
 @using System.Globalization
 @using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Utilities
 @using Chronicis.Shared.DTOs.Maps
 @inject IMapApiService MapApi
 @inject IWorldApiService WorldApi
@@ -67,7 +68,7 @@ else
                 <div class="map-page__layer-add-row">
                     <input type="text"
                            class="map-page__layer-add-input"
-                           placeholder="Add custom layer"
+                           placeholder="@(_addLayerParentLayerId.HasValue ? "Add child layer" : "Add custom layer")"
                            value="@_newLayerNameInput"
                            @oninput="OnNewLayerNameInput"
                            @onkeydown="OnNewLayerNameKeyDown"
@@ -76,8 +77,17 @@ else
                             class="map-page__layer-add-button"
                             disabled="@_isAddingLayer"
                             @onclick="AddLayerAsync">
-                        @(_isAddingLayer ? "Adding..." : "Add")
+                            @(_isAddingLayer ? "Adding..." : "Add")
                     </button>
+                    @if (_addLayerParentLayerId.HasValue)
+                    {
+                        <button type="button"
+                                class="map-page__layer-action-button map-page__layer-action-button--cancel"
+                                disabled="@_isAddingLayer"
+                                @onclick="CancelAddChildLayer">
+                            Cancel child
+                        </button>
+                    }
                 </div>
                 @if (!string.IsNullOrWhiteSpace(_addLayerError))
                 {
@@ -87,13 +97,46 @@ else
                 {
                     <div class="map-page__layer-add-error">@_manageLayerError</div>
                 }
-
-                @for (var index = 0; index < _layers.Count; index++)
+                @if (_isNestParentPickerOpen && _nestingLayerId.HasValue)
                 {
-                    var layer = _layers[index];
-                    var rowIndex = index;
+                    <div class="map-page__layer-parent-picker" role="group" aria-label="Nest layer under parent">
+                        <select class="map-page__layer-parent-select"
+                                value="@(_selectedNestParentLayerId?.ToString() ?? string.Empty)"
+                                @onchange="OnNestParentSelectionChanged"
+                                disabled="@_isApplyingParentChange">
+                            <option value="">Choose parent layer...</option>
+                            @foreach (var candidate in _eligibleNestParentCandidates)
+                            {
+                                <option value="@candidate.MapLayerId.ToString()">@candidate.Name</option>
+                            }
+                        </select>
+                        <button type="button"
+                                class="map-page__layer-action-button"
+                                disabled="@(!_selectedNestParentLayerId.HasValue || _isApplyingParentChange)"
+                                @onclick="ConfirmNestLayerAsync">
+                            @(_isApplyingParentChange ? "Saving..." : "Confirm")
+                        </button>
+                        <button type="button"
+                                class="map-page__layer-action-button map-page__layer-action-button--cancel"
+                                disabled="@_isApplyingParentChange"
+                                @onclick="CancelNestLayer">
+                            Cancel
+                        </button>
+                    </div>
+                }
+
+                @{
+                    var effectivelyVisibleLayerIds = GetEffectivelyVisibleLayerIds();
+                }
+                @for (var index = 0; index < _layerRows.Count; index++)
+                {
+                    var layerRow = _layerRows[index];
+                    var layer = layerRow.Layer;
+                    var rowIndex = layerRow.FlatIndex;
                     var isProtectedLayer = IsProtectedDefaultLayer(layer.MapLayerId);
-                    <div class="@($"map-page__layer-row map-page__layer-row--hoverable {(layer.IsEnabled ? "map-page__layer-row--enabled" : "map-page__layer-row--disabled")} {(SelectedLayerId == layer.MapLayerId ? "layer-row-selected" : string.Empty)} {(_draggedLayerId == layer.MapLayerId ? "map-page__layer-row--dragging" : string.Empty)} {(_dropTargetIndex == rowIndex ? "map-page__layer-row--drop-target" : string.Empty)}")"
+                    <div class="@($"map-page__layer-row map-page__layer-row--hoverable {(effectivelyVisibleLayerIds.Contains(layer.MapLayerId) ? "map-page__layer-row--enabled" : "map-page__layer-row--disabled")} {(SelectedLayerId == layer.MapLayerId ? "layer-row-selected" : string.Empty)} {(_draggedLayerId == layer.MapLayerId ? "map-page__layer-row--dragging" : string.Empty)} {(_dropTargetIndex == rowIndex ? "map-page__layer-row--drop-target" : string.Empty)}")"
+                         data-layer-id="@layer.MapLayerId"
+                         data-layer-depth="@layerRow.Depth"
                          draggable="true"
                          @ondragstart="args => OnLayerDragStart(layer.MapLayerId, args)"
                          @ondragenter="() => OnLayerDragEnter(rowIndex)"
@@ -103,6 +146,9 @@ else
                          @ondrop:preventDefault="true"
                          @ondragend="OnLayerDragEnd"
                          @onclick="@(() => OnLayerRowSelected(layer.MapLayerId))">
+                        <span class="map-page__layer-depth-spacer"
+                              style="@GetLayerDepthStyle(layerRow.Depth)"
+                              aria-hidden="true"></span>
                         <span class="map-page__layer-drag-handle" aria-hidden="true">::</span>
                         <input type="checkbox"
                                class="map-page__layer-toggle"
@@ -161,6 +207,12 @@ else
                                 else
                                 {
                                     <button type="button"
+                                            class="map-page__layer-action-button map-page__layer-add-child-button"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => BeginAddChildLayer(layer.MapLayerId)">
+                                        Add Child Layer
+                                    </button>
+                                    <button type="button"
                                             class="map-page__layer-action-button map-page__layer-rename-button"
                                             @onclick:stopPropagation="true"
                                             @onclick="() => BeginLayerRename(layer.MapLayerId)">
@@ -172,7 +224,32 @@ else
                                             @onclick="() => BeginLayerDelete(layer.MapLayerId)">
                                         Delete
                                     </button>
+                                    <button type="button"
+                                            class="map-page__layer-action-button map-page__layer-nest-button"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => BeginNestLayer(layer.MapLayerId)"
+                                            disabled="@(_isApplyingParentChange || _parentChangeInFlightLayerId.HasValue)">
+                                        Nest under...
+                                    </button>
+                                    <button type="button"
+                                            class="map-page__layer-action-button map-page__layer-root-button"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => MoveLayerToRootAsync(layer.MapLayerId)"
+                                            disabled="@(layer.ParentLayerId == null || _isApplyingParentChange || _parentChangeInFlightLayerId.HasValue)">
+                                        Move to root
+                                    </button>
                                 }
+                            </div>
+                        }
+                        else if (!IsEditingLayer(layer.MapLayerId))
+                        {
+                            <div class="map-page__layer-actions">
+                                <button type="button"
+                                        class="map-page__layer-action-button map-page__layer-add-child-button"
+                                        @onclick:stopPropagation="true"
+                                        @onclick="() => BeginAddChildLayer(layer.MapLayerId)">
+                                    Add Child Layer
+                                </button>
                             </div>
                         }
                     </div>
@@ -398,6 +475,7 @@ else
     private string _addLayerError = string.Empty;
     private string _manageLayerError = string.Empty;
     private string _newLayerNameInput = string.Empty;
+    private Guid? _addLayerParentLayerId;
     private string _renameLayerNameInput = string.Empty;
     private string _createPinArticleIdInput = string.Empty;
     private string _createPinNameInput = string.Empty;
@@ -417,7 +495,14 @@ else
     private bool _isDeletingLayer;
     private Guid? _editingLayerId;
     private Guid? _pendingDeleteLayerId;
+    private Guid? _nestingLayerId;
+    private Guid? _selectedNestParentLayerId;
+    private Guid? _parentChangeInFlightLayerId;
+    private bool _isApplyingParentChange;
+    private bool _isNestParentPickerOpen;
     private readonly HashSet<Guid> _protectedDefaultLayerIds = [];
+    private readonly List<MapLayerDto> _eligibleNestParentCandidates = [];
+    private readonly List<LayerRenderRow> _layerRows = [];
     private bool _hasMapViewportLayout;
     private double? _mapPreferredViewportHeightPx;
     private double _mapBaseWidth;
@@ -477,6 +562,7 @@ else
         _addLayerError = string.Empty;
         _manageLayerError = string.Empty;
         _newLayerNameInput = string.Empty;
+        _addLayerParentLayerId = null;
         _renameLayerNameInput = string.Empty;
         _createPinArticleIdInput = string.Empty;
         _createPinNameInput = string.Empty;
@@ -498,7 +584,14 @@ else
         _isDeletingLayer = false;
         _editingLayerId = null;
         _pendingDeleteLayerId = null;
+        _nestingLayerId = null;
+        _selectedNestParentLayerId = null;
+        _parentChangeInFlightLayerId = null;
+        _isApplyingParentChange = false;
+        _isNestParentPickerOpen = false;
         _protectedDefaultLayerIds.Clear();
+        _eligibleNestParentCandidates.Clear();
+        _layerRows.Clear();
         _pins = [];
         _selectedPinId = null;
         _hasMapViewportLayout = false;
@@ -568,11 +661,8 @@ else
             _basemapReadUrl = basemapResult.Basemap.ReadUrl;
             var layers = await MapApi.GetLayersForMapAsync(WorldId, MapId);
             _layers = layers?.OrderBy(l => l.SortOrder).ToList() ?? [];
-            foreach (var layer in _layers)
-            {
-                layer.IsEnabled = true;
-            }
             InitializeProtectedDefaultLayerIds(_layers);
+            RebuildLayerRows();
             if (SelectedLayerId == null)
             {
                 SelectedLayerId = ResolveDefaultSelectedLayerId(_layers);
@@ -704,6 +794,23 @@ else
         _addLayerError = string.Empty;
     }
 
+    private void BeginAddChildLayer(Guid parentLayerId)
+    {
+        if (!_layers.Any(layer => layer.MapLayerId == parentLayerId))
+        {
+            return;
+        }
+
+        _addLayerParentLayerId = parentLayerId;
+        _addLayerError = string.Empty;
+    }
+
+    private void CancelAddChildLayer()
+    {
+        _addLayerParentLayerId = null;
+        _addLayerError = string.Empty;
+    }
+
     private Task OnNewLayerNameKeyDown(KeyboardEventArgs args)
     {
         if (string.Equals(args.Key, "Enter", StringComparison.Ordinal))
@@ -743,10 +850,12 @@ else
             var createdLayer = await MapApi.CreateLayerAsync(
                 WorldId,
                 MapId,
-                layerName);
+                layerName,
+                _addLayerParentLayerId);
 
             _layers.Add(createdLayer);
             _layers = _layers.OrderBy(l => l.SortOrder).ToList();
+            RebuildLayerRows();
             SelectedLayerId = createdLayer.MapLayerId;
             _newLayerNameInput = string.Empty;
         }
@@ -757,6 +866,7 @@ else
         finally
         {
             _isAddingLayer = false;
+            _addLayerParentLayerId = null;
         }
     }
 
@@ -772,6 +882,7 @@ else
         _renameLayerNameInput = layer.Name;
         _manageLayerError = string.Empty;
         _pendingDeleteLayerId = null;
+        CancelNestLayer();
     }
 
     private void OnRenameLayerNameInput(ChangeEventArgs args)
@@ -859,6 +970,7 @@ else
         _manageLayerError = string.Empty;
         _editingLayerId = null;
         _renameLayerNameInput = string.Empty;
+        CancelNestLayer();
     }
 
     private void CancelLayerDelete()
@@ -881,6 +993,8 @@ else
         {
             await MapApi.DeleteLayerAsync(WorldId, MapId, layerId);
             _layers.RemoveAll(layer => layer.MapLayerId == layerId);
+            RebuildLayerRows();
+            ClearNestLayerStateIfTargetMissing(layerId);
 
             if (SelectedLayerId == layerId)
             {
@@ -896,6 +1010,166 @@ else
             _isDeletingLayer = false;
             _pendingDeleteLayerId = null;
         }
+    }
+
+    private void BeginNestLayer(Guid layerId)
+    {
+        if (_isApplyingParentChange || _parentChangeInFlightLayerId.HasValue || IsProtectedDefaultLayer(layerId))
+        {
+            return;
+        }
+
+        var layer = _layers.FirstOrDefault(existingLayer => existingLayer.MapLayerId == layerId);
+        if (layer == null)
+        {
+            return;
+        }
+
+        _nestingLayerId = layerId;
+        _selectedNestParentLayerId = null;
+        _manageLayerError = string.Empty;
+        _editingLayerId = null;
+        _pendingDeleteLayerId = null;
+        _renameLayerNameInput = string.Empty;
+        _isNestParentPickerOpen = true;
+        _eligibleNestParentCandidates.Clear();
+        _eligibleNestParentCandidates.AddRange(GetEligibleNestParentCandidates(layer));
+    }
+
+    private void CancelNestLayer()
+    {
+        _isNestParentPickerOpen = false;
+        _nestingLayerId = null;
+        _selectedNestParentLayerId = null;
+        _eligibleNestParentCandidates.Clear();
+        _isApplyingParentChange = false;
+    }
+
+    private void OnNestParentSelectionChanged(ChangeEventArgs args)
+    {
+        var value = args.Value?.ToString();
+        _selectedNestParentLayerId = Guid.TryParse(value, out var parentId) ? parentId : null;
+    }
+
+    private async Task ConfirmNestLayerAsync()
+    {
+        if (!_isNestParentPickerOpen || !_nestingLayerId.HasValue || !_selectedNestParentLayerId.HasValue || _isApplyingParentChange)
+        {
+            return;
+        }
+
+        var layer = _layers.FirstOrDefault(existingLayer => existingLayer.MapLayerId == _nestingLayerId.Value);
+        if (layer == null)
+        {
+            CancelNestLayer();
+            return;
+        }
+
+        var selectedParentId = _selectedNestParentLayerId.Value;
+        var isValidCandidate = _eligibleNestParentCandidates.Any(candidate => candidate.MapLayerId == selectedParentId);
+        if (!isValidCandidate || layer.ParentLayerId == selectedParentId)
+        {
+            return;
+        }
+
+        await ApplyLayerParentChangeAsync(layer.MapLayerId, selectedParentId, closeNestDialogOnSuccess: true);
+    }
+
+    private async Task MoveLayerToRootAsync(Guid layerId)
+    {
+        if (_isApplyingParentChange || _parentChangeInFlightLayerId.HasValue || IsProtectedDefaultLayer(layerId))
+        {
+            return;
+        }
+
+        var layer = _layers.FirstOrDefault(existingLayer => existingLayer.MapLayerId == layerId);
+        if (layer == null || layer.ParentLayerId == null)
+        {
+            return;
+        }
+
+        await ApplyLayerParentChangeAsync(layerId, null, closeNestDialogOnSuccess: false);
+    }
+
+    private async Task ApplyLayerParentChangeAsync(Guid layerId, Guid? parentLayerId, bool closeNestDialogOnSuccess)
+    {
+        if (_isApplyingParentChange || _parentChangeInFlightLayerId.HasValue)
+        {
+            return;
+        }
+
+        var layer = _layers.FirstOrDefault(existingLayer => existingLayer.MapLayerId == layerId);
+        if (layer == null || layer.ParentLayerId == parentLayerId)
+        {
+            return;
+        }
+
+        _isApplyingParentChange = true;
+        _parentChangeInFlightLayerId = layerId;
+        _manageLayerError = string.Empty;
+
+        try
+        {
+            await MapApi.SetLayerParentAsync(WorldId, MapId, layerId, parentLayerId);
+            layer.ParentLayerId = parentLayerId;
+            RebuildLayerRows();
+
+            if (closeNestDialogOnSuccess)
+            {
+                CancelNestLayer();
+            }
+        }
+        catch (Exception ex)
+        {
+            _manageLayerError = $"Failed to move layer: {ex.Message}";
+        }
+        finally
+        {
+            _isApplyingParentChange = false;
+            _parentChangeInFlightLayerId = null;
+        }
+    }
+
+    private IEnumerable<MapLayerDto> GetEligibleNestParentCandidates(MapLayerDto layer)
+    {
+        var descendantIds = GetDescendantLayerIds(layer.MapLayerId);
+
+        return _layers
+            .Where(candidate => candidate.MapLayerId != layer.MapLayerId)
+            .Where(candidate => !descendantIds.Contains(candidate.MapLayerId))
+            .Where(candidate => candidate.MapLayerId != layer.ParentLayerId)
+            .OrderBy(candidate => candidate.SortOrder)
+            .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.MapLayerId);
+    }
+
+    private HashSet<Guid> GetDescendantLayerIds(Guid layerId)
+    {
+        var descendants = new HashSet<Guid>();
+        var visited = new HashSet<Guid> { layerId };
+        var queue = new Queue<Guid>();
+        queue.Enqueue(layerId);
+
+        while (queue.Count > 0)
+        {
+            var currentId = queue.Dequeue();
+            var childIds = _layers
+                .Where(layer => layer.ParentLayerId == currentId)
+                .Select(layer => layer.MapLayerId);
+
+            foreach (var childId in childIds)
+            {
+                if (!visited.Add(childId))
+                {
+                    continue;
+                }
+
+                descendants.Add(childId);
+                queue.Enqueue(childId);
+            }
+        }
+
+        return descendants;
     }
 
     private void OnLayerDragStart(Guid layerId, DragEventArgs args)
@@ -948,23 +1222,35 @@ else
             return;
         }
 
+        var draggedLayer = _layers[draggedIndex];
+        var targetLayer = _layers[targetIndex];
+        if (draggedLayer.ParentLayerId != targetLayer.ParentLayerId)
+        {
+            ClearLayerDragState();
+            return;
+        }
+
         var previousLayerOrder = _layers
             .Select(layer => layer.MapLayerId)
             .ToList();
 
-        MoveLayer(_layers, draggedIndex, targetIndex);
-        var reorderedLayerIds = _layers
-            .Select(layer => layer.MapLayerId)
-            .ToList();
+        if (!TryReorderSiblingGroup(_layers, draggedIndex, targetIndex, out var reorderedSiblingLayerIds))
+        {
+            ClearLayerDragState();
+            return;
+        }
+
+        RebuildLayerRows();
         StateHasChanged();
 
         try
         {
-            await MapApi.ReorderLayersAsync(WorldId, MapId, reorderedLayerIds);
+            await MapApi.ReorderLayersAsync(WorldId, MapId, reorderedSiblingLayerIds);
         }
         catch
         {
             _layers = RestoreLayerOrder(_layers, previousLayerOrder);
+            RebuildLayerRows();
             StateHasChanged();
         }
         finally
@@ -988,6 +1274,51 @@ else
         layers.Insert(toIndex, movedLayer);
     }
 
+    private static bool TryReorderSiblingGroup(
+        List<MapLayerDto> allLayers,
+        int draggedIndex,
+        int targetIndex,
+        out List<Guid> reorderedSiblingLayerIds)
+    {
+        reorderedSiblingLayerIds = [];
+
+        if (draggedIndex < 0 || draggedIndex >= allLayers.Count || targetIndex < 0 || targetIndex >= allLayers.Count)
+        {
+            return false;
+        }
+
+        var parentLayerId = allLayers[draggedIndex].ParentLayerId;
+        if (allLayers[targetIndex].ParentLayerId != parentLayerId)
+        {
+            return false;
+        }
+
+        var siblingIndices = Enumerable.Range(0, allLayers.Count)
+            .Where(index => allLayers[index].ParentLayerId == parentLayerId)
+            .ToList();
+        var draggedSiblingIndex = siblingIndices.IndexOf(draggedIndex);
+        var targetSiblingIndex = siblingIndices.IndexOf(targetIndex);
+        if (draggedSiblingIndex < 0 || targetSiblingIndex < 0 || draggedSiblingIndex == targetSiblingIndex)
+        {
+            return false;
+        }
+
+        var siblings = siblingIndices
+            .Select(index => allLayers[index])
+            .ToList();
+        MoveLayer(siblings, draggedSiblingIndex, targetSiblingIndex);
+
+        for (var index = 0; index < siblingIndices.Count; index++)
+        {
+            allLayers[siblingIndices[index]] = siblings[index];
+        }
+
+        reorderedSiblingLayerIds = siblings
+            .Select(layer => layer.MapLayerId)
+            .ToList();
+        return true;
+    }
+
     private static List<MapLayerDto> RestoreLayerOrder(List<MapLayerDto> currentLayers, IReadOnlyList<Guid> orderedLayerIds)
     {
         var layersById = currentLayers.ToDictionary(layer => layer.MapLayerId);
@@ -1004,6 +1335,99 @@ else
         return restored;
     }
 
+    private void RebuildLayerRows()
+    {
+        _layerRows.Clear();
+        if (_layers.Count == 0)
+        {
+            return;
+        }
+
+        var childrenByParentId = _layers
+            .Where(layer => layer.ParentLayerId.HasValue)
+            .GroupBy(layer => layer.ParentLayerId!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderBy(layer => layer.SortOrder)
+                    .ThenBy(layer => layer.Name, StringComparer.Ordinal)
+                    .ThenBy(layer => layer.MapLayerId)
+                    .ToList());
+
+        var visited = new HashSet<Guid>();
+        var flatIndexByLayerId = _layers
+            .Select((layer, index) => new { layer.MapLayerId, Index = index })
+            .ToDictionary(item => item.MapLayerId, item => item.Index);
+
+        var rootLayers = _layers
+            .Where(layer => !layer.ParentLayerId.HasValue || !_layers.Any(candidate => candidate.MapLayerId == layer.ParentLayerId.Value))
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.Name, StringComparer.Ordinal)
+            .ThenBy(layer => layer.MapLayerId);
+
+        foreach (var rootLayer in rootLayers)
+        {
+            BuildLayerRowsDepthFirst(rootLayer, depth: 0, childrenByParentId, flatIndexByLayerId, visited);
+        }
+
+        foreach (var remainingLayer in _layers
+                     .Where(layer => !visited.Contains(layer.MapLayerId))
+                     .OrderBy(layer => layer.SortOrder)
+                     .ThenBy(layer => layer.Name, StringComparer.Ordinal)
+                     .ThenBy(layer => layer.MapLayerId))
+        {
+            BuildLayerRowsDepthFirst(remainingLayer, depth: 0, childrenByParentId, flatIndexByLayerId, visited);
+        }
+    }
+
+    private void BuildLayerRowsDepthFirst(
+        MapLayerDto layer,
+        int depth,
+        IReadOnlyDictionary<Guid, List<MapLayerDto>> childrenByParentId,
+        IReadOnlyDictionary<Guid, int> flatIndexByLayerId,
+        HashSet<Guid> visited)
+    {
+        if (!visited.Add(layer.MapLayerId))
+        {
+            return;
+        }
+
+        _layerRows.Add(new LayerRenderRow(layer, depth, flatIndexByLayerId[layer.MapLayerId]));
+
+        if (!childrenByParentId.TryGetValue(layer.MapLayerId, out var children))
+        {
+            return;
+        }
+
+        foreach (var child in children)
+        {
+            BuildLayerRowsDepthFirst(child, depth + 1, childrenByParentId, flatIndexByLayerId, visited);
+        }
+    }
+
+    private static string GetLayerDepthStyle(int depth)
+    {
+        var clampedDepth = depth < 0 ? 0 : depth;
+        var indentPixels = clampedDepth * 14;
+        return string.Create(CultureInfo.InvariantCulture, $"display:inline-block;width:{indentPixels}px;");
+    }
+
+    private void ClearNestLayerStateIfTargetMissing(Guid removedLayerId)
+    {
+        if (_nestingLayerId == removedLayerId)
+        {
+            CancelNestLayer();
+            return;
+        }
+
+        if (_selectedNestParentLayerId == removedLayerId)
+        {
+            _selectedNestParentLayerId = null;
+        }
+
+        _eligibleNestParentCandidates.RemoveAll(candidate => candidate.MapLayerId == removedLayerId);
+    }
+
     private IEnumerable<MapPinResponseDto> GetVisiblePins()
     {
         if (_layers.Count == 0)
@@ -1015,10 +1439,7 @@ else
             .Select((layer, index) => new { layer.MapLayerId, Index = index })
             .ToDictionary(x => x.MapLayerId, x => x.Index);
 
-        var enabledLayerIds = _layers
-            .Where(l => l.IsEnabled)
-            .Select(l => l.MapLayerId)
-            .ToHashSet();
+        var enabledLayerIds = GetEffectivelyVisibleLayerIds();
 
         return _pins
             .Select((pin, index) => new { Pin = pin, Index = index })
@@ -1027,6 +1448,9 @@ else
             .ThenBy(x => x.Index)
             .Select(x => x.Pin);
     }
+
+    private HashSet<Guid> GetEffectivelyVisibleLayerIds() =>
+        MapLayerVisibilityEvaluator.GetEffectivelyVisibleLayerIds(_layers);
 
     private async Task OnLayerVisibilityChangedAsync(Guid layerId, ChangeEventArgs args)
     {
@@ -1746,4 +2170,6 @@ else
         _selectedPinId.HasValue
             ? _pins.FirstOrDefault(p => p.PinId == _selectedPinId.Value)
             : null;
+
+    private sealed record LayerRenderRow(MapLayerDto Layer, int Depth, int FlatIndex);
 }

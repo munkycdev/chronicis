@@ -93,6 +93,7 @@ public class MapAutocompleteDto
 public class MapLayerDto
 {
     public Guid MapLayerId { get; set; }
+    public Guid? ParentLayerId { get; set; }
     public string Name { get; set; } = string.Empty;
     public int SortOrder { get; set; }
     public bool IsEnabled { get; set; }
@@ -105,6 +106,7 @@ public class MapLayerDto
 public class CreateLayerRequest
 {
     public string Name { get; set; } = string.Empty;
+    public Guid? ParentLayerId { get; set; }
 }
 
 /// <summary>
@@ -182,6 +184,15 @@ public class ReorderLayersRequest
 public class RenameLayerRequest
 {
     public string Name { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Request DTO for assigning or clearing a map layer parent.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class SetLayerParentRequest
+{
+    public Guid? ParentLayerId { get; set; }
 }
 
 /// <summary>

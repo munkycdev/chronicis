@@ -183,19 +183,21 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void Modal_HiddenLayerPins_AreNotRendered()
+    public async Task Modal_InheritedVisibility_HiddenParentHidesAndReenableRestoresChildPin()
     {
         const string readUrl = "https://blob.example.com/read";
-        var visibleLayerId = Guid.Parse("58977eba-cf26-4ff8-a5f8-970ea28bf8a4");
-        var hiddenLayerId = Guid.Parse("6d7f6081-fc5e-440d-935c-a8f2e63f95d0");
+        var parentLayerId = Guid.Parse("58977eba-cf26-4ff8-a5f8-970ea28bf8a4");
+        var childLayerId = Guid.Parse("6d7f6081-fc5e-440d-935c-a8f2e63f95d0");
+        var siblingLayerId = Guid.Parse("042a1feb-4e4a-4008-aea3-c6f920be0b73");
 
         _mapApi.GetBasemapReadUrlAsync(_worldId, _mapId)
             .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = readUrl }, 200, null));
         _mapApi.GetLayersForMapAsync(_worldId, _mapId)
             .Returns(new List<MapLayerDto>
             {
-                new() { MapLayerId = visibleLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
-                new() { MapLayerId = hiddenLayerId, Name = "Arc", SortOrder = 1, IsEnabled = true }
+                new() { MapLayerId = parentLayerId, Name = "Parent", SortOrder = 0, IsEnabled = false },
+                new() { MapLayerId = childLayerId, Name = "Child", SortOrder = 1, IsEnabled = true, ParentLayerId = parentLayerId },
+                new() { MapLayerId = siblingLayerId, Name = "Sibling", SortOrder = 2, IsEnabled = true }
             });
         _mapApi.ListPinsForMapAsync(_worldId, _mapId)
             .Returns(new List<MapPinResponseDto>
@@ -204,8 +206,8 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
                 {
                     PinId = Guid.Parse("896d266f-c2ca-4274-96d0-03c0d45f19fd"),
                     MapId = _mapId,
-                    LayerId = visibleLayerId,
-                    Name = "Visible Pin",
+                    LayerId = childLayerId,
+                    Name = "Child Pin",
                     X = 0.2f,
                     Y = 0.2f
                 },
@@ -213,8 +215,8 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
                 {
                     PinId = Guid.Parse("96cf8fdb-0dd8-4132-a335-b4c1570fcc27"),
                     MapId = _mapId,
-                    LayerId = hiddenLayerId,
-                    Name = "Hidden Pin",
+                    LayerId = siblingLayerId,
+                    Name = "Sibling Pin",
                     X = 0.6f,
                     Y = 0.6f
                 }
@@ -225,9 +227,57 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
             .Add(x => x.WorldId, _worldId)
             .Add(x => x.MapId, _mapId));
 
-        // All layers default to visible on load; toggle the Arc layer off to hide its pin
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".session-map-viewer-modal__layer-toggle").Count));
-        cut.FindAll(".session-map-viewer-modal__layer-toggle")[1].Change(false);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Single(cut.FindAll(".session-map-viewer-modal__pin"));
+            var pinNames = cut.FindAll(".session-map-viewer-modal__pin-name")
+                .Select(x => x.TextContent.Trim())
+                .ToList();
+            Assert.Equal(["Sibling Pin"], pinNames);
+        });
+
+        await InvokePrivateTask(cut.Instance, "OnLayerToggleChangedAsync", parentLayerId, new ChangeEventArgs { Value = true });
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Equal(2, cut.FindAll(".session-map-viewer-modal__pin").Count);
+            var pinNames = cut.FindAll(".session-map-viewer-modal__pin-name")
+                .Select(x => x.TextContent.Trim())
+                .OrderBy(name => name)
+                .ToList();
+            Assert.Equal(["Child Pin", "Sibling Pin"], pinNames);
+        });
+
+        var layers = (List<MapLayerDto>)GetField(cut.Instance, "_layers")!;
+        Assert.True(layers.Single(layer => layer.MapLayerId == childLayerId).IsEnabled);
+    }
+
+    [Fact]
+    public async Task Modal_InheritedVisibility_ExplicitlyDisabledChildRemainsHidden()
+    {
+        const string readUrl = "https://blob.example.com/read";
+        var parentLayerId = Guid.Parse("dbda4609-e783-47d0-8504-c2e74f14a592");
+        var childLayerId = Guid.Parse("8d7e63f6-f4cb-4f7f-a3a1-09197a824d44");
+
+        _mapApi.GetBasemapReadUrlAsync(_worldId, _mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = readUrl }, 200, null));
+        _mapApi.GetLayersForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapLayerDto>
+            {
+                new() { MapLayerId = parentLayerId, Name = "Parent", SortOrder = 0, IsEnabled = true },
+                new() { MapLayerId = childLayerId, Name = "Child", SortOrder = 1, IsEnabled = false, ParentLayerId = parentLayerId }
+            });
+        _mapApi.ListPinsForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapPinResponseDto>
+            {
+                new() { PinId = Guid.NewGuid(), MapId = _mapId, LayerId = parentLayerId, Name = "Parent Pin", X = 0.1f, Y = 0.2f },
+                new() { PinId = Guid.NewGuid(), MapId = _mapId, LayerId = childLayerId, Name = "Child Pin", X = 0.3f, Y = 0.4f },
+            });
+
+        var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.WorldId, _worldId)
+            .Add(x => x.MapId, _mapId));
 
         cut.WaitForAssertion(() =>
         {
@@ -235,7 +285,99 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
             var pinNames = cut.FindAll(".session-map-viewer-modal__pin-name")
                 .Select(x => x.TextContent.Trim())
                 .ToList();
-            Assert.Equal(["Visible Pin"], pinNames);
+            Assert.Equal(["Parent Pin"], pinNames);
+        });
+
+        await InvokePrivateTask(cut.Instance, "OnLayerToggleChangedAsync", parentLayerId, new ChangeEventArgs { Value = false });
+        await InvokePrivateTask(cut.Instance, "OnLayerToggleChangedAsync", parentLayerId, new ChangeEventArgs { Value = true });
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Single(cut.FindAll(".session-map-viewer-modal__pin"));
+            var pinNames = cut.FindAll(".session-map-viewer-modal__pin-name")
+                .Select(x => x.TextContent.Trim())
+                .ToList();
+            Assert.Equal(["Parent Pin"], pinNames);
+        });
+
+        var layers = (List<MapLayerDto>)GetField(cut.Instance, "_layers")!;
+        Assert.False(layers.Single(layer => layer.MapLayerId == childLayerId).IsEnabled);
+    }
+
+    [Fact]
+    public void Modal_InheritedVisibility_DeepAncestorAndSiblingIsolation()
+    {
+        const string readUrl = "https://blob.example.com/read";
+        var rootId = Guid.Parse("4933bbf4-c328-45fd-adba-5b6ef7cf70b0");
+        var parentAId = Guid.Parse("ec6050a9-b3de-4c20-8690-cd86f273f996");
+        var childAId = Guid.Parse("07887992-cc3c-46a2-9d6a-806302c0d3db");
+        var parentBId = Guid.Parse("74a83a6c-c170-45dc-a013-d3ba90d48d79");
+        var childBId = Guid.Parse("e3db21d2-7afa-4694-a2e7-12595a2bdd6a");
+
+        _mapApi.GetBasemapReadUrlAsync(_worldId, _mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = readUrl }, 200, null));
+        _mapApi.GetLayersForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapLayerDto>
+            {
+                new() { MapLayerId = rootId, Name = "Root", SortOrder = 0, IsEnabled = true },
+                new() { MapLayerId = parentAId, Name = "Parent A", SortOrder = 1, IsEnabled = false, ParentLayerId = rootId },
+                new() { MapLayerId = childAId, Name = "Child A", SortOrder = 2, IsEnabled = true, ParentLayerId = parentAId },
+                new() { MapLayerId = parentBId, Name = "Parent B", SortOrder = 3, IsEnabled = true, ParentLayerId = rootId },
+                new() { MapLayerId = childBId, Name = "Child B", SortOrder = 4, IsEnabled = true, ParentLayerId = parentBId },
+            });
+        _mapApi.ListPinsForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapPinResponseDto>
+            {
+                new() { PinId = Guid.NewGuid(), MapId = _mapId, LayerId = childAId, Name = "Child A Pin", X = 0.2f, Y = 0.2f },
+                new() { PinId = Guid.NewGuid(), MapId = _mapId, LayerId = childBId, Name = "Child B Pin", X = 0.6f, Y = 0.6f },
+            });
+
+        var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.WorldId, _worldId)
+            .Add(x => x.MapId, _mapId));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Single(cut.FindAll(".session-map-viewer-modal__pin"));
+            var pinNames = cut.FindAll(".session-map-viewer-modal__pin-name")
+                .Select(x => x.TextContent.Trim())
+                .ToList();
+            Assert.Equal(["Child B Pin"], pinNames);
+        });
+    }
+
+    [Fact]
+    public void Modal_InheritedVisibility_MissingParentAndSelfCycleAreHiddenWithoutThrowing()
+    {
+        const string readUrl = "https://blob.example.com/read";
+        var orphanLayerId = Guid.Parse("c66197d6-9750-41f0-866f-66bc74cd0c00");
+        var selfCycleLayerId = Guid.Parse("3ce8dca2-cbc0-4de8-b42d-5151908b0b53");
+
+        _mapApi.GetBasemapReadUrlAsync(_worldId, _mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = readUrl }, 200, null));
+        _mapApi.GetLayersForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapLayerDto>
+            {
+                new() { MapLayerId = orphanLayerId, Name = "Orphan", SortOrder = 0, IsEnabled = true, ParentLayerId = Guid.NewGuid() },
+                new() { MapLayerId = selfCycleLayerId, Name = "Cycle", SortOrder = 1, IsEnabled = true, ParentLayerId = selfCycleLayerId },
+            });
+        _mapApi.ListPinsForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapPinResponseDto>
+            {
+                new() { PinId = Guid.NewGuid(), MapId = _mapId, LayerId = orphanLayerId, Name = "Orphan Pin", X = 0.2f, Y = 0.2f },
+                new() { PinId = Guid.NewGuid(), MapId = _mapId, LayerId = selfCycleLayerId, Name = "Cycle Pin", X = 0.6f, Y = 0.6f },
+            });
+
+        var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.WorldId, _worldId)
+            .Add(x => x.MapId, _mapId));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Empty(cut.FindAll(".session-map-viewer-modal__pin"));
+            Assert.Empty(cut.FindAll(".session-map-viewer-modal__pin-name"));
         });
     }
 
