@@ -127,7 +127,7 @@ Maps are NOT WorldDocuments.
 
 ## Map Discovery Rules
 
-Maps Detail shows all maps in the world.
+Map Listing shows all maps in the world.
 Grouping logic:
 
 * No campaign/arc rows = world-scoped
@@ -144,10 +144,10 @@ Sorted by Name ascending.
 * The `Maps` group navigates to `/world/{worldId}/maps`.
 * Map nodes navigate to `/world/{worldId}/maps/{mapId}`.
 * `Maps` virtual group does not expose tree-based create actions.
-* On Maps Detail load:
+* On Map Listing load:
   * world + Maps group path is expanded
   * Maps group is selected
-* On Map Page load:
+* On Map Detail load:
   * world + Maps group path is expanded
   * current map node is selected
 * On map rename save:
@@ -187,3 +187,4 @@ Map rename and delete require world owner authorization.
 * Reuse low-level blob utilities.
 * Do NOT reuse WorldDocument services.
 * Implement a dedicated Map storage service abstraction.
+

@@ -36,8 +36,8 @@ public class TutorialPageTypeResolverTests
     [InlineData("/world/123", "Page:WorldDetail")]
     [InlineData("/world/123/maps", "Page:MapListing")]
     [InlineData("/world/123/maps?tab=all", "Page:MapListing")]
-    [InlineData("/world/123/maps/456", "Page:MapPage")]
-    [InlineData("/world/123/maps/456?mode=view", "Page:MapPage")]
+    [InlineData("/world/123/maps/456", "Page:MapDetail")]
+    [InlineData("/world/123/maps/456?mode=view", "Page:MapDetail")]
     [InlineData("/campaign/123/maps", "Page:CampaignDetail")]
     [InlineData("/world/123/wiki", "Page:WorldDetail")]
     [InlineData("/campaign/123", "Page:CampaignDetail")]
@@ -133,3 +133,4 @@ public class TutorialPageTypeResolverTests
         Assert.Equal("X", single);
     }
 }
+

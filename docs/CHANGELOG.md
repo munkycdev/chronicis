@@ -10,11 +10,11 @@ All notable changes to this project are documented in this file.
 
 **Added:**
 - World-level Maps feature with dedicated routes:
-  - `/world/{worldId}/maps` (Maps Detail)
-  - `/world/{worldId}/maps/{mapId}` (Map Page)
-- Maps virtual group in the world tree; clicking **Maps** opens Maps Detail instead of creating an uncategorized wiki article.
+  - `/world/{worldId}/maps` (Map Listing)
+  - `/world/{worldId}/maps/{mapId}` (Map Detail)
+- Maps virtual group in the world tree; clicking **Maps** opens Map Listing instead of creating an uncategorized wiki article.
 - Map creation flow with required map name plus basemap image upload.
-- Basemap upload supports file picker and drag/drop in the Maps Detail create panel.
+- Basemap upload supports file picker and drag/drop in the Map Listing create panel.
 - Browser drag/drop guard to prevent dropped image files from opening in a new tab outside the drop zone.
 - Map page header with inline map-name editing and explicit save controls (session-style save pattern).
 - Map layer management on map pages and modal viewers:
@@ -833,3 +833,4 @@ WorldName/
 - [STATUS.md](STATUS.md) - Project status
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Technical architecture
 - [FEATURES.md](FEATURES.md) - Feature documentation
+

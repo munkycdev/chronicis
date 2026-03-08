@@ -16,9 +16,9 @@ Provide a spatial interface for Chronicis that allows users to attach maps to a 
 * Prevent browser "open file in new tab" behavior during map upload drag/drop interactions.
 * View basemap on a dedicated map page.
 * Maps appear under a new top-level **Maps** tree category.
-* Maps Detail page lists all maps in the world.
+* Map Listing page lists all maps in the world.
 * Rename map from the map page header (world owner only).
-* Delete map from Maps Detail (world owner only) with destructive confirmation.
+* Delete map from Map Listing (world owner only) with destructive confirmation.
 
 ### MVP 1
 
@@ -35,14 +35,14 @@ Provide a spatial interface for Chronicis that allows users to attach maps to a 
 * Clicking a map opens `/world/{worldId}/maps/{mapId}`.
 * Tree displays map name only.
 * Maps sorted by name.
-* On Maps Detail load, the world and Maps group are expanded in the tree and Maps is selected.
-* On Map Page load, the world and Maps group are expanded and the active map is selected.
+* On Map Listing load, the world and Maps group are expanded in the tree and Maps is selected.
+* On Map Detail load, the world and Maps group are expanded and the active map is selected.
 * When map name changes, the tree label updates immediately.
 * The Maps tree group does not offer an "Add Item" action.
 
 ---
 
-## Maps Detail Page (World Context)
+## Map Listing Page (World Context)
 
 Displays all maps in the world grouped by:
 
@@ -61,7 +61,7 @@ Page behavior:
 
 ---
 
-## Map Page (Single Map Context)
+## Map Detail (Single Map Context)
 
 * Route: `/world/{worldId}/maps/{mapId}`
 * Breadcrumbs: `Dashboard / {world name} / Maps / {map name}`
@@ -92,3 +92,4 @@ Page behavior:
 4. As a world owner, I can permanently delete a map after explicit confirmation.
 5. As a GM, I can place a pin and link it to an article.
 6. As a user, I can click a pin and open its linked article.
+

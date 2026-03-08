@@ -17,15 +17,15 @@
 {
     <LoadingSkeleton />
 }
-else if (_state == MapPageState.NotFound)
+else if (_state == MapDetailState.NotFound)
 {
     <MudAlert Severity="Severity.Error">Map not found.</MudAlert>
 }
-else if (_state == MapPageState.Unauthorized)
+else if (_state == MapDetailState.Unauthorized)
 {
     <MudAlert Severity="Severity.Error">You do not have access to this map.</MudAlert>
 }
-else if (_state == MapPageState.BasemapMissing)
+else if (_state == MapDetailState.BasemapMissing)
 {
     <MudAlert Severity="Severity.Warning">Basemap is missing for this map.</MudAlert>
 }
@@ -548,7 +548,7 @@ else
     private bool _isCreatingPin;
     private bool _isDeletingPin;
     private bool _isCreatePinDialogOpen;
-    private MapPageState _state = MapPageState.Loaded;
+    private MapDetailState _state = MapDetailState.Loaded;
     private string _worldName = "World";
     private string _mapName = "Map";
     private string _editMapName = "Map";
@@ -614,7 +614,7 @@ else
     private ElementReference _mapViewportRef;
     private ElementReference _mapImageRef;
     private IJSObjectReference? _mapInteropModule;
-    private DotNetObjectReference<MapPage>? _dotNetRef;
+    private DotNetObjectReference<MapDetail>? _dotNetRef;
     private List<BreadcrumbItem> _breadcrumbs =
     [
         new("Dashboard", href: "/dashboard"),
@@ -623,7 +623,7 @@ else
         new("Map", href: null, disabled: true)
     ];
 
-    private enum MapPageState
+    private enum MapDetailState
     {
         Loaded,
         NotFound,
@@ -679,7 +679,7 @@ else
         _isSavingMap = false;
         _hasUnsavedMapChanges = false;
         _canManageMap = false;
-        _state = MapPageState.Loaded;
+        _state = MapDetailState.Loaded;
         _worldName = "World";
         _mapName = "Map";
         _editMapName = "Map";
@@ -774,19 +774,19 @@ else
 
         if (IsUnauthorized(mapResult.StatusCode) || IsUnauthorized(basemapResult.StatusCode))
         {
-            _state = MapPageState.Unauthorized;
+            _state = MapDetailState.Unauthorized;
         }
         else if (IsBasemapMissing(basemapResult.StatusCode, basemapResult.Error))
         {
-            _state = MapPageState.BasemapMissing;
+            _state = MapDetailState.BasemapMissing;
         }
         else if (mapResult.Map == null || basemapResult.StatusCode == 404)
         {
-            _state = MapPageState.NotFound;
+            _state = MapDetailState.NotFound;
         }
         else if (string.IsNullOrWhiteSpace(basemapResult.Basemap?.ReadUrl))
         {
-            _state = MapPageState.BasemapMissing;
+            _state = MapDetailState.BasemapMissing;
         }
         else
         {
@@ -800,7 +800,7 @@ else
                 SelectedLayerId = ResolveDefaultSelectedLayerId(_layers);
             }
             _pins = await MapApi.ListPinsForMapAsync(WorldId, MapId);
-            _state = MapPageState.Loaded;
+            _state = MapDetailState.Loaded;
             BuildBreadcrumbs();
         }
 

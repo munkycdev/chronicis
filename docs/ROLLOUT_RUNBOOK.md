@@ -39,11 +39,11 @@ Exit codes:
 
 Run these user-path checks at each rollout checkpoint (`10%`, `50%`, `100%`):
 
-1. Create a map from Maps Detail with a PNG/JPEG/WebP basemap upload.
+1. Create a map from Map Listing with a PNG/JPEG/WebP basemap upload.
 2. Open the new map page and verify the basemap renders inside the content container.
 3. Rename the map from the map page header and verify the tree label updates.
 4. Confirm Maps tree group is expanded and active map node is selected on map route load.
-5. Delete the map from Maps Detail via typed-name confirmation and verify it disappears from list/tree.
+5. Delete the map from Map Listing via typed-name confirmation and verify it disappears from list/tree.
 
 ## Default Rollback Criteria
 
@@ -70,3 +70,4 @@ Run these user-path checks at each rollout checkpoint (`10%`, `50%`, `100%`):
 - Revision IDs and traffic split.
 - Datadog links for latency/error/authorization dashboards.
 - Data consistency query output.
+

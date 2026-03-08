@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Chronicis.Client.Tests.Pages;
 
-public class MapPageTests : MudBlazorTestContext
+public class MapDetailTests : MudBlazorTestContext
 {
     private readonly IMapApiService _mapApi = Substitute.For<IMapApiService>();
     private readonly IWorldApiService _worldApi = Substitute.For<IWorldApiService>();
@@ -26,7 +26,7 @@ public class MapPageTests : MudBlazorTestContext
     private readonly Guid _campaignLayerId = Guid.Parse("44000000-0000-0000-0000-000000000002");
     private readonly Guid _arcLayerId = Guid.Parse("44000000-0000-0000-0000-000000000003");
 
-    public MapPageTests()
+    public MapDetailTests()
     {
         Services.AddSingleton(_mapApi);
         Services.AddSingleton(_worldApi);
@@ -73,7 +73,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenLoading_RendersLoadingSkeleton()
+    public void MapDetail_WhenLoading_RendersLoadingSkeleton()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -91,7 +91,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenNotFound_RendersNotFoundState()
+    public void MapDetail_WhenNotFound_RendersNotFoundState()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -105,7 +105,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenUnauthorized_RendersUnauthorizedState()
+    public void MapDetail_WhenUnauthorized_RendersUnauthorizedState()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -119,7 +119,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenUnauthorized401_RendersUnauthorizedState()
+    public void MapDetail_WhenUnauthorized401_RendersUnauthorizedState()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -133,7 +133,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenBasemapMissingByError_RendersBasemapMissingState()
+    public void MapDetail_WhenBasemapMissingByError_RendersBasemapMissingState()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -147,7 +147,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenBasemapReadUrlEmpty_RendersBasemapMissingState()
+    public void MapDetail_WhenBasemapReadUrlEmpty_RendersBasemapMissingState()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -161,7 +161,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenSuccessful_RendersBasemapImage()
+    public void MapDetail_WhenSuccessful_RendersBasemapImage()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -187,7 +187,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenSuccessful_RendersLayerPanelRows()
+    public void MapDetail_WhenSuccessful_RendersLayerPanelRows()
     {
         var cut = RenderLoadedPage();
 
@@ -202,7 +202,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenSuccessful_RendersRootAddButtonAndNoLegacyAddControls()
+    public void MapDetail_WhenSuccessful_RendersRootAddButtonAndNoLegacyAddControls()
     {
         var cut = RenderLoadedPage();
 
@@ -215,7 +215,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenSuccessful_RendersAddChildLayerActionForEachLayer()
+    public void MapDetail_WhenSuccessful_RendersAddChildLayerActionForEachLayer()
     {
         var cut = RenderLoadedPage();
 
@@ -1651,7 +1651,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenSuccessful_RendersLayerDragHandles()
+    public void MapDetail_WhenSuccessful_RendersLayerDragHandles()
     {
         var cut = RenderLoadedPage();
 
@@ -1663,7 +1663,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_LayerRows_IncludeHoverableClass()
+    public void MapDetail_LayerRows_IncludeHoverableClass()
     {
         var cut = RenderLoadedPage();
 
@@ -1677,7 +1677,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_DefaultSelection_ChoosesArc_WhenAvailable()
+    public void MapDetail_DefaultSelection_ChoosesArc_WhenAvailable()
     {
         var cut = RenderLoadedPage();
 
@@ -1686,7 +1686,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_DefaultSelection_FallsBackToCampaignThenWorld()
+    public void MapDetail_DefaultSelection_FallsBackToCampaignThenWorld()
     {
         var worldIdCampaign = Guid.NewGuid();
         var mapIdCampaign = Guid.NewGuid();
@@ -1719,7 +1719,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_DefaultSelection_UsesFirstAvailable_WhenNoArcCampaignWorld_AndNullWhenNoLayers()
+    public void MapDetail_DefaultSelection_UsesFirstAvailable_WhenNoArcCampaignWorld_AndNullWhenNoLayers()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -1799,7 +1799,7 @@ public class MapPageTests : MudBlazorTestContext
 
         await InvokePrivateOnRendererAsync(cut, "OnLayerDragStart", _worldLayerId, new DragEventArgs());
 
-        var onLayerDropMethod = typeof(MapPage).GetMethod(
+        var onLayerDropMethod = typeof(MapDetail).GetMethod(
             "OnLayerDropAsync",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(onLayerDropMethod);
@@ -2093,7 +2093,7 @@ public class MapPageTests : MudBlazorTestContext
     [Fact]
     public void RestoreLayerOrder_AppendsUnspecifiedLayers_WhenOrderListIsPartial()
     {
-        var restoreLayerOrderMethod = typeof(MapPage).GetMethod(
+        var restoreLayerOrderMethod = typeof(MapDetail).GetMethod(
             "RestoreLayerOrder",
             System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(restoreLayerOrderMethod);
@@ -2127,7 +2127,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public async Task MapPage_InheritedVisibility_HiddenParentHidesAndReenableRestoresChildPin()
+    public async Task MapDetail_InheritedVisibility_HiddenParentHidesAndReenableRestoresChildPin()
     {
         var cut = RenderLoadedPage();
         var parentLayerId = Guid.NewGuid();
@@ -2173,7 +2173,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public async Task MapPage_InheritedVisibility_ExplicitlyDisabledChildRemainsHidden()
+    public async Task MapDetail_InheritedVisibility_ExplicitlyDisabledChildRemainsHidden()
     {
         var cut = RenderLoadedPage();
         var parentLayerId = Guid.NewGuid();
@@ -2222,7 +2222,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_InheritedVisibility_DeepAncestorAndSiblingIsolation()
+    public void MapDetail_InheritedVisibility_DeepAncestorAndSiblingIsolation()
     {
         var cut = RenderLoadedPage();
         var rootId = Guid.NewGuid();
@@ -2255,7 +2255,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_InheritedVisibility_MissingParentAndSelfCycleAreHiddenWithoutThrowing()
+    public void MapDetail_InheritedVisibility_MissingParentAndSelfCycleAreHiddenWithoutThrowing()
     {
         var cut = RenderLoadedPage();
         var missingParentChildId = Guid.NewGuid();
@@ -2276,7 +2276,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_VisiblePins_RenderInLayerSortOrder()
+    public void MapDetail_VisiblePins_RenderInLayerSortOrder()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -2311,7 +2311,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_LaterLayerPins_RenderAfterEarlierLayerPins()
+    public void MapDetail_LaterLayerPins_RenderAfterEarlierLayerPins()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -2366,7 +2366,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenWorldNameUnavailable_UsesFallbackBreadcrumbLabel()
+    public void MapDetail_WhenWorldNameUnavailable_UsesFallbackBreadcrumbLabel()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -2388,7 +2388,7 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenUserIsOwner_RendersSaveControls()
+    public void MapDetail_WhenUserIsOwner_RendersSaveControls()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -2559,7 +2559,7 @@ public class MapPageTests : MudBlazorTestContext
     public void GetMapViewportClass_CoversCreateDragPanAndDefaultBranches()
     {
         var cut = RenderLoadedPage();
-        var method = typeof(MapPage).GetMethod("GetMapViewportClass", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var method = typeof(MapDetail).GetMethod("GetMapViewportClass", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
 
         SetField(cut.Instance, "_isCreatePinMode", true);
@@ -2587,7 +2587,7 @@ public class MapPageTests : MudBlazorTestContext
     public void GetMapStageStyle_CoversFallbackAndFormattedTransform()
     {
         var cut = RenderLoadedPage();
-        var method = typeof(MapPage).GetMethod("GetMapStageStyle", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var method = typeof(MapDetail).GetMethod("GetMapStageStyle", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
 
         SetField(cut.Instance, "_hasMapViewportLayout", false);
@@ -2608,7 +2608,7 @@ public class MapPageTests : MudBlazorTestContext
     public void GetMapImageClass_CoversPreAndPostLayoutBranches()
     {
         var cut = RenderLoadedPage();
-        var method = typeof(MapPage).GetMethod("GetMapImageClass", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var method = typeof(MapDetail).GetMethod("GetMapImageClass", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
 
         SetField(cut.Instance, "_hasMapViewportLayout", false);
@@ -2624,7 +2624,7 @@ public class MapPageTests : MudBlazorTestContext
     public void GetMapShellStyle_CoversFallbackAndComputedHeightBranches()
     {
         var cut = RenderLoadedPage();
-        var method = typeof(MapPage).GetMethod("GetMapShellStyle", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var method = typeof(MapDetail).GetMethod("GetMapShellStyle", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
 
         SetField(cut.Instance, "_mapPreferredViewportHeightPx", null);
@@ -2639,8 +2639,8 @@ public class MapPageTests : MudBlazorTestContext
     [Fact]
     public void ZoomSliderHelpers_CoverClampsAndDegenerateRanges()
     {
-        var sliderMethod = typeof(MapPage).GetMethod("GetSliderValueForZoom", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-        var zoomMethod = typeof(MapPage).GetMethod("GetZoomForSliderValue", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var sliderMethod = typeof(MapDetail).GetMethod("GetSliderValueForZoom", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var zoomMethod = typeof(MapDetail).GetMethod("GetZoomForSliderValue", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(sliderMethod);
         Assert.NotNull(zoomMethod);
 
@@ -2666,7 +2666,7 @@ public class MapPageTests : MudBlazorTestContext
     [Fact]
     public void ClampPanAxis_CoversAllBranches()
     {
-        var method = typeof(MapPage).GetMethod("ClampPanAxis", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var method = typeof(MapDetail).GetMethod("ClampPanAxis", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
 
         var noViewport = (double)method!.Invoke(null, new object?[] { 10d, 0d, 100d })!;
@@ -2688,7 +2688,7 @@ public class MapPageTests : MudBlazorTestContext
     [Fact]
     public void TryReadDouble_CoversValidAndInvalidInput()
     {
-        var method = typeof(MapPage).GetMethod("TryReadDouble", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var method = typeof(MapDetail).GetMethod("TryReadDouble", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
 
         var validArgs = new object?[] { "12.5", 0d };
@@ -2711,7 +2711,7 @@ public class MapPageTests : MudBlazorTestContext
     public void TryMapClientPointToPinCoordinates_CoversValidationAndCoordinateMath()
     {
         var cut = RenderLoadedPage();
-        var method = typeof(MapPage).GetMethod("TryMapClientPointToPinCoordinates", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var method = typeof(MapDetail).GetMethod("TryMapClientPointToPinCoordinates", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
 
         SetField(cut.Instance, "_hasMapViewportLayout", false);
@@ -2859,8 +2859,8 @@ public class MapPageTests : MudBlazorTestContext
     public async Task ZoomButtons_CoverAvailabilityAndClickHandlers()
     {
         var cut = RenderLoadedPage();
-        var canZoomInMethod = typeof(MapPage).GetMethod("CanZoomIn", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        var canZoomOutMethod = typeof(MapPage).GetMethod("CanZoomOut", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var canZoomInMethod = typeof(MapDetail).GetMethod("CanZoomIn", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var canZoomOutMethod = typeof(MapDetail).GetMethod("CanZoomOut", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(canZoomInMethod);
         Assert.NotNull(canZoomOutMethod);
 
@@ -3188,7 +3188,7 @@ public class MapPageTests : MudBlazorTestContext
     [Fact]
     public void GetPinStyle_FormatsNormalizedCoordinatesAsPercentages()
     {
-        var method = typeof(MapPage).GetMethod("GetPinStyle", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var method = typeof(MapDetail).GetMethod("GetPinStyle", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
 
         var style = (string?)method!.Invoke(null, new object?[] { new MapPinResponseDto { X = 0.1234f, Y = 0.5678f } });
@@ -3200,7 +3200,7 @@ public class MapPageTests : MudBlazorTestContext
     public void GetCreatePinPopupStyle_UsesPendingCoordinatesOrCenterFallback()
     {
         var cut = RenderLoadedPage();
-        var method = typeof(MapPage).GetMethod("GetCreatePinPopupStyle", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var method = typeof(MapDetail).GetMethod("GetCreatePinPopupStyle", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
 
         SetField(cut.Instance, "_pendingCreatePinViewportX", null);
@@ -3217,10 +3217,10 @@ public class MapPageTests : MudBlazorTestContext
     [Fact]
     public void PinLabelAndTooltipHelpers_CoverNameAndArticleFallbackBranches()
     {
-        var hasPinLabelMethod = typeof(MapPage).GetMethod("HasPinLabel", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-        var getPinLabelStyleMethod = typeof(MapPage).GetMethod("GetPinLabelStyle", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-        var getPinTooltipMethod = typeof(MapPage).GetMethod("GetPinTooltip", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-        var getPinAriaLabelMethod = typeof(MapPage).GetMethod("GetPinAriaLabel", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var hasPinLabelMethod = typeof(MapDetail).GetMethod("HasPinLabel", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var getPinLabelStyleMethod = typeof(MapDetail).GetMethod("GetPinLabelStyle", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var getPinTooltipMethod = typeof(MapDetail).GetMethod("GetPinTooltip", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var getPinAriaLabelMethod = typeof(MapDetail).GetMethod("GetPinAriaLabel", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(hasPinLabelMethod);
         Assert.NotNull(getPinLabelStyleMethod);
         Assert.NotNull(getPinTooltipMethod);
@@ -3253,7 +3253,7 @@ public class MapPageTests : MudBlazorTestContext
     [Fact]
     public void TryParseLinkedArticleId_CoversBlankValidAndInvalidBranches()
     {
-        var method = typeof(MapPage).GetMethod("TryParseLinkedArticleId", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var method = typeof(MapDetail).GetMethod("TryParseLinkedArticleId", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
 
         var blankArgs = new object?[] { "   ", null };
@@ -3276,7 +3276,7 @@ public class MapPageTests : MudBlazorTestContext
     [Fact]
     public void Clamp01_ClampsLowAndHighAndReturnsMiddle()
     {
-        var method = typeof(MapPage).GetMethod("Clamp01", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var method = typeof(MapDetail).GetMethod("Clamp01", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
 
         var low = (double)method!.Invoke(null, new object?[] { -0.5d })!;
@@ -3291,8 +3291,8 @@ public class MapPageTests : MudBlazorTestContext
     [Fact]
     public void HasUsableBounds_CoversNullWidthHeightAndValidBranches()
     {
-        var method = typeof(MapPage).GetMethod("HasUsableBounds", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-        var rectType = typeof(MapPage).GetNestedType("MapElementRect", System.Reflection.BindingFlags.NonPublic);
+        var method = typeof(MapDetail).GetMethod("HasUsableBounds", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        var rectType = typeof(MapDetail).GetNestedType("MapElementRect", System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(method);
         Assert.NotNull(rectType);
 
@@ -3335,14 +3335,14 @@ public class MapPageTests : MudBlazorTestContext
         Assert.Null(none);
     }
 
-    private IRenderedComponent<MapPage> RenderPage(Guid worldId, Guid mapId)
+    private IRenderedComponent<MapDetail> RenderPage(Guid worldId, Guid mapId)
     {
-        return RenderComponent<MapPage>(parameters => parameters
+        return RenderComponent<MapDetail>(parameters => parameters
             .Add(p => p.WorldId, worldId)
             .Add(p => p.MapId, mapId));
     }
 
-    private IRenderedComponent<MapPage> RenderLoadedPage()
+    private IRenderedComponent<MapDetail> RenderLoadedPage()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -3355,7 +3355,7 @@ public class MapPageTests : MudBlazorTestContext
         return cut;
     }
 
-    private IRenderedComponent<MapPage> RenderNestedLayerPage(Guid locationsLayerId, Guid harborLayerId)
+    private IRenderedComponent<MapDetail> RenderNestedLayerPage(Guid locationsLayerId, Guid harborLayerId)
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -3380,7 +3380,7 @@ public class MapPageTests : MudBlazorTestContext
         });
     }
 
-    private static List<string?> GetVisibleLayerRowIds(IRenderedComponent<MapPage> cut) =>
+    private static List<string?> GetVisibleLayerRowIds(IRenderedComponent<MapDetail> cut) =>
         cut.FindAll(".map-page__layer-row[data-layer-id]")
             .Select(row => row.GetAttribute("data-layer-id"))
             .ToList();
@@ -3399,7 +3399,7 @@ public class MapPageTests : MudBlazorTestContext
         field!.SetValue(instance, value);
     }
 
-    private static Task InvokePrivateOnRendererAsync(IRenderedComponent<MapPage> cut, string methodName, params object?[] args)
+    private static Task InvokePrivateOnRendererAsync(IRenderedComponent<MapDetail> cut, string methodName, params object?[] args)
     {
         return cut.InvokeAsync(async () =>
         {

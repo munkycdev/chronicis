@@ -32,7 +32,7 @@ public static class TutorialPageTypes
             new("Page:Settings", "Settings"),
             new("Page:WorldDetail", "World Detail"),
             new("Page:MapListing", "World Map Listing"),
-            new("Page:MapPage", "Map Page"),
+            new("Page:MapDetail", "Map Detail"),
             new("Page:CampaignDetail", "Campaign Detail"),
             new("Page:ArcDetail", "Arc Detail"),
             new("Page:SessionDetail", "Session Detail"),
@@ -80,3 +80,5 @@ public sealed record TutorialPageTypeOption(string PageType, string DefaultName)
 {
     public string DisplayLabel => $"{PageType} ({DefaultName})";
 }
+
+

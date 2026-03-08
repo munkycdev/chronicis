@@ -2,15 +2,15 @@
 
 ## Routes
 
-* Maps Detail: `/world/{worldId}/maps`
-* Map Page: `/world/{worldId}/maps/{mapId}`
+* Map Listing: `/world/{worldId}/maps`
+* Map Detail: `/world/{worldId}/maps/{mapId}`
 
 ## Tree Behavior Constants
 
 * Maps virtual group type: `VirtualGroupType.Maps`
-* Maps virtual group is selectable and navigable to Maps Detail.
+* Maps virtual group is selectable and navigable to Map Listing.
 * Map node type: `TreeNodeType.Map`
-* Map nodes are selectable and navigable to Map Page.
+* Map nodes are selectable and navigable to Map Detail.
 * Maps virtual group has no tree add-child action.
 
 ## Blob Container
@@ -59,3 +59,4 @@
 
 * Delete is permanent.
 * Deletes map metadata and all blobs under `maps/{mapId}/`.
+

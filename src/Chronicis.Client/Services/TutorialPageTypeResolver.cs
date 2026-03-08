@@ -115,7 +115,7 @@ public class TutorialPageTypeResolver
             return false;
         }
 
-        pageName = segments.Length == 3 ? "MapListing" : "MapPage";
+        pageName = segments.Length == 3 ? "MapListing" : "MapDetail";
         return true;
     }
 
@@ -183,3 +183,5 @@ public class TutorialPageTypeResolver
         return char.ToUpperInvariant(word[0]) + word[1..];
     }
 }
+
+
