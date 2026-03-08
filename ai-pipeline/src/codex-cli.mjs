@@ -22,9 +22,13 @@ export async function runCodexPlanPrompt(promptText) {
     "exec",
     "--cd",
     REPO_ROOT,
+    "--model",
+    "gpt-5.4",
+    "-c",
+    'model_reasoning_effort="high"',
     "--sandbox",
     "read-only",
-    "-",
+    "-"
   ]);
 
   const result = await runProcess(invocation.command, invocation.args, {
@@ -51,8 +55,12 @@ export async function runCodex(taskText) {
     "exec",
     "--cd",
     REPO_ROOT,
+    "--model",
+    "gpt-5.4",
+    "-c",
+    'model_reasoning_effort="medium"',
     "--full-auto",
-    "-",
+    "-"
   ]);
 
   const result = await runProcess(invocation.command, invocation.args, {
@@ -74,8 +82,12 @@ export async function resumeCodex(repairPrompt) {
     "--last",
     "--cd",
     REPO_ROOT,
+    "--model",
+    "gpt-5.4",
+    "-c",
+    'model_reasoning_effort="medium"',
     "--full-auto",
-    "-",
+    "-"
   ]);
 
   const result = await runProcess(invocation.command, invocation.args, {
