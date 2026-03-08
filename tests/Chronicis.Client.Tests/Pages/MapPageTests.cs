@@ -202,14 +202,15 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapPage_WhenSuccessful_RendersLayerAddControls()
+    public void MapPage_WhenSuccessful_RendersRootAddButtonAndNoLegacyAddControls()
     {
         var cut = RenderLoadedPage();
 
         cut.WaitForAssertion(() =>
         {
-            Assert.Single(cut.FindAll(".map-page__layer-add-input"));
-            Assert.Single(cut.FindAll(".map-page__layer-add-button"));
+            Assert.Single(cut.FindAll(".map-page__layer-add-root-button"));
+            Assert.Empty(cut.FindAll(".map-page__layer-add-input"));
+            Assert.Empty(cut.FindAll(".map-page__layer-add-button"));
         });
     }
 
@@ -228,7 +229,253 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public async Task AddLayerAsync_CallsApi_AppendsLayerAndSelectsNewLayer()
+    public void AddRootLevelLayer_WhenClicked_RendersInlineCreateRowAtRootDepth()
+    {
+        var cut = RenderLoadedPage();
+
+        cut.Find(".map-page__layer-add-root-button").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            var draftRows = cut.FindAll(".map-page__layer-row--inline-create");
+            Assert.Single(draftRows);
+            Assert.Equal("0", draftRows[0].GetAttribute("data-layer-depth"));
+            Assert.Single(cut.FindAll(".map-page__layer-create-input"));
+            Assert.Contains("Save", draftRows[0].TextContent, StringComparison.Ordinal);
+            Assert.Contains("Cancel", draftRows[0].TextContent, StringComparison.Ordinal);
+        });
+
+        Assert.True(GetField<bool>(cut.Instance, "_isInlineCreateActive"));
+        Assert.True(GetField<bool>(cut.Instance, "_shouldFocusCreateLayerInput"));
+        Assert.Null(GetField<Guid?>(cut.Instance, "_createLayerParentLayerId"));
+    }
+
+    [Fact]
+    public async Task InlineCreate_OnAfterRender_ClearsPendingCreateFocusFlag()
+    {
+        var cut = RenderLoadedPage();
+
+        cut.Find(".map-page__layer-add-root-button").Click();
+        Assert.True(GetField<bool>(cut.Instance, "_shouldFocusCreateLayerInput"));
+
+        await InvokePrivateOnRendererAsync(cut, "OnAfterRenderAsync", false);
+
+        Assert.False(GetField<bool>(cut.Instance, "_shouldFocusCreateLayerInput"));
+    }
+
+    [Fact]
+    public void AddChildLayer_WhenClicked_InsertsDraftAtEndOfParentSubtree()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var locationsLayerId = Guid.NewGuid();
+        var harborLayerId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Nested Layer Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = locationsLayerId, Name = "Locations", SortOrder = 0, IsEnabled = true, ParentLayerId = _worldLayerId },
+            new() { MapLayerId = harborLayerId, Name = "Harbor", SortOrder = 0, IsEnabled = true, ParentLayerId = locationsLayerId },
+        });
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Equal(5, cut.FindAll(".map-page__layer-row").Count));
+
+        cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-add-child-button").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            var rows = cut.FindAll(".map-page__layer-row").ToList();
+            var draftIndex = rows.FindIndex(row => row.ClassList.Contains("map-page__layer-row--inline-create"));
+            var campaignIndex = rows.FindIndex(row => row.TextContent.Contains("Campaign", StringComparison.Ordinal));
+            Assert.True(draftIndex >= 0);
+            Assert.Equal(campaignIndex - 1, draftIndex);
+            Assert.Equal("1", rows[draftIndex].GetAttribute("data-layer-depth"));
+        });
+
+        Assert.Equal(_worldLayerId, GetField<Guid?>(cut.Instance, "_createLayerParentLayerId"));
+    }
+
+    [Fact]
+    public void LayerTree_ParentsRenderDisclosureAndLeavesRenderSpacer()
+    {
+        var locationsLayerId = Guid.NewGuid();
+        var harborLayerId = Guid.NewGuid();
+        var cut = RenderNestedLayerPage(locationsLayerId, harborLayerId);
+
+        cut.WaitForAssertion(() =>
+        {
+            var disclosureButtons = cut.FindAll(".map-page__layer-disclosure");
+            Assert.Equal(2, disclosureButtons.Count);
+            Assert.NotNull(cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-disclosure"));
+            Assert.NotNull(cut.Find($".map-page__layer-row[data-layer-id='{locationsLayerId}'] .map-page__layer-disclosure"));
+
+            var leafRow = cut.Find($".map-page__layer-row[data-layer-id='{harborLayerId}']");
+            Assert.Null(leafRow.QuerySelector(".map-page__layer-disclosure"));
+            Assert.NotNull(leafRow.QuerySelector(".map-page__layer-disclosure-spacer"));
+        });
+    }
+
+    [Fact]
+    public void LayerTree_CollapseAndExpand_HidesAndRestoresDescendants()
+    {
+        var locationsLayerId = Guid.NewGuid();
+        var harborLayerId = Guid.NewGuid();
+        var cut = RenderNestedLayerPage(locationsLayerId, harborLayerId);
+
+        cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-disclosure").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            var visibleLayerIds = GetVisibleLayerRowIds(cut);
+            Assert.DoesNotContain(locationsLayerId.ToString(), visibleLayerIds);
+            Assert.DoesNotContain(harborLayerId.ToString(), visibleLayerIds);
+            Assert.Contains(_campaignLayerId.ToString(), visibleLayerIds);
+            Assert.Equal("false", cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-disclosure").GetAttribute("aria-expanded"));
+        });
+
+        cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-disclosure").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            var visibleLayerIds = GetVisibleLayerRowIds(cut);
+            Assert.Contains(locationsLayerId.ToString(), visibleLayerIds);
+            Assert.Contains(harborLayerId.ToString(), visibleLayerIds);
+            Assert.Equal("true", cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-disclosure").GetAttribute("aria-expanded"));
+        });
+    }
+
+    [Fact]
+    public void AddChildLayer_FromCollapsedParent_AutoExpandsAndShowsDraft()
+    {
+        var locationsLayerId = Guid.NewGuid();
+        var harborLayerId = Guid.NewGuid();
+        var cut = RenderNestedLayerPage(locationsLayerId, harborLayerId);
+
+        cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-disclosure").Click();
+        cut.WaitForAssertion(() => Assert.DoesNotContain(locationsLayerId.ToString(), GetVisibleLayerRowIds(cut)));
+
+        cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-add-child-button").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            var rows = cut.FindAll(".map-page__layer-row").ToList();
+            var draftIndex = rows.FindIndex(row => row.ClassList.Contains("map-page__layer-row--inline-create"));
+            var campaignIndex = rows.FindIndex(row => row.GetAttribute("data-layer-id") == _campaignLayerId.ToString());
+            Assert.True(draftIndex >= 0);
+            Assert.Equal(campaignIndex - 1, draftIndex);
+            Assert.Equal("1", rows[draftIndex].GetAttribute("data-layer-depth"));
+            Assert.Equal("true", cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-disclosure").GetAttribute("aria-expanded"));
+            Assert.Contains(locationsLayerId.ToString(), GetVisibleLayerRowIds(cut));
+        });
+    }
+
+    [Fact]
+    public async Task BeginLayerRename_FromCollapsedBranch_ExpandsAncestorsAndKeepsEditorVisible()
+    {
+        var locationsLayerId = Guid.NewGuid();
+        var harborLayerId = Guid.NewGuid();
+        var cut = RenderNestedLayerPage(locationsLayerId, harborLayerId);
+
+        cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-disclosure").Click();
+        cut.WaitForAssertion(() => Assert.DoesNotContain(harborLayerId.ToString(), GetVisibleLayerRowIds(cut)));
+
+        await InvokePrivateOnRendererAsync(cut, "BeginLayerRename", harborLayerId);
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains(harborLayerId.ToString(), GetVisibleLayerRowIds(cut));
+            Assert.Equal("true", cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-disclosure").GetAttribute("aria-expanded"));
+            Assert.Equal("true", cut.Find($".map-page__layer-row[data-layer-id='{locationsLayerId}'] .map-page__layer-disclosure").GetAttribute("aria-expanded"));
+            Assert.NotNull(cut.Find($".map-page__layer-row[data-layer-id='{harborLayerId}'] .map-page__layer-rename-input"));
+        });
+    }
+
+    [Fact]
+    public async Task LayerTree_CollapseBlocked_WhenDescendantRenameOrCreateIsActive()
+    {
+        var locationsLayerId = Guid.NewGuid();
+        var harborLayerId = Guid.NewGuid();
+        var cut = RenderNestedLayerPage(locationsLayerId, harborLayerId);
+
+        await InvokePrivateOnRendererAsync(cut, "BeginLayerRename", harborLayerId);
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-disclosure").HasAttribute("disabled"));
+            Assert.True(cut.Find($".map-page__layer-row[data-layer-id='{locationsLayerId}'] .map-page__layer-disclosure").HasAttribute("disabled"));
+        });
+
+        cut.Find($".map-page__layer-row[data-layer-id='{harborLayerId}'] .map-page__layer-action-button--cancel").Click();
+
+        cut.Find($".map-page__layer-row[data-layer-id='{locationsLayerId}'] .map-page__layer-add-child-button").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-disclosure").HasAttribute("disabled"));
+            Assert.True(cut.Find($".map-page__layer-row[data-layer-id='{locationsLayerId}'] .map-page__layer-disclosure").HasAttribute("disabled"));
+            Assert.Single(cut.FindAll(".map-page__layer-row--inline-create"));
+        });
+    }
+
+    [Fact]
+    public async Task CollapsedBranch_RenameAndCreateSaveFlowsStillWork()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var locationsLayerId = Guid.NewGuid();
+        var harborLayerId = Guid.NewGuid();
+        var newChildLayerId = Guid.NewGuid();
+
+        ConfigureNestedLayerPage(worldId, mapId, locationsLayerId, harborLayerId);
+        _mapApi.CreateLayerAsync(worldId, mapId, Arg.Any<string>(), Arg.Any<Guid?>())
+            .Returns(new MapLayerDto
+            {
+                MapLayerId = newChildLayerId,
+                Name = "Docks",
+                SortOrder = 1,
+                IsEnabled = true,
+                ParentLayerId = locationsLayerId,
+            });
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Equal(5, cut.FindAll(".map-page__layer-row").Count));
+
+        cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-disclosure").Click();
+        cut.WaitForAssertion(() => Assert.DoesNotContain(harborLayerId.ToString(), GetVisibleLayerRowIds(cut)));
+
+        await InvokePrivateOnRendererAsync(cut, "BeginLayerRename", harborLayerId);
+        cut.Find($".map-page__layer-row[data-layer-id='{harborLayerId}'] .map-page__layer-rename-input").Input("Port");
+        cut.Find($".map-page__layer-row[data-layer-id='{harborLayerId}'] .map-page__layer-action-button").Click();
+
+        await _mapApi.Received(1).RenameLayerAsync(worldId, mapId, harborLayerId, "Port");
+
+        cut.WaitForAssertion(() =>
+            Assert.Contains("Port", cut.Find($".map-page__layer-row[data-layer-id='{harborLayerId}']").TextContent, StringComparison.Ordinal));
+
+        cut.Find($".map-page__layer-row[data-layer-id='{locationsLayerId}'] .map-page__layer-disclosure").Click();
+        cut.WaitForAssertion(() => Assert.DoesNotContain(harborLayerId.ToString(), GetVisibleLayerRowIds(cut)));
+
+        cut.Find($".map-page__layer-row[data-layer-id='{locationsLayerId}'] .map-page__layer-add-child-button").Click();
+        cut.Find(".map-page__layer-create-input").Input("Docks");
+        cut.Find(".map-page__layer-create-input").KeyDown("Enter");
+
+        await _mapApi.Received(1).CreateLayerAsync(worldId, mapId, "Docks", locationsLayerId);
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains(newChildLayerId.ToString(), GetVisibleLayerRowIds(cut));
+            Assert.Equal(newChildLayerId, GetField<Guid?>(cut.Instance, "SelectedLayerId"));
+        });
+    }
+
+    [Fact]
+    public async Task InlineCreate_WhenEnterOnRootDraft_SavesAndSelectsLayer()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -249,8 +496,9 @@ public class MapPageTests : MudBlazorTestContext
         var cut = RenderPage(worldId, mapId);
         cut.WaitForAssertion(() => Assert.Equal(3, cut.FindAll(".map-page__layer-row").Count));
 
-        cut.Find(".map-page__layer-add-input").Input("Cities");
-        cut.Find(".map-page__layer-add-button").Click();
+        cut.Find(".map-page__layer-add-root-button").Click();
+        cut.Find(".map-page__layer-create-input").Input("Cities");
+        cut.Find(".map-page__layer-create-input").KeyDown("Enter");
 
         await _mapApi.Received(1).CreateLayerAsync(
             worldId,
@@ -265,12 +513,13 @@ public class MapPageTests : MudBlazorTestContext
             Assert.Contains("Cities", rows[3].TextContent, StringComparison.Ordinal);
         });
 
+        Assert.Empty(cut.FindAll(".map-page__layer-row--inline-create"));
         Assert.Equal(customLayerId, GetField<Guid?>(cut.Instance, "SelectedLayerId"));
-        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_newLayerNameInput"));
+        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_createLayerNameInput"));
     }
 
     [Fact]
-    public async Task AddLayerAsync_FromAddChildAction_SendsParentAndRendersNestedChild()
+    public async Task InlineCreate_WhenEnterOnChildDraft_SendsParentAndPersistsChild()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -292,9 +541,9 @@ public class MapPageTests : MudBlazorTestContext
         var cut = RenderPage(worldId, mapId);
         cut.WaitForAssertion(() => Assert.Equal(3, cut.FindAll(".map-page__layer-row").Count));
 
-        cut.FindAll(".map-page__layer-add-child-button")[0].Click();
-        cut.Find(".map-page__layer-add-input").Input("Child");
-        cut.Find(".map-page__layer-add-button").Click();
+        cut.Find($".map-page__layer-row[data-layer-id='{_worldLayerId}'] .map-page__layer-add-child-button").Click();
+        cut.Find(".map-page__layer-create-input").Input("Child");
+        cut.Find(".map-page__layer-create-input").KeyDown("Enter");
 
         await _mapApi.Received(1).CreateLayerAsync(worldId, mapId, "Child", _worldLayerId);
 
@@ -305,100 +554,133 @@ public class MapPageTests : MudBlazorTestContext
             Assert.Equal("1", childRow.GetAttribute("data-layer-depth"));
         });
 
-        Assert.Null(GetField<Guid?>(cut.Instance, "_addLayerParentLayerId"));
+        Assert.False(GetField<bool>(cut.Instance, "_isInlineCreateActive"));
+        Assert.Null(GetField<Guid?>(cut.Instance, "_createLayerParentLayerId"));
     }
 
     [Fact]
-    public async Task AddLayerAsync_AfterCancelChildCreate_SendsNullParentForRootCreate()
-    {
-        var worldId = Guid.NewGuid();
-        var mapId = Guid.NewGuid();
-        var rootLayerId = Guid.NewGuid();
-
-        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Root Create Map" }, 200, null));
-        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
-        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
-        _mapApi.CreateLayerAsync(worldId, mapId, Arg.Any<string>(), Arg.Any<Guid?>())
-            .Returns(new MapLayerDto
-            {
-                MapLayerId = rootLayerId,
-                Name = "Settlements",
-                SortOrder = 3,
-                IsEnabled = true,
-                ParentLayerId = null,
-            });
-
-        var cut = RenderPage(worldId, mapId);
-        cut.WaitForAssertion(() => Assert.Equal(3, cut.FindAll(".map-page__layer-row").Count));
-
-        cut.FindAll(".map-page__layer-add-child-button")[0].Click();
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".map-page__layer-action-button--cancel")
-            .Where(button => button.TextContent.Contains("Cancel child", StringComparison.Ordinal))));
-
-        cut.FindAll(".map-page__layer-action-button--cancel")
-            .First(button => button.TextContent.Contains("Cancel child", StringComparison.Ordinal))
-            .Click();
-
-        cut.Find(".map-page__layer-add-input").Input("Settlements");
-        cut.Find(".map-page__layer-add-button").Click();
-
-        await _mapApi.Received(1).CreateLayerAsync(worldId, mapId, "Settlements", null);
-        Assert.Null(GetField<Guid?>(cut.Instance, "_addLayerParentLayerId"));
-    }
-
-    [Fact]
-    public async Task AddLayerAsync_WhenNameBlank_SetsValidationErrorAndSkipsApi()
+    public async Task InlineCreate_WhenEscape_CancelsDraftAndSkipsApi()
     {
         var cut = RenderLoadedPage();
 
-        await InvokePrivateOnRendererAsync(cut, "AddLayerAsync");
+        cut.Find(".map-page__layer-add-root-button").Click();
+        cut.Find(".map-page__layer-create-input").Input("Cities");
+        cut.Find(".map-page__layer-create-input").KeyDown("Escape");
+
+        Assert.Empty(cut.FindAll(".map-page__layer-row--inline-create"));
+        Assert.False(GetField<bool>(cut.Instance, "_isInlineCreateActive"));
+        await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>());
+    }
+
+    [Fact]
+    public void LayerInlineCreate_WhenActive_DisablesAdditionalAddAndRenameEntryPoints()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var customLayerId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Inline Guard Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = customLayerId, Name = "Cities", SortOrder = 3, IsEnabled = true },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".map-page__layer-name-button")));
+
+        cut.Find(".map-page__layer-add-root-button").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(cut.Find(".map-page__layer-add-root-button").HasAttribute("disabled"));
+            Assert.All(cut.FindAll(".map-page__layer-add-child-button"), button => Assert.True(button.HasAttribute("disabled")));
+            Assert.True(cut.Find(".map-page__layer-name-button").HasAttribute("disabled"));
+        });
+    }
+
+    [Fact]
+    public void BeginInlineCreate_ClearsPendingDeleteAndNestTransientState()
+    {
+        var cut = RenderLoadedPage();
+
+        SetField(cut.Instance, "_pendingDeleteLayerId", _campaignLayerId);
+        SetField(cut.Instance, "_nestingLayerId", _campaignLayerId);
+        SetField(cut.Instance, "_selectedNestParentLayerId", _worldLayerId);
+        SetField(cut.Instance, "_isNestParentPickerOpen", true);
+
+        cut.Find(".map-page__layer-add-root-button").Click();
+
+        Assert.Null(GetField<Guid?>(cut.Instance, "_pendingDeleteLayerId"));
+        Assert.Null(GetField<Guid?>(cut.Instance, "_nestingLayerId"));
+        Assert.Null(GetField<Guid?>(cut.Instance, "_selectedNestParentLayerId"));
+        Assert.False(GetField<bool>(cut.Instance, "_isNestParentPickerOpen"));
+    }
+
+    [Fact]
+    public async Task SaveCreatedLayerAsync_WhenNameBlank_SetsValidationErrorAndSkipsApi()
+    {
+        var cut = RenderLoadedPage();
+        SetField(cut.Instance, "_isInlineCreateActive", true);
+        SetField(cut.Instance, "_createLayerNameInput", "   ");
+
+        await InvokePrivateOnRendererAsync(cut, "SaveCreatedLayerAsync");
 
         Assert.Equal("Layer name is required.", GetField<string>(cut.Instance, "_addLayerError"));
         await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>());
     }
 
     [Fact]
-    public async Task AddLayerAsync_WhenNameTooLong_SetsValidationErrorAndSkipsApi()
+    public async Task SaveCreatedLayerAsync_WhenNameTooLong_SetsValidationErrorAndSkipsApi()
     {
         var cut = RenderLoadedPage();
-        SetField(cut.Instance, "_newLayerNameInput", new string('L', 201));
+        SetField(cut.Instance, "_isInlineCreateActive", true);
+        SetField(cut.Instance, "_createLayerNameInput", new string('L', 201));
 
-        await InvokePrivateOnRendererAsync(cut, "AddLayerAsync");
+        await InvokePrivateOnRendererAsync(cut, "SaveCreatedLayerAsync");
 
         Assert.Equal("Layer name must be 200 characters or fewer.", GetField<string>(cut.Instance, "_addLayerError"));
         await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>());
     }
 
     [Fact]
-    public async Task AddLayerAsync_WhenApiThrows_SetsError()
+    public async Task SaveCreatedLayerAsync_WhenApiThrows_SetsErrorAndKeepsDraft()
     {
         var cut = RenderLoadedPage();
-        SetField(cut.Instance, "_newLayerNameInput", "Cities");
+        SetField(cut.Instance, "_isInlineCreateActive", true);
+        SetField(cut.Instance, "_createLayerNameInput", "Cities");
         _mapApi.CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>())
             .Returns(Task.FromException<MapLayerDto>(new InvalidOperationException("boom")));
 
-        await InvokePrivateOnRendererAsync(cut, "AddLayerAsync");
+        await InvokePrivateOnRendererAsync(cut, "SaveCreatedLayerAsync");
 
         Assert.Equal("Failed to add layer: boom", GetField<string>(cut.Instance, "_addLayerError"));
+        Assert.True(GetField<bool>(cut.Instance, "_isInlineCreateActive"));
     }
 
     [Fact]
-    public async Task AddLayerAsync_WhenAlreadyAdding_DoesNothing()
+    public async Task SaveCreatedLayerAsync_WhenAlreadyAdding_DoesNothing()
     {
         var cut = RenderLoadedPage();
-        SetField(cut.Instance, "_newLayerNameInput", "Cities");
+        SetField(cut.Instance, "_isInlineCreateActive", true);
+        SetField(cut.Instance, "_createLayerNameInput", "Cities");
         SetField(cut.Instance, "_isAddingLayer", true);
 
-        await InvokePrivateOnRendererAsync(cut, "AddLayerAsync");
+        await InvokePrivateOnRendererAsync(cut, "SaveCreatedLayerAsync");
 
         await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>());
     }
 
     [Fact]
-    public async Task OnNewLayerNameKeyDown_CoversEnterAndNonEnterPaths()
+    public async Task OnCreateLayerNameKeyDown_CoversEnterEscapeAndDefaultPaths()
     {
         var cut = RenderLoadedPage();
-        SetField(cut.Instance, "_newLayerNameInput", "Cities");
+        SetField(cut.Instance, "_isInlineCreateActive", true);
+        SetField(cut.Instance, "_createLayerNameInput", "Cities");
         _mapApi.CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>())
             .Returns(new MapLayerDto
             {
@@ -408,28 +690,35 @@ public class MapPageTests : MudBlazorTestContext
                 IsEnabled = true
             });
 
-        await InvokePrivateOnRendererAsync(cut, "OnNewLayerNameKeyDown", new KeyboardEventArgs { Key = "Escape" });
+        await InvokePrivateOnRendererAsync(cut, "OnCreateLayerNameKeyDown", new KeyboardEventArgs { Key = "Escape" });
+        Assert.False(GetField<bool>(cut.Instance, "_isInlineCreateActive"));
         await _mapApi.DidNotReceive().CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>());
 
-        await InvokePrivateOnRendererAsync(cut, "OnNewLayerNameKeyDown", new KeyboardEventArgs { Key = "Enter" });
+        SetField(cut.Instance, "_isInlineCreateActive", true);
+        SetField(cut.Instance, "_createLayerNameInput", "Cities");
+        await InvokePrivateOnRendererAsync(cut, "OnCreateLayerNameKeyDown", new KeyboardEventArgs { Key = "Enter" });
         await _mapApi.Received(1).CreateLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>());
+
+        SetField(cut.Instance, "_isInlineCreateActive", true);
+        SetField(cut.Instance, "_createLayerNameInput", "Cities");
+        await InvokePrivateOnRendererAsync(cut, "OnCreateLayerNameKeyDown", new KeyboardEventArgs { Key = "Tab" });
     }
 
     [Fact]
-    public async Task OnNewLayerNameInput_WhenValueNull_UsesEmptyStringAndClearsError()
+    public async Task OnCreateLayerNameInput_WhenValueNull_UsesEmptyStringAndClearsError()
     {
         var cut = RenderLoadedPage();
-        SetField(cut.Instance, "_newLayerNameInput", "Existing");
+        SetField(cut.Instance, "_createLayerNameInput", "Existing");
         SetField(cut.Instance, "_addLayerError", "old error");
 
-        await InvokePrivateOnRendererAsync(cut, "OnNewLayerNameInput", new ChangeEventArgs { Value = null });
+        await InvokePrivateOnRendererAsync(cut, "OnCreateLayerNameInput", new ChangeEventArgs { Value = null });
 
-        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_newLayerNameInput"));
+        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_createLayerNameInput"));
         Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_addLayerError"));
     }
 
     [Fact]
-    public void LayerRow_CustomLayer_ShowsRenameAndDeleteControlsOnlyForCustom()
+    public void LayerRow_CustomLayer_ShowsInlineRenameEntryAndNoLegacyRenameButtons()
     {
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
@@ -449,7 +738,8 @@ public class MapPageTests : MudBlazorTestContext
         var cut = RenderPage(worldId, mapId);
         cut.WaitForAssertion(() =>
         {
-            Assert.Single(cut.FindAll(".map-page__layer-rename-button"));
+            Assert.Empty(cut.FindAll(".map-page__layer-rename-button"));
+            Assert.Single(cut.FindAll(".map-page__layer-name-button"));
             Assert.Single(cut.FindAll(".map-page__layer-delete-button"));
         });
     }
@@ -473,9 +763,9 @@ public class MapPageTests : MudBlazorTestContext
         _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
 
         var cut = RenderPage(worldId, mapId);
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".map-page__layer-rename-button")));
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".map-page__layer-name-button")));
 
-        cut.Find(".map-page__layer-rename-button").Click();
+        cut.Find(".map-page__layer-name-button").Click();
         cut.Find(".map-page__layer-rename-input").Input("Settlements");
         cut.FindAll(".map-page__layer-action-button")
             .First(button => button.TextContent.Contains("Save", StringComparison.Ordinal))
@@ -484,6 +774,143 @@ public class MapPageTests : MudBlazorTestContext
         await _mapApi.Received(1).RenameLayerAsync(worldId, mapId, customLayerId, "Settlements");
 
         cut.WaitForAssertion(() => Assert.Contains("Settlements", cut.Markup, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void LayerRename_BeginEdit_OnlyTargetLayerEntersEditMode()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var customLayerAId = Guid.NewGuid();
+        var customLayerBId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Inline Edit Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = customLayerAId, Name = "Cities", SortOrder = 3, IsEnabled = true },
+            new() { MapLayerId = customLayerBId, Name = "Terrain", SortOrder = 4, IsEnabled = true },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Equal(5, cut.FindAll(".map-page__layer-row").Count));
+
+        var rowA = cut.Find($".map-page__layer-row[data-layer-id='{customLayerAId}']");
+        var rowB = cut.Find($".map-page__layer-row[data-layer-id='{customLayerBId}']");
+
+        rowA.Find(".map-page__layer-name-button").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Single(cut.FindAll(".map-page__layer-rename-input"));
+            Assert.Single(rowA.QuerySelectorAll(".map-page__layer-rename-input"));
+            Assert.Empty(rowB.QuerySelectorAll(".map-page__layer-rename-input"));
+        });
+    }
+
+    [Fact]
+    public void LayerRename_LegacyRenameActionButtons_AreRemovedForAllRows()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "No Legacy Rename Buttons Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = Guid.NewGuid(), Name = "Cities", SortOrder = 3, IsEnabled = true },
+            new() { MapLayerId = Guid.NewGuid(), Name = "Terrain", SortOrder = 4, IsEnabled = true },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Equal(5, cut.FindAll(".map-page__layer-row").Count);
+            Assert.Empty(cut.FindAll(".map-page__layer-rename-button"));
+        });
+    }
+
+    [Fact]
+    public void LayerRename_WhenEditingLayer_ClickingAnotherLayerNameDoesNothing()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var customLayerAId = Guid.NewGuid();
+        var customLayerBId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Single Editor Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = customLayerAId, Name = "Cities", SortOrder = 3, IsEnabled = true },
+            new() { MapLayerId = customLayerBId, Name = "Terrain", SortOrder = 4, IsEnabled = true },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Equal(5, cut.FindAll(".map-page__layer-row").Count));
+
+        var rowA = cut.Find($".map-page__layer-row[data-layer-id='{customLayerAId}']");
+        var rowB = cut.Find($".map-page__layer-row[data-layer-id='{customLayerBId}']");
+        rowA.Find(".map-page__layer-name-button").Click();
+
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".map-page__layer-rename-input")));
+        Assert.True(rowB.Find(".map-page__layer-name-button").HasAttribute("disabled"));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Single(rowA.QuerySelectorAll(".map-page__layer-rename-input"));
+            Assert.Empty(rowB.QuerySelectorAll(".map-page__layer-rename-input"));
+            Assert.Equal(customLayerAId, GetField<Guid?>(cut.Instance, "_editingLayerId"));
+        });
+    }
+
+    [Fact]
+    public void LayerRename_NestedLayer_ClickTargetsOnlyNestedLayer()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var parentLayerId = Guid.NewGuid();
+        var childLayerId = Guid.NewGuid();
+
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Nested Inline Rename Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = parentLayerId, Name = "Parent", SortOrder = 3, IsEnabled = true },
+            new() { MapLayerId = childLayerId, Name = "Child", SortOrder = 4, IsEnabled = true, ParentLayerId = parentLayerId },
+        });
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Equal(5, cut.FindAll(".map-page__layer-row").Count));
+
+        var parentRow = cut.Find($".map-page__layer-row[data-layer-id='{parentLayerId}']");
+        var childRow = cut.Find($".map-page__layer-row[data-layer-id='{childLayerId}']");
+
+        childRow.Find(".map-page__layer-name-button").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Single(cut.FindAll(".map-page__layer-rename-input"));
+            Assert.Empty(parentRow.QuerySelectorAll(".map-page__layer-rename-input"));
+            Assert.Single(childRow.QuerySelectorAll(".map-page__layer-rename-input"));
+        });
     }
 
     [Fact]
@@ -942,15 +1369,34 @@ public class MapPageTests : MudBlazorTestContext
     }
 
     [Fact]
-    public async Task BeginLayerRename_WhenProtectedOrMissing_DoesNothing()
+    public async Task BeginLayerRename_WhenProtectedMissingOrAnotherLayerAlreadyEditing_DoesNothing()
     {
         var cut = RenderLoadedPage();
+        var customLayerId = Guid.NewGuid();
+        GetField<List<MapLayerDto>>(cut.Instance, "_layers").Add(new MapLayerDto
+        {
+            MapLayerId = customLayerId,
+            Name = "Custom",
+            SortOrder = 3,
+            IsEnabled = true
+        });
 
         await InvokePrivateOnRendererAsync(cut, "BeginLayerRename", _worldLayerId);
         Assert.Null(GetField<Guid?>(cut.Instance, "_editingLayerId"));
 
         await InvokePrivateOnRendererAsync(cut, "BeginLayerRename", Guid.NewGuid());
         Assert.Null(GetField<Guid?>(cut.Instance, "_editingLayerId"));
+
+        SetField(cut.Instance, "_editingLayerId", _campaignLayerId);
+        SetField(cut.Instance, "_renameLayerNameInput", "Campaign");
+        await InvokePrivateOnRendererAsync(cut, "BeginLayerRename", customLayerId);
+
+        Assert.Equal(_campaignLayerId, GetField<Guid?>(cut.Instance, "_editingLayerId"));
+        Assert.Equal("Campaign", GetField<string>(cut.Instance, "_renameLayerNameInput"));
+
+        SetField(cut.Instance, "_isRenamingLayer", true);
+        await InvokePrivateOnRendererAsync(cut, "BeginLayerRename", customLayerId);
+        Assert.Equal(_campaignLayerId, GetField<Guid?>(cut.Instance, "_editingLayerId"));
     }
 
     [Fact]
@@ -964,6 +1410,11 @@ public class MapPageTests : MudBlazorTestContext
 
         Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_renameLayerNameInput"));
         Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_manageLayerError"));
+
+        SetField(cut.Instance, "_renameLayerNameInput", "Keep");
+        SetField(cut.Instance, "_isRenamingLayer", true);
+        await InvokePrivateOnRendererAsync(cut, "OnRenameLayerNameInput", new ChangeEventArgs { Value = "Ignored" });
+        Assert.Equal("Keep", GetField<string>(cut.Instance, "_renameLayerNameInput"));
     }
 
     [Fact]
@@ -972,10 +1423,12 @@ public class MapPageTests : MudBlazorTestContext
         var cut = RenderLoadedPage();
         SetField(cut.Instance, "_editingLayerId", _campaignLayerId);
         SetField(cut.Instance, "_renameLayerNameInput", "Campaign Layer");
+        SetField(cut.Instance, "_renameLayerOriginalName", "Campaign");
 
         await InvokePrivateOnRendererAsync(cut, "OnRenameLayerNameKeyDown", _campaignLayerId, new KeyboardEventArgs { Key = "Escape" });
         Assert.Null(GetField<Guid?>(cut.Instance, "_editingLayerId"));
         Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_renameLayerNameInput"));
+        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_renameLayerOriginalName"));
 
         await InvokePrivateOnRendererAsync(cut, "OnRenameLayerNameKeyDown", _campaignLayerId, new KeyboardEventArgs { Key = "Tab" });
         await _mapApi.DidNotReceive().RenameLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>());
@@ -996,10 +1449,34 @@ public class MapPageTests : MudBlazorTestContext
         });
         SetField(cut.Instance, "_editingLayerId", customLayerId);
         SetField(cut.Instance, "_renameLayerNameInput", "Renamed Custom");
+        SetField(cut.Instance, "_renameLayerOriginalName", "Custom");
 
         await InvokePrivateOnRendererAsync(cut, "OnRenameLayerNameKeyDown", customLayerId, new KeyboardEventArgs { Key = "Enter" });
 
         await _mapApi.Received(1).RenameLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), customLayerId, "Renamed Custom");
+    }
+
+    [Fact]
+    public async Task OnRenameLayerNameKeyDown_WhenEnterAndNameUnchanged_SkipsApiAndExitsEdit()
+    {
+        var cut = RenderLoadedPage();
+        var customLayerId = Guid.NewGuid();
+        var layers = GetField<List<MapLayerDto>>(cut.Instance, "_layers");
+        layers.Add(new MapLayerDto
+        {
+            MapLayerId = customLayerId,
+            Name = "Custom",
+            SortOrder = 3,
+            IsEnabled = true
+        });
+        SetField(cut.Instance, "_editingLayerId", customLayerId);
+        SetField(cut.Instance, "_renameLayerNameInput", "Custom");
+        SetField(cut.Instance, "_renameLayerOriginalName", "Custom");
+
+        await InvokePrivateOnRendererAsync(cut, "OnRenameLayerNameKeyDown", customLayerId, new KeyboardEventArgs { Key = "Enter" });
+
+        await _mapApi.DidNotReceive().RenameLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), customLayerId, Arg.Any<string>());
+        Assert.Null(GetField<Guid?>(cut.Instance, "_editingLayerId"));
     }
 
     [Fact]
@@ -1027,16 +1504,43 @@ public class MapPageTests : MudBlazorTestContext
 
         SetField(cut.Instance, "_editingLayerId", customLayerId);
         SetField(cut.Instance, "_renameLayerNameInput", "   ");
+        SetField(cut.Instance, "_renameLayerOriginalName", "Custom");
         await InvokePrivateOnRendererAsync(cut, "ConfirmLayerRenameAsync", customLayerId);
         Assert.Equal("Layer name is required.", GetField<string>(cut.Instance, "_manageLayerError"));
+        Assert.Equal(customLayerId, GetField<Guid?>(cut.Instance, "_editingLayerId"));
+        Assert.Equal("   ", GetField<string>(cut.Instance, "_renameLayerNameInput"));
 
         SetField(cut.Instance, "_renameLayerNameInput", new string('L', 201));
         await InvokePrivateOnRendererAsync(cut, "ConfirmLayerRenameAsync", customLayerId);
         Assert.Equal("Layer name must be 200 characters or fewer.", GetField<string>(cut.Instance, "_manageLayerError"));
+        Assert.Equal(customLayerId, GetField<Guid?>(cut.Instance, "_editingLayerId"));
     }
 
     [Fact]
-    public async Task ConfirmLayerRenameAsync_WhenApiThrows_SetsManageError()
+    public async Task ConfirmLayerRenameAsync_WhenNameUnchanged_ExitsEditModeWithoutApiCall()
+    {
+        var cut = RenderLoadedPage();
+        var customLayerId = Guid.NewGuid();
+        GetField<List<MapLayerDto>>(cut.Instance, "_layers").Add(new MapLayerDto
+        {
+            MapLayerId = customLayerId,
+            Name = "Custom",
+            SortOrder = 3,
+            IsEnabled = true
+        });
+        SetField(cut.Instance, "_editingLayerId", customLayerId);
+        SetField(cut.Instance, "_renameLayerNameInput", "Custom");
+        SetField(cut.Instance, "_renameLayerOriginalName", "Custom");
+
+        await InvokePrivateOnRendererAsync(cut, "ConfirmLayerRenameAsync", customLayerId);
+
+        await _mapApi.DidNotReceive().RenameLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>());
+        Assert.Null(GetField<Guid?>(cut.Instance, "_editingLayerId"));
+        Assert.Equal(string.Empty, GetField<string>(cut.Instance, "_renameLayerNameInput"));
+    }
+
+    [Fact]
+    public async Task ConfirmLayerRenameAsync_WhenApiThrows_KeepsEditSessionAndDraft()
     {
         var cut = RenderLoadedPage();
         var customLayerId = Guid.NewGuid();
@@ -1049,12 +1553,45 @@ public class MapPageTests : MudBlazorTestContext
         });
         SetField(cut.Instance, "_editingLayerId", customLayerId);
         SetField(cut.Instance, "_renameLayerNameInput", "Renamed Layer");
+        SetField(cut.Instance, "_renameLayerOriginalName", "Custom");
         _mapApi.RenameLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
             .Returns(Task.FromException(new InvalidOperationException("rename failed")));
 
         await InvokePrivateOnRendererAsync(cut, "ConfirmLayerRenameAsync", customLayerId);
 
         Assert.Equal("Failed to rename layer: rename failed", GetField<string>(cut.Instance, "_manageLayerError"));
+        Assert.Equal(customLayerId, GetField<Guid?>(cut.Instance, "_editingLayerId"));
+        Assert.Equal("Renamed Layer", GetField<string>(cut.Instance, "_renameLayerNameInput"));
+    }
+
+    [Fact]
+    public async Task ConfirmLayerRenameAsync_WhenSaveAlreadyInFlight_SendsSingleRequest()
+    {
+        var cut = RenderLoadedPage();
+        var customLayerId = Guid.NewGuid();
+        GetField<List<MapLayerDto>>(cut.Instance, "_layers").Add(new MapLayerDto
+        {
+            MapLayerId = customLayerId,
+            Name = "Custom",
+            SortOrder = 3,
+            IsEnabled = true
+        });
+
+        var renameTcs = new TaskCompletionSource();
+        _mapApi.RenameLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>())
+            .Returns(renameTcs.Task);
+
+        SetField(cut.Instance, "_editingLayerId", customLayerId);
+        SetField(cut.Instance, "_renameLayerNameInput", "Renamed Layer");
+        SetField(cut.Instance, "_renameLayerOriginalName", "Custom");
+
+        var firstSave = InvokePrivateOnRendererAsync(cut, "ConfirmLayerRenameAsync", customLayerId);
+        var secondSave = InvokePrivateOnRendererAsync(cut, "ConfirmLayerRenameAsync", customLayerId);
+
+        await _mapApi.Received(1).RenameLayerAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), customLayerId, "Renamed Layer");
+
+        renameTcs.SetResult();
+        await Task.WhenAll(firstSave, secondSave);
     }
 
     [Fact]
@@ -2817,6 +3354,36 @@ public class MapPageTests : MudBlazorTestContext
         cut.WaitForAssertion(() => Assert.Contains("<img", cut.Markup, StringComparison.OrdinalIgnoreCase));
         return cut;
     }
+
+    private IRenderedComponent<MapPage> RenderNestedLayerPage(Guid locationsLayerId, Guid harborLayerId)
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        ConfigureNestedLayerPage(worldId, mapId, locationsLayerId, harborLayerId);
+        var cut = RenderPage(worldId, mapId);
+        cut.WaitForAssertion(() => Assert.Equal(5, cut.FindAll(".map-page__layer-row").Count));
+        return cut;
+    }
+
+    private void ConfigureNestedLayerPage(Guid worldId, Guid mapId, Guid locationsLayerId, Guid harborLayerId)
+    {
+        _mapApi.GetMapAsync(worldId, mapId).Returns((new MapDto { Name = "Nested Layer Map" }, 200, null));
+        _mapApi.GetBasemapReadUrlAsync(worldId, mapId).Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://blob/read" }, 200, null));
+        _mapApi.ListPinsForMapAsync(worldId, mapId).Returns(new List<MapPinResponseDto>());
+        _mapApi.GetLayersForMapAsync(worldId, mapId).Returns(new List<MapLayerDto>
+        {
+            new() { MapLayerId = _worldLayerId, Name = "World", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = _campaignLayerId, Name = "Campaign", SortOrder = 1, IsEnabled = true },
+            new() { MapLayerId = _arcLayerId, Name = "Arc", SortOrder = 2, IsEnabled = true },
+            new() { MapLayerId = locationsLayerId, Name = "Locations", SortOrder = 0, IsEnabled = true, ParentLayerId = _worldLayerId },
+            new() { MapLayerId = harborLayerId, Name = "Harbor", SortOrder = 0, IsEnabled = true, ParentLayerId = locationsLayerId },
+        });
+    }
+
+    private static List<string?> GetVisibleLayerRowIds(IRenderedComponent<MapPage> cut) =>
+        cut.FindAll(".map-page__layer-row[data-layer-id]")
+            .Select(row => row.GetAttribute("data-layer-id"))
+            .ToList();
 
     private static T GetField<T>(object instance, string fieldName)
     {

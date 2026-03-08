@@ -1,4 +1,8 @@
-import { futurePhaseBlockText } from "../phase-files.mjs";
+function futurePhaseBlockText(futurePhaseNames) {
+  return futurePhaseNames.length > 0
+    ? futurePhaseNames.map((name) => `- ${name}`).join("\n")
+    : "(none)";
+}
 
 export function buildPlanningBriefPrompt(
   phaseSpec,
@@ -13,7 +17,6 @@ export function buildPlanningBriefPrompt(
 You are preparing a planning brief for a single implementation phase in an existing repository.
 
 This is not a redesign exercise.
-Do not reopen settled repository-wide decisions.
 
 Return only these sections:
 - Goal
@@ -25,24 +28,24 @@ Return only these sections:
 - Phase Guard
 
 Requirements:
-- stay within the current phase
-- do not suggest future-phase work
-- do not suggest auth, authorization, transport, hosting, or repo-wide redesign unless the phase explicitly changes it
-- keep the output under 300 words
-- be concise and concrete
+- be concise
+- stay within the phase
+- do not reopen settled repo-level decisions
+- do not suggest auth, transport, or infrastructure redesign unless explicitly required by the phase
+- keep under 300 words
 
 Current phase file: ${phaseFileName}
 
 Future phases that must NOT be implemented in this phase:
 ${futurePhaseBlock}
 
-FEATURE ARCHITECTURE / SHARED RULES
-===================================
-${architecture || "(none provided)"}
-
 FROZEN ASSUMPTIONS
 ==================
 ${frozenAssumptions || "(none provided)"}
+
+FEATURE ARCHITECTURE
+====================
+${architecture || "(none provided)"}
 
 PHASE SPECIFICATION
 ===================
@@ -83,18 +86,17 @@ Requirements:
 - keep the plan specific enough for direct execution
 - avoid unrelated refactors
 - do not propose future-phase work
-- do not reopen frozen assumptions
 
 Future phases that are out of scope:
 ${futurePhaseBlock}
 
-FEATURE ARCHITECTURE / SHARED RULES
-===================================
-${architecture || "(none provided)"}
-
 FROZEN ASSUMPTIONS
 ==================
 ${frozenAssumptions || "(none provided)"}
+
+FEATURE ARCHITECTURE
+====================
+${architecture || "(none provided)"}
 
 PLANNING BRIEF
 ==============
@@ -114,17 +116,46 @@ export function buildPlanReviewPrompt(
   codexPlan,
   phaseFileName,
   futurePhaseNames,
-  previousReview = "",
-  settledDecisions = ""
+  previousReview,
+  settledDecisions,
+  roundNumber,
+  isFinalRound
 ) {
   const futurePhaseBlock = futurePhaseBlockText(futurePhaseNames);
+
+  const finalRoundGuidance = isFinalRound
+    ? `
+FINAL REVIEW ROUND
+==================
+This is the last review round.
+
+You must prefer approval if the plan is viable and safe to implement.
+
+Only return VERDICT: REVISE if significant changes are absolutely necessary due to one or more true blocking issues:
+- phase specification violation
+- future-phase scope drift
+- likely compile, runtime, or test failure
+- clearly missing required tests
+- violation of frozen assumptions
+
+Do NOT request revision for:
+- optional improvements
+- stylistic preferences
+- alternative valid approaches
+- re-adjudicating settled repository decisions
+- minor sequencing preferences
+
+If implementation could proceed safely with the current plan and any remaining concerns can be handled as non-blocking notes, you must approve.
+`.trim()
+    : "";
 
   return `
 You are reviewing an implementation plan for a single existing-repository phase.
 
 This is NOT a greenfield design review.
 Do NOT reopen settled repository-level decisions unless the phase explicitly changes them.
-Your job is to identify BLOCKING issues only.
+
+Your job is to find only BLOCKING issues.
 
 A BLOCKING issue is one that:
 - violates the phase specification
@@ -134,11 +165,11 @@ A BLOCKING issue is one that:
 - pulls in future-phase work
 - breaks established project patterns that this phase is not allowed to redesign
 
-A NON-BLOCKING issue is one that:
-- is a style preference
-- is an optional improvement
-- suggests a different but still viable design
-- reopens settled repository-wide concerns
+A NON-BLOCKING issue is:
+- style preference
+- optional improvement
+- alternative design that is not required
+- reopening settled repo-wide concerns
 
 If there are no BLOCKING issues, you MUST approve.
 
@@ -161,22 +192,25 @@ VERDICT: REVISE
 Rules:
 - If there are zero BLOCKING issues, use VERDICT: APPROVED
 - Do not ask for future-phase work
-- Do not ask to redesign authentication, authorization, transport, hosting, or other repo-wide patterns unless the phase explicitly changes them
+- Do not ask to redesign authentication, authorization, transport, hosting, or repo-wide patterns unless the phase explicitly changes them
 - Prefer approval when the plan is viable
-- Keep the review concise and actionable
+
+Review round: ${roundNumber}
+
+${finalRoundGuidance}
 
 Current phase file: ${phaseFileName}
 
 Future phases that must NOT be implemented in this phase:
 ${futurePhaseBlock}
 
-FEATURE ARCHITECTURE / SHARED RULES
-===================================
-${architecture || "(none provided)"}
-
 FROZEN ASSUMPTIONS
 ==================
 ${frozenAssumptions || "(none provided)"}
+
+FEATURE ARCHITECTURE
+====================
+${architecture || "(none provided)"}
 
 PLANNING BRIEF
 ==============
@@ -210,7 +244,7 @@ export function buildCodexPlanRevisionPrompt(
   phaseFileName,
   futurePhaseNames,
   roundNumber,
-  settledDecisions = ""
+  settledDecisions
 ) {
   const futurePhaseBlock = futurePhaseBlockText(futurePhaseNames);
 
@@ -221,7 +255,7 @@ You are planning only.
 Do NOT implement code.
 Do NOT edit files.
 Do NOT include commentary outside the final plan.
-Do NOT redesign repository-wide systems.
+Do NOT reopen settled repository decisions.
 
 Return only markdown with these sections:
 # Implementation Plan
@@ -235,24 +269,23 @@ Return only markdown with these sections:
 This is revision round ${roundNumber}.
 
 Requirements:
-- address every BLOCKING issue raised in the review
-- preserve viable decisions already made
+- address the BLOCKING issues raised in the review
+- do not churn valid prior decisions
 - obey phase boundaries strictly
 - do not implement future phases
 - avoid unrelated refactors
 - keep the plan concrete enough for direct execution
-- do not reopen settled decisions
 
 Future phases that remain out of scope:
 ${futurePhaseBlock}
 
-FEATURE ARCHITECTURE / SHARED RULES
-===================================
-${architecture || "(none provided)"}
-
 FROZEN ASSUMPTIONS
 ==================
 ${frozenAssumptions || "(none provided)"}
+
+FEATURE ARCHITECTURE
+====================
+${architecture || "(none provided)"}
 
 PLANNING BRIEF
 ==============
@@ -262,13 +295,13 @@ PHASE SPECIFICATION
 ===================
 ${phaseSpec}
 
-SETTLED DECISIONS
-=================
-${settledDecisions || "(none)"}
-
 CURRENT IMPLEMENTATION PLAN
 ===========================
 ${currentPlan}
+
+SETTLED DECISIONS
+=================
+${settledDecisions || "(none)"}
 
 REVIEW TO ADDRESS
 =================

@@ -53,15 +53,38 @@
                         <aside class="session-map-viewer-modal__layers" aria-label="Map layers">
                             @{
                                 var effectivelyVisibleLayerIds = GetEffectivelyVisibleLayerIds();
+                                var layerRows = GetVisibleLayerRows();
                             }
-                            @foreach (var layer in _layers)
+                            @foreach (var layerRow in layerRows)
                             {
-                                <label class="@GetLayerRowClass(layer, effectivelyVisibleLayerIds)">
+                                <label class="@GetLayerRowClass(layerRow.Layer, effectivelyVisibleLayerIds)"
+                                       data-layer-id="@layerRow.Layer.MapLayerId"
+                                       data-layer-depth="@layerRow.Depth">
+                                    @if (layerRow.HasChildren)
+                                    {
+                                        <button type="button"
+                                                class="session-map-viewer-modal__layer-disclosure"
+                                                data-layer-disclosure="@layerRow.Layer.MapLayerId"
+                                                aria-label="@GetLayerDisclosureLabel(layerRow)"
+                                                aria-expanded="@(!layerRow.IsCollapsed).ToString().ToLowerInvariant()"
+                                                @onclick="@(() => ToggleLayerCollapsed(layerRow.Layer.MapLayerId))">
+                                            <span class="session-map-viewer-modal__layer-disclosure-icon" aria-hidden="true">
+                                                @(layerRow.IsCollapsed ? ">" : "v")
+                                            </span>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="session-map-viewer-modal__layer-disclosure-spacer" aria-hidden="true"></span>
+                                    }
+                                    <span class="session-map-viewer-modal__layer-indent"
+                                          style="@GetLayerDepthStyle(layerRow.Depth)"
+                                          aria-hidden="true"></span>
                                     <input type="checkbox"
                                            class="session-map-viewer-modal__layer-toggle"
-                                           checked="@layer.IsEnabled"
-                                           @onchange="@(args => OnLayerToggleChangedAsync(layer.MapLayerId, args))" />
-                                    <span class="session-map-viewer-modal__layer-name">@layer.Name</span>
+                                           checked="@layerRow.Layer.IsEnabled"
+                                           @onchange="@(args => OnLayerToggleChangedAsync(layerRow.Layer.MapLayerId, args))" />
+                                    <span class="session-map-viewer-modal__layer-name">@layerRow.Layer.Name</span>
                                 </label>
                             }
                         </aside>
@@ -168,6 +191,7 @@
     private double _dragStartClientY;
     private double _dragStartPanX;
     private double _dragStartPanY;
+    private readonly HashSet<Guid> _collapsedLayerIds = [];
     private ElementReference _mapViewportRef;
     private ElementReference _mapImageRef;
     private IJSObjectReference? _mapInteropModule;
@@ -192,6 +216,7 @@
     {
         if (!IsOpen)
         {
+            _collapsedLayerIds.Clear();
             _lastIsOpen = false;
             return;
         }
@@ -218,6 +243,7 @@
         _basemapReadUrl = string.Empty;
         _pins = [];
         _layers = [];
+        _collapsedLayerIds.Clear();
         ResetMapViewportState();
         _state = SessionMapViewerState.None;
         await InvokeAsync(StateHasChanged);
@@ -254,7 +280,8 @@
                 return;
             }
 
-            _layers = SortLayersByOrder(layers);
+            _layers = layers;
+            PruneCollapsedLayerIds();
             _pins = pins;
             _state = SessionMapViewerState.Loaded;
         }
@@ -602,9 +629,6 @@
     private static double Clamp(double value, double min, double max) =>
         value < min ? min : value > max ? max : value;
 
-    private static List<MapLayerDto> SortLayersByOrder(List<MapLayerDto> layers) =>
-        layers.OrderBy(layer => layer.SortOrder).ToList();
-
     private IEnumerable<MapPinResponseDto> GetVisiblePins()
     {
         if (_layers.Count == 0)
@@ -623,6 +647,111 @@
         effectivelyVisibleLayerIds.Contains(layer.MapLayerId)
             ? "session-map-viewer-modal__layer-row"
             : "session-map-viewer-modal__layer-row session-map-viewer-modal__layer-row--disabled";
+
+    private List<LayerRenderRow> GetVisibleLayerRows()
+    {
+        if (_layers.Count == 0)
+        {
+            _collapsedLayerIds.Clear();
+            return [];
+        }
+
+        var layerRows = new List<LayerRenderRow>(_layers.Count);
+        var childrenByParentId = _layers
+            .Where(layer => layer.ParentLayerId.HasValue)
+            .GroupBy(layer => layer.ParentLayerId!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group => OrderSiblingLayers(group).ToList());
+
+        var visited = new HashSet<Guid>();
+        foreach (var rootLayer in OrderSiblingLayers(_layers.Where(IsRootLayer)))
+        {
+            BuildVisibleLayerRowsDepthFirst(rootLayer, depth: 0, childrenByParentId, layerRows, visited);
+        }
+
+        foreach (var remainingLayer in OrderSiblingLayers(_layers.Where(layer => !visited.Contains(layer.MapLayerId))))
+        {
+            BuildVisibleLayerRowsDepthFirst(remainingLayer, depth: 0, childrenByParentId, layerRows, visited);
+        }
+
+        PruneCollapsedLayerIds();
+        return layerRows;
+    }
+
+    private void BuildVisibleLayerRowsDepthFirst(
+        MapLayerDto layer,
+        int depth,
+        IReadOnlyDictionary<Guid, List<MapLayerDto>> childrenByParentId,
+        ICollection<LayerRenderRow> layerRows,
+        ISet<Guid> visited)
+    {
+        if (!visited.Add(layer.MapLayerId))
+        {
+            return;
+        }
+
+        var hasChildren = childrenByParentId.TryGetValue(layer.MapLayerId, out var children) && children.Count > 0;
+        var isCollapsed = hasChildren && _collapsedLayerIds.Contains(layer.MapLayerId);
+        layerRows.Add(new LayerRenderRow(layer, depth, hasChildren, isCollapsed));
+
+        if (!hasChildren || isCollapsed || children is null)
+        {
+            return;
+        }
+
+        foreach (var child in children)
+        {
+            BuildVisibleLayerRowsDepthFirst(child, depth + 1, childrenByParentId, layerRows, visited);
+        }
+    }
+
+    private bool IsRootLayer(MapLayerDto layer) =>
+        !layer.ParentLayerId.HasValue || !_layers.Any(candidate => candidate.MapLayerId == layer.ParentLayerId.Value);
+
+    private static IOrderedEnumerable<MapLayerDto> OrderSiblingLayers(IEnumerable<MapLayerDto> layers) =>
+        layers
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.Name, StringComparer.Ordinal)
+            .ThenBy(layer => layer.MapLayerId);
+
+    private void ToggleLayerCollapsed(Guid layerId)
+    {
+        var layerRows = GetVisibleLayerRows();
+        var row = layerRows.FirstOrDefault(existingRow => existingRow.Layer.MapLayerId == layerId);
+        if (row is null || !row.HasChildren)
+        {
+            return;
+        }
+
+        if (!_collapsedLayerIds.Add(layerId))
+        {
+            _collapsedLayerIds.Remove(layerId);
+        }
+    }
+
+    private void PruneCollapsedLayerIds()
+    {
+        if (_collapsedLayerIds.Count == 0)
+        {
+            return;
+        }
+
+        var validLayerIds = _layers.Select(layer => layer.MapLayerId).ToHashSet();
+        _collapsedLayerIds.RemoveWhere(layerId => !validLayerIds.Contains(layerId));
+    }
+
+    private static string GetLayerDepthStyle(int depth)
+    {
+        var clampedDepth = depth < 0 ? 0 : depth;
+        var indentPixels = clampedDepth * 14;
+        return string.Create(CultureInfo.InvariantCulture, $"width:{indentPixels}px;");
+    }
+
+    private static string GetLayerDisclosureLabel(LayerRenderRow layerRow) =>
+        layerRow.IsCollapsed
+            ? $"Expand {layerRow.Layer.Name}"
+            : $"Collapse {layerRow.Layer.Name}";
 
     private async Task<IJSObjectReference?> EnsureModuleAsync()
     {
@@ -759,4 +888,10 @@
         NotFound,
         BasemapMissing
     }
+
+    private sealed record LayerRenderRow(
+        MapLayerDto Layer,
+        int Depth,
+        bool HasChildren,
+        bool IsCollapsed);
 }

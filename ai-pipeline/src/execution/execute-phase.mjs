@@ -23,14 +23,13 @@ export async function executePhase(phasePath, allPhasePaths, architecture, froze
   const phaseSpec = readText(phasePath);
 
   const planResult = await createAndApprovePlan(
-    phaseSpec,
-    architecture,
-    frozenAssumptions,
-    phaseFileName,
-    phaseName,
-    futurePhaseNames,
-    paths
-  );
+  phaseSpec,
+  architecture,
+  frozenAssumptions,
+  phaseFileName,
+  futurePhaseNames,
+  paths
+);
 
   const codexTask = buildCodexImplementationTask(
     phaseSpec,

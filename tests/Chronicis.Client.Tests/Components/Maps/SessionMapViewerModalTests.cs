@@ -124,21 +124,25 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void Modal_LayersRenderInSortOrder()
+    public void Modal_LayersRenderAsNestedHierarchy()
     {
         const string readUrl = "https://blob.example.com/read";
+        var worldId = Guid.Parse("557f2a83-8645-48e4-86ba-df8619e6c096");
+        var citiesId = Guid.Parse("16cb18f7-9d2f-4e17-b530-92f1ac3f5380");
+        var terrainId = Guid.Parse("cf99ebef-e9f1-4e4d-a985-9b3fdcd9f152");
+        var capitalId = Guid.Parse("60a93f52-db84-4822-9f52-c32fefb5140b");
+        var portsId = Guid.Parse("cc5a4657-4af7-4a5c-ab1b-bd3c7b94c728");
+
         _mapApi.GetBasemapReadUrlAsync(_worldId, _mapId)
             .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = readUrl }, 200, null));
-
-        var layerA = Guid.Parse("cf99ebef-e9f1-4e4d-a985-9b3fdcd9f152");
-        var layerB = Guid.Parse("557f2a83-8645-48e4-86ba-df8619e6c096");
-        var layerC = Guid.Parse("16cb18f7-9d2f-4e17-b530-92f1ac3f5380");
         _mapApi.GetLayersForMapAsync(_worldId, _mapId)
             .Returns(new List<MapLayerDto>
             {
-                new() { MapLayerId = layerA, Name = "Arc", SortOrder = 2, IsEnabled = true },
-                new() { MapLayerId = layerB, Name = "World", SortOrder = 0, IsEnabled = true },
-                new() { MapLayerId = layerC, Name = "Campaign", SortOrder = 1, IsEnabled = true }
+                new() { MapLayerId = portsId, Name = "Ports", SortOrder = 1, IsEnabled = true, ParentLayerId = citiesId },
+                new() { MapLayerId = terrainId, Name = "Terrain", SortOrder = 1, IsEnabled = true, ParentLayerId = worldId },
+                new() { MapLayerId = citiesId, Name = "Cities", SortOrder = 0, IsEnabled = true, ParentLayerId = worldId },
+                new() { MapLayerId = worldId, Name = "World", SortOrder = 0, IsEnabled = true },
+                new() { MapLayerId = capitalId, Name = "Capital", SortOrder = 0, IsEnabled = true, ParentLayerId = citiesId }
             });
 
         var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
@@ -148,10 +152,105 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
 
         cut.WaitForAssertion(() =>
         {
-            var layerNames = cut.FindAll(".session-map-viewer-modal__layer-name")
-                .Select(x => x.TextContent.Trim())
+            var layerRows = cut.FindAll("[data-layer-id]")
+                .Select(x => new
+                {
+                    Id = x.GetAttribute("data-layer-id"),
+                    Depth = x.GetAttribute("data-layer-depth"),
+                    Name = x.QuerySelector(".session-map-viewer-modal__layer-name")!.TextContent.Trim()
+                })
                 .ToList();
-            Assert.Equal(["World", "Campaign", "Arc"], layerNames);
+            Assert.Equal(
+                [worldId.ToString(), citiesId.ToString(), capitalId.ToString(), portsId.ToString(), terrainId.ToString()],
+                layerRows.Select(row => row.Id).ToList());
+            Assert.Equal(["0", "1", "2", "2", "1"], layerRows.Select(row => row.Depth).ToList());
+            Assert.Equal(["World", "Cities", "Capital", "Ports", "Terrain"], layerRows.Select(row => row.Name).ToList());
+        });
+    }
+
+    [Fact]
+    public void Modal_OnlyParentRowsRenderDisclosureControls()
+    {
+        const string readUrl = "https://blob.example.com/read";
+        var rootId = Guid.Parse("3c56fef8-7f1c-42b5-b6da-c8af20a1ef3f");
+        var childId = Guid.Parse("6fe96fd4-b32d-4f79-b0ea-3e00d48361a8");
+        var leafRootId = Guid.Parse("f677af67-bb79-437b-9303-00ee1e27eb69");
+
+        _mapApi.GetBasemapReadUrlAsync(_worldId, _mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = readUrl }, 200, null));
+        _mapApi.GetLayersForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapLayerDto>
+            {
+                new() { MapLayerId = rootId, Name = "Root", SortOrder = 0, IsEnabled = true },
+                new() { MapLayerId = childId, Name = "Child", SortOrder = 0, IsEnabled = true, ParentLayerId = rootId },
+                new() { MapLayerId = leafRootId, Name = "Leaf Root", SortOrder = 1, IsEnabled = true }
+            });
+
+        var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.WorldId, _worldId)
+            .Add(x => x.MapId, _mapId));
+
+        cut.WaitForAssertion(() =>
+        {
+            var disclosures = cut.FindAll("[data-layer-disclosure]");
+            Assert.Single(disclosures);
+            Assert.Equal(rootId.ToString(), disclosures[0].GetAttribute("data-layer-disclosure"));
+            Assert.Equal("true", disclosures[0].GetAttribute("aria-expanded"));
+            Assert.Empty(cut.FindAll($"[data-layer-id='{childId}'] [data-layer-disclosure]"));
+            Assert.Empty(cut.FindAll($"[data-layer-id='{leafRootId}'] [data-layer-disclosure]"));
+        });
+    }
+
+    [Fact]
+    public void Modal_CollapseAndExpand_HidesOnlyDescendantsOfThatBranch()
+    {
+        const string readUrl = "https://blob.example.com/read";
+        var rootId = Guid.Parse("fb1dccd5-c6e5-4116-9db8-b1a6e4cb087d");
+        var branchAId = Guid.Parse("0870ad54-60f3-4cfc-94f2-7104ee7c4f44");
+        var branchALeafId = Guid.Parse("43b1c972-3144-4d40-82a9-c983f5f87516");
+        var branchBId = Guid.Parse("8cab907e-06cf-4935-9e14-00efc34efd3e");
+        var branchBLeafId = Guid.Parse("b5b9831c-8006-4417-8183-cccf2a0a9be1");
+        var peerRootId = Guid.Parse("9d0de65c-becc-4da1-b48b-36d707177494");
+
+        _mapApi.GetBasemapReadUrlAsync(_worldId, _mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = readUrl }, 200, null));
+        _mapApi.GetLayersForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapLayerDto>
+            {
+                new() { MapLayerId = rootId, Name = "Root", SortOrder = 0, IsEnabled = true },
+                new() { MapLayerId = branchAId, Name = "Branch A", SortOrder = 0, IsEnabled = true, ParentLayerId = rootId },
+                new() { MapLayerId = branchALeafId, Name = "Branch A Leaf", SortOrder = 0, IsEnabled = true, ParentLayerId = branchAId },
+                new() { MapLayerId = branchBId, Name = "Branch B", SortOrder = 1, IsEnabled = true, ParentLayerId = rootId },
+                new() { MapLayerId = branchBLeafId, Name = "Branch B Leaf", SortOrder = 0, IsEnabled = true, ParentLayerId = branchBId },
+                new() { MapLayerId = peerRootId, Name = "Peer Root", SortOrder = 1, IsEnabled = true }
+            });
+
+        var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.WorldId, _worldId)
+            .Add(x => x.MapId, _mapId));
+
+        cut.WaitForAssertion(() =>
+            Assert.Equal(6, cut.FindAll("[data-layer-id]").Count));
+
+        cut.Find($"[data-layer-disclosure='{branchAId}']").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.DoesNotContain(cut.FindAll("[data-layer-id]").Select(row => row.GetAttribute("data-layer-id")), id => id == branchALeafId.ToString());
+            Assert.Contains(cut.FindAll("[data-layer-id]").Select(row => row.GetAttribute("data-layer-id")), id => id == branchBId.ToString());
+            Assert.Contains(cut.FindAll("[data-layer-id]").Select(row => row.GetAttribute("data-layer-id")), id => id == branchBLeafId.ToString());
+            Assert.Contains(cut.FindAll("[data-layer-id]").Select(row => row.GetAttribute("data-layer-id")), id => id == peerRootId.ToString());
+            Assert.Equal("false", cut.Find($"[data-layer-disclosure='{branchAId}']").GetAttribute("aria-expanded"));
+        });
+
+        cut.Find($"[data-layer-disclosure='{branchAId}']").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains(cut.FindAll("[data-layer-id]").Select(row => row.GetAttribute("data-layer-id")), id => id == branchALeafId.ToString());
+            Assert.Equal("true", cut.Find($"[data-layer-disclosure='{branchAId}']").GetAttribute("aria-expanded"));
         });
     }
 
@@ -378,6 +477,35 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
         {
             Assert.Empty(cut.FindAll(".session-map-viewer-modal__pin"));
             Assert.Empty(cut.FindAll(".session-map-viewer-modal__pin-name"));
+        });
+    }
+
+    [Fact]
+    public void Modal_DoesNotRenderManagementControls()
+    {
+        const string readUrl = "https://blob.example.com/read";
+        _mapApi.GetBasemapReadUrlAsync(_worldId, _mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = readUrl }, 200, null));
+        _mapApi.GetLayersForMapAsync(_worldId, _mapId)
+            .Returns(new List<MapLayerDto>
+            {
+                new() { MapLayerId = Guid.NewGuid(), Name = "World", SortOrder = 0, IsEnabled = true }
+            });
+
+        var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.WorldId, _worldId)
+            .Add(x => x.MapId, _mapId));
+
+        cut.WaitForAssertion(() =>
+        {
+            var markup = cut.Markup;
+            Assert.DoesNotContain("Add Root-Level Layer", markup, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Add Child Layer", markup, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Rename", markup, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Delete", markup, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Nest", markup, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(">Root<", markup, StringComparison.OrdinalIgnoreCase);
         });
     }
 
@@ -658,6 +786,56 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
         Assert.Equal(5d, (double)InvokeStatic("Clamp", 5d, 0d, 10d)!);
         Assert.Equal(10d, (double)InvokeStatic("Clamp", 11d, 0d, 10d)!);
 
+        var rootId = Guid.Parse("6dce0116-7d14-4547-ab00-f580f27eb416");
+        var childId = Guid.Parse("5691b07a-5f2c-42f4-a786-f637f2451f80");
+        var orphanId = Guid.Parse("b2b9d7a6-3d65-4062-a760-6f70f1d4ec47");
+        var layers = new List<MapLayerDto>
+        {
+            new() { MapLayerId = childId, Name = "Child", SortOrder = 0, IsEnabled = true, ParentLayerId = rootId },
+            new() { MapLayerId = rootId, Name = "Root", SortOrder = 0, IsEnabled = true },
+            new() { MapLayerId = orphanId, Name = "Orphan", SortOrder = 0, IsEnabled = true, ParentLayerId = Guid.NewGuid() }
+        };
+        SetField(instance, "_layers", layers);
+
+        var orderedSiblingNames = ((IEnumerable<MapLayerDto>)InvokeStatic("OrderSiblingLayers", new[]
+        {
+            new MapLayerDto { MapLayerId = Guid.Parse("9979ac5a-5434-4012-bd99-b0ba55f73df7"), Name = "B", SortOrder = 1 },
+            new MapLayerDto { MapLayerId = Guid.Parse("8ace2b95-92cb-4a33-8024-4f8c853cb22d"), Name = "A", SortOrder = 1 },
+            new MapLayerDto { MapLayerId = Guid.Parse("1cb96547-4982-4c5a-bf5a-57f4450031e6"), Name = "C", SortOrder = 0 }
+        })!)
+            .Select(layer => layer.Name)
+            .ToList();
+        Assert.Equal(["C", "A", "B"], orderedSiblingNames);
+
+        Assert.True((bool)InvokePrivate(instance, "IsRootLayer", layers.Single(layer => layer.MapLayerId == rootId))!);
+        Assert.True((bool)InvokePrivate(instance, "IsRootLayer", layers.Single(layer => layer.MapLayerId == orphanId))!);
+        Assert.False((bool)InvokePrivate(instance, "IsRootLayer", layers.Single(layer => layer.MapLayerId == childId))!);
+
+        Assert.Equal("width:0px;", (string)InvokeStatic("GetLayerDepthStyle", -1)!);
+        Assert.Equal("width:28px;", (string)InvokeStatic("GetLayerDepthStyle", 2)!);
+
+        var visibleRows = (IEnumerable<object>)InvokePrivate(instance, "GetVisibleLayerRows")!;
+        Assert.Equal(3, visibleRows.Count());
+
+        var disclosureLabel = (string)InvokeStatic(
+            "GetLayerDisclosureLabel",
+            CreateLayerRenderRow(layers.Single(layer => layer.MapLayerId == rootId), depth: 0, hasChildren: true, isCollapsed: false))!;
+        Assert.Equal("Collapse Root", disclosureLabel);
+        var expandLabel = (string)InvokeStatic(
+            "GetLayerDisclosureLabel",
+            CreateLayerRenderRow(layers.Single(layer => layer.MapLayerId == rootId), depth: 0, hasChildren: true, isCollapsed: true))!;
+        Assert.Equal("Expand Root", expandLabel);
+
+        var collapsedLayerIds = (HashSet<Guid>)GetField(instance, "_collapsedLayerIds")!;
+        collapsedLayerIds.Add(rootId);
+        InvokePrivate(instance, "ToggleLayerCollapsed", rootId);
+        Assert.DoesNotContain(rootId, collapsedLayerIds);
+        InvokePrivate(instance, "ToggleLayerCollapsed", childId);
+        Assert.DoesNotContain(childId, collapsedLayerIds);
+        collapsedLayerIds.Add(Guid.NewGuid());
+        InvokePrivate(instance, "PruneCollapsedLayerIds");
+        Assert.DoesNotContain(collapsedLayerIds, layerId => !layers.Any(layer => layer.MapLayerId == layerId));
+
         var pinWithName = new MapPinResponseDto { Name = "Castle", X = 0.25f, Y = 0.5f };
         Assert.Equal("left:25.0000%;top:50.0000%;", (string)InvokeStatic("GetPinStyle", pinWithName)!);
         Assert.Equal("left:25.0000%;top:50.0000%;", (string)InvokeStatic("GetPinLabelStyle", pinWithName)!);
@@ -731,6 +909,16 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
         rectType.GetProperty("Width", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(rect, width);
         rectType.GetProperty("Height", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(rect, height);
         return rect;
+    }
+
+    private static object CreateLayerRenderRow(MapLayerDto layer, int depth, bool hasChildren, bool isCollapsed)
+    {
+        var rowType = typeof(SessionMapViewerModal).GetNestedType("LayerRenderRow", BindingFlags.NonPublic);
+        Assert.NotNull(rowType);
+
+        var row = Activator.CreateInstance(rowType!, layer, depth, hasChildren, isCollapsed);
+        Assert.NotNull(row);
+        return row;
     }
 
     private sealed class FakeJsObjectReference(bool throwDisconnectedOnDispose) : IJSObjectReference

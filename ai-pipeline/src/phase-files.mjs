@@ -46,6 +46,20 @@ export function getFuturePhaseFileNames(currentPhasePath, allPhasePaths) {
   return allPhasePaths.slice(currentIndex + 1).map((p) => path.basename(p));
 }
 
+export function getCodexPlanDraftPath(phaseDir, roundNumber) {
+  return path.join(phaseDir, `codex-plan-v${roundNumber}.md`);
+}
+
+export function getCodexPlanReviewPath(phaseDir, roundNumber) {
+  return path.join(phaseDir, `codex-plan-review-${roundNumber}.md`);
+}
+
+export function futurePhaseBlockText(futurePhaseNames) {
+  return futurePhaseNames.length > 0
+    ? futurePhaseNames.map((name) => `- ${name}`).join("\n")
+    : "(none)";
+}
+
 export function getPhaseStatePaths(phaseFileName) {
   const phaseBase = phaseFileName.replace(/\.md$/i, "");
   const phaseStateDir = path.join(STATE_DIR, phaseBase);
@@ -59,18 +73,4 @@ export function getPhaseStatePaths(phaseFileName) {
     verifyLog: path.join(phaseStateDir, "verify.log"),
     summary: path.join(phaseStateDir, "summary.md"),
   };
-}
-
-export function getCodexPlanDraftPath(phaseDir, roundNumber) {
-  return path.join(phaseDir, `codex-plan-v${roundNumber}.md`);
-}
-
-export function getCodexPlanReviewPath(phaseDir, roundNumber) {
-  return path.join(phaseDir, `codex-plan-review-${roundNumber}.md`);
-}
-
-export function futurePhaseBlockText(futurePhaseNames) {
-  return futurePhaseNames.length > 0
-    ? futurePhaseNames.map((name) => `- ${name}`).join("\n")
-    : "(none)";
 }

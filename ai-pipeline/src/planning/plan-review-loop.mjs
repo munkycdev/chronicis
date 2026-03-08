@@ -1,18 +1,66 @@
-import { MAX_PLAN_REVIEW_ROUNDS } from "../config.mjs";
-import { logStep, setTerminalTitle } from "../console-ui.mjs";
 import { writeText, readText } from "../fs-utils.mjs";
-import { askModel } from "../openai-client.mjs";
 import { runCodexPlanPrompt } from "../codex-cli.mjs";
 import {
-  getCodexPlanDraftPath,
-  getCodexPlanReviewPath,
-} from "../phase-files.mjs";
-import {
+  buildPlanningBriefPrompt,
   buildCodexPlanDraftPrompt,
   buildPlanReviewPrompt,
   buildCodexPlanRevisionPrompt,
 } from "../prompts/planning-prompts.mjs";
-import { generatePlanningBrief } from "./planning-brief.mjs";
+import { askModel } from "../openai-client.mjs";
+import { logStep } from "../console-ui.mjs";
+import { MAX_PLAN_REVIEW_ROUNDS } from "../config.mjs";
+import {
+  getCodexPlanDraftPath,
+  getCodexPlanReviewPath,
+} from "../phase-files.mjs";
+
+export async function generatePlanningBrief(
+  phaseSpec,
+  architecture,
+  frozenAssumptions,
+  phaseFileName,
+  futurePhaseNames
+) {
+  return await askModel(
+    buildPlanningBriefPrompt(
+      phaseSpec,
+      architecture,
+      frozenAssumptions,
+      phaseFileName,
+      futurePhaseNames
+    )
+  );
+}
+
+export async function reviewCodexPlan(
+  phaseSpec,
+  architecture,
+  frozenAssumptions,
+  planningBrief,
+  codexPlan,
+  phaseFileName,
+  futurePhaseNames,
+  previousReview,
+  settledDecisions,
+  roundNumber,
+  isFinalRound
+) {
+  return await askModel(
+    buildPlanReviewPrompt(
+      phaseSpec,
+      architecture,
+      frozenAssumptions,
+      planningBrief,
+      codexPlan,
+      phaseFileName,
+      futurePhaseNames,
+      previousReview,
+      settledDecisions,
+      roundNumber,
+      isFinalRound
+    )
+  );
+}
 
 export function parseReviewVerdict(reviewText) {
   const normalized = reviewText.toUpperCase();
@@ -28,37 +76,16 @@ export function parseReviewVerdict(reviewText) {
   throw new Error("Could not parse plan review verdict.");
 }
 
-function extractSection(reviewText, heading) {
-  const escaped = heading.replace(/[.*+?^${}()|[\]\]]/g, "\$&");
-  const regex = new RegExp(`## ${escaped}\n([\s\S]*?)(?=\n## |$)`, "i");
-  const match = reviewText.match(regex);
-  return match ? match[1].trim() : "";
-}
-
-export async function reviewCodexPlan(
-  phaseSpec,
-  architecture,
-  frozenAssumptions,
-  planningBrief,
-  codexPlan,
-  phaseFileName,
-  futurePhaseNames,
-  previousReview = "",
-  settledDecisions = ""
-) {
-  return await askModel(
-    buildPlanReviewPrompt(
-      phaseSpec,
-      architecture,
-      frozenAssumptions,
-      planningBrief,
-      codexPlan,
-      phaseFileName,
-      futurePhaseNames,
-      previousReview,
-      settledDecisions
-    )
+function extractSettledDecisions(reviewText) {
+  const match = reviewText.match(
+    /## Settled Decisions\s*([\s\S]*?)(?:\n## |\n# |$)/i
   );
+
+  if (!match) {
+    return "";
+  }
+
+  return match[1].trim();
 }
 
 export async function createAndApprovePlan(
@@ -66,11 +93,9 @@ export async function createAndApprovePlan(
   architecture,
   frozenAssumptions,
   phaseFileName,
-  phaseName,
   futurePhaseNames,
   paths
 ) {
-  setTerminalTitle(`AIP - ${phaseName} - planning brief`);
   logStep("Generating planning brief...");
   const planningBrief = await generatePlanningBrief(
     phaseSpec,
@@ -85,11 +110,12 @@ export async function createAndApprovePlan(
   let approved = false;
   let reviewRoundsUsed = 0;
   let previousReview = "";
-  let settledDecisions = paths.settledDecisions && readTextSafe(paths.settledDecisions);
+  let settledDecisions = "";
 
   for (let round = 1; round <= MAX_PLAN_REVIEW_ROUNDS; round += 1) {
+    const isFinalRound = round === MAX_PLAN_REVIEW_ROUNDS;
+
     if (round === 1) {
-      setTerminalTitle(`AIP - ${phaseName} - Codex plan draft`);
       logStep(`Requesting Codex implementation plan draft (round ${round})...`);
       currentPlan = await runCodexPlanPrompt(
         buildCodexPlanDraftPrompt(
@@ -102,9 +128,11 @@ export async function createAndApprovePlan(
         )
       );
     } else {
-      setTerminalTitle(`AIP - ${phaseName} - Codex plan revision ${round}`);
       logStep(`Requesting Codex implementation plan revision (round ${round})...`);
       const previousPlan = readText(getCodexPlanDraftPath(paths.dir, round - 1));
+      const previousReviewText = readText(
+        getCodexPlanReviewPath(paths.dir, round - 1)
+      );
 
       currentPlan = await runCodexPlanPrompt(
         buildCodexPlanRevisionPrompt(
@@ -113,7 +141,7 @@ export async function createAndApprovePlan(
           frozenAssumptions,
           planningBrief,
           previousPlan,
-          previousReview,
+          previousReviewText,
           phaseFileName,
           futurePhaseNames,
           round,
@@ -125,8 +153,10 @@ export async function createAndApprovePlan(
     const planPath = getCodexPlanDraftPath(paths.dir, round);
     writeText(planPath, currentPlan);
 
-    setTerminalTitle(`AIP - ${phaseName} - ChatGPT review ${round}`);
-    logStep(`Reviewing Codex plan with ChatGPT (round ${round})...`);
+    logStep(
+      `Reviewing Codex plan with ChatGPT (round ${round}${isFinalRound ? ", final" : ""})...`
+    );
+
     const review = await reviewCodexPlan(
       phaseSpec,
       architecture,
@@ -136,17 +166,22 @@ export async function createAndApprovePlan(
       phaseFileName,
       futurePhaseNames,
       previousReview,
-      settledDecisions
+      settledDecisions,
+      round,
+      isFinalRound
     );
 
     const reviewPath = getCodexPlanReviewPath(paths.dir, round);
     writeText(reviewPath, review);
 
     previousReview = review;
-    const extractedSettledDecisions = extractSection(review, "Settled Decisions");
+
+    const extractedSettledDecisions = extractSettledDecisions(review);
     if (extractedSettledDecisions) {
       settledDecisions = extractedSettledDecisions;
-      writeText(paths.settledDecisions, settledDecisions);
+      if (paths.settledDecisions) {
+        writeText(paths.settledDecisions, settledDecisions);
+      }
     }
 
     const verdict = parseReviewVerdict(review);
@@ -173,12 +208,4 @@ export async function createAndApprovePlan(
     reviewRoundsUsed,
     settledDecisions,
   };
-}
-
-function readTextSafe(filePath) {
-  try {
-    return filePath ? readText(filePath) : "";
-  } catch {
-    return "";
-  }
 }
