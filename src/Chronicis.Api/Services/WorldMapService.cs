@@ -578,7 +578,7 @@ public class WorldMapService : IWorldMapService
     }
 
     /// <inheritdoc/>
-    public async Task SetLayerParent(Guid worldId, Guid mapId, Guid userId, Guid layerId, Guid? parentLayerId)
+    public async Task SetLayerParentAsync(Guid worldId, Guid mapId, Guid userId, Guid layerId, Guid? parentLayerId)
     {
         _logger.LogTraceSanitized("User {UserId} setting parent for layer {LayerId} on map {MapId}", userId, layerId, mapId);
 

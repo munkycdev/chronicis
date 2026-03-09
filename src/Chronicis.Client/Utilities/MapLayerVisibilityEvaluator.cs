@@ -11,7 +11,11 @@ internal static class MapLayerVisibilityEvaluator
             return [];
         }
 
-        var layersById = layers.ToDictionary(layer => layer.MapLayerId);
+        var layersById = new Dictionary<Guid, MapLayerDto>(layers.Count);
+        foreach (var layer in layers)
+        {
+            layersById[layer.MapLayerId] = layer;
+        }
         var visibleLayerIds = new HashSet<Guid>();
         foreach (var layer in layers)
         {

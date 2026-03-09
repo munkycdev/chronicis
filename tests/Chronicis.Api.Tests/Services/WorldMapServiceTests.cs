@@ -448,7 +448,7 @@ public class WorldMapServiceTests : IDisposable
         var before = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
 
         var service = (IWorldMapService)_sut;
-        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
+        await service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
 
         var updated = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
         Assert.Equal(parent.MapLayerId, updated.ParentLayerId);
@@ -466,8 +466,8 @@ public class WorldMapServiceTests : IDisposable
         var child = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child");
 
         var service = (IWorldMapService)_sut;
-        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
-        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, null);
+        await service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
+        await service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, child.MapLayerId, null);
 
         var updated = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
         Assert.Null(updated.ParentLayerId);
@@ -481,10 +481,10 @@ public class WorldMapServiceTests : IDisposable
         var child = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child");
 
         var service = (IWorldMapService)_sut;
-        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
+        await service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
         var before = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
 
-        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
+        await service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
 
         var after = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
         Assert.Equal(before.ParentLayerId, after.ParentLayerId);
@@ -501,7 +501,7 @@ public class WorldMapServiceTests : IDisposable
         var before = await _db.MapLayers.AsNoTracking().FirstAsync(existing => existing.MapLayerId == layer.MapLayerId);
 
         var service = (IWorldMapService)_sut;
-        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, layer.MapLayerId, null);
+        await service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, layer.MapLayerId, null);
 
         var after = await _db.MapLayers.AsNoTracking().FirstAsync(existing => existing.MapLayerId == layer.MapLayerId);
         Assert.Null(after.ParentLayerId);
@@ -518,7 +518,7 @@ public class WorldMapServiceTests : IDisposable
 
         var service = (IWorldMapService)_sut;
         await Assert.ThrowsAsync<ArgumentException>(
-            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, Guid.NewGuid(), parent.MapLayerId));
+            () => service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, Guid.NewGuid(), parent.MapLayerId));
     }
 
     [Fact]
@@ -531,7 +531,7 @@ public class WorldMapServiceTests : IDisposable
 
         var service = (IWorldMapService)_sut;
         await Assert.ThrowsAsync<ArgumentException>(
-            () => service.SetLayerParent(_worldId, secondMap.WorldMapId, _memberId, layerInFirstMap.MapLayerId, parentInSecondMap.MapLayerId));
+            () => service.SetLayerParentAsync(_worldId, secondMap.WorldMapId, _memberId, layerInFirstMap.MapLayerId, parentInSecondMap.MapLayerId));
     }
 
     [Fact]
@@ -542,7 +542,7 @@ public class WorldMapServiceTests : IDisposable
 
         var service = (IWorldMapService)_sut;
         await Assert.ThrowsAsync<ArgumentException>(
-            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, Guid.NewGuid()));
+            () => service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, child.MapLayerId, Guid.NewGuid()));
     }
 
     [Fact]
@@ -556,7 +556,7 @@ public class WorldMapServiceTests : IDisposable
 
         var service = (IWorldMapService)_sut;
         await Assert.ThrowsAsync<ArgumentException>(
-            () => service.SetLayerParent(_worldId, firstMap.WorldMapId, _memberId, child.MapLayerId, parentInOtherMap.MapLayerId));
+            () => service.SetLayerParentAsync(_worldId, firstMap.WorldMapId, _memberId, child.MapLayerId, parentInOtherMap.MapLayerId));
 
         var unchanged = await _db.MapLayers.AsNoTracking().FirstAsync(layer => layer.MapLayerId == child.MapLayerId);
         Assert.Equal(original.ParentLayerId, unchanged.ParentLayerId);
@@ -571,7 +571,7 @@ public class WorldMapServiceTests : IDisposable
 
         var service = (IWorldMapService)_sut;
         await Assert.ThrowsAsync<ArgumentException>(
-            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, layer.MapLayerId, layer.MapLayerId));
+            () => service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, layer.MapLayerId, layer.MapLayerId));
 
         var unchanged = await _db.MapLayers.AsNoTracking().FirstAsync(existing => existing.MapLayerId == layer.MapLayerId);
         Assert.Equal(original.ParentLayerId, unchanged.ParentLayerId);
@@ -585,10 +585,10 @@ public class WorldMapServiceTests : IDisposable
         var child = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Child");
         var service = (IWorldMapService)_sut;
 
-        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
+        await service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, child.MapLayerId, parent.MapLayerId);
 
         await Assert.ThrowsAsync<ArgumentException>(
-            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, parent.MapLayerId, child.MapLayerId));
+            () => service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, parent.MapLayerId, child.MapLayerId));
     }
 
     [Fact]
@@ -600,11 +600,11 @@ public class WorldMapServiceTests : IDisposable
         var layerC = await _sut.CreateLayerAsync(_worldId, map.WorldMapId, _memberId, "Layer C");
         var service = (IWorldMapService)_sut;
 
-        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, layerB.MapLayerId, layerA.MapLayerId);
-        await service.SetLayerParent(_worldId, map.WorldMapId, _memberId, layerC.MapLayerId, layerB.MapLayerId);
+        await service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, layerB.MapLayerId, layerA.MapLayerId);
+        await service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, layerC.MapLayerId, layerB.MapLayerId);
 
         await Assert.ThrowsAsync<ArgumentException>(
-            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, layerA.MapLayerId, layerC.MapLayerId));
+            () => service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, layerA.MapLayerId, layerC.MapLayerId));
     }
 
     [Fact]
@@ -623,7 +623,7 @@ public class WorldMapServiceTests : IDisposable
 
         var service = (IWorldMapService)_sut;
         await Assert.ThrowsAsync<ArgumentException>(
-            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, target.MapLayerId, badA.MapLayerId));
+            () => service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, target.MapLayerId, badA.MapLayerId));
     }
 
     [Fact]
@@ -637,7 +637,7 @@ public class WorldMapServiceTests : IDisposable
 
         var service = (IWorldMapService)_sut;
         await Assert.ThrowsAsync<ArgumentException>(
-            () => service.SetLayerParent(_worldId, map.WorldMapId, _memberId, worldLayer.MapLayerId, customParent.MapLayerId));
+            () => service.SetLayerParentAsync(_worldId, map.WorldMapId, _memberId, worldLayer.MapLayerId, customParent.MapLayerId));
     }
 
     [Fact]
@@ -648,7 +648,7 @@ public class WorldMapServiceTests : IDisposable
 
         var service = (IWorldMapService)_sut;
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => service.SetLayerParent(_worldId, map.WorldMapId, _outsiderId, layer.MapLayerId, null));
+            () => service.SetLayerParentAsync(_worldId, map.WorldMapId, _outsiderId, layer.MapLayerId, null));
     }
 
     [Fact]
@@ -2133,3 +2133,4 @@ public class WorldMapServiceTests : IDisposable
         return article;
     }
 }
+

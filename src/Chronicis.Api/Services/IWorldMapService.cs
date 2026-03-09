@@ -91,7 +91,7 @@ public interface IWorldMapService
     /// Assign or clear a map layer parent.
     /// Requires world membership.
     /// </summary>
-    Task SetLayerParent(Guid worldId, Guid mapId, Guid userId, Guid layerId, Guid? parentLayerId);
+    Task SetLayerParentAsync(Guid worldId, Guid mapId, Guid userId, Guid layerId, Guid? parentLayerId);
 
     /// <summary>
     /// Delete a map layer.

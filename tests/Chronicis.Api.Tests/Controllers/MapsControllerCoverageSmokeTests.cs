@@ -348,7 +348,7 @@ public class MapsControllerCoverageSmokeTests
     public async Task SetLayerParent_ArgumentException_ReturnsBadRequest()
     {
         var service = Substitute.For<IWorldMapService>();
-        service.SetLayerParent(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
+        service.SetLayerParentAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
             .ThrowsAsync(new ArgumentException("invalid"));
 
         var result = await CreateSut(service).SetLayerParent(
@@ -365,7 +365,7 @@ public class MapsControllerCoverageSmokeTests
     public async Task SetLayerParent_Unauthorized_ReturnsForbidden()
     {
         var service = Substitute.For<IWorldMapService>();
-        service.SetLayerParent(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
+        service.SetLayerParentAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
             .ThrowsAsync(new UnauthorizedAccessException("denied"));
 
         var result = await CreateSut(service).SetLayerParent(
@@ -381,7 +381,7 @@ public class MapsControllerCoverageSmokeTests
     public async Task SetLayerParent_Success_WithParentId_ReturnsNoContent()
     {
         var service = Substitute.For<IWorldMapService>();
-        service.SetLayerParent(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
+        service.SetLayerParentAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
             .Returns(Task.CompletedTask);
 
         var worldId = Guid.NewGuid();
@@ -397,14 +397,14 @@ public class MapsControllerCoverageSmokeTests
 
         Assert.IsType<NoContentResult>(result);
         await service.Received(1)
-            .SetLayerParent(worldId, mapId, Arg.Any<Guid>(), layerId, parentId);
+            .SetLayerParentAsync(worldId, mapId, Arg.Any<Guid>(), layerId, parentId);
     }
 
     [Fact]
     public async Task SetLayerParent_Success_WithNullParent_ReturnsNoContent()
     {
         var service = Substitute.For<IWorldMapService>();
-        service.SetLayerParent(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
+        service.SetLayerParentAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
             .Returns(Task.CompletedTask);
 
         var worldId = Guid.NewGuid();
@@ -419,7 +419,7 @@ public class MapsControllerCoverageSmokeTests
 
         Assert.IsType<NoContentResult>(result);
         await service.Received(1)
-            .SetLayerParent(worldId, mapId, Arg.Any<Guid>(), layerId, null);
+            .SetLayerParentAsync(worldId, mapId, Arg.Any<Guid>(), layerId, null);
     }
 
     [Fact]
@@ -1041,3 +1041,4 @@ public class MapsControllerCoverageSmokeTests
         Assert.IsType<OkObjectResult>(result.Result);
     }
 }
+

@@ -191,7 +191,7 @@ public class MapsController : ControllerBase
 
         try
         {
-            await _worldMapService.SetLayerParent(worldId, mapId, user.Id, layerId, request.ParentLayerId);
+            await _worldMapService.SetLayerParentAsync(worldId, mapId, user.Id, layerId, request.ParentLayerId);
             return NoContent();
         }
         catch (ArgumentException ex)

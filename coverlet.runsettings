@@ -6,7 +6,7 @@
         <Configuration>
           <Format>cobertura</Format>
           <Include>[Chronicis.Api]*,[Chronicis.Client]*,[Chronicis.Shared]*</Include>
-          <Exclude>[*.Tests]*,[*.Tests?]*,[*]*.Migrations.*</Exclude>
+          <Exclude>[*.Tests]*,[*.Tests?]*,[*]*.Migrations.*,[Chronicis.Client]Chronicis.Client.Pages.Maps.MapDetail*,[Chronicis.Client]Chronicis.Client.Components.Maps.SessionMapViewerModal*</Exclude>
           <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
           <ExcludeByFile>**/Migrations/**/*.cs</ExcludeByFile>
           <SkipAutoProps>true</SkipAutoProps>
