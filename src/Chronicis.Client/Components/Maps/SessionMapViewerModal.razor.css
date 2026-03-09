@@ -88,6 +88,30 @@
     background: var(--chronicis-background-light);
 }
 
+.session-map-viewer-modal__layers-empty {
+    margin: 0;
+    color: color-mix(in srgb, var(--chronicis-text-primary) 60%, transparent 40%);
+}
+
+.session-map-viewer-modal__layer-tree {
+    width: 100%;
+}
+
+.session-map-viewer-modal__layer-tree .mud-treeview-item,
+.session-map-viewer-modal__layer-tree-item {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.session-map-viewer-modal__layer-tree .mud-treeview-item-content {
+    min-height: 0;
+    padding: 0;
+}
+
+.session-map-viewer-modal__layer-tree .mud-treeview-group {
+    margin-left: 0.45rem;
+}
+
 .session-map-viewer-modal__layer-row {
     display: flex;
     align-items: center;
@@ -105,39 +129,6 @@
 
 .session-map-viewer-modal__layer-row--disabled {
     color: color-mix(in srgb, var(--chronicis-text-primary) 40%, transparent 60%);
-}
-
-.session-map-viewer-modal__layer-disclosure,
-.session-map-viewer-modal__layer-disclosure-spacer {
-    flex: 0 0 1rem;
-    width: 1rem;
-    height: 1rem;
-}
-
-.session-map-viewer-modal__layer-disclosure {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: none;
-    border-radius: var(--chronicis-radius-sm);
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-}
-
-.session-map-viewer-modal__layer-disclosure:hover {
-    background: color-mix(in srgb, var(--chronicis-secondary) 12%, transparent 88%);
-}
-
-.session-map-viewer-modal__layer-disclosure-icon {
-    font-size: 0.7rem;
-    line-height: 1;
-}
-
-.session-map-viewer-modal__layer-indent {
-    flex: 0 0 auto;
-    height: 1px;
 }
 
 .session-map-viewer-modal__layer-toggle {

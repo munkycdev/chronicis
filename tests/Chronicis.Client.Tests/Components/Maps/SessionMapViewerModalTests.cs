@@ -1,4 +1,5 @@
 using System.Reflection;
+using AngleSharp.Dom;
 using Bunit;
 using Chronicis.Client.Components.Maps;
 using Chronicis.Client.Services;
@@ -169,7 +170,7 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void Modal_OnlyParentRowsRenderDisclosureControls()
+    public void Modal_OnlyParentRowsRenderTreeExpanders()
     {
         const string readUrl = "https://blob.example.com/read";
         var rootId = Guid.Parse("3c56fef8-7f1c-42b5-b6da-c8af20a1ef3f");
@@ -193,12 +194,9 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
 
         cut.WaitForAssertion(() =>
         {
-            var disclosures = cut.FindAll("[data-layer-disclosure]");
-            Assert.Single(disclosures);
-            Assert.Equal(rootId.ToString(), disclosures[0].GetAttribute("data-layer-disclosure"));
-            Assert.Equal("true", disclosures[0].GetAttribute("aria-expanded"));
-            Assert.Empty(cut.FindAll($"[data-layer-id='{childId}'] [data-layer-disclosure]"));
-            Assert.Empty(cut.FindAll($"[data-layer-id='{leafRootId}'] [data-layer-disclosure]"));
+            Assert.NotNull(GetLayerExpander(cut, rootId));
+            Assert.Null(GetLayerExpander(cut, childId));
+            Assert.Null(GetLayerExpander(cut, leafRootId));
         });
     }
 
@@ -234,7 +232,7 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
         cut.WaitForAssertion(() =>
             Assert.Equal(6, cut.FindAll("[data-layer-id]").Count));
 
-        cut.Find($"[data-layer-disclosure='{branchAId}']").Click();
+        GetLayerExpander(cut, branchAId)!.Click();
 
         cut.WaitForAssertion(() =>
         {
@@ -242,15 +240,13 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
             Assert.Contains(cut.FindAll("[data-layer-id]").Select(row => row.GetAttribute("data-layer-id")), id => id == branchBId.ToString());
             Assert.Contains(cut.FindAll("[data-layer-id]").Select(row => row.GetAttribute("data-layer-id")), id => id == branchBLeafId.ToString());
             Assert.Contains(cut.FindAll("[data-layer-id]").Select(row => row.GetAttribute("data-layer-id")), id => id == peerRootId.ToString());
-            Assert.Equal("false", cut.Find($"[data-layer-disclosure='{branchAId}']").GetAttribute("aria-expanded"));
         });
 
-        cut.Find($"[data-layer-disclosure='{branchAId}']").Click();
+        GetLayerExpander(cut, branchAId)!.Click();
 
         cut.WaitForAssertion(() =>
         {
             Assert.Contains(cut.FindAll("[data-layer-id]").Select(row => row.GetAttribute("data-layer-id")), id => id == branchALeafId.ToString());
-            Assert.Equal("true", cut.Find($"[data-layer-disclosure='{branchAId}']").GetAttribute("aria-expanded"));
         });
     }
 
@@ -811,30 +807,18 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
         Assert.True((bool)InvokePrivate(instance, "IsRootLayer", layers.Single(layer => layer.MapLayerId == orphanId))!);
         Assert.False((bool)InvokePrivate(instance, "IsRootLayer", layers.Single(layer => layer.MapLayerId == childId))!);
 
-        Assert.Equal("width:0px;", (string)InvokeStatic("GetLayerDepthStyle", -1)!);
-        Assert.Equal("width:28px;", (string)InvokeStatic("GetLayerDepthStyle", 2)!);
-
-        var visibleRows = (IEnumerable<object>)InvokePrivate(instance, "GetVisibleLayerRows")!;
-        Assert.Equal(3, visibleRows.Count());
-
-        var disclosureLabel = (string)InvokeStatic(
-            "GetLayerDisclosureLabel",
-            CreateLayerRenderRow(layers.Single(layer => layer.MapLayerId == rootId), depth: 0, hasChildren: true, isCollapsed: false))!;
-        Assert.Equal("Collapse Root", disclosureLabel);
-        var expandLabel = (string)InvokeStatic(
-            "GetLayerDisclosureLabel",
-            CreateLayerRenderRow(layers.Single(layer => layer.MapLayerId == rootId), depth: 0, hasChildren: true, isCollapsed: true))!;
-        Assert.Equal("Expand Root", expandLabel);
-
-        var collapsedLayerIds = (HashSet<Guid>)GetField(instance, "_collapsedLayerIds")!;
-        collapsedLayerIds.Add(rootId);
-        InvokePrivate(instance, "ToggleLayerCollapsed", rootId);
-        Assert.DoesNotContain(rootId, collapsedLayerIds);
-        InvokePrivate(instance, "ToggleLayerCollapsed", childId);
-        Assert.DoesNotContain(childId, collapsedLayerIds);
-        collapsedLayerIds.Add(Guid.NewGuid());
-        InvokePrivate(instance, "PruneCollapsedLayerIds");
-        Assert.DoesNotContain(collapsedLayerIds, layerId => !layers.Any(layer => layer.MapLayerId == layerId));
+        var layerTreeRoots = ((IEnumerable<object>)InvokePrivate(instance, "BuildLayerTreeRoots")!).ToList();
+        Assert.Equal(2, layerTreeRoots.Count);
+        var firstRootLayer = (MapLayerDto)layerTreeRoots[0].GetType().GetProperty("Layer", BindingFlags.Instance | BindingFlags.Public)!.GetValue(layerTreeRoots[0])!;
+        var secondRootLayer = (MapLayerDto)layerTreeRoots[1].GetType().GetProperty("Layer", BindingFlags.Instance | BindingFlags.Public)!.GetValue(layerTreeRoots[1])!;
+        Assert.Equal(rootId, firstRootLayer.MapLayerId);
+        Assert.Equal(orphanId, secondRootLayer.MapLayerId);
+        Assert.True((bool)layerTreeRoots[0].GetType().GetProperty("HasChildren", BindingFlags.Instance | BindingFlags.Public)!.GetValue(layerTreeRoots[0])!);
+        Assert.True((bool)layerTreeRoots[0].GetType().GetProperty("IsExpanded", BindingFlags.Instance | BindingFlags.Public)!.GetValue(layerTreeRoots[0])!);
+        var firstRootChildren = ((IEnumerable<object>)layerTreeRoots[0].GetType().GetProperty("Children", BindingFlags.Instance | BindingFlags.Public)!.GetValue(layerTreeRoots[0])!).ToList();
+        Assert.Single(firstRootChildren);
+        var firstChildLayer = (MapLayerDto)firstRootChildren[0].GetType().GetProperty("Layer", BindingFlags.Instance | BindingFlags.Public)!.GetValue(firstRootChildren[0])!;
+        Assert.Equal(childId, firstChildLayer.MapLayerId);
 
         var pinWithName = new MapPinResponseDto { Name = "Castle", X = 0.25f, Y = 0.5f };
         Assert.Equal("left:25.0000%;top:50.0000%;", (string)InvokeStatic("GetPinStyle", pinWithName)!);
@@ -873,6 +857,18 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
         Assert.True(fakeModule.DisposeCalled);
     }
 
+    private static IElement? GetLayerExpander(IRenderedComponent<SessionMapViewerModal> cut, Guid layerId)
+    {
+        var layerRow = cut.Find($"[data-layer-id='{layerId}']");
+        var parent = layerRow.ParentElement;
+        while (parent is not null && !parent.ClassList.Contains("mud-treeview-item"))
+        {
+            parent = parent.ParentElement;
+        }
+
+        return parent?.QuerySelector(".mud-treeview-item-arrow");
+    }
+
     private static object? InvokePrivate(object instance, string methodName, params object?[]? args)
         => instance.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(instance, args);
@@ -909,16 +905,6 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
         rectType.GetProperty("Width", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(rect, width);
         rectType.GetProperty("Height", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(rect, height);
         return rect;
-    }
-
-    private static object CreateLayerRenderRow(MapLayerDto layer, int depth, bool hasChildren, bool isCollapsed)
-    {
-        var rowType = typeof(SessionMapViewerModal).GetNestedType("LayerRenderRow", BindingFlags.NonPublic);
-        Assert.NotNull(rowType);
-
-        var row = Activator.CreateInstance(rowType!, layer, depth, hasChildren, isCollapsed);
-        Assert.NotNull(row);
-        return row;
     }
 
     private sealed class FakeJsObjectReference(bool throwDisconnectedOnDispose) : IJSObjectReference
