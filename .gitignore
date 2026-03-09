@@ -23,6 +23,7 @@ bld/
 *.sln.docstates
 *.rsuser
 .vscode/
+*.binlog
 
 ############################################################
 # NuGet

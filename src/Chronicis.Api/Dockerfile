@@ -5,11 +5,15 @@ WORKDIR /src
 ARG APP_VERSION=0.0.0-local
 ARG GIT_SHA=local
 
-# Copy repo (context should be repo root)
-COPY . .
-
-# Restore + publish ONLY the API project (avoid Windows-only projects)
+# Copy project files first so NuGet restore is cached independently of source changes.
+# This layer is only invalidated when .csproj / Directory.Build.props / global.json change.
+COPY global.json Directory.Build.props ./
+COPY src/Chronicis.Api/Chronicis.Api.csproj src/Chronicis.Api/
+COPY src/Chronicis.Shared/Chronicis.Shared.csproj src/Chronicis.Shared/
 RUN dotnet restore ./src/Chronicis.Api/Chronicis.Api.csproj
+
+# Now copy full source (busts cache on source changes, but restore above is already cached)
+COPY . .
 RUN dotnet publish ./src/Chronicis.Api/Chronicis.Api.csproj \
     -c Release \
     -o /out \
@@ -41,7 +45,7 @@ RUN set -eux; \
     test -f /opt/datadog/Datadog.Trace.ClrProfiler.Native.so
 
 # Datadog init (in-container)
-COPY --from=datadog/serverless-init:latest /datadog-init /app/datadog-init
+COPY --from=datadog/serverless-init:1 /datadog-init /app/datadog-init
 
 # App files
 COPY --from=build /out .
