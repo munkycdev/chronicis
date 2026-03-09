@@ -103,230 +103,24 @@ else
 
                 @{
                     var effectivelyVisibleLayerIds = GetEffectivelyVisibleLayerIds();
-                    var createInsertIndex = GetInlineCreateInsertIndex();
                     var createDepth = GetInlineCreateDepth();
+                    var layerTreeRoots = BuildVisibleLayerTree();
                 }
-                @for (var index = 0; index < _layerRows.Count; index++)
-                {
-                    @if (createInsertIndex == index)
+                <MudTreeView T="Guid"
+                             Dense="true"
+                             Hover="false"
+                             ReadOnly="true"
+                             Ripple="false"
+                             ExpandOnClick="false"
+                             Class="map-page__layer-tree">
+                    @foreach (var rootNode in layerTreeRoots)
                     {
-                        <div class="map-page__layer-row map-page__layer-row--inline-create"
-                             data-layer-depth="@createDepth">
-                            <span class="map-page__layer-depth-spacer"
-                                  style="@GetLayerDepthStyle(createDepth)"
-                                  aria-hidden="true"></span>
-                            <span class="map-page__layer-disclosure-spacer" aria-hidden="true"></span>
-                            <span class="map-page__layer-drag-handle" aria-hidden="true"></span>
-                            <span class="map-page__layer-create-spacer" aria-hidden="true"></span>
-                            <input type="text"
-                                   class="map-page__layer-create-input"
-                                   @ref="_createLayerInputRef"
-                                   value="@_createLayerNameInput"
-                                   @onclick:stopPropagation="true"
-                                   @oninput="OnCreateLayerNameInput"
-                                   @onkeydown="OnCreateLayerNameKeyDown"
-                                   disabled="@_isAddingLayer" />
-                            <button type="button"
-                                    class="map-page__layer-action-button"
-                                    @onclick:stopPropagation="true"
-                                    @onclick="SaveCreatedLayerAsync"
-                                    disabled="@_isAddingLayer">
-                                @(_isAddingLayer ? "Saving..." : "Save")
-                            </button>
-                            <button type="button"
-                                    class="map-page__layer-action-button map-page__layer-action-button--cancel"
-                                    @onclick:stopPropagation="true"
-                                    @onclick="CancelInlineLayerCreate"
-                                    disabled="@_isAddingLayer">
-                                Cancel
-                            </button>
-                        </div>
+                        @RenderLayerTreeNode(rootNode, effectivelyVisibleLayerIds)
                     }
-
-                    var layerRow = _layerRows[index];
-                    var layer = layerRow.Layer;
-                    var rowIndex = layerRow.FlatIndex;
-                    var isProtectedLayer = IsProtectedDefaultLayer(layer.MapLayerId);
-                    <div class="@($"map-page__layer-row map-page__layer-row--hoverable {(effectivelyVisibleLayerIds.Contains(layer.MapLayerId) ? "map-page__layer-row--enabled" : "map-page__layer-row--disabled")} {(SelectedLayerId == layer.MapLayerId ? "layer-row-selected" : string.Empty)} {(_draggedLayerId == layer.MapLayerId ? "map-page__layer-row--dragging" : string.Empty)} {(_dropTargetIndex == rowIndex ? "map-page__layer-row--drop-target" : string.Empty)}")"
-                         data-layer-id="@layer.MapLayerId"
-                         data-layer-depth="@layerRow.Depth"
-                         draggable="true"
-                         @ondragstart="args => OnLayerDragStart(layer.MapLayerId, args)"
-                         @ondragenter="() => OnLayerDragEnter(rowIndex)"
-                         @ondragover="() => OnLayerDragOver(rowIndex)"
-                         @ondragover:preventDefault="true"
-                         @ondrop="() => OnLayerDropAsync(rowIndex)"
-                         @ondrop:preventDefault="true"
-                         @ondragend="OnLayerDragEnd"
-                         @onclick="@(() => OnLayerRowSelected(layer.MapLayerId))">
-                        <span class="map-page__layer-depth-spacer"
-                              style="@GetLayerDepthStyle(layerRow.Depth)"
-                              aria-hidden="true"></span>
-                        @if (layerRow.HasChildren)
-                        {
-                            <button type="button"
-                                    class="map-page__layer-disclosure"
-                                    data-layer-disclosure="@layer.MapLayerId"
-                                    aria-expanded="@(layerRow.IsCollapsed ? "false" : "true")"
-                                    @onclick:stopPropagation="true"
-                                    @onclick="() => ToggleLayerCollapsed(layer.MapLayerId)"
-                                    disabled="@layerRow.IsCollapseBlocked">
-                                @(layerRow.IsCollapsed ? ">" : "v")
-                            </button>
-                        }
-                        else
-                        {
-                            <span class="map-page__layer-disclosure-spacer" aria-hidden="true"></span>
-                        }
-                        <span class="map-page__layer-drag-handle" aria-hidden="true">::</span>
-                        <input type="checkbox"
-                               class="map-page__layer-toggle"
-                               checked="@layer.IsEnabled"
-                               @onclick:stopPropagation="true"
-                               @onchange="args => OnLayerVisibilityChangedAsync(layer.MapLayerId, args)" />
-                        @if (IsEditingLayer(layer.MapLayerId))
-                        {
-                            <input type="text"
-                                   class="map-page__layer-rename-input"
-                                   @ref="_renameLayerInputRef"
-                                   value="@_renameLayerNameInput"
-                                   @onclick:stopPropagation="true"
-                                   @oninput="OnRenameLayerNameInput"
-                                   @onkeydown="args => OnRenameLayerNameKeyDown(layer.MapLayerId, args)"
-                                   disabled="@_isRenamingLayer" />
-                            <button type="button"
-                                    class="map-page__layer-action-button"
-                                    @onclick:stopPropagation="true"
-                                    @onclick="() => ConfirmLayerRenameAsync(layer.MapLayerId)"
-                                    disabled="@_isRenamingLayer">
-                                @(_isRenamingLayer ? "Saving..." : "Save")
-                            </button>
-                            <button type="button"
-                                    class="map-page__layer-action-button map-page__layer-action-button--cancel"
-                                    @onclick:stopPropagation="true"
-                                    @onclick="CancelLayerRename"
-                                    disabled="@_isRenamingLayer">
-                                Cancel
-                            </button>
-                        }
-                        else
-                        {
-                            @if (!isProtectedLayer)
-                            {
-                                <button type="button"
-                                        class="map-page__layer-name-button"
-                                        @onclick:stopPropagation="true"
-                                        @onclick="() => BeginLayerRename(layer.MapLayerId)"
-                                        disabled="@(!CanBeginLayerRename(layer.MapLayerId))">
-                                    <span class="map-page__layer-name">@layer.Name</span>
-                                </button>
-                            }
-                            else
-                            {
-                                <span class="map-page__layer-name">@layer.Name</span>
-                            }
-                        }
-
-                        @if (!isProtectedLayer && !IsEditingLayer(layer.MapLayerId))
-                        {
-                            <div class="map-page__layer-actions">
-                                @if (IsPendingDeleteLayer(layer.MapLayerId))
-                                {
-                                    <button type="button"
-                                            class="map-page__layer-action-button map-page__layer-action-button--danger"
-                                            @onclick:stopPropagation="true"
-                                            @onclick="() => ConfirmLayerDeleteAsync(layer.MapLayerId)"
-                                            disabled="@_isDeletingLayer">
-                                        @(_isDeletingLayer ? "Deleting..." : "Confirm")
-                                    </button>
-                                    <button type="button"
-                                            class="map-page__layer-action-button map-page__layer-action-button--cancel"
-                                            @onclick:stopPropagation="true"
-                                            @onclick="CancelLayerDelete"
-                                            disabled="@_isDeletingLayer">
-                                        Cancel
-                                    </button>
-                                }
-                                else
-                                {
-                                    <button type="button"
-                                            class="map-page__layer-action-button map-page__layer-add-child-button"
-                                            @onclick:stopPropagation="true"
-                                            @onclick="() => BeginAddChildLayer(layer.MapLayerId)"
-                                            disabled="@(!CanBeginInlineLayerCreate(layer.MapLayerId))">
-                                        Add Child Layer
-                                    </button>
-                                    <button type="button"
-                                            class="map-page__layer-action-button map-page__layer-delete-button"
-                                            @onclick:stopPropagation="true"
-                                            @onclick="() => BeginLayerDelete(layer.MapLayerId)">
-                                        Delete
-                                    </button>
-                                    <button type="button"
-                                            class="map-page__layer-action-button map-page__layer-nest-button"
-                                            @onclick:stopPropagation="true"
-                                            @onclick="() => BeginNestLayer(layer.MapLayerId)"
-                                            disabled="@(_isApplyingParentChange || _parentChangeInFlightLayerId.HasValue)">
-                                        Nest under...
-                                    </button>
-                                    <button type="button"
-                                            class="map-page__layer-action-button map-page__layer-root-button"
-                                            @onclick:stopPropagation="true"
-                                            @onclick="() => MoveLayerToRootAsync(layer.MapLayerId)"
-                                            disabled="@(layer.ParentLayerId == null || _isApplyingParentChange || _parentChangeInFlightLayerId.HasValue)">
-                                        Move to root
-                                    </button>
-                                }
-                            </div>
-                        }
-                        else if (!IsEditingLayer(layer.MapLayerId))
-                        {
-                            <div class="map-page__layer-actions">
-                                <button type="button"
-                                        class="map-page__layer-action-button map-page__layer-add-child-button"
-                                        @onclick:stopPropagation="true"
-                                        @onclick="() => BeginAddChildLayer(layer.MapLayerId)"
-                                        disabled="@(!CanBeginInlineLayerCreate(layer.MapLayerId))">
-                                    Add Child Layer
-                                </button>
-                            </div>
-                        }
-                    </div>
-                }
-
-                @if (createInsertIndex == _layerRows.Count)
+                </MudTreeView>
+                @if (_isInlineCreateActive)
                 {
-                    <div class="map-page__layer-row map-page__layer-row--inline-create"
-                         data-layer-depth="@createDepth">
-                        <span class="map-page__layer-depth-spacer"
-                              style="@GetLayerDepthStyle(createDepth)"
-                              aria-hidden="true"></span>
-                        <span class="map-page__layer-disclosure-spacer" aria-hidden="true"></span>
-                        <span class="map-page__layer-drag-handle" aria-hidden="true"></span>
-                        <span class="map-page__layer-create-spacer" aria-hidden="true"></span>
-                        <input type="text"
-                               class="map-page__layer-create-input"
-                               @ref="_createLayerInputRef"
-                               value="@_createLayerNameInput"
-                               @onclick:stopPropagation="true"
-                               @oninput="OnCreateLayerNameInput"
-                               @onkeydown="OnCreateLayerNameKeyDown"
-                               disabled="@_isAddingLayer" />
-                        <button type="button"
-                                class="map-page__layer-action-button"
-                                @onclick:stopPropagation="true"
-                                @onclick="SaveCreatedLayerAsync"
-                                disabled="@_isAddingLayer">
-                            @(_isAddingLayer ? "Saving..." : "Save")
-                        </button>
-                        <button type="button"
-                                class="map-page__layer-action-button map-page__layer-action-button--cancel"
-                                @onclick:stopPropagation="true"
-                                @onclick="CancelInlineLayerCreate"
-                                disabled="@_isAddingLayer">
-                            Cancel
-                        </button>
-                    </div>
+                    @RenderInlineCreateRow(createDepth)
                 }
 
                 <div class="map-page__layer-footer-actions">
@@ -1080,34 +874,6 @@ else
         _shouldFocusCreateLayerInput = false;
     }
 
-    private int? GetInlineCreateInsertIndex()
-    {
-        if (!_isInlineCreateActive)
-        {
-            return null;
-        }
-
-        if (!_createLayerParentLayerId.HasValue)
-        {
-            return _layerRows.Count;
-        }
-
-        var parentRowIndex = _layerRows.FindIndex(row => row.Layer.MapLayerId == _createLayerParentLayerId.Value);
-        if (parentRowIndex < 0)
-        {
-            return _layerRows.Count;
-        }
-
-        var parentDepth = _layerRows[parentRowIndex].Depth;
-        var insertIndex = parentRowIndex + 1;
-        while (insertIndex < _layerRows.Count && _layerRows[insertIndex].Depth > parentDepth)
-        {
-            insertIndex++;
-        }
-
-        return insertIndex;
-    }
-
     private int GetInlineCreateDepth()
     {
         if (!_isInlineCreateActive || !_createLayerParentLayerId.HasValue)
@@ -1117,6 +883,236 @@ else
 
         var parentRow = _layerRows.FirstOrDefault(row => row.Layer.MapLayerId == _createLayerParentLayerId.Value);
         return parentRow == null ? 0 : parentRow.Depth + 1;
+    }
+
+    private List<LayerTreeNode> BuildVisibleLayerTree()
+    {
+        var roots = new List<LayerTreeNode>();
+        var stack = new Stack<LayerTreeNode>();
+
+        for (var visibleIndex = 0; visibleIndex < _layerRows.Count; visibleIndex++)
+        {
+            var node = new LayerTreeNode(_layerRows[visibleIndex]);
+            while (stack.Count > 0 && stack.Peek().Row.Depth >= node.Row.Depth)
+            {
+                stack.Pop();
+            }
+
+            if (stack.Count == 0)
+            {
+                roots.Add(node);
+            }
+            else
+            {
+                stack.Peek().Children.Add(node);
+            }
+
+            stack.Push(node);
+        }
+
+        return roots;
+    }
+
+    private RenderFragment RenderLayerTreeNode(
+        LayerTreeNode node,
+        IReadOnlySet<Guid> effectivelyVisibleLayerIds) => @<MudTreeViewItem T="Guid"
+                         @key="node.Row.Layer.MapLayerId"
+                         Value="@node.Row.Layer.MapLayerId"
+                         Class="map-page__layer-tree-item"
+                         CanExpand="@node.Row.HasChildren"
+                         Expanded="@(!node.Row.IsCollapsed)"
+                         ExpandedChanged="@((bool expanded) => SetLayerExpandedState(node.Row.Layer.MapLayerId, expanded))">
+            <BodyContent>
+                @RenderLayerRow(node.Row, effectivelyVisibleLayerIds)
+            </BodyContent>
+            <ChildContent>
+                @foreach (var child in node.Children)
+                {
+                    @RenderLayerTreeNode(child, effectivelyVisibleLayerIds)
+                }
+            </ChildContent>
+        </MudTreeViewItem>;
+
+    private RenderFragment RenderLayerRow(LayerRenderRow layerRow, IReadOnlySet<Guid> effectivelyVisibleLayerIds) => @<div class="@GetLayerRowClass(layerRow, effectivelyVisibleLayerIds)"
+         data-layer-id="@layerRow.Layer.MapLayerId"
+         data-layer-depth="@layerRow.Depth"
+         draggable="true"
+         @ondragstart="args => OnLayerDragStart(layerRow.Layer.MapLayerId, args)"
+         @ondragenter="() => OnLayerDragEnter(layerRow.FlatIndex)"
+         @ondragover="() => OnLayerDragOver(layerRow.FlatIndex)"
+         @ondragover:preventDefault="true"
+         @ondrop="() => OnLayerDropAsync(layerRow.FlatIndex)"
+         @ondrop:preventDefault="true"
+         @ondragend="OnLayerDragEnd"
+         @onclick="@(() => OnLayerRowSelected(layerRow.Layer.MapLayerId))">
+        <span class="map-page__layer-drag-handle" aria-hidden="true">::</span>
+        <input type="checkbox"
+               class="map-page__layer-toggle"
+               checked="@layerRow.Layer.IsEnabled"
+               @onclick:stopPropagation="true"
+               @onchange="args => OnLayerVisibilityChangedAsync(layerRow.Layer.MapLayerId, args)" />
+        @if (IsEditingLayer(layerRow.Layer.MapLayerId))
+        {
+            <input type="text"
+                   class="map-page__layer-rename-input"
+                   @ref="_renameLayerInputRef"
+                   value="@_renameLayerNameInput"
+                   @onclick:stopPropagation="true"
+                   @oninput="OnRenameLayerNameInput"
+                   @onkeydown="args => OnRenameLayerNameKeyDown(layerRow.Layer.MapLayerId, args)"
+                   disabled="@_isRenamingLayer" />
+            <div class="map-page__layer-actions">
+                <button type="button"
+                        class="map-page__layer-action-button"
+                        @onclick:stopPropagation="true"
+                        @onclick="() => ConfirmLayerRenameAsync(layerRow.Layer.MapLayerId)"
+                        disabled="@_isRenamingLayer">
+                    @(_isRenamingLayer ? "Saving..." : "Save")
+                </button>
+                <button type="button"
+                        class="map-page__layer-action-button map-page__layer-action-button--cancel"
+                        @onclick:stopPropagation="true"
+                        @onclick="CancelLayerRename"
+                        disabled="@_isRenamingLayer">
+                    Cancel
+                </button>
+            </div>
+        }
+        else if (!IsProtectedDefaultLayer(layerRow.Layer.MapLayerId))
+        {
+            <button type="button"
+                    class="map-page__layer-name-button"
+                    @onclick:stopPropagation="true"
+                    @onclick="() => BeginLayerRename(layerRow.Layer.MapLayerId)"
+                    disabled="@(!CanBeginLayerRename(layerRow.Layer.MapLayerId))">
+                <span class="map-page__layer-name">@layerRow.Layer.Name</span>
+            </button>
+        }
+        else
+        {
+            <span class="map-page__layer-name">@layerRow.Layer.Name</span>
+        }
+
+        @if (!IsProtectedDefaultLayer(layerRow.Layer.MapLayerId) && !IsEditingLayer(layerRow.Layer.MapLayerId))
+        {
+            <div class="map-page__layer-actions">
+                @if (IsPendingDeleteLayer(layerRow.Layer.MapLayerId))
+                {
+                    <button type="button"
+                            class="map-page__layer-action-button map-page__layer-action-button--danger"
+                            @onclick:stopPropagation="true"
+                            @onclick="() => ConfirmLayerDeleteAsync(layerRow.Layer.MapLayerId)"
+                            disabled="@_isDeletingLayer">
+                        @(_isDeletingLayer ? "Deleting..." : "Confirm")
+                    </button>
+                    <button type="button"
+                            class="map-page__layer-action-button map-page__layer-action-button--cancel"
+                            @onclick:stopPropagation="true"
+                            @onclick="CancelLayerDelete"
+                            disabled="@_isDeletingLayer">
+                        Cancel
+                    </button>
+                }
+                else
+                {
+                    <button type="button"
+                            class="map-page__layer-action-button map-page__layer-add-child-button"
+                            @onclick:stopPropagation="true"
+                            @onclick="() => BeginAddChildLayer(layerRow.Layer.MapLayerId)"
+                            disabled="@(!CanBeginInlineLayerCreate(layerRow.Layer.MapLayerId))">
+                        Add Child Layer
+                    </button>
+                    <button type="button"
+                            class="map-page__layer-action-button map-page__layer-delete-button"
+                            @onclick:stopPropagation="true"
+                            @onclick="() => BeginLayerDelete(layerRow.Layer.MapLayerId)">
+                        Delete
+                    </button>
+                    <button type="button"
+                            class="map-page__layer-action-button map-page__layer-nest-button"
+                            @onclick:stopPropagation="true"
+                            @onclick="() => BeginNestLayer(layerRow.Layer.MapLayerId)"
+                            disabled="@(_isApplyingParentChange || _parentChangeInFlightLayerId.HasValue)">
+                        Nest under...
+                    </button>
+                    <button type="button"
+                            class="map-page__layer-action-button map-page__layer-root-button"
+                            @onclick:stopPropagation="true"
+                            @onclick="() => MoveLayerToRootAsync(layerRow.Layer.MapLayerId)"
+                            disabled="@(layerRow.Layer.ParentLayerId == null || _isApplyingParentChange || _parentChangeInFlightLayerId.HasValue)">
+                        Move to root
+                    </button>
+                }
+            </div>
+        }
+        else if (!IsEditingLayer(layerRow.Layer.MapLayerId))
+        {
+            <div class="map-page__layer-actions">
+                <button type="button"
+                        class="map-page__layer-action-button map-page__layer-add-child-button"
+                        @onclick:stopPropagation="true"
+                        @onclick="() => BeginAddChildLayer(layerRow.Layer.MapLayerId)"
+                        disabled="@(!CanBeginInlineLayerCreate(layerRow.Layer.MapLayerId))">
+                    Add Child Layer
+                </button>
+            </div>
+        }
+    </div>;
+
+    private RenderFragment RenderInlineCreateRow(int createDepth) => @<div class="map-page__layer-row map-page__layer-row--inline-create"
+         data-layer-depth="@createDepth">
+        <span class="map-page__layer-depth-spacer"
+              style="@GetLayerDepthStyle(createDepth)"
+              aria-hidden="true"></span>
+        <span class="map-page__layer-drag-handle" aria-hidden="true"></span>
+        <span class="map-page__layer-create-spacer" aria-hidden="true"></span>
+        <input type="text"
+               class="map-page__layer-create-input"
+               @ref="_createLayerInputRef"
+               value="@_createLayerNameInput"
+               @onclick:stopPropagation="true"
+               @oninput="OnCreateLayerNameInput"
+               @onkeydown="OnCreateLayerNameKeyDown"
+               disabled="@_isAddingLayer" />
+        <div class="map-page__layer-actions">
+            <button type="button"
+                    class="map-page__layer-action-button"
+                    @onclick:stopPropagation="true"
+                    @onclick="SaveCreatedLayerAsync"
+                    disabled="@_isAddingLayer">
+                @(_isAddingLayer ? "Saving..." : "Save")
+            </button>
+            <button type="button"
+                    class="map-page__layer-action-button map-page__layer-action-button--cancel"
+                    @onclick:stopPropagation="true"
+                    @onclick="CancelInlineLayerCreate"
+                    disabled="@_isAddingLayer">
+                Cancel
+            </button>
+        </div>
+    </div>;
+
+    private string GetLayerRowClass(LayerRenderRow layerRow, IReadOnlySet<Guid> effectivelyVisibleLayerIds) =>
+        $"map-page__layer-row map-page__layer-row--hoverable {(effectivelyVisibleLayerIds.Contains(layerRow.Layer.MapLayerId) ? "map-page__layer-row--enabled" : "map-page__layer-row--disabled")} {(SelectedLayerId == layerRow.Layer.MapLayerId ? "layer-row-selected" : string.Empty)} {(_draggedLayerId == layerRow.Layer.MapLayerId ? "map-page__layer-row--dragging" : string.Empty)} {(_dropTargetIndex == layerRow.FlatIndex ? "map-page__layer-row--drop-target" : string.Empty)}";
+
+    private void SetLayerExpandedState(Guid layerId, bool expanded)
+    {
+        var row = _layerRows.FirstOrDefault(existingRow => existingRow.Layer.MapLayerId == layerId);
+        if (row == null || !row.HasChildren || (!expanded && row.IsCollapseBlocked))
+        {
+            return;
+        }
+
+        if (expanded)
+        {
+            _collapsedLayerIds.Remove(layerId);
+        }
+        else
+        {
+            _collapsedLayerIds.Add(layerId);
+        }
+
+        RebuildLayerRows();
     }
 
     private void BeginLayerRename(Guid layerId)
@@ -1755,20 +1751,6 @@ else
         }
 
         ClearInlineLayerCreateState();
-    }
-
-    private void ToggleLayerCollapsed(Guid layerId)
-    {
-        var row = _layerRows.FirstOrDefault(existingRow => existingRow.Layer.MapLayerId == layerId);
-        if (row == null || !row.HasChildren || row.IsCollapseBlocked)
-        {
-            return;
-        }
-
-        if (!_collapsedLayerIds.Add(layerId))
-        {
-            _collapsedLayerIds.Remove(layerId);
-        }
     }
 
     private void ExpandAncestorChain(Guid layerId, bool includeSelf)
@@ -2584,4 +2566,11 @@ else
         bool HasChildren,
         bool IsCollapsed,
         bool IsCollapseBlocked);
+
+    private sealed class LayerTreeNode(LayerRenderRow row)
+    {
+        public LayerRenderRow Row { get; } = row;
+
+        public List<LayerTreeNode> Children { get; } = [];
+    }
 }

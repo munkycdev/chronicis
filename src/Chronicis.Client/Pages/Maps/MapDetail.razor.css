@@ -199,14 +199,46 @@
     line-height: 1.2;
 }
 
+.map-page__layer-tree {
+    width: 100%;
+}
+
+.map-page__layer-tree .mud-treeview-item {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.map-page__layer-tree-item {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.map-page__layer-tree .mud-treeview-item-content {
+    min-height: 0;
+    padding: 0 !important;
+    width: 100%;
+}
+
+.map-page__layer-tree .mud-treeview-item-label {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.map-page__layer-tree .mud-treeview-group {
+    margin-left: 0.35rem;
+}
+
 .map-page__layer-row {
     display: flex;
     align-items: center;
+    width: 100%;
     gap: 0.45rem;
     font-size: 0.82rem;
     line-height: 1.2;
+    box-sizing: border-box;
     border-radius: var(--chronicis-radius-md);
-    padding: 0.2rem 0.3rem;
+    padding: 0.2rem 0;
+    padding-inline-start: 0.3rem;
     cursor: grab;
     color: var(--chronicis-text-primary);
     transition: background-color var(--chronicis-transition-fast), outline-color var(--chronicis-transition-fast);
@@ -254,36 +286,6 @@
     cursor: pointer;
 }
 
-.map-page__layer-disclosure,
-.map-page__layer-disclosure-spacer {
-    inline-size: 1rem;
-    block-size: 1rem;
-    flex: 0 0 1rem;
-}
-
-.map-page__layer-disclosure {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: var(--chronicis-radius-sm);
-    padding: 0;
-    background: transparent;
-    color: color-mix(in srgb, var(--chronicis-primary) 65%, transparent 35%);
-    cursor: pointer;
-    font-size: 0.72rem;
-    line-height: 1;
-}
-
-.map-page__layer-disclosure:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--chronicis-secondary) 12%, transparent 88%);
-}
-
-.map-page__layer-disclosure:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
 .map-page__layer-drag-handle {
     inline-size: 0.7rem;
     text-align: center;
@@ -316,6 +318,8 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
 }
 
 .map-page__layer-action-button {
