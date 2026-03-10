@@ -10,7 +10,7 @@ ARG GIT_SHA=local
 COPY global.json Directory.Build.props ./
 COPY src/Chronicis.Api/Chronicis.Api.csproj src/Chronicis.Api/
 COPY src/Chronicis.Shared/Chronicis.Shared.csproj src/Chronicis.Shared/
-RUN dotnet restore ./src/Chronicis.Api/Chronicis.Api.csproj
+RUN dotnet restore ./src/Chronicis.Api/Chronicis.Api.csproj -r linux-x64
 
 # Now copy full source (busts cache on source changes, but restore above is already cached)
 COPY . .
@@ -18,6 +18,7 @@ RUN dotnet publish ./src/Chronicis.Api/Chronicis.Api.csproj \
     -c Release \
     -o /out \
     --no-restore \
+    -r linux-x64 \
     /p:InformationalVersion="${APP_VERSION}+${GIT_SHA}"
 
 # Runtime
