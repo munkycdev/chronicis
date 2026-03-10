@@ -184,7 +184,7 @@ public class ArticleHierarchyService : IArticleHierarchyService
     /// <summary>
     /// Walks up the parent chain from <paramref name="articleId"/> to the root,
     /// collecting breadcrumbs in root-to-leaf order.
-    /// Includes cycle protection via a visited set and a hard depth limit.
+    /// Issues one query per ancestor level; depth is typically 2–5 for real hierarchies.
     /// </summary>
     private async Task<List<BreadcrumbDto>> WalkAncestorsAsync(Guid articleId, HierarchyWalkOptions options)
     {
@@ -192,9 +192,8 @@ public class ArticleHierarchyService : IArticleHierarchyService
         var visited = new HashSet<Guid>();
         var currentId = (Guid?)articleId;
 
-        while (currentId.HasValue)
+        while (currentId.HasValue && visited.Count <= MaxDepth)
         {
-            // Cycle detection
             if (!visited.Add(currentId.Value))
             {
                 _logger.LogErrorSanitized(
@@ -203,43 +202,20 @@ public class ArticleHierarchyService : IArticleHierarchyService
                 break;
             }
 
-            // Hard depth limit
-            if (visited.Count > MaxDepth)
-            {
-                _logger.LogErrorSanitized(
-                    "Max hierarchy depth ({MaxDepth}) exceeded walking from article {ArticleId}",
-                    MaxDepth, articleId);
-                break;
-            }
-
-            // Build the base query
             IQueryable<Chronicis.Shared.Models.Article> query = _context.Articles
                 .AsNoTracking()
                 .Where(a => a.Id == currentId);
 
             if (options.PublicOnly)
-            {
                 query = query.Where(a => a.Visibility == ArticleVisibility.Public);
-            }
 
             var article = await query
-                .Select(a => new
-                {
-                    a.Id,
-                    a.Title,
-                    a.Slug,
-                    a.ParentId,
-                    a.Type,
-                    a.WorldId,
-                    a.CampaignId,
-                    a.ArcId
-                })
+                .Select(a => new { a.Id, a.Title, a.Slug, a.ParentId, a.Type })
                 .FirstOrDefaultAsync();
 
             if (article == null)
                 break;
 
-            // Skip the current article if the caller only wants ancestors
             var isTarget = (article.Id == articleId);
             if (!isTarget || options.IncludeCurrentArticle)
             {
