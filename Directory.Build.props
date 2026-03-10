@@ -7,10 +7,5 @@
     <EmbedUntrackedSources>false</EmbedUntrackedSources>
   </PropertyGroup>
 
-  <!-- Enable ReadyToRun: pre-compiles IL to native at publish time, reducing JIT work on cold start.
-       Only activates during `dotnet publish` — no effect on regular builds or Blazor WASM. -->
-  <PropertyGroup>
-    <PublishReadyToRun>true</PublishReadyToRun>
-  </PropertyGroup>
 
 </Project>

@@ -15,7 +15,7 @@ COPY global.json Directory.Build.props ./
 COPY src/Chronicis.Client.Host/Chronicis.Client.Host.csproj src/Chronicis.Client.Host/
 COPY src/Chronicis.Client/Chronicis.Client.csproj src/Chronicis.Client/
 COPY src/Chronicis.Shared/Chronicis.Shared.csproj src/Chronicis.Shared/
-RUN dotnet restore ./src/Chronicis.Client.Host/Chronicis.Client.Host.csproj -r linux-x64
+RUN dotnet restore ./src/Chronicis.Client.Host/Chronicis.Client.Host.csproj
 
 # Now copy full source (busts cache on source changes, but restore above is already cached)
 COPY . .
@@ -28,7 +28,7 @@ RUN BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") && \
       "${APP_VERSION}" "${BUILD_NUMBER}" "${GIT_SHA}" "${BUILD_DATE}" \
       > src/Chronicis.Client/wwwroot/version.json && \
     echo "Stamped version.json:" && cat src/Chronicis.Client/wwwroot/version.json
-RUN dotnet publish ./src/Chronicis.Client.Host/Chronicis.Client.Host.csproj -c Release -o /out --no-restore -r linux-x64
+RUN dotnet publish ./src/Chronicis.Client.Host/Chronicis.Client.Host.csproj -c Release -o /out --no-restore
 
 # Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
