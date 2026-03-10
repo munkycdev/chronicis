@@ -71,6 +71,20 @@ public partial class ExportService : IExportService
             .Where(s => arcIds.Contains(s.ArcId))
             .ToListAsync();
 
+        // Pre-build lookups so hierarchy traversal and session-note resolution are O(1)
+        // instead of O(N) per article/session, avoiding O(N²) behaviour on large worlds.
+        var wikiByParent = articles
+            .Where(a => a.Type == ArticleType.WikiArticle || a.Type == ArticleType.Legacy)
+            .ToLookup(a => a.ParentId);
+        var charactersByParent = articles
+            .Where(a => a.Type == ArticleType.Character)
+            .ToLookup(a => a.ParentId);
+        var sessionNotesBySession = articles
+            .Where(a => a.Type == ArticleType.SessionNote)
+            .ToLookup(a => a.SessionId);
+        var sessionsByArc = sessionEntities
+            .ToLookup(s => s.ArcId);
+
         // Build the zip archive
         using var memoryStream = new MemoryStream();
         using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
@@ -78,12 +92,10 @@ public partial class ExportService : IExportService
             var worldFolderName = SanitizeFileName(world.Name);
 
             // Export wiki articles (hierarchical)
-            var wikiArticles = articles.Where(a => a.Type == ArticleType.WikiArticle || a.Type == ArticleType.Legacy).ToList();
-            await ExportArticleHierarchy(archive, wikiArticles, $"{worldFolderName}/Wiki", null);
+            await ExportArticleHierarchy(archive, wikiByParent, $"{worldFolderName}/Wiki", null);
 
             // Export characters
-            var characters = articles.Where(a => a.Type == ArticleType.Character).ToList();
-            await ExportArticleHierarchy(archive, characters, $"{worldFolderName}/Characters", null);
+            await ExportArticleHierarchy(archive, charactersByParent, $"{worldFolderName}/Characters", null);
 
             // Export campaigns with their sessions
             var usedCampaignNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -109,8 +121,7 @@ public partial class ExportService : IExportService
                     await AddFileToArchive(archive, $"{arcFolder}/{arcFolderName}.md", arcContent);
 
                     // Session entities in this arc
-                    var arcSessions = sessionEntities
-                        .Where(s => s.ArcId == arc.Id)
+                    var arcSessions = sessionsByArc[arc.Id]
                         .OrderBy(s => s.SessionDate ?? s.CreatedAt)
                         .ThenBy(s => s.Name)
                         .ToList();
@@ -122,9 +133,8 @@ public partial class ExportService : IExportService
                         var sessionContent = BuildSessionMarkdown(session);
                         await AddFileToArchive(archive, $"{arcFolder}/{sessionFolderName}/{sessionFolderName}.md", sessionContent);
 
-                        // Session notes attached via Article.SessionId
-                        var sessionNotes = articles
-                            .Where(a => a.SessionId == session.Id && a.Type == ArticleType.SessionNote)
+                        // Session notes: O(1) lookup instead of O(articles) scan
+                        var sessionNotes = sessionNotesBySession[session.Id]
                             .OrderBy(a => a.CreatedAt)
                             .ThenBy(a => a.Title)
                             .ToList();
@@ -152,17 +162,17 @@ public partial class ExportService : IExportService
 
     private async Task ExportArticleHierarchy(
         ZipArchive archive,
-        List<Article> articles,
+        ILookup<Guid?, Article> byParent,
         string basePath,
         Guid? parentId)
     {
-        var children = articles.Where(a => a.ParentId == parentId).OrderBy(a => a.Title).ToList();
+        var children = byParent[parentId].OrderBy(a => a.Title);
         var usedSiblingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var article in children)
         {
             var articleFileName = GetUniqueSiblingName(article.Title, usedSiblingNames);
-            var hasChildren = articles.Any(a => a.ParentId == article.Id);
+            var hasChildren = byParent[article.Id].Any();
 
             if (hasChildren)
             {
@@ -172,7 +182,7 @@ public partial class ExportService : IExportService
                 await AddFileToArchive(archive, $"{articleFolder}/{articleFileName}.md", content);
 
                 // Recursively export children
-                await ExportArticleHierarchy(archive, articles, articleFolder, article.Id);
+                await ExportArticleHierarchy(archive, byParent, articleFolder, article.Id);
             }
             else
             {
