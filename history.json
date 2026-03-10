@@ -1,1 +1,10 @@
-{ "points": [] }
+{
+  "points": [
+    {
+      "date": "2026-03-10T01:55:11Z",
+      "sha": "99bf1dd4d45b5998b7b60617f220afdcf331afd3",
+      "linePct": 100.0,
+      "branchPct": 100.0
+    }
+  ]
+}
