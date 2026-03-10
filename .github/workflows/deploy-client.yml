@@ -1,16 +1,10 @@
 name: Deploy Client (ACA)
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Guardrails"]
+    types: [completed]
     branches: ["main"]
-    paths:
-      - "src/Chronicis.Client/**"
-      - "src/Chronicis.Client.Host/**"
-      - "src/Chronicis.Shared/**"
-      - "Directory.Build.props"
-      - "Directory.Build.targets"
-      - "global.json"
-      - ".github/workflows/deploy-client.yml"
 
 permissions:
   id-token: write
@@ -22,6 +16,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
