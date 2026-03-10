@@ -26,6 +26,16 @@ public interface IArticleHierarchyService
     /// Optionally strips the first level (world root) for display in link suggestions / backlinks.
     /// </summary>
     Task<string> BuildDisplayPathAsync(Guid articleId, bool stripFirstLevel = true);
+
+    /// <summary>
+    /// Builds ancestor breadcrumb trails for multiple articles in bulk.
+    /// Loads all required ancestor data in O(depth) DB queries rather than O(N × depth).
+    /// Only supports <see cref="HierarchyWalkOptions.IncludeCurrentArticle"/> from the options;
+    /// world breadcrumbs and virtual groups are not included.
+    /// </summary>
+    Task<Dictionary<Guid, List<BreadcrumbDto>>> BuildBreadcrumbsBatchAsync(
+        IEnumerable<Guid> articleIds,
+        HierarchyWalkOptions? options = null);
 }
 
 /// <summary>

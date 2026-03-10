@@ -89,6 +89,95 @@ public class ArticleHierarchyService : IArticleHierarchyService
     }
 
     // ────────────────────────────────────────────────────────────────
+    //  Batch breadcrumb resolution
+    // ────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public async Task<Dictionary<Guid, List<BreadcrumbDto>>> BuildBreadcrumbsBatchAsync(
+        IEnumerable<Guid> articleIds,
+        HierarchyWalkOptions? options = null)
+    {
+        options ??= new HierarchyWalkOptions();
+
+        var requestedIds = articleIds.Distinct().ToList();
+        var result = requestedIds.ToDictionary(id => id, _ => new List<BreadcrumbDto>());
+
+        if (requestedIds.Count == 0)
+            return result;
+
+        // Phase 1: Load all article data needed for breadcrumbs in O(depth) bulk queries.
+        // Each iteration loads one "level" of parents that has not been fetched yet.
+        var cache = new Dictionary<Guid, (string? Title, string Slug, Guid? ParentId, ArticleType Type)>();
+        var pending = new HashSet<Guid>(requestedIds);
+
+        while (pending.Count > 0)
+        {
+            if (cache.Count > 10_000)
+            {
+                _logger.LogErrorSanitized(
+                    "BuildBreadcrumbsBatchAsync: ancestor cache exceeded 10,000 entries, stopping walk");
+                break;
+            }
+
+            var pendingList = pending.ToList();
+            var batch = await _context.Articles
+                .AsNoTracking()
+                .Where(a => pendingList.Contains(a.Id))
+                .Select(a => new { a.Id, a.Title, a.Slug, a.ParentId, a.Type })
+                .ToListAsync();
+
+            pending.Clear();
+
+            foreach (var node in batch)
+            {
+                cache[node.Id] = (node.Title, node.Slug, node.ParentId, node.Type);
+
+                if (node.ParentId.HasValue && !cache.ContainsKey(node.ParentId.Value))
+                    pending.Add(node.ParentId.Value);
+            }
+        }
+
+        // Phase 2: Build breadcrumbs in memory for each requested article ID.
+        foreach (var articleId in requestedIds)
+        {
+            if (!cache.TryGetValue(articleId, out var article))
+                continue;
+
+            var breadcrumbs = new List<BreadcrumbDto>();
+            var visited = new HashSet<Guid> { articleId };
+
+            // Honour IncludeCurrentArticle: start from the article itself or skip to its parent.
+            var currentId = options.IncludeCurrentArticle
+                ? (Guid?)articleId
+                : article.ParentId;
+
+            while (currentId.HasValue)
+            {
+                if (!visited.Add(currentId.Value))
+                    break; // cycle detected
+
+                if (!cache.TryGetValue(currentId.Value, out var node))
+                    break; // parent was not loaded (shouldn't happen within safety cap)
+
+                breadcrumbs.Insert(0, new BreadcrumbDto
+                {
+                    Id = currentId.Value,
+                    Title = node.Title ?? "(Untitled)",
+                    Slug = node.Slug,
+                    Type = node.Type,
+                    IsWorld = false
+                });
+
+                currentId = node.ParentId;
+            }
+
+            result[articleId] = breadcrumbs;
+        }
+
+        return result;
+    }
+
+    // ────────────────────────────────────────────────────────────────
     //  Core walk algorithm
     // ────────────────────────────────────────────────────────────────
 

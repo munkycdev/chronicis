@@ -15,6 +15,8 @@ public class SearchReadServiceTests
         var hierarchy = Substitute.For<IArticleHierarchyService>();
         hierarchy.BuildBreadcrumbsAsync(Arg.Any<Guid>(), Arg.Any<HierarchyWalkOptions?>())
             .Returns(Task.FromResult(new List<BreadcrumbDto>()));
+        hierarchy.BuildBreadcrumbsBatchAsync(Arg.Any<IEnumerable<Guid>>(), Arg.Any<HierarchyWalkOptions?>())
+            .Returns(Task.FromResult(new Dictionary<Guid, List<BreadcrumbDto>>()));
 
         var userId = Guid.NewGuid();
         var otherUserId = Guid.NewGuid();

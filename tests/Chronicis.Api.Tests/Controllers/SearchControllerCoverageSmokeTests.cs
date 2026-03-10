@@ -35,6 +35,8 @@ public class SearchControllerCoverageSmokeTests
         var hierarchy = Substitute.For<IArticleHierarchyService>();
         hierarchy.BuildBreadcrumbsAsync(Arg.Any<Guid>(), Arg.Any<HierarchyWalkOptions>())
             .Returns(new List<BreadcrumbDto>());
+        hierarchy.BuildBreadcrumbsBatchAsync(Arg.Any<IEnumerable<Guid>>(), Arg.Any<HierarchyWalkOptions>())
+            .Returns(new Dictionary<Guid, List<BreadcrumbDto>>());
 
         var tutorialWorld = TestHelpers.CreateWorld(id: Guid.Empty, ownerId: currentUser.Id, name: "Tutorial System");
         var normalWorld = TestHelpers.CreateWorld(ownerId: currentUser.Id, name: "Normal World");

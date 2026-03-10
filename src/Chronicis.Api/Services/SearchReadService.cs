@@ -113,9 +113,14 @@ public class SearchReadService : ISearchReadService
             IncludeCurrentArticle = false
         };
 
+        var ancestorPaths = await _hierarchyService.BuildBreadcrumbsBatchAsync(
+            allResults.Select(r => r.Id),
+            ancestorOptions);
+
         foreach (var result in allResults)
         {
-            result.AncestorPath = await _hierarchyService.BuildBreadcrumbsAsync(result.Id, ancestorOptions);
+            if (ancestorPaths.TryGetValue(result.Id, out var path))
+                result.AncestorPath = path;
         }
 
         var seenIds = new HashSet<Guid>();
