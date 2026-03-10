@@ -17,7 +17,7 @@ public class TutorialPageTypesTests
         Assert.Contains(all, o => o.PageType == "Page:AdminUtilities");
         Assert.Contains(all, o => o.PageType == "Page:AdminStatus");
         Assert.Contains(all, o => o.PageType == "Page:MapListing" && o.DefaultName == "World Map Listing");
-        Assert.Contains(all, o => o.PageType == "Page:MapPage" && o.DefaultName == "Map Page");
+        Assert.Contains(all, o => o.PageType == "Page:MapDetail" && o.DefaultName == "Map Detail");
         Assert.Contains(all, o => o.PageType == "ArticleType:Any" && o.DefaultName == "Any Article");
         Assert.DoesNotContain(all, o => o.PageType == $"ArticleType:{ArticleType.Tutorial}");
         Assert.Contains(all, o => o.PageType == $"ArticleType:{ArticleType.WikiArticle}" && o.DefaultName == "Wiki Articles");
@@ -63,3 +63,4 @@ public class TutorialPageTypesTests
         Assert.Equal("Page:Dashboard (Dashboard)", option.DisplayLabel);
     }
 }
+

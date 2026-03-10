@@ -120,6 +120,7 @@ public class WorldMapService : IWorldMapService
             .Select(l => new MapLayerDto
             {
                 MapLayerId = l.MapLayerId,
+                ParentLayerId = l.ParentLayerId,
                 Name = l.Name,
                 SortOrder = l.SortOrder,
                 IsEnabled = l.IsEnabled,
@@ -127,10 +128,10 @@ public class WorldMapService : IWorldMapService
             .ToListAsync();
     }
 
-    Task<MapLayerDto> IWorldMapService.CreateLayer(Guid worldId, Guid mapId, Guid userId, string name) =>
-        CreateLayerAsync(worldId, mapId, userId, name);
+    Task<MapLayerDto> IWorldMapService.CreateLayer(Guid worldId, Guid mapId, Guid userId, string name, Guid? parentLayerId) =>
+        CreateLayerAsync(worldId, mapId, userId, name, parentLayerId);
 
-    public async Task<MapLayerDto> CreateLayerAsync(Guid worldId, Guid mapId, Guid userId, string name)
+    public async Task<MapLayerDto> CreateLayerAsync(Guid worldId, Guid mapId, Guid userId, string name, Guid? parentLayerId = null)
     {
         _logger.LogTraceSanitized("User {UserId} creating layer on map {MapId}", userId, mapId);
 
@@ -158,9 +159,26 @@ public class WorldMapService : IWorldMapService
             throw new ArgumentException("Layer name already exists");
         }
 
+        if (parentLayerId.HasValue)
+        {
+            var parentLayer = await _db.MapLayers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(layer => layer.MapLayerId == parentLayerId.Value);
+
+            if (parentLayer == null)
+            {
+                throw new ArgumentException("Parent layer not found");
+            }
+
+            if (parentLayer.WorldMapId != mapId)
+            {
+                throw new ArgumentException("Parent layer does not belong to map");
+            }
+        }
+
         var nextSortOrder = await _db.MapLayers
             .AsNoTracking()
-            .Where(layer => layer.WorldMapId == mapId)
+            .Where(layer => layer.WorldMapId == mapId && layer.ParentLayerId == parentLayerId)
             .Select(layer => (int?)layer.SortOrder)
             .MaxAsync() ?? -1;
 
@@ -168,6 +186,7 @@ public class WorldMapService : IWorldMapService
         {
             MapLayerId = Guid.NewGuid(),
             WorldMapId = map.WorldMapId,
+            ParentLayerId = parentLayerId,
             Name = normalizedName,
             SortOrder = nextSortOrder + 1,
             IsEnabled = true,
@@ -179,6 +198,7 @@ public class WorldMapService : IWorldMapService
         return new MapLayerDto
         {
             MapLayerId = createdLayer.MapLayerId,
+            ParentLayerId = createdLayer.ParentLayerId,
             Name = createdLayer.Name,
             SortOrder = createdLayer.SortOrder,
             IsEnabled = createdLayer.IsEnabled,
@@ -467,30 +487,47 @@ public class WorldMapService : IWorldMapService
             throw new ArgumentException("Map not found");
         }
 
-        var mapLayers = await _db.MapLayers
-            .Where(l => l.WorldMapId == mapId)
-            .ToListAsync();
-
-        var mapLayerIds = mapLayers
-            .Select(l => l.MapLayerId)
-            .ToHashSet();
-
-        if (layerIds.Any(id => !mapLayerIds.Contains(id)))
-        {
-            throw new ArgumentException("Layer does not belong to map");
-        }
-
         if (layerIds.Distinct().Count() != layerIds.Count)
         {
             throw new ArgumentException("Duplicate layer IDs are not allowed");
         }
 
-        if (layerIds.Count != mapLayers.Count || !mapLayerIds.SetEquals(layerIds))
+        var requestedLayers = await _db.MapLayers
+            .Where(layer => layerIds.Contains(layer.MapLayerId))
+            .ToListAsync();
+
+        if (requestedLayers.Count != layerIds.Count)
         {
-            throw new ArgumentException("LayerIds must include all map layers");
+            throw new ArgumentException("Layer not found");
         }
 
-        var mapLayersById = mapLayers.ToDictionary(l => l.MapLayerId);
+        if (requestedLayers.Any(layer => layer.WorldMapId != mapId))
+        {
+            throw new ArgumentException("Layer does not belong to map");
+        }
+
+        var parentLayerIds = requestedLayers
+            .Select(layer => layer.ParentLayerId)
+            .Distinct()
+            .ToList();
+
+        if (parentLayerIds.Count != 1)
+        {
+            throw new ArgumentException("Layers must share the same parent");
+        }
+
+        var parentLayerId = parentLayerIds[0];
+        var siblingLayerIds = await _db.MapLayers
+            .Where(layer => layer.WorldMapId == mapId && layer.ParentLayerId == parentLayerId)
+            .Select(layer => layer.MapLayerId)
+            .ToListAsync();
+
+        if (siblingLayerIds.Count != layerIds.Count || !siblingLayerIds.ToHashSet().SetEquals(layerIds))
+        {
+            throw new ArgumentException("LayerIds must include all sibling layers");
+        }
+
+        var mapLayersById = requestedLayers.ToDictionary(layer => layer.MapLayerId);
         for (var index = 0; index < layerIds.Count; index++)
         {
             mapLayersById[layerIds[index]].SortOrder = index;
@@ -540,6 +577,67 @@ public class WorldMapService : IWorldMapService
         await _db.SaveChangesAsync();
     }
 
+    /// <inheritdoc/>
+    public async Task SetLayerParentAsync(Guid worldId, Guid mapId, Guid userId, Guid layerId, Guid? parentLayerId)
+    {
+        _logger.LogTraceSanitized("User {UserId} setting parent for layer {LayerId} on map {MapId}", userId, layerId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+
+        var mapExists = await _db.WorldMaps
+            .AsNoTracking()
+            .AnyAsync(m => m.WorldMapId == mapId && m.WorldId == worldId);
+
+        if (!mapExists)
+        {
+            throw new ArgumentException("Map not found");
+        }
+
+        var layer = await _db.MapLayers
+            .FirstOrDefaultAsync(l => l.MapLayerId == layerId && l.WorldMapId == mapId);
+
+        if (layer == null)
+        {
+            throw new ArgumentException("Layer not found");
+        }
+
+        if (parentLayerId == layerId)
+        {
+            throw new ArgumentException("Layer cannot be its own parent");
+        }
+
+        if (layer.ParentLayerId == parentLayerId)
+        {
+            return;
+        }
+
+        if (IsProtectedDefaultLayer(layer.Name))
+        {
+            throw new ArgumentException("Default layers cannot be re-parented");
+        }
+
+        if (parentLayerId == null)
+        {
+            layer.ParentLayerId = null;
+            await _db.SaveChangesAsync();
+            return;
+        }
+
+        var parent = await _db.MapLayers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.MapLayerId == parentLayerId.Value && l.WorldMapId == mapId);
+
+        if (parent == null)
+        {
+            throw new ArgumentException("Parent layer not found in map");
+        }
+
+        await EnsureValidParentChainAsync(mapId, layerId, parent.MapLayerId);
+
+        layer.ParentLayerId = parent.MapLayerId;
+        await _db.SaveChangesAsync();
+    }
+
     Task IWorldMapService.DeleteLayer(Guid worldId, Guid mapId, Guid userId, Guid layerId) =>
         DeleteLayerAsync(worldId, mapId, userId, layerId);
 
@@ -557,12 +655,6 @@ public class WorldMapService : IWorldMapService
         {
             throw new ArgumentException("Map not found");
         }
-
-        var mapLayers = await _db.MapLayers
-            .Where(layer => layer.WorldMapId == mapId)
-            .OrderBy(layer => layer.SortOrder)
-            .ThenBy(layer => layer.MapLayerId)
-            .ToListAsync();
 
         var layer = await _db.MapLayers
             .FirstOrDefaultAsync(l => l.MapLayerId == layerId);
@@ -582,6 +674,17 @@ public class WorldMapService : IWorldMapService
             throw new ArgumentException("Default layers cannot be deleted");
         }
 
+        var hasChildren = await _db.MapLayers
+            .AsNoTracking()
+            .AnyAsync(existingLayer =>
+                existingLayer.WorldMapId == layer.WorldMapId
+                && existingLayer.ParentLayerId == layer.MapLayerId);
+
+        if (hasChildren)
+        {
+            throw new ArgumentException("Layer cannot be deleted while child layers exist");
+        }
+
         var hasPins = await _db.MapFeatures
             .AsNoTracking()
             .AnyAsync(feature => feature.MapLayerId == layerId);
@@ -591,15 +694,23 @@ public class WorldMapService : IWorldMapService
             throw new ArgumentException("Layer cannot be deleted while pins reference it");
         }
 
+        var siblingParentLayerId = layer.ParentLayerId;
+        var siblingWorldMapId = layer.WorldMapId;
+
         _db.MapLayers.Remove(layer);
 
-        var remainingLayers = mapLayers
-            .Where(existingLayer => existingLayer.MapLayerId != layerId)
-            .ToList();
+        var remainingSiblingLayers = await _db.MapLayers
+            .Where(existingLayer =>
+                existingLayer.WorldMapId == siblingWorldMapId
+                && existingLayer.ParentLayerId == siblingParentLayerId
+                && existingLayer.MapLayerId != layerId)
+            .OrderBy(existingLayer => existingLayer.SortOrder)
+            .ThenBy(existingLayer => existingLayer.MapLayerId)
+            .ToListAsync();
 
-        for (var index = 0; index < remainingLayers.Count; index++)
+        for (var index = 0; index < remainingSiblingLayers.Count; index++)
         {
-            remainingLayers[index].SortOrder = index;
+            remainingSiblingLayers[index].SortOrder = index;
         }
 
         await _db.SaveChangesAsync();
@@ -858,6 +969,42 @@ public class WorldMapService : IWorldMapService
 
     private static bool IsProtectedDefaultLayer(string layerName) =>
         ProtectedDefaultLayerNames.Contains(layerName);
+
+    private async Task EnsureValidParentChainAsync(Guid mapId, Guid layerId, Guid parentLayerId)
+    {
+        var visited = new HashSet<Guid>();
+        Guid? currentLayerId = parentLayerId;
+
+        while (currentLayerId.HasValue)
+        {
+            if (!visited.Add(currentLayerId.Value))
+            {
+                throw new ArgumentException("Invalid parent chain");
+            }
+
+            if (currentLayerId.Value == layerId)
+            {
+                throw new ArgumentException("Parent assignment would create a cycle");
+            }
+
+            var currentLayer = await _db.MapLayers
+                .AsNoTracking()
+                .Where(l => l.WorldMapId == mapId && l.MapLayerId == currentLayerId.Value)
+                .Select(l => new
+                {
+                    l.MapLayerId,
+                    l.ParentLayerId,
+                })
+                .FirstOrDefaultAsync();
+
+            if (currentLayer == null)
+            {
+                throw new ArgumentException("Invalid parent chain");
+            }
+
+            currentLayerId = currentLayer.ParentLayerId;
+        }
+    }
 
     private async Task<MapPinResponseDto> GetMapPinResponseAsync(Guid pinId, Guid mapId)
     {

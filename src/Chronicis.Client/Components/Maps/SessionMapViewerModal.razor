@@ -1,4 +1,5 @@
 @using System.Globalization
+@using Chronicis.Client.Utilities
 @using Chronicis.Shared.DTOs.Maps
 @inject IMapApiService MapApi
 @inject IJSRuntime JSRuntime
@@ -50,15 +51,30 @@
                 {
                     <div class="session-map-viewer-modal__layout">
                         <aside class="session-map-viewer-modal__layers" aria-label="Map layers">
-                            @foreach (var layer in _layers)
+                            @{
+                                var effectivelyVisibleLayerIds = GetEffectivelyVisibleLayerIds();
+                                var layerTreeRoots = BuildLayerTreeRoots();
+                            }
+                            @if (layerTreeRoots.Count == 0)
                             {
-                                <label class="@GetLayerRowClass(layer)">
-                                    <input type="checkbox"
-                                           class="session-map-viewer-modal__layer-toggle"
-                                           checked="@layer.IsEnabled"
-                                           @onchange="@(args => OnLayerToggleChangedAsync(layer.MapLayerId, args))" />
-                                    <span class="session-map-viewer-modal__layer-name">@layer.Name</span>
-                                </label>
+                                <MudText Typo="Typo.body2" Class="session-map-viewer-modal__layers-empty">
+                                    No layers available.
+                                </MudText>
+                            }
+                            else
+                            {
+                                <MudTreeView T="Guid"
+                                             Hover="true"
+                                             Dense="true"
+                                             ReadOnly="true"
+                                             Ripple="false"
+                                             ExpandOnClick="false"
+                                             Class="session-map-viewer-modal__layer-tree">
+                                    @foreach (var layerTreeRoot in layerTreeRoots)
+                                    {
+                                        @RenderLayerTreeItem(layerTreeRoot, effectivelyVisibleLayerIds)
+                                    }
+                                </MudTreeView>
                             }
                         </aside>
 
@@ -250,11 +266,7 @@
                 return;
             }
 
-            _layers = SortLayersByOrder(layers);
-            foreach (var layer in _layers)
-            {
-                layer.IsEnabled = true;
-            }
+            _layers = layers;
             _pins = pins;
             _state = SessionMapViewerState.Loaded;
         }
@@ -602,9 +614,6 @@
     private static double Clamp(double value, double min, double max) =>
         value < min ? min : value > max ? max : value;
 
-    private static List<MapLayerDto> SortLayersByOrder(List<MapLayerDto> layers) =>
-        layers.OrderBy(layer => layer.SortOrder).ToList();
-
     private IEnumerable<MapPinResponseDto> GetVisiblePins()
     {
         if (_layers.Count == 0)
@@ -612,20 +621,112 @@
             return _pins;
         }
 
-        var enabledLayerIds = GetEnabledLayerIds(_layers);
+        var enabledLayerIds = GetEffectivelyVisibleLayerIds();
         return _pins.Where(pin => enabledLayerIds.Contains(pin.LayerId));
     }
 
-    private static HashSet<Guid> GetEnabledLayerIds(IEnumerable<MapLayerDto> layers) =>
-        layers
-            .Where(layer => layer.IsEnabled)
-            .Select(layer => layer.MapLayerId)
-            .ToHashSet();
+    private HashSet<Guid> GetEffectivelyVisibleLayerIds() =>
+        MapLayerVisibilityEvaluator.GetEffectivelyVisibleLayerIds(_layers);
 
-    private static string GetLayerRowClass(MapLayerDto layer) =>
-        layer.IsEnabled
+    private static string GetLayerRowClass(MapLayerDto layer, IReadOnlySet<Guid> effectivelyVisibleLayerIds) =>
+        effectivelyVisibleLayerIds.Contains(layer.MapLayerId)
             ? "session-map-viewer-modal__layer-row"
             : "session-map-viewer-modal__layer-row session-map-viewer-modal__layer-row--disabled";
+
+    private RenderFragment RenderLayerTreeItem(LayerTreeNode layerTreeNode, IReadOnlySet<Guid> effectivelyVisibleLayerIds) => @<MudTreeViewItem T="Guid"
+        Value="@layerTreeNode.Layer.MapLayerId"
+        class="session-map-viewer-modal__layer-tree-item"
+        CanExpand="@layerTreeNode.HasChildren"
+        Expanded="@layerTreeNode.IsExpanded"
+        ExpandedChanged="@((bool expanded) => layerTreeNode.IsExpanded = expanded)"
+        Style="padding:0px !important; margin:0px !important;">
+        <BodyContent>
+            <div class="@GetLayerRowClass(layerTreeNode.Layer, effectivelyVisibleLayerIds)"
+                 data-layer-id="@layerTreeNode.Layer.MapLayerId"
+                 data-layer-depth="@layerTreeNode.Depth">
+                <input type="checkbox"
+                       class="session-map-viewer-modal__layer-toggle"
+                       checked="@layerTreeNode.Layer.IsEnabled"
+                       @onchange="@(args => OnLayerToggleChangedAsync(layerTreeNode.Layer.MapLayerId, args))"
+                       @onclick:stopPropagation="true" />
+                <span class="session-map-viewer-modal__layer-name">@layerTreeNode.Layer.Name</span>
+            </div>
+        </BodyContent>
+        <ChildContent>
+            @foreach (var childLayerTreeNode in layerTreeNode.Children)
+            {
+                @RenderLayerTreeItem(childLayerTreeNode, effectivelyVisibleLayerIds)
+            }
+        </ChildContent>
+    </MudTreeViewItem>;
+
+    private List<LayerTreeNode> BuildLayerTreeRoots()
+    {
+        if (_layers.Count == 0)
+        {
+            return [];
+        }
+
+        var treeRoots = new List<LayerTreeNode>();
+        var childrenByParentId = _layers
+            .Where(layer => layer.ParentLayerId.HasValue && layer.ParentLayerId.Value != layer.MapLayerId)
+            .GroupBy(layer => layer.ParentLayerId!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group => OrderSiblingLayers(group).ToList());
+
+        var visited = new HashSet<Guid>();
+        foreach (var rootLayer in OrderSiblingLayers(_layers.Where(IsRootLayer)))
+        {
+            treeRoots.Add(BuildLayerTreeDepthFirst(rootLayer, depth: 0, childrenByParentId, visited));
+        }
+
+        foreach (var remainingLayer in OrderSiblingLayers(_layers.Where(layer => !visited.Contains(layer.MapLayerId))))
+        {
+            treeRoots.Add(BuildLayerTreeDepthFirst(remainingLayer, depth: 0, childrenByParentId, visited));
+        }
+
+        return treeRoots;
+    }
+
+    private LayerTreeNode BuildLayerTreeDepthFirst(
+        MapLayerDto layer,
+        int depth,
+        IReadOnlyDictionary<Guid, List<MapLayerDto>> childrenByParentId,
+        ISet<Guid> visited)
+    {
+        var layerTreeNode = new LayerTreeNode(layer, depth);
+        if (!visited.Add(layer.MapLayerId))
+        {
+            return layerTreeNode;
+        }
+
+        if (!childrenByParentId.TryGetValue(layer.MapLayerId, out var children) || children.Count == 0)
+        {
+            return layerTreeNode;
+        }
+
+        foreach (var child in children)
+        {
+            if (visited.Contains(child.MapLayerId))
+            {
+                continue;
+            }
+
+            layerTreeNode.Children.Add(BuildLayerTreeDepthFirst(child, depth + 1, childrenByParentId, visited));
+        }
+
+        return layerTreeNode;
+    }
+
+    private bool IsRootLayer(MapLayerDto layer) =>
+        !layer.ParentLayerId.HasValue || !_layers.Any(candidate => candidate.MapLayerId == layer.ParentLayerId.Value);
+
+    private static IOrderedEnumerable<MapLayerDto> OrderSiblingLayers(IEnumerable<MapLayerDto> layers) =>
+        layers
+            .OrderBy(layer => layer.SortOrder)
+            .ThenBy(layer => layer.Name, StringComparer.Ordinal)
+            .ThenBy(layer => layer.MapLayerId);
 
     private async Task<IJSObjectReference?> EnsureModuleAsync()
     {
@@ -761,5 +862,18 @@
         Unauthorized,
         NotFound,
         BasemapMissing
+    }
+
+    private sealed class LayerTreeNode(MapLayerDto layer, int depth)
+    {
+        public MapLayerDto Layer { get; } = layer;
+
+        public int Depth { get; } = depth;
+
+        public bool IsExpanded { get; set; } = true;
+
+        public List<LayerTreeNode> Children { get; } = [];
+
+        public bool HasChildren => Children.Count > 0;
     }
 }

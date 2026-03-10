@@ -88,6 +88,30 @@
     background: var(--chronicis-background-light);
 }
 
+.session-map-viewer-modal__layers-empty {
+    margin: 0;
+    color: color-mix(in srgb, var(--chronicis-text-primary) 60%, transparent 40%);
+}
+
+.session-map-viewer-modal__layer-tree {
+    width: 100%;
+}
+
+.session-map-viewer-modal__layer-tree .mud-treeview-item,
+.session-map-viewer-modal__layer-tree-item {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.session-map-viewer-modal__layer-tree .mud-treeview-item-content {
+    min-height: 0;
+    padding: 0;
+}
+
+.session-map-viewer-modal__layer-tree .mud-treeview-group {
+    margin-left: 0.45rem;
+}
+
 .session-map-viewer-modal__layer-row {
     display: flex;
     align-items: center;

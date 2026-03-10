@@ -156,7 +156,7 @@ public class TreeNode
             VirtualGroupType.Campaigns => false, // TODO: Enable when campaign creation dialog is ready
             // Links are managed via WorldDetail page, not tree
             VirtualGroupType.Links => false,
-            // Maps are managed via the Maps Detail page, not tree
+            // Maps are managed via the Map Listing page, not tree
             VirtualGroupType.Maps => false,
             _ => true
         },
@@ -241,3 +241,4 @@ public class TreeNode
         _ => "fa-solid fa-file"
     };
 }
+

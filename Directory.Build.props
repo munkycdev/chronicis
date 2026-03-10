@@ -1,0 +1,16 @@
+<Project>
+
+  <!-- Disable SourceLink on local builds — it queries git on every build with no incremental check,
+       adding ~2-3s to every no-op invocation. CI keeps it enabled for reproducible symbol files. -->
+  <PropertyGroup Condition="'$(CI)' != 'true'">
+    <PublishRepositoryUrl>false</PublishRepositoryUrl>
+    <EmbedUntrackedSources>false</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <!-- Enable ReadyToRun: pre-compiles IL to native at publish time, reducing JIT work on cold start.
+       Only activates during `dotnet publish` — no effect on regular builds or Blazor WASM. -->
+  <PropertyGroup>
+    <PublishReadyToRun>true</PublishReadyToRun>
+  </PropertyGroup>
+
+</Project>

@@ -1,7 +1,7 @@
 namespace Chronicis.Shared.Enums;
 
 /// <summary>
-/// Defines the scope of a WorldMap for grouping on the Maps Detail page.
+/// Defines the scope of a WorldMap for grouping on the Map Listing page.
 /// </summary>
 public enum MapScope
 {
@@ -20,3 +20,4 @@ public enum MapScope
     /// </summary>
     ArcScoped = 2,
 }
+

@@ -9,7 +9,15 @@ ARG GIT_SHA=local
 # Done before COPY so this layer is cached independently of source changes.
 RUN dotnet workload install wasm-tools
 
-# Copy repo (context should be repo root)
+# Copy project files first so NuGet restore is cached independently of source changes.
+# This layer is only invalidated when .csproj / Directory.Build.props / global.json change.
+COPY global.json Directory.Build.props ./
+COPY src/Chronicis.Client.Host/Chronicis.Client.Host.csproj src/Chronicis.Client.Host/
+COPY src/Chronicis.Client/Chronicis.Client.csproj src/Chronicis.Client/
+COPY src/Chronicis.Shared/Chronicis.Shared.csproj src/Chronicis.Shared/
+RUN dotnet restore ./src/Chronicis.Client.Host/Chronicis.Client.Host.csproj
+
+# Now copy full source (busts cache on source changes, but restore above is already cached)
 COPY . .
 
 # Stamp version.json so the running WASM app can read its own build version.
@@ -20,9 +28,6 @@ RUN BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") && \
       "${APP_VERSION}" "${BUILD_NUMBER}" "${GIT_SHA}" "${BUILD_DATE}" \
       > src/Chronicis.Client/wwwroot/version.json && \
     echo "Stamped version.json:" && cat src/Chronicis.Client/wwwroot/version.json
-
-# Restore + publish ONLY the Client Host project (avoid Windows-only projects)
-RUN dotnet restore ./src/Chronicis.Client.Host/Chronicis.Client.Host.csproj
 RUN dotnet publish ./src/Chronicis.Client.Host/Chronicis.Client.Host.csproj -c Release -o /out --no-restore
 
 # Runtime

@@ -8,7 +8,7 @@
 * Do not implement non-point geometry.
 * Do not reuse WorldDocument services.
 * Keep Maps tree behavior aligned with current UX contract:
-  * Maps group navigates to Maps Detail.
+  * Maps group navigates to Map Listing.
   * Maps group does not show "Add Item".
   * Maps and Map nodes must remain selectable for tree state sync.
 
@@ -84,3 +84,4 @@ All tests must pass `./scripts/verify.ps1`.
   * `/world/{worldId}/maps` expands/selects Maps in tree.
   * `/world/{worldId}/maps/{mapId}` expands/selects active map.
   * Renaming a map updates nav tree title without full refresh.
+

@@ -23,6 +23,7 @@ bld/
 *.sln.docstates
 *.rsuser
 .vscode/
+*.binlog
 
 ############################################################
 # NuGet
@@ -71,6 +72,12 @@ mono_crash.*
 ############################################################
 # Project specifics (Chronicis)
 ############################################################
+# AI Automation Pipeline working files
+ai-pipeline/node_modules/*
+ai-pipeline/state/*
+ai-pipeline/phases/p*
+ai-pipeline/phases/_p*
+ai-pipeline/prompts/*
 
 # Docs and local scratch areas
 /docs/legacy/

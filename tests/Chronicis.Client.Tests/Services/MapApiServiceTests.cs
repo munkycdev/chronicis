@@ -166,6 +166,7 @@ public class MapApiServiceTests
             var body = await req.Content!.ReadAsStringAsync(cancellationToken);
             using var json = JsonDocument.Parse(body);
             Assert.Equal("Cities", json.RootElement.GetProperty("name").GetString());
+            Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("parentLayerId").ValueKind);
 
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -181,6 +182,28 @@ public class MapApiServiceTests
         Assert.Equal("Cities", result.Name);
         Assert.Equal(3, result.SortOrder);
         Assert.True(result.IsEnabled);
+    }
+
+    [Fact]
+    public async Task CreateLayerAsync_WithParentId_SendsParentLayerIdInPayload()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var parentLayerId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler(async (req, cancellationToken) =>
+        {
+            var body = await req.Content!.ReadAsStringAsync(cancellationToken);
+            using var json = JsonDocument.Parse(body);
+            Assert.Equal(parentLayerId, json.RootElement.GetProperty("parentLayerId").GetGuid());
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"mapLayerId":"00000000-0000-0000-0000-000000000001","name":"Child","sortOrder":0,"isEnabled":true}""")
+            };
+        });
+
+        var sut = CreateSut(handler);
+        _ = await sut.CreateLayerAsync(worldId, mapId, "Child", parentLayerId);
     }
 
     [Fact]
@@ -413,6 +436,52 @@ public class MapApiServiceTests
     }
 
     [Fact]
+    public async Task SetLayerParentAsync_UsesExpectedRouteVerbAndPayload()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var layerId = Guid.NewGuid();
+        var parentLayerId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler(async (req, cancellationToken) =>
+        {
+            Assert.Equal(HttpMethod.Put, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/layers/{layerId}/parent", req.RequestUri!.PathAndQuery.TrimStart('/'));
+
+            var body = await req.Content!.ReadAsStringAsync(cancellationToken);
+            using var json = JsonDocument.Parse(body);
+            Assert.Equal(parentLayerId, json.RootElement.GetProperty("parentLayerId").GetGuid());
+
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+
+        var sut = CreateSut(handler);
+
+        await sut.SetLayerParentAsync(worldId, mapId, layerId, parentLayerId);
+    }
+
+    [Fact]
+    public async Task SetLayerParentAsync_WhenClearingParent_SendsNullInPayload()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var layerId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler(async (req, cancellationToken) =>
+        {
+            var body = await req.Content!.ReadAsStringAsync(cancellationToken);
+            using var json = JsonDocument.Parse(body);
+            Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("parentLayerId").ValueKind);
+
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+
+        var sut = CreateSut(handler);
+
+        await sut.SetLayerParentAsync(worldId, mapId, layerId, null);
+    }
+
+    [Fact]
     public async Task RenameLayerAsync_WhenRequestFails_ThrowsInvalidOperationException()
     {
         var sut = CreateSut(new TestHttpMessageHandler((_, _) =>
@@ -430,6 +499,16 @@ public class MapApiServiceTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => sut.DeleteLayerAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task SetLayerParentAsync_WhenRequestFails_ThrowsInvalidOperationException()
+    {
+        var sut = CreateSut(new TestHttpMessageHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest))));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.SetLayerParentAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
     }
 
     [Fact]

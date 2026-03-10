@@ -18,14 +18,14 @@ using Xunit;
 
 namespace Chronicis.Client.Tests.Pages;
 
-public class MapsDetailTests : MudBlazorTestContext
+public class MapListingTests : MudBlazorTestContext
 {
     private readonly IMapApiService _mapApi = Substitute.For<IMapApiService>();
     private readonly IWorldApiService _worldApi = Substitute.For<IWorldApiService>();
     private readonly IArcApiService _arcApi = Substitute.For<IArcApiService>();
     private readonly ITreeStateService _treeState = Substitute.For<ITreeStateService>();
 
-    public MapsDetailTests()
+    public MapListingTests()
     {
         Services.AddSingleton(_mapApi);
         Services.AddSingleton(_worldApi);
@@ -50,13 +50,13 @@ public class MapsDetailTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapsDetail_WhenLoading_RendersLoadingSkeleton()
+    public void MapListing_WhenLoading_RendersLoadingSkeleton()
     {
         var worldId = Guid.NewGuid();
         var tcs = new TaskCompletionSource<WorldDetailDto?>();
         _worldApi.GetWorldAsync(worldId).Returns(tcs.Task);
 
-        var cut = RenderMapsDetail(worldId);
+        var cut = RenderMapListing(worldId);
 
         Assert.Contains("chronicis-loading-skeleton", cut.Markup, StringComparison.OrdinalIgnoreCase);
 
@@ -64,32 +64,32 @@ public class MapsDetailTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapsDetail_WhenWorldMissing_RendersLoadFailureAlert()
+    public void MapListing_WhenWorldMissing_RendersLoadFailureAlert()
     {
         var worldId = Guid.NewGuid();
         _worldApi.GetWorldAsync(worldId).Returns((WorldDetailDto?)null);
 
-        var cut = RenderMapsDetail(worldId);
+        var cut = RenderMapListing(worldId);
 
         cut.WaitForAssertion(() =>
             Assert.Contains("World not found or access denied.", cut.Markup, StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
-    public void MapsDetail_WhenWorldApiThrows_RendersLoadFailureAlert()
+    public void MapListing_WhenWorldApiThrows_RendersLoadFailureAlert()
     {
         var worldId = Guid.NewGuid();
         _worldApi.GetWorldAsync(worldId)
             .Returns(Task.FromException<WorldDetailDto?>(new InvalidOperationException("boom")));
 
-        var cut = RenderMapsDetail(worldId);
+        var cut = RenderMapListing(worldId);
 
         cut.WaitForAssertion(() =>
             Assert.Contains("World not found or access denied.", cut.Markup, StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
-    public void MapsDetail_WhenMapsLoaded_BuildsAllScopeGroupingsAndFallbackNames()
+    public void MapListing_WhenMapsLoaded_BuildsAllScopeGroupingsAndFallbackNames()
     {
         var worldId = Guid.NewGuid();
         var campaignKnownId = Guid.NewGuid();
@@ -175,7 +175,7 @@ public class MapsDetailTests : MudBlazorTestContext
             }
         ]);
 
-        var cut = RenderMapsDetail(worldId);
+        var cut = RenderMapListing(worldId);
 
         cut.WaitForAssertion(() =>
         {
@@ -192,7 +192,7 @@ public class MapsDetailTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void MapsDetail_OnLoad_ExpandsMapsGroupInTree()
+    public void MapListing_OnLoad_ExpandsMapsGroupInTree()
     {
         var worldId = Guid.NewGuid();
         var mapsGroupId = Guid.NewGuid();
@@ -216,7 +216,7 @@ public class MapsDetailTests : MudBlazorTestContext
             }
         });
 
-        var cut = RenderMapsDetail(worldId);
+        var cut = RenderMapListing(worldId);
 
         cut.WaitForAssertion(() => Assert.False(GetField<bool>(cut.Instance, "_isLoading")));
         _treeState.Received(1).ExpandPathToAndSelect(mapsGroupId);
@@ -429,7 +429,7 @@ public class MapsDetailTests : MudBlazorTestContext
         _mapApi.ConfirmBasemapUploadAsync(worldId, mapId, Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
             .Returns(new MapDto { WorldMapId = mapId, Name = "Success Map" });
 
-        var cut = RenderMapsDetail(worldId);
+        var cut = RenderMapListing(worldId);
         cut.WaitForAssertion(() => Assert.False(GetField<bool>(cut.Instance, "_isLoading")));
 
         SetField(cut.Instance, "_newMapName", "Success Map");
@@ -481,7 +481,7 @@ public class MapsDetailTests : MudBlazorTestContext
             new List<MapSummaryDto>());
         _mapApi.DeleteMapAsync(worldId, mapId).Returns(true);
 
-        var cut = RenderMapsDetail(worldId);
+        var cut = RenderMapListing(worldId);
         cut.WaitForAssertion(() => Assert.False(GetField<bool>(cut.Instance, "_isLoading")));
 
         await InvokePrivateOnRendererAsync(cut, "DeleteMapAsync", mapId, "Delete Me");
@@ -495,7 +495,7 @@ public class MapsDetailTests : MudBlazorTestContext
     [Fact]
     public void PrivateHelpers_CoverScopeAndDisplayBranches()
     {
-        var detailType = typeof(MapsDetail);
+        var detailType = typeof(MapListing);
         var deriveScope = detailType.GetMethod("DeriveScope", BindingFlags.Static | BindingFlags.NonPublic);
         var resolveScope = detailType.GetMethod("ResolveScope", BindingFlags.Static | BindingFlags.NonPublic);
         var getDisplayName = detailType.GetMethod("GetDisplayName", BindingFlags.Static | BindingFlags.NonPublic);
@@ -545,7 +545,7 @@ public class MapsDetailTests : MudBlazorTestContext
     public async Task BasemapDropzoneHelpers_UpdateStateAndClasses()
     {
         var cut = RenderLoadedComponent();
-        var detailType = typeof(MapsDetail);
+        var detailType = typeof(MapListing);
         var dragEnter = detailType.GetMethod("OnBasemapDragEnter", BindingFlags.Instance | BindingFlags.NonPublic);
         var dragOver = detailType.GetMethod("OnBasemapDragOver", BindingFlags.Instance | BindingFlags.NonPublic);
         var dragLeave = detailType.GetMethod("OnBasemapDragLeave", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -666,17 +666,17 @@ public class MapsDetailTests : MudBlazorTestContext
         Assert.False((bool)isFileDrag.Invoke(null, [emptyArgs])!);
     }
 
-    private IRenderedComponent<MapsDetail> RenderLoadedComponent()
+    private IRenderedComponent<MapListing> RenderLoadedComponent()
     {
         var worldId = Guid.NewGuid();
-        var cut = RenderMapsDetail(worldId);
+        var cut = RenderMapListing(worldId);
         cut.WaitForAssertion(() => Assert.False(GetField<bool>(cut.Instance, "_isLoading")));
         return cut;
     }
 
-    private IRenderedComponent<MapsDetail> RenderMapsDetail(Guid worldId)
+    private IRenderedComponent<MapListing> RenderMapListing(Guid worldId)
     {
-        return RenderComponent<MapsDetail>(parameters =>
+        return RenderComponent<MapListing>(parameters =>
             parameters.Add(x => x.WorldId, worldId));
     }
 
@@ -694,7 +694,7 @@ public class MapsDetailTests : MudBlazorTestContext
         field!.SetValue(instance, value);
     }
 
-    private static Task InvokePrivateOnRendererAsync(IRenderedComponent<MapsDetail> cut, string methodName, params object?[] args)
+    private static Task InvokePrivateOnRendererAsync(IRenderedComponent<MapListing> cut, string methodName, params object?[] args)
     {
         return cut.InvokeAsync(async () =>
         {
@@ -808,3 +808,4 @@ public class MapsDetailTests : MudBlazorTestContext
         }
     }
 }
+

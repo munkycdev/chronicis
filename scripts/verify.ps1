@@ -65,11 +65,18 @@ Push-Location $RepoRoot
 try {
     dotnet --version
 
-    Write-Host "Running dotnet format..."
-    dotnet format $Solution
+    # Format only files changed vs main (whitespace + style only - analyzers already run during build).
+    $changedFiles = @(git diff --name-only main...HEAD --diff-filter=ACMR | Where-Object { $_ -match '\.cs$' })
+    if ($changedFiles.Count -gt 0) {
+        $includeArg = $changedFiles -join " "
+        Write-Host "Running dotnet format on $($changedFiles.Count) changed file(s)..."
+        dotnet format whitespace $Solution --no-restore --include $includeArg
+        dotnet format style     $Solution --no-restore --include $includeArg
+    } else {
+        Write-Host "No changed .cs files - skipping dotnet format."
+    }
 
-    dotnet restore $Solution
-    dotnet build $Solution -c $Configuration --no-restore
+    dotnet build $Solution -c $Configuration -m
 
     # Clear previous per-test-project coverage outputs so latest run is authoritative.
     foreach ($target in $CoverageTargets) {
@@ -78,9 +85,55 @@ try {
         }
     }
 
-    dotnet test $Solution -c $Configuration `
-        --no-build --no-restore `
-        --settings $RunSettings
+    # Run all test projects in parallel using background jobs.
+    # Each coverage project gets its own explicit --results-directory so coverlet
+    # files stay isolated (solution-level -m can route all results to the same
+    # temp directory, causing coverage files to overwrite each other).
+    $testJobs = @()
+
+    foreach ($target in $CoverageTargets) {
+        $csproj = Join-Path $RepoRoot "tests\$($target.Name).Tests\$($target.Name).Tests.csproj"
+        $dir    = $target.ResultsDir
+        $rs     = $RunSettings
+        $cfg    = $Configuration
+        $testJobs += [PSCustomObject]@{
+            Name = $target.Name
+            Job  = Start-Job -ScriptBlock {
+                param($csproj, $dir, $rs, $cfg)
+                dotnet test $csproj -c $cfg --no-build --no-restore `
+                    --collect:"XPlat Code Coverage" --settings $rs --results-directory $dir
+                $LASTEXITCODE
+            } -ArgumentList $csproj, $dir, $rs, $cfg
+        }
+    }
+
+    # Architectural tests - no coverage needed.
+    $archCsproj = Join-Path $RepoRoot "tests\Chronicis.ArchitecturalTests\Chronicis.ArchitecturalTests.csproj"
+    $cfg = $Configuration
+    $testJobs += [PSCustomObject]@{
+        Name = "ArchitecturalTests"
+        Job  = Start-Job -ScriptBlock {
+            param($csproj, $cfg)
+            dotnet test $csproj -c $cfg --no-build --no-restore
+            $LASTEXITCODE
+        } -ArgumentList $archCsproj, $cfg
+    }
+
+    Write-Host "Running $($testJobs.Count) test projects in parallel..."
+    $null = $testJobs.Job | Wait-Job
+
+    $anyFailed = $false
+    foreach ($entry in $testJobs) {
+        $results  = @(Receive-Job $entry.Job)
+        Remove-Job $entry.Job
+        $exitCode = [int]($results | Select-Object -Last 1)
+        $results  | Select-Object -SkipLast 1 | ForEach-Object { Write-Host $_ }
+        if ($exitCode -ne 0) {
+            Write-Host "[FAIL] $($entry.Name) tests failed (exit $exitCode)" -ForegroundColor Red
+            $anyFailed = $true
+        }
+    }
+    if ($anyFailed) { throw "One or more test suites failed." }
 
     Write-Host ""
     Write-Host "Coverage verification (class-level, line+branch):"

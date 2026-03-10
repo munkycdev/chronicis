@@ -19,7 +19,11 @@
       "Bash(dotnet run --project tests/Chronicis.Client.Tests)",
       "Bash(ildasm)",
       "Bash(ls z:/repos/chronicis/tests/Chronicis.Client.Tests/bin/Debug/net9.0/Chronicis*.dll)",
-      "Bash(xxd)"
+      "Bash(xxd)",
+      "Bash(dotnet build-server status)",
+      "Bash(dotnet clean Chronicis.sln -v:q)",
+      "Bash(Get-ChildItem -Recurse -Directory -Include bin,obj)",
+      "Bash(Remove-Item -Recurse -Force)"
     ],
     "defaultMode": "acceptEdits"
   }

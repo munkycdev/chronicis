@@ -119,7 +119,7 @@ public class MapsController : ControllerBase
 
         try
         {
-            var created = await _worldMapService.CreateLayer(worldId, mapId, user.Id, request.Name);
+            var created = await _worldMapService.CreateLayer(worldId, mapId, user.Id, request.Name, request.ParentLayerId);
             return Ok(created);
         }
         catch (ArgumentException ex)
@@ -166,6 +166,42 @@ public class MapsController : ControllerBase
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarningSanitized(ex, "Unauthorized rename layer request");
+            return Forbid();
+        }
+    }
+
+    /// <summary>
+    /// PUT /world/{worldId}/maps/{mapId}/layers/{layerId}/parent — Assign or clear layer parent.
+    /// </summary>
+    [HttpPut("{mapId:guid}/layers/{layerId:guid}/parent")]
+    public async Task<IActionResult> SetLayerParent(
+        Guid worldId,
+        Guid mapId,
+        Guid layerId,
+        [FromBody] SetLayerParentRequest request)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (request == null)
+        {
+            return BadRequest(new { error = "Invalid request body" });
+        }
+
+        _logger.LogTraceSanitized("User {UserId} setting parent for layer {LayerId} on map {MapId}", user.Id, layerId, mapId);
+
+        try
+        {
+            await _worldMapService.SetLayerParentAsync(worldId, mapId, user.Id, layerId, request.ParentLayerId);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Invalid set layer parent request");
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized set layer parent request");
             return Forbid();
         }
     }

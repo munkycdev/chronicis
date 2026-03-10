@@ -29,7 +29,7 @@ public interface IWorldMapService
     /// Create a custom layer for a map.
     /// Requires world membership.
     /// </summary>
-    Task<MapLayerDto> CreateLayer(Guid worldId, Guid mapId, Guid userId, string name);
+    Task<MapLayerDto> CreateLayer(Guid worldId, Guid mapId, Guid userId, string name, Guid? parentLayerId = null);
 
     /// <summary>
     /// Update editable map metadata. Only the world owner may update map details.
@@ -86,6 +86,12 @@ public interface IWorldMapService
     /// Requires world membership.
     /// </summary>
     Task RenameLayer(Guid worldId, Guid mapId, Guid userId, Guid layerId, string name);
+
+    /// <summary>
+    /// Assign or clear a map layer parent.
+    /// Requires world membership.
+    /// </summary>
+    Task SetLayerParentAsync(Guid worldId, Guid mapId, Guid userId, Guid layerId, Guid? parentLayerId);
 
     /// <summary>
     /// Delete a map layer.

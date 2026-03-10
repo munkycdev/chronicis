@@ -201,3 +201,4 @@ Scope:
 
 ## 18) Explicitly Out of Scope
 - `src/Chronicis.CaptureApp` features are intentionally excluded from this inventory.
+
