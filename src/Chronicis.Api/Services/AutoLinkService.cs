@@ -137,8 +137,7 @@ public class AutoLinkService : IAutoLinkService
 
             try
             {
-                var regex = new Regex(pattern, RegexOptions.IgnoreCase);
-                var regexMatches = regex.Matches(body);
+                var regexMatches = Regex.Matches(body, pattern, RegexOptions.IgnoreCase);
 
                 foreach (Match match in regexMatches)
                 {

@@ -85,13 +85,18 @@ try {
         }
     }
 
-    # Run all test projects in parallel using background jobs.
-    # Each coverage project gets its own explicit --results-directory so coverlet
-    # files stay isolated (solution-level -m can route all results to the same
-    # temp directory, causing coverage files to overwrite each other).
+    # Run Shared, Api, and Architectural tests in parallel.
+    # Chronicis.Client.Tests runs separately afterwards: the BlazorWebAssembly SDK can
+    # cause the Chronicis.Client.dll to be loaded by the test host before the coverlet
+    # CLR profiler finishes attaching when there is process contention, silently
+    # producing a coverage file with zero Client classes. Running it in isolation
+    # eliminates that race.
+    $parallelTargets = $CoverageTargets | Where-Object { $_.Name -ne "Chronicis.Client" }
+    $clientTarget    = $CoverageTargets | Where-Object { $_.Name -eq "Chronicis.Client" }
+
     $testJobs = @()
 
-    foreach ($target in $CoverageTargets) {
+    foreach ($target in $parallelTargets) {
         $csproj = Join-Path $RepoRoot "tests\$($target.Name).Tests\$($target.Name).Tests.csproj"
         $dir    = $target.ResultsDir
         $rs     = $RunSettings
@@ -133,6 +138,21 @@ try {
             $anyFailed = $true
         }
     }
+
+    # Run Chronicis.Client.Tests in isolation so coverlet can attach its CLR profiler
+    # before the Blazor assembly is loaded (see comment above).
+    foreach ($target in $clientTarget) {
+        $csproj = Join-Path $RepoRoot "tests\$($target.Name).Tests\$($target.Name).Tests.csproj"
+        $dir    = $target.ResultsDir
+        Write-Host "Running $($target.Name).Tests (isolated)..."
+        dotnet test $csproj -c $Configuration --no-build --no-restore `
+            --collect:"XPlat Code Coverage" --settings $RunSettings --results-directory $dir
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "[FAIL] $($target.Name) tests failed (exit $LASTEXITCODE)" -ForegroundColor Red
+            $anyFailed = $true
+        }
+    }
+
     if ($anyFailed) { throw "One or more test suites failed." }
 
     Write-Host ""

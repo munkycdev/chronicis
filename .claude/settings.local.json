@@ -23,7 +23,17 @@
       "Bash(dotnet build-server status)",
       "Bash(dotnet clean Chronicis.sln -v:q)",
       "Bash(Get-ChildItem -Recurse -Directory -Include bin,obj)",
-      "Bash(Remove-Item -Recurse -Force)"
+      "Bash(Remove-Item -Recurse -Force)",
+      "Bash($file = Get-ChildItem -Path \"z:\\\\repos\\\\chronicis\\\\tests\\\\Chronicis.Client.Tests\\\\TestResults\" -Recurse -Filter \"coverage.cobertura.xml\")",
+      "Bash(Sort-Object LastWriteTime -Descending)",
+      "Bash(Select-Object -First 1)",
+      "Bash([xml]$xml = Get-Content $file.FullName)",
+      "Bash($xml.coverage.packages.package)",
+      "Bash(ForEach-Object { $_classes.class)",
+      "Bash(Select-Object -First 5 -ExpandProperty name })",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''z:\\\\repos\\\\chronicis\\\\tests\\\\Chronicis.Client.Tests\\\\TestResults'' -Recurse -Filter ''coverage.cobertura.xml'' | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName\")",
+      "Bash(powershell -Command \"[xml]$xml = Get-Content ''Z:\\\\repos\\\\chronicis\\\\tests\\\\Chronicis.Client.Tests\\\\TestResults\\\\46d9b771-39b5-40bb-9ac0-07cd411b605e\\\\coverage.cobertura.xml''; $xml.coverage.packages.package | ForEach-Object { $_.classes.class | Select-Object -First 10 -ExpandProperty name }\")",
+      "Bash(powershell -File:*)"
     ],
     "defaultMode": "acceptEdits"
   }
