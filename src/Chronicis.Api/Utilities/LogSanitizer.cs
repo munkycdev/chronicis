@@ -5,17 +5,11 @@ namespace Chronicis.Api.Utilities;
 /// <summary>
 /// Provides aggressive sanitization of user input before logging to prevent log injection attacks.
 /// </summary>
-public static class LogSanitizer
+public static partial class LogSanitizer
 {
     private const int MaxLogLength = 1000;
     private const string TruncationMarker = "...[TRUNCATED]";
     private const string SanitizedMarker = "[SANITIZED]";
-
-    // Matches all control characters including newlines, carriage returns, tabs, etc.
-    private static readonly Regex ControlCharPattern = new(@"[\x00-\x1F\x7F-\x9F]", RegexOptions.Compiled);
-
-    // Matches potentially dangerous sequences
-    private static readonly Regex DangerousPattern = new(@"(\r\n|\r|\n|\t|%0[aAdD]|%0[aA]|%0[dD])", RegexOptions.Compiled);
 
     /// <summary>
     /// Sanitizes a string value for safe logging by removing control characters and truncating length.
@@ -30,13 +24,13 @@ public static class LogSanitizer
         }
 
         // First pass: Remove control characters
-        var sanitized = ControlCharPattern.Replace(value, "");
+        var sanitized = ControlCharRegex().Replace(value, "");
 
         // Second pass: Remove URL-encoded dangerous characters
-        sanitized = DangerousPattern.Replace(sanitized, "");
+        sanitized = DangerousRegex().Replace(sanitized, "");
 
         // Remove any remaining whitespace sequences longer than 1 space
-        sanitized = Regex.Replace(sanitized, @"\s{2,}", " ");
+        sanitized = MultiSpaceRegex().Replace(sanitized, " ");
 
         // Trim the result
         sanitized = sanitized.Trim();
@@ -47,7 +41,7 @@ public static class LogSanitizer
         // Truncate if too long
         if (sanitized.Length > MaxLogLength)
         {
-            sanitized = sanitized.Substring(0, MaxLogLength) + TruncationMarker;
+            sanitized = sanitized[..MaxLogLength] + TruncationMarker;
             wasSanitized = true;
         }
 
@@ -85,4 +79,13 @@ public static class LogSanitizer
     {
         return values.Select(Sanitize).ToArray();
     }
+
+    [GeneratedRegex(@"[\x00-\x1F\x7F-\x9F]")]
+    private static partial Regex ControlCharRegex();
+
+    [GeneratedRegex(@"(\r\n|\r|\n|\t|%0[aAdD]|%0[aA]|%0[dD])")]
+    private static partial Regex DangerousRegex();
+
+    [GeneratedRegex(@"\s{2,}")]
+    private static partial Regex MultiSpaceRegex();
 }

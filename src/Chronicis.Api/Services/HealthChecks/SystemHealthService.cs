@@ -7,7 +7,7 @@ public interface ISystemHealthService
     Task<SystemHealthStatusDto> GetSystemHealthAsync();
 }
 
-public class SystemHealthService : ISystemHealthService
+public sealed class SystemHealthService : ISystemHealthService
 {
     private readonly DatabaseHealthCheckService _databaseHealth;
     private readonly AzureOpenAIHealthCheckService _azureOpenAIHealth;

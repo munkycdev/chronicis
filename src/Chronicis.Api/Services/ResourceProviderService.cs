@@ -9,9 +9,8 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Service implementation for managing resource providers with authorization.
 /// </summary>
-public class ResourceProviderService : IResourceProviderService
+public sealed partial class ResourceProviderService : IResourceProviderService
 {
-    private static readonly Regex LookupKeyPattern = new("^[a-z0-9][a-z0-9_-]{0,49}$", RegexOptions.Compiled);
 
     private readonly IResourceProviderRepository _repository;
     private readonly ChronicisDbContext _context;
@@ -97,7 +96,7 @@ public class ResourceProviderService : IResourceProviderService
             ? NormalizeLookupKey(lookupKey)
             : null;
 
-        if (lookupKeyUpdateRequested && normalizedLookupKey != null && !LookupKeyPattern.IsMatch(normalizedLookupKey))
+        if (lookupKeyUpdateRequested && normalizedLookupKey != null && !LookupKeyRegex().IsMatch(normalizedLookupKey))
         {
             throw new ArgumentException(
                 "Lookup key must start with a letter/number and use only lowercase letters, numbers, '-' or '_', max 50 characters.",
@@ -161,4 +160,7 @@ public class ResourceProviderService : IResourceProviderService
 
         return lookupKey.Trim().ToLowerInvariant();
     }
+
+    [GeneratedRegex("^[a-z0-9][a-z0-9_-]{0,49}$")]
+    private static partial Regex LookupKeyRegex();
 }

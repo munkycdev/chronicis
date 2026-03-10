@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Chronicis.Shared.Enums;
 
 namespace Chronicis.Client.Services;
@@ -5,28 +6,29 @@ namespace Chronicis.Client.Services;
 /// <summary>
 /// Resolves the canonical tutorial PageType key from the current route context.
 /// </summary>
-public class TutorialPageTypeResolver
+public sealed class TutorialPageTypeResolver
 {
-    private static readonly Dictionary<string, string> RoutePageNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["dashboard"] = "Dashboard",
-        ["settings"] = "Settings",
-        ["world"] = "WorldDetail",
-        ["campaign"] = "CampaignDetail",
-        ["arc"] = "ArcDetail",
-        ["session"] = "SessionDetail",
-        ["admin/status"] = "AdminStatus",
-        ["admin/utilities"] = "AdminUtilities",
-        ["search"] = "Search",
-        ["cosmos"] = "Cosmos",
-        ["about"] = "About",
-        ["getting-started"] = "GettingStarted",
-        ["changelog"] = "ChangeLog",
-        ["change-log"] = "ChangeLog",
-        ["privacy"] = "Privacy",
-        ["terms"] = "Terms",
-        ["licenses"] = "Licenses"
-    };
+    private static readonly FrozenDictionary<string, string> RoutePageNames =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["dashboard"] = "Dashboard",
+            ["settings"] = "Settings",
+            ["world"] = "WorldDetail",
+            ["campaign"] = "CampaignDetail",
+            ["arc"] = "ArcDetail",
+            ["session"] = "SessionDetail",
+            ["admin/status"] = "AdminStatus",
+            ["admin/utilities"] = "AdminUtilities",
+            ["search"] = "Search",
+            ["cosmos"] = "Cosmos",
+            ["about"] = "About",
+            ["getting-started"] = "GettingStarted",
+            ["changelog"] = "ChangeLog",
+            ["change-log"] = "ChangeLog",
+            ["privacy"] = "Privacy",
+            ["terms"] = "Terms",
+            ["licenses"] = "Licenses"
+        }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Resolves the canonical page type for tutorial lookup.

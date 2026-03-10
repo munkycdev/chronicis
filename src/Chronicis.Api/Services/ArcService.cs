@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class ArcService : IArcService
+public sealed class ArcService : IArcService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<ArcService> _logger;

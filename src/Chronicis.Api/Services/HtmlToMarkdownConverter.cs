@@ -72,17 +72,30 @@ public static partial class HtmlToMarkdownConverter
     private static partial Regex ExcessiveNewlines();
 
     /// <summary>
-    /// Compiled header patterns for h1–h6. Index 0 = h1, index 5 = h6.
+    /// Header patterns for h1–h6. Index 0 = h1, index 5 = h6.
     /// </summary>
     private static readonly Regex[] HeaderPatterns =
     [
-        new Regex(@"<h1[^>]*>(.*?)</h1>", RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled),
-        new Regex(@"<h2[^>]*>(.*?)</h2>", RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled),
-        new Regex(@"<h3[^>]*>(.*?)</h3>", RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled),
-        new Regex(@"<h4[^>]*>(.*?)</h4>", RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled),
-        new Regex(@"<h5[^>]*>(.*?)</h5>", RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled),
-        new Regex(@"<h6[^>]*>(.*?)</h6>", RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled),
+        H1Regex(), H2Regex(), H3Regex(), H4Regex(), H5Regex(), H6Regex(),
     ];
+
+    [GeneratedRegex(@"<h1[^>]*>(.*?)</h1>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex H1Regex();
+
+    [GeneratedRegex(@"<h2[^>]*>(.*?)</h2>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex H2Regex();
+
+    [GeneratedRegex(@"<h3[^>]*>(.*?)</h3>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex H3Regex();
+
+    [GeneratedRegex(@"<h4[^>]*>(.*?)</h4>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex H4Regex();
+
+    [GeneratedRegex(@"<h5[^>]*>(.*?)</h5>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex H5Regex();
+
+    [GeneratedRegex(@"<h6[^>]*>(.*?)</h6>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex H6Regex();
 
     // ── Public API ───────────────────────────────────────────────────────────
 

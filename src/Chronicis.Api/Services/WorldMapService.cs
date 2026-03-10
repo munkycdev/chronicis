@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.Enums;
@@ -9,26 +10,26 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Manages WorldMaps: creation with default layers, metadata retrieval, and basemap uploads.
 /// </summary>
-public class WorldMapService : IWorldMapService
+public sealed class WorldMapService : IWorldMapService
 {
     private readonly ChronicisDbContext _db;
     private readonly IMapBlobStore _mapBlobStore;
     private readonly ILogger<WorldMapService> _logger;
     private const int MaxPinNameLength = 200;
     private const int MaxLayerNameLength = 200;
-    private static readonly HashSet<string> ProtectedDefaultLayerNames = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly FrozenSet<string> ProtectedDefaultLayerNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "World",
         "Campaign",
         "Arc",
-    };
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
-    internal static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly FrozenSet<string> AllowedContentTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "image/png",
         "image/jpeg",
         "image/webp",
-    };
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     public WorldMapService(
         ChronicisDbContext db,
@@ -272,7 +273,7 @@ public class WorldMapService : IWorldMapService
 
         if (!string.IsNullOrWhiteSpace(normalizedQuery))
         {
-            var normalizedQueryLower = normalizedQuery.ToLower();
+            var normalizedQueryLower = normalizedQuery.ToLowerInvariant();
             mapsQuery = mapsQuery.Where(m => m.Name.ToLower().Contains(normalizedQueryLower));
         }
 

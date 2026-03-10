@@ -9,7 +9,7 @@ namespace Chronicis.Api.Services;
 /// Service for anonymous public access to worlds.
 /// All methods return only publicly visible content - no authentication required.
 /// </summary>
-public class PublicWorldService : IPublicWorldService
+public sealed class PublicWorldService : IPublicWorldService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<PublicWorldService> _logger;

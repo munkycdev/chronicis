@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class WorldLinkSuggestionService : IWorldLinkSuggestionService
+public sealed class WorldLinkSuggestionService : IWorldLinkSuggestionService
 {
     private readonly ChronicisDbContext _context;
     private readonly IArticleHierarchyService _hierarchyService;
@@ -72,9 +72,29 @@ public class WorldLinkSuggestionService : IWorldLinkSuggestionService
             .Take(20)
             .ToList();
 
+        // Batch breadcrumb lookup: one set of O(depth) queries for all suggestions
+        // instead of O(suggestions × depth) serial calls to BuildDisplayPathAsync.
+        var displayPathOptions = new HierarchyWalkOptions
+        {
+            PublicOnly = false,
+            IncludeWorldBreadcrumb = false,
+            IncludeVirtualGroups = false,
+            IncludeCurrentArticle = true
+        };
+
+        var ancestorPaths = await _hierarchyService.BuildBreadcrumbsBatchAsync(
+            suggestions.Select(s => s.ArticleId),
+            displayPathOptions);
+
         foreach (var suggestion in suggestions)
         {
-            suggestion.DisplayPath = await _hierarchyService.BuildDisplayPathAsync(suggestion.ArticleId);
+            if (ancestorPaths.TryGetValue(suggestion.ArticleId, out var breadcrumbs))
+            {
+                var titles = breadcrumbs.Select(b => b.Title).ToList();
+                if (titles.Count > 1)
+                    titles.RemoveAt(0); // strip top-level root (mirrors BuildDisplayPathAsync default)
+                suggestion.DisplayPath = string.Join(" / ", titles);
+            }
         }
 
         return ServiceResult<List<LinkSuggestionDto>>.Success(suggestions);

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class TutorialService : ITutorialService
+public sealed class TutorialService : ITutorialService
 {
     private const string DefaultPageType = "Page:Default";
     private const string ArticleTypePrefix = "ArticleType:";

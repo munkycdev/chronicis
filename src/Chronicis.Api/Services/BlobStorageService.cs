@@ -8,7 +8,7 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Azure Blob Storage service for managing world document files.
 /// </summary>
-public class BlobStorageService : IBlobStorageService
+public sealed class BlobStorageService : IBlobStorageService
 {
     private readonly BlobServiceClient _blobServiceClient;
     private readonly IConfiguration _configuration;

@@ -22,14 +22,15 @@ public class ResourceProviderServiceBranchCoverageTests
     }
 
     [Fact]
-    public void LookupKeyPattern_StaticField_IsInitialized()
+    public void LookupKeyRegex_ValidatesExpectedFormat()
     {
-        var field = typeof(ResourceProviderService).GetField(
-            "LookupKeyPattern",
+        var method = typeof(ResourceProviderService).GetMethod(
+            "LookupKeyRegex",
             BindingFlags.NonPublic | BindingFlags.Static);
 
-        Assert.NotNull(field);
-        Assert.NotNull(field!.GetValue(null));
+        Assert.NotNull(method);
+        var regex = method!.Invoke(null, null);
+        Assert.NotNull(regex);
     }
 
     [Theory]

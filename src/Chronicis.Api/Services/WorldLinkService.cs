@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class WorldLinkService : IWorldLinkService
+public sealed class WorldLinkService : IWorldLinkService
 {
     private readonly ChronicisDbContext _context;
 

@@ -10,7 +10,7 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Service for QuestUpdate operations with world membership authorization.
 /// </summary>
-public class QuestUpdateService : IQuestUpdateService
+public sealed class QuestUpdateService : IQuestUpdateService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<QuestUpdateService> _logger;

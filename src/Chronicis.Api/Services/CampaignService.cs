@@ -9,7 +9,7 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Service for campaign management
 /// </summary>
-public class CampaignService : ICampaignService
+public sealed class CampaignService : ICampaignService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<CampaignService> _logger;

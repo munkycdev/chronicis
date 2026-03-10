@@ -8,7 +8,7 @@ namespace Chronicis.Api.Services;
 /// Synchronizes wiki links in the database based on article content.
 /// Uses a delete-then-insert strategy for simplicity.
 /// </summary>
-public class LinkSyncService : ILinkSyncService
+public sealed class LinkSyncService : ILinkSyncService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILinkParser _linkParser;

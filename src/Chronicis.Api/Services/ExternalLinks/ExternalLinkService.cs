@@ -8,7 +8,7 @@ namespace Chronicis.Api.Services.ExternalLinks;
 /// Resolves providers via <see cref="IExternalLinkProviderRegistry"/>,
 /// centralizes caching patterns, and standardizes exception handling.
 /// </summary>
-public class ExternalLinkService : IExternalLinkService
+public sealed class ExternalLinkService : IExternalLinkService
 {
     private static readonly TimeSpan SuggestionCacheDuration = TimeSpan.FromMinutes(2);
     private static readonly TimeSpan ContentCacheDuration = TimeSpan.FromMinutes(5);

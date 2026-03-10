@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class ArticleValidationService : IArticleValidationService
+public sealed class ArticleValidationService : IArticleValidationService
 {
     private readonly ChronicisDbContext _context;
 

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Chronicis.Api.Services;
 
 [ExcludeFromCodeCoverage]
-public class DatabaseHealthCheckService : HealthCheckServiceBase
+public sealed class DatabaseHealthCheckService : HealthCheckServiceBase
 {
     private readonly ChronicisDbContext _context;
 

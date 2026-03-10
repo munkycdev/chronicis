@@ -23,7 +23,7 @@ public sealed class MagicItemCategoryStrategy : Open5eCategoryStrategyBase
         var attunement = GetString(root, "requires_attunement");
 
         var subtitle = string.Join(", ", new[] { type, rarity }.Where(s => !string.IsNullOrEmpty(s)));
-        if (!string.IsNullOrEmpty(attunement) && attunement.ToLower() != "false")
+        if (!string.IsNullOrEmpty(attunement) && !string.Equals(attunement, "false", StringComparison.OrdinalIgnoreCase))
             subtitle += $" ({attunement})";
 
         if (!string.IsNullOrEmpty(subtitle))

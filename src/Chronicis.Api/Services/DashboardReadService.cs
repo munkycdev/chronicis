@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class DashboardReadService : IDashboardReadService
+public sealed class DashboardReadService : IDashboardReadService
 {
     private readonly ChronicisDbContext _context;
     private readonly IPromptService _promptService;

@@ -12,7 +12,7 @@ namespace Chronicis.Api.Services;
 /// Azure OpenAI implementation of AI summary generation service.
 /// Supports articles, campaigns, and arcs with customizable templates.
 /// </summary>
-public class SummaryService : ISummaryService
+public sealed class SummaryService : ISummaryService
 {
     private readonly ChronicisDbContext _context;
     private readonly IConfiguration _configuration;
@@ -860,7 +860,7 @@ Based on the source materials above and following the custom instructions, provi
         {
             _logger.LogWarningSanitized("Prompt exceeds max input tokens, truncating content");
             var maxContentLength = maxInputTokens * CharsPerToken - (promptTemplate.Length + entityName.Length + 200);
-            var truncatedSourceContent = sourceContent.Substring(0, Math.Min(sourceContent.Length, maxContentLength));
+            var truncatedSourceContent = sourceContent[..Math.Min(sourceContent.Length, maxContentLength)];
             prompt = BuildPrompt(promptTemplate, entityName, truncatedSourceContent, webContent);
         }
 

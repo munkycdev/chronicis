@@ -2,7 +2,7 @@ using Chronicis.Api.Data;
 
 namespace Chronicis.Api.Services;
 
-public class HealthReadinessService : IHealthReadinessService
+public sealed class HealthReadinessService : IHealthReadinessService
 {
     private readonly ChronicisDbContext _context;
 

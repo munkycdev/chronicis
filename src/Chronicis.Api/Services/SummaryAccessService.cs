@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class SummaryAccessService : ISummaryAccessService
+public sealed class SummaryAccessService : ISummaryAccessService
 {
     private readonly ChronicisDbContext _context;
     private readonly IReadAccessPolicyService _readAccessPolicy;

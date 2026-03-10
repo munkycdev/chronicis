@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class CharacterClaimService : ICharacterClaimService
+public sealed class CharacterClaimService : ICharacterClaimService
 {
     private readonly ChronicisDbContext _context;
 

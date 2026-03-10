@@ -11,7 +11,7 @@ namespace Chronicis.Api.Services.ExternalLinks;
 /// "[[ros/bestiary" shows bestiary's children, and so on at any depth.
 /// Cross-category text search is supported at the top level (no slash).
 /// </summary>
-public class BlobExternalLinkProvider : IExternalLinkProvider
+public sealed class BlobExternalLinkProvider : IExternalLinkProvider
 {
     private readonly BlobExternalLinkProviderOptions _options;
     private readonly BlobContainerClient _containerClient;

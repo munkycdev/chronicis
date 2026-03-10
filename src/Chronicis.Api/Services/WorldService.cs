@@ -10,7 +10,7 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Service for core world management (CRUD, lookup, creation)
 /// </summary>
-public class WorldService : IWorldService
+public sealed class WorldService : IWorldService
 {
     private readonly ChronicisDbContext _context;
     private readonly IWorldMembershipService _membershipService;

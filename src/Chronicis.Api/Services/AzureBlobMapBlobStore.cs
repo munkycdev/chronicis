@@ -7,7 +7,7 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Azure Blob Storage service for managing map basemap files.
 /// </summary>
-public class AzureBlobMapBlobStore : IMapBlobStore
+public sealed class AzureBlobMapBlobStore : IMapBlobStore
 {
     private readonly BlobServiceClient _blobServiceClient;
     private readonly ILogger<AzureBlobMapBlobStore> _logger;

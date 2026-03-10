@@ -213,7 +213,7 @@ public static class GenericJsonMarkdownRenderer
         // Convert to title case
         var words = sb.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var titleCased = words.Select(w =>
-            w.Length > 0 ? char.ToUpper(w[0]) + w.Substring(1).ToLower() : w);
+            w.Length > 0 ? char.ToUpper(w[0]) + w[1..].ToLowerInvariant() : w);
 
         return string.Join(" ", titleCased);
     }

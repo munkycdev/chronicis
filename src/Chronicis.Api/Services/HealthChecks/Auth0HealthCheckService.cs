@@ -4,7 +4,7 @@ using Chronicis.Shared.DTOs;
 namespace Chronicis.Api.Services;
 
 [ExcludeFromCodeCoverage]
-public class Auth0HealthCheckService : HealthCheckServiceBase
+public sealed class Auth0HealthCheckService : HealthCheckServiceBase
 {
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;

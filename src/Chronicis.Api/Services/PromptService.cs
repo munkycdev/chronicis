@@ -5,7 +5,7 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Service for generating contextual prompts based on user state.
 /// </summary>
-public class PromptService : IPromptService
+public sealed class PromptService : IPromptService
 {
     private readonly ILogger<PromptService> _logger;
 

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class ArticleDataAccessService : IArticleDataAccessService
+public sealed class ArticleDataAccessService : IArticleDataAccessService
 {
     private readonly ChronicisDbContext _context;
     private readonly IWorldDocumentService _worldDocumentService;

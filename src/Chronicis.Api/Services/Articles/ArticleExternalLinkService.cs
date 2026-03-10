@@ -9,7 +9,7 @@ namespace Chronicis.Api.Services.Articles;
 /// <summary>
 /// Service for managing external resource links embedded in article content.
 /// </summary>
-public partial class ArticleExternalLinkService : IArticleExternalLinkService
+public sealed partial class ArticleExternalLinkService : IArticleExternalLinkService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<ArticleExternalLinkService> _logger;

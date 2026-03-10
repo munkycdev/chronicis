@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class SessionService : ISessionService
+public sealed class SessionService : ISessionService
 {
     private readonly ChronicisDbContext _context;
     private readonly ISummaryService _summaryService;

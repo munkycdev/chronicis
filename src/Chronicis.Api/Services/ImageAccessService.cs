@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class ImageAccessService : IImageAccessService
+public sealed class ImageAccessService : IImageAccessService
 {
     private readonly ChronicisDbContext _context;
     private readonly IBlobStorageService _blobStorage;

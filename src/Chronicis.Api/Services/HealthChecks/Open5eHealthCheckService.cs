@@ -4,7 +4,7 @@ using Chronicis.Shared.DTOs;
 namespace Chronicis.Api.Services;
 
 [ExcludeFromCodeCoverage]
-public class Open5eHealthCheckService : HealthCheckServiceBase
+public sealed class Open5eHealthCheckService : HealthCheckServiceBase
 {
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;

@@ -9,7 +9,7 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Service for exporting world data to downloadable archives
 /// </summary>
-public partial class ExportService : IExportService
+public sealed partial class ExportService : IExportService
 {
     private readonly ChronicisDbContext _db;
     private readonly IWorldMembershipService _membershipService;

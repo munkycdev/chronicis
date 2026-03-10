@@ -10,7 +10,7 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Implementation of user management service
 /// </summary>
-public class UserService : IUserService
+public sealed class UserService : IUserService
 {
     private static readonly Guid TutorialTemplateWorldId = new("bbcee097-e733-4c55-a72b-91fa2cfa0391");
 

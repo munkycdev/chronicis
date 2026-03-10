@@ -1,5 +1,6 @@
 using Chronicis.Api.Models;
 using Chronicis.Api.Services;
+using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
 using NSubstitute;
@@ -67,7 +68,14 @@ public class WorldLinkSuggestionServiceTests
         await db.SaveChangesAsync();
 
         var hierarchy = Substitute.For<IArticleHierarchyService>();
-        hierarchy.BuildDisplayPathAsync(Arg.Any<Guid>()).Returns(call => $"path:{call.Arg<Guid>()}");
+        hierarchy.BuildBreadcrumbsBatchAsync(Arg.Any<IEnumerable<Guid>>(), Arg.Any<HierarchyWalkOptions>())
+            .Returns(call =>
+            {
+                var ids = call.Arg<IEnumerable<Guid>>();
+                return Task.FromResult(ids.ToDictionary(
+                    id => id,
+                    id => new List<BreadcrumbDto> { new() { Id = id, Title = $"path:{id}" } }));
+            });
 
         var sut = new WorldLinkSuggestionService(db, hierarchy);
         var result = await sut.GetSuggestionsAsync(world.Id, "dragon", userId);

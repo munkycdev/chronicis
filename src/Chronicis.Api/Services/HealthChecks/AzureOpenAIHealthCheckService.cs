@@ -4,7 +4,7 @@ using Chronicis.Shared.DTOs;
 namespace Chronicis.Api.Services;
 
 [ExcludeFromCodeCoverage]
-public class AzureOpenAIHealthCheckService : HealthCheckServiceBase
+public sealed class AzureOpenAIHealthCheckService : HealthCheckServiceBase
 {
     private readonly IConfiguration _configuration;
     private readonly HttpClient _httpClient;

@@ -9,7 +9,7 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Service for world invitation management
 /// </summary>
-public class WorldInvitationService : IWorldInvitationService
+public sealed class WorldInvitationService : IWorldInvitationService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<WorldInvitationService> _logger;

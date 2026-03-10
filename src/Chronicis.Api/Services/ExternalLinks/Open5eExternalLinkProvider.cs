@@ -1,9 +1,10 @@
+using System.Collections.Frozen;
 using System.Text.Json;
 using static Chronicis.Api.Services.ExternalLinks.Open5eJsonHelpers;
 
 namespace Chronicis.Api.Services.ExternalLinks;
 
-public class Open5eExternalLinkProvider : IExternalLinkProvider
+public sealed class Open5eExternalLinkProvider : IExternalLinkProvider
 {
     private const string SourceKey = "srd";
     private const string HttpClientName = "Open5eApi";
@@ -11,7 +12,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<Open5eExternalLinkProvider> _logger;
 
-    private static readonly Dictionary<string, IOpen5eCategoryStrategy> Strategies =
+    private static readonly FrozenDictionary<string, IOpen5eCategoryStrategy> Strategies =
         CreateStrategies();
 
     public Open5eExternalLinkProvider(
@@ -238,7 +239,7 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
         };
     }
 
-    private static Dictionary<string, IOpen5eCategoryStrategy> CreateStrategies()
+    private static FrozenDictionary<string, IOpen5eCategoryStrategy> CreateStrategies()
     {
         var strategies = new IOpen5eCategoryStrategy[]
         {
@@ -254,6 +255,6 @@ public class Open5eExternalLinkProvider : IExternalLinkProvider
             new ArmorCategoryStrategy()
         };
 
-        return strategies.ToDictionary(s => s.CategoryKey, StringComparer.OrdinalIgnoreCase);
+        return strategies.ToFrozenDictionary(s => s.CategoryKey, StringComparer.OrdinalIgnoreCase);
     }
 }

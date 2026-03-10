@@ -1,6 +1,6 @@
 namespace Chronicis.Api.Services.ExternalLinks;
 
-public class ExternalLinkProviderRegistry : IExternalLinkProviderRegistry
+public sealed class ExternalLinkProviderRegistry : IExternalLinkProviderRegistry
 {
     private readonly Dictionary<string, IExternalLinkProvider> _providers;
 

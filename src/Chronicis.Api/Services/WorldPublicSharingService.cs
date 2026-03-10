@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
@@ -8,17 +9,15 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Service for world public sharing and slug management
 /// </summary>
-public class WorldPublicSharingService : IWorldPublicSharingService
+public sealed partial class WorldPublicSharingService : IWorldPublicSharingService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<WorldPublicSharingService> _logger;
 
-    // Regex for valid public slug: lowercase alphanumeric with hyphens, no leading/trailing hyphens
-    private static readonly Regex PublicSlugRegex = new(@"^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.Compiled);
-
     // Reserved slugs that shouldn't be used
-    private static readonly string[] ReservedSlugs =
-        { "api", "admin", "public", "private", "new", "edit", "delete", "search", "login", "logout", "settings" };
+    private static readonly FrozenSet<string> ReservedSlugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        { "api", "admin", "public", "private", "new", "edit", "delete", "search", "login", "logout", "settings" }
+        .ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     public WorldPublicSharingService(ChronicisDbContext context, ILogger<WorldPublicSharingService> logger)
     {
@@ -114,7 +113,7 @@ public class WorldPublicSharingService : IWorldPublicSharingService
         if (slug.Length > 100)
             return "Public slug must be 100 characters or less";
 
-        if (!PublicSlugRegex.IsMatch(slug))
+        if (!ValidPublicSlugRegex().IsMatch(slug))
             return "Public slug must contain only lowercase letters, numbers, and hyphens (no leading/trailing hyphens)";
 
         if (ReservedSlugs.Contains(slug))
@@ -159,4 +158,7 @@ public class WorldPublicSharingService : IWorldPublicSharingService
 
         return candidate;
     }
+
+    [GeneratedRegex(@"^[a-z0-9]+(-[a-z0-9]+)*$")]
+    private static partial Regex ValidPublicSlugRegex();
 }

@@ -26,31 +26,10 @@ public interface IAutoLinkService
 /// Implementation of auto-link service.
 /// Works on HTML content and returns match positions for client-side insertion.
 /// </summary>
-public class AutoLinkService : IAutoLinkService
+public sealed partial class AutoLinkService : IAutoLinkService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<AutoLinkService> _logger;
-
-    // Regex to find existing wiki-link spans in HTML
-    // Matches: <span data-type="wiki-link" ... >...</span>
-    private static readonly Regex ExistingWikiLinkPattern = new(
-        @"<span[^>]*data-type=""wiki-link""[^>]*>.*?</span>",
-        RegexOptions.Compiled | RegexOptions.Singleline);
-
-    // Regex to find existing external-link spans in HTML
-    private static readonly Regex ExistingExternalLinkPattern = new(
-        @"<span[^>]*data-type=""external-link""[^>]*>.*?</span>",
-        RegexOptions.Compiled | RegexOptions.Singleline);
-
-    // Regex to find HTML tags (to avoid matching inside them)
-    private static readonly Regex HtmlTagPattern = new(
-        @"<[^>]+>",
-        RegexOptions.Compiled);
-
-    // Legacy markdown wiki link pattern (for backwards compatibility)
-    private static readonly Regex LegacyWikiLinkPattern = new(
-        @"\[\[([a-fA-F0-9\-]{36})(?:\|([^\]]+))?\]\]",
-        RegexOptions.Compiled);
 
     public AutoLinkService(ChronicisDbContext context, ILogger<AutoLinkService> logger)
     {
@@ -201,25 +180,25 @@ public class AutoLinkService : IAutoLinkService
         var ranges = new List<(int Start, int End)>();
 
         // Protect HTML tags
-        foreach (Match match in HtmlTagPattern.Matches(body))
+        foreach (Match match in HtmlTagRegex().Matches(body))
         {
             ranges.Add((match.Index, match.Index + match.Length));
         }
 
         // Protect existing wiki-link spans (entire span including content)
-        foreach (Match match in ExistingWikiLinkPattern.Matches(body))
+        foreach (Match match in ExistingWikiLinkRegex().Matches(body))
         {
             ranges.Add((match.Index, match.Index + match.Length));
         }
 
         // Protect existing external-link spans
-        foreach (Match match in ExistingExternalLinkPattern.Matches(body))
+        foreach (Match match in ExistingExternalLinkRegex().Matches(body))
         {
             ranges.Add((match.Index, match.Index + match.Length));
         }
 
         // Protect legacy markdown wiki links (for mixed content)
-        foreach (Match match in LegacyWikiLinkPattern.Matches(body))
+        foreach (Match match in LegacyWikiLinkRegex().Matches(body))
         {
             ranges.Add((match.Index, match.Index + match.Length));
         }
@@ -242,4 +221,16 @@ public class AutoLinkService : IAutoLinkService
         }
         return false;
     }
+
+    [GeneratedRegex(@"<[^>]+>")]
+    private static partial Regex HtmlTagRegex();
+
+    [GeneratedRegex(@"<span[^>]*data-type=""wiki-link""[^>]*>.*?</span>", RegexOptions.Singleline)]
+    private static partial Regex ExistingWikiLinkRegex();
+
+    [GeneratedRegex(@"<span[^>]*data-type=""external-link""[^>]*>.*?</span>", RegexOptions.Singleline)]
+    private static partial Regex ExistingExternalLinkRegex();
+
+    [GeneratedRegex(@"\[\[([a-fA-F0-9\-]{36})(?:\|([^\]]+))?\]\]")]
+    private static partial Regex LegacyWikiLinkRegex();
 }

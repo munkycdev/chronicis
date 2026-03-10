@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services
 {
-    public class ArticleService : IArticleService
+    public sealed class ArticleService : IArticleService
     {
         private readonly ChronicisDbContext _context;
         private readonly ILogger<ArticleService> _logger;

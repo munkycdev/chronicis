@@ -124,7 +124,7 @@ public class CurrentUserService : ICurrentUserService
         // Title case each word
         var words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var titleCased = words.Select(w =>
-            char.ToUpper(w[0]) + (w.Length > 1 ? w.Substring(1).ToLower() : ""));
+            char.ToUpper(w[0]) + (w.Length > 1 ? w[1..].ToLowerInvariant() : ""));
 
         var result = string.Join(" ", titleCased);
 

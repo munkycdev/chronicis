@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Chronicis.Api.Services;
 
 /// <inheritdoc />
-public class ArticleHierarchyService : IArticleHierarchyService
+public sealed class ArticleHierarchyService : IArticleHierarchyService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<ArticleHierarchyService> _logger;

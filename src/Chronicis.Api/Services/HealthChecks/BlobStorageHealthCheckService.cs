@@ -5,7 +5,7 @@ using Chronicis.Shared.DTOs;
 namespace Chronicis.Api.Services;
 
 [ExcludeFromCodeCoverage]
-public class BlobStorageHealthCheckService : HealthCheckServiceBase
+public sealed class BlobStorageHealthCheckService : HealthCheckServiceBase
 {
     private readonly IConfiguration _configuration;
 

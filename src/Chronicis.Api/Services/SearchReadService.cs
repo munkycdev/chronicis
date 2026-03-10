@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
 
-public class SearchReadService : ISearchReadService
+public sealed partial class SearchReadService : ISearchReadService
 {
     private readonly ChronicisDbContext _context;
     private readonly IArticleHierarchyService _hierarchyService;
@@ -172,10 +172,19 @@ public class SearchReadService : ISearchReadService
 
     private static string CleanForDisplay(string text)
     {
-        text = Regex.Replace(text, @"<[^>]+>", " ");
-        text = Regex.Replace(text, @"\[\[[a-fA-F0-9\-]{36}(?:\|([^\]]+))?\]\]", "$1");
-        text = Regex.Replace(text, @"\s+", " ");
+        text = HtmlTagRegex().Replace(text, " ");
+        text = WorldLinkRegex().Replace(text, "$1");
+        text = WhitespaceRegex().Replace(text, " ");
         return text.Trim();
     }
+
+    [GeneratedRegex(@"<[^>]+>")]
+    private static partial Regex HtmlTagRegex();
+
+    [GeneratedRegex(@"\[\[[a-fA-F0-9\-]{36}(?:\|([^\]]+))?\]\]")]
+    private static partial Regex WorldLinkRegex();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespaceRegex();
 }
 

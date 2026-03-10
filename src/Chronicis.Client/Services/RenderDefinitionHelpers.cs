@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Text.Json;
 
 namespace Chronicis.Client.Services;
@@ -7,13 +8,14 @@ namespace Chronicis.Client.Services;
 /// </summary>
 public static class RenderDefinitionHelpers
 {
-    private static readonly HashSet<string> HiddenFields = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "pk", "model", "document", "illustration", "url", "key", "slug",
-        "hover", "v2_converted_path", "img_main", "document__slug",
-        "document__title", "document__license_url", "document__url",
-        "page_no", "spell_list", "environments"
-    };
+    private static readonly FrozenSet<string> HiddenFields =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "pk", "model", "document", "illustration", "url", "key", "slug",
+            "hover", "v2_converted_path", "img_main", "document__slug",
+            "document__title", "document__license_url", "document__url",
+            "page_no", "spell_list", "environments"
+        }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     public static readonly string[] TitleCandidates = { "name", "title" };
 

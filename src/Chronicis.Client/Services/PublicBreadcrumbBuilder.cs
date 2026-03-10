@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Chronicis.Shared.DTOs;
 using MudBlazor;
 
@@ -9,10 +10,11 @@ namespace Chronicis.Client.Services;
 /// </summary>
 public static class PublicBreadcrumbBuilder
 {
-    private static readonly HashSet<string> VirtualGroupSlugs = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "characters", "wiki", "campaigns", "uncategorized"
-    };
+    private static readonly FrozenSet<string> VirtualGroupSlugs =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "characters", "wiki", "campaigns", "uncategorized"
+        }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Converts article breadcrumb DTOs into MudBlazor BreadcrumbItems for public pages.

@@ -10,7 +10,7 @@ namespace Chronicis.Api.Services;
 /// Every public method verifies sysadmin status via <see cref="ICurrentUserService"/>
 /// before performing any work.
 /// </summary>
-public class AdminService : IAdminService
+public sealed class AdminService : IAdminService
 {
     private readonly ChronicisDbContext _context;
     private readonly ICurrentUserService _currentUserService;

@@ -3,7 +3,7 @@ using Chronicis.Shared.Models;
 
 namespace Chronicis.Api.Services;
 
-public class ReadAccessPolicyService : IReadAccessPolicyService
+public sealed class ReadAccessPolicyService : IReadAccessPolicyService
 {
     public string NormalizePublicSlug(string publicSlug)
     {

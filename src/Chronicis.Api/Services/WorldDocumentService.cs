@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Models;
@@ -8,7 +9,7 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Service for managing world documents with blob storage integration.
 /// </summary>
-public class WorldDocumentService : IWorldDocumentService
+public sealed class WorldDocumentService : IWorldDocumentService
 {
     private readonly ChronicisDbContext _db;
     private readonly IBlobStorageService _blobStorage;
@@ -17,13 +18,13 @@ public class WorldDocumentService : IWorldDocumentService
 
     // File validation constants
     private const long MaxFileSizeBytes = 209_715_200; // 200 MB
-    internal static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly FrozenSet<string> AllowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         ".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".md",
         ".png", ".jpg", ".jpeg", ".gif", ".webp"
-    };
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
-    internal static readonly Dictionary<string, string> ExtensionToMimeType = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly FrozenDictionary<string, string> ExtensionToMimeType = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         { ".pdf", "application/pdf" },
         { ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
@@ -36,7 +37,7 @@ public class WorldDocumentService : IWorldDocumentService
         { ".jpeg", "image/jpeg" },
         { ".gif", "image/gif" },
         { ".webp", "image/webp" }
-    };
+    }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
     public WorldDocumentService(
         ChronicisDbContext db,

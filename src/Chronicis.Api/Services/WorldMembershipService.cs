@@ -8,7 +8,7 @@ namespace Chronicis.Api.Services;
 /// <summary>
 /// Service for world membership and access control
 /// </summary>
-public class WorldMembershipService : IWorldMembershipService
+public sealed class WorldMembershipService : IWorldMembershipService
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<WorldMembershipService> _logger;
