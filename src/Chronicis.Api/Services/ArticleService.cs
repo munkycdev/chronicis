@@ -9,6 +9,98 @@ namespace Chronicis.Api.Services
 {
     public sealed class ArticleService : IArticleService
     {
+        // Compiled queries for hot-path article tree operations.
+        // Access policy filters are inlined from ReadAccessPolicyService.ApplyAuthenticatedWorldArticleFilter.
+        private static readonly Func<ChronicisDbContext, Guid, IAsyncEnumerable<ArticleTreeDto>>
+            GetRootArticlesQuery = EF.CompileAsyncQuery<ChronicisDbContext, Guid, ArticleTreeDto>(
+                (ChronicisDbContext ctx, Guid userId) => ctx.Articles
+                    .AsNoTracking()
+                    .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
+                    .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == userId))
+                    .Where(a => a.Visibility != ArticleVisibility.Private || a.CreatedBy == userId)
+                    .Where(a => a.ParentId == null)
+                    .Select(a => new ArticleTreeDto
+                    {
+                        Id = a.Id,
+                        Title = a.Title,
+                        Slug = a.Slug,
+                        ParentId = a.ParentId,
+                        WorldId = a.WorldId,
+                        CampaignId = a.CampaignId,
+                        ArcId = a.ArcId,
+                        SessionId = a.SessionId,
+                        Type = a.Type,
+                        Visibility = a.Visibility,
+                        ChildCount = ctx.Articles.Count(c => c.ParentId == a.Id),
+                        Children = new List<ArticleTreeDto>(),
+                        CreatedAt = a.CreatedAt,
+                        EffectiveDate = a.EffectiveDate,
+                        IconEmoji = a.IconEmoji,
+                        CreatedBy = a.CreatedBy,
+                        HasAISummary = a.AISummary != null
+                    })
+                    .OrderBy(a => a.Title));
+
+        private static readonly Func<ChronicisDbContext, Guid, Guid, IAsyncEnumerable<ArticleTreeDto>>
+            GetRootArticlesInWorldQuery = EF.CompileAsyncQuery<ChronicisDbContext, Guid, Guid, ArticleTreeDto>(
+                (ChronicisDbContext ctx, Guid userId, Guid worldId) => ctx.Articles
+                    .AsNoTracking()
+                    .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
+                    .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == userId))
+                    .Where(a => a.Visibility != ArticleVisibility.Private || a.CreatedBy == userId)
+                    .Where(a => a.ParentId == null && a.WorldId == worldId)
+                    .Select(a => new ArticleTreeDto
+                    {
+                        Id = a.Id,
+                        Title = a.Title,
+                        Slug = a.Slug,
+                        ParentId = a.ParentId,
+                        WorldId = a.WorldId,
+                        CampaignId = a.CampaignId,
+                        ArcId = a.ArcId,
+                        SessionId = a.SessionId,
+                        Type = a.Type,
+                        Visibility = a.Visibility,
+                        ChildCount = ctx.Articles.Count(c => c.ParentId == a.Id),
+                        Children = new List<ArticleTreeDto>(),
+                        CreatedAt = a.CreatedAt,
+                        EffectiveDate = a.EffectiveDate,
+                        IconEmoji = a.IconEmoji,
+                        CreatedBy = a.CreatedBy,
+                        HasAISummary = a.AISummary != null
+                    })
+                    .OrderBy(a => a.Title));
+
+        private static readonly Func<ChronicisDbContext, Guid, Guid, IAsyncEnumerable<ArticleTreeDto>>
+            GetChildrenCompiledQuery = EF.CompileAsyncQuery<ChronicisDbContext, Guid, Guid, ArticleTreeDto>(
+                (ChronicisDbContext ctx, Guid parentId, Guid userId) => ctx.Articles
+                    .AsNoTracking()
+                    .Where(a => a.Type != ArticleType.Tutorial && a.WorldId != Guid.Empty)
+                    .Where(a => a.World != null && a.World.Members.Any(m => m.UserId == userId))
+                    .Where(a => a.Visibility != ArticleVisibility.Private || a.CreatedBy == userId)
+                    .Where(a => a.ParentId == parentId)
+                    .Select(a => new ArticleTreeDto
+                    {
+                        Id = a.Id,
+                        Title = a.Title,
+                        Slug = a.Slug,
+                        ParentId = a.ParentId,
+                        WorldId = a.WorldId,
+                        CampaignId = a.CampaignId,
+                        ArcId = a.ArcId,
+                        SessionId = a.SessionId,
+                        Type = a.Type,
+                        Visibility = a.Visibility,
+                        ChildCount = ctx.Articles.Count(c => c.ParentId == a.Id),
+                        Children = new List<ArticleTreeDto>(),
+                        CreatedAt = a.CreatedAt,
+                        EffectiveDate = a.EffectiveDate,
+                        IconEmoji = a.IconEmoji,
+                        CreatedBy = a.CreatedBy,
+                        HasAISummary = a.AISummary != null
+                    })
+                    .OrderBy(a => a.Title));
+
         private readonly ChronicisDbContext _context;
         private readonly ILogger<ArticleService> _logger;
         private readonly IArticleHierarchyService _hierarchyService;
@@ -50,39 +142,16 @@ namespace Chronicis.Api.Services
         /// </summary>
         public async Task<List<ArticleTreeDto>> GetRootArticlesAsync(Guid userId, Guid? worldId = null)
         {
-            var query = GetAccessibleArticles(userId)
-                .AsNoTracking()
-                .Where(a => a.ParentId == null);
+            var compiled = worldId.HasValue
+                ? GetRootArticlesInWorldQuery(_context, userId, worldId.Value)
+                : GetRootArticlesQuery(_context, userId);
 
-            if (worldId.HasValue)
+            var rootArticles = new List<ArticleTreeDto>();
+            await foreach (var a in compiled)
             {
-                query = query.Where(a => a.WorldId == worldId.Value);
+                a.HasChildren = a.ChildCount > 0;
+                rootArticles.Add(a);
             }
-
-            var rootArticles = await query
-                .Select(a => new ArticleTreeDto
-                {
-                    Id = a.Id,
-                    Title = a.Title,
-                    Slug = a.Slug,
-                    ParentId = a.ParentId,
-                    WorldId = a.WorldId,
-                    CampaignId = a.CampaignId,
-                    ArcId = a.ArcId,
-                    SessionId = a.SessionId,
-                    Type = a.Type,
-                    Visibility = a.Visibility,
-                    HasChildren = _context.Articles.Any(c => c.ParentId == a.Id),
-                    ChildCount = _context.Articles.Count(c => c.ParentId == a.Id),
-                    Children = new List<ArticleTreeDto>(),
-                    CreatedAt = a.CreatedAt,
-                    EffectiveDate = a.EffectiveDate,
-                    IconEmoji = a.IconEmoji,
-                    CreatedBy = a.CreatedBy,
-                    HasAISummary = a.AISummary != null
-                })
-                .OrderBy(a => a.Title)
-                .ToListAsync();
 
             return rootArticles;
         }
@@ -136,32 +205,12 @@ namespace Chronicis.Api.Services
         /// </summary>
         public async Task<List<ArticleTreeDto>> GetChildrenAsync(Guid parentId, Guid userId)
         {
-            var children = await GetAccessibleArticles(userId)
-                .AsNoTracking()
-                .Where(a => a.ParentId == parentId)
-                .Select(a => new ArticleTreeDto
-                {
-                    Id = a.Id,
-                    Title = a.Title,
-                    Slug = a.Slug,
-                    ParentId = a.ParentId,
-                    WorldId = a.WorldId,
-                    CampaignId = a.CampaignId,
-                    ArcId = a.ArcId,
-                    SessionId = a.SessionId,
-                    Type = a.Type,
-                    Visibility = a.Visibility,
-                    HasChildren = _context.Articles.Any(c => c.ParentId == a.Id),
-                    ChildCount = _context.Articles.Count(c => c.ParentId == a.Id),
-                    Children = new List<ArticleTreeDto>(),
-                    CreatedAt = a.CreatedAt,
-                    EffectiveDate = a.EffectiveDate,
-                    IconEmoji = a.IconEmoji,
-                    CreatedBy = a.CreatedBy,
-                    HasAISummary = a.AISummary != null
-                })
-                .OrderBy(a => a.Title)
-                .ToListAsync();
+            var children = new List<ArticleTreeDto>();
+            await foreach (var a in GetChildrenCompiledQuery(_context, parentId, userId))
+            {
+                a.HasChildren = a.ChildCount > 0;
+                children.Add(a);
+            }
 
             return children;
         }
