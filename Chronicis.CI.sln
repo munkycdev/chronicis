@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.Shared.Tests", "t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.ArchitecturalTests", "tests\Chronicis.ArchitecturalTests\Chronicis.ArchitecturalTests.csproj", "{6CF78F81-3825-4027-9096-0CF8ED32B7B5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronicis.Client.Engine", "src\Chronicis.Client.Engine\Chronicis.Client.Engine.csproj", "{29317868-DFDE-4A19-96B9-8AB5E6C553BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -129,6 +131,18 @@ Global
 		{6CF78F81-3825-4027-9096-0CF8ED32B7B5}.Release|x64.Build.0 = Release|Any CPU
 		{6CF78F81-3825-4027-9096-0CF8ED32B7B5}.Release|x86.ActiveCfg = Release|Any CPU
 		{6CF78F81-3825-4027-9096-0CF8ED32B7B5}.Release|x86.Build.0 = Release|Any CPU
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD}.Debug|x64.Build.0 = Debug|Any CPU
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD}.Debug|x86.Build.0 = Debug|Any CPU
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD}.Release|x64.ActiveCfg = Release|Any CPU
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD}.Release|x64.Build.0 = Release|Any CPU
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD}.Release|x86.ActiveCfg = Release|Any CPU
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -142,5 +156,6 @@ Global
 		{BCE2AD07-F0FC-48E1-B36D-AE2B601B97B6} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{FAAEA92E-D0B5-412E-B670-17DBCBEBF3DD} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{6CF78F81-3825-4027-9096-0CF8ED32B7B5} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{29317868-DFDE-4A19-96B9-8AB5E6C553BD} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

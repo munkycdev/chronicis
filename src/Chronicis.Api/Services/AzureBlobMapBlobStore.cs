@@ -1,6 +1,8 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
+using System.IO.Compression;
+using System.Text;
 
 namespace Chronicis.Api.Services;
 
@@ -50,6 +52,10 @@ public sealed class AzureBlobMapBlobStore : IMapBlobStore
         var sanitized = SanitizeFileName(fileName);
         return $"maps/{mapId}/basemap/{sanitized}";
     }
+
+    /// <inheritdoc/>
+    public string BuildFeatureGeometryBlobKey(Guid mapId, Guid layerId, Guid featureId) =>
+        $"maps/{mapId}/layers/{layerId}/features/{featureId}.geojson.gz";
 
     /// <inheritdoc/>
     public Task<string> GenerateUploadSasUrlAsync(Guid mapId, string fileName, string contentType)
@@ -118,6 +124,61 @@ public sealed class AzureBlobMapBlobStore : IMapBlobStore
             "Deleted {DeletedCount} blob(s) for map folder prefix {Prefix}",
             deletedCount,
             prefix);
+    }
+
+    /// <inheritdoc/>
+    public async Task<string> SaveFeatureGeometryAsync(string blobKey, string geometryJson, CancellationToken cancellationToken = default)
+    {
+        var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
+        var blobClient = containerClient.GetBlobClient(blobKey);
+
+        await using var payloadStream = new MemoryStream();
+        await using (var gzipStream = new GZipStream(payloadStream, CompressionLevel.SmallestSize, leaveOpen: true))
+        await using (var writer = new StreamWriter(gzipStream, Encoding.UTF8, 1024, leaveOpen: true))
+        {
+            await writer.WriteAsync(geometryJson.AsMemory(), cancellationToken);
+        }
+
+        payloadStream.Position = 0;
+        var uploadOptions = new BlobUploadOptions
+        {
+            HttpHeaders = new BlobHttpHeaders
+            {
+                ContentType = "application/json",
+                ContentEncoding = "gzip",
+            },
+        };
+
+        var response = await blobClient.UploadAsync(payloadStream, uploadOptions, cancellationToken);
+        _logger.LogTraceSanitized("Saved geometry blob {BlobKey}", blobKey);
+        return response.Value.ETag.ToString();
+    }
+
+    /// <inheritdoc/>
+    public async Task<string?> LoadFeatureGeometryAsync(string blobKey, CancellationToken cancellationToken = default)
+    {
+        var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
+        var blobClient = containerClient.GetBlobClient(blobKey);
+
+        if (!await blobClient.ExistsAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        var response = await blobClient.DownloadStreamingAsync(cancellationToken: cancellationToken);
+        await using var content = response.Value.Content;
+        using var gzipStream = new GZipStream(content, CompressionMode.Decompress, leaveOpen: false);
+        using var reader = new StreamReader(gzipStream, Encoding.UTF8);
+        return await reader.ReadToEndAsync(cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task DeleteFeatureGeometryAsync(string blobKey, CancellationToken cancellationToken = default)
+    {
+        var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
+        var blobClient = containerClient.GetBlobClient(blobKey);
+        await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: cancellationToken);
+        _logger.LogTraceSanitized("Deleted geometry blob {BlobKey}", blobKey);
     }
 
     private static string SanitizeFileName(string fileName)

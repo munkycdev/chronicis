@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Text.Json;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.Enums;
@@ -17,6 +18,7 @@ public sealed class WorldMapService : IWorldMapService
     private readonly ILogger<WorldMapService> _logger;
     private const int MaxPinNameLength = 200;
     private const int MaxLayerNameLength = 200;
+    private static readonly JsonSerializerOptions GeometryJsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly FrozenSet<string> ProtectedDefaultLayerNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "World",
@@ -295,38 +297,16 @@ public sealed class WorldMapService : IWorldMapService
         await EnsureWorldMembershipAsync(worldId, userId);
         ValidateNormalizedCoordinates(dto.X, dto.Y);
         var pinName = NormalizePinName(dto.Name);
-
-        Guid layerId;
-        if (dto.LayerId.HasValue)
-        {
-            await EnsureMapInWorldAsync(worldId, mapId);
-
-            var layer = await _db.MapLayers
-                .AsNoTracking()
-                .FirstOrDefaultAsync(l => l.MapLayerId == dto.LayerId.Value);
-
-            if (layer == null)
-            {
-                throw new ArgumentException("Layer not found");
-            }
-
-            if (layer.WorldMapId != mapId)
-            {
-                throw new ArgumentException("Layer does not belong to map");
-            }
-
-            layerId = layer.MapLayerId;
-        }
-        else
-        {
-            layerId = await ResolveDefaultLayerIdAsync(worldId, mapId);
-        }
+        var layerId = dto.LayerId.HasValue
+            ? await ResolveRequestedLayerIdAsync(worldId, mapId, dto.LayerId.Value)
+            : await ResolveDefaultLayerIdAsync(worldId, mapId);
 
         var pin = new MapFeature
         {
             MapFeatureId = Guid.NewGuid(),
             WorldMapId = mapId,
             MapLayerId = layerId,
+            FeatureType = MapFeatureType.Point,
             Name = pinName,
             X = dto.X,
             Y = dto.Y,
@@ -349,7 +329,7 @@ public sealed class WorldMapService : IWorldMapService
 
         var pins = await _db.MapFeatures
             .AsNoTracking()
-            .Where(mf => mf.WorldMapId == mapId)
+            .Where(mf => mf.WorldMapId == mapId && mf.FeatureType == MapFeatureType.Point)
             .OrderBy(mf => mf.MapFeatureId)
             .Select(mf => new
             {
@@ -408,7 +388,10 @@ public sealed class WorldMapService : IWorldMapService
         ValidateNormalizedCoordinates(dto.X, dto.Y);
 
         var pin = await _db.MapFeatures
-            .FirstOrDefaultAsync(mf => mf.MapFeatureId == pinId && mf.WorldMapId == mapId);
+            .FirstOrDefaultAsync(mf =>
+                mf.MapFeatureId == pinId
+                && mf.WorldMapId == mapId
+                && mf.FeatureType == MapFeatureType.Point);
 
         if (pin == null)
         {
@@ -686,13 +669,13 @@ public sealed class WorldMapService : IWorldMapService
             throw new ArgumentException("Layer cannot be deleted while child layers exist");
         }
 
-        var hasPins = await _db.MapFeatures
+        var hasFeatures = await _db.MapFeatures
             .AsNoTracking()
             .AnyAsync(feature => feature.MapLayerId == layerId);
 
-        if (hasPins)
+        if (hasFeatures)
         {
-            throw new ArgumentException("Layer cannot be deleted while pins reference it");
+            throw new ArgumentException("Layer cannot be deleted while features reference it");
         }
 
         var siblingParentLayerId = layer.ParentLayerId;
@@ -726,7 +709,10 @@ public sealed class WorldMapService : IWorldMapService
         await EnsureMapInWorldAsync(worldId, mapId);
 
         var pin = await _db.MapFeatures
-            .FirstOrDefaultAsync(mf => mf.MapFeatureId == pinId && mf.WorldMapId == mapId);
+            .FirstOrDefaultAsync(mf =>
+                mf.MapFeatureId == pinId
+                && mf.WorldMapId == mapId
+                && mf.FeatureType == MapFeatureType.Point);
 
         if (pin == null)
         {
@@ -734,6 +720,187 @@ public sealed class WorldMapService : IWorldMapService
         }
 
         _db.MapFeatures.Remove(pin);
+        await _db.SaveChangesAsync();
+    }
+
+    /// <inheritdoc/>
+    public async Task<MapFeatureDto> CreateFeatureAsync(Guid worldId, Guid mapId, Guid userId, MapFeatureCreateDto dto)
+    {
+        _logger.LogTraceSanitized("User {UserId} creating feature on map {MapId}", userId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        var layerId = await ResolveRequestedLayerIdAsync(worldId, mapId, dto.LayerId);
+        var featureName = NormalizePinName(dto.Name);
+
+        if (dto.FeatureType == MapFeatureType.Point)
+        {
+            if (dto.Point == null)
+            {
+                throw new ArgumentException("Point geometry is required");
+            }
+
+            ValidateNormalizedCoordinates(dto.Point.X, dto.Point.Y);
+
+            var pointFeature = new MapFeature
+            {
+                MapFeatureId = Guid.NewGuid(),
+                WorldMapId = mapId,
+                MapLayerId = layerId,
+                FeatureType = MapFeatureType.Point,
+                Name = featureName,
+                X = dto.Point.X,
+                Y = dto.Point.Y,
+                LinkedArticleId = dto.LinkedArticleId,
+            };
+
+            _db.MapFeatures.Add(pointFeature);
+            await _db.SaveChangesAsync();
+            return await GetMapFeatureResponseAsync(pointFeature.MapFeatureId, mapId);
+        }
+
+        if (dto.FeatureType != MapFeatureType.Polygon)
+        {
+            throw new ArgumentException("Unsupported feature type");
+        }
+
+        var normalizedPolygon = NormalizePolygonGeometry(dto.Polygon);
+        var feature = new MapFeature
+        {
+            MapFeatureId = Guid.NewGuid(),
+            WorldMapId = mapId,
+            MapLayerId = layerId,
+            FeatureType = MapFeatureType.Polygon,
+            Name = featureName,
+            LinkedArticleId = dto.LinkedArticleId,
+        };
+
+        feature.GeometryBlobKey = _mapBlobStore.BuildFeatureGeometryBlobKey(mapId, layerId, feature.MapFeatureId);
+        var geometryJson = JsonSerializer.Serialize(normalizedPolygon, GeometryJsonOptions);
+        feature.GeometryETag = await _mapBlobStore.SaveFeatureGeometryAsync(feature.GeometryBlobKey, geometryJson);
+
+        _db.MapFeatures.Add(feature);
+        await _db.SaveChangesAsync();
+
+        return await GetMapFeatureResponseAsync(feature.MapFeatureId, mapId);
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<MapFeatureDto>> ListFeaturesForMapAsync(Guid worldId, Guid mapId, Guid userId)
+    {
+        _logger.LogTraceSanitized("User {UserId} listing features for map {MapId}", userId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        await EnsureMapInWorldAsync(worldId, mapId);
+
+        var features = await _db.MapFeatures
+            .AsNoTracking()
+            .Where(mf => mf.WorldMapId == mapId)
+            .OrderBy(mf => mf.MapFeatureId)
+            .ToListAsync();
+
+        return await ToMapFeatureDtosAsync(features);
+    }
+
+    /// <inheritdoc/>
+    public async Task<MapFeatureDto?> GetFeatureAsync(Guid worldId, Guid mapId, Guid featureId, Guid userId)
+    {
+        _logger.LogTraceSanitized("User {UserId} getting feature {FeatureId} on map {MapId}", userId, featureId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        await EnsureMapInWorldAsync(worldId, mapId);
+
+        var feature = await _db.MapFeatures
+            .AsNoTracking()
+            .FirstOrDefaultAsync(mf => mf.MapFeatureId == featureId && mf.WorldMapId == mapId);
+
+        if (feature == null)
+        {
+            return null;
+        }
+
+        return await GetMapFeatureResponseAsync(feature.MapFeatureId, mapId);
+    }
+
+    /// <inheritdoc/>
+    public async Task<MapFeatureDto> UpdateFeatureAsync(Guid worldId, Guid mapId, Guid featureId, Guid userId, MapFeatureUpdateDto dto)
+    {
+        _logger.LogTraceSanitized("User {UserId} updating feature {FeatureId} on map {MapId}", userId, featureId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        await EnsureMapInWorldAsync(worldId, mapId);
+
+        var feature = await _db.MapFeatures
+            .FirstOrDefaultAsync(mf => mf.MapFeatureId == featureId && mf.WorldMapId == mapId);
+
+        if (feature == null)
+        {
+            throw new InvalidOperationException("Feature not found");
+        }
+
+        var layerId = await ResolveRequestedLayerIdAsync(worldId, mapId, dto.LayerId);
+        feature.Name = NormalizePinName(dto.Name);
+        feature.MapLayerId = layerId;
+        feature.LinkedArticleId = dto.LinkedArticleId;
+
+        if (feature.FeatureType == MapFeatureType.Point)
+        {
+            if (dto.Point == null)
+            {
+                throw new ArgumentException("Point geometry is required");
+            }
+
+            ValidateNormalizedCoordinates(dto.Point.X, dto.Point.Y);
+            feature.X = dto.Point.X;
+            feature.Y = dto.Point.Y;
+        }
+        else if (feature.FeatureType == MapFeatureType.Polygon)
+        {
+            var normalizedPolygon = NormalizePolygonGeometry(dto.Polygon);
+            var nextBlobKey = _mapBlobStore.BuildFeatureGeometryBlobKey(mapId, layerId, feature.MapFeatureId);
+            if (!string.Equals(feature.GeometryBlobKey, nextBlobKey, StringComparison.Ordinal))
+            {
+                if (!string.IsNullOrWhiteSpace(feature.GeometryBlobKey))
+                {
+                    await _mapBlobStore.DeleteFeatureGeometryAsync(feature.GeometryBlobKey);
+                }
+
+                feature.GeometryBlobKey = nextBlobKey;
+            }
+
+            var geometryJson = JsonSerializer.Serialize(normalizedPolygon, GeometryJsonOptions);
+            feature.GeometryETag = await _mapBlobStore.SaveFeatureGeometryAsync(feature.GeometryBlobKey!, geometryJson);
+        }
+        else
+        {
+            throw new ArgumentException("Unsupported feature type");
+        }
+
+        await _db.SaveChangesAsync();
+        return await GetMapFeatureResponseAsync(feature.MapFeatureId, mapId);
+    }
+
+    /// <inheritdoc/>
+    public async Task DeleteFeatureAsync(Guid worldId, Guid mapId, Guid featureId, Guid userId)
+    {
+        _logger.LogTraceSanitized("User {UserId} deleting feature {FeatureId} on map {MapId}", userId, featureId, mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        await EnsureMapInWorldAsync(worldId, mapId);
+
+        var feature = await _db.MapFeatures
+            .FirstOrDefaultAsync(mf => mf.MapFeatureId == featureId && mf.WorldMapId == mapId);
+
+        if (feature == null)
+        {
+            throw new InvalidOperationException("Feature not found");
+        }
+
+        if (!string.IsNullOrWhiteSpace(feature.GeometryBlobKey))
+        {
+            await _mapBlobStore.DeleteFeatureGeometryAsync(feature.GeometryBlobKey);
+        }
+
+        _db.MapFeatures.Remove(feature);
         await _db.SaveChangesAsync();
     }
 
@@ -925,6 +1092,27 @@ public sealed class WorldMapService : IWorldMapService
         return layer.MapLayerId;
     }
 
+    private async Task<Guid> ResolveRequestedLayerIdAsync(Guid worldId, Guid mapId, Guid layerId)
+    {
+        await EnsureMapInWorldAsync(worldId, mapId);
+
+        var layer = await _db.MapLayers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.MapLayerId == layerId);
+
+        if (layer == null)
+        {
+            throw new ArgumentException("Layer not found");
+        }
+
+        if (layer.WorldMapId != mapId)
+        {
+            throw new ArgumentException("Layer does not belong to map");
+        }
+
+        return layer.MapLayerId;
+    }
+
     private static void ValidateNormalizedCoordinates(float x, float y)
     {
         if (!IsNormalizedCoordinate(x) || !IsNormalizedCoordinate(y))
@@ -1011,7 +1199,10 @@ public sealed class WorldMapService : IWorldMapService
     {
         var pin = await _db.MapFeatures
             .AsNoTracking()
-            .Where(mf => mf.MapFeatureId == pinId && mf.WorldMapId == mapId)
+            .Where(mf =>
+                mf.MapFeatureId == pinId
+                && mf.WorldMapId == mapId
+                && mf.FeatureType == MapFeatureType.Point)
             .Select(mf => new
             {
                 mf.MapFeatureId,
@@ -1057,6 +1248,153 @@ public sealed class WorldMapService : IWorldMapService
             X = pin.X,
             Y = pin.Y,
             LinkedArticle = linkedArticle,
+        };
+    }
+
+    private async Task<MapFeatureDto> GetMapFeatureResponseAsync(Guid featureId, Guid mapId)
+    {
+        var feature = await _db.MapFeatures
+            .AsNoTracking()
+            .FirstOrDefaultAsync(mf => mf.MapFeatureId == featureId && mf.WorldMapId == mapId);
+
+        if (feature == null)
+        {
+            throw new InvalidOperationException("Feature not found");
+        }
+
+        var linkedArticles = await GetLinkedArticleTitlesAsync([feature]);
+        return (await ToMapFeatureDtosAsync([feature], linkedArticles)).Single();
+    }
+
+    private async Task<List<MapFeatureDto>> ToMapFeatureDtosAsync(
+        IReadOnlyCollection<MapFeature> features,
+        Dictionary<Guid, string>? linkedArticles = null)
+    {
+        linkedArticles ??= await GetLinkedArticleTitlesAsync(features);
+        var results = new List<MapFeatureDto>(features.Count);
+
+        foreach (var feature in features)
+        {
+            PolygonGeometryDto? polygon = null;
+            if (feature.FeatureType == MapFeatureType.Polygon && !string.IsNullOrWhiteSpace(feature.GeometryBlobKey))
+            {
+                var geometryJson = await _mapBlobStore.LoadFeatureGeometryAsync(feature.GeometryBlobKey);
+                polygon = geometryJson == null
+                    ? null
+                    : JsonSerializer.Deserialize<PolygonGeometryDto>(geometryJson, GeometryJsonOptions);
+            }
+
+            results.Add(new MapFeatureDto
+            {
+                FeatureId = feature.MapFeatureId,
+                MapId = feature.WorldMapId,
+                LayerId = feature.MapLayerId,
+                FeatureType = feature.FeatureType,
+                Name = feature.Name,
+                LinkedArticleId = feature.LinkedArticleId,
+                LinkedArticle = feature.LinkedArticleId.HasValue
+                    && linkedArticles.TryGetValue(feature.LinkedArticleId.Value, out var title)
+                    ? new LinkedArticleSummaryDto
+                    {
+                        ArticleId = feature.LinkedArticleId.Value,
+                        Title = title,
+                    }
+                    : null,
+                Point = feature.FeatureType == MapFeatureType.Point
+                    ? new MapFeaturePointDto
+                    {
+                        X = feature.X,
+                        Y = feature.Y,
+                    }
+                    : null,
+                Polygon = polygon,
+                Geometry = feature.FeatureType == MapFeatureType.Polygon && !string.IsNullOrWhiteSpace(feature.GeometryBlobKey)
+                    ? new MapFeatureGeometryReferenceDto
+                    {
+                        BlobKey = feature.GeometryBlobKey,
+                        ETag = feature.GeometryETag,
+                    }
+                    : null,
+            });
+        }
+
+        return results;
+    }
+
+    private async Task<Dictionary<Guid, string>> GetLinkedArticleTitlesAsync(IEnumerable<MapFeature> features)
+    {
+        var linkedArticleIds = features
+            .Where(feature => feature.LinkedArticleId.HasValue)
+            .Select(feature => feature.LinkedArticleId!.Value)
+            .Distinct()
+            .ToList();
+
+        return linkedArticleIds.Count == 0
+            ? []
+            : await _db.Articles
+                .AsNoTracking()
+                .Where(a => linkedArticleIds.Contains(a.Id))
+                .ToDictionaryAsync(a => a.Id, a => a.Title);
+    }
+
+    private static PolygonGeometryDto NormalizePolygonGeometry(PolygonGeometryDto? polygon)
+    {
+        if (polygon == null)
+        {
+            throw new ArgumentException("Polygon geometry is required");
+        }
+
+        if (!string.Equals(polygon.Type, "Polygon", StringComparison.Ordinal))
+        {
+            throw new ArgumentException("Polygon geometry type must be 'Polygon'");
+        }
+
+        if (polygon.Coordinates.Count != 1)
+        {
+            throw new ArgumentException("Polygon must contain exactly one outer ring");
+        }
+
+        var ring = polygon.Coordinates[0];
+        if (ring.Count < 3)
+        {
+            throw new ArgumentException("Polygon must contain at least 3 vertices");
+        }
+
+        foreach (var point in ring)
+        {
+            if (point.Count != 2)
+            {
+                throw new ArgumentException("Polygon coordinates must be coordinate pairs");
+            }
+
+            ValidateNormalizedCoordinates(point[0], point[1]);
+        }
+
+        var distinctVertices = ring
+            .Select(point => (point[0], point[1]))
+            .Distinct()
+            .Count();
+
+        if (distinctVertices < 3)
+        {
+            throw new ArgumentException("Polygon must contain at least 3 distinct vertices");
+        }
+
+        var normalizedRing = ring
+            .Select(point => new List<float> { point[0], point[1] })
+            .ToList();
+
+        var first = normalizedRing[0];
+        var last = normalizedRing[^1];
+        if (first[0] != last[0] || first[1] != last[1])
+        {
+            normalizedRing.Add(new List<float> { first[0], first[1] });
+        }
+
+        return new PolygonGeometryDto
+        {
+            Type = "Polygon",
+            Coordinates = [normalizedRing],
         };
     }
 

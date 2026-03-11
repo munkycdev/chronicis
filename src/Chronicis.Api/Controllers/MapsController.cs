@@ -506,6 +506,160 @@ public class MapsController : ControllerBase
     }
 
     /// <summary>
+    /// POST /world/{worldId}/maps/{mapId}/features — Create an additive map feature.
+    /// </summary>
+    [HttpPost("{mapId:guid}/features")]
+    public async Task<ActionResult<MapFeatureDto>> CreateFeature(
+        Guid worldId,
+        Guid mapId,
+        [FromBody] MapFeatureCreateDto dto)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (dto == null)
+        {
+            return BadRequest(new { error = "Invalid request body" });
+        }
+
+        try
+        {
+            var feature = await _worldMapService.CreateFeatureAsync(worldId, mapId, user.Id, dto);
+            return Ok(feature);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized feature create");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Invalid feature create request");
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Feature create target not found");
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// GET /world/{worldId}/maps/{mapId}/features — List additive map features.
+    /// </summary>
+    [HttpGet("{mapId:guid}/features")]
+    public async Task<ActionResult<IEnumerable<MapFeatureDto>>> ListFeatures(Guid worldId, Guid mapId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        try
+        {
+            var features = await _worldMapService.ListFeaturesForMapAsync(worldId, mapId, user.Id);
+            return Ok(features);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized feature list");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Feature list target not found");
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// GET /world/{worldId}/maps/{mapId}/features/{featureId} — Get a single map feature.
+    /// </summary>
+    [HttpGet("{mapId:guid}/features/{featureId:guid}")]
+    public async Task<ActionResult<MapFeatureDto>> GetFeature(Guid worldId, Guid mapId, Guid featureId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        try
+        {
+            var feature = await _worldMapService.GetFeatureAsync(worldId, mapId, featureId, user.Id);
+            return feature == null
+                ? NotFound(new { error = "Feature not found" })
+                : Ok(feature);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized feature get");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Feature get target not found");
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// PUT /world/{worldId}/maps/{mapId}/features/{featureId} — Replace a map feature.
+    /// </summary>
+    [HttpPut("{mapId:guid}/features/{featureId:guid}")]
+    public async Task<ActionResult<MapFeatureDto>> UpdateFeature(
+        Guid worldId,
+        Guid mapId,
+        Guid featureId,
+        [FromBody] MapFeatureUpdateDto dto)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        if (dto == null)
+        {
+            return BadRequest(new { error = "Invalid request body" });
+        }
+
+        try
+        {
+            var feature = await _worldMapService.UpdateFeatureAsync(worldId, mapId, featureId, user.Id, dto);
+            return Ok(feature);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized feature update");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Invalid feature update request");
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Feature update target not found");
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// DELETE /world/{worldId}/maps/{mapId}/features/{featureId} — Delete a map feature.
+    /// </summary>
+    [HttpDelete("{mapId:guid}/features/{featureId:guid}")]
+    public async Task<IActionResult> DeleteFeature(Guid worldId, Guid mapId, Guid featureId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        try
+        {
+            await _worldMapService.DeleteFeatureAsync(worldId, mapId, featureId, user.Id);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized feature delete");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Feature delete target not found");
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// DELETE /world/{worldId}/maps/{mapId} — Permanently delete map metadata and all map blobs.
     /// </summary>
     [HttpDelete("{mapId:guid}")]

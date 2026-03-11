@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.IO.Compression;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Chronicis.Api.Services;
@@ -97,6 +98,19 @@ public class AzureBlobMapBlobStoreTests
         Assert.Equal($"maps/{mapId}/basemap/world-map.png", key);
     }
 
+    [Fact]
+    public void BuildFeatureGeometryBlobKey_ReturnsCorrectPath()
+    {
+        var sut = CreateUninitializedStore();
+        var mapId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
+        var layerId = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000002");
+        var featureId = Guid.Parse("cccccccc-0000-0000-0000-000000000003");
+
+        var key = sut.BuildFeatureGeometryBlobKey(mapId, layerId, featureId);
+
+        Assert.Equal($"maps/{mapId}/layers/{layerId}/features/{featureId}.geojson.gz", key);
+    }
+
     // ── GenerateUploadSasUrlAsync ─────────────────────────────────────────────
 
     [Fact]
@@ -137,6 +151,28 @@ public class AzureBlobMapBlobStoreTests
 
         Assert.Contains(endpoint.Requests, r => r.Method == "GET" && r.Query.Contains("comp=list", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(endpoint.Requests, r => r.Method == "DELETE" && r.Path.Contains(blobName, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task FeatureGeometry_SaveLoadDelete_RoundTripsCompressedJson()
+    {
+        var blobKey = "maps/map-id/layers/layer-id/features/feature-id.geojson.gz";
+        const string geometryJson = """{"type":"Polygon","coordinates":[[[0.1,0.2],[0.8,0.2],[0.1,0.2]]]}""";
+
+        using var endpoint = StartFeatureGeometryEndpoint(blobKey);
+        var sut = CreateUninitializedStore(endpoint.ServiceBaseUri);
+
+        var etag = await sut.SaveFeatureGeometryAsync(blobKey, geometryJson);
+        var loaded = await sut.LoadFeatureGeometryAsync(blobKey);
+        await sut.DeleteFeatureGeometryAsync(blobKey);
+        await endpoint.DeleteObserved;
+
+        Assert.Equal("\"feature-etag\"", etag);
+        Assert.Equal(geometryJson, loaded);
+        Assert.Equal(geometryJson, endpoint.StoredJson);
+        Assert.Contains(endpoint.Requests, r => r.Method == "PUT" && r.Path.Contains(blobKey, StringComparison.Ordinal));
+        Assert.Contains(endpoint.Requests, r => r.Method == "GET" && r.Path.Contains(blobKey, StringComparison.Ordinal));
+        Assert.Contains(endpoint.Requests, r => r.Method == "DELETE" && r.Path.Contains(blobKey, StringComparison.Ordinal));
     }
 
     // ── SanitizeFileName (private static via reflection) ─────────────────────
@@ -278,6 +314,132 @@ public class AzureBlobMapBlobStoreTests
         HttpListener Listener,
         List<(string Method, string Path, string Query)> Requests) : IDisposable
     {
+        public void Dispose()
+        {
+            Listener.Stop();
+        }
+    }
+
+    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Ownership transferred to TestFeatureGeometryEndpoint.")]
+    private static TestFeatureGeometryEndpoint StartFeatureGeometryEndpoint(string blobKey)
+    {
+        using var tcp = new TcpListener(IPAddress.Loopback, 0);
+        tcp.Start();
+        var port = ((IPEndPoint)tcp.LocalEndpoint).Port;
+        tcp.Stop();
+
+        var listener = new HttpListener();
+        listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+        listener.Start();
+
+        var requests = new List<(string Method, string Path, string Query)>();
+        var deleteObserved = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        byte[]? storedPayload = null;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (listener.IsListening)
+                {
+                    var context = await listener.GetContextAsync();
+                    var req = context.Request;
+                    requests.Add((req.HttpMethod, req.Url?.AbsolutePath ?? string.Empty, req.Url?.Query ?? string.Empty));
+
+                    if (req.HttpMethod.Equals("PUT", StringComparison.OrdinalIgnoreCase))
+                    {
+                        using var memory = new MemoryStream();
+                        await req.InputStream.CopyToAsync(memory);
+                        storedPayload = memory.ToArray();
+                        context.Response.StatusCode = 201;
+                        context.Response.Headers["ETag"] = "\"feature-etag\"";
+                        context.Response.Headers["x-ms-request-id"] = Guid.NewGuid().ToString("N");
+                        context.Response.Headers["x-ms-version"] = "2023-11-03";
+                        context.Response.Headers["Date"] = DateTime.UtcNow.ToString("R");
+                        context.Response.Close();
+                        continue;
+                    }
+
+                    if (req.HttpMethod.Equals("HEAD", StringComparison.OrdinalIgnoreCase))
+                    {
+                        context.Response.StatusCode = storedPayload == null ? 404 : 200;
+                        context.Response.Headers["x-ms-request-id"] = Guid.NewGuid().ToString("N");
+                        context.Response.Headers["x-ms-version"] = "2023-11-03";
+                        context.Response.Headers["Date"] = DateTime.UtcNow.ToString("R");
+                        context.Response.Close();
+                        continue;
+                    }
+
+                    if (req.HttpMethod.Equals("GET", StringComparison.OrdinalIgnoreCase))
+                    {
+                        context.Response.StatusCode = 200;
+                        context.Response.ContentType = "application/json";
+                        context.Response.Headers["Content-Encoding"] = "gzip";
+                        context.Response.Headers["x-ms-request-id"] = Guid.NewGuid().ToString("N");
+                        context.Response.Headers["x-ms-version"] = "2023-11-03";
+                        context.Response.Headers["Date"] = DateTime.UtcNow.ToString("R");
+                        var payload = storedPayload ?? [];
+                        context.Response.ContentLength64 = payload.Length;
+                        await context.Response.OutputStream.WriteAsync(payload);
+                        context.Response.Close();
+                        continue;
+                    }
+
+                    if (req.HttpMethod.Equals("DELETE", StringComparison.OrdinalIgnoreCase))
+                    {
+                        context.Response.StatusCode = 202;
+                        context.Response.Headers["x-ms-request-id"] = Guid.NewGuid().ToString("N");
+                        context.Response.Headers["x-ms-version"] = "2023-11-03";
+                        context.Response.Headers["Date"] = DateTime.UtcNow.ToString("R");
+                        context.Response.Close();
+                        deleteObserved.TrySetResult();
+                        break;
+                    }
+
+                    context.Response.StatusCode = 404;
+                    context.Response.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                deleteObserved.TrySetException(ex);
+            }
+            finally
+            {
+                listener.Stop();
+            }
+        });
+
+        return new TestFeatureGeometryEndpoint(
+            $"http://127.0.0.1:{port}/devstoreaccount1/",
+            deleteObserved.Task,
+            listener,
+            requests,
+            () => ReadGzipPayload(storedPayload));
+    }
+
+    private static string? ReadGzipPayload(byte[]? payload)
+    {
+        if (payload == null)
+        {
+            return null;
+        }
+
+        using var input = new MemoryStream(payload);
+        using var gzip = new GZipStream(input, CompressionMode.Decompress);
+        using var reader = new StreamReader(gzip, Encoding.UTF8);
+        return reader.ReadToEnd();
+    }
+
+    private sealed record TestFeatureGeometryEndpoint(
+        string ServiceBaseUri,
+        Task DeleteObserved,
+        HttpListener Listener,
+        List<(string Method, string Path, string Query)> Requests,
+        Func<string?> ReadStoredJson) : IDisposable
+    {
+        public string? StoredJson => ReadStoredJson();
+
         public void Dispose()
         {
             Listener.Stop();

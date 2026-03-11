@@ -104,12 +104,29 @@ public class MapApiService : IMapApiService
             $"pin for map {mapId}");
     }
 
+    public async Task<MapFeatureDto?> CreateFeatureAsync(Guid worldId, Guid mapId, MapFeatureCreateDto dto)
+    {
+        return await _http.PostEntityAsync<MapFeatureDto>(
+            $"world/{worldId}/maps/{mapId}/features",
+            dto,
+            _logger,
+            $"feature for map {mapId}");
+    }
+
     public async Task<bool> DeletePinAsync(Guid worldId, Guid mapId, Guid pinId)
     {
         return await _http.DeleteEntityAsync(
             $"world/{worldId}/maps/{mapId}/pins/{pinId}",
             _logger,
             $"pin {pinId} for map {mapId}");
+    }
+
+    public async Task<bool> DeleteFeatureAsync(Guid worldId, Guid mapId, Guid featureId)
+    {
+        return await _http.DeleteEntityAsync(
+            $"world/{worldId}/maps/{mapId}/features/{featureId}",
+            _logger,
+            $"feature {featureId} for map {mapId}");
     }
 
     public async Task<bool> UpdatePinPositionAsync(Guid worldId, Guid mapId, Guid pinId, MapPinPositionUpdateDto dto)
@@ -119,6 +136,30 @@ public class MapApiService : IMapApiService
             dto,
             _logger,
             $"pin {pinId} for map {mapId}");
+    }
+
+    public async Task<List<MapFeatureDto>> ListFeaturesForMapAsync(Guid worldId, Guid mapId)
+    {
+        return await _http.GetListAsync<MapFeatureDto>(
+            $"world/{worldId}/maps/{mapId}/features",
+            _logger,
+            $"features for map {mapId}");
+    }
+
+    public async Task<(MapFeatureDto? Feature, int? StatusCode, string? Error)> GetFeatureAsync(Guid worldId, Guid mapId, Guid featureId)
+    {
+        return await GetEntityWithStatusAsync<MapFeatureDto>(
+            $"world/{worldId}/maps/{mapId}/features/{featureId}",
+            $"feature {featureId} for map {mapId}");
+    }
+
+    public async Task<MapFeatureDto?> UpdateFeatureAsync(Guid worldId, Guid mapId, Guid featureId, MapFeatureUpdateDto dto)
+    {
+        return await _http.PutEntityAsync<MapFeatureDto>(
+            $"world/{worldId}/maps/{mapId}/features/{featureId}",
+            dto,
+            _logger,
+            $"feature {featureId} for map {mapId}");
     }
 
     public async Task<MapDto?> UpdateMapAsync(Guid worldId, Guid mapId, MapUpdateDto dto)

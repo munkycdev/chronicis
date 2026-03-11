@@ -546,6 +546,54 @@ public class MapApiServiceTests
     }
 
     [Fact]
+    public async Task CreateFeatureAsync_UsesExpectedRouteAndBody()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var layerId = Guid.NewGuid();
+        var request = new MapFeatureCreateDto
+        {
+            FeatureType = Chronicis.Shared.Enums.MapFeatureType.Polygon,
+            LayerId = layerId,
+            Name = "Region",
+            Polygon = new PolygonGeometryDto
+            {
+                Type = "Polygon",
+                Coordinates =
+                [
+                    [
+                        [0.1f, 0.1f],
+                        [0.8f, 0.1f],
+                        [0.8f, 0.8f],
+                        [0.1f, 0.1f],
+                    ],
+                ],
+            },
+        };
+
+        var handler = new TestHttpMessageHandler(async (req, cancellationToken) =>
+        {
+            Assert.Equal(HttpMethod.Post, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/features", req.RequestUri!.PathAndQuery.TrimStart('/'));
+
+            var body = await req.Content!.ReadAsStringAsync(cancellationToken);
+            using var json = JsonDocument.Parse(body);
+            Assert.Equal((int)Chronicis.Shared.Enums.MapFeatureType.Polygon, json.RootElement.GetProperty("featureType").GetInt32());
+            Assert.Equal(layerId, json.RootElement.GetProperty("layerId").GetGuid());
+            Assert.Equal("Polygon", json.RootElement.GetProperty("polygon").GetProperty("type").GetString());
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"featureId":"00000000-0000-0000-0000-000000000001","featureType":1}""")
+            };
+        });
+
+        var sut = CreateSut(handler);
+
+        _ = await sut.CreateFeatureAsync(worldId, mapId, request);
+    }
+
+    [Fact]
     public async Task ListPinsForMapAsync_UsesExpectedRouteAndNoBody()
     {
         var worldId = Guid.NewGuid();
@@ -566,6 +614,118 @@ public class MapApiServiceTests
         var sut = CreateSut(handler);
 
         _ = await sut.ListPinsForMapAsync(worldId, mapId);
+    }
+
+    [Fact]
+    public async Task ListFeaturesForMapAsync_UsesExpectedRouteAndNoBody()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            Assert.Equal(HttpMethod.Get, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/features", req.RequestUri!.PathAndQuery.TrimStart('/'));
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]")
+            });
+        });
+
+        var sut = CreateSut(handler);
+
+        _ = await sut.ListFeaturesForMapAsync(worldId, mapId);
+    }
+
+    [Fact]
+    public async Task GetFeatureAsync_NotFound_ReturnsStatusAndError()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var featureId = Guid.NewGuid();
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            Assert.Equal($"world/{worldId}/maps/{mapId}/features/{featureId}", req.RequestUri!.PathAndQuery.TrimStart('/'));
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound)
+            {
+                Content = new StringContent("""{"error":"Feature not found"}""")
+            });
+        });
+
+        var sut = CreateSut(handler);
+
+        var result = await sut.GetFeatureAsync(worldId, mapId, featureId);
+
+        Assert.Null(result.Feature);
+        Assert.Equal(404, result.StatusCode);
+        Assert.Equal("Feature not found", result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateFeatureAsync_UsesExpectedRouteAndBody()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var featureId = Guid.NewGuid();
+        var layerId = Guid.NewGuid();
+        var request = new MapFeatureUpdateDto
+        {
+            LayerId = layerId,
+            Name = "Updated Region",
+            Polygon = new PolygonGeometryDto
+            {
+                Type = "Polygon",
+                Coordinates =
+                [
+                    [
+                        [0.2f, 0.2f],
+                        [0.7f, 0.2f],
+                        [0.7f, 0.7f],
+                        [0.2f, 0.2f],
+                    ],
+                ],
+            },
+        };
+
+        var handler = new TestHttpMessageHandler(async (req, cancellationToken) =>
+        {
+            Assert.Equal(HttpMethod.Put, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/features/{featureId}", req.RequestUri!.PathAndQuery.TrimStart('/'));
+
+            var body = await req.Content!.ReadAsStringAsync(cancellationToken);
+            using var json = JsonDocument.Parse(body);
+            Assert.Equal("Updated Region", json.RootElement.GetProperty("name").GetString());
+            Assert.Equal(layerId, json.RootElement.GetProperty("layerId").GetGuid());
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"featureId":"00000000-0000-0000-0000-000000000001","featureType":1}""")
+            };
+        });
+
+        var sut = CreateSut(handler);
+
+        _ = await sut.UpdateFeatureAsync(worldId, mapId, featureId, request);
+    }
+
+    [Fact]
+    public async Task DeleteFeatureAsync_UsesExpectedRouteAndNoBody()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var featureId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            Assert.Equal(HttpMethod.Delete, req.Method);
+            Assert.Equal($"world/{worldId}/maps/{mapId}/features/{featureId}", req.RequestUri!.PathAndQuery.TrimStart('/'));
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+        });
+
+        var sut = CreateSut(handler);
+
+        Assert.True(await sut.DeleteFeatureAsync(worldId, mapId, featureId));
     }
 
     [Fact]

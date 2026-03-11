@@ -69,6 +69,36 @@ public interface IWorldMapService
         Guid worldId, Guid mapId, Guid pinId, Guid userId, MapPinPositionUpdateDto dto);
 
     /// <summary>
+    /// Create a map feature using additive polygon-capable transport.
+    /// Requires world membership.
+    /// </summary>
+    Task<MapFeatureDto> CreateFeatureAsync(Guid worldId, Guid mapId, Guid userId, MapFeatureCreateDto dto);
+
+    /// <summary>
+    /// List all map features for a map.
+    /// Requires world membership.
+    /// </summary>
+    Task<List<MapFeatureDto>> ListFeaturesForMapAsync(Guid worldId, Guid mapId, Guid userId);
+
+    /// <summary>
+    /// Get a single map feature for a map.
+    /// Requires world membership.
+    /// </summary>
+    Task<MapFeatureDto?> GetFeatureAsync(Guid worldId, Guid mapId, Guid featureId, Guid userId);
+
+    /// <summary>
+    /// Replace a map feature.
+    /// Requires world membership.
+    /// </summary>
+    Task<MapFeatureDto> UpdateFeatureAsync(Guid worldId, Guid mapId, Guid featureId, Guid userId, MapFeatureUpdateDto dto);
+
+    /// <summary>
+    /// Delete a map feature.
+    /// Requires world membership.
+    /// </summary>
+    Task DeleteFeatureAsync(Guid worldId, Guid mapId, Guid featureId, Guid userId);
+
+    /// <summary>
     /// Update map layer visibility.
     /// Requires world membership.
     /// </summary>
