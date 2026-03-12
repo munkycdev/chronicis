@@ -57,6 +57,22 @@
     pointer-events: none;
 }
 
+.map-page__polygons-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.map-page__polygon {
+    fill: color-mix(in srgb, var(--chronicis-secondary) 18%, transparent 82%);
+    stroke: color-mix(in srgb, var(--chronicis-secondary) 72%, var(--chronicis-background-light) 28%);
+    stroke-width: 0.003;
+    vector-effect: non-scaling-stroke;
+}
+
 .map-page__pins-overlay {
     position: absolute;
     inset: 0;

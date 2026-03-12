@@ -2,9 +2,11 @@
 @attribute [Authorize]
 @implements IAsyncDisposable
 @using System.Globalization
+@using Chronicis.Client.Engine.Geometry
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Client.Utilities
 @using Chronicis.Shared.DTOs.Maps
+@using Chronicis.Shared.Enums
 @inject IMapApiService MapApi
 @inject IWorldApiService WorldApi
 @inject IUserApiService UserApi
@@ -167,7 +169,7 @@ else
                  @onclick="OnMapImageShellClick"
                  @onmousedown="OnMapViewportMouseDown"
                  @onmousemove="OnMapViewportMouseMove"
-                 @onmouseup="OnMapViewportMouseUp"
+                @onmouseup="OnMapViewportMouseUp"
                  @onmouseleave="OnMapViewportMouseUp">
                 <div class="map-page__map-stage" style="@GetMapStageStyle()">
                     <img @ref="_mapImageRef"
@@ -176,6 +178,19 @@ else
                          class="@GetMapImageClass()"
                          @onload="OnMapImageLoaded"
                          draggable="false" />
+                    <svg class="map-page__polygons-overlay"
+                         viewBox="0 0 1 1"
+                         preserveAspectRatio="none"
+                         aria-hidden="true">
+                        @foreach (var polygon in GetVisiblePolygons())
+                        {
+                            <path class="map-page__polygon"
+                                  d="@polygon.PathData"
+                                  data-feature-id="@polygon.FeatureId.ToString()"
+                                  data-layer-id="@polygon.LayerId.ToString()">
+                            </path>
+                        }
+                    </svg>
                     <div class="map-page__pins-overlay @(_isCreatePinMode ? "map-page__pins-overlay--create" : string.Empty)"
                          aria-hidden="false">
                         @foreach (var pin in GetVisiblePins())
@@ -368,6 +383,7 @@ else
     private Guid? _draggedLayerId;
     private int? _dropTargetIndex;
     private List<MapPinResponseDto> _pins = [];
+    private readonly Dictionary<Guid, PolygonRenderModel> _polygonsByFeatureId = [];
     private Guid? _selectedPinId;
     private bool _isAddingLayer;
     private bool _isRenamingLayer;
@@ -517,6 +533,7 @@ else
         _eligibleNestParentCandidates.Clear();
         _layerRows.Clear();
         _pins = [];
+        _polygonsByFeatureId.Clear();
         _selectedPinId = null;
         _hasMapViewportLayout = false;
         _mapPreferredViewportHeightPx = null;
@@ -594,6 +611,8 @@ else
                 SelectedLayerId = ResolveDefaultSelectedLayerId(_layers);
             }
             _pins = await MapApi.ListPinsForMapAsync(WorldId, MapId);
+            var features = await MapApi.ListFeaturesForMapAsync(WorldId, MapId);
+            SetRenderedPolygons(features);
             _state = MapDetailState.Loaded;
             BuildBreadcrumbs();
         }
@@ -1837,6 +1856,52 @@ else
             .Select(x => x.Pin);
     }
 
+    private IEnumerable<PolygonRenderModel> GetVisiblePolygons()
+    {
+        if (_polygonsByFeatureId.Count == 0)
+        {
+            return [];
+        }
+
+        var layerOrderById = _layers
+            .Select((layer, index) => new { layer.MapLayerId, Index = index })
+            .ToDictionary(x => x.MapLayerId, x => x.Index);
+
+        var enabledLayerIds = GetEffectivelyVisibleLayerIds();
+
+        return _polygonsByFeatureId.Values
+            .Where(polygon => enabledLayerIds.Contains(polygon.LayerId))
+            .OrderBy(polygon => layerOrderById.TryGetValue(polygon.LayerId, out var order) ? order : int.MaxValue)
+            .ThenBy(polygon => polygon.DisplayName, StringComparer.Ordinal)
+            .ThenBy(polygon => polygon.FeatureId);
+    }
+
+    private void SetRenderedPolygons(IEnumerable<MapFeatureDto>? features)
+    {
+        _polygonsByFeatureId.Clear();
+
+        if (features == null)
+        {
+            return;
+        }
+
+        foreach (var feature in features)
+        {
+            if (feature.MapId != MapId
+                || feature.FeatureType != MapFeatureType.Polygon
+                || !PolygonSvgPathBuilder.TryBuildPath(feature.Polygon, out var pathData))
+            {
+                continue;
+            }
+
+            _polygonsByFeatureId[feature.FeatureId] = new PolygonRenderModel(
+                feature.FeatureId,
+                feature.LayerId,
+                feature.Name ?? string.Empty,
+                pathData);
+        }
+    }
+
     private HashSet<Guid> GetEffectivelyVisibleLayerIds() =>
         MapLayerVisibilityEvaluator.GetEffectivelyVisibleLayerIds(_layers);
 
@@ -2573,4 +2638,10 @@ else
 
         public List<LayerTreeNode> Children { get; } = [];
     }
+
+    private sealed record PolygonRenderModel(
+        Guid FeatureId,
+        Guid LayerId,
+        string DisplayName,
+        string PathData);
 }

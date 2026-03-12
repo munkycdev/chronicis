@@ -63,4 +63,87 @@ public class GeometryEngineTests
         Assert.True(draft.RemoveLastVertex());
         Assert.Equal(2, draft.Vertices.Count);
     }
+
+    [Fact]
+    public void PolygonSvgPathBuilder_ValidPolygon_ReturnsSvgPath()
+    {
+        var polygon = new Chronicis.Shared.DTOs.Maps.PolygonGeometryDto
+        {
+            Type = "Polygon",
+            Coordinates =
+            [
+                [
+                    [0.1f, 0.2f],
+                    [0.8f, 0.2f],
+                    [0.4f, 0.7f],
+                    [0.1f, 0.2f],
+                ]
+            ]
+        };
+
+        var result = PolygonSvgPathBuilder.TryBuildPath(polygon, out var path);
+
+        Assert.True(result);
+        Assert.Equal("M 0.1 0.2 L 0.8 0.2 L 0.4 0.7 L 0.1 0.2 Z", path);
+    }
+
+    [Fact]
+    public void PolygonSvgPathBuilder_OutOfBoundsCoordinate_ReturnsFalse()
+    {
+        var polygon = new Chronicis.Shared.DTOs.Maps.PolygonGeometryDto
+        {
+            Type = "Polygon",
+            Coordinates =
+            [
+                [
+                    [0.1f, 0.2f],
+                    [1.1f, 0.2f],
+                    [0.4f, 0.7f],
+                    [0.1f, 0.2f],
+                ]
+            ]
+        };
+
+        Assert.False(PolygonSvgPathBuilder.TryBuildPath(polygon, out _));
+    }
+
+    [Fact]
+    public void PolygonSvgPathBuilder_FewerThanThreeDistinctVertices_ReturnsFalse()
+    {
+        var polygon = new Chronicis.Shared.DTOs.Maps.PolygonGeometryDto
+        {
+            Type = "Polygon",
+            Coordinates =
+            [
+                [
+                    [0.1f, 0.2f],
+                    [0.8f, 0.2f],
+                    [0.1f, 0.2f],
+                    [0.1f, 0.2f],
+                ]
+            ]
+        };
+
+        Assert.False(PolygonSvgPathBuilder.TryBuildPath(polygon, out _));
+    }
+
+    [Fact]
+    public void PolygonSvgPathBuilder_NonClosedRing_ReturnsFalse()
+    {
+        var polygon = new Chronicis.Shared.DTOs.Maps.PolygonGeometryDto
+        {
+            Type = "Polygon",
+            Coordinates =
+            [
+                [
+                    [0.1f, 0.2f],
+                    [0.8f, 0.2f],
+                    [0.4f, 0.7f],
+                    [0.2f, 0.3f],
+                ]
+            ]
+        };
+
+        Assert.False(PolygonSvgPathBuilder.TryBuildPath(polygon, out _));
+    }
 }
