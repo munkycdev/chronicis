@@ -1,5 +1,5 @@
 import path from "path";
-import { ensureDir, readText, writeText } from "../fs-utils.mjs";
+import { ensureDir, fileExists, readText, writeText } from "../fs-utils.mjs";
 import { setTerminalTitle, timestamp } from "../console-ui.mjs";
 import { getFuturePhaseFileNames, getPhaseStatePaths } from "../phase-files.mjs";
 import { createAndApprovePlan } from "../planning/plan-review-loop.mjs";
@@ -10,6 +10,11 @@ import { COMMIT_AFTER_EACH_PHASE } from "../config.mjs";
 import { hasTrackedChanges, commitAllChanges } from "../git/git-commits.mjs";
 import { logStep } from "../console-ui.mjs";
 
+function parseSummaryField(summary, label) {
+  const match = summary.match(new RegExp(`^${label}: (.+)$`, "m"));
+  return match ? match[1].trim() : null;
+}
+
 export async function executePhase(phasePath, allPhasePaths, architecture, frozenAssumptions) {
   const phaseFileName = path.basename(phasePath);
   const phaseName = phaseFileName.replace(/\.md$/i, "");
@@ -18,6 +23,21 @@ export async function executePhase(phasePath, allPhasePaths, architecture, froze
 
   ensureDir(paths.dir);
 
+  // If this phase previously passed, skip it.
+  if (fileExists(paths.summary)) {
+    const summary = readText(paths.summary);
+    if (parseSummaryField(summary, "Status") === "PASSED") {
+      console.log(`\n=== Phase ${phaseName}: already passed — skipping ===\n`);
+      return {
+        phaseName,
+        passed: true,
+        reviewRoundsUsed: parseInt(parseSummaryField(summary, "Plan review rounds used") ?? "0", 10),
+        attempts: parseInt(parseSummaryField(summary, "Repair attempts used") ?? "0", 10),
+      };
+    }
+    console.log(`    Phase ${phaseName} previously failed — resuming...`);
+  }
+
   console.clear();
   setTerminalTitle(`AIP - Running ${phaseName}`);
   console.log(`
@@ -25,14 +45,26 @@ export async function executePhase(phasePath, allPhasePaths, architecture, froze
 
   const phaseSpec = readText(phasePath);
 
-  const planResult = await createAndApprovePlan(
-  phaseSpec,
-  architecture,
-  frozenAssumptions,
-  phaseFileName,
-  futurePhaseNames,
-  paths
-);
+  // If an approved plan already exists from a prior (interrupted) run, skip planning.
+  let planResult;
+  if (fileExists(paths.approvedPlan)) {
+    logStep("Approved plan found — skipping planning stage...");
+    planResult = {
+      planningBrief: fileExists(paths.planningBrief) ? readText(paths.planningBrief) : "",
+      approvedPlan: readText(paths.approvedPlan),
+      reviewRoundsUsed: 0,
+      settledDecisions: fileExists(paths.settledDecisions) ? readText(paths.settledDecisions) : "",
+    };
+  } else {
+    planResult = await createAndApprovePlan(
+      phaseSpec,
+      architecture,
+      frozenAssumptions,
+      phaseFileName,
+      futurePhaseNames,
+      paths
+    );
+  }
 
   const codexTask = buildCodexImplementationTask(
     phaseSpec,

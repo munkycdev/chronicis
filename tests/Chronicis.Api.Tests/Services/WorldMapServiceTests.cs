@@ -33,6 +33,14 @@ public class WorldMapServiceTests : IDisposable
         _db = new ChronicisDbContext(options);
         _blobStore = Substitute.For<IMapBlobStore>();
         _blobStore.DeleteMapFolderAsync(Arg.Any<Guid>()).Returns(Task.CompletedTask);
+        _blobStore.BuildFeatureGeometryBlobKey(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(callInfo =>
+            {
+                var mapId = callInfo.ArgAt<Guid>(0);
+                var layerId = callInfo.ArgAt<Guid>(1);
+                var featureId = callInfo.ArgAt<Guid>(2);
+                return $"maps/{mapId}/layers/{layerId}/features/{featureId}.geojson.gz";
+            });
         _sut = new WorldMapService(_db, _blobStore, NullLogger<WorldMapService>.Instance);
 
         SeedWorld();
@@ -1901,6 +1909,189 @@ public class WorldMapServiceTests : IDisposable
                     ],
                 },
             }));
+    }
+
+    [Fact]
+    public async Task CreateFeatureAsync_Polygon_RejectsMissingGeometry()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Missing Polygon Geometry");
+        var layerId = (await GetMapLayersByNameAsync(map.WorldMapId))["World"];
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.CreateFeatureAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapFeatureCreateDto
+            {
+                FeatureType = MapFeatureType.Polygon,
+                LayerId = layerId,
+                Polygon = null,
+            }));
+    }
+
+    [Fact]
+    public async Task CreateFeatureAsync_Polygon_RejectsInvalidGeometryType()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Invalid Polygon Type");
+        var layerId = (await GetMapLayersByNameAsync(map.WorldMapId))["World"];
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.CreateFeatureAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapFeatureCreateDto
+            {
+                FeatureType = MapFeatureType.Polygon,
+                LayerId = layerId,
+                Polygon = new PolygonGeometryDto
+                {
+                    Type = "LineString",
+                    Coordinates =
+                    [
+                        [
+                            [0.1f, 0.1f],
+                            [0.6f, 0.1f],
+                            [0.4f, 0.5f],
+                        ],
+                    ],
+                },
+            }));
+    }
+
+    [Fact]
+    public async Task CreateFeatureAsync_Polygon_RejectsMultipleOuterRings()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Polygon Multiple Rings");
+        var layerId = (await GetMapLayersByNameAsync(map.WorldMapId))["World"];
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.CreateFeatureAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapFeatureCreateDto
+            {
+                FeatureType = MapFeatureType.Polygon,
+                LayerId = layerId,
+                Polygon = new PolygonGeometryDto
+                {
+                    Type = "Polygon",
+                    Coordinates =
+                    [
+                        [
+                            [0.1f, 0.1f],
+                            [0.3f, 0.1f],
+                            [0.2f, 0.3f],
+                        ],
+                        [
+                            [0.6f, 0.6f],
+                            [0.8f, 0.6f],
+                            [0.7f, 0.8f],
+                        ],
+                    ],
+                },
+            }));
+    }
+
+    [Fact]
+    public async Task CreateFeatureAsync_Polygon_RejectsFewerThanThreeVertices()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Polygon Too Few Vertices");
+        var layerId = (await GetMapLayersByNameAsync(map.WorldMapId))["World"];
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.CreateFeatureAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapFeatureCreateDto
+            {
+                FeatureType = MapFeatureType.Polygon,
+                LayerId = layerId,
+                Polygon = new PolygonGeometryDto
+                {
+                    Type = "Polygon",
+                    Coordinates =
+                    [
+                        [
+                            [0.1f, 0.1f],
+                            [0.3f, 0.2f],
+                        ],
+                    ],
+                },
+            }));
+    }
+
+    [Fact]
+    public async Task CreateFeatureAsync_Polygon_RejectsCoordinateTriples()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Polygon Invalid Coordinate Pair");
+        var layerId = (await GetMapLayersByNameAsync(map.WorldMapId))["World"];
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _sut.CreateFeatureAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapFeatureCreateDto
+            {
+                FeatureType = MapFeatureType.Polygon,
+                LayerId = layerId,
+                Polygon = new PolygonGeometryDto
+                {
+                    Type = "Polygon",
+                    Coordinates =
+                    [
+                        [
+                            [0.1f, 0.1f, 0.9f],
+                            [0.6f, 0.1f],
+                            [0.4f, 0.5f],
+                        ],
+                    ],
+                },
+            }));
+    }
+
+    [Fact]
+    public async Task CreateFeatureAsync_Polygon_ClosesRingWhenOnlyYDiffersOnLastVertex()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Polygon Shared X Closure");
+        var layerId = (await GetMapLayersByNameAsync(map.WorldMapId))["World"];
+        string? savedGeometryJson = null;
+
+        _blobStore.SaveFeatureGeometryAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                savedGeometryJson = callInfo.ArgAt<string>(1);
+                return "\"etag-shared-x\"";
+            });
+        _blobStore.LoadFeatureGeometryAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(_ => savedGeometryJson);
+
+        var created = await _sut.CreateFeatureAsync(
+            _worldId,
+            map.WorldMapId,
+            _memberId,
+            new MapFeatureCreateDto
+            {
+                FeatureType = MapFeatureType.Polygon,
+                LayerId = layerId,
+                Polygon = new PolygonGeometryDto
+                {
+                    Type = "Polygon",
+                    Coordinates =
+                    [
+                        [
+                            [0.2f, 0.2f],
+                            [0.8f, 0.2f],
+                            [0.2f, 0.7f],
+                        ],
+                    ],
+                },
+            });
+
+        Assert.NotNull(created.Polygon);
+        var normalizedRing = created.Polygon!.Coordinates[0];
+        Assert.Equal(4, normalizedRing.Count);
+        Assert.Equal(normalizedRing[0][0], normalizedRing[^1][0]);
+        Assert.Equal(normalizedRing[0][1], normalizedRing[^1][1]);
     }
 
     [Fact]

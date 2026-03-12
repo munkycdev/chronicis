@@ -1,5 +1,6 @@
 using Chronicis.Client.Engine.Geometry;
 using Chronicis.Client.Engine.Interaction;
+using Xunit;
 
 namespace Chronicis.Client.Tests.Engine;
 

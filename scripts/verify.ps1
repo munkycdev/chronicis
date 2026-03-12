@@ -85,75 +85,10 @@ try {
         }
     }
 
-    # Run Shared, Api, and Architectural tests in parallel.
-    # Chronicis.Client.Tests runs separately afterwards: the BlazorWebAssembly SDK can
-    # cause the Chronicis.Client.dll to be loaded by the test host before the coverlet
-    # CLR profiler finishes attaching when there is process contention, silently
-    # producing a coverage file with zero Client classes. Running it in isolation
-    # eliminates that race.
-    $parallelTargets = $CoverageTargets | Where-Object { $_.Name -ne "Chronicis.Client" }
-    $clientTarget    = $CoverageTargets | Where-Object { $_.Name -eq "Chronicis.Client" }
-
-    $testJobs = @()
-
-    foreach ($target in $parallelTargets) {
-        $csproj = Join-Path $RepoRoot "tests\$($target.Name).Tests\$($target.Name).Tests.csproj"
-        $dir    = $target.ResultsDir
-        $rs     = $RunSettings
-        $cfg    = $Configuration
-        $testJobs += [PSCustomObject]@{
-            Name = $target.Name
-            Job  = Start-Job -ScriptBlock {
-                param($csproj, $dir, $rs, $cfg)
-                dotnet test $csproj -c $cfg --no-build --no-restore `
-                    --collect:"XPlat Code Coverage" --settings $rs --results-directory $dir
-                $LASTEXITCODE
-            } -ArgumentList $csproj, $dir, $rs, $cfg
-        }
-    }
-
-    # Architectural tests - no coverage needed.
-    $archCsproj = Join-Path $RepoRoot "tests\Chronicis.ArchitecturalTests\Chronicis.ArchitecturalTests.csproj"
-    $cfg = $Configuration
-    $testJobs += [PSCustomObject]@{
-        Name = "ArchitecturalTests"
-        Job  = Start-Job -ScriptBlock {
-            param($csproj, $cfg)
-            dotnet test $csproj -c $cfg --no-build --no-restore
-            $LASTEXITCODE
-        } -ArgumentList $archCsproj, $cfg
-    }
-
-    Write-Host "Running $($testJobs.Count) test projects in parallel..."
-    $null = $testJobs.Job | Wait-Job
-
-    $anyFailed = $false
-    foreach ($entry in $testJobs) {
-        $results  = @(Receive-Job $entry.Job)
-        Remove-Job $entry.Job
-        $exitCode = [int]($results | Select-Object -Last 1)
-        $results  | Select-Object -SkipLast 1 | ForEach-Object { Write-Host $_ }
-        if ($exitCode -ne 0) {
-            Write-Host "[FAIL] $($entry.Name) tests failed (exit $exitCode)" -ForegroundColor Red
-            $anyFailed = $true
-        }
-    }
-
-    # Run Chronicis.Client.Tests in isolation so coverlet can attach its CLR profiler
-    # before the Blazor assembly is loaded (see comment above).
-    foreach ($target in $clientTarget) {
-        $csproj = Join-Path $RepoRoot "tests\$($target.Name).Tests\$($target.Name).Tests.csproj"
-        $dir    = $target.ResultsDir
-        Write-Host "Running $($target.Name).Tests (isolated)..."
-        dotnet test $csproj -c $Configuration --no-build --no-restore `
-            --collect:"XPlat Code Coverage" --settings $RunSettings --results-directory $dir
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "[FAIL] $($target.Name) tests failed (exit $LASTEXITCODE)" -ForegroundColor Red
-            $anyFailed = $true
-        }
-    }
-
-    if ($anyFailed) { throw "One or more test suites failed." }
+    Write-Host "Running all tests..."
+    dotnet test $Solution -c $Configuration --no-build --no-restore `
+        --collect:"XPlat Code Coverage" --settings $RunSettings
+    if ($LASTEXITCODE -ne 0) { throw "One or more test suites failed." }
 
     Write-Host ""
     Write-Host "Coverage verification (class-level, line+branch):"
@@ -208,5 +143,7 @@ try {
 }
 finally {
     Pop-Location
-    Read-Host -Prompt "Press Enter to exit"
+    if ($Host.Name -eq "ConsoleHost" -and [Environment]::UserInteractive) {
+        Read-Host -Prompt "Press Enter to exit"
+    }
 }

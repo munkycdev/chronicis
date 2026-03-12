@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Xunit;
 
 namespace Chronicis.Client.Tests.Engine;
 
@@ -32,7 +33,26 @@ public class GeometryEngineBuildIntegrationTests
         var manifestPath = Path.Combine(
             GetRepoRoot(),
             "src",
-            "Chronicis.Client.Engine",
+            "Chronicis.Client",
+            "bin",
+            "Debug",
+            "net9.0",
+            "Chronicis.Client.staticwebassets.runtime.json");
+
+        Assert.True(File.Exists(manifestPath));
+
+        using var payload = JsonDocument.Parse(File.ReadAllText(manifestPath));
+        var text = payload.RootElement.GetRawText();
+        Assert.Contains("chronicis-map-engine.js", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ClientBuildOutput_IncludesEngineArtifact()
+    {
+        var manifestPath = Path.Combine(
+            GetRepoRoot(),
+            "src",
+            "Chronicis.Client",
             "obj",
             "Debug",
             "net9.0",
@@ -43,6 +63,23 @@ public class GeometryEngineBuildIntegrationTests
         using var payload = JsonDocument.Parse(File.ReadAllText(manifestPath));
         var text = payload.RootElement.GetRawText();
         Assert.Contains("chronicis-map-engine.js", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ClientBuildOutput_CopiesEngineScriptToClientWwwroot()
+    {
+        var scriptPath = Path.Combine(
+            GetRepoRoot(),
+            "src",
+            "Chronicis.Client",
+            "bin",
+            "Debug",
+            "net9.0",
+            "wwwroot",
+            "js",
+            "chronicis-map-engine.js");
+
+        Assert.True(File.Exists(scriptPath));
     }
 
     private static string GetRepoRoot()

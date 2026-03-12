@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Sas;
@@ -16,28 +18,11 @@ public class BlobStorageServiceBranchCoverageTests
     [Fact]
     public async Task BlobStorageService_Constructor_CanCompleteWithLocalBlobEndpoint()
     {
-        using var tcp = new TcpListener(IPAddress.Loopback, 0);
-        tcp.Start();
-        var port = ((IPEndPoint)tcp.LocalEndpoint).Port;
-        tcp.Stop();
-
-        using var listener = new HttpListener();
-        listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-        listener.Start();
-
-        var serverTask = Task.Run(async () =>
-        {
-            var context = await listener.GetContextAsync();
-            context.Response.StatusCode = 201;
-            context.Response.Headers["x-ms-request-id"] = Guid.NewGuid().ToString("N");
-            context.Response.Headers["x-ms-version"] = "2023-11-03";
-            context.Response.Headers["Date"] = DateTime.UtcNow.ToString("R");
-            context.Response.Close();
-        });
+        using var server = RawAzureConstructorServer.Start();
 
         var accountKey = Convert.ToBase64String(Enumerable.Repeat((byte)3, 32).ToArray());
         var connectionString =
-            $"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey={accountKey};BlobEndpoint=http://127.0.0.1:{port}/devstoreaccount1;";
+            $"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey={accountKey};BlobEndpoint={server.ServiceBaseUri}";
 
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
@@ -46,7 +31,7 @@ public class BlobStorageServiceBranchCoverageTests
         }).Build();
 
         var service = new BlobStorageService(config, NullLogger<BlobStorageService>.Instance);
-        await serverTask;
+        await server.Completion;
 
         Assert.NotNull(service);
     }
@@ -134,5 +119,84 @@ public class BlobStorageServiceBranchCoverageTests
         var downloadUrl = await blobService.GenerateDownloadSasUrlAsync(blobPath);
         Assert.StartsWith("https://account.blob.core.windows.net/container/worlds/", downloadUrl);
         Assert.Contains("sig=", downloadUrl);
+    }
+
+    private sealed class RawAzureConstructorServer : IDisposable
+    {
+        private readonly TcpListener _listener;
+        private readonly CancellationTokenSource _cts = new();
+        private readonly Task _loop;
+
+        private RawAzureConstructorServer(TcpListener listener)
+        {
+            _listener = listener;
+            ServiceBaseUri = $"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}/devstoreaccount1/";
+            _loop = Task.Run(() => RunAsync(_cts.Token));
+        }
+
+        public string ServiceBaseUri { get; }
+
+        public Task Completion => _loop;
+
+        [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Ownership transferred to RawAzureConstructorServer.")]
+        public static RawAzureConstructorServer Start()
+        {
+            var listener = new TcpListener(System.Net.IPAddress.Loopback, 0);
+            listener.Start();
+            return new RawAzureConstructorServer(listener);
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _listener.Stop();
+            try
+            {
+                _loop.GetAwaiter().GetResult();
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (SocketException)
+            {
+            }
+            finally
+            {
+                _cts.Dispose();
+            }
+        }
+
+        private async Task RunAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var client = await _listener.AcceptTcpClientAsync(cancellationToken);
+                using var stream = client.GetStream();
+                using var reader = new StreamReader(stream, Encoding.ASCII, false, 1024, leaveOpen: true);
+
+                while (!string.IsNullOrEmpty(await reader.ReadLineAsync(cancellationToken)))
+                {
+                }
+
+                var response = new StringBuilder()
+                    .Append("HTTP/1.1 201 Created\r\n")
+                    .Append($"x-ms-request-id: {Guid.NewGuid():N}\r\n")
+                    .Append("x-ms-version: 2023-11-03\r\n")
+                    .Append($"Date: {DateTime.UtcNow:R}\r\n")
+                    .Append("Content-Length: 0\r\n")
+                    .Append("Connection: close\r\n\r\n")
+                    .ToString();
+
+                var bytes = Encoding.ASCII.GetBytes(response);
+                await stream.WriteAsync(bytes, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
     }
 }
