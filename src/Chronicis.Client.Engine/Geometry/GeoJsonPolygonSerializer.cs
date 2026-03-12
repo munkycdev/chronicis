@@ -12,7 +12,7 @@ public static class GeoJsonPolygonSerializer
 
     public static PolygonGeometryDto ToDto(PolygonGeometry geometry)
     {
-        var ring = geometry.Vertices
+        var ring = EnsureClosedRing(geometry.Vertices)
             .Select(vertex => new List<float> { vertex.X, vertex.Y })
             .ToList();
 
@@ -43,5 +43,20 @@ public static class GeoJsonPolygonSerializer
             ?? throw new InvalidOperationException("Polygon payload could not be deserialized.");
 
         return FromDto(dto);
+    }
+
+    private static IReadOnlyList<NormalizedMapPoint> EnsureClosedRing(IReadOnlyList<NormalizedMapPoint> vertices)
+    {
+        if (vertices.Count == 0)
+        {
+            return [];
+        }
+
+        if (vertices[^1].Equals(vertices[0]))
+        {
+            return vertices;
+        }
+
+        return [.. vertices, vertices[0]];
     }
 }

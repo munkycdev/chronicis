@@ -320,6 +320,204 @@ public class MapDetailTests : MudBlazorTestContext
         });
     }
 
+    [Fact]
+    public async Task MapDetail_ClickInsidePolygon_SelectsPolygonAndRendersVertexHandles()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000020");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapImageShellClick",
+            new MouseEventArgs { OffsetX = 300, OffsetY = 200, Detail = 1 });
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Equal(featureId, GetField<Guid?>(cut.Instance, "_selectedPolygonFeatureId"));
+            Assert.Equal(3, cut.FindAll("circle[data-polygon-vertex-index]").Count);
+        });
+    }
+
+    [Fact]
+    public void MapDetail_ClickingInteractivePin_DoesNotSelectOverlappingPolygon()
+    {
+        var articleId = Guid.Parse("70000000-0000-0000-0000-000000000001");
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000021");
+        _mapApi.ListPinsForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            new MapPinResponseDto
+            {
+                PinId = Guid.NewGuid(),
+                MapId = MapId,
+                LayerId = VisibleChildLayerId,
+                Name = "Linked pin",
+                X = 0.4f,
+                Y = 0.4f,
+                LinkedArticle = new LinkedArticleSummaryDto
+                {
+                    ArticleId = articleId,
+                    Title = "Pin article",
+                }
+            }
+        ]);
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+        _articleApi.GetArticleDetailAsync(articleId).Returns(new ArticleDto
+        {
+            Id = articleId,
+            Breadcrumbs = [new ArticleBreadcrumbDto { Slug = "pin-article", Title = "Pin article" }]
+        });
+
+        var cut = RenderMapDetail();
+
+        cut.Find("button.map-page__pin--interactive").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Null(GetField<Guid?>(cut.Instance, "_selectedPolygonFeatureId"));
+            Assert.EndsWith("/article/pin-article", Services.GetRequiredService<NavigationManager>().Uri, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
+    public async Task MapDetail_DraggingSelectedPolygonVertex_UpdatesRenderedPath()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000022");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        await SelectPolygonAsync(cut, 300, 200);
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapViewportMouseDown",
+            new MouseEventArgs { Button = 0, OffsetX = 100, OffsetY = 100, ClientX = 100, ClientY = 100 });
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapViewportMouseMove",
+            new MouseEventArgs { OffsetX = 200, OffsetY = 120, ClientX = 200, ClientY = 120 });
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseUp", new MouseEventArgs());
+
+        cut.WaitForAssertion(() =>
+        {
+            var path = cut.Find($"path[data-feature-id='{featureId}']");
+            Assert.Equal("M 0.2 0.24 L 0.8 0.2 L 0.4 0.7 L 0.2 0.24 Z", path.GetAttribute("d"));
+        });
+    }
+
+    [Fact]
+    public async Task MapDetail_EscapeDuringPolygonEdit_RestoresOriginalGeometry()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000023");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        await SelectPolygonAsync(cut, 300, 200);
+        await DragFirstPolygonVertexAsync(cut, 200, 120);
+
+        cut.Find(".map-page__viewport").KeyDown(new KeyboardEventArgs { Key = "Escape" });
+
+        cut.WaitForAssertion(() =>
+        {
+            var path = cut.Find($"path[data-feature-id='{featureId}']");
+            Assert.Equal("M 0.1 0.2 L 0.8 0.2 L 0.4 0.7 L 0.1 0.2 Z", path.GetAttribute("d"));
+        });
+    }
+
+    [Fact]
+    public async Task MapDetail_SavingPolygonEdit_SendsUpdatedClosedGeometry()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000024");
+        MapFeatureUpdateDto? capturedRequest = null;
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+        _mapApi.UpdateFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), featureId, Arg.Any<MapFeatureUpdateDto>())
+            .Returns(call =>
+            {
+                capturedRequest = call.ArgAt<MapFeatureUpdateDto>(3);
+                return CreatePolygonFeature(featureId, VisibleChildLayerId, capturedRequest.Polygon);
+            });
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        await SelectPolygonAsync(cut, 300, 200);
+        await DragFirstPolygonVertexAsync(cut, 200, 120);
+
+        await InvokePrivateOnRendererAsync(cut, "SaveSelectedPolygonAsync");
+
+        Assert.NotNull(capturedRequest);
+        Assert.Equal(VisibleChildLayerId, capturedRequest!.LayerId);
+        Assert.Equal(capturedRequest.Polygon!.Coordinates[0][0], capturedRequest.Polygon.Coordinates[0][^1]);
+        Assert.Equal(new[] { 0.2f, 0.24f }, capturedRequest.Polygon.Coordinates[0][0]);
+    }
+
+    [Fact]
+    public async Task MapDetail_DeletingSelectedPolygon_RemovesLocalState()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000025");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+        _mapApi.DeleteFeatureAsync(WorldId, MapId, featureId).Returns(true);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        await SelectPolygonAsync(cut, 300, 200);
+
+        await InvokePrivateOnRendererAsync(cut, "DeleteSelectedPolygonAsync");
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Empty(GetVisiblePolygonModels(cut.Instance));
+            Assert.Null(GetField<Guid?>(cut.Instance, "_selectedPolygonFeatureId"));
+        });
+    }
+
+    [Fact]
+    public async Task MapDetail_HidingSelectedPolygonLayer_ClearsEditState()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000026");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        await SelectPolygonAsync(cut, 300, 200);
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnLayerVisibilityChangedAsync",
+            RootLayerId,
+            new ChangeEventArgs { Value = false });
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Null(GetField<Guid?>(cut.Instance, "_selectedPolygonFeatureId"));
+            Assert.Empty(cut.FindAll("circle[data-polygon-vertex-index]"));
+        });
+    }
+
     private IRenderedComponent<MapDetail> RenderMapDetail() =>
         RenderComponent<MapDetail>(parameters => parameters
             .Add(p => p.WorldId, WorldId)
@@ -375,6 +573,27 @@ public class MapDetailTests : MudBlazorTestContext
             new MouseEventArgs { OffsetX = offsetX, OffsetY = offsetY, Detail = 1 });
 
         await Task.Delay(250);
+    }
+
+    private async Task SelectPolygonAsync(IRenderedComponent<MapDetail> cut, double offsetX, double offsetY)
+    {
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapImageShellClick",
+            new MouseEventArgs { OffsetX = offsetX, OffsetY = offsetY, Detail = 1 });
+    }
+
+    private async Task DragFirstPolygonVertexAsync(IRenderedComponent<MapDetail> cut, double offsetX, double offsetY)
+    {
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapViewportMouseDown",
+            new MouseEventArgs { Button = 0, OffsetX = 100, OffsetY = 100, ClientX = 100, ClientY = 100 });
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapViewportMouseMove",
+            new MouseEventArgs { OffsetX = offsetX, OffsetY = offsetY, ClientX = offsetX, ClientY = offsetY });
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseUp", new MouseEventArgs());
     }
 
     private static List<object> GetVisiblePolygonModels(object instance) =>

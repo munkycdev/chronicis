@@ -48,6 +48,100 @@ public class GeometryEngineTests
     }
 
     [Fact]
+    public void PolygonHitTester_ContainsPoint_TreatsBoundaryAsHit()
+    {
+        var polygon = new PolygonGeometry(
+        [
+            new NormalizedMapPoint(0.1f, 0.1f),
+            new NormalizedMapPoint(0.9f, 0.1f),
+            new NormalizedMapPoint(0.9f, 0.9f),
+            new NormalizedMapPoint(0.1f, 0.9f),
+            new NormalizedMapPoint(0.1f, 0.1f),
+        ]);
+
+        Assert.True(PolygonHitTester.ContainsPoint(polygon, new NormalizedMapPoint(0.1f, 0.5f)));
+    }
+
+    [Fact]
+    public void PolygonVertexEditor_FindNearestVertexIndex_ReturnsNearestEditableVertex()
+    {
+        var polygon = new PolygonGeometry(
+        [
+            new NormalizedMapPoint(0.1f, 0.2f),
+            new NormalizedMapPoint(0.8f, 0.2f),
+            new NormalizedMapPoint(0.4f, 0.7f),
+            new NormalizedMapPoint(0.1f, 0.2f),
+        ]);
+
+        var index = PolygonVertexEditor.FindNearestVertexIndex(
+            polygon,
+            new NormalizedMapPoint(0.78f, 0.21f),
+            maxDistance: 0.05f);
+
+        Assert.Equal(1, index);
+    }
+
+    [Fact]
+    public void PolygonVertexEditor_TryMoveVertex_ReplacesMiddleVertex()
+    {
+        var polygon = new PolygonGeometry(
+        [
+            new NormalizedMapPoint(0.1f, 0.2f),
+            new NormalizedMapPoint(0.8f, 0.2f),
+            new NormalizedMapPoint(0.4f, 0.7f),
+            new NormalizedMapPoint(0.1f, 0.2f),
+        ]);
+
+        var moved = PolygonVertexEditor.TryMoveVertex(
+            polygon,
+            vertexIndex: 1,
+            new NormalizedMapPoint(0.6f, 0.25f),
+            out var updated);
+
+        Assert.True(moved);
+        Assert.Equal(new NormalizedMapPoint(0.6f, 0.25f), updated.Vertices[1]);
+        Assert.Equal(updated.Vertices[0], updated.Vertices[^1]);
+    }
+
+    [Fact]
+    public void PolygonVertexEditor_TryMoveVertex_PreservesClosureForFirstVertex()
+    {
+        var polygon = new PolygonGeometry(
+        [
+            new NormalizedMapPoint(0.1f, 0.2f),
+            new NormalizedMapPoint(0.8f, 0.2f),
+            new NormalizedMapPoint(0.4f, 0.7f),
+            new NormalizedMapPoint(0.1f, 0.2f),
+        ]);
+
+        var moved = PolygonVertexEditor.TryMoveVertex(
+            polygon,
+            vertexIndex: 0,
+            new NormalizedMapPoint(-0.2f, 1.2f),
+            out var updated);
+
+        Assert.True(moved);
+        Assert.Equal(new NormalizedMapPoint(0f, 1f), updated.Vertices[0]);
+        Assert.Equal(updated.Vertices[0], updated.Vertices[^1]);
+    }
+
+    [Fact]
+    public void GeoJsonPolygonSerializer_ToDto_ClosesOpenRing()
+    {
+        var polygon = new PolygonGeometry(
+        [
+            new NormalizedMapPoint(0.1f, 0.2f),
+            new NormalizedMapPoint(0.8f, 0.2f),
+            new NormalizedMapPoint(0.4f, 0.7f),
+        ]);
+
+        var dto = GeoJsonPolygonSerializer.ToDto(polygon);
+
+        Assert.Equal(4, dto.Coordinates[0].Count);
+        Assert.Equal(dto.Coordinates[0][0], dto.Coordinates[0][^1]);
+    }
+
+    [Fact]
     public void PolygonDraftState_SupportsAddMoveRemoveAndBuild()
     {
         var draft = new PolygonDraftState();

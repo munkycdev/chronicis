@@ -1,0 +1,11 @@
+Build started 3/11/2026 9:37:35 PM.
+     1>Project "Z:\repos\chronicis\tests\Chronicis.Client.Tests\Chronicis.Client.Tests.csproj" on node 1 (Restore target(s)).
+     1>_GetAllRestoreProjectPathItems:
+         Determining projects to restore...
+     1>Done Building Project "Z:\repos\chronicis\tests\Chronicis.Client.Tests\Chronicis.Client.Tests.csproj" (Restore target(s)) -- FAILED.
+
+Build FAILED.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.11

@@ -83,6 +83,28 @@
     vector-effect: non-scaling-stroke;
 }
 
+.map-page__polygon--selected {
+    fill: color-mix(in srgb, var(--chronicis-secondary) 24%, transparent 76%);
+    stroke: color-mix(in srgb, var(--chronicis-secondary) 88%, var(--chronicis-background-light) 12%);
+    stroke-width: 0.0045;
+}
+
+.map-page__polygon--dirty {
+    stroke: color-mix(in srgb, var(--chronicis-accent, var(--chronicis-secondary)) 86%, var(--chronicis-background-light) 14%);
+}
+
+.map-page__polygon-vertex {
+    fill: var(--chronicis-background-light);
+    stroke: var(--chronicis-secondary);
+    stroke-width: 0.003;
+    vector-effect: non-scaling-stroke;
+}
+
+.map-page__polygon-vertex--active {
+    fill: var(--chronicis-secondary);
+    stroke: var(--chronicis-background-light);
+}
+
 .map-page__polygon-draft {
     fill: none;
     stroke: color-mix(in srgb, var(--chronicis-accent, var(--chronicis-secondary)) 78%, var(--chronicis-background-light) 22%);
@@ -468,6 +490,41 @@
     align-items: center;
     gap: 0.75rem;
     margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.map-page__polygon-editor {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.85rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: var(--chronicis-radius-lg);
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 30%, transparent 70%);
+    background: color-mix(in srgb, var(--chronicis-background-light) 94%, var(--chronicis-secondary) 6%);
+}
+
+.map-page__polygon-editor-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--chronicis-text-primary);
+}
+
+.map-page__polygon-editor-name {
+    color: var(--chronicis-secondary);
+}
+
+.map-page__polygon-editor-status {
+    font-size: 0.72rem;
+    color: color-mix(in srgb, var(--chronicis-primary) 72%, transparent 28%);
+}
+
+.map-page__polygon-editor-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
     flex-wrap: wrap;
 }
 
