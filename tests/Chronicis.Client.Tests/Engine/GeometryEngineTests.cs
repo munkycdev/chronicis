@@ -65,6 +65,135 @@ public class GeometryEngineTests
     }
 
     [Fact]
+    public void PolygonDraftState_CanComplete_RequiresThreeDistinctVertices()
+    {
+        var draft = new PolygonDraftState();
+        draft.AddVertex(new NormalizedMapPoint(0.1f, 0.1f));
+        draft.AddVertex(new NormalizedMapPoint(0.5f, 0.1f));
+
+        Assert.False(draft.CanComplete);
+
+        draft.AddVertex(new NormalizedMapPoint(0.5f, 0.5f));
+
+        Assert.True(draft.CanComplete);
+    }
+
+    [Fact]
+    public void PolygonDraftState_BuildClosedRing_AppendsStartVertex()
+    {
+        var draft = new PolygonDraftState();
+        draft.AddVertex(new NormalizedMapPoint(0.1f, 0.1f));
+        draft.AddVertex(new NormalizedMapPoint(0.5f, 0.1f));
+        draft.AddVertex(new NormalizedMapPoint(0.5f, 0.5f));
+
+        var ring = draft.BuildClosedRing();
+
+        Assert.Equal(4, ring.Count);
+        Assert.Equal(ring[0], ring[^1]);
+    }
+
+    [Fact]
+    public void PolygonDraftState_BuildClosedRing_CollapsesAdjacentDuplicateTerminalVertex()
+    {
+        var draft = new PolygonDraftState();
+        draft.AddVertex(new NormalizedMapPoint(0.1f, 0.1f));
+        draft.AddVertex(new NormalizedMapPoint(0.5f, 0.1f));
+        draft.AddVertex(new NormalizedMapPoint(0.5f, 0.5f));
+        draft.AddVertex(new NormalizedMapPoint(0.5005f, 0.5004f));
+
+        var ring = draft.BuildClosedRing();
+
+        Assert.Equal(4, ring.Count);
+        Assert.Equal(new NormalizedMapPoint(0.5f, 0.5f), ring[^2]);
+        Assert.Equal(ring[0], ring[^1]);
+    }
+
+    [Fact]
+    public void PolygonDraftState_ClearAndRemoveLastVertex_ResetLifecycle()
+    {
+        var draft = new PolygonDraftState();
+        draft.AddVertex(new NormalizedMapPoint(0.1f, 0.1f));
+
+        Assert.True(draft.RemoveLastVertex());
+        Assert.False(draft.RemoveLastVertex());
+
+        draft.AddVertex(new NormalizedMapPoint(0.2f, 0.2f));
+        draft.Clear();
+
+        Assert.True(draft.IsEmpty);
+        Assert.Empty(draft.BuildClosedRing());
+    }
+
+    [Fact]
+    public void MapViewportCoordinateConverter_ConvertsViewportPoint()
+    {
+        var result = MapViewportCoordinateConverter.TryConvertToNormalizedPoint(
+            viewportLocalX: 250d,
+            viewportLocalY: 100d,
+            viewportWidth: 1000d,
+            viewportHeight: 500d,
+            baseWidth: 1000d,
+            baseHeight: 500d,
+            panX: 0d,
+            panY: 0d,
+            zoom: 1d,
+            out var point);
+
+        Assert.True(result);
+        Assert.Equal(new NormalizedMapPoint(0.25f, 0.2f), point);
+    }
+
+    [Fact]
+    public void MapViewportCoordinateConverter_AppliesPanAndZoom()
+    {
+        var result = MapViewportCoordinateConverter.TryConvertToNormalizedPoint(
+            viewportLocalX: 450d,
+            viewportLocalY: 275d,
+            viewportWidth: 800d,
+            viewportHeight: 600d,
+            baseWidth: 1000d,
+            baseHeight: 500d,
+            panX: -50d,
+            panY: 25d,
+            zoom: 2d,
+            out var point);
+
+        Assert.True(result);
+        Assert.Equal(new NormalizedMapPoint(0.25f, 0.25f), point);
+    }
+
+    [Theory]
+    [InlineData(-1d, 50d, 100d, 100d, 100d, 100d, 0d, 0d, 1d)]
+    [InlineData(50d, 50d, 0d, 100d, 100d, 100d, 0d, 0d, 1d)]
+    [InlineData(150d, 50d, 100d, 100d, 100d, 100d, 0d, 0d, 1d)]
+    [InlineData(50d, 50d, 100d, 100d, 100d, 100d, 100d, 0d, 1d)]
+    public void MapViewportCoordinateConverter_InvalidInputs_ReturnFalse(
+        double localX,
+        double localY,
+        double viewportWidth,
+        double viewportHeight,
+        double baseWidth,
+        double baseHeight,
+        double panX,
+        double panY,
+        double zoom)
+    {
+        var result = MapViewportCoordinateConverter.TryConvertToNormalizedPoint(
+            localX,
+            localY,
+            viewportWidth,
+            viewportHeight,
+            baseWidth,
+            baseHeight,
+            panX,
+            panY,
+            zoom,
+            out _);
+
+        Assert.False(result);
+    }
+
+    [Fact]
     public void PolygonSvgPathBuilder_ValidPolygon_ReturnsSvgPath()
     {
         var polygon = new Chronicis.Shared.DTOs.Maps.PolygonGeometryDto
@@ -145,5 +274,35 @@ public class GeometryEngineTests
         };
 
         Assert.False(PolygonSvgPathBuilder.TryBuildPath(polygon, out _));
+    }
+
+    [Fact]
+    public void PolygonSvgPathBuilder_DraftPath_IncludesHoverPoint()
+    {
+        var result = PolygonSvgPathBuilder.TryBuildDraftPath(
+            [
+                new NormalizedMapPoint(0.1f, 0.2f),
+                new NormalizedMapPoint(0.8f, 0.2f)
+            ],
+            new NormalizedMapPoint(0.4f, 0.7f),
+            out var path);
+
+        Assert.True(result);
+        Assert.Equal("M 0.1 0.2 L 0.8 0.2 L 0.4 0.7", path);
+    }
+
+    [Fact]
+    public void PolygonSvgPathBuilder_DraftPath_WithoutHoverPoint_UsesCommittedVerticesOnly()
+    {
+        var result = PolygonSvgPathBuilder.TryBuildDraftPath(
+            [
+                new NormalizedMapPoint(0.1f, 0.2f),
+                new NormalizedMapPoint(0.8f, 0.2f)
+            ],
+            hoverPoint: null,
+            out var path);
+
+        Assert.True(result);
+        Assert.Equal("M 0.1 0.2 L 0.8 0.2", path);
     }
 }

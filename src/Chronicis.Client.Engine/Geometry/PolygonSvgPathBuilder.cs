@@ -69,4 +69,51 @@ public static class PolygonSvgPathBuilder
         pathData = builder.ToString();
         return true;
     }
+
+    public static bool TryBuildDraftPath(
+        IReadOnlyList<NormalizedMapPoint> vertices,
+        NormalizedMapPoint? hoverPoint,
+        out string pathData)
+    {
+        pathData = string.Empty;
+
+        if (vertices.Count == 0)
+        {
+            return false;
+        }
+
+        var builder = new System.Text.StringBuilder();
+        AppendPoint(builder, vertices[0], moveTo: true);
+
+        for (var index = 1; index < vertices.Count; index++)
+        {
+            if (!vertices[index].IsInBounds)
+            {
+                return false;
+            }
+
+            AppendPoint(builder, vertices[index], moveTo: false);
+        }
+
+        if (hoverPoint is { IsInBounds: true } previewPoint)
+        {
+            AppendPoint(builder, previewPoint, moveTo: false);
+        }
+
+        pathData = builder.ToString();
+        return true;
+    }
+
+    private static void AppendPoint(System.Text.StringBuilder builder, NormalizedMapPoint point, bool moveTo)
+    {
+        if (!point.IsInBounds)
+        {
+            throw new InvalidOperationException("SVG draft path received an out-of-bounds point.");
+        }
+
+        builder.Append(moveTo ? "M " : " L ");
+        builder.Append(point.X.ToString("0.####", CultureInfo.InvariantCulture));
+        builder.Append(' ');
+        builder.Append(point.Y.ToString("0.####", CultureInfo.InvariantCulture));
+    }
 }

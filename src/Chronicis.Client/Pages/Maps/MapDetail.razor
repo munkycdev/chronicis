@@ -3,6 +3,7 @@
 @implements IAsyncDisposable
 @using System.Globalization
 @using Chronicis.Client.Engine.Geometry
+@using Chronicis.Client.Engine.Interaction
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Client.Utilities
 @using Chronicis.Shared.DTOs.Maps
@@ -145,16 +146,32 @@ else
                 @(_isCreatePinMode ? "Create Pin: ON" : "Create Pin")
             </MudButton>
 
+            <MudButton Variant="@(_isCreatePolygonMode ? Variant.Filled : Variant.Outlined)"
+                       Color="Color.Primary"
+                       OnClick="ToggleCreatePolygonMode"
+                       Disabled="@_isCreatingPolygon"
+                       StartIcon="@Icons.Material.Filled.ChangeHistory">
+                @(_isCreatePolygonMode ? "Create Polygon: ON" : "Create Polygon")
+            </MudButton>
+
             <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                @(_isCreatePinMode
-                    ? "Click on the map to choose pin details."
-                    : "Enable Create Pin, then click map to place a pin.")
+                @GetMapInteractionHelpText()
             </MudText>
         </div>
+
+        @if (_isCreatePolygonMode && !SelectedLayerId.HasValue)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-4">Select a layer before saving a polygon.</MudAlert>
+        }
 
         @if (!string.IsNullOrWhiteSpace(_createPinError))
         {
             <MudAlert Severity="Severity.Error" Class="mb-4">@_createPinError</MudAlert>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_createPolygonError))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_createPolygonError</MudAlert>
         }
 
         @if (!string.IsNullOrWhiteSpace(_pinDeleteError))
@@ -166,11 +183,15 @@ else
             <div @ref="_mapViewportRef"
                  class="@GetMapViewportClass()"
                  aria-hidden="false"
+                 tabindex="0"
                  @onclick="OnMapImageShellClick"
+                 @ondblclick="OnMapViewportDoubleClickAsync"
+                 @onkeydown="OnMapViewportKeyDown"
+                 @onkeydown:preventDefault="_isCreatePolygonMode"
                  @onmousedown="OnMapViewportMouseDown"
                  @onmousemove="OnMapViewportMouseMove"
-                @onmouseup="OnMapViewportMouseUp"
-                 @onmouseleave="OnMapViewportMouseUp">
+                 @onmouseup="OnMapViewportMouseUp"
+                 @onmouseleave="OnMapViewportMouseLeave">
                 <div class="map-page__map-stage" style="@GetMapStageStyle()">
                     <img @ref="_mapImageRef"
                          src="@_basemapReadUrl"
@@ -190,8 +211,21 @@ else
                                   data-layer-id="@polygon.LayerId.ToString()">
                             </path>
                         }
+                        @if (_isCreatePolygonMode && !string.IsNullOrWhiteSpace(_polygonDraftPathData))
+                        {
+                            <path class="map-page__polygon-draft" d="@_polygonDraftPathData"></path>
+
+                            @foreach (var vertex in _polygonDraft.Vertices)
+                            {
+                                <circle class="map-page__polygon-draft-vertex"
+                                        cx="@FormatSvgCoordinate(vertex.X)"
+                                        cy="@FormatSvgCoordinate(vertex.Y)"
+                                        r="0.0075">
+                                </circle>
+                            }
+                        }
                     </svg>
-                    <div class="map-page__pins-overlay @(_isCreatePinMode ? "map-page__pins-overlay--create" : string.Empty)"
+                    <div class="map-page__pins-overlay @(_isCreatePinMode ? "map-page__pins-overlay--create" : string.Empty) @(_isCreatePolygonMode ? "map-page__pins-overlay--polygon-create" : string.Empty)"
                          aria-hidden="false">
                         @foreach (var pin in GetVisiblePins())
                         {
@@ -348,13 +382,16 @@ else
     private const double ZoomRangeMultiplier = 5d;
     private const double PanDragThresholdPx = 3d;
     private const double PanEnableZoomDelta = 0.0001d;
+    private const int PolygonClickDebounceMs = 175;
 
     private bool _isLoading = true;
     private bool _isSavingMap;
     private bool _hasUnsavedMapChanges;
     private bool _canManageMap;
     private bool _isCreatePinMode;
+    private bool _isCreatePolygonMode;
     private bool _isCreatingPin;
+    private bool _isCreatingPolygon;
     private bool _isDeletingPin;
     private bool _isCreatePinDialogOpen;
     private MapDetailState _state = MapDetailState.Loaded;
@@ -363,6 +400,7 @@ else
     private string _editMapName = "Map";
     private string _mapSaveError = string.Empty;
     private string _createPinError = string.Empty;
+    private string _createPolygonError = string.Empty;
     private string _pinDeleteError = string.Empty;
     private string _addLayerError = string.Empty;
     private string _manageLayerError = string.Empty;
@@ -384,6 +422,7 @@ else
     private int? _dropTargetIndex;
     private List<MapPinResponseDto> _pins = [];
     private readonly Dictionary<Guid, PolygonRenderModel> _polygonsByFeatureId = [];
+    private readonly PolygonDraftState _polygonDraft = new();
     private Guid? _selectedPinId;
     private bool _isAddingLayer;
     private bool _isRenamingLayer;
@@ -419,6 +458,11 @@ else
     private double _dragStartPanY;
     private bool _shouldFocusCreateLayerInput;
     private bool _shouldFocusRenameLayerInput;
+    private bool _shouldFocusMapViewport;
+    private NormalizedMapPoint? _polygonHoverPoint;
+    private string _polygonDraftPathData = string.Empty;
+    private CancellationTokenSource? _pendingPolygonClickCts;
+    private NormalizedMapPoint? _pendingPolygonClickPoint;
     private ElementReference _createLayerInputRef;
     private ElementReference _renameLayerInputRef;
     private ElementReference _mapViewportRef;
@@ -464,22 +508,36 @@ else
             }
         }
 
-        if (!_shouldFocusRenameLayerInput || !_editingLayerId.HasValue)
+        if (_shouldFocusRenameLayerInput && _editingLayerId.HasValue)
         {
-            return;
+            _shouldFocusRenameLayerInput = false;
+
+            try
+            {
+                await _renameLayerInputRef.FocusAsync();
+            }
+            catch (JSException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
         }
 
-        _shouldFocusRenameLayerInput = false;
+        if (_shouldFocusMapViewport && _isCreatePolygonMode)
+        {
+            _shouldFocusMapViewport = false;
 
-        try
-        {
-            await _renameLayerInputRef.FocusAsync();
-        }
-        catch (JSException)
-        {
-        }
-        catch (InvalidOperationException)
-        {
+            try
+            {
+                await _mapViewportRef.FocusAsync();
+            }
+            catch (JSException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
         }
     }
 
@@ -495,6 +553,7 @@ else
         _editMapName = "Map";
         _mapSaveError = string.Empty;
         _createPinError = string.Empty;
+        _createPolygonError = string.Empty;
         _pinDeleteError = string.Empty;
         _addLayerError = string.Empty;
         _manageLayerError = string.Empty;
@@ -506,7 +565,9 @@ else
         _createPinArticleIdInput = string.Empty;
         _createPinNameInput = string.Empty;
         _isCreatePinMode = false;
+        _isCreatePolygonMode = false;
         _isCreatingPin = false;
+        _isCreatingPolygon = false;
         _isDeletingPin = false;
         _isCreatePinDialogOpen = false;
         _basemapReadUrl = string.Empty;
@@ -549,12 +610,14 @@ else
         _isMapPointerDown = false;
         _isMapDragging = false;
         _suppressCreatePinClick = false;
+        ClearPolygonDraft();
         _dragStartClientX = 0d;
         _dragStartClientY = 0d;
         _dragStartPanX = 0d;
         _dragStartPanY = 0d;
         _shouldFocusCreateLayerInput = false;
         _shouldFocusRenameLayerInput = false;
+        _shouldFocusMapViewport = false;
         BuildBreadcrumbs();
 
         var worldTask = WorldApi.GetWorldAsync(WorldId);
@@ -1887,18 +1950,7 @@ else
 
         foreach (var feature in features)
         {
-            if (feature.MapId != MapId
-                || feature.FeatureType != MapFeatureType.Polygon
-                || !PolygonSvgPathBuilder.TryBuildPath(feature.Polygon, out var pathData))
-            {
-                continue;
-            }
-
-            _polygonsByFeatureId[feature.FeatureId] = new PolygonRenderModel(
-                feature.FeatureId,
-                feature.LayerId,
-                feature.Name ?? string.Empty,
-                pathData);
+            TrySetRenderedPolygon(feature);
         }
     }
 
@@ -1940,13 +1992,39 @@ else
         }
         else
         {
+            ExitPolygonMode();
             _isMapPointerDown = false;
             _isMapDragging = false;
         }
     }
 
+    private void ToggleCreatePolygonMode()
+    {
+        _createPolygonError = string.Empty;
+        _selectedPinId = null;
+        _isCreatePolygonMode = !_isCreatePolygonMode;
+
+        if (!_isCreatePolygonMode)
+        {
+            ClearPolygonDraft();
+            return;
+        }
+
+        _isCreatePinMode = false;
+        CancelCreatePinDialog();
+        _isMapPointerDown = false;
+        _isMapDragging = false;
+        _shouldFocusMapViewport = true;
+        UpdatePolygonDraftPreview();
+    }
+
     private string GetMapViewportClass()
     {
+        if (_isCreatePolygonMode)
+        {
+            return "map-page__viewport map-page__viewport--polygon-create";
+        }
+
         if (_isCreatePinMode)
         {
             return "map-page__viewport map-page__viewport--create";
@@ -2056,6 +2134,11 @@ else
 
     private void OnMapViewportMouseMove(MouseEventArgs args)
     {
+        if (_isCreatePolygonMode)
+        {
+            UpdatePolygonHoverPoint(args);
+        }
+
         if (!_isMapPointerDown)
         {
             return;
@@ -2084,6 +2167,19 @@ else
 
         _isMapPointerDown = false;
         _isMapDragging = false;
+    }
+
+    private void OnMapViewportMouseLeave(MouseEventArgs args)
+    {
+        OnMapViewportMouseUp(args);
+
+        if (!_isCreatePolygonMode)
+        {
+            return;
+        }
+
+        _polygonHoverPoint = null;
+        UpdatePolygonDraftPreview();
     }
 
     private async Task OnMapImageLoaded()
@@ -2160,6 +2256,8 @@ else
 
     public async ValueTask DisposeAsync()
     {
+        CancelPendingPolygonClick();
+
         try
         {
             if (_mapInteropModule != null)
@@ -2175,6 +2273,7 @@ else
     private bool CanPanMap() =>
         _hasMapViewportLayout
         && !_isCreatePinMode
+        && !_isCreatePolygonMode
         && _mapZoom > _mapMinZoom + PanEnableZoomDelta;
 
     private void SetZoomLevel(double targetZoom)
@@ -2333,6 +2432,12 @@ else
             return;
         }
 
+        if (_isCreatePolygonMode)
+        {
+            await HandlePolygonViewportClickAsync(args);
+            return;
+        }
+
         if (!_isCreatePinMode || _isCreatingPin || _isCreatePinDialogOpen)
         {
             return;
@@ -2369,6 +2474,90 @@ else
         {
             _createPinError = "Could not determine map bounds for pin placement.";
         }
+    }
+
+    private async Task HandlePolygonViewportClickAsync(MouseEventArgs args)
+    {
+        await FocusMapViewportAsync();
+
+        if (_isCreatingPolygon || args.Detail > 1)
+        {
+            return;
+        }
+
+        _createPolygonError = string.Empty;
+        if (!TryGetPolygonDraftPoint(args, out var point))
+        {
+            _createPolygonError = "Could not determine map bounds for polygon creation.";
+            return;
+        }
+
+        if (_pendingPolygonClickPoint.HasValue)
+        {
+            FlushPendingPolygonClick();
+        }
+
+        SchedulePolygonVertexAdd(point);
+    }
+
+    private async Task OnMapViewportDoubleClickAsync(MouseEventArgs args)
+    {
+        if (!_isCreatePolygonMode || _isCreatingPolygon)
+        {
+            return;
+        }
+
+        await FocusMapViewportAsync();
+        _createPolygonError = string.Empty;
+
+        if (!TryGetPolygonDraftPoint(args, out var completionPoint))
+        {
+            _createPolygonError = "Could not determine map bounds for polygon creation.";
+            return;
+        }
+
+        CancelPendingPolygonClick();
+
+        if (!_polygonDraft.EndsWith(completionPoint))
+        {
+            _polygonDraft.AddVertex(completionPoint);
+        }
+
+        UpdatePolygonDraftPreview();
+        await CompletePolygonDraftAsync();
+    }
+
+    private Task OnMapViewportKeyDown(KeyboardEventArgs args)
+    {
+        if (!_isCreatePolygonMode)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (string.Equals(args.Key, "Escape", StringComparison.Ordinal))
+        {
+            _createPolygonError = string.Empty;
+            ClearPolygonDraft();
+            return Task.CompletedTask;
+        }
+
+        if (string.Equals(args.Key, "Backspace", StringComparison.Ordinal))
+        {
+            _createPolygonError = string.Empty;
+
+            if (_pendingPolygonClickPoint.HasValue)
+            {
+                CancelPendingPolygonClick();
+            }
+            else
+            {
+                _polygonDraft.RemoveLastVertex();
+            }
+
+            UpdatePolygonDraftPreview();
+        }
+
+        return Task.CompletedTask;
     }
 
     private void CancelCreatePinDialog()
@@ -2565,6 +2754,205 @@ else
         var y = _pendingCreatePinViewportY ?? 0.5f;
         return $"left:{x * 100:F4}%;top:{y * 100:F4}%;";
     }
+
+    private async Task CompletePolygonDraftAsync()
+    {
+        if (!SelectedLayerId.HasValue)
+        {
+            _createPolygonError = "Select a layer before saving a polygon.";
+            return;
+        }
+
+        if (!_polygonDraft.CanComplete)
+        {
+            _createPolygonError = "Polygon requires at least 3 distinct vertices.";
+            return;
+        }
+
+        var polygon = _polygonDraft.BuildClosedPolygon();
+        if (!polygon.IsClosed || polygon.Vertices.Any(vertex => !vertex.IsInBounds))
+        {
+            _createPolygonError = "Polygon geometry is invalid.";
+            return;
+        }
+
+        _isCreatingPolygon = true;
+
+        try
+        {
+            var created = await MapApi.CreateFeatureAsync(
+                WorldId,
+                MapId,
+                new MapFeatureCreateDto
+                {
+                    FeatureType = MapFeatureType.Polygon,
+                    LayerId = SelectedLayerId.Value,
+                    Polygon = GeoJsonPolygonSerializer.ToDto(polygon),
+                });
+
+            if (created == null || !TrySetRenderedPolygon(created))
+            {
+                _createPolygonError = "Failed to create polygon.";
+                return;
+            }
+
+            _createPolygonError = string.Empty;
+            ClearPolygonDraft();
+        }
+        catch (Exception ex)
+        {
+            _createPolygonError = $"Failed to create polygon: {ex.Message}";
+        }
+        finally
+        {
+            _isCreatingPolygon = false;
+        }
+    }
+
+    private bool TrySetRenderedPolygon(MapFeatureDto feature)
+    {
+        if (feature.MapId != MapId
+            || feature.FeatureType != MapFeatureType.Polygon
+            || !PolygonSvgPathBuilder.TryBuildPath(feature.Polygon, out var pathData))
+        {
+            return false;
+        }
+
+        _polygonsByFeatureId[feature.FeatureId] = new PolygonRenderModel(
+            feature.FeatureId,
+            feature.LayerId,
+            feature.Name ?? string.Empty,
+            pathData);
+
+        return true;
+    }
+
+    private bool TryGetPolygonDraftPoint(MouseEventArgs args, out NormalizedMapPoint point) =>
+        MapViewportCoordinateConverter.TryConvertToNormalizedPoint(
+            args.OffsetX,
+            args.OffsetY,
+            _mapViewportWidth,
+            _mapViewportHeight,
+            _mapBaseWidth,
+            _mapBaseHeight,
+            _mapPanX,
+            _mapPanY,
+            _mapZoom,
+            out point);
+
+    private void UpdatePolygonHoverPoint(MouseEventArgs args)
+    {
+        if (TryGetPolygonDraftPoint(args, out var point))
+        {
+            _polygonHoverPoint = point;
+        }
+        else
+        {
+            _polygonHoverPoint = null;
+        }
+
+        UpdatePolygonDraftPreview();
+    }
+
+    private void UpdatePolygonDraftPreview()
+    {
+        var hoverPoint = _isCreatePolygonMode ? _polygonHoverPoint : null;
+        _polygonDraftPathData = PolygonSvgPathBuilder.TryBuildDraftPath(_polygonDraft.Vertices, hoverPoint, out var pathData)
+            ? pathData
+            : string.Empty;
+    }
+
+    private void SchedulePolygonVertexAdd(NormalizedMapPoint point)
+    {
+        CancelPendingPolygonClick();
+        _pendingPolygonClickPoint = point;
+        _pendingPolygonClickCts = new CancellationTokenSource();
+        _ = CommitPendingPolygonVertexAsync(_pendingPolygonClickCts.Token);
+    }
+
+    private async Task CommitPendingPolygonVertexAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(PolygonClickDebounceMs, cancellationToken);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        if (cancellationToken.IsCancellationRequested || !_pendingPolygonClickPoint.HasValue)
+        {
+            return;
+        }
+
+        FlushPendingPolygonClick();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void FlushPendingPolygonClick()
+    {
+        var point = _pendingPolygonClickPoint;
+        CancelPendingPolygonClick();
+
+        if (!point.HasValue)
+        {
+            return;
+        }
+
+        _polygonDraft.AddVertex(point.Value);
+        UpdatePolygonDraftPreview();
+    }
+
+    private void CancelPendingPolygonClick()
+    {
+        if (_pendingPolygonClickCts != null)
+        {
+            _pendingPolygonClickCts.Cancel();
+            _pendingPolygonClickCts.Dispose();
+            _pendingPolygonClickCts = null;
+        }
+
+        _pendingPolygonClickPoint = null;
+    }
+
+    private void ClearPolygonDraft()
+    {
+        CancelPendingPolygonClick();
+        _polygonDraft.Clear();
+        _polygonHoverPoint = null;
+        _polygonDraftPathData = string.Empty;
+    }
+
+    private void ExitPolygonMode()
+    {
+        _isCreatePolygonMode = false;
+        ClearPolygonDraft();
+    }
+
+    private async Task FocusMapViewportAsync()
+    {
+        try
+        {
+            await _mapViewportRef.FocusAsync();
+        }
+        catch (JSException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    private string GetMapInteractionHelpText() =>
+        _isCreatePolygonMode
+            ? "Click to add vertices. Double-click to save. Backspace removes the last point. Escape cancels."
+            : _isCreatePinMode
+                ? "Click on the map to choose pin details."
+                : "Enable Create Pin or Create Polygon, then click the map.";
+
+    private static string FormatSvgCoordinate(float value) =>
+        value.ToString("0.####", CultureInfo.InvariantCulture);
 
     private static bool TryParseLinkedArticleId(string value, out Guid? linkedArticleId)
     {

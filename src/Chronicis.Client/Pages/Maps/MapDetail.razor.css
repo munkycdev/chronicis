@@ -25,6 +25,16 @@
     cursor: crosshair;
 }
 
+.map-page__viewport--polygon-create {
+    cursor: crosshair;
+    outline: 2px solid color-mix(in srgb, var(--chronicis-secondary) 28%, transparent 72%);
+    outline-offset: -2px;
+}
+
+.map-page__viewport--polygon-create:focus {
+    outline-color: color-mix(in srgb, var(--chronicis-secondary) 72%, transparent 28%);
+}
+
 .map-page__viewport--pan {
     cursor: grab;
 }
@@ -73,6 +83,23 @@
     vector-effect: non-scaling-stroke;
 }
 
+.map-page__polygon-draft {
+    fill: none;
+    stroke: color-mix(in srgb, var(--chronicis-accent, var(--chronicis-secondary)) 78%, var(--chronicis-background-light) 22%);
+    stroke-width: 0.0035;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 0.012 0.01;
+    vector-effect: non-scaling-stroke;
+}
+
+.map-page__polygon-draft-vertex {
+    fill: var(--chronicis-background-light);
+    stroke: var(--chronicis-secondary);
+    stroke-width: 0.0025;
+    vector-effect: non-scaling-stroke;
+}
+
 .map-page__pins-overlay {
     position: absolute;
     inset: 0;
@@ -84,6 +111,10 @@
     pointer-events: auto;
     cursor: crosshair;
     background: color-mix(in srgb, var(--chronicis-secondary) 6%, transparent 94%);
+}
+
+.map-page__pins-overlay--polygon-create {
+    pointer-events: none;
 }
 
 .map-page__pin {
