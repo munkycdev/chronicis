@@ -30,16 +30,11 @@ public class GeometryEngineBuildIntegrationTests
     [Fact]
     public void EngineProject_ProducesStaticWebAssetManifest()
     {
-        var manifestPath = Path.Combine(
-            GetRepoRoot(),
-            "src",
-            "Chronicis.Client",
-            "bin",
-            "Debug",
-            "net9.0",
-            "Chronicis.Client.staticwebassets.runtime.json");
+        var manifestPath = FindClientBinArtifact(
+            "Chronicis.Client.staticwebassets.runtime.json",
+            "net9.0");
 
-        Assert.True(File.Exists(manifestPath));
+        Assert.True(File.Exists(manifestPath), manifestPath);
 
         using var payload = JsonDocument.Parse(File.ReadAllText(manifestPath));
         var text = payload.RootElement.GetRawText();
@@ -49,16 +44,11 @@ public class GeometryEngineBuildIntegrationTests
     [Fact]
     public void ClientBuildOutput_IncludesEngineArtifact()
     {
-        var manifestPath = Path.Combine(
-            GetRepoRoot(),
-            "src",
-            "Chronicis.Client",
-            "obj",
-            "Debug",
-            "net9.0",
-            "staticwebassets.build.json");
+        var manifestPath = FindClientObjArtifact(
+            "staticwebassets.build.json",
+            "net9.0");
 
-        Assert.True(File.Exists(manifestPath));
+        Assert.True(File.Exists(manifestPath), manifestPath);
 
         using var payload = JsonDocument.Parse(File.ReadAllText(manifestPath));
         var text = payload.RootElement.GetRawText();
@@ -68,18 +58,13 @@ public class GeometryEngineBuildIntegrationTests
     [Fact]
     public void ClientBuildOutput_CopiesEngineScriptToClientWwwroot()
     {
-        var scriptPath = Path.Combine(
-            GetRepoRoot(),
-            "src",
-            "Chronicis.Client",
-            "bin",
-            "Debug",
+        var scriptPath = FindClientBinArtifact(
+            "chronicis-map-engine.js",
             "net9.0",
             "wwwroot",
-            "js",
-            "chronicis-map-engine.js");
+            "js");
 
-        Assert.True(File.Exists(scriptPath));
+        Assert.True(File.Exists(scriptPath), scriptPath);
     }
 
     private static string GetRepoRoot()
@@ -91,5 +76,23 @@ public class GeometryEngineBuildIntegrationTests
         }
 
         return current?.FullName ?? throw new InvalidOperationException("Repository root not found.");
+    }
+
+    private static string FindClientBinArtifact(string fileName, params string[] requiredSegments) =>
+        FindClientArtifact("bin", fileName, requiredSegments);
+
+    private static string FindClientObjArtifact(string fileName, params string[] requiredSegments) =>
+        FindClientArtifact("obj", fileName, requiredSegments);
+
+    private static string FindClientArtifact(string rootFolder, string fileName, params string[] requiredSegments)
+    {
+        var clientRoot = Path.Combine(GetRepoRoot(), "src", "Chronicis.Client", rootFolder);
+        var match = Directory
+            .EnumerateFiles(clientRoot, fileName, SearchOption.AllDirectories)
+            .FirstOrDefault(path => requiredSegments.All(segment =>
+                path.Contains($"{Path.DirectorySeparatorChar}{segment}{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
+                || path.EndsWith($"{Path.DirectorySeparatorChar}{segment}", StringComparison.OrdinalIgnoreCase)));
+
+        return match ?? Path.Combine(clientRoot, requiredSegments.Aggregate(string.Empty, Path.Combine), fileName);
     }
 }
