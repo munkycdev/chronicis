@@ -18,6 +18,7 @@ public class MapFeatureDtosTests
             LayerId = Guid.NewGuid(),
             FeatureType = MapFeatureType.Point,
             Name = "Capital",
+            Color = "teal",
             Point = new MapFeaturePointDto { X = 0.2f, Y = 0.4f },
         };
 
@@ -26,6 +27,7 @@ public class MapFeatureDtosTests
 
         Assert.NotNull(roundTrip);
         Assert.Equal(MapFeatureType.Point, roundTrip!.FeatureType);
+        Assert.Equal("teal", roundTrip.Color);
         Assert.NotNull(roundTrip.Point);
         Assert.Equal(0.2f, roundTrip.Point!.X);
         Assert.Null(roundTrip.Polygon);
@@ -41,6 +43,7 @@ public class MapFeatureDtosTests
             LayerId = Guid.NewGuid(),
             FeatureType = MapFeatureType.Polygon,
             Name = "Region",
+            Color = "amber",
             Polygon = new PolygonGeometryDto
             {
                 Type = "Polygon",
@@ -68,6 +71,7 @@ public class MapFeatureDtosTests
         Assert.Equal(MapFeatureType.Polygon, roundTrip!.FeatureType);
         Assert.NotNull(roundTrip.Polygon);
         Assert.Equal("Polygon", roundTrip.Polygon!.Type);
+        Assert.Equal("amber", roundTrip.Color);
         Assert.Single(roundTrip.Polygon.Coordinates);
         Assert.Equal(4, roundTrip.Polygon.Coordinates[0].Count);
         Assert.Equal(0.1f, roundTrip.Polygon.Coordinates[0][0][0]);

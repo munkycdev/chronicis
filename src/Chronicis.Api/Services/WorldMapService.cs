@@ -748,6 +748,7 @@ public sealed class WorldMapService : IWorldMapService
                 MapLayerId = layerId,
                 FeatureType = MapFeatureType.Point,
                 Name = featureName,
+                Color = dto.Color,
                 X = dto.Point.X,
                 Y = dto.Point.Y,
                 LinkedArticleId = dto.LinkedArticleId,
@@ -771,6 +772,7 @@ public sealed class WorldMapService : IWorldMapService
             MapLayerId = layerId,
             FeatureType = MapFeatureType.Polygon,
             Name = featureName,
+            Color = dto.Color,
             LinkedArticleId = dto.LinkedArticleId,
         };
 
@@ -839,6 +841,7 @@ public sealed class WorldMapService : IWorldMapService
 
         var layerId = await ResolveRequestedLayerIdAsync(worldId, mapId, dto.LayerId);
         feature.Name = NormalizePinName(dto.Name);
+        feature.Color = dto.Color;
         feature.MapLayerId = layerId;
         feature.LinkedArticleId = dto.LinkedArticleId;
 
@@ -1291,6 +1294,7 @@ public sealed class WorldMapService : IWorldMapService
                 LayerId = feature.MapLayerId,
                 FeatureType = feature.FeatureType,
                 Name = feature.Name,
+                Color = feature.Color,
                 LinkedArticleId = feature.LinkedArticleId,
                 LinkedArticle = feature.LinkedArticleId.HasValue
                     && linkedArticles.TryGetValue(feature.LinkedArticleId.Value, out var title)

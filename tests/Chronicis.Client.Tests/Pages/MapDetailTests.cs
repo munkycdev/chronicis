@@ -103,6 +103,34 @@ public class MapDetailTests : MudBlazorTestContext
     }
 
     [Fact]
+    public void MapDetail_PolygonCreateMode_ShowsDraftEditorWithEnabledSave()
+    {
+        var cut = RenderMapDetail();
+        cut.WaitForElement(".map-page__create-pin-controls");
+
+        cut.FindAll("button")
+            .Single(button => button.TextContent.Contains("Create Polygon", StringComparison.Ordinal))
+            .Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            var editor = cut.Find(".map-page__polygon-editor");
+            Assert.Contains("Editing polygon", editor.TextContent, StringComparison.Ordinal);
+            Assert.Contains("Draft", editor.TextContent, StringComparison.Ordinal);
+            Assert.Equal(
+                ["blue", "green", "amber", "red", "teal"],
+                cut.FindAll("#create-polygon-color option").Select(option => option.GetAttribute("value")).ToList());
+
+            var saveButton = cut.FindAll(".map-page__polygon-editor button")
+                .Single(button => string.Equals(button.TextContent.Trim(), "Save", StringComparison.Ordinal));
+            Assert.False(saveButton.HasAttribute("disabled"));
+            Assert.DoesNotContain(
+                cut.FindAll(".map-page__polygon-editor button"),
+                button => string.Equals(button.TextContent.Trim(), "Delete", StringComparison.Ordinal));
+        });
+    }
+
+    [Fact]
     public async Task MapDetail_MissingSelectedLayer_BlocksPolygonCompletion()
     {
         var cut = RenderMapDetail();
@@ -123,6 +151,31 @@ public class MapDetailTests : MudBlazorTestContext
             _mapApi.ReceivedCalls(),
             call => string.Equals(call.GetMethodInfo().Name, nameof(IMapApiService.CreateFeatureAsync), StringComparison.Ordinal));
         Assert.Equal("Select a layer before saving a polygon.", GetField<string>(cut.Instance, "_createPolygonError"));
+    }
+
+    [Fact]
+    public async Task MapDetail_HiddenSelectedLayer_BlocksPolygonCompletion()
+    {
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        await InvokePrivateOnRendererAsync(cut, "ToggleCreatePolygonMode");
+        SetField(cut.Instance, "SelectedLayerId", HiddenChildLayerId);
+
+        var draft = GetField<PolygonDraftState>(cut.Instance, "_polygonDraft");
+        draft.AddVertex(new(0.1f, 0.1f));
+        draft.AddVertex(new(0.5f, 0.1f));
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapViewportDoubleClickAsync",
+            new MouseEventArgs { OffsetX = 500, OffsetY = 250 });
+
+        Assert.DoesNotContain(
+            _mapApi.ReceivedCalls(),
+            call => string.Equals(call.GetMethodInfo().Name, nameof(IMapApiService.CreateFeatureAsync), StringComparison.Ordinal));
+        Assert.Equal(
+            "Selected layer is hidden. Enable the layer (and ancestors) before saving a polygon.",
+            GetField<string>(cut.Instance, "_createPolygonError"));
     }
 
     [Fact]
@@ -204,6 +257,49 @@ public class MapDetailTests : MudBlazorTestContext
         var visiblePolygons = GetVisiblePolygonModels(cut.Instance);
         Assert.Single(visiblePolygons);
         Assert.Equal("M 0.1 0.2 L 0.4 0.2 L 0.45 0.5 L 0.1 0.2 Z", GetProperty<string>(visiblePolygons[0], "PathData"));
+        Assert.Equal("Polygon saved to 'Visible'.", GetField<string>(cut.Instance, "_createPolygonStatus"));
+        Assert.Equal(Guid.Parse("30000000-0000-0000-0000-000000000010"), GetField<Guid?>(cut.Instance, "_selectedPolygonFeatureId"));
+    }
+
+    [Fact]
+    public async Task MapDetail_CreatePolygonEditorSave_ClosesAndPersistsDraft()
+    {
+        var createdFeatureId = Guid.Parse("30000000-0000-0000-0000-000000000012");
+        MapFeatureCreateDto? capturedRequest = null;
+        _mapApi.CreateFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapFeatureCreateDto>())
+            .Returns(call =>
+            {
+                capturedRequest = call.ArgAt<MapFeatureCreateDto>(2);
+                return CreatePolygonFeature(createdFeatureId, capturedRequest.LayerId, capturedRequest.Polygon!, color: capturedRequest.Color);
+            });
+
+        var cut = RenderMapDetail();
+        cut.WaitForElement(".map-page__create-pin-controls");
+        SetMapViewportLayout(cut.Instance);
+        SetField(cut.Instance, "SelectedLayerId", VisibleChildLayerId);
+        cut.FindAll("button")
+            .Single(button => button.TextContent.Contains("Create Polygon", StringComparison.Ordinal))
+            .Click();
+
+        await AddPolygonVertexAsync(cut, 100, 100);
+        await AddPolygonVertexAsync(cut, 400, 100);
+        await InvokePrivateOnRendererAsync(cut, "OnMapImageShellClick", new MouseEventArgs { OffsetX = 450, OffsetY = 250, Detail = 1 });
+        cut.Find("#create-polygon-color").Change("green");
+
+        cut.FindAll(".map-page__polygon-editor button")
+            .Single(button => string.Equals(button.TextContent.Trim(), "Save", StringComparison.Ordinal))
+            .Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.NotNull(capturedRequest);
+            Assert.Equal(4, capturedRequest!.Polygon!.Coordinates[0].Count);
+            Assert.Equal(new[] { 0.45f, 0.5f }, capturedRequest.Polygon.Coordinates[0][2]);
+            Assert.Equal(capturedRequest.Polygon.Coordinates[0][0], capturedRequest.Polygon.Coordinates[0][^1]);
+            Assert.Equal("green", capturedRequest.Color);
+            Assert.Equal("Polygon saved to 'Visible'.", GetField<string>(cut.Instance, "_createPolygonStatus"));
+            Assert.Equal(createdFeatureId, GetField<Guid?>(cut.Instance, "_selectedPolygonFeatureId"));
+        });
     }
 
     [Fact]
@@ -257,6 +353,47 @@ public class MapDetailTests : MudBlazorTestContext
         {
             var path = cut.Find($"path[data-feature-id='{featureId}']");
             Assert.Equal("M 0.1 0.2 L 0.8 0.2 L 0.4 0.7 L 0.1 0.2 Z", path.GetAttribute("d"));
+        });
+    }
+
+    [Fact]
+    public void MapDetail_NamedPolygon_RendersCenteredLabel()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000098");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId, name: "Kasandrien")
+        ]);
+
+        var cut = RenderMapDetail();
+
+        cut.WaitForAssertion(() =>
+        {
+            var label = cut.Find($".map-page__polygon-label[data-feature-id='{featureId}']");
+            var style = label.GetAttribute("style");
+            Assert.Equal("Kasandrien", label.TextContent.Trim());
+            Assert.Contains("left:43.3333%", style, StringComparison.Ordinal);
+            Assert.Contains("top:36.6667%", style, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
+    public void MapDetail_PersistedPolygon_WithoutColor_UsesBlueFallbackStyle()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000099");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId, color: null)
+        ]);
+
+        var cut = RenderMapDetail();
+
+        cut.WaitForAssertion(() =>
+        {
+            var path = cut.Find($"path[data-feature-id='{featureId}']");
+            var style = path.GetAttribute("style");
+            Assert.Contains("--map-polygon-fill:rgb(59 130 246 / 0.35)", style, StringComparison.Ordinal);
+            Assert.Contains("--map-polygon-stroke:rgb(30 64 175 / 0.95)", style, StringComparison.Ordinal);
         });
     }
 
@@ -340,7 +477,12 @@ public class MapDetailTests : MudBlazorTestContext
         cut.WaitForAssertion(() =>
         {
             Assert.Equal(featureId, GetField<Guid?>(cut.Instance, "_selectedPolygonFeatureId"));
-            Assert.Equal(3, cut.FindAll("circle[data-polygon-vertex-index]").Count);
+            Assert.Equal(3, cut.FindAll("span[data-polygon-vertex-index]").Count);
+            Assert.All(
+                cut.FindAll("span[data-polygon-vertex-index]"),
+                element => Assert.Equal("⊙", element.TextContent.Trim()));
+            var nameInput = cut.Find("#selected-polygon-name");
+            Assert.Equal("Polygon", nameInput.GetAttribute("value"));
         });
     }
 
@@ -373,7 +515,7 @@ public class MapDetailTests : MudBlazorTestContext
         _articleApi.GetArticleDetailAsync(articleId).Returns(new ArticleDto
         {
             Id = articleId,
-            Breadcrumbs = [new ArticleBreadcrumbDto { Slug = "pin-article", Title = "Pin article" }]
+            Breadcrumbs = [new BreadcrumbDto { Slug = "pin-article", Title = "Pin article" }]
         });
 
         var cut = RenderMapDetail();
@@ -418,6 +560,169 @@ public class MapDetailTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task MapDetail_ZoomedInVertexHandle_RemainsSelectable()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000027");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        SetField(cut.Instance, "_mapZoom", 3d);
+        SetField(cut.Instance, "_mapViewportLeft", 100d);
+        SetField(cut.Instance, "_mapViewportTop", 50d);
+        await InvokePrivateOnRendererAsync(cut, "SelectPolygon", featureId);
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapViewportMouseDown",
+            new MouseEventArgs { Button = 0, OffsetX = 100, OffsetY = 100, ClientX = 400, ClientY = 350 });
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapViewportMouseMove",
+            new MouseEventArgs { OffsetX = 120, OffsetY = 120, ClientX = 460, ClientY = 380 });
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseUp", new MouseEventArgs());
+
+        cut.WaitForAssertion(() =>
+        {
+            var path = cut.Find($"path[data-feature-id='{featureId}']");
+            Assert.NotEqual("M 0.1 0.2 L 0.8 0.2 L 0.4 0.7 L 0.1 0.2 Z", path.GetAttribute("d"));
+        });
+    }
+
+    [Fact]
+    public async Task MapDetail_ZoomedInRenderedVertexHandle_StartsDrag()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000028");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        SetField(cut.Instance, "_mapZoom", 3d);
+        SetField(cut.Instance, "_mapViewportLeft", 100d);
+        SetField(cut.Instance, "_mapViewportTop", 50d);
+        await InvokePrivateOnRendererAsync(cut, "SelectPolygon", featureId);
+
+        cut.Find("span[data-polygon-vertex-index='0']")
+            .MouseDown(new MouseEventArgs { Button = 0, OffsetX = 100, OffsetY = 100, ClientX = 400, ClientY = 350 });
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapViewportMouseMove",
+            new MouseEventArgs { OffsetX = 120, OffsetY = 120, ClientX = 460, ClientY = 380 });
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseUp", new MouseEventArgs());
+
+        cut.WaitForAssertion(() =>
+        {
+            var path = cut.Find($"path[data-feature-id='{featureId}']");
+            Assert.NotEqual("M 0.1 0.2 L 0.8 0.2 L 0.4 0.7 L 0.1 0.2 Z", path.GetAttribute("d"));
+        });
+    }
+
+    [Fact]
+    public async Task MapDetail_ActiveVertexDrag_IgnoresBadMoveOffsets_AndResumesFromClientDelta()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-00000000002A");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        SetField(cut.Instance, "_mapZoom", 3d);
+        SetField(cut.Instance, "_mapViewportLeft", 100d);
+        SetField(cut.Instance, "_mapViewportTop", 50d);
+        await InvokePrivateOnRendererAsync(cut, "SelectPolygon", featureId);
+
+        cut.Find("span[data-polygon-vertex-index='0']")
+            .MouseDown(new MouseEventArgs { Button = 0, OffsetX = 100, OffsetY = 100, ClientX = 400, ClientY = 350 });
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapViewportMouseMove",
+            new MouseEventArgs { OffsetX = 6, OffsetY = 6, ClientX = 0, ClientY = 0 });
+
+        cut.WaitForAssertion(() =>
+        {
+            var path = cut.Find($"path[data-feature-id='{featureId}']");
+            Assert.Equal("M 0.1 0.2 L 0.8 0.2 L 0.4 0.7 L 0.1 0.2 Z", path.GetAttribute("d"));
+        });
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapViewportMouseMove",
+            new MouseEventArgs { OffsetX = 7, OffsetY = 7, ClientX = 460, ClientY = 380 });
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseUp", new MouseEventArgs());
+
+        cut.WaitForAssertion(() =>
+        {
+            var path = cut.Find($"path[data-feature-id='{featureId}']");
+            Assert.Equal("M 0.12 0.22 L 0.8 0.2 L 0.4 0.7 L 0.12 0.22 Z", path.GetAttribute("d"));
+        });
+    }
+
+    [Fact]
+    public async Task MapDetail_ActiveVertexDrag_UsesVertexGeometryAnchor_WhenViewportOriginIsStale()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-00000000002B");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        SetField(cut.Instance, "_mapZoom", 3d);
+        SetField(cut.Instance, "_mapViewportLeft", 900d);
+        SetField(cut.Instance, "_mapViewportTop", 700d);
+        await InvokePrivateOnRendererAsync(cut, "SelectPolygon", featureId);
+
+        cut.Find("span[data-polygon-vertex-index='0']")
+            .MouseDown(new MouseEventArgs { Button = 0, OffsetX = 4, OffsetY = 4, ClientX = 400, ClientY = 350 });
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapViewportMouseMove",
+            new MouseEventArgs { OffsetX = 6, OffsetY = 6, ClientX = 460, ClientY = 380 });
+        await InvokePrivateOnRendererAsync(cut, "OnMapViewportMouseUp", new MouseEventArgs());
+
+        cut.WaitForAssertion(() =>
+        {
+            var path = cut.Find($"path[data-feature-id='{featureId}']");
+            Assert.Equal("M 0.12 0.22 L 0.8 0.2 L 0.4 0.7 L 0.12 0.22 Z", path.GetAttribute("d"));
+        });
+    }
+
+    [Fact]
+    public async Task MapDetail_SelectPolygon_FallsBackToOffsetCoordinates_WhenViewportOriginIsStale()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000029");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapImageShellClick",
+            new MouseEventArgs { OffsetX = 300, OffsetY = 200, ClientX = 900, ClientY = 500, Detail = 1 });
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Equal(featureId, GetField<Guid?>(cut.Instance, "_selectedPolygonFeatureId"));
+        });
+    }
+
+    [Fact]
     public async Task MapDetail_EscapeDuringPolygonEdit_RestoresOriginalGeometry()
     {
         var featureId = Guid.Parse("30000000-0000-0000-0000-000000000023");
@@ -453,20 +758,25 @@ public class MapDetailTests : MudBlazorTestContext
             .Returns(call =>
             {
                 capturedRequest = call.ArgAt<MapFeatureUpdateDto>(3);
-                return CreatePolygonFeature(featureId, VisibleChildLayerId, capturedRequest.Polygon);
+                return CreatePolygonFeature(featureId, VisibleChildLayerId, capturedRequest.Polygon, color: capturedRequest.Color);
             });
 
         var cut = RenderMapDetail();
         SetMapViewportLayout(cut.Instance);
         await SelectPolygonAsync(cut, 300, 200);
         await DragFirstPolygonVertexAsync(cut, 200, 120);
+        cut.Find("#selected-polygon-name").Input("Northern Reach");
+        cut.Find("#selected-polygon-color").Change("red");
 
         await InvokePrivateOnRendererAsync(cut, "SaveSelectedPolygonAsync");
 
         Assert.NotNull(capturedRequest);
         Assert.Equal(VisibleChildLayerId, capturedRequest!.LayerId);
+        Assert.Equal("Northern Reach", capturedRequest.Name);
+        Assert.Equal("red", capturedRequest.Color);
         Assert.Equal(capturedRequest.Polygon!.Coordinates[0][0], capturedRequest.Polygon.Coordinates[0][^1]);
-        Assert.Equal(new[] { 0.2f, 0.24f }, capturedRequest.Polygon.Coordinates[0][0]);
+        Assert.Equal(0.2f, capturedRequest.Polygon.Coordinates[0][0][0], 3);
+        Assert.Equal(0.24f, capturedRequest.Polygon.Coordinates[0][0][1], 3);
     }
 
     [Fact]
@@ -514,7 +824,7 @@ public class MapDetailTests : MudBlazorTestContext
         cut.WaitForAssertion(() =>
         {
             Assert.Null(GetField<Guid?>(cut.Instance, "_selectedPolygonFeatureId"));
-            Assert.Empty(cut.FindAll("circle[data-polygon-vertex-index]"));
+            Assert.Empty(cut.FindAll("span[data-polygon-vertex-index]"));
         });
     }
 
@@ -531,7 +841,13 @@ public class MapDetailTests : MudBlazorTestContext
         new() { MapLayerId = HiddenChildLayerId, ParentLayerId = HiddenParentLayerId, Name = "Hidden Child", SortOrder = 0, IsEnabled = true }
     ];
 
-    private static MapFeatureDto CreatePolygonFeature(Guid featureId, Guid layerId, PolygonGeometryDto? polygon = null, string? name = null, bool closed = true) =>
+    private static MapFeatureDto CreatePolygonFeature(
+        Guid featureId,
+        Guid layerId,
+        PolygonGeometryDto? polygon = null,
+        string? name = null,
+        bool closed = true,
+        string? color = "blue") =>
         new()
         {
             FeatureId = featureId,
@@ -539,6 +855,7 @@ public class MapDetailTests : MudBlazorTestContext
             LayerId = layerId,
             FeatureType = MapFeatureType.Polygon,
             Name = name ?? "Polygon",
+            Color = color,
             Polygon = polygon ?? new PolygonGeometryDto
             {
                 Type = "Polygon",

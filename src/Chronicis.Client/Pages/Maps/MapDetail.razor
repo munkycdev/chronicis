@@ -15,6 +15,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject ITreeStateService TreeState
+@inject ILogger<MapDetail> Logger
 
 @if (_isLoading)
 {
@@ -157,11 +158,32 @@ else
             <MudText Typo="Typo.body2" Class="mud-text-secondary">
                 @GetMapInteractionHelpText()
             </MudText>
+
+            @if (SelectedLayer is { } selectedLayer)
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary map-page__selected-layer-status">
+                    Active layer: <strong>@selectedLayer.Name</strong>
+                    @if (_isCreatePolygonMode && !IsSelectedLayerEffectivelyVisible)
+                    {
+                        <span class="map-page__selected-layer-status--warning">(hidden by layer visibility)</span>
+                    }
+                </MudText>
+            }
         </div>
 
         @if (_isCreatePolygonMode && !SelectedLayerId.HasValue)
         {
             <MudAlert Severity="Severity.Warning" Class="mb-4">Select a layer before saving a polygon.</MudAlert>
+        }
+
+        @if (_isCreatePolygonMode && SelectedLayerId.HasValue && !IsSelectedLayerEffectivelyVisible)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-4">Selected layer is hidden. Enable it (and any parent layers) before saving polygons.</MudAlert>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_createPolygonStatus))
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">@_createPolygonStatus</MudAlert>
         }
 
         @if (!string.IsNullOrWhiteSpace(_createPinError))
@@ -184,7 +206,46 @@ else
             <MudAlert Severity="Severity.Error" Class="mb-4">@_polygonEditError</MudAlert>
         }
 
-        @if (SelectedPolygonRenderModel is { } selectedPolygon)
+        @if (_isCreatePolygonMode)
+        {
+            <div class="map-page__polygon-editor" aria-label="Polygon editor">
+                <span class="map-page__polygon-editor-title">
+                    Editing polygon
+                    <span class="map-page__polygon-editor-name">Draft</span>
+                </span>
+                <span class="map-page__polygon-editor-status">
+                    @GetCreatePolygonEditorStatus()
+                </span>
+                <div class="map-page__polygon-editor-color">
+                    <label class="map-page__polygon-editor-color-label" for="create-polygon-color">Color</label>
+                    <select id="create-polygon-color"
+                            class="map-page__polygon-color-select"
+                            value="@_createPolygonColor"
+                            disabled="@_isCreatingPolygon"
+                            @onchange="OnCreatePolygonColorChanged">
+                        @foreach (var option in PolygonColorOptions)
+                        {
+                            <option value="@option.Key">@option.Label</option>
+                        }
+                    </select>
+                </div>
+                <div class="map-page__polygon-editor-actions">
+                    <button type="button"
+                            class="map-page__layer-action-button"
+                            disabled="@_isCreatingPolygon"
+                            @onclick="SaveCreatePolygonDraftAsync">
+                        @(_isCreatingPolygon ? "Saving..." : "Save")
+                    </button>
+                    <button type="button"
+                            class="map-page__layer-action-button map-page__layer-action-button--cancel"
+                            disabled="@_isCreatingPolygon"
+                            @onclick="CancelCreatePolygonDraft">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        }
+        else if (SelectedPolygonRenderModel is { } selectedPolygon)
         {
             <div class="map-page__polygon-editor" aria-label="Polygon editor">
                 <span class="map-page__polygon-editor-title">
@@ -197,6 +258,28 @@ else
                 <span class="map-page__polygon-editor-status">
                     @(IsSelectedPolygonDirty ? "Unsaved changes" : "Selected")
                 </span>
+                <div class="map-page__polygon-editor-name-field">
+                    <label class="map-page__polygon-editor-color-label" for="selected-polygon-name">Name</label>
+                    <input id="selected-polygon-name"
+                           class="map-page__polygon-name-input"
+                           value="@_selectedPolygonName"
+                           maxlength="200"
+                           disabled="@IsPolygonEditInteractionLocked"
+                           @oninput="OnSelectedPolygonNameInput" />
+                </div>
+                <div class="map-page__polygon-editor-color">
+                    <label class="map-page__polygon-editor-color-label" for="selected-polygon-color">Color</label>
+                    <select id="selected-polygon-color"
+                            class="map-page__polygon-color-select"
+                            value="@_selectedPolygonColor"
+                            disabled="@IsPolygonEditInteractionLocked"
+                            @onchange="OnSelectedPolygonColorChanged">
+                        @foreach (var option in PolygonColorOptions)
+                        {
+                            <option value="@option.Key">@option.Label</option>
+                        }
+                    </select>
+                </div>
                 <div class="map-page__polygon-editor-actions">
                     <button type="button"
                             class="map-page__layer-action-button"
@@ -248,36 +331,51 @@ else
                         {
                             <path class="@GetPolygonClass(polygon)"
                                   d="@polygon.PathData"
+                                  style="@GetPolygonStyle(polygon)"
                                   data-feature-id="@polygon.FeatureId.ToString()"
                                   data-layer-id="@polygon.LayerId.ToString()">
                             </path>
                         }
+                        @if (_isCreatePolygonMode && !string.IsNullOrWhiteSpace(_polygonDraftPathData))
+                        {
+                            <path class="map-page__polygon-draft" d="@_polygonDraftPathData"></path>
+                        }
+                    </svg>
+                    <div class="map-page__polygon-points-overlay" aria-hidden="true">
                         @if (SelectedPolygonRenderModel is { } editablePolygon)
                         {
                             @foreach (var vertex in GetEditablePolygonVertices(editablePolygon.Geometry))
                             {
-                                <circle class="@GetPolygonVertexClass(vertex.Index)"
-                                        cx="@FormatSvgCoordinate(vertex.Point.X)"
-                                        cy="@FormatSvgCoordinate(vertex.Point.Y)"
-                                        r="0.0105"
-                                        data-polygon-vertex-index="@vertex.Index.ToString(CultureInfo.InvariantCulture)">
-                                </circle>
+                                <span class="@GetPolygonVertexClass(vertex.Index)"
+                                      style="@GetPolygonPointStyle(vertex.Point)"
+                                      data-polygon-vertex-index="@vertex.Index.ToString(CultureInfo.InvariantCulture)"
+                                      @onmousedown:stopPropagation="true"
+                                      @onmousedown="args => OnPolygonVertexMouseDown(args, vertex.Index)">⊙</span>
                             }
                         }
-                        @if (_isCreatePolygonMode && !string.IsNullOrWhiteSpace(_polygonDraftPathData))
+                        @if (_isCreatePolygonMode)
                         {
-                            <path class="map-page__polygon-draft" d="@_polygonDraftPathData"></path>
-
                             @foreach (var vertex in _polygonDraft.Vertices)
                             {
-                                <circle class="map-page__polygon-draft-vertex"
-                                        cx="@FormatSvgCoordinate(vertex.X)"
-                                        cy="@FormatSvgCoordinate(vertex.Y)"
-                                        r="0.0075">
-                                </circle>
+                                <span class="map-page__polygon-draft-vertex"
+                                      style="@GetPolygonPointStyle(vertex)">⊙</span>
                             }
                         }
-                    </svg>
+                    </div>
+                    <div class="map-page__polygon-labels-overlay" aria-hidden="true">
+                        @foreach (var polygon in GetVisiblePolygons())
+                        {
+                            @if (!string.IsNullOrWhiteSpace(polygon.DisplayName)
+                                && TryGetPolygonLabelPosition(polygon.Geometry, out var labelPoint))
+                            {
+                                <div class="map-page__polygon-label"
+                                     style="@GetPolygonLabelStyle(labelPoint)"
+                                     data-feature-id="@polygon.FeatureId.ToString()">
+                                    @polygon.DisplayName
+                                </div>
+                            }
+                        }
+                    </div>
                     <div class="map-page__pins-overlay @(_isCreatePinMode ? "map-page__pins-overlay--create" : string.Empty) @(_isCreatePolygonMode ? "map-page__pins-overlay--polygon-create" : string.Empty)"
                          aria-hidden="false">
                         @foreach (var pin in GetVisiblePins())
@@ -437,6 +535,18 @@ else
     private const double PanDragThresholdPx = 3d;
     private const double PanEnableZoomDelta = 0.0001d;
     private const int PolygonClickDebounceMs = 175;
+    private const int MaxPolygonNameLength = 200;
+    private const string DefaultPolygonColor = "blue";
+    private static readonly PolygonColorOption[] PolygonColorOptions =
+    [
+        new("blue", "Blue", "rgb(59 130 246 / 0.35)", "rgb(30 64 175 / 0.95)", "rgb(37 99 235 / 0.46)", "rgb(29 78 216 / 1)"),
+        new("green", "Green", "rgb(34 197 94 / 0.35)", "rgb(22 101 52 / 0.95)", "rgb(22 163 74 / 0.46)", "rgb(21 128 61 / 1)"),
+        new("amber", "Amber", "rgb(245 158 11 / 0.35)", "rgb(146 64 14 / 0.95)", "rgb(217 119 6 / 0.46)", "rgb(180 83 9 / 1)"),
+        new("red", "Red", "rgb(239 68 68 / 0.35)", "rgb(127 29 29 / 0.95)", "rgb(220 38 38 / 0.46)", "rgb(185 28 28 / 1)"),
+        new("teal", "Teal", "rgb(20 184 166 / 0.35)", "rgb(19 78 74 / 0.95)", "rgb(13 148 136 / 0.46)", "rgb(15 118 110 / 1)"),
+    ];
+    private static readonly Dictionary<string, PolygonColorOption> PolygonColorOptionsByKey =
+        PolygonColorOptions.ToDictionary(option => option.Key, StringComparer.OrdinalIgnoreCase);
 
     private bool _isLoading = true;
     private bool _isSavingMap;
@@ -455,6 +565,8 @@ else
     private string _mapSaveError = string.Empty;
     private string _createPinError = string.Empty;
     private string _createPolygonError = string.Empty;
+    private string _createPolygonStatus = string.Empty;
+    private string _createPolygonColor = DefaultPolygonColor;
     private string _pinDeleteError = string.Empty;
     private string _polygonEditError = string.Empty;
     private string _addLayerError = string.Empty;
@@ -482,6 +594,10 @@ else
     private Guid? _selectedPolygonFeatureId;
     private PolygonGeometry? _selectedPolygonOriginalGeometry;
     private PolygonGeometry? _selectedPolygonWorkingGeometry;
+    private string _selectedPolygonOriginalName = string.Empty;
+    private string _selectedPolygonName = string.Empty;
+    private string _selectedPolygonOriginalColor = DefaultPolygonColor;
+    private string _selectedPolygonColor = DefaultPolygonColor;
     private int? _activePolygonVertexIndex;
     private bool _isDraggingPolygonVertex;
     private bool _isSavingPolygonEdit;
@@ -506,6 +622,8 @@ else
     private double _mapBaseHeight;
     private double _mapViewportWidth;
     private double _mapViewportHeight;
+    private double _mapViewportLeft;
+    private double _mapViewportTop;
     private double _mapMinZoom = 1d;
     private double _mapMaxZoom = 1d;
     private double _mapZoom = 1d;
@@ -518,6 +636,11 @@ else
     private double _dragStartClientY;
     private double _dragStartPanX;
     private double _dragStartPanY;
+    private double _polygonVertexDragStartLocalX;
+    private double _polygonVertexDragStartLocalY;
+    private double _polygonVertexDragStartClientX;
+    private double _polygonVertexDragStartClientY;
+    private bool _hasPolygonVertexDragClientAnchor;
     private bool _shouldFocusCreateLayerInput;
     private bool _shouldFocusRenameLayerInput;
     private bool _shouldFocusMapViewport;
@@ -616,6 +739,8 @@ else
         _mapSaveError = string.Empty;
         _createPinError = string.Empty;
         _createPolygonError = string.Empty;
+        _createPolygonStatus = string.Empty;
+        _createPolygonColor = DefaultPolygonColor;
         _pinDeleteError = string.Empty;
         _polygonEditError = string.Empty;
         _addLayerError = string.Empty;
@@ -662,6 +787,10 @@ else
         _selectedPolygonFeatureId = null;
         _selectedPolygonOriginalGeometry = null;
         _selectedPolygonWorkingGeometry = null;
+        _selectedPolygonOriginalName = string.Empty;
+        _selectedPolygonName = string.Empty;
+        _selectedPolygonOriginalColor = DefaultPolygonColor;
+        _selectedPolygonColor = DefaultPolygonColor;
         _activePolygonVertexIndex = null;
         _isDraggingPolygonVertex = false;
         _isSavingPolygonEdit = false;
@@ -672,6 +801,8 @@ else
         _mapBaseHeight = 0d;
         _mapViewportWidth = 0d;
         _mapViewportHeight = 0d;
+        _mapViewportLeft = 0d;
+        _mapViewportTop = 0d;
         _mapMinZoom = 1d;
         _mapMaxZoom = 1d;
         _mapZoom = 1d;
@@ -685,6 +816,11 @@ else
         _dragStartClientY = 0d;
         _dragStartPanX = 0d;
         _dragStartPanY = 0d;
+        _polygonVertexDragStartLocalX = 0d;
+        _polygonVertexDragStartLocalY = 0d;
+        _polygonVertexDragStartClientX = 0d;
+        _polygonVertexDragStartClientY = 0d;
+        _hasPolygonVertexDragClientAnchor = false;
         _shouldFocusCreateLayerInput = false;
         _shouldFocusRenameLayerInput = false;
         _shouldFocusMapViewport = false;
@@ -2028,6 +2164,14 @@ else
     private HashSet<Guid> GetEffectivelyVisibleLayerIds() =>
         MapLayerVisibilityEvaluator.GetEffectivelyVisibleLayerIds(_layers);
 
+    private MapLayerDto? SelectedLayer =>
+        SelectedLayerId.HasValue
+            ? _layers.FirstOrDefault(layer => layer.MapLayerId == SelectedLayerId.Value)
+            : null;
+
+    private bool IsSelectedLayerEffectivelyVisible =>
+        SelectedLayerId.HasValue && GetEffectivelyVisibleLayerIds().Contains(SelectedLayerId.Value);
+
     private async Task OnLayerVisibilityChangedAsync(Guid layerId, ChangeEventArgs args)
     {
         var layer = _layers.FirstOrDefault(l => l.MapLayerId == layerId);
@@ -2074,6 +2218,7 @@ else
     private void ToggleCreatePolygonMode()
     {
         _createPolygonError = string.Empty;
+        _createPolygonStatus = string.Empty;
         _selectedPinId = null;
         ClearPolygonEditState();
         _isCreatePolygonMode = !_isCreatePolygonMode;
@@ -2090,6 +2235,7 @@ else
         _isMapDragging = false;
         _shouldFocusMapViewport = true;
         UpdatePolygonDraftPreview();
+        _createPolygonStatus = $"Polygon mode enabled. Active layer: {GetSelectedLayerLabel()}.";
     }
 
     private string GetMapViewportClass()
@@ -2253,8 +2399,7 @@ else
         if (_isDraggingPolygonVertex)
         {
             _suppressCreatePinClick = true;
-            _isDraggingPolygonVertex = false;
-            _activePolygonVertexIndex = null;
+            ResetPolygonVertexDragState();
         }
 
         if (_isMapDragging)
@@ -2296,6 +2441,8 @@ else
 
         _mapViewportWidth = viewportRect!.Width;
         _mapViewportHeight = viewportRect.Height;
+        _mapViewportLeft = viewportRect.Left;
+        _mapViewportTop = viewportRect.Top;
         _mapBaseWidth = imageRect!.Width;
         _mapBaseHeight = imageRect.Height;
 
@@ -2312,6 +2459,8 @@ else
             {
                 _mapViewportWidth = updatedViewportRect!.Width;
                 _mapViewportHeight = updatedViewportRect.Height;
+                _mapViewportLeft = updatedViewportRect.Left;
+                _mapViewportTop = updatedViewportRect.Top;
             }
         }
 
@@ -2588,9 +2737,11 @@ else
         }
 
         _createPolygonError = string.Empty;
+        _createPolygonStatus = string.Empty;
         if (!TryGetPolygonDraftPoint(args, out var point))
         {
             _createPolygonError = "Could not determine map bounds for polygon creation.";
+            Logger.LogWarning("Map {MapId}: polygon vertex add failed because map bounds could not be resolved.", MapId);
             return;
         }
 
@@ -2611,10 +2762,19 @@ else
 
         await FocusMapViewportAsync();
         _createPolygonError = string.Empty;
+        _createPolygonStatus = string.Empty;
+
+        Logger.LogInformation(
+            "Map {MapId}: polygon completion requested. DraftVertices={DraftVertexCount}, SelectedLayerId={SelectedLayerId}, SelectedLayer={SelectedLayer}.",
+            MapId,
+            _polygonDraft.Vertices.Count,
+            SelectedLayerId,
+            SelectedLayer?.Name ?? "<none>");
 
         if (!TryGetPolygonDraftPoint(args, out var completionPoint))
         {
             _createPolygonError = "Could not determine map bounds for polygon creation.";
+            Logger.LogWarning("Map {MapId}: polygon completion failed because map bounds could not be resolved.", MapId);
             return;
         }
 
@@ -2627,6 +2787,84 @@ else
 
         UpdatePolygonDraftPreview();
         await CompletePolygonDraftAsync();
+    }
+
+    private async Task SaveCreatePolygonDraftAsync()
+    {
+        if (!_isCreatePolygonMode || _isCreatingPolygon)
+        {
+            return;
+        }
+
+        await FocusMapViewportAsync();
+        _createPolygonError = string.Empty;
+        _createPolygonStatus = string.Empty;
+
+        if (_pendingPolygonClickPoint.HasValue)
+        {
+            FlushPendingPolygonClick();
+        }
+
+        await CompletePolygonDraftAsync();
+    }
+
+    private void CancelCreatePolygonDraft()
+    {
+        if (!_isCreatePolygonMode || _isCreatingPolygon)
+        {
+            return;
+        }
+
+        _createPolygonError = string.Empty;
+        _createPolygonStatus = string.Empty;
+        ClearPolygonDraft();
+    }
+
+    private void OnCreatePolygonColorChanged(ChangeEventArgs args)
+    {
+        _createPolygonColor = NormalizePolygonColorKey(args.Value?.ToString());
+    }
+
+    private void OnSelectedPolygonColorChanged(ChangeEventArgs args)
+    {
+        if (SelectedPolygonRenderModel is not { } polygon || _selectedPolygonWorkingGeometry == null || IsPolygonEditInteractionLocked)
+        {
+            return;
+        }
+
+        _selectedPolygonColor = NormalizePolygonColorKey(args.Value?.ToString());
+        SetPolygonRenderGeometry(
+            polygon.FeatureId,
+            polygon.LayerId,
+            _selectedPolygonName,
+            polygon.LinkedArticleId,
+            _selectedPolygonWorkingGeometry,
+            _selectedPolygonColor);
+        StateHasChanged();
+    }
+
+    private void OnSelectedPolygonNameInput(ChangeEventArgs args)
+    {
+        if (SelectedPolygonRenderModel is not { } polygon || _selectedPolygonWorkingGeometry == null || IsPolygonEditInteractionLocked)
+        {
+            return;
+        }
+
+        var value = args.Value?.ToString() ?? string.Empty;
+        if (value.Length > MaxPolygonNameLength)
+        {
+            value = value[..MaxPolygonNameLength];
+        }
+
+        _selectedPolygonName = value;
+        SetPolygonRenderGeometry(
+            polygon.FeatureId,
+            polygon.LayerId,
+            _selectedPolygonName,
+            polygon.LinkedArticleId,
+            _selectedPolygonWorkingGeometry,
+            _selectedPolygonColor);
+        StateHasChanged();
     }
 
     private Task OnMapViewportKeyDown(KeyboardEventArgs args)
@@ -2868,12 +3106,30 @@ else
         if (!SelectedLayerId.HasValue)
         {
             _createPolygonError = "Select a layer before saving a polygon.";
+            _createPolygonStatus = string.Empty;
+            Logger.LogWarning("Map {MapId}: polygon completion blocked because no layer is selected.", MapId);
+            return;
+        }
+
+        if (!IsSelectedLayerEffectivelyVisible)
+        {
+            _createPolygonError = "Selected layer is hidden. Enable the layer (and ancestors) before saving a polygon.";
+            _createPolygonStatus = string.Empty;
+            Logger.LogWarning(
+                "Map {MapId}: polygon completion blocked because selected layer {SelectedLayerId} is hidden by visibility inheritance.",
+                MapId,
+                SelectedLayerId.Value);
             return;
         }
 
         if (!_polygonDraft.CanComplete)
         {
             _createPolygonError = "Polygon requires at least 3 distinct vertices.";
+            _createPolygonStatus = string.Empty;
+            Logger.LogWarning(
+                "Map {MapId}: polygon completion blocked because draft has insufficient distinct vertices. DraftVertices={DraftVertexCount}.",
+                MapId,
+                _polygonDraft.Vertices.Count);
             return;
         }
 
@@ -2881,9 +3137,18 @@ else
         if (!polygon.IsClosed || polygon.Vertices.Any(vertex => !vertex.IsInBounds))
         {
             _createPolygonError = "Polygon geometry is invalid.";
+            _createPolygonStatus = string.Empty;
+            Logger.LogWarning("Map {MapId}: polygon completion blocked because geometry validation failed.", MapId);
             return;
         }
 
+        var selectedLayerLabel = GetSelectedLayerLabel();
+        _createPolygonStatus = $"Saving polygon to layer '{selectedLayerLabel}'...";
+        Logger.LogInformation(
+            "Map {MapId}: saving polygon. Layer={SelectedLayer}, VertexCount={VertexCount}.",
+            MapId,
+            selectedLayerLabel,
+            polygon.Vertices.Count);
         _isCreatingPolygon = true;
 
         try
@@ -2895,27 +3160,42 @@ else
                 {
                     FeatureType = MapFeatureType.Polygon,
                     LayerId = SelectedLayerId.Value,
+                    Color = _createPolygonColor,
                     Polygon = GeoJsonPolygonSerializer.ToDto(polygon),
                 });
 
             if (created == null || !TrySetRenderedPolygon(created))
             {
                 _createPolygonError = "Failed to create polygon.";
+                _createPolygonStatus = "Polygon save did not return a renderable feature.";
+                Logger.LogWarning("Map {MapId}: polygon save returned null or non-renderable result.", MapId);
                 return;
             }
 
             _createPolygonError = string.Empty;
+            _createPolygonStatus = $"Polygon saved to '{selectedLayerLabel}'.";
+            Logger.LogInformation(
+                "Map {MapId}: polygon created. FeatureId={FeatureId}, LayerId={LayerId}.",
+                MapId,
+                created.FeatureId,
+                created.LayerId);
+            SelectPolygon(created.FeatureId);
             ClearPolygonDraft();
         }
         catch (Exception ex)
         {
             _createPolygonError = $"Failed to create polygon: {ex.Message}";
+            _createPolygonStatus = "Polygon save failed.";
+            Logger.LogError(ex, "Map {MapId}: polygon save failed.", MapId);
         }
         finally
         {
             _isCreatingPolygon = false;
         }
     }
+
+    private string GetSelectedLayerLabel() =>
+        SelectedLayer?.Name ?? SelectedLayerId?.ToString() ?? "none";
 
     private bool TrySetRenderedPolygon(MapFeatureDto feature)
     {
@@ -2938,7 +3218,8 @@ else
             feature.Name ?? string.Empty,
             feature.LinkedArticleId,
             geometry,
-            pathData);
+            pathData,
+            NormalizePolygonColorKey(feature.Color));
 
         return true;
     }
@@ -2981,18 +3262,41 @@ else
         _selectedPolygonFeatureId = polygon.FeatureId;
         _selectedPolygonOriginalGeometry = polygon.Geometry;
         _selectedPolygonWorkingGeometry = polygon.Geometry;
-        _activePolygonVertexIndex = null;
-        _isDraggingPolygonVertex = false;
+        _selectedPolygonOriginalName = polygon.DisplayName;
+        _selectedPolygonName = _selectedPolygonOriginalName;
+        _selectedPolygonOriginalColor = NormalizePolygonColorKey(polygon.Color);
+        _selectedPolygonColor = _selectedPolygonOriginalColor;
+        ResetPolygonVertexDragState();
+        StateHasChanged();
     }
 
     private void ClearPolygonEditState()
     {
+        var hadSelection =
+            _selectedPolygonFeatureId.HasValue
+            || _selectedPolygonOriginalGeometry != null
+            || _selectedPolygonWorkingGeometry != null
+            || !string.IsNullOrEmpty(_selectedPolygonOriginalName)
+            || !string.IsNullOrEmpty(_selectedPolygonName)
+            || !string.Equals(_selectedPolygonColor, DefaultPolygonColor, StringComparison.Ordinal)
+            || !string.Equals(_selectedPolygonOriginalColor, DefaultPolygonColor, StringComparison.Ordinal)
+            || _activePolygonVertexIndex.HasValue
+            || _isDraggingPolygonVertex;
+
         _polygonEditError = string.Empty;
         _selectedPolygonFeatureId = null;
         _selectedPolygonOriginalGeometry = null;
         _selectedPolygonWorkingGeometry = null;
-        _activePolygonVertexIndex = null;
-        _isDraggingPolygonVertex = false;
+        _selectedPolygonOriginalName = string.Empty;
+        _selectedPolygonName = string.Empty;
+        _selectedPolygonOriginalColor = DefaultPolygonColor;
+        _selectedPolygonColor = DefaultPolygonColor;
+        ResetPolygonVertexDragState();
+
+        if (hadSelection)
+        {
+            StateHasChanged();
+        }
     }
 
     private void CancelSelectedPolygonEdit()
@@ -3004,7 +3308,15 @@ else
         }
 
         _selectedPolygonWorkingGeometry = _selectedPolygonOriginalGeometry;
-        SetPolygonRenderGeometry(polygon.FeatureId, polygon.LayerId, polygon.DisplayName, polygon.LinkedArticleId, _selectedPolygonOriginalGeometry);
+        _selectedPolygonName = _selectedPolygonOriginalName;
+        _selectedPolygonColor = _selectedPolygonOriginalColor;
+        SetPolygonRenderGeometry(
+            polygon.FeatureId,
+            polygon.LayerId,
+            _selectedPolygonOriginalName,
+            polygon.LinkedArticleId,
+            _selectedPolygonOriginalGeometry,
+            _selectedPolygonOriginalColor);
     }
 
     private async Task SaveSelectedPolygonAsync()
@@ -3033,7 +3345,8 @@ else
                 polygon.FeatureId,
                 new MapFeatureUpdateDto
                 {
-                    Name = string.IsNullOrWhiteSpace(polygon.DisplayName) ? null : polygon.DisplayName,
+                    Name = string.IsNullOrWhiteSpace(_selectedPolygonName) ? null : _selectedPolygonName.Trim(),
+                    Color = _selectedPolygonColor,
                     LayerId = polygon.LayerId,
                     LinkedArticleId = polygon.LinkedArticleId,
                     Polygon = GeoJsonPolygonSerializer.ToDto(_selectedPolygonWorkingGeometry),
@@ -3117,7 +3430,7 @@ else
             || _isCreatePolygonMode
             || _isCreatePinMode
             || IsPolygonEditInteractionLocked
-            || !TryGetMapPoint(args, out var point))
+            || !TryGetMapPointForVertexDrag(args, out var point))
         {
             return false;
         }
@@ -3129,10 +3442,49 @@ else
             return false;
         }
 
+        return BeginPolygonVertexDrag(vertexIndex, args);
+    }
+
+    private void OnPolygonVertexMouseDown(MouseEventArgs args, int vertexIndex)
+    {
+        if (args.Button != 0
+            || SelectedPolygonRenderModel is not { }
+            || _selectedPolygonWorkingGeometry == null
+            || _isCreatePolygonMode
+            || _isCreatePinMode
+            || IsPolygonEditInteractionLocked
+            || vertexIndex < 0
+            || vertexIndex >= GetEditablePolygonVertices(_selectedPolygonWorkingGeometry).Count())
+        {
+            return;
+        }
+
+        BeginPolygonVertexDrag(vertexIndex, args);
+    }
+
+    private bool BeginPolygonVertexDrag(int vertexIndex, MouseEventArgs args)
+    {
+        if (_selectedPolygonWorkingGeometry == null
+            || vertexIndex < 0
+            || vertexIndex >= _selectedPolygonWorkingGeometry.Vertices.Count
+            || !TryGetViewportLocalPoint(_selectedPolygonWorkingGeometry.Vertices[vertexIndex], out var localX, out var localY))
+        {
+            return false;
+        }
+
         _activePolygonVertexIndex = vertexIndex;
         _isDraggingPolygonVertex = true;
         _isMapPointerDown = false;
         _isMapDragging = false;
+        _polygonVertexDragStartLocalX = localX;
+        _polygonVertexDragStartLocalY = localY;
+        _polygonVertexDragStartClientX = HasClientViewportCoordinates(args)
+            ? args.ClientX
+            : _mapViewportLeft + localX;
+        _polygonVertexDragStartClientY = HasClientViewportCoordinates(args)
+            ? args.ClientY
+            : _mapViewportTop + localY;
+        _hasPolygonVertexDragClientAnchor = HasClientViewportCoordinates(args);
         _polygonEditError = string.Empty;
         return true;
     }
@@ -3142,7 +3494,7 @@ else
         if (_activePolygonVertexIndex is not { } vertexIndex
             || SelectedPolygonRenderModel is not { } polygon
             || _selectedPolygonWorkingGeometry == null
-            || !TryGetMapPoint(args, out var point))
+            || !TryGetMapPointForActiveVertexDrag(args, out var point))
         {
             return;
         }
@@ -3153,7 +3505,14 @@ else
         }
 
         _selectedPolygonWorkingGeometry = updatedGeometry;
-        SetPolygonRenderGeometry(polygon.FeatureId, polygon.LayerId, polygon.DisplayName, polygon.LinkedArticleId, updatedGeometry);
+        SetPolygonRenderGeometry(
+            polygon.FeatureId,
+            polygon.LayerId,
+            _selectedPolygonName,
+            polygon.LinkedArticleId,
+            updatedGeometry,
+            _selectedPolygonColor);
+        StateHasChanged();
     }
 
     private void SetPolygonRenderGeometry(
@@ -3161,7 +3520,8 @@ else
         Guid layerId,
         string displayName,
         Guid? linkedArticleId,
-        PolygonGeometry geometry)
+        PolygonGeometry geometry,
+        string color)
     {
         var dto = GeoJsonPolygonSerializer.ToDto(geometry);
         if (!PolygonSvgPathBuilder.TryBuildPath(dto, out var pathData))
@@ -3169,7 +3529,14 @@ else
             return;
         }
 
-        _polygonsByFeatureId[featureId] = new PolygonRenderModel(featureId, layerId, displayName, linkedArticleId, geometry, pathData);
+        _polygonsByFeatureId[featureId] = new PolygonRenderModel(
+            featureId,
+            layerId,
+            displayName,
+            linkedArticleId,
+            geometry,
+            pathData,
+            NormalizePolygonColorKey(color));
     }
 
     private void ReconcileSelectedPolygonState()
@@ -3186,7 +3553,98 @@ else
         }
     }
 
-    private bool TryGetMapPoint(MouseEventArgs args, out NormalizedMapPoint point) =>
+    private bool TryGetMapPoint(MouseEventArgs args, out NormalizedMapPoint point)
+    {
+        if (TryGetMapPointFromOffsets(args, out point))
+        {
+            return true;
+        }
+
+        return TryGetMapPointFromClientViewportCoordinates(args, out point);
+    }
+
+    private bool TryGetMapPointForVertexDrag(MouseEventArgs args, out NormalizedMapPoint point)
+    {
+        if (TryGetMapPointFromClientViewportCoordinates(args, out point))
+        {
+            return true;
+        }
+
+        return TryGetMapPointFromOffsets(args, out point);
+    }
+
+    private bool TryGetMapPointForActiveVertexDrag(MouseEventArgs args, out NormalizedMapPoint point)
+    {
+        if (_hasPolygonVertexDragClientAnchor)
+        {
+            point = default;
+            if (!HasClientViewportCoordinates(args))
+            {
+                return false;
+            }
+
+            var localX = _polygonVertexDragStartLocalX + (args.ClientX - _polygonVertexDragStartClientX);
+            var localY = _polygonVertexDragStartLocalY + (args.ClientY - _polygonVertexDragStartClientY);
+            return MapViewportCoordinateConverter.TryConvertToNormalizedPoint(
+                localX,
+                localY,
+                _mapViewportWidth,
+                _mapViewportHeight,
+                _mapBaseWidth,
+                _mapBaseHeight,
+                _mapPanX,
+                _mapPanY,
+                _mapZoom,
+                out point);
+        }
+
+        return TryGetMapPointFromOffsets(args, out point);
+    }
+
+    private bool TryGetViewportLocalPoint(NormalizedMapPoint point, out double localX, out double localY)
+    {
+        localX = 0d;
+        localY = 0d;
+
+        if (_mapBaseWidth <= 0d || _mapBaseHeight <= 0d || _mapZoom <= 0d)
+        {
+            return false;
+        }
+
+        localX = (point.X * _mapBaseWidth * _mapZoom) + _mapPanX;
+        localY = (point.Y * _mapBaseHeight * _mapZoom) + _mapPanY;
+        return true;
+    }
+
+    private void ResetPolygonVertexDragState()
+    {
+        _activePolygonVertexIndex = null;
+        _isDraggingPolygonVertex = false;
+        _polygonVertexDragStartLocalX = 0d;
+        _polygonVertexDragStartLocalY = 0d;
+        _polygonVertexDragStartClientX = 0d;
+        _polygonVertexDragStartClientY = 0d;
+        _hasPolygonVertexDragClientAnchor = false;
+    }
+
+    private bool TryGetMapPointFromClientViewportCoordinates(MouseEventArgs args, out NormalizedMapPoint point)
+    {
+        point = default;
+        return HasClientViewportCoordinates(args)
+            && MapViewportCoordinateConverter.TryConvertToNormalizedPoint(
+                args.ClientX - _mapViewportLeft,
+                args.ClientY - _mapViewportTop,
+                _mapViewportWidth,
+                _mapViewportHeight,
+                _mapBaseWidth,
+                _mapBaseHeight,
+                _mapPanX,
+                _mapPanY,
+                _mapZoom,
+                out point);
+    }
+
+    private bool TryGetMapPointFromOffsets(MouseEventArgs args, out NormalizedMapPoint point) =>
         MapViewportCoordinateConverter.TryConvertToNormalizedPoint(
             args.OffsetX,
             args.OffsetY,
@@ -3198,6 +3656,11 @@ else
             _mapPanY,
             _mapZoom,
             out point);
+
+    private bool HasClientViewportCoordinates(MouseEventArgs args) =>
+        _mapViewportWidth > 0d
+        && _mapViewportHeight > 0d
+        && (args.ClientX != 0d || args.ClientY != 0d);
 
     private string GetPolygonClass(PolygonRenderModel polygon)
     {
@@ -3213,6 +3676,72 @@ else
         }
 
         return className;
+    }
+
+    private static string GetPolygonStyle(PolygonRenderModel polygon)
+    {
+        var color = GetPolygonColorOption(polygon.Color);
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"--map-polygon-fill:{color.Fill};--map-polygon-stroke:{color.Stroke};--map-polygon-fill-selected:{color.SelectedFill};--map-polygon-stroke-selected:{color.SelectedStroke};");
+    }
+
+    private static string GetPolygonLabelStyle(NormalizedMapPoint point) =>
+        string.Create(
+            CultureInfo.InvariantCulture,
+            $"left:{point.X * 100:F4}%;top:{point.Y * 100:F4}%;");
+
+    private static string GetPolygonPointStyle(NormalizedMapPoint point) =>
+        string.Create(
+            CultureInfo.InvariantCulture,
+            $"left:{point.X * 100:F4}%;top:{point.Y * 100:F4}%;");
+
+    private static bool TryGetPolygonLabelPosition(PolygonGeometry geometry, out NormalizedMapPoint point)
+    {
+        point = default;
+
+        if (geometry.Vertices.Count < 3)
+        {
+            return false;
+        }
+
+        var vertices = geometry.IsClosed && geometry.Vertices.Count > 1
+            ? geometry.Vertices.Take(geometry.Vertices.Count - 1).ToList()
+            : geometry.Vertices.ToList();
+
+        if (vertices.Count < 3)
+        {
+            return false;
+        }
+
+        double areaTwice = 0d;
+        double centroidXAccumulator = 0d;
+        double centroidYAccumulator = 0d;
+
+        for (var i = 0; i < vertices.Count; i++)
+        {
+            var current = vertices[i];
+            var next = vertices[(i + 1) % vertices.Count];
+            var cross = (current.X * next.Y) - (next.X * current.Y);
+            areaTwice += cross;
+            centroidXAccumulator += (current.X + next.X) * cross;
+            centroidYAccumulator += (current.Y + next.Y) * cross;
+        }
+
+        if (Math.Abs(areaTwice) > 1e-7)
+        {
+            var centroidX = centroidXAccumulator / (3d * areaTwice);
+            var centroidY = centroidYAccumulator / (3d * areaTwice);
+            point = new NormalizedMapPoint((float)Math.Clamp(centroidX, 0d, 1d), (float)Math.Clamp(centroidY, 0d, 1d));
+            return true;
+        }
+
+        var minX = vertices.Min(vertex => vertex.X);
+        var maxX = vertices.Max(vertex => vertex.X);
+        var minY = vertices.Min(vertex => vertex.Y);
+        var maxY = vertices.Max(vertex => vertex.Y);
+        point = new NormalizedMapPoint((minX + maxX) / 2f, (minY + maxY) / 2f);
+        return true;
     }
 
     private IEnumerable<(int Index, NormalizedMapPoint Point)> GetEditablePolygonVertices(PolygonGeometry geometry)
@@ -3235,7 +3764,9 @@ else
     private float GetPolygonVertexSelectionThreshold()
     {
         var baseDimension = Math.Max(Math.Min(_mapBaseWidth, _mapBaseHeight), 1d);
-        var normalizedThreshold = 14d / (baseDimension * Math.Max(_mapZoom, 1d));
+        // Vertex markers live inside the scaled map stage, so the hit radius should track
+        // their on-screen growth instead of shrinking as zoom increases.
+        var normalizedThreshold = 14d / baseDimension;
         return (float)normalizedThreshold;
     }
 
@@ -3348,12 +3879,42 @@ else
 
     private string GetMapInteractionHelpText() =>
         _isCreatePolygonMode
-            ? "Click to add vertices. Double-click to save. Backspace removes the last point. Escape cancels."
+            ? "Click to add vertices. Use Save or double-click to close and save. Backspace removes the last point. Escape cancels."
             : _isCreatePinMode
                 ? "Click on the map to choose pin details."
                 : SelectedPolygonRenderModel != null
                     ? "Drag polygon vertices. Escape cancels unsaved edits."
                     : "Enable Create Pin or Create Polygon, then click the map.";
+
+    private string GetCreatePolygonEditorStatus()
+    {
+        var vertexCount = _polygonDraft.Vertices.Count + (_pendingPolygonClickPoint.HasValue ? 1 : 0);
+        if (vertexCount == 0)
+        {
+            return "Draft: click map to add points";
+        }
+
+        if (vertexCount < 3)
+        {
+            return $"Draft: {vertexCount}/3 points";
+        }
+
+        return $"Draft: {vertexCount} points";
+    }
+
+    private static string NormalizePolygonColorKey(string? value) =>
+        GetPolygonColorOption(value).Key;
+
+    private static PolygonColorOption GetPolygonColorOption(string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)
+            && PolygonColorOptionsByKey.TryGetValue(value.Trim(), out var option))
+        {
+            return option;
+        }
+
+        return PolygonColorOptions[0];
+    }
 
     private bool ShouldPreventMapViewportKeyDefault =>
         _isCreatePolygonMode || SelectedPolygonRenderModel != null;
@@ -3366,9 +3927,11 @@ else
             : null;
 
     private bool IsSelectedPolygonDirty =>
-        _selectedPolygonOriginalGeometry != null
-        && _selectedPolygonWorkingGeometry != null
-        && !_selectedPolygonOriginalGeometry.Vertices.SequenceEqual(_selectedPolygonWorkingGeometry.Vertices);
+        (_selectedPolygonOriginalGeometry != null
+            && _selectedPolygonWorkingGeometry != null
+            && !_selectedPolygonOriginalGeometry.Vertices.SequenceEqual(_selectedPolygonWorkingGeometry.Vertices))
+        || !string.Equals(_selectedPolygonOriginalName, _selectedPolygonName, StringComparison.Ordinal)
+        || !string.Equals(_selectedPolygonOriginalColor, _selectedPolygonColor, StringComparison.Ordinal);
 
     private bool IsPolygonEditInteractionLocked =>
         _isSavingPolygonEdit || _isDeletingPolygon;
@@ -3455,5 +4018,14 @@ else
         string DisplayName,
         Guid? LinkedArticleId,
         PolygonGeometry Geometry,
-        string PathData);
+        string PathData,
+        string Color);
+
+    private sealed record PolygonColorOption(
+        string Key,
+        string Label,
+        string Fill,
+        string Stroke,
+        string SelectedFill,
+        string SelectedStroke);
 }

@@ -989,6 +989,9 @@ public class ChronicisDbContext : DbContext
             entity.Property(mf => mf.Name)
                 .HasMaxLength(200);
 
+            entity.Property(mf => mf.Color)
+                .HasMaxLength(32);
+
             entity.Property(mf => mf.GeometryBlobKey)
                 .HasMaxLength(1024);
 

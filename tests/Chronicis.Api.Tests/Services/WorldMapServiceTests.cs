@@ -1824,6 +1824,7 @@ public class WorldMapServiceTests : IDisposable
                 FeatureType = MapFeatureType.Polygon,
                 LayerId = layerId,
                 Name = "Dessarin Valley",
+                Color = "teal",
                 Polygon = new PolygonGeometryDto
                 {
                     Type = "Polygon",
@@ -1839,6 +1840,7 @@ public class WorldMapServiceTests : IDisposable
             });
 
         Assert.Equal(MapFeatureType.Polygon, created.FeatureType);
+        Assert.Equal("teal", created.Color);
         Assert.NotNull(created.Geometry);
         Assert.StartsWith(expectedBlobKey, created.Geometry!.BlobKey, StringComparison.Ordinal);
         Assert.Equal("\"polygon-etag\"", created.Geometry.ETag);
@@ -1847,10 +1849,15 @@ public class WorldMapServiceTests : IDisposable
 
         var persisted = await _db.MapFeatures.AsNoTracking().FirstAsync(feature => feature.MapFeatureId == created.FeatureId);
         Assert.Equal(MapFeatureType.Polygon, persisted.FeatureType);
+        Assert.Equal("teal", persisted.Color);
         Assert.Equal(created.Geometry.BlobKey, persisted.GeometryBlobKey);
 
         var listed = await _sut.ListFeaturesForMapAsync(_worldId, map.WorldMapId, _memberId);
-        Assert.Contains(listed, feature => feature.FeatureId == created.FeatureId && feature.FeatureType == MapFeatureType.Polygon);
+        Assert.Contains(
+            listed,
+            feature => feature.FeatureId == created.FeatureId
+                && feature.FeatureType == MapFeatureType.Polygon
+                && feature.Color == "teal");
     }
 
     [Fact]
@@ -2137,6 +2144,7 @@ public class WorldMapServiceTests : IDisposable
             {
                 LayerId = regionsLayer.MapLayerId,
                 Name = "Updated",
+                Color = "green",
                 Polygon = new PolygonGeometryDto
                 {
                     Type = "Polygon",
@@ -2153,6 +2161,7 @@ public class WorldMapServiceTests : IDisposable
 
         Assert.Equal(regionsLayer.MapLayerId, updated.LayerId);
         Assert.Equal("Updated", updated.Name);
+        Assert.Equal("green", updated.Color);
         Assert.Equal("\"etag-2\"", updated.Geometry!.ETag);
         await _blobStore.Received(1).DeleteFeatureGeometryAsync(created.Geometry!.BlobKey, Arg.Any<CancellationToken>());
     }

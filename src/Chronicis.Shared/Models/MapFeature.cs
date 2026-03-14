@@ -20,6 +20,8 @@ public class MapFeature
 
     public string? Name { get; set; }
 
+    public string? Color { get; set; }
+
     public float X { get; set; }
 
     public float Y { get; set; }

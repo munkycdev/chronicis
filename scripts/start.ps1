@@ -1,0 +1,1 @@
+wt -w 0 new-tab pwsh -NoExit  -File "z:\repos\chronicis\scripts\start-client.ps1" -- title "Chronicis Client"`; split-pane -NoExit --title "Chronicis API" pwsh -File "z:\repos\chronicis\scripts\start-api.ps1"; exit

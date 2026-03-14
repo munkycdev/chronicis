@@ -12,6 +12,7 @@ public class MapFeatureCreateDto
     public MapFeatureType FeatureType { get; set; }
     public Guid LayerId { get; set; }
     public string? Name { get; set; }
+    public string? Color { get; set; }
     public Guid? LinkedArticleId { get; set; }
     public MapFeaturePointDto? Point { get; set; }
     public PolygonGeometryDto? Polygon { get; set; }
@@ -24,6 +25,7 @@ public class MapFeatureCreateDto
 public class MapFeatureUpdateDto
 {
     public string? Name { get; set; }
+    public string? Color { get; set; }
     public Guid LayerId { get; set; }
     public Guid? LinkedArticleId { get; set; }
     public MapFeaturePointDto? Point { get; set; }
@@ -41,6 +43,7 @@ public class MapFeatureDto
     public Guid LayerId { get; set; }
     public MapFeatureType FeatureType { get; set; }
     public string? Name { get; set; }
+    public string? Color { get; set; }
     public Guid? LinkedArticleId { get; set; }
     public LinkedArticleSummaryDto? LinkedArticle { get; set; }
     public MapFeaturePointDto? Point { get; set; }
