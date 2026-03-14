@@ -205,6 +205,48 @@
     pointer-events: none;
 }
 
+.session-map-viewer-modal__features-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.session-map-viewer-modal__feature-point {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    border: 2px solid rgba(215, 208, 168, 0.9);
+    background: rgba(75, 90, 69, 0.55);
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 2px rgba(31, 42, 51, 0.35);
+}
+
+.session-map-viewer-modal__feature-point--highlighted {
+    background: rgba(215, 208, 168, 0.9);
+    border-color: #1F2A33;
+    box-shadow: 0 0 0 4px rgba(215, 208, 168, 0.28);
+}
+
+.session-map-viewer-modal__feature-polygon {
+    position: absolute;
+    inset: 0;
+}
+
+.session-map-viewer-modal__feature-polygon polygon {
+    fill: rgba(75, 90, 69, 0.22);
+    stroke: rgba(215, 208, 168, 0.75);
+    stroke-width: 0.45;
+}
+
+.session-map-viewer-modal__feature-polygon--highlighted polygon {
+    fill: rgba(215, 208, 168, 0.26);
+    stroke: #F4F0EA;
+    stroke-width: 0.8;
+    filter: drop-shadow(0 0 6px rgba(215, 208, 168, 0.5));
+}
+
 .session-map-viewer-modal__pin {
     position: absolute;
     width: 14px;

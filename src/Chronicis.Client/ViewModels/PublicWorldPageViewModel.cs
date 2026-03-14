@@ -33,6 +33,10 @@ public sealed class PublicWorldPageViewModel : ViewModelBase, IAsyncDisposable
     private bool _isLoading = true;
     private bool _isLoadingArticle = false;
     private bool _wikiLinksInitialized = false;
+    private bool _isMapModalOpen;
+    private Guid _selectedMapId;
+    private Guid? _selectedMapFeatureId;
+    private string? _selectedMapName;
     private DotNetObjectReference<PublicWorldPageViewModel>? _dotNetHelper;
 
     // -------------------------------------------------------------------------
@@ -84,6 +88,34 @@ public sealed class PublicWorldPageViewModel : ViewModelBase, IAsyncDisposable
         private set => SetField(ref _wikiLinksInitialized, value);
     }
 
+    /// <summary>Whether the public map viewer modal is currently open.</summary>
+    public bool IsMapModalOpen
+    {
+        get => _isMapModalOpen;
+        private set => SetField(ref _isMapModalOpen, value);
+    }
+
+    /// <summary>The selected map id for the public map viewer modal.</summary>
+    public Guid SelectedMapId
+    {
+        get => _selectedMapId;
+        private set => SetField(ref _selectedMapId, value);
+    }
+
+    /// <summary>The selected target feature id for the public map viewer modal.</summary>
+    public Guid? SelectedMapFeatureId
+    {
+        get => _selectedMapFeatureId;
+        private set => SetField(ref _selectedMapFeatureId, value);
+    }
+
+    /// <summary>The selected display name for the public map viewer modal.</summary>
+    public string? SelectedMapName
+    {
+        get => _selectedMapName;
+        private set => SetField(ref _selectedMapName, value);
+    }
+
     public PublicWorldPageViewModel(
         IPublicApiService publicApi,
         IAppNavigator navigator,
@@ -106,6 +138,7 @@ public sealed class PublicWorldPageViewModel : ViewModelBase, IAsyncDisposable
     public async Task LoadWorldAsync(string publicSlug, string? articlePath)
     {
         WikiLinksInitialized = false;
+        ResetMapModalState();
         IsLoading = true;
 
         try
@@ -183,6 +216,54 @@ public sealed class PublicWorldPageViewModel : ViewModelBase, IAsyncDisposable
         {
             // Silently ignore — link may not be public or may not exist.
         }
+    }
+
+    /// <summary>
+    /// Invoked from JavaScript when a map chip in the public article body is clicked.
+    /// Opens the public map viewer modal when world context is available.
+    /// </summary>
+    [JSInvokable]
+    public Task OnPublicMapLinkClicked(string mapId, string? mapName)
+    {
+        if (!Guid.TryParse(mapId, out var parsedMapId) || World == null || World.Id == Guid.Empty)
+        {
+            return Task.CompletedTask;
+        }
+
+        SelectedMapId = parsedMapId;
+        SelectedMapFeatureId = null;
+        SelectedMapName = string.IsNullOrWhiteSpace(mapName) ? null : mapName.Trim();
+        IsMapModalOpen = true;
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Invoked from JavaScript when a map-feature chip in the public article body is clicked.
+    /// Opens the public map viewer modal centered on the selected feature.
+    /// </summary>
+    [JSInvokable]
+    public Task OnPublicMapFeatureChipClicked(string mapId, string featureId, string? mapName)
+    {
+        if (!Guid.TryParse(mapId, out var parsedMapId)
+            || !Guid.TryParse(featureId, out var parsedFeatureId)
+            || World == null
+            || World.Id == Guid.Empty)
+        {
+            return Task.CompletedTask;
+        }
+
+        SelectedMapId = parsedMapId;
+        SelectedMapFeatureId = parsedFeatureId;
+        SelectedMapName = string.IsNullOrWhiteSpace(mapName) ? null : mapName.Trim();
+        IsMapModalOpen = true;
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Closes the public map viewer modal and clears selection state.</summary>
+    public Task CloseMapModalAsync()
+    {
+        ResetMapModalState();
+        return Task.CompletedTask;
     }
 
     // -------------------------------------------------------------------------
@@ -273,5 +354,13 @@ public sealed class PublicWorldPageViewModel : ViewModelBase, IAsyncDisposable
         {
             IsLoadingArticle = false;
         }
+    }
+
+    private void ResetMapModalState()
+    {
+        IsMapModalOpen = false;
+        SelectedMapId = Guid.Empty;
+        SelectedMapFeatureId = null;
+        SelectedMapName = null;
     }
 }

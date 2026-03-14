@@ -513,6 +513,19 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
         }
     }
 
+    if (window.createMapFeatureLinkExtension) {
+        try {
+            const mapFeatureLinkExt = window.createMapFeatureLinkExtension();
+            if (mapFeatureLinkExt) {
+                extensions.push(mapFeatureLinkExt);
+            } else {
+                console.error('Map feature link extension returned null - TipTap.Node may not be available');
+            }
+        } catch (err) {
+            console.error('Failed to load map feature link extension:', err);
+        }
+    }
+
     // Add Image extension for inline image support
     if (window.TipTap.Image) {
         extensions.push(window.TipTap.Image.configure({
@@ -593,6 +606,22 @@ async function initializeTipTapEditor(editorId, initialContent, dotNetHelper) {
                     // Navigate to the article
                     dotNetHelper.invokeMethodAsync('OnWikiLinkClicked', targetArticleId);
                 }
+            }
+        }
+
+        const mapFeatureLink = e.target.closest('span[data-type="map-feature-link"]');
+        if (mapFeatureLink) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const mapId = mapFeatureLink.getAttribute('data-map-id');
+            const featureId = mapFeatureLink.getAttribute('data-feature-id');
+            const mapName = mapFeatureLink.getAttribute('data-map-name')
+                || mapFeatureLink.querySelector('.map-feature-link-map')?.textContent
+                || '';
+
+            if (mapId && featureId) {
+                dotNetHelper.invokeMethodAsync('OnMapFeatureChipClicked', mapId, featureId, mapName);
             }
         }
     });
@@ -826,6 +855,11 @@ function markdownToHTML(markdown) {
         return `<span data-type="wiki-link" data-target-id="${guid}"${displayAttr}>${displayText}</span>`;
     });
 
+    html = html.replace(
+        /<span[^>]*data-type="map-feature-link"[^>]*data-feature-id="([^"]+)"[^>]*data-map-id="([^"]+)"[^>]*data-display="([^"]*)"[^>]*data-map-name="([^"]*)"[^>]*>.*?<\/span>/gi,
+        (_match, featureId, mapId, displayText, mapName) =>
+            `<span data-type="map-feature-link" data-feature-id="${featureId}" data-map-id="${mapId}" data-display="${displayText}" data-map-name="${mapName}">${displayText}</span>`);
+
     // Headers (# = h1, ## = h2, etc.)
     html = html.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
     html = html.replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>');
@@ -897,6 +931,10 @@ function htmlToMarkdown(html) {
     // Convert to: [[guid|display]] or [[guid]]
     markdown = markdown.replace(/<span[^>]*data-type="wiki-link"[^>]*data-target-id="([^"]+)"[^>]*data-display="([^"]+)"[^>]*>.*?<\/span>/gi, '[[$1|$2]]');
     markdown = markdown.replace(/<span[^>]*data-type="wiki-link"[^>]*data-target-id="([^"]+)"[^>]*>.*?<\/span>/gi, '[[$1]]');
+
+    markdown = markdown.replace(
+        /<span[^>]*data-type="map-feature-link"[^>]*data-feature-id="([^"]+)"[^>]*data-map-id="([^"]+)"[^>]*data-display="([^"]*)"[^>]*data-map-name="([^"]*)"[^>]*>.*?<\/span>/gi,
+        '<span data-type="map-feature-link" data-feature-id="$1" data-map-id="$2" data-display="$3" data-map-name="$4"></span>');
 
     // Headers
     markdown = markdown.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');

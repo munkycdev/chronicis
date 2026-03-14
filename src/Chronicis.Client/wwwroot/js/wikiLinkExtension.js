@@ -105,9 +105,8 @@ function createWikiLinkExtension() {
                         class: 'wiki-link-node map-link-node',
                         ...HTMLAttributes
                     },
-                    ['span', { class: 'map-link-badge' }, 'MAP'],
+                    ['span', { class: 'map-chip-pin', 'aria-hidden': 'true' }, '📍'],
                     ['span', { class: 'map-link-text' }, mapName],
-                    ['i', { class: 'map-link-icon fa-solid fa-map', 'aria-hidden': 'true' }]
                 ];
             }
 
@@ -199,6 +198,67 @@ function createExternalLinkExtension() {
     });
 }
 
+function createMapFeatureLinkExtension() {
+    if (!window.TipTap || !window.TipTap.Node) {
+        console.error('TipTap Node not available - cannot create map feature link extension');
+        return null;
+    }
+
+    return window.TipTap.Node.create({
+        name: 'mapFeatureLink',
+        group: 'inline',
+        inline: true,
+        atom: true,
+
+        addAttributes() {
+            return {
+                featureId: {
+                    default: null,
+                    parseHTML: element => element.getAttribute('data-feature-id'),
+                    renderHTML: attributes => ({ 'data-feature-id': attributes.featureId })
+                },
+                mapId: {
+                    default: null,
+                    parseHTML: element => element.getAttribute('data-map-id'),
+                    renderHTML: attributes => ({ 'data-map-id': attributes.mapId })
+                },
+                displayText: {
+                    default: null,
+                    parseHTML: element => element.getAttribute('data-display'),
+                    renderHTML: attributes => ({ 'data-display': attributes.displayText })
+                },
+                mapName: {
+                    default: null,
+                    parseHTML: element => element.getAttribute('data-map-name'),
+                    renderHTML: attributes => ({ 'data-map-name': attributes.mapName })
+                }
+            };
+        },
+
+        parseHTML() {
+            return [{ tag: 'span[data-type="map-feature-link"]' }];
+        },
+
+        renderHTML({ node, HTMLAttributes }) {
+            const displayText = node.attrs.displayText || 'Location';
+            const mapName = node.attrs.mapName || 'Map';
+
+            return [
+                'span',
+                {
+                    'data-type': 'map-feature-link',
+                    class: 'map-feature-link-node',
+                    ...HTMLAttributes
+                },
+                ['span', { class: 'map-chip-pin', 'aria-hidden': 'true' }, '📍'],
+                ['span', { class: 'map-feature-link-text' }, displayText],
+                ['span', { class: 'map-feature-link-map' }, mapName]
+            ];
+        }
+    });
+}
+
 // Make available globally
 window.createWikiLinkExtension = createWikiLinkExtension;
 window.createExternalLinkExtension = createExternalLinkExtension;
+window.createMapFeatureLinkExtension = createMapFeatureLinkExtension;

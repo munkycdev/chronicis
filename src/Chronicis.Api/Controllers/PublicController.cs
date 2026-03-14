@@ -1,5 +1,6 @@
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Maps;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chronicis.Api.Controllers;
@@ -142,5 +143,85 @@ public class PublicController : ControllerBase
         }
 
         return Redirect(downloadUrl);
+    }
+
+    /// <summary>
+    /// GET /api/public/worlds/{publicSlug}/maps/{mapId}/basemap - Get a public basemap read URL.
+    /// </summary>
+    [HttpGet("worlds/{publicSlug}/maps/{mapId:guid}/basemap")]
+    public async Task<ActionResult<GetBasemapReadUrlResponseDto>> GetPublicMapBasemap(string publicSlug, Guid mapId)
+    {
+        if (string.IsNullOrWhiteSpace(publicSlug))
+        {
+            return BadRequest(new { error = "Public slug is required" });
+        }
+
+        var (basemap, error) = await _publicWorldService.GetPublicMapBasemapReadUrlAsync(publicSlug, mapId);
+        if (basemap == null)
+        {
+            return NotFound(new { error = error ?? "Map not found or not public" });
+        }
+
+        return Ok(basemap);
+    }
+
+    /// <summary>
+    /// GET /api/public/worlds/{publicSlug}/maps/{mapId}/layers - List public map layers.
+    /// </summary>
+    [HttpGet("worlds/{publicSlug}/maps/{mapId:guid}/layers")]
+    public async Task<ActionResult<IEnumerable<MapLayerDto>>> GetPublicMapLayers(string publicSlug, Guid mapId)
+    {
+        if (string.IsNullOrWhiteSpace(publicSlug))
+        {
+            return BadRequest(new { error = "Public slug is required" });
+        }
+
+        var layers = await _publicWorldService.GetPublicMapLayersAsync(publicSlug, mapId);
+        if (layers == null)
+        {
+            return NotFound(new { error = "Map not found or not public" });
+        }
+
+        return Ok(layers);
+    }
+
+    /// <summary>
+    /// GET /api/public/worlds/{publicSlug}/maps/{mapId}/pins - List public map pins.
+    /// </summary>
+    [HttpGet("worlds/{publicSlug}/maps/{mapId:guid}/pins")]
+    public async Task<ActionResult<IEnumerable<MapPinResponseDto>>> GetPublicMapPins(string publicSlug, Guid mapId)
+    {
+        if (string.IsNullOrWhiteSpace(publicSlug))
+        {
+            return BadRequest(new { error = "Public slug is required" });
+        }
+
+        var pins = await _publicWorldService.GetPublicMapPinsAsync(publicSlug, mapId);
+        if (pins == null)
+        {
+            return NotFound(new { error = "Map not found or not public" });
+        }
+
+        return Ok(pins);
+    }
+
+    /// <summary>
+    /// GET /api/public/worlds/{publicSlug}/maps/{mapId}/features - List public map features.
+    /// </summary>
+    [HttpGet("worlds/{publicSlug}/maps/{mapId:guid}/features")]
+    public async Task<ActionResult<IEnumerable<MapFeatureDto>>> GetPublicMapFeatures(string publicSlug, Guid mapId)
+    {
+        if (string.IsNullOrWhiteSpace(publicSlug))
+        {
+            return BadRequest(new { error = "Public slug is required" });
+        }
+
+        var features = await _publicWorldService.GetPublicMapFeaturesAsync(publicSlug, mapId);
+        if (features == null)
+        {
+            return NotFound(new { error = "Map not found or not public" });
+        }
+
+        return Ok(features);
     }
 }

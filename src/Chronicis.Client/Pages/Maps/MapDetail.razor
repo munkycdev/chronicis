@@ -300,6 +300,40 @@ else
                         @(_isDeletingPolygon ? "Deleting..." : "Delete")
                     </button>
                 </div>
+                <div class="map-page__feature-session-history" aria-label="Referenced In Sessions">
+                    <span class="map-page__feature-session-history-title">Referenced In Sessions</span>
+                    @if (_isLoadingSelectedPolygonSessionReferences)
+                    {
+                        <span class="map-page__feature-session-history-empty">Loading session references...</span>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(_selectedPolygonSessionReferenceError))
+                    {
+                        <span class="map-page__feature-session-history-error">@_selectedPolygonSessionReferenceError</span>
+                    }
+                    else if (_selectedPolygonSessionReferences.Count == 0)
+                    {
+                        <span class="map-page__feature-session-history-empty">No session references yet.</span>
+                    }
+                    else
+                    {
+                        <div class="map-page__feature-session-history-list">
+                            @foreach (var reference in _selectedPolygonSessionReferences)
+                            {
+                                <button type="button"
+                                        class="map-page__feature-session-history-item"
+                                        @onclick="() => NavigateToSessionReferenceAsync(reference)">
+                                    <span class="map-page__feature-session-history-item-title">
+                                        @(string.IsNullOrWhiteSpace(reference.SessionName) ? reference.SessionNoteTitle : reference.SessionName)
+                                    </span>
+                                    @if (FormatSessionReferenceDate(reference.SessionDate) is { Length: > 0 } sessionDateLabel)
+                                    {
+                                        <span class="map-page__feature-session-history-item-date">@sessionDateLabel</span>
+                                    }
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
             </div>
         }
 
@@ -598,6 +632,10 @@ else
     private string _selectedPolygonName = string.Empty;
     private string _selectedPolygonOriginalColor = DefaultPolygonColor;
     private string _selectedPolygonColor = DefaultPolygonColor;
+    private List<MapFeatureSessionReferenceDto> _selectedPolygonSessionReferences = [];
+    private string _selectedPolygonSessionReferenceError = string.Empty;
+    private bool _isLoadingSelectedPolygonSessionReferences;
+    private int _selectedPolygonSessionReferenceLoadVersion;
     private int? _activePolygonVertexIndex;
     private bool _isDraggingPolygonVertex;
     private bool _isSavingPolygonEdit;
@@ -791,6 +829,10 @@ else
         _selectedPolygonName = string.Empty;
         _selectedPolygonOriginalColor = DefaultPolygonColor;
         _selectedPolygonColor = DefaultPolygonColor;
+        _selectedPolygonSessionReferences = [];
+        _selectedPolygonSessionReferenceError = string.Empty;
+        _isLoadingSelectedPolygonSessionReferences = false;
+        _selectedPolygonSessionReferenceLoadVersion = 0;
         _activePolygonVertexIndex = null;
         _isDraggingPolygonVertex = false;
         _isSavingPolygonEdit = false;
@@ -3062,6 +3104,9 @@ else
         Navigation.NavigateTo($"/article/{path}");
     }
 
+    private Task NavigateToSessionReferenceAsync(MapFeatureSessionReferenceDto reference) =>
+        NavigateToLinkedArticleAsync(reference.SessionNoteId);
+
     private static string GetPinStyle(MapPinResponseDto pin) =>
         $"left:{pin.X * 100:F4}%;top:{pin.Y * 100:F4}%;";
 
@@ -3312,6 +3357,7 @@ else
         _selectedPolygonOriginalColor = NormalizePolygonColorKey(polygon.Color);
         _selectedPolygonColor = _selectedPolygonOriginalColor;
         ResetPolygonVertexDragState();
+        _ = LoadSelectedPolygonSessionReferencesAsync(polygon.FeatureId);
         StateHasChanged();
     }
 
@@ -3336,6 +3382,10 @@ else
         _selectedPolygonName = string.Empty;
         _selectedPolygonOriginalColor = DefaultPolygonColor;
         _selectedPolygonColor = DefaultPolygonColor;
+        _selectedPolygonSessionReferences = [];
+        _selectedPolygonSessionReferenceError = string.Empty;
+        _isLoadingSelectedPolygonSessionReferences = false;
+        _selectedPolygonSessionReferenceLoadVersion++;
         ResetPolygonVertexDragState();
 
         if (hadSelection)
@@ -3987,6 +4037,50 @@ else
 
     private bool IsPolygonEditInteractionLocked =>
         _isSavingPolygonEdit || _isDeletingPolygon;
+
+    private async Task LoadSelectedPolygonSessionReferencesAsync(Guid featureId)
+    {
+        var loadVersion = ++_selectedPolygonSessionReferenceLoadVersion;
+        _isLoadingSelectedPolygonSessionReferences = true;
+        _selectedPolygonSessionReferenceError = string.Empty;
+        _selectedPolygonSessionReferences = [];
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var references = await MapApi.GetFeatureSessionReferencesAsync(WorldId, MapId, featureId);
+            if (loadVersion != _selectedPolygonSessionReferenceLoadVersion
+                || _selectedPolygonFeatureId != featureId)
+            {
+                return;
+            }
+
+            _selectedPolygonSessionReferences = references;
+        }
+        catch (Exception ex)
+        {
+            if (loadVersion != _selectedPolygonSessionReferenceLoadVersion
+                || _selectedPolygonFeatureId != featureId)
+            {
+                return;
+            }
+
+            Logger.LogWarning(ex, "Map {MapId}: failed to load session references for feature {FeatureId}.", MapId, featureId);
+            _selectedPolygonSessionReferenceError = "Failed to load session references.";
+        }
+        finally
+        {
+            if (loadVersion == _selectedPolygonSessionReferenceLoadVersion
+                && _selectedPolygonFeatureId == featureId)
+            {
+                _isLoadingSelectedPolygonSessionReferences = false;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private static string FormatSessionReferenceDate(DateTime? sessionDate) =>
+        sessionDate?.ToString("MMM d, yyyy", CultureInfo.InvariantCulture) ?? string.Empty;
 
     private static string FormatSvgCoordinate(float value) =>
         value.ToString("0.####", CultureInfo.InvariantCulture);

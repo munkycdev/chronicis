@@ -31,6 +31,7 @@ public class ChronicisDbContext : DbContext
     public DbSet<Quest> Quests { get; set; } = null!;
     public DbSet<QuestUpdate> QuestUpdates { get; set; } = null!;
     public DbSet<Session> Sessions { get; set; } = null!;
+    public DbSet<SessionNoteMapFeature> SessionNoteMapFeatures { get; set; } = null!;
 
     // ===== Maps =====
     public DbSet<WorldMap> WorldMaps { get; set; } = null!;
@@ -66,6 +67,7 @@ public class ChronicisDbContext : DbContext
         ConfigureQuest(modelBuilder);
         ConfigureQuestUpdate(modelBuilder);
         ConfigureSession(modelBuilder);
+        ConfigureSessionNoteMapFeature(modelBuilder);
         ConfigureWorldMap(modelBuilder);
         ConfigureMapLayer(modelBuilder);
         ConfigureMapFeature(modelBuilder);
@@ -919,6 +921,29 @@ public class ChronicisDbContext : DbContext
 
             entity.HasIndex(s => new { s.ArcId, s.SessionDate })
                 .HasDatabaseName("IX_Sessions_ArcId_SessionDate");
+        });
+    }
+
+    private static void ConfigureSessionNoteMapFeature(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<SessionNoteMapFeature>(entity =>
+        {
+            entity.HasKey(link => new { link.SessionNoteId, link.MapFeatureId });
+
+            entity.Property(link => link.CreatedAt)
+                .IsRequired();
+
+            entity.HasOne(link => link.SessionNote)
+                .WithMany(article => article.SessionNoteMapFeatures)
+                .HasForeignKey(link => link.SessionNoteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(link => link.MapFeature)
+                .WithMany(feature => feature.SessionNoteMapFeatures)
+                .HasForeignKey(link => link.MapFeatureId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(link => link.MapFeatureId);
         });
     }
 

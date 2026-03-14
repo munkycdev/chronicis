@@ -176,6 +176,7 @@ else
         <SessionMapViewerModal IsOpen="_isMapModalOpen"
                                WorldId="CurrentWorldId"
                                MapId="_selectedMapId"
+                               TargetFeatureId="_selectedMapFeatureId"
                                MapName="@_selectedMapName"
                                OnClose="CloseMapModalAsync" />
     }
@@ -226,6 +227,7 @@ else
     private readonly Dictionary<string, ExternalLinkContentDto> _externalLinkCache = new(StringComparer.OrdinalIgnoreCase);
     private bool _isMapModalOpen;
     private Guid _selectedMapId;
+    private Guid? _selectedMapFeatureId;
     private string? _selectedMapName;
 
     private const string LastArticlePathKey = "chronicis_last_article_path";
@@ -661,7 +663,9 @@ else
         if (isMapAutocomplete)
         {
             var remainder = normalizedQuery.Substring("maps/".Length);
-            mapSearch = string.IsNullOrWhiteSpace(remainder) ? null : remainder.Trim();
+            var slashIndex = remainder.IndexOf('/');
+            var mapSegment = slashIndex >= 0 ? remainder[..slashIndex] : remainder;
+            mapSearch = string.IsNullOrWhiteSpace(mapSegment) ? null : mapSegment.Trim();
             _autocompleteIsExternalQuery = false;
             _autocompleteExternalSourceKey = null;
             _autocompleteQuery = mapSearch ?? string.Empty;
@@ -709,10 +713,13 @@ else
 
             if (isMapAutocomplete)
             {
-                var mapSuggestions = await MapApi.GetMapAutocompleteAsync(worldId, mapSearch);
-                _autocompleteSuggestions = mapSuggestions
-                    .Select(WikiLinkAutocompleteItem.FromMapAutocomplete)
-                    .ToList();
+                if (!await TryLoadSessionNoteMapFeatureSuggestionsAsync(worldId, normalizedQuery))
+                {
+                    var mapSuggestions = await MapApi.GetMapAutocompleteAsync(worldId, mapSearch);
+                    _autocompleteSuggestions = mapSuggestions
+                        .Select(WikiLinkAutocompleteItem.FromMapAutocomplete)
+                        .ToList();
+                }
             }
             else if (_autocompleteIsExternalQuery)
             {
@@ -813,11 +820,24 @@ else
 
             if (suggestion.MapId.HasValue)
             {
-                await JSRuntime.InvokeVoidAsync(
-                    "insertMapLinkToken",
-                    $"tiptap-editor-{_article.Id}",
-                    suggestion.MapId.Value.ToString(),
-                    suggestion.Title);
+                if (suggestion.IsMapFeature && suggestion.MapFeatureId.HasValue)
+                {
+                    await JSRuntime.InvokeVoidAsync(
+                        "insertMapFeatureLinkToken",
+                        $"tiptap-editor-{_article.Id}",
+                        suggestion.MapFeatureId.Value.ToString(),
+                        suggestion.MapId.Value.ToString(),
+                        suggestion.Title,
+                        suggestion.SecondaryText ?? string.Empty);
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync(
+                        "insertMapLinkToken",
+                        $"tiptap-editor-{_article.Id}",
+                        suggestion.MapId.Value.ToString(),
+                        suggestion.Title);
+                }
             }
             else if (suggestion.IsExternal)
             {
@@ -925,6 +945,65 @@ else
         return !string.IsNullOrWhiteSpace(sourceKey);
     }
 
+    private async Task<bool> TryLoadSessionNoteMapFeatureSuggestionsAsync(Guid worldId, string normalizedQuery)
+    {
+        if (_article?.Type != ArticleType.SessionNote
+            || !TryParseMapFeatureAutocompleteQuery(normalizedQuery, out var mapName, out var featureSearch))
+        {
+            return false;
+        }
+
+        var mapSuggestions = await MapApi.GetMapAutocompleteAsync(worldId, mapName);
+        var exactMatches = mapSuggestions
+            .Where(map => string.Equals(map.Name, mapName, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var resolvedMap = exactMatches.Count == 1 ? exactMatches[0] : null;
+
+        if (resolvedMap == null)
+        {
+            _autocompleteQuery = mapName;
+            _autocompleteSuggestions = mapSuggestions
+                .Select(WikiLinkAutocompleteItem.FromMapAutocomplete)
+                .ToList();
+            return true;
+        }
+
+        _autocompleteQuery = featureSearch ?? string.Empty;
+        var featureSuggestions = await MapApi.GetMapFeatureAutocompleteAsync(worldId, resolvedMap.MapId, featureSearch);
+        _autocompleteSuggestions = featureSuggestions
+            .Select(WikiLinkAutocompleteItem.FromMapFeatureAutocomplete)
+            .ToList();
+        return true;
+    }
+
+    private static bool TryParseMapFeatureAutocompleteQuery(string normalizedQuery, out string mapName, out string? featureSearch)
+    {
+        mapName = string.Empty;
+        featureSearch = null;
+
+        if (!normalizedQuery.StartsWith("maps/", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var remainder = normalizedQuery.Substring("maps/".Length);
+        var slashIndex = remainder.IndexOf('/');
+        if (slashIndex < 0)
+        {
+            return false;
+        }
+
+        mapName = remainder[..slashIndex].Trim();
+        if (string.IsNullOrWhiteSpace(mapName))
+        {
+            return false;
+        }
+
+        var featureSegment = remainder[(slashIndex + 1)..];
+        featureSearch = string.IsNullOrWhiteSpace(featureSegment) ? null : featureSegment.Trim();
+        return true;
+    }
+
     [JSInvokable]
     public Task OnMapLinkClicked(string mapId, string? mapName)
     {
@@ -940,6 +1019,28 @@ else
         }
 
         _selectedMapId = parsedMapId;
+        _selectedMapFeatureId = null;
+        _selectedMapName = string.IsNullOrWhiteSpace(mapName) ? null : mapName.Trim();
+        _isMapModalOpen = true;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public Task OnMapFeatureChipClicked(string mapId, string featureId, string? mapName)
+    {
+        if (!Guid.TryParse(mapId, out var parsedMapId) || !Guid.TryParse(featureId, out var parsedFeatureId))
+        {
+            return Task.CompletedTask;
+        }
+
+        if (CurrentWorldId == Guid.Empty)
+        {
+            Snackbar.Add("Unable to open location: missing world context.", Severity.Warning);
+            return Task.CompletedTask;
+        }
+
+        _selectedMapId = parsedMapId;
+        _selectedMapFeatureId = parsedFeatureId;
         _selectedMapName = string.IsNullOrWhiteSpace(mapName) ? null : mapName.Trim();
         _isMapModalOpen = true;
         return InvokeAsync(StateHasChanged);
@@ -949,8 +1050,16 @@ else
     {
         _isMapModalOpen = false;
         _selectedMapId = Guid.Empty;
+        _selectedMapFeatureId = null;
         _selectedMapName = null;
         return InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public Task OnBrokenLinkClicked(string _)
+    {
+        Snackbar.Add("This link points to a missing article", Severity.Warning);
+        return Task.CompletedTask;
     }
 
     [JSInvokable]

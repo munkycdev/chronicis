@@ -2,8 +2,6 @@
 
 All notable changes to this project are documented in this file.
 
----
-
 ## [3.0.0] - 2026-03-03
 
 ### Maps, Layers, and Basemap Image Workflow
@@ -21,19 +19,49 @@ All notable changes to this project are documented in this file.
   - Default World/Campaign/Arc layers plus custom layers.
   - Layer visibility toggles with immediate pin filtering.
   - Layer selection for pin placement, drag/drop reorder, and custom layer create/rename/delete controls.
+- Polygon authoring workflow on map pages:
+  - Click to add vertices directly on the basemap.
+  - Live draft overlay while plotting the shape.
+  - Save from the "Editing polygon" bar or double-click to close and save.
+- Polygon editor states for both draft and selected polygons with:
+  - Save / Cancel controls during draft creation.
+  - Save / Cancel / Delete controls for existing polygons.
+  - Draft progress and unsaved-change status messaging.
+- Standardized polygon color palette:
+  - `Blue`
+  - `Green`
+  - `Amber`
+  - `Red`
+  - `Teal`
+- Polygon naming with editable text input and on-map label rendering near the polygon center.
+- Vertex-editing affordances:
+  - Direct drag handles on polygon vertices.
+  - Click-on-edge insertion to add a new point to an existing polygon.
+  - High-contrast circled-dot vertex markers with white backing for better visibility over map art.
 - Breadcrumbs on both maps pages:
   - `Dashboard / {world name} / Maps`
   - `Dashboard / {world name} / Maps / {map name}`
 - World-owner delete workflow with typed-name confirmation, matching Session Detail destructive-delete safety pattern.
 - Session Note map linking:
   - Type `[[maps/` in Session Notes to autocomplete maps from the current world.
-  - Selecting a suggestion inserts an inline map chip.
-  - Clicking the chip opens the map in a modal viewer with basemap + pins and pan/zoom support.
+  - Selecting a map suggestion inserts an inline map chip.
+  - Type `[[maps/{map}/` to autocomplete features on a specific resolved map.
+  - Selecting a feature suggestion inserts an inline map-feature chip scoped to that map.
+  - Clicking the chip opens the map in a modal viewer; feature chips center and highlight the selected feature.
+- Public shared-world map viewing:
+  - Public article rendering recognizes the same inline map and map-feature chips used in Session Notes.
+  - Clicking a public map or map-feature chip opens the modal viewer in anonymous read-only mode.
+  - Public feature chips target and highlight the selected feature without introducing anonymous persistence for modal layer toggles.
 
 **Changed:**
 - Map page basemap rendering is constrained to its content container to prevent horizontal overflow blowout.
 - Tree behavior now expands/selects Maps and active map nodes when navigating maps routes.
 - Map rename updates map node label in the tree immediately.
+- Saved polygons now render as filled SVG regions using the selected standardized color instead of outline-only display.
+- Polygon create mode now shows the editor bar immediately instead of waiting for polygon completion.
+- Vertex hit-testing and drag behavior were hardened for zoomed-in editing so handles remain draggable at high zoom levels.
+- Polygon selection and create-point coordinate resolution were hardened so editing still works after viewport/zoom changes.
+- Map and map-feature chips now render as light gold-beige pills with a leading `📍` glyph and no leading type badge.
 
 **Removed:**
 - "Add Item" action from the Maps virtual group.
@@ -51,6 +79,10 @@ All notable changes to this project are documented in this file.
 **Storage and Data:**
 - New maps tables for map metadata, layer defaults, and campaign/arc scoping pivots.
 - Basemap binaries stored in blob storage under map-scoped folders.
+- `MapFeatureCreateDto`, `MapFeatureUpdateDto`, and `MapFeatureDto` now round-trip polygon `Color` metadata alongside `Name`.
+- `MapFeature` persistence now stores polygon color selection in addition to name and geometry references.
+- Polygon geometry continues to use GeoJSON-shaped payloads with blob-backed storage for the compressed geometry body.
+- Migration `20260313180329_AddMapFeatureColor` adds map-feature color persistence.
 - Delete map permanently removes metadata records and the full map blob folder (no restoration path).
 
 ---

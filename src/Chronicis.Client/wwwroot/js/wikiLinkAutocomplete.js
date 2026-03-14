@@ -30,10 +30,9 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
         // Get cursor position
         const { from } = editor.state.selection;
         const textBefore = editor.state.doc.textBetween(Math.max(0, from - 50), from, '\n');
-
         // Check if we just typed [[
         const match = textBefore.match(/\[\[([^\]]*)$/);
-        
+
         if (match) {
             const fullQuery = match[1];
             
@@ -150,7 +149,23 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
 
     // Expose a setter so insertWikiLink / insertExternalLinkToken can close the popup
     // without needing access to the closure-scoped flag directly.
-    window._setAutocompleteVisible = (value) => { autocompleteVisible = value; };
+window._setAutocompleteVisible = (value) => { autocompleteVisible = value; };
+}
+
+function findWikiBracketRange(doc, from) {
+    for (let pos = from - 1; pos >= Math.max(0, from - 100); pos--) {
+        try {
+            const char1 = doc.textBetween(pos, pos + 1, '');
+            const char2 = pos > 0 ? doc.textBetween(pos - 1, pos, '') : '';
+            if (char2 === '[' && char1 === '[') {
+                return { from: pos - 1, to: from };
+            }
+        } catch (e) {
+            continue;
+        }
+    }
+
+    return null;
 }
 
 /**
@@ -174,22 +189,9 @@ function insertWikiLink(editorId, articleId, displayText) {
 
     const { from } = editor.state.selection;
     const doc = editor.state.doc;
-    let bracketPos = -1;
+    const triggerRange = findWikiBracketRange(doc, from);
 
-    for (let pos = from - 1; pos >= Math.max(0, from - 100); pos--) {
-        try {
-            const char1 = doc.textBetween(pos, pos + 1, '');
-            const char2 = pos > 0 ? doc.textBetween(pos - 1, pos, '') : '';
-            if (char2 === '[' && char1 === '[') {
-                bracketPos = pos - 1;
-                break;
-            }
-        } catch (e) {
-            continue;
-        }
-    }
-
-    if (bracketPos === -1) {
+    if (!triggerRange) {
         console.error('Could not find [[ before cursor');
         return;
     }
@@ -197,7 +199,7 @@ function insertWikiLink(editorId, articleId, displayText) {
     editor
         .chain()
         .focus()
-        .deleteRange({ from: bracketPos, to: from })
+        .deleteRange(triggerRange)
         .insertContent({ type: 'wikiLink', attrs: { targetArticleId: articleId, displayText: finalDisplayText, broken: false } })
         .insertContent(' ')
         .run();
@@ -230,22 +232,9 @@ function insertExternalLinkToken(editorId, source, id, title) {
 
     const { from } = editor.state.selection;
     const doc = editor.state.doc;
-    let bracketPos = -1;
+    const triggerRange = findWikiBracketRange(doc, from);
 
-    for (let pos = from - 1; pos >= Math.max(0, from - 100); pos--) {
-        try {
-            const char1 = doc.textBetween(pos, pos + 1, '');
-            const char2 = pos > 0 ? doc.textBetween(pos - 1, pos, '') : '';
-            if (char2 === '[' && char1 === '[') {
-                bracketPos = pos - 1;
-                break;
-            }
-        } catch (e) {
-            continue;
-        }
-    }
-
-    if (bracketPos === -1) {
+    if (!triggerRange) {
         console.error('Could not find [[ before cursor');
         return;
     }
@@ -253,7 +242,7 @@ function insertExternalLinkToken(editorId, source, id, title) {
     editor
         .chain()
         .focus()
-        .deleteRange({ from: bracketPos, to: from })
+        .deleteRange(triggerRange)
         .insertContent({ type: 'externalLink', attrs: { source: source, externalId: id, title: finalTitle } })
         .insertContent(' ')
         .run();
@@ -289,22 +278,9 @@ function insertMapLinkToken(editorId, mapId, mapName) {
 
     const { from } = editor.state.selection;
     const doc = editor.state.doc;
-    let bracketPos = -1;
+    const triggerRange = findWikiBracketRange(doc, from);
 
-    for (let pos = from - 1; pos >= Math.max(0, from - 100); pos--) {
-        try {
-            const char1 = doc.textBetween(pos, pos + 1, '');
-            const char2 = pos > 0 ? doc.textBetween(pos - 1, pos, '') : '';
-            if (char2 === '[' && char1 === '[') {
-                bracketPos = pos - 1;
-                break;
-            }
-        } catch (e) {
-            continue;
-        }
-    }
-
-    if (bracketPos === -1) {
+    if (!triggerRange) {
         console.error('Could not find [[ before cursor');
         return;
     }
@@ -312,7 +288,7 @@ function insertMapLinkToken(editorId, mapId, mapName) {
     editor
         .chain()
         .focus()
-        .deleteRange({ from: bracketPos, to: from })
+        .deleteRange(triggerRange)
         .insertContent({
             type: 'wikiLink',
             attrs: {
@@ -321,6 +297,43 @@ function insertMapLinkToken(editorId, mapId, mapName) {
                 broken: false,
                 mapId: mapId,
                 mapName: finalMapName
+            }
+        })
+        .insertContent(' ')
+        .run();
+}
+
+function insertMapFeatureLinkToken(editorId, featureId, mapId, displayText, mapName) {
+    const editor = window.tipTapEditors[editorId];
+    if (!editor) {
+        console.error('Editor not found:', editorId);
+        return;
+    }
+
+    if (!featureId || !mapId || !displayText) {
+        console.error('Map feature link token missing feature identity');
+        return;
+    }
+
+    if (window._setAutocompleteVisible) window._setAutocompleteVisible(false);
+    const { from } = editor.state.selection;
+    const triggerRange = findWikiBracketRange(editor.state.doc, from);
+    if (!triggerRange) {
+        console.error('Could not find [[ before cursor');
+        return;
+    }
+
+    editor
+        .chain()
+        .focus()
+        .deleteRange(triggerRange)
+        .insertContent({
+            type: 'mapFeatureLink',
+            attrs: {
+                featureId: featureId,
+                mapId: mapId,
+                displayText: displayText.trim(),
+                mapName: (mapName || '').trim()
             }
         })
         .insertContent(' ')
@@ -442,6 +455,7 @@ window.initializeWikiLinkAutocomplete = initializeWikiLinkAutocomplete;
 window.insertWikiLink = insertWikiLink;
 window.insertExternalLinkToken = insertExternalLinkToken;
 window.insertMapLinkToken = insertMapLinkToken;
+window.insertMapFeatureLinkToken = insertMapFeatureLinkToken;
 window.updateAutocompleteText = updateAutocompleteText;
 window.insertWikiLinksAtPositions = insertWikiLinksAtPositions;
 window.getTipTapContent = getTipTapContent;

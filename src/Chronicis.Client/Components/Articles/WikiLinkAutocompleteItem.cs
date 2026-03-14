@@ -18,9 +18,11 @@ public sealed class WikiLinkAutocompleteItem
     public string? Source { get; private init; }
     public Guid? ArticleId { get; private init; }
     public Guid? MapId { get; private init; }
+    public Guid? MapFeatureId { get; private init; }
     public string? ExternalId { get; private init; }
     public string? CategoryKey { get; private init; }
     public string? Icon { get; private init; }
+    public bool IsMapFeature { get; private init; }
 
     /// <summary>
     /// If the suggestion matched via an alias, this contains the matched alias.
@@ -79,6 +81,21 @@ public sealed class WikiLinkAutocompleteItem
             Title = suggestion.Name,
             SecondaryText = "Map",
             MapId = suggestion.MapId,
+            MatchedAlias = null
+        };
+    }
+
+    public static WikiLinkAutocompleteItem FromMapFeatureAutocomplete(MapFeatureAutocompleteDto suggestion)
+    {
+        return new WikiLinkAutocompleteItem
+        {
+            IsExternal = false,
+            IsCategory = false,
+            IsMapFeature = true,
+            Title = suggestion.DisplayText,
+            SecondaryText = suggestion.MapName,
+            MapId = suggestion.MapId,
+            MapFeatureId = suggestion.MapFeatureId,
             MatchedAlias = null
         };
     }

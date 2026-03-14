@@ -1,5 +1,6 @@
 using Bunit;
 using Bunit.TestDoubles;
+using Chronicis.Client.Components.Maps;
 using Chronicis.Client.Abstractions;
 using Chronicis.Client.Pages;
 using Chronicis.Client.Services;
@@ -240,5 +241,32 @@ public class PublicWorldPageTests : MudBlazorTestContext
             Assert.Contains("mud-skeleton", cut.Markup, StringComparison.OrdinalIgnoreCase));
 
         articleTcs.SetResult(null);
+    }
+
+    [Fact]
+    public async Task PublicWorldPage_WhenMapModalOpen_RendersSessionMapViewerModal()
+    {
+        ComponentFactories.AddStub<SessionMapViewerModal>();
+
+        var publicApi = Substitute.For<IPublicApiService>();
+        publicApi.GetPublicWorldAsync("test-world").Returns(new WorldDetailDto
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test World",
+            PublicSlug = "test-world"
+        });
+        publicApi.GetPublicArticleTreeAsync("test-world").Returns(new List<ArticleTreeDto>());
+
+        var vm = CreateViewModel(publicApi: publicApi);
+        var cut = RenderWithViewModel(vm, "test-world");
+
+        await cut.InvokeAsync(async () => await vm.LoadWorldAsync("test-world", null));
+        await cut.InvokeAsync(async () => await vm.OnPublicMapLinkClicked(Guid.NewGuid().ToString(), "Roshar"));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(vm.IsMapModalOpen);
+            Assert.NotNull(cut.FindComponent<Stub<SessionMapViewerModal>>());
+        });
     }
 }

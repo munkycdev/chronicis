@@ -66,6 +66,9 @@ public class PublicWorldPageViewModelTests
         Assert.Null(c.VM.CurrentArticle);
         Assert.False(c.VM.IsLoadingArticle);
         Assert.False(c.VM.WikiLinksInitialized);
+        Assert.False(c.VM.IsMapModalOpen);
+        Assert.Equal(Guid.Empty, c.VM.SelectedMapId);
+        Assert.Null(c.VM.SelectedMapFeatureId);
     }
 
     // -------------------------------------------------------------------------
@@ -298,6 +301,118 @@ public class PublicWorldPageViewModelTests
 
         // Must not throw
         await c.VM.OnPublicWikiLinkClicked(articleId.ToString());
+    }
+
+    [Fact]
+    public async Task OnPublicMapLinkClicked_WithLoadedWorld_OpensMapModal()
+    {
+        var c = CreateSut();
+        var world = MakeWorld("test-world");
+        c.PublicApi.GetPublicWorldAsync("test-world").Returns(world);
+        c.PublicApi.GetPublicArticleTreeAsync("test-world").Returns(new List<ArticleTreeDto>());
+        await c.VM.LoadWorldAsync("test-world", null);
+
+        var mapId = Guid.NewGuid();
+        await c.VM.OnPublicMapLinkClicked(mapId.ToString(), "Roshar");
+
+        Assert.True(c.VM.IsMapModalOpen);
+        Assert.Equal(mapId, c.VM.SelectedMapId);
+        Assert.Null(c.VM.SelectedMapFeatureId);
+        Assert.Equal("Roshar", c.VM.SelectedMapName);
+    }
+
+    [Fact]
+    public async Task OnPublicMapLinkClicked_InvalidOrMissingWorld_DoesNotOpenModal()
+    {
+        var c = CreateSut();
+
+        await c.VM.OnPublicMapLinkClicked("not-a-guid", "Roshar");
+        Assert.False(c.VM.IsMapModalOpen);
+
+        await c.VM.OnPublicMapLinkClicked(Guid.NewGuid().ToString(), "Roshar");
+        Assert.False(c.VM.IsMapModalOpen);
+    }
+
+    [Fact]
+    public async Task OnPublicMapLinkClicked_WhitespaceName_NormalizesToNull()
+    {
+        var c = CreateSut();
+        var world = MakeWorld("test-world");
+        c.PublicApi.GetPublicWorldAsync("test-world").Returns(world);
+        c.PublicApi.GetPublicArticleTreeAsync("test-world").Returns(new List<ArticleTreeDto>());
+        await c.VM.LoadWorldAsync("test-world", null);
+
+        await c.VM.OnPublicMapLinkClicked(Guid.NewGuid().ToString(), "   ");
+
+        Assert.True(c.VM.IsMapModalOpen);
+        Assert.Null(c.VM.SelectedMapName);
+    }
+
+    [Fact]
+    public async Task OnPublicMapFeatureChipClicked_WithLoadedWorld_OpensMapModalWithFeature()
+    {
+        var c = CreateSut();
+        var world = MakeWorld("test-world");
+        c.PublicApi.GetPublicWorldAsync("test-world").Returns(world);
+        c.PublicApi.GetPublicArticleTreeAsync("test-world").Returns(new List<ArticleTreeDto>());
+        await c.VM.LoadWorldAsync("test-world", null);
+
+        var mapId = Guid.NewGuid();
+        var featureId = Guid.NewGuid();
+        await c.VM.OnPublicMapFeatureChipClicked(mapId.ToString(), featureId.ToString(), "Roshar");
+
+        Assert.True(c.VM.IsMapModalOpen);
+        Assert.Equal(mapId, c.VM.SelectedMapId);
+        Assert.Equal(featureId, c.VM.SelectedMapFeatureId);
+        Assert.Equal("Roshar", c.VM.SelectedMapName);
+    }
+
+    [Fact]
+    public async Task OnPublicMapFeatureChipClicked_InvalidInputOrMissingWorld_DoesNotOpenModal()
+    {
+        var c = CreateSut();
+
+        await c.VM.OnPublicMapFeatureChipClicked("not-a-guid", Guid.NewGuid().ToString(), "Roshar");
+        Assert.False(c.VM.IsMapModalOpen);
+
+        await c.VM.OnPublicMapFeatureChipClicked(Guid.NewGuid().ToString(), "not-a-guid", "Roshar");
+        Assert.False(c.VM.IsMapModalOpen);
+
+        await c.VM.OnPublicMapFeatureChipClicked(Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), "Roshar");
+        Assert.False(c.VM.IsMapModalOpen);
+    }
+
+    [Fact]
+    public async Task OnPublicMapFeatureChipClicked_WhitespaceName_NormalizesToNull()
+    {
+        var c = CreateSut();
+        var world = MakeWorld("test-world");
+        c.PublicApi.GetPublicWorldAsync("test-world").Returns(world);
+        c.PublicApi.GetPublicArticleTreeAsync("test-world").Returns(new List<ArticleTreeDto>());
+        await c.VM.LoadWorldAsync("test-world", null);
+
+        await c.VM.OnPublicMapFeatureChipClicked(Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), "   ");
+
+        Assert.True(c.VM.IsMapModalOpen);
+        Assert.Null(c.VM.SelectedMapName);
+    }
+
+    [Fact]
+    public async Task CloseMapModalAsync_ResetsMapSelection()
+    {
+        var c = CreateSut();
+        var world = MakeWorld("test-world");
+        c.PublicApi.GetPublicWorldAsync("test-world").Returns(world);
+        c.PublicApi.GetPublicArticleTreeAsync("test-world").Returns(new List<ArticleTreeDto>());
+        await c.VM.LoadWorldAsync("test-world", null);
+
+        await c.VM.OnPublicMapFeatureChipClicked(Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), "Roshar");
+        await c.VM.CloseMapModalAsync();
+
+        Assert.False(c.VM.IsMapModalOpen);
+        Assert.Equal(Guid.Empty, c.VM.SelectedMapId);
+        Assert.Null(c.VM.SelectedMapFeatureId);
+        Assert.Null(c.VM.SelectedMapName);
     }
 
     // -------------------------------------------------------------------------

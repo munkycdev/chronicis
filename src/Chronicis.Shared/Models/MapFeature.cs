@@ -31,4 +31,6 @@ public class MapFeature
     public string? GeometryETag { get; set; }
 
     public Guid? LinkedArticleId { get; set; }
+
+    public ICollection<SessionNoteMapFeature> SessionNoteMapFeatures { get; set; } = new List<SessionNoteMapFeature>();
 }

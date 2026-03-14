@@ -1,6 +1,6 @@
 # Chronicis Feature Inventory
 
-Last reviewed: 2026-03-03
+Last reviewed: 2026-03-14
 
 Scope:
 - Included: `src/Chronicis.Api`, `src/Chronicis.Client`
@@ -162,6 +162,9 @@ Scope:
 - Public read-only behavior for shared content.
 - Public visibility enforcement (hidden non-public content).
 - Public document/image access for eligible shared content.
+- Public map and map-feature chips on shared articles open the same modal map viewer used in authenticated article views.
+- Public map-feature chips center and highlight the selected feature in read-only mode.
+- Public map modal layer toggles remain local to the current viewer session and do not persist anonymous state.
 
 ## 15) Admin and Operational Features
 - Admin world inventory view.
@@ -192,7 +195,17 @@ Scope:
 - Dedicated map page at `/world/{worldId}/maps/{mapId}` with constrained basemap rendering.
 - Map layer stack management with default and custom layers, visibility toggles, selected layer targeting, drag/drop reorder, and custom-layer create/rename/delete actions.
 - Pin visibility and render stacking respect enabled layer state and current layer order.
-- Session Note map linking via `[[maps/` autocomplete, inline map chips, and click-to-open modal map viewer (basemap + pins with pan/zoom).
+- Polygon creation workflow on map pages with click-to-add vertices, live draft overlay, layer-aware validation, and save via editor action or double-click completion.
+- Polygon editing surface with create/selected states, explicit save/cancel/delete actions, standardized color selection, and unsaved-change status.
+- Polygon rendering as filled SVG regions using a standardized palette (`Blue`, `Green`, `Amber`, `Red`, `Teal`).
+- Polygon naming with in-editor text input and on-map label rendering near the polygon's visual center.
+- Polygon geometry editing with draggable vertex handles, edge-click vertex insertion, and keyboard affordances for cancel/remove-last-point during draft editing.
+- Polygon vertex markers use high-contrast circled-dot handles for improved visibility against basemap art.
+- Session Note map linking via nested `[[maps/{map}` and `[[maps/{map}/{feature}` autocomplete.
+- `[[maps/` suggests maps in the current world; `[[maps/{map}/` suggests only features on the resolved map.
+- Selecting a suggestion inserts an inline map or map-feature chip.
+- Map and map-feature chips render as light gold-beige pills with a leading `📍` and no leading type badge.
+- Clicking map or map-feature chips opens the modal map viewer (basemap + pins with pan/zoom); feature chips center and highlight the selected feature.
 - Editable map-name header on map page with dirty tracking, save status indicator, and explicit save action.
 - Breadcrumbs for maps detail (`Dashboard / {world} / Maps`) and map page (`Dashboard / {world} / Maps / {map}`).
 - World-owner destructive map delete flow with typed-name confirmation.

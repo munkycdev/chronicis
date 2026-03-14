@@ -1,7 +1,10 @@
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.Enums;
+using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Chronicis.Api.Services;
 
@@ -11,24 +14,29 @@ namespace Chronicis.Api.Services;
 /// </summary>
 public sealed class PublicWorldService : IPublicWorldService
 {
+    private static readonly JsonSerializerOptions GeometryJsonOptions = new(JsonSerializerDefaults.Web);
+
     private readonly ChronicisDbContext _context;
     private readonly ILogger<PublicWorldService> _logger;
     private readonly IArticleHierarchyService _hierarchyService;
     private readonly IBlobStorageService _blobStorage;
     private readonly IReadAccessPolicyService _readAccessPolicy;
+    private readonly IMapBlobStore _mapBlobStore;
 
     public PublicWorldService(
         ChronicisDbContext context,
         ILogger<PublicWorldService> logger,
         IArticleHierarchyService hierarchyService,
         IBlobStorageService blobStorage,
-        IReadAccessPolicyService readAccessPolicy)
+        IReadAccessPolicyService readAccessPolicy,
+        IMapBlobStore mapBlobStore)
     {
         _context = context;
         _logger = logger;
         _hierarchyService = hierarchyService;
         _blobStorage = blobStorage;
         _readAccessPolicy = readAccessPolicy;
+        _mapBlobStore = mapBlobStore;
     }
 
     /// <summary>
@@ -565,5 +573,226 @@ public sealed class PublicWorldService : IPublicWorldService
         }
 
         return await _blobStorage.GenerateDownloadSasUrlAsync(document.BlobPath);
+    }
+
+    /// <inheritdoc />
+    public async Task<(GetBasemapReadUrlResponseDto? Basemap, string? Error)> GetPublicMapBasemapReadUrlAsync(string publicSlug, Guid mapId)
+    {
+        var map = await GetPublicMapAsync(publicSlug, mapId);
+        if (map == null)
+        {
+            return (null, "Map not found or not public");
+        }
+
+        if (string.IsNullOrWhiteSpace(map.BasemapBlobKey))
+        {
+            return (null, "Basemap is missing for this map.");
+        }
+
+        var readUrl = await _mapBlobStore.GenerateReadSasUrlAsync(map.BasemapBlobKey);
+        return (new GetBasemapReadUrlResponseDto { ReadUrl = readUrl }, null);
+    }
+
+    /// <inheritdoc />
+    public async Task<List<MapLayerDto>?> GetPublicMapLayersAsync(string publicSlug, Guid mapId)
+    {
+        var map = await GetPublicMapAsync(publicSlug, mapId);
+        if (map == null)
+        {
+            return null;
+        }
+
+        return await _context.MapLayers
+            .AsNoTracking()
+            .Where(layer => layer.WorldMapId == mapId)
+            .OrderBy(layer => layer.SortOrder)
+            .Select(layer => new MapLayerDto
+            {
+                MapLayerId = layer.MapLayerId,
+                ParentLayerId = layer.ParentLayerId,
+                Name = layer.Name,
+                SortOrder = layer.SortOrder,
+                IsEnabled = layer.IsEnabled,
+            })
+            .ToListAsync();
+    }
+
+    /// <inheritdoc />
+    public async Task<List<MapPinResponseDto>?> GetPublicMapPinsAsync(string publicSlug, Guid mapId)
+    {
+        var map = await GetPublicMapAsync(publicSlug, mapId);
+        if (map == null)
+        {
+            return null;
+        }
+
+        var pins = await _context.MapFeatures
+            .AsNoTracking()
+            .Where(feature => feature.WorldMapId == mapId && feature.FeatureType == MapFeatureType.Point)
+            .OrderBy(feature => feature.MapFeatureId)
+            .Select(feature => new
+            {
+                feature.MapFeatureId,
+                feature.WorldMapId,
+                feature.MapLayerId,
+                feature.Name,
+                X = feature.X,
+                Y = feature.Y,
+                feature.LinkedArticleId,
+            })
+            .ToListAsync();
+
+        var linkedArticles = await GetPublicLinkedArticleTitlesAsync(
+            map.WorldId,
+            pins.Where(pin => pin.LinkedArticleId.HasValue).Select(pin => pin.LinkedArticleId!.Value));
+
+        return pins
+            .Select(pin => new MapPinResponseDto
+            {
+                PinId = pin.MapFeatureId,
+                MapId = pin.WorldMapId,
+                LayerId = pin.MapLayerId,
+                Name = pin.Name,
+                X = pin.X,
+                Y = pin.Y,
+                LinkedArticle = pin.LinkedArticleId.HasValue
+                    && linkedArticles.TryGetValue(pin.LinkedArticleId.Value, out var title)
+                    ? new LinkedArticleSummaryDto
+                    {
+                        ArticleId = pin.LinkedArticleId.Value,
+                        Title = title,
+                    }
+                    : null,
+            })
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<List<MapFeatureDto>?> GetPublicMapFeaturesAsync(string publicSlug, Guid mapId)
+    {
+        var map = await GetPublicMapAsync(publicSlug, mapId);
+        if (map == null)
+        {
+            return null;
+        }
+
+        var features = await _context.MapFeatures
+            .AsNoTracking()
+            .Where(feature => feature.WorldMapId == mapId)
+            .OrderBy(feature => feature.MapFeatureId)
+            .ToListAsync();
+
+        return await ToPublicMapFeatureDtosAsync(map.WorldId, features);
+    }
+
+    private async Task<PublicMapLookup?> GetPublicMapAsync(string publicSlug, Guid mapId)
+    {
+        var normalizedSlug = _readAccessPolicy.NormalizePublicSlug(publicSlug);
+        var worldId = await _readAccessPolicy
+            .ApplyPublicWorldSlugFilter(_context.Worlds.AsNoTracking(), normalizedSlug)
+            .Select(world => (Guid?)world.Id)
+            .FirstOrDefaultAsync();
+
+        if (!worldId.HasValue)
+        {
+            return null;
+        }
+
+        return await _context.WorldMaps
+            .AsNoTracking()
+            .Where(map => map.WorldId == worldId.Value && map.WorldMapId == mapId)
+            .Select(map => new PublicMapLookup
+            {
+                WorldId = map.WorldId,
+                BasemapBlobKey = map.BasemapBlobKey,
+            })
+            .FirstOrDefaultAsync();
+    }
+
+    private async Task<Dictionary<Guid, string>> GetPublicLinkedArticleTitlesAsync(Guid worldId, IEnumerable<Guid> linkedArticleIds)
+    {
+        var ids = linkedArticleIds
+            .Distinct()
+            .ToList();
+
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        return await _readAccessPolicy
+            .ApplyPublicArticleFilter(_context.Articles.AsNoTracking(), worldId)
+            .Where(article => ids.Contains(article.Id))
+            .ToDictionaryAsync(article => article.Id, article => article.Title);
+    }
+
+    private Task<Dictionary<Guid, string>> GetPublicLinkedArticleTitlesAsync(Guid worldId, IEnumerable<MapFeature> features)
+    {
+        return GetPublicLinkedArticleTitlesAsync(
+            worldId,
+            features
+                .Where(feature => feature.LinkedArticleId.HasValue)
+                .Select(feature => feature.LinkedArticleId!.Value));
+    }
+
+    private async Task<List<MapFeatureDto>> ToPublicMapFeatureDtosAsync(Guid worldId, IReadOnlyCollection<MapFeature> features)
+    {
+        var linkedArticles = await GetPublicLinkedArticleTitlesAsync(worldId, features);
+        var results = new List<MapFeatureDto>(features.Count);
+
+        foreach (var feature in features)
+        {
+            PolygonGeometryDto? polygon = null;
+            if (feature.FeatureType == MapFeatureType.Polygon && !string.IsNullOrWhiteSpace(feature.GeometryBlobKey))
+            {
+                var geometryJson = await _mapBlobStore.LoadFeatureGeometryAsync(feature.GeometryBlobKey);
+                polygon = geometryJson == null
+                    ? null
+                    : JsonSerializer.Deserialize<PolygonGeometryDto>(geometryJson, GeometryJsonOptions);
+            }
+
+            results.Add(new MapFeatureDto
+            {
+                FeatureId = feature.MapFeatureId,
+                MapId = feature.WorldMapId,
+                LayerId = feature.MapLayerId,
+                FeatureType = feature.FeatureType,
+                Name = feature.Name,
+                Color = feature.Color,
+                LinkedArticleId = feature.LinkedArticleId,
+                LinkedArticle = feature.LinkedArticleId.HasValue
+                    && linkedArticles.TryGetValue(feature.LinkedArticleId.Value, out var title)
+                    ? new LinkedArticleSummaryDto
+                    {
+                        ArticleId = feature.LinkedArticleId.Value,
+                        Title = title,
+                    }
+                    : null,
+                Point = feature.FeatureType == MapFeatureType.Point
+                    ? new MapFeaturePointDto
+                    {
+                        X = feature.X,
+                        Y = feature.Y,
+                    }
+                    : null,
+                Polygon = polygon,
+                Geometry = feature.FeatureType == MapFeatureType.Polygon && !string.IsNullOrWhiteSpace(feature.GeometryBlobKey)
+                    ? new MapFeatureGeometryReferenceDto
+                    {
+                        BlobKey = feature.GeometryBlobKey,
+                        ETag = feature.GeometryETag,
+                    }
+                    : null,
+            });
+        }
+
+        return results;
+    }
+
+    private sealed class PublicMapLookup
+    {
+        public Guid WorldId { get; init; }
+
+        public string? BasemapBlobKey { get; init; }
     }
 }

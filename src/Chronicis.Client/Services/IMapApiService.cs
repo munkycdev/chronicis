@@ -18,6 +18,16 @@ public interface IMapApiService
     Task<List<MapAutocompleteDto>> GetMapAutocompleteAsync(Guid worldId, string? query);
 
     /// <summary>
+    /// Gets map feature autocomplete suggestions for the given world.
+    /// </summary>
+    Task<List<MapFeatureAutocompleteDto>> GetMapFeatureAutocompleteAsync(Guid worldId, string? query);
+
+    /// <summary>
+    /// Gets map feature autocomplete suggestions scoped to a specific map.
+    /// </summary>
+    Task<List<MapFeatureAutocompleteDto>> GetMapFeatureAutocompleteAsync(Guid worldId, Guid mapId, string? query);
+
+    /// <summary>
     /// Creates a map in the specified world.
     /// </summary>
     Task<MapDto?> CreateMapAsync(Guid worldId, MapCreateDto dto);
@@ -76,6 +86,11 @@ public interface IMapApiService
     /// Gets a single feature with HTTP status details.
     /// </summary>
     Task<(MapFeatureDto? Feature, int? StatusCode, string? Error)> GetFeatureAsync(Guid worldId, Guid mapId, Guid featureId);
+
+    /// <summary>
+    /// Lists session-note references for a feature.
+    /// </summary>
+    Task<List<MapFeatureSessionReferenceDto>> GetFeatureSessionReferencesAsync(Guid worldId, Guid mapId, Guid featureId);
 
     /// <summary>
     /// Replaces a feature on the given map.

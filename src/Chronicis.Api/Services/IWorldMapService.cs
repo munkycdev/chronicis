@@ -50,6 +50,20 @@ public interface IWorldMapService
     Task<List<MapAutocompleteDto>> SearchMapsForWorldAsync(Guid worldId, Guid userId, string? query);
 
     /// <summary>
+    /// List map feature suggestions for editor autocomplete.
+    /// Returns minimal data and supports optional feature/article-title filtering.
+    /// Requires world membership.
+    /// </summary>
+    Task<List<MapFeatureAutocompleteDto>> SearchMapFeaturesForWorldAsync(Guid worldId, Guid userId, string? query);
+
+    /// <summary>
+    /// List map feature suggestions scoped to a specific map for editor autocomplete.
+    /// Returns minimal data and supports optional feature/article-title filtering.
+    /// Requires world membership.
+    /// </summary>
+    Task<List<MapFeatureAutocompleteDto>> SearchMapFeaturesForMapAsync(Guid worldId, Guid mapId, Guid userId, string? query);
+
+    /// <summary>
     /// Create a pin for a map, selecting the default layer using Arc > Campaign > World.
     /// Requires world membership.
     /// </summary>
@@ -85,6 +99,12 @@ public interface IWorldMapService
     /// Requires world membership.
     /// </summary>
     Task<MapFeatureDto?> GetFeatureAsync(Guid worldId, Guid mapId, Guid featureId, Guid userId);
+
+    /// <summary>
+    /// List session-note references for a map feature.
+    /// Requires world membership.
+    /// </summary>
+    Task<List<MapFeatureSessionReferenceDto>> ListSessionReferencesForFeatureAsync(Guid worldId, Guid mapId, Guid featureId, Guid userId);
 
     /// <summary>
     /// Replace a map feature.
@@ -134,6 +154,30 @@ public interface IWorldMapService
     /// Requires world membership.
     /// </summary>
     Task DeletePinAsync(Guid worldId, Guid mapId, Guid pinId, Guid userId);
+
+    /// <summary>
+    /// Link a map feature to a SessionNote article.
+    /// Requires world membership.
+    /// </summary>
+    Task AddFeatureToSessionNoteAsync(Guid worldId, Guid sessionNoteId, Guid mapFeatureId, Guid userId);
+
+    /// <summary>
+    /// Remove a map feature link from a SessionNote article.
+    /// Requires world membership.
+    /// </summary>
+    Task RemoveFeatureFromSessionNoteAsync(Guid worldId, Guid sessionNoteId, Guid mapFeatureId, Guid userId);
+
+    /// <summary>
+    /// List all map features linked to a SessionNote article.
+    /// Requires world membership.
+    /// </summary>
+    Task<List<MapFeatureDto>> ListFeaturesForSessionNoteAsync(Guid worldId, Guid sessionNoteId, Guid userId);
+
+    /// <summary>
+    /// Reconciles the SessionNote map-feature links to the provided feature ID set.
+    /// Requires world membership.
+    /// </summary>
+    Task SyncSessionNoteMapFeaturesAsync(Guid worldId, Guid sessionNoteId, IEnumerable<Guid> mapFeatureIds, Guid userId);
 
     /// <summary>
     /// Validate the upload request, persist the blob key / filename / content-type,

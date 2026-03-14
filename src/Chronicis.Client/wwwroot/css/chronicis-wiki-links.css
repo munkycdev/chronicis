@@ -36,11 +36,11 @@ span[data-type="wiki-link"][data-map-id] {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 2px 6px;
+    padding: 3px 9px;
     border-radius: 999px;
-    border: 1px solid #1F2A33;
-    background: #1F2A33;
-    color: #F4F0EA;
+    border: 1px solid var(--chronicis-secondary-muted);
+    background: var(--chronicis-secondary-muted);
+    color: var(--chronicis-background-dark);
     font-weight: 600;
     font-size: 12px;
     text-decoration: none;
@@ -49,29 +49,51 @@ span[data-type="wiki-link"][data-map-id] {
 }
 
 span[data-type="wiki-link"][data-map-id]:hover {
-    background: #3A4750;
-    border-color: #3A4750;
+    background: #b49d7a;
+    border-color: #b49d7a;
 }
 
-.map-link-badge {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 1px 5px;
-    border-radius: 6px;
-    background: #C4AF8E;
-    border: 1px solid #C4AF8E;
-    color: #1F2A33;
+span[data-type="map-feature-link"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--chronicis-secondary-muted);
+    background: var(--chronicis-secondary-muted);
+    color: var(--chronicis-background-dark);
+    font-weight: 600;
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+span[data-type="map-feature-link"]:hover {
+    background: #b49d7a;
+    border-color: #b49d7a;
+}
+
+.map-chip-pin {
+    font-size: 12px;
+    line-height: 1;
+    color: var(--chronicis-background-dark);
+}
+
+.map-feature-link-text {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.map-feature-link-map {
+    font-size: 10px;
+    opacity: 0.9;
+    color: rgba(31, 42, 51, 0.78);
 }
 
 .map-link-text {
     font-size: 12px;
     font-weight: 600;
-}
-
-.map-link-icon {
-    font-size: 11px;
-    color: #F4F0EA;
 }
 
 /* ============================================
@@ -279,20 +301,26 @@ span[data-type="external-link"]:hover {
 }
 
 @media (prefers-color-scheme: dark) {
-    span[data-type="external-link"],
-    span[data-type="wiki-link"][data-map-id] {
+    span[data-type="wiki-link"][data-map-id],
+    span[data-type="map-feature-link"] {
+        color: var(--chronicis-background-dark);
+        border-color: var(--chronicis-secondary-muted);
+    }
+
+    span[data-type="wiki-link"][data-map-id]:hover,
+    span[data-type="map-feature-link"]:hover {
+        border-color: #b49d7a;
+    }
+
+    span[data-type="external-link"] {
         color: #F4F0EA;
-        background: #1F2A33;
-        border-color: #1F2A33;
+        border-color: currentColor;
     }
 
-    span[data-type="external-link"]:hover,
-    span[data-type="wiki-link"][data-map-id]:hover {
-        background: #3A4750;
-        border-color: #3A4750;
+    span[data-type="external-link"]:hover {
+        border-color: currentColor;
     }
 
-    .map-link-badge,
     .external-link-badge,
     .external-link-preview-source {
         color: #1F2A33;
@@ -300,9 +328,28 @@ span[data-type="external-link"]:hover {
         border-color: #C4AF8E;
     }
 
-    .map-link-icon,
+    .map-chip-pin {
+        color: var(--chronicis-background-dark);
+    }
+
     .external-link-icon {
         color: #F4F0EA;
+    }
+
+    span[data-type="wiki-link"][data-map-id] {
+        background: var(--chronicis-secondary-muted);
+    }
+
+    span[data-type="wiki-link"][data-map-id]:hover {
+        background: #b49d7a;
+    }
+
+    span[data-type="map-feature-link"] {
+        background: var(--chronicis-secondary-muted);
+    }
+
+    span[data-type="map-feature-link"]:hover {
+        background: #b49d7a;
     }
 }
 

@@ -41,6 +41,34 @@ public class MapApiService : IMapApiService
             $"map autocomplete for world {worldId}");
     }
 
+    public async Task<List<MapFeatureAutocompleteDto>> GetMapFeatureAutocompleteAsync(Guid worldId, string? query)
+    {
+        var route = $"world/{worldId}/maps/features/autocomplete";
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            route = $"{route}?query={Uri.EscapeDataString(query)}";
+        }
+
+        return await _http.GetListAsync<MapFeatureAutocompleteDto>(
+            route,
+            _logger,
+            $"map feature autocomplete for world {worldId}");
+    }
+
+    public async Task<List<MapFeatureAutocompleteDto>> GetMapFeatureAutocompleteAsync(Guid worldId, Guid mapId, string? query)
+    {
+        var route = $"world/{worldId}/maps/{mapId}/features/autocomplete";
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            route = $"{route}?query={Uri.EscapeDataString(query)}";
+        }
+
+        return await _http.GetListAsync<MapFeatureAutocompleteDto>(
+            route,
+            _logger,
+            $"map feature autocomplete for map {mapId}");
+    }
+
     public async Task<MapDto?> CreateMapAsync(Guid worldId, MapCreateDto dto)
     {
         return await _http.PostEntityAsync<MapDto>(
@@ -151,6 +179,14 @@ public class MapApiService : IMapApiService
         return await GetEntityWithStatusAsync<MapFeatureDto>(
             $"world/{worldId}/maps/{mapId}/features/{featureId}",
             $"feature {featureId} for map {mapId}");
+    }
+
+    public async Task<List<MapFeatureSessionReferenceDto>> GetFeatureSessionReferencesAsync(Guid worldId, Guid mapId, Guid featureId)
+    {
+        return await _http.GetListAsync<MapFeatureSessionReferenceDto>(
+            $"world/{worldId}/maps/{mapId}/features/{featureId}/session-references",
+            _logger,
+            $"session references for feature {featureId} on map {mapId}");
     }
 
     public async Task<MapFeatureDto?> UpdateFeatureAsync(Guid worldId, Guid mapId, Guid featureId, MapFeatureUpdateDto dto)

@@ -78,4 +78,29 @@ public class MapFeatureDtosTests
         Assert.Equal("maps/a/layers/b/features/c.geojson.gz", roundTrip.Geometry!.BlobKey);
         Assert.Equal("gzip", roundTrip.Geometry.ContentEncoding);
     }
+
+    [Fact]
+    public void MapFeatureSessionReferenceDto_SerializesAndDeserializes()
+    {
+        var dto = new MapFeatureSessionReferenceDto
+        {
+            SessionNoteId = Guid.NewGuid(),
+            SessionNoteTitle = "Player Notes",
+            SessionId = Guid.NewGuid(),
+            SessionName = "Session 8",
+            SessionDate = new DateTime(2026, 3, 8, 0, 0, 0, DateTimeKind.Utc),
+            CreatedAt = new DateTime(2026, 3, 9, 12, 30, 0, DateTimeKind.Utc),
+        };
+
+        var json = JsonSerializer.Serialize(dto, JsonOptions);
+        var roundTrip = JsonSerializer.Deserialize<MapFeatureSessionReferenceDto>(json, JsonOptions);
+
+        Assert.NotNull(roundTrip);
+        Assert.Equal(dto.SessionNoteId, roundTrip!.SessionNoteId);
+        Assert.Equal("Player Notes", roundTrip.SessionNoteTitle);
+        Assert.Equal(dto.SessionId, roundTrip.SessionId);
+        Assert.Equal("Session 8", roundTrip.SessionName);
+        Assert.Equal(dto.SessionDate, roundTrip.SessionDate);
+        Assert.Equal(dto.CreatedAt, roundTrip.CreatedAt);
+    }
 }

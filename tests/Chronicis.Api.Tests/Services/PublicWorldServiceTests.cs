@@ -1,6 +1,7 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ public sealed class PublicWorldServiceTests : IDisposable
     private readonly ChronicisDbContext _context;
     private readonly IArticleHierarchyService _hierarchyService;
     private readonly IBlobStorageService _blobStorage;
+    private readonly IMapBlobStore _mapBlobStore;
     private readonly PublicWorldService _sut;
     private bool _disposed;
 
@@ -31,13 +33,17 @@ public sealed class PublicWorldServiceTests : IDisposable
         _blobStorage = Substitute.For<IBlobStorageService>();
         _blobStorage.GenerateDownloadSasUrlAsync(Arg.Any<string>())
             .Returns(args => Task.FromResult($"https://cdn.test/{args.Arg<string>()}"));
+        _mapBlobStore = Substitute.For<IMapBlobStore>();
+        _mapBlobStore.GenerateReadSasUrlAsync(Arg.Any<string>())
+            .Returns(args => Task.FromResult($"https://maps.test/{args.Arg<string>()}"));
 
         _sut = new PublicWorldService(
             _context,
             NullLogger<PublicWorldService>.Instance,
             _hierarchyService,
             _blobStorage,
-            new ReadAccessPolicyService());
+            new ReadAccessPolicyService(),
+            _mapBlobStore);
     }
 
     public void Dispose()
@@ -288,6 +294,99 @@ public sealed class PublicWorldServiceTests : IDisposable
         await _blobStorage.DidNotReceive().GenerateDownloadSasUrlAsync(Arg.Any<string>());
     }
 
+    [Fact]
+    public async Task GetPublicMapBasemapReadUrlAsync_ReturnsUrl_WhenMapBelongsToPublicWorld()
+    {
+        var seed = await SeedPublicWorldWithMapAsync();
+
+        var result = await _sut.GetPublicMapBasemapReadUrlAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
+
+        Assert.NotNull(result.Basemap);
+        Assert.Null(result.Error);
+        Assert.Equal($"https://maps.test/{seed.Map.BasemapBlobKey}", result.Basemap!.ReadUrl);
+        await _mapBlobStore.Received(1).GenerateReadSasUrlAsync(seed.Map.BasemapBlobKey!);
+    }
+
+    [Fact]
+    public async Task GetPublicMapBasemapReadUrlAsync_ReturnsError_WhenBasemapMissing()
+    {
+        var seed = await SeedPublicWorldWithMapAsync();
+        seed.Map.BasemapBlobKey = null;
+        await _context.SaveChangesAsync();
+
+        var result = await _sut.GetPublicMapBasemapReadUrlAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
+
+        Assert.Null(result.Basemap);
+        Assert.Equal("Basemap is missing for this map.", result.Error);
+        await _mapBlobStore.DidNotReceive().GenerateReadSasUrlAsync(Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task PublicMapQueries_ReturnProjectedData_AndHidePrivateLinkedArticles()
+    {
+        var seed = await SeedPublicWorldWithMapAsync();
+        _mapBlobStore.LoadFeatureGeometryAsync(seed.PolygonFeature.GeometryBlobKey!)
+            .Returns(Task.FromResult<string?>(
+                "{\"type\":\"Polygon\",\"coordinates\":[[[0.1,0.1],[0.6,0.1],[0.3,0.5],[0.1,0.1]]]}"));
+
+        var layers = await _sut.GetPublicMapLayersAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
+        var pins = await _sut.GetPublicMapPinsAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
+        var features = await _sut.GetPublicMapFeaturesAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
+
+        Assert.NotNull(layers);
+        Assert.Equal(new[] { seed.RootLayer.MapLayerId, seed.RegionLayer.MapLayerId }, layers!.Select(layer => layer.MapLayerId));
+
+        var pin = Assert.Single(pins!);
+        Assert.Equal(seed.PointFeature.MapFeatureId, pin.PinId);
+        Assert.Equal(seed.PublicArticle.Id, pin.LinkedArticle!.ArticleId);
+        Assert.Equal(seed.PublicArticle.Title, pin.LinkedArticle.Title);
+
+        Assert.Equal(2, features!.Count);
+        var pointFeature = Assert.Single(features, feature => feature.FeatureId == seed.PointFeature.MapFeatureId);
+        Assert.Equal(seed.PublicArticle.Title, pointFeature.LinkedArticle!.Title);
+
+        var polygonFeature = Assert.Single(features, feature => feature.FeatureId == seed.PolygonFeature.MapFeatureId);
+        Assert.Null(polygonFeature.LinkedArticle);
+        Assert.NotNull(polygonFeature.Polygon);
+        Assert.Equal(seed.PolygonFeature.GeometryBlobKey, polygonFeature.Geometry!.BlobKey);
+    }
+
+    [Fact]
+    public async Task GetPublicMapLayersAsync_ReturnsNull_WhenMapIsNotInPublicWorld()
+    {
+        var seed = await SeedPublicWorldWithMapAsync();
+
+        var result = await _sut.GetPublicMapLayersAsync(seed.World.PublicSlug!, Guid.NewGuid());
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task PublicMapQueries_ReturnNull_WhenWorldSlugIsNotPublic()
+    {
+        var result = await _sut.GetPublicMapFeaturesAsync("missing-world", Guid.NewGuid());
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task PublicMapQueries_HandleMissingLinkedArticles()
+    {
+        var seed = await SeedPublicWorldWithMapAsync();
+        seed.PointFeature.LinkedArticleId = null;
+        seed.PolygonFeature.LinkedArticleId = null;
+        await _context.SaveChangesAsync();
+        _mapBlobStore.LoadFeatureGeometryAsync(seed.PolygonFeature.GeometryBlobKey!)
+            .Returns(Task.FromResult<string?>(
+                "{\"type\":\"Polygon\",\"coordinates\":[[[0.1,0.1],[0.6,0.1],[0.3,0.5],[0.1,0.1]]]}"));
+
+        var pins = await _sut.GetPublicMapPinsAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
+        var features = await _sut.GetPublicMapFeaturesAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
+
+        Assert.Null(Assert.Single(pins!).LinkedArticle);
+        Assert.All(features!, feature => Assert.Null(feature.LinkedArticle));
+    }
+
     private async Task<(User Owner, World World, Campaign Campaign, Arc Arc, Session Session, string LegacySessionArticleSlug)> SeedWorldWithSessionAsync(bool includeLegacySessionArticle)
     {
         var owner = TestHelpers.CreateUser();
@@ -345,5 +444,102 @@ public sealed class PublicWorldServiceTests : IDisposable
 
         await _context.SaveChangesAsync();
         return (owner, world, campaign, arc, session, legacySessionSlug);
+    }
+
+    private async Task<(
+        User Owner,
+        World World,
+        WorldMap Map,
+        MapLayer RootLayer,
+        MapLayer RegionLayer,
+        Article PublicArticle,
+        Article PrivateArticle,
+        MapFeature PointFeature,
+        MapFeature PolygonFeature)> SeedPublicWorldWithMapAsync()
+    {
+        var owner = TestHelpers.CreateUser();
+        var world = TestHelpers.CreateWorld(ownerId: owner.Id, name: "Public World", slug: "internal-world");
+        world.IsPublic = true;
+        world.PublicSlug = "public-world";
+
+        var publicArticle = TestHelpers.CreateArticle(
+            worldId: world.Id,
+            createdBy: owner.Id,
+            title: "Visible Lore",
+            slug: "visible-lore",
+            visibility: ArticleVisibility.Public);
+
+        var privateArticle = TestHelpers.CreateArticle(
+            worldId: world.Id,
+            createdBy: owner.Id,
+            title: "Private Lore",
+            slug: "private-lore",
+            visibility: ArticleVisibility.Private);
+
+        var map = new WorldMap
+        {
+            WorldMapId = Guid.NewGuid(),
+            WorldId = world.Id,
+            Name = "Roshar",
+            BasemapBlobKey = "maps/roshar/basemap.png",
+            BasemapContentType = "image/png",
+            BasemapOriginalFilename = "roshar.png",
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow
+        };
+
+        var rootLayer = new MapLayer
+        {
+            MapLayerId = Guid.NewGuid(),
+            WorldMapId = map.WorldMapId,
+            Name = "World",
+            SortOrder = 0,
+            IsEnabled = true
+        };
+
+        var regionLayer = new MapLayer
+        {
+            MapLayerId = Guid.NewGuid(),
+            WorldMapId = map.WorldMapId,
+            ParentLayerId = rootLayer.MapLayerId,
+            Name = "Regions",
+            SortOrder = 1,
+            IsEnabled = true
+        };
+
+        var pointFeature = new MapFeature
+        {
+            MapFeatureId = Guid.NewGuid(),
+            WorldMapId = map.WorldMapId,
+            MapLayerId = rootLayer.MapLayerId,
+            FeatureType = MapFeatureType.Point,
+            Name = "Shattered Plains",
+            X = 0.25f,
+            Y = 0.75f,
+            LinkedArticleId = publicArticle.Id
+        };
+
+        var polygonFeature = new MapFeature
+        {
+            MapFeatureId = Guid.NewGuid(),
+            WorldMapId = map.WorldMapId,
+            MapLayerId = regionLayer.MapLayerId,
+            FeatureType = MapFeatureType.Polygon,
+            Name = "Alethkar",
+            Color = "#C4AF8E",
+            GeometryBlobKey = "maps/roshar/layers/regions/features/alethkar.geojson.gz",
+            GeometryETag = "\"etag\"",
+            LinkedArticleId = privateArticle.Id
+        };
+
+        _context.Users.Add(owner);
+        _context.Worlds.Add(world);
+        _context.Articles.AddRange(publicArticle, privateArticle);
+        _context.WorldMaps.Add(map);
+        _context.MapLayers.AddRange(rootLayer, regionLayer);
+        _context.MapFeatures.AddRange(pointFeature, polygonFeature);
+        await _context.SaveChangesAsync();
+
+        return (owner, world, map, rootLayer, regionLayer, publicArticle, privateArticle, pointFeature, polygonFeature);
     }
 }

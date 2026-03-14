@@ -52,6 +52,34 @@ public class MapFeatureDto
 }
 
 /// <summary>
+/// Session-note reference payload for map feature history display.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class MapFeatureSessionReferenceDto
+{
+    public Guid SessionNoteId { get; set; }
+    public string SessionNoteTitle { get; set; } = string.Empty;
+    public Guid? SessionId { get; set; }
+    public string? SessionName { get; set; }
+    public DateTime? SessionDate { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
+/// Minimal map feature suggestion payload for editor autocomplete.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class MapFeatureAutocompleteDto
+{
+    public Guid MapFeatureId { get; set; }
+    public Guid MapId { get; set; }
+    public string MapName { get; set; } = string.Empty;
+    public string DisplayText { get; set; } = string.Empty;
+    public string? FeatureName { get; set; }
+    public string? LinkedArticleTitle { get; set; }
+}
+
+/// <summary>
 /// Normalized point geometry for point features.
 /// </summary>
 [ExcludeFromCodeCoverage]

@@ -1,11 +1,12 @@
 # Chronicis Architecture Inventory
 
-Last reviewed: 2026-03-03
+Last reviewed: 2026-03-14
 
 ## 1) Scope
 - Projects covered:
 - `src/Chronicis.Api`
 - `src/Chronicis.Client`
+- `src/Chronicis.Client.Engine`
 - `src/Chronicis.Shared`
 - Purpose:
 - Capture the implemented architecture (composition roots, boundaries, dependencies, persistence model, integration adapters, and conventions).
@@ -16,6 +17,7 @@ Last reviewed: 2026-03-03
 
 ### 2.1 Runtime Components
 - Browser-hosted Blazor WebAssembly app (`Chronicis.Client`) serves UI and user interaction workflows.
+- Client-side geometry/static-asset package (`Chronicis.Client.Engine`) supplies polygon-editing algorithms and ships the map-engine static web asset consumed by client builds.
 - ASP.NET Core API (`Chronicis.Api`) provides authenticated and public endpoints.
 - SQL Server (via EF Core) stores application state and relational graph.
 - Azure Blob Storage stores world documents, inline article images, and map basemap files.
@@ -24,9 +26,11 @@ Last reviewed: 2026-03-03
 
 ### 2.2 Dependency Direction (Compile-Time)
 ```text
+Chronicis.Client  ---->  Chronicis.Client.Engine  ---->  Chronicis.Shared
 Chronicis.Client  ---->  Chronicis.Shared
 Chronicis.Api     ---->  Chronicis.Shared
-Chronicis.Shared  ---->  (no project references)
+Chronicis.Client.Engine  ---->  Chronicis.Shared
+Chronicis.Shared         ---->  (no project references)
 ```
 
 ### 2.3 Request/Response Topology
@@ -74,9 +78,9 @@ Chronicis.Shared  ---->  (no project references)
 - File/export module:
 - `BlobStorageService`, `WorldDocumentService`, `ExportService` (+ markdown builder partials).
 - Maps module:
-- `WorldMapService` + `IMapBlobStore`/`AzureBlobMapBlobStore` handle map metadata, basemap SAS flows, and destructive map-folder cleanup.
+- `WorldMapService` + `IMapBlobStore`/`AzureBlobMapBlobStore` handle map metadata, basemap SAS flows, point/polygon feature CRUD, polygon geometry blob persistence, session-note nested map/feature autocomplete reads, and destructive map-folder cleanup.
 - Public read model module:
-- `PublicWorldService` for anonymous world/article/document access projections.
+- `PublicWorldService` for anonymous world/article/document access projections plus anonymous map/modal read models for shared worlds.
 - Admin/tutorial module:
 - `AdminService`, `TutorialService`.
 - Prompting module:
@@ -123,7 +127,7 @@ Chronicis.Shared  ---->  (no project references)
 - World collaboration entities (`WorldMember`, `WorldInvitation`) are world-scoped.
 - Link graph entities (`ArticleLink`, `ArticleExternalLink`, `ArticleAlias`) attach to articles.
 - Document entities (`WorldDocument`) are world-scoped with optional article association.
-- Map entities (`WorldMap`, `MapLayer`, `WorldMapCampaign`, `WorldMapArc`) are world-scoped with optional campaign/arc scoping pivots.
+- Map entities (`WorldMap`, `MapLayer`, `MapFeature`, `WorldMapCampaign`, `WorldMapArc`) are world-scoped with optional campaign/arc scoping pivots.
 - Quest entities are arc-scoped with quest-update timeline entities and optional session reference.
 - Constraint architecture:
 - Unique indexes for identity/business constraints (e.g., owner+slug, public slug, invitation code, sibling slug uniqueness).
@@ -175,6 +179,8 @@ Chronicis.Shared  ---->  (no project references)
 - `ViewModels/*` use `INotifyPropertyChanged` (`ViewModelBase`) for page state and orchestration.
 - Service layer:
 - API clients, app state, drawer/shortcut coordination, markdown/render helpers.
+- Shared map-geometry layer:
+- `Chronicis.Client.Engine` centralizes polygon draft state, hit testing, SVG path building, GeoJSON conversion, and vertex editing so map workflows do not duplicate geometry logic inside page code.
 - Infrastructure abstraction layer:
 - `Infrastructure/*` adapters isolate navigation/dialog/title/notification concerns from viewmodels.
 - JS interop layer:
@@ -199,6 +205,9 @@ Chronicis.Shared  ---->  (no project references)
 - `ChronicisAuthHandler` injects bearer token via `IAccessTokenProvider`.
 - API service pattern:
 - Interface + implementation per domain endpoint cluster (e.g., `IArticleApiService` / `ArticleApiService`).
+- Map-linking client seams:
+- `IMapApiService` / `MapApiService` serve authenticated map CRUD and nested `[[maps/...` autocomplete reads for editor map/map-feature chips.
+- `IPublicApiService` / `PublicApiService` serve anonymous public-world content reads and modal map hydration for public chip clicks.
 - Shared HTTP utility extension methods unify GET/POST/PUT/PATCH/DELETE error handling and logging behavior.
 
 ### 4.5 State and Coordination Architecture
@@ -247,7 +256,12 @@ Chronicis.Shared  ---->  (no project references)
 - `questEditor.js`
 - Auxiliary UX/diagnostic modules:
 - `emojiPickerInterop.js`
+- `chronicis-map-engine.js` (static web asset packaged via `Chronicis.Client.Engine`)
 - `rum.js`
+- Map chip interop responsibilities:
+- `wikiLinkAutocomplete.js` routes nested `[[maps/...` editor autocomplete between world-map suggestions and feature suggestions scoped to a resolved map.
+- `wikiLinkExtension.js` renders inline map/map-feature chips as `📍` pills and forwards chip click metadata into Blazor event handlers.
+- `publicWikiLinks.js` binds rendered public map/map-feature chips to anonymous modal-open callbacks so public pages reuse the shared map viewer in read-only mode.
 
 ### 4.9 Inline Image Sub-Architecture
 - Inline image persistence model:
@@ -272,13 +286,13 @@ Chronicis.Shared  ---->  (no project references)
 - User/world/collaboration: `User`, `World`, `WorldMember`, `WorldInvitation`
 - Narrative hierarchy: `Campaign`, `Arc`, `Session`, `Article`
 - Linking/resource entities: `ArticleLink`, `ArticleAlias`, `ArticleExternalLink`, `WorldLink`, `WorldDocument`
-- Map entities: `WorldMap`, `MapLayer`, `WorldMapCampaign`, `WorldMapArc`
+- Map entities: `WorldMap`, `MapLayer`, `MapFeature`, `WorldMapCampaign`, `WorldMapArc`
 - Questing: `Quest`, `QuestUpdate`
 - Configuration/content templates: `SummaryTemplate`, `TutorialPage`, `ResourceProvider`, `WorldResourceProvider`
 
 ### 5.3 Contract/DTO Layer
 - DTO modules in `DTOs/*` provide API contract boundaries by domain area:
-- articles, worlds, campaigns/arcs/sessions, links/external links, summaries, search, dashboard, admin/tutorials, health, users, characters, resource providers.
+- articles, worlds, campaigns/arcs/sessions, maps, links/external links, summaries, search, dashboard, admin/tutorials, health, users, characters, resource providers.
 - DTO shapes support both hierarchical and flat read models (e.g., `ArticleDto` + `ArticleTreeDto`).
 
 ### 5.4 Enums and Policy Encoding
@@ -317,6 +331,7 @@ Chronicis.Shared  ---->  (no project references)
 - `WorldDocument` records map metadata/state for blob-backed files.
 - Optional `ArticleId` supports inline content image association.
 - `WorldMap` stores basemap metadata (`BasemapBlobKey`, content type, original filename) for blob-backed map imagery.
+- `MapFeature` stores point coordinates inline and stores polygon geometry references (`GeometryBlobKey`, `GeometryETag`) plus feature-level name/color metadata for blob-backed polygon shapes.
 
 ### 6.5 Progress Tracking
 - Quests are arc-scoped.

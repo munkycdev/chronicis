@@ -2245,6 +2245,245 @@ public class WorldMapServiceTests : IDisposable
         Assert.Contains("features reference", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    // ── SessionNoteMapFeature ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AddFeatureToSessionNoteAsync_AllowsMultipleFeaturesPerNote()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Session Note Feature Links");
+        var firstFeature = await CreatePointFeatureAsync(map.WorldMapId, "Blackroot Ford", 0.2f, 0.3f);
+        var secondFeature = await CreatePointFeatureAsync(map.WorldMapId, "South Gate", 0.5f, 0.6f);
+        var sessionNote = await CreateSessionNoteArticleAsync("Session 3");
+
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, sessionNote.Id, firstFeature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, sessionNote.Id, secondFeature.FeatureId, _memberId);
+
+        var linked = await _sut.ListFeaturesForSessionNoteAsync(_worldId, sessionNote.Id, _memberId);
+
+        Assert.Equal(2, linked.Count);
+        Assert.Contains(linked, feature => feature.FeatureId == firstFeature.FeatureId);
+        Assert.Contains(linked, feature => feature.FeatureId == secondFeature.FeatureId);
+        Assert.Equal(2, await _db.SessionNoteMapFeatures.CountAsync(link => link.SessionNoteId == sessionNote.Id));
+    }
+
+    [Fact]
+    public async Task SearchMapFeaturesForWorldAsync_ReturnsFeatureAndMapMetadata()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Ambria");
+        var linkedArticle = await CreateArticleAsync(_worldId, "Blackroot Article");
+        var feature = await CreatePointFeatureAsync(map.WorldMapId, null, 0.2f, 0.3f);
+
+        var persistedFeature = await _db.MapFeatures.FirstAsync(existing => existing.MapFeatureId == feature.FeatureId);
+        persistedFeature.LinkedArticleId = linkedArticle.Id;
+        await _db.SaveChangesAsync();
+
+        var results = await _sut.SearchMapFeaturesForWorldAsync(_worldId, _memberId, "blackroot");
+
+        var suggestion = Assert.Single(results);
+        Assert.Equal(feature.FeatureId, suggestion.MapFeatureId);
+        Assert.Equal(map.WorldMapId, suggestion.MapId);
+        Assert.Equal("Ambria", suggestion.MapName);
+        Assert.Equal("Blackroot Article", suggestion.DisplayText);
+        Assert.Equal("Blackroot Article", suggestion.LinkedArticleTitle);
+    }
+
+    [Fact]
+    public async Task SearchMapFeaturesForWorldAsync_WhitespaceQuery_ReturnsAllFeatures()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Davokar");
+        var feature = await CreatePointFeatureAsync(map.WorldMapId, "South Gate", 0.4f, 0.6f);
+
+        var results = await _sut.SearchMapFeaturesForWorldAsync(_worldId, _memberId, "   ");
+
+        var suggestion = Assert.Single(results);
+        Assert.Equal(feature.FeatureId, suggestion.MapFeatureId);
+        Assert.Equal(map.WorldMapId, suggestion.MapId);
+        Assert.Equal("Davokar", suggestion.MapName);
+        Assert.Equal("South Gate", suggestion.DisplayText);
+    }
+
+    [Fact]
+    public async Task SearchMapFeaturesForMapAsync_FiltersToRequestedMap()
+    {
+        var roshar = await CreateMapWithDefaultLayersAsync("Roshar");
+        var scadrial = await CreateMapWithDefaultLayersAsync("Scadrial");
+        var expectedFeature = await CreatePointFeatureAsync(roshar.WorldMapId, "Ravinia", 0.2f, 0.2f);
+        _ = await CreatePointFeatureAsync(scadrial.WorldMapId, "Ravinia Outpost", 0.7f, 0.7f);
+
+        var results = await _sut.SearchMapFeaturesForMapAsync(_worldId, roshar.WorldMapId, _memberId, "rav");
+
+        var suggestion = Assert.Single(results);
+        Assert.Equal(expectedFeature.FeatureId, suggestion.MapFeatureId);
+        Assert.Equal(roshar.WorldMapId, suggestion.MapId);
+        Assert.Equal("Roshar", suggestion.MapName);
+        Assert.Equal("Ravinia", suggestion.DisplayText);
+    }
+
+    [Fact]
+    public async Task AddFeatureToSessionNoteAsync_AllowsSameFeatureAcrossMultipleNotes()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Shared Session Feature");
+        var feature = await CreatePointFeatureAsync(map.WorldMapId, "Ruined Watchtower", 0.4f, 0.4f);
+        var firstNote = await CreateSessionNoteArticleAsync("Session 8");
+        var secondNote = await CreateSessionNoteArticleAsync("Session 11");
+
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, firstNote.Id, feature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, secondNote.Id, feature.FeatureId, _memberId);
+
+        var firstLinked = await _sut.ListFeaturesForSessionNoteAsync(_worldId, firstNote.Id, _memberId);
+        var secondLinked = await _sut.ListFeaturesForSessionNoteAsync(_worldId, secondNote.Id, _memberId);
+
+        Assert.Single(firstLinked);
+        Assert.Single(secondLinked);
+        Assert.Equal(feature.FeatureId, firstLinked[0].FeatureId);
+        Assert.Equal(feature.FeatureId, secondLinked[0].FeatureId);
+        Assert.Equal(2, await _db.SessionNoteMapFeatures.CountAsync(link => link.MapFeatureId == feature.FeatureId));
+    }
+
+    [Fact]
+    public async Task RemoveFeatureFromSessionNoteAsync_RemovesOnlyRequestedLink()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Remove Session Feature");
+        var feature = await CreatePointFeatureAsync(map.WorldMapId, "Blackroot Ford", 0.1f, 0.1f);
+        var firstNote = await CreateSessionNoteArticleAsync("Session 1");
+        var secondNote = await CreateSessionNoteArticleAsync("Session 2");
+
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, firstNote.Id, feature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, secondNote.Id, feature.FeatureId, _memberId);
+
+        await _sut.RemoveFeatureFromSessionNoteAsync(_worldId, firstNote.Id, feature.FeatureId, _memberId);
+
+        Assert.Empty(await _sut.ListFeaturesForSessionNoteAsync(_worldId, firstNote.Id, _memberId));
+        var remaining = await _sut.ListFeaturesForSessionNoteAsync(_worldId, secondNote.Id, _memberId);
+        Assert.Single(remaining);
+        Assert.Equal(1, await _db.SessionNoteMapFeatures.CountAsync(link => link.MapFeatureId == feature.FeatureId));
+    }
+
+    [Fact]
+    public async Task SyncSessionNoteMapFeaturesAsync_ReconcilesExpectedJoinRows()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Sync Session Features");
+        var keepFeature = await CreatePointFeatureAsync(map.WorldMapId, "Blackroot Ford", 0.1f, 0.1f);
+        var removeFeature = await CreatePointFeatureAsync(map.WorldMapId, "South Gate", 0.2f, 0.2f);
+        var addFeature = await CreatePointFeatureAsync(map.WorldMapId, "Ruined Watchtower", 0.3f, 0.3f);
+        var sessionNote = await CreateSessionNoteArticleAsync("Session 12");
+
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, sessionNote.Id, keepFeature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, sessionNote.Id, removeFeature.FeatureId, _memberId);
+
+        await _sut.SyncSessionNoteMapFeaturesAsync(
+            _worldId,
+            sessionNote.Id,
+            [keepFeature.FeatureId, addFeature.FeatureId, addFeature.FeatureId],
+            _memberId);
+
+        var linked = await _sut.ListFeaturesForSessionNoteAsync(_worldId, sessionNote.Id, _memberId);
+
+        Assert.Equal(2, linked.Count);
+        Assert.Contains(linked, feature => feature.FeatureId == keepFeature.FeatureId);
+        Assert.Contains(linked, feature => feature.FeatureId == addFeature.FeatureId);
+        Assert.DoesNotContain(linked, feature => feature.FeatureId == removeFeature.FeatureId);
+    }
+
+    [Fact]
+    public async Task ListSessionReferencesForFeatureAsync_ReturnsOnlyReadableLinkedSessionNotes()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Referenced Sessions");
+        var feature = await CreatePointFeatureAsync(map.WorldMapId, "Blackroot Ford", 0.1f, 0.1f);
+        var publicNote = await CreateSessionNoteArticleAsync("Session 3", createdBy: _ownerId);
+        var privateOwnNote = await CreateSessionNoteArticleAsync(
+            "Session 5",
+            createdBy: _memberId,
+            visibility: ArticleVisibility.Private);
+        var privateOtherNote = await CreateSessionNoteArticleAsync(
+            "Session 7",
+            createdBy: _ownerId,
+            visibility: ArticleVisibility.Private);
+        var unrelatedNote = await CreateSessionNoteArticleAsync("Session 9", createdBy: _ownerId);
+
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, publicNote.Id, feature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, privateOwnNote.Id, feature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, privateOtherNote.Id, feature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, unrelatedNote.Id, feature.FeatureId, _memberId);
+        await _sut.RemoveFeatureFromSessionNoteAsync(_worldId, unrelatedNote.Id, feature.FeatureId, _memberId);
+
+        var result = await _sut.ListSessionReferencesForFeatureAsync(_worldId, map.WorldMapId, feature.FeatureId, _memberId);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal(
+            new[] { publicNote.Id, privateOwnNote.Id }.OrderBy(id => id).ToList(),
+            result.Select(reference => reference.SessionNoteId).OrderBy(id => id).ToList());
+        Assert.DoesNotContain(result, reference => reference.SessionNoteId == privateOtherNote.Id);
+        Assert.DoesNotContain(result, reference => reference.SessionNoteId == unrelatedNote.Id);
+    }
+
+    [Fact]
+    public async Task ListSessionReferencesForFeatureAsync_OrdersByEffectiveSessionDateThenCreatedAtThenTitleThenId()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Ordered References");
+        var feature = await CreatePointFeatureAsync(map.WorldMapId, "Ruined Watchtower", 0.2f, 0.2f);
+        var firstSessionNote = await CreateSessionNoteArticleAsync(
+            "Beta Session Note",
+            sessionName: "Zulu Session",
+            sessionDate: new DateTime(2025, 2, 1, 0, 0, 0, DateTimeKind.Utc));
+        var secondSessionNote = await CreateSessionNoteArticleAsync(
+            "Alpha Session Note",
+            sessionName: "Omega Session",
+            sessionDate: new DateTime(2025, 2, 1, 0, 0, 0, DateTimeKind.Utc));
+        var legacySessionNote = await CreateSessionNoteArticleAsync(
+            "Legacy Session Note",
+            legacySessionDate: new DateTime(2025, 3, 5, 0, 0, 0, DateTimeKind.Utc));
+        var undatedSessionNote = await CreateSessionNoteArticleAsync("Undated Session Note");
+
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, firstSessionNote.Id, feature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, secondSessionNote.Id, feature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, legacySessionNote.Id, feature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, undatedSessionNote.Id, feature.FeatureId, _memberId);
+
+        await SetSessionReferenceCreatedAtAsync(firstSessionNote.Id, feature.FeatureId, new DateTime(2025, 2, 2, 8, 0, 0, DateTimeKind.Utc));
+        await SetSessionReferenceCreatedAtAsync(secondSessionNote.Id, feature.FeatureId, new DateTime(2025, 2, 2, 8, 0, 0, DateTimeKind.Utc));
+        await SetSessionReferenceCreatedAtAsync(legacySessionNote.Id, feature.FeatureId, new DateTime(2025, 3, 6, 8, 0, 0, DateTimeKind.Utc));
+        await SetSessionReferenceCreatedAtAsync(undatedSessionNote.Id, feature.FeatureId, new DateTime(2025, 4, 1, 8, 0, 0, DateTimeKind.Utc));
+
+        var result = await _sut.ListSessionReferencesForFeatureAsync(_worldId, map.WorldMapId, feature.FeatureId, _memberId);
+
+        Assert.Equal(
+            [secondSessionNote.Id, firstSessionNote.Id, legacySessionNote.Id, undatedSessionNote.Id],
+            result.Select(reference => reference.SessionNoteId).ToList());
+        Assert.Equal("Omega Session", result[0].SessionName);
+        Assert.Equal(new DateTime(2025, 2, 1, 0, 0, 0, DateTimeKind.Utc), result[0].SessionDate);
+        Assert.Equal(new DateTime(2025, 3, 5, 0, 0, 0, DateTimeKind.Utc), result[2].SessionDate);
+        Assert.Null(result[3].SessionDate);
+    }
+
+    [Fact]
+    public async Task ListSessionReferencesForFeatureAsync_Throws_WhenFeatureIsNotOnMap()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Missing Feature References");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.ListSessionReferencesForFeatureAsync(_worldId, map.WorldMapId, Guid.NewGuid(), _memberId));
+    }
+
+    [Fact]
+    public async Task SessionNoteFeatureMethods_EnforceAuthorization()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Unauthorized Session Feature");
+        var feature = await CreatePointFeatureAsync(map.WorldMapId, "South Gate", 0.7f, 0.2f);
+        var sessionNote = await CreateSessionNoteArticleAsync("Session 9");
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.AddFeatureToSessionNoteAsync(_worldId, sessionNote.Id, feature.FeatureId, _outsiderId));
+
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, sessionNote.Id, feature.FeatureId, _memberId);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.ListFeaturesForSessionNoteAsync(_worldId, sessionNote.Id, _outsiderId));
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.RemoveFeatureFromSessionNoteAsync(_worldId, sessionNote.Id, feature.FeatureId, _outsiderId));
+    }
+
     // ── RequestBasemapUploadAsync ─────────────────────────────────────────────
 
     [Fact]
@@ -2585,6 +2824,78 @@ public class WorldMapServiceTests : IDisposable
         _db.Articles.Add(article);
         await _db.SaveChangesAsync();
         return article;
+    }
+
+    private async Task<Article> CreateSessionNoteArticleAsync(
+        string title,
+        Guid? createdBy = null,
+        ArticleVisibility visibility = ArticleVisibility.Public,
+        DateTime? sessionDate = null,
+        string? sessionName = null,
+        DateTime? legacySessionDate = null)
+    {
+        Guid? sessionId = null;
+        if (!string.IsNullOrWhiteSpace(sessionName) || sessionDate.HasValue)
+        {
+            sessionId = Guid.NewGuid();
+            _db.Sessions.Add(new Session
+            {
+                Id = sessionId.Value,
+                ArcId = Guid.NewGuid(),
+                Name = sessionName ?? title,
+                SessionDate = sessionDate,
+                CreatedBy = createdBy ?? _ownerId,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+
+        var article = new Article
+        {
+            Id = Guid.NewGuid(),
+            WorldId = _worldId,
+            Title = title,
+            Slug = title.ToLowerInvariant().Replace(' ', '-'),
+            Type = ArticleType.SessionNote,
+            Visibility = visibility,
+            CreatedBy = createdBy ?? _ownerId,
+            CreatedAt = DateTime.UtcNow,
+            EffectiveDate = DateTime.UtcNow,
+            SessionId = sessionId,
+            SessionDate = legacySessionDate,
+        };
+
+        _db.Articles.Add(article);
+        await _db.SaveChangesAsync();
+        return article;
+    }
+
+    private async Task SetSessionReferenceCreatedAtAsync(Guid sessionNoteId, Guid featureId, DateTime createdAt)
+    {
+        var link = await _db.SessionNoteMapFeatures.SingleAsync(existingLink =>
+            existingLink.SessionNoteId == sessionNoteId && existingLink.MapFeatureId == featureId);
+        link.CreatedAt = createdAt;
+        await _db.SaveChangesAsync();
+    }
+
+    private async Task<MapFeatureDto> CreatePointFeatureAsync(Guid mapId, string? name, float x, float y)
+    {
+        var layerId = (await GetMapLayersByNameAsync(mapId))["World"];
+
+        return await _sut.CreateFeatureAsync(
+            _worldId,
+            mapId,
+            _memberId,
+            new MapFeatureCreateDto
+            {
+                FeatureType = MapFeatureType.Point,
+                LayerId = layerId,
+                Name = name,
+                Point = new MapFeaturePointDto
+                {
+                    X = x,
+                    Y = y,
+                },
+            });
     }
 }
 
