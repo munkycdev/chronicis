@@ -25,6 +25,16 @@
     cursor: crosshair;
 }
 
+.map-page__viewport--polygon-create {
+    cursor: crosshair;
+    outline: 2px solid color-mix(in srgb, var(--chronicis-secondary) 28%, transparent 72%);
+    outline-offset: -2px;
+}
+
+.map-page__viewport--polygon-create:focus {
+    outline-color: color-mix(in srgb, var(--chronicis-secondary) 72%, transparent 28%);
+}
+
 .map-page__viewport--pan {
     cursor: grab;
 }
@@ -57,6 +67,42 @@
     pointer-events: none;
 }
 
+.map-page__polygons-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.map-page__polygon {
+    fill: var(--map-polygon-fill, rgb(59 130 246 / 0.35));
+    stroke: var(--map-polygon-stroke, rgb(30 64 175 / 0.95));
+    stroke-width: 0.003;
+    vector-effect: non-scaling-stroke;
+}
+
+.map-page__polygon--selected {
+    fill: var(--map-polygon-fill-selected, rgb(37 99 235 / 0.46));
+    stroke: var(--map-polygon-stroke-selected, rgb(29 78 216 / 1));
+    stroke-width: 0.0045;
+}
+
+.map-page__polygon--dirty {
+    stroke: color-mix(in srgb, var(--chronicis-accent, var(--chronicis-secondary)) 86%, var(--chronicis-background-light) 14%);
+}
+
+.map-page__polygon-draft {
+    fill: none;
+    stroke: color-mix(in srgb, var(--chronicis-accent, var(--chronicis-secondary)) 78%, var(--chronicis-background-light) 22%);
+    stroke-width: 0.0035;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 0.012 0.01;
+    vector-effect: non-scaling-stroke;
+}
+
 .map-page__pins-overlay {
     position: absolute;
     inset: 0;
@@ -68,6 +114,10 @@
     pointer-events: auto;
     cursor: crosshair;
     background: color-mix(in srgb, var(--chronicis-secondary) 6%, transparent 94%);
+}
+
+.map-page__pins-overlay--polygon-create {
+    pointer-events: none;
 }
 
 .map-page__pin {
@@ -278,6 +328,20 @@
     cursor: default;
 }
 
+.map-page__selected-layer-status {
+    margin-top: 0.15rem;
+}
+
+.map-page__selected-layer-status strong {
+    color: var(--chronicis-text-primary);
+}
+
+.map-page__selected-layer-status--warning {
+    margin-left: 0.35rem;
+    font-weight: 600;
+    color: var(--mud-palette-warning);
+}
+
 .map-page__layer-toggle {
     margin: 0;
     inline-size: 0.95rem;
@@ -422,6 +486,155 @@
     gap: 0.75rem;
     margin-bottom: 1rem;
     flex-wrap: wrap;
+}
+
+.map-page__polygon-editor {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.85rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: var(--chronicis-radius-lg);
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 30%, transparent 70%);
+    background: color-mix(in srgb, var(--chronicis-background-light) 94%, var(--chronicis-secondary) 6%);
+}
+
+.map-page__polygon-editor-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--chronicis-text-primary);
+}
+
+.map-page__polygon-editor-name {
+    color: var(--chronicis-secondary);
+}
+
+.map-page__polygon-editor-status {
+    font-size: 0.72rem;
+    color: color-mix(in srgb, var(--chronicis-primary) 72%, transparent 28%);
+}
+
+.map-page__polygon-editor-color {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.map-page__polygon-editor-name-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.map-page__polygon-editor-color-label {
+    font-size: 0.72rem;
+    color: color-mix(in srgb, var(--chronicis-primary) 68%, transparent 32%);
+}
+
+.map-page__polygon-name-input {
+    min-width: 12rem;
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 34%, transparent 66%);
+    border-radius: var(--chronicis-radius-sm);
+    padding: 0.18rem 0.36rem;
+    background: color-mix(in srgb, var(--chronicis-background-light) 92%, var(--chronicis-secondary) 8%);
+    color: var(--chronicis-text-primary);
+    font-size: 0.72rem;
+    line-height: 1.2;
+}
+
+.map-page__polygon-name-input:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.map-page__polygon-color-select {
+    min-width: 7.4rem;
+    border: 1px solid color-mix(in srgb, var(--chronicis-secondary) 34%, transparent 66%);
+    border-radius: var(--chronicis-radius-sm);
+    padding: 0.18rem 0.36rem;
+    background: color-mix(in srgb, var(--chronicis-background-light) 92%, var(--chronicis-secondary) 8%);
+    color: var(--chronicis-text-primary);
+    font-size: 0.72rem;
+    line-height: 1.2;
+}
+
+.map-page__polygon-color-select:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.map-page__polygon-editor-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+    flex-wrap: wrap;
+}
+
+.map-page__polygon-points-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.map-page__polygon-vertex,
+.map-page__polygon-draft-vertex {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    color: #111;
+    font-size: 1.05rem;
+    line-height: 1;
+    background: rgb(255 255 255 / 0.96);
+    border-radius: 999px;
+    box-shadow:
+        0 0 0 1px rgb(17 17 17 / 0.14),
+        0 0 6px rgb(255 255 255 / 0.75);
+}
+
+.map-page__polygon-vertex {
+    font-size: 1.2rem;
+    min-width: 1.18rem;
+    min-height: 1.18rem;
+    pointer-events: auto;
+    cursor: grab;
+}
+
+.map-page__polygon-vertex--active {
+    transform: translate(-50%, -50%) scale(1.12);
+    cursor: grabbing;
+}
+
+.map-page__polygon-draft-vertex {
+    font-size: 0.95rem;
+    min-width: 0.98rem;
+    min-height: 0.98rem;
+}
+
+.map-page__polygon-labels-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.map-page__polygon-label {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    color: color-mix(in srgb, var(--chronicis-background-light) 92%, transparent 8%);
+    text-shadow:
+        0 0 2px color-mix(in srgb, var(--chronicis-background-dark) 78%, transparent 22%),
+        0 0 6px color-mix(in srgb, var(--chronicis-background-dark) 52%, transparent 48%);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
 }
 
 /* ---- Create Pin Popup ---- */

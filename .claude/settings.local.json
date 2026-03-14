@@ -1,40 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs grep -l \"DbSet<\")",
-      "Bash(dotnet ef migrations add *)",
-      "Bash(./scripts/*)",
-      "Bash(powershell -File scripts/verify.ps1)",
-      "Bash(dotnet build *)",
-      "Bash(dotnet test *)",
-      "Bash(python3 -c \":*)",
-      "Bash(node -e \":*)",
-      "Bash(node coverage_check.js)",
-      "Bash(dotnet format Chronicis.CI.sln)",
-      "Bash(pwsh ./scripts/verify.ps1)",
-      "Bash(pwsh -NoProfile ./scripts/verify.ps1)",
-      "Bash(dotnet format z:/repos/chronicis/Chronicis.CI.sln)",
-      "Bash(taskkill /PID 25392 /F)",
-      "Bash(powershell -Command \"Stop-Process -Id 25392 -Force -ErrorAction SilentlyContinue; Write-Host Done\")",
-      "Bash(dotnet run --project tests/Chronicis.Client.Tests)",
-      "Bash(ildasm)",
-      "Bash(ls z:/repos/chronicis/tests/Chronicis.Client.Tests/bin/Debug/net9.0/Chronicis*.dll)",
-      "Bash(xxd)",
-      "Bash(dotnet build-server status)",
-      "Bash(dotnet clean Chronicis.sln -v:q)",
-      "Bash(Get-ChildItem -Recurse -Directory -Include bin,obj)",
-      "Bash(Remove-Item -Recurse -Force)",
-      "Bash($file = Get-ChildItem -Path \"z:\\\\repos\\\\chronicis\\\\tests\\\\Chronicis.Client.Tests\\\\TestResults\" -Recurse -Filter \"coverage.cobertura.xml\")",
-      "Bash(Sort-Object LastWriteTime -Descending)",
-      "Bash(Select-Object -First 1)",
-      "Bash([xml]$xml = Get-Content $file.FullName)",
-      "Bash($xml.coverage.packages.package)",
-      "Bash(ForEach-Object { $_classes.class)",
-      "Bash(Select-Object -First 5 -ExpandProperty name })",
-      "Bash(powershell -Command \"Get-ChildItem -Path ''z:\\\\repos\\\\chronicis\\\\tests\\\\Chronicis.Client.Tests\\\\TestResults'' -Recurse -Filter ''coverage.cobertura.xml'' | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName\")",
-      "Bash(powershell -Command \"[xml]$xml = Get-Content ''Z:\\\\repos\\\\chronicis\\\\tests\\\\Chronicis.Client.Tests\\\\TestResults\\\\46d9b771-39b5-40bb-9ac0-07cd411b605e\\\\coverage.cobertura.xml''; $xml.coverage.packages.package | ForEach-Object { $_.classes.class | Select-Object -First 10 -ExpandProperty name }\")",
-      "Bash(powershell -File:*)",
-      "Bash(powershell -Command \":*)"
+      "Bash(*)"
     ],
     "defaultMode": "acceptEdits"
   }

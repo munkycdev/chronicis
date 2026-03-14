@@ -1,3 +1,4 @@
+import readline from "readline";
 import {
   ARCH_PATH,
   FROZEN_ASSUMPTIONS_PATH,
@@ -30,6 +31,24 @@ import {
   getCurrentBranchName,
 } from "../git/git-branching.mjs";
 
+
+async function promptOnPhaseError(err) {
+  console.error("");
+  console.error("  Phase failed:");
+  console.error(`  ${err.message}`);
+  console.error("");
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => {
+    rl.question("  [r]etry  [s]kip  [a]bort (default: abort): ", (answer) => {
+      rl.close();
+      const choice = answer.trim().toLowerCase();
+      if (choice === "r") resolve("retry");
+      else if (choice === "s") resolve("skip");
+      else resolve("abort");
+    });
+  });
+}
 
 export async function run() {
   try {
@@ -78,27 +97,44 @@ export async function run() {
 
     let createdBranchName = "";
     const startingBranch = await getCurrentBranchName();
+    const onMain = startingBranch === "main";
 
-    if (CREATE_FEATURE_BRANCH) {
-    await ensureGitWorkingTreeIsUsable();
+    if (CREATE_FEATURE_BRANCH && onMain) {
+      await ensureGitWorkingTreeIsUsable();
 
-    createdBranchName = buildFeatureBranchName(
+      createdBranchName = buildFeatureBranchName(
         FEATURE_BRANCH_PREFIX,
         FEATURE_NAME
-    );
+      );
 
-    console.log(`Creating feature branch: ${createdBranchName}`);
-    await createAndSwitchToBranch(createdBranchName);
+      console.log(`Creating feature branch: ${createdBranchName}`);
+      await createAndSwitchToBranch(createdBranchName);
     }
 
     for (const phasePath of phaseFiles) {
-      const result = await executePhase(
-        phasePath,
-        phaseFiles,
-        architecture,
-        frozenAssumptions
-      );
-      results.push(result);
+      let done = false;
+      while (!done) {
+        try {
+          const result = await executePhase(
+            phasePath,
+            phaseFiles,
+            architecture,
+            frozenAssumptions
+          );
+          results.push(result);
+          done = true;
+        } catch (err) {
+          const action = await promptOnPhaseError(err);
+          if (action === "retry") {
+            console.log("    Retrying phase...\n");
+          } else if (action === "skip") {
+            console.log("    Skipping phase.\n");
+            done = true;
+          } else {
+            throw err;
+          }
+        }
+      }
     }
 
     const runSummary = `

@@ -861,6 +861,218 @@ public class MapsControllerCoverageSmokeTests
         Assert.IsType<NoContentResult>(result);
     }
 
+    // ── Features ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateFeature_NullDto_ReturnsBadRequest()
+    {
+        var result = await CreateSut().CreateFeature(Guid.NewGuid(), Guid.NewGuid(), null!);
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreateFeature_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreateFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapFeatureCreateDto>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).CreateFeature(Guid.NewGuid(), Guid.NewGuid(), new MapFeatureCreateDto());
+
+        var status = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateFeature_InvalidInput_ReturnsBadRequest()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreateFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapFeatureCreateDto>())
+            .ThrowsAsync(new ArgumentException("invalid"));
+
+        var result = await CreateSut(service).CreateFeature(Guid.NewGuid(), Guid.NewGuid(), new MapFeatureCreateDto());
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreateFeature_NotFound_Returns404()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreateFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapFeatureCreateDto>())
+            .ThrowsAsync(new InvalidOperationException("Map not found"));
+
+        var result = await CreateSut(service).CreateFeature(Guid.NewGuid(), Guid.NewGuid(), new MapFeatureCreateDto());
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreateFeature_Success_ReturnsOk()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.CreateFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapFeatureCreateDto>())
+            .Returns(new MapFeatureDto { FeatureId = Guid.NewGuid() });
+
+        var result = await CreateSut(service).CreateFeature(Guid.NewGuid(), Guid.NewGuid(), new MapFeatureCreateDto());
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task ListFeatures_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).ListFeatures(Guid.NewGuid(), Guid.NewGuid());
+
+        var status = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListFeatures_NotFound_Returns404()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new InvalidOperationException("Map not found"));
+
+        var result = await CreateSut(service).ListFeatures(Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task ListFeatures_Success_ReturnsOk()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns([]);
+
+        var result = await CreateSut(service).ListFeatures(Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task GetFeature_Success_ReturnsOk()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.GetFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(new MapFeatureDto { FeatureId = Guid.NewGuid() });
+
+        var result = await CreateSut(service).GetFeature(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task GetFeature_MissingFeature_ReturnsNotFound()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.GetFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns((MapFeatureDto?)null);
+
+        var result = await CreateSut(service).GetFeature(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateFeature_NullDto_ReturnsBadRequest()
+    {
+        var result = await CreateSut().UpdateFeature(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null!);
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateFeature_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdateFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapFeatureUpdateDto>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).UpdateFeature(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new MapFeatureUpdateDto());
+
+        var status = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateFeature_InvalidInput_ReturnsBadRequest()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdateFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapFeatureUpdateDto>())
+            .ThrowsAsync(new ArgumentException("invalid"));
+
+        var result = await CreateSut(service).UpdateFeature(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new MapFeatureUpdateDto());
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateFeature_NotFound_Returns404()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdateFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapFeatureUpdateDto>())
+            .ThrowsAsync(new InvalidOperationException("Feature not found"));
+
+        var result = await CreateSut(service).UpdateFeature(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new MapFeatureUpdateDto());
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateFeature_Success_ReturnsOk()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.UpdateFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<MapFeatureUpdateDto>())
+            .Returns(new MapFeatureDto { FeatureId = Guid.NewGuid() });
+
+        var result = await CreateSut(service).UpdateFeature(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new MapFeatureUpdateDto());
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task DeleteFeature_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.DeleteFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).DeleteFeature(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        var status = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteFeature_NotFound_Returns404()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.DeleteFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new InvalidOperationException("Feature not found"));
+
+        var result = await CreateSut(service).DeleteFeature(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task DeleteFeature_Success_ReturnsNoContent()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.DeleteFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateSut(service).DeleteFeature(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<NoContentResult>(result);
+    }
+
     // ── DeleteMap ─────────────────────────────────────────────────────────────
 
     [Fact]

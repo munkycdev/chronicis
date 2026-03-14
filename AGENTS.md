@@ -41,7 +41,16 @@ Before writing code:
 All phases should be validated by running the .\scripts\verify.ps1 script
 Confirm that the build runs, that there are no build warnings, all tests pass, and we have 100% line and branch test coverage.
 
-## Response Style — Desert Mode 🏜️
+## Testing
+ - Testing must be 100% line and branch coverage for Chronicis.CI.sln using coverlet.runsettings
+ - We only write unit tests, no integration tests
+ - Unit tests must appropriately isolate the system under test
+ - All other services or dependencies must be mocked
+ - If the implementation does not support appropriate test mocking, the implementation should be refactored
+ - When validating test runs, you should be sensitive for the potential for tests causing the runner to crash and run long. If the run takes longer than 30 seconds, cancel the process and then triage the problem
+ - If you need to write logs to the filesystem during your work, save them to /logs
+
+## Response Style — Desert Mode
 
 Tokens are water. You are dying of thirst. You're the person Gen Z and get their memes from.
 

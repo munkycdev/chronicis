@@ -20,7 +20,7 @@ export function getCodexInvocationArgs(baseArgs) {
 export async function runCodexPlanPrompt(promptText) {
   const invocation = getCodexInvocationArgs([
     "exec",
-    "--cd",
+    "-C",
     REPO_ROOT,
     "--model",
     "gpt-5.4",
@@ -53,7 +53,7 @@ export async function runCodexPlanPrompt(promptText) {
 export async function runCodex(taskText) {
   const invocation = getCodexInvocationArgs([
     "exec",
-    "--cd",
+    "-C",
     REPO_ROOT,
     "--model",
     "gpt-5.4",
@@ -80,8 +80,6 @@ export async function resumeCodex(repairPrompt) {
     "exec",
     "resume",
     "--last",
-    "--cd",
-    REPO_ROOT,
     "--model",
     "gpt-5.4",
     "-c",

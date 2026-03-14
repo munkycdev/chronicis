@@ -5,7 +5,7 @@ export const MAX_PLAN_REVIEW_ROUNDS = 3;
 export const MODEL = "gpt-5-mini";
 export const REASONING_EFFORT = "low";
 
-// git configuratoin
+// git configuration
 export const CREATE_FEATURE_BRANCH = true;
 export const COMMIT_AFTER_EACH_PHASE = true;
 export const FEATURE_BRANCH_PREFIX = "aip";

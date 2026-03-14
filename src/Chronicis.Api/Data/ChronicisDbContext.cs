@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Chronicis.Shared.Models;
+using Chronicis.Shared.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Data;
@@ -982,8 +983,20 @@ public class ChronicisDbContext : DbContext
         {
             entity.HasKey(mf => mf.MapFeatureId);
 
+            entity.Property(mf => mf.FeatureType)
+                .HasDefaultValue(MapFeatureType.Point);
+
             entity.Property(mf => mf.Name)
                 .HasMaxLength(200);
+
+            entity.Property(mf => mf.Color)
+                .HasMaxLength(32);
+
+            entity.Property(mf => mf.GeometryBlobKey)
+                .HasMaxLength(1024);
+
+            entity.Property(mf => mf.GeometryETag)
+                .HasMaxLength(128);
 
             // MapFeature -> WorldMap
             entity.HasOne<WorldMap>()

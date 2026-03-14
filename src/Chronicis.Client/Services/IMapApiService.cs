@@ -48,14 +48,39 @@ public interface IMapApiService
     Task<MapPinResponseDto?> CreatePinAsync(Guid worldId, Guid mapId, MapPinCreateDto dto);
 
     /// <summary>
+    /// Creates a new additive map feature on the given map.
+    /// </summary>
+    Task<MapFeatureDto?> CreateFeatureAsync(Guid worldId, Guid mapId, MapFeatureCreateDto dto);
+
+    /// <summary>
     /// Deletes a pin from the given map.
     /// </summary>
     Task<bool> DeletePinAsync(Guid worldId, Guid mapId, Guid pinId);
 
     /// <summary>
+    /// Deletes a feature from the given map.
+    /// </summary>
+    Task<bool> DeleteFeatureAsync(Guid worldId, Guid mapId, Guid featureId);
+
+    /// <summary>
     /// Updates a pin's normalized position on the given map.
     /// </summary>
     Task<bool> UpdatePinPositionAsync(Guid worldId, Guid mapId, Guid pinId, MapPinPositionUpdateDto dto);
+
+    /// <summary>
+    /// Lists all additive map features for the given map.
+    /// </summary>
+    Task<List<MapFeatureDto>> ListFeaturesForMapAsync(Guid worldId, Guid mapId);
+
+    /// <summary>
+    /// Gets a single feature with HTTP status details.
+    /// </summary>
+    Task<(MapFeatureDto? Feature, int? StatusCode, string? Error)> GetFeatureAsync(Guid worldId, Guid mapId, Guid featureId);
+
+    /// <summary>
+    /// Replaces a feature on the given map.
+    /// </summary>
+    Task<MapFeatureDto?> UpdateFeatureAsync(Guid worldId, Guid mapId, Guid featureId, MapFeatureUpdateDto dto);
 
     /// <summary>
     /// Updates map metadata.
