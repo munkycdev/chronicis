@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.Enums;
@@ -32,6 +33,7 @@ public sealed class WorldMapService : IWorldMapService
         "image/jpeg",
         "image/webp",
     }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+    private static readonly Regex WhitespaceCollapseRegex = new(@"\s+", RegexOptions.Compiled);
 
     public WorldMapService(
         ChronicisDbContext db,
@@ -286,6 +288,61 @@ public sealed class WorldMapService : IWorldMapService
                 MapId = m.WorldMapId,
                 Name = m.Name,
             })
+            .ToListAsync();
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<MapFeatureAutocompleteDto>> SearchMapFeaturesForWorldAsync(Guid worldId, Guid userId, string? query)
+    {
+        _logger.LogTraceSanitized("User {UserId} searching feature autocomplete for world {WorldId}", userId, worldId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+
+        var normalizedQuery = NormalizeAutocompleteQuery(query);
+        var featuresQuery = _db.MapFeatures
+            .AsNoTracking()
+            .Join(
+                _db.WorldMaps.AsNoTracking(),
+                feature => feature.WorldMapId,
+                map => map.WorldMapId,
+                (feature, map) => new { feature, map })
+            .Where(result => result.map.WorldId == worldId)
+            .GroupJoin(
+                _db.Articles.AsNoTracking(),
+                result => result.feature.LinkedArticleId,
+                article => article.Id,
+                (result, articles) => new
+                {
+                    result.feature.MapFeatureId,
+                    result.feature.WorldMapId,
+                    MapName = result.map.Name,
+                    FeatureName = result.feature.Name,
+                    LinkedArticleTitle = articles.Select(article => article.Title).FirstOrDefault(),
+                });
+
+        if (!string.IsNullOrWhiteSpace(normalizedQuery))
+        {
+            featuresQuery = featuresQuery.Where(result =>
+                (!string.IsNullOrWhiteSpace(result.FeatureName) && result.FeatureName.ToLower().Contains(normalizedQuery))
+                || (!string.IsNullOrWhiteSpace(result.LinkedArticleTitle) && result.LinkedArticleTitle.ToLower().Contains(normalizedQuery)));
+        }
+
+        return await featuresQuery
+            .OrderBy(result => result.FeatureName ?? result.LinkedArticleTitle ?? string.Empty)
+            .ThenBy(result => result.MapName)
+            .ThenBy(result => result.MapFeatureId)
+            .Select(result => new MapFeatureAutocompleteDto
+            {
+                MapFeatureId = result.MapFeatureId,
+                MapId = result.WorldMapId,
+                MapName = result.MapName,
+                FeatureName = result.FeatureName,
+                LinkedArticleTitle = result.LinkedArticleTitle,
+                DisplayText = !string.IsNullOrWhiteSpace(result.FeatureName)
+                    ? result.FeatureName!
+                    : result.LinkedArticleTitle ?? "Unnamed Feature",
+            })
+            .Take(25)
             .ToListAsync();
     }
 
@@ -995,6 +1052,73 @@ public sealed class WorldMapService : IWorldMapService
     }
 
     /// <inheritdoc/>
+    public async Task SyncSessionNoteMapFeaturesAsync(Guid worldId, Guid sessionNoteId, IEnumerable<Guid> mapFeatureIds, Guid userId)
+    {
+        _logger.LogTraceSanitized(
+            "User {UserId} syncing session-note feature links for session note {SessionNoteId} in world {WorldId}",
+            userId,
+            sessionNoteId,
+            worldId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        _ = await GetSessionNoteArticleAsync(worldId, sessionNoteId);
+
+        var requestedFeatureIds = mapFeatureIds
+            .Where(featureId => featureId != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (requestedFeatureIds.Count > 0)
+        {
+            var validFeatureIds = await _db.MapFeatures
+                .AsNoTracking()
+                .Join(
+                    _db.WorldMaps.AsNoTracking(),
+                    feature => feature.WorldMapId,
+                    map => map.WorldMapId,
+                    (feature, map) => new { feature.MapFeatureId, map.WorldId })
+                .Where(result => result.WorldId == worldId && requestedFeatureIds.Contains(result.MapFeatureId))
+                .Select(result => result.MapFeatureId)
+                .ToListAsync();
+
+            if (validFeatureIds.Count != requestedFeatureIds.Count)
+            {
+                throw new InvalidOperationException("Feature not found");
+            }
+        }
+
+        var existingLinks = await _db.SessionNoteMapFeatures
+            .Where(link => link.SessionNoteId == sessionNoteId)
+            .ToListAsync();
+
+        var requestedFeatureSet = requestedFeatureIds.ToHashSet();
+        var existingFeatureSet = existingLinks.Select(link => link.MapFeatureId).ToHashSet();
+
+        var linksToRemove = existingLinks
+            .Where(link => !requestedFeatureSet.Contains(link.MapFeatureId))
+            .ToList();
+        if (linksToRemove.Count > 0)
+        {
+            _db.SessionNoteMapFeatures.RemoveRange(linksToRemove);
+        }
+
+        var featureIdsToAdd = requestedFeatureIds
+            .Where(featureId => !existingFeatureSet.Contains(featureId))
+            .ToList();
+        foreach (var featureId in featureIdsToAdd)
+        {
+            _db.SessionNoteMapFeatures.Add(new SessionNoteMapFeature
+            {
+                SessionNoteId = sessionNoteId,
+                MapFeatureId = featureId,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+
+        await _db.SaveChangesAsync();
+    }
+
+    /// <inheritdoc/>
     public async Task<RequestBasemapUploadResponseDto> RequestBasemapUploadAsync(
         Guid worldId, Guid mapId, Guid userId, RequestBasemapUploadDto dto)
     {
@@ -1213,6 +1337,17 @@ public sealed class WorldMapService : IWorldMapService
 
     private static bool IsNormalizedCoordinate(float value) =>
         !float.IsNaN(value) && !float.IsInfinity(value) && value >= 0f && value <= 1f;
+
+    private static string? NormalizeAutocompleteQuery(string? query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return null;
+        }
+
+        var collapsed = WhitespaceCollapseRegex.Replace(query.Trim(), " ");
+        return collapsed.ToLowerInvariant();
+    }
 
     private static string? NormalizePinName(string? value)
     {

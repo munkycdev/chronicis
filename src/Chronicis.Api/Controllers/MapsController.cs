@@ -506,6 +506,27 @@ public class MapsController : ControllerBase
     }
 
     /// <summary>
+    /// GET /world/{worldId}/maps/features/autocomplete?query=... — List minimal map feature suggestions for editor autocomplete.
+    /// </summary>
+    [HttpGet("features/autocomplete")]
+    public async Task<ActionResult<IEnumerable<MapFeatureAutocompleteDto>>> AutocompleteFeatures(Guid worldId, [FromQuery] string? query = null)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+        _logger.LogTraceSanitized("User {UserId} requesting feature autocomplete for world {WorldId}", user.Id, worldId);
+
+        try
+        {
+            var features = await _worldMapService.SearchMapFeaturesForWorldAsync(worldId, user.Id, query);
+            return Ok(features);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized feature autocomplete request");
+            return StatusCode(403, new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// POST /world/{worldId}/maps/{mapId}/features — Create an additive map feature.
     /// </summary>
     [HttpPost("{mapId:guid}/features")]

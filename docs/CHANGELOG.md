@@ -2,13 +2,23 @@
 
 All notable changes to this project are documented in this file.
 
----
+## [3.0.0] - 2026-03-03
 
-## [3.1.0] - 2026-03-13
-
-### Polygon Authoring and Editing on World Maps
+### Maps, Layers, and Basemap Image Workflow
 
 **Added:**
+- World-level Maps feature with dedicated routes:
+  - `/world/{worldId}/maps` (Map Listing)
+  - `/world/{worldId}/maps/{mapId}` (Map Detail)
+- Maps virtual group in the world tree; clicking **Maps** opens Map Listing instead of creating an uncategorized wiki article.
+- Map creation flow with required map name plus basemap image upload.
+- Basemap upload supports file picker and drag/drop in the Map Listing create panel.
+- Browser drag/drop guard to prevent dropped image files from opening in a new tab outside the drop zone.
+- Map page header with inline map-name editing and explicit save controls (session-style save pattern).
+- Map layer management on map pages and modal viewers:
+  - Default World/Campaign/Arc layers plus custom layers.
+  - Layer visibility toggles with immediate pin filtering.
+  - Layer selection for pin placement, drag/drop reorder, and custom layer create/rename/delete controls.
 - Polygon authoring workflow on map pages:
   - Click to add vertices directly on the basemap.
   - Live draft overlay while plotting the shape.
@@ -28,40 +38,6 @@ All notable changes to this project are documented in this file.
   - Direct drag handles on polygon vertices.
   - Click-on-edge insertion to add a new point to an existing polygon.
   - High-contrast circled-dot vertex markers with white backing for better visibility over map art.
-
-**Changed:**
-- Saved polygons now render as filled SVG regions using the selected standardized color instead of outline-only display.
-- Polygon create mode now shows the editor bar immediately instead of waiting for polygon completion.
-- Vertex hit-testing and drag behavior were hardened for zoomed-in editing so handles remain draggable at high zoom levels.
-- Polygon selection and create-point coordinate resolution were hardened so editing still works after viewport/zoom changes.
-
-**API / Data:**
-- `MapFeatureCreateDto`, `MapFeatureUpdateDto`, and `MapFeatureDto` now round-trip polygon `Color` metadata alongside `Name`.
-- `MapFeature` persistence now stores polygon color selection in addition to name and geometry references.
-- Polygon geometry continues to use GeoJSON-shaped payloads with blob-backed storage for the compressed geometry body.
-
-**Migration:**
-- `20260313180329_AddMapFeatureColor`
-
----
-
-## [3.0.0] - 2026-03-03
-
-### Maps, Layers, and Basemap Image Workflow
-
-**Added:**
-- World-level Maps feature with dedicated routes:
-  - `/world/{worldId}/maps` (Map Listing)
-  - `/world/{worldId}/maps/{mapId}` (Map Detail)
-- Maps virtual group in the world tree; clicking **Maps** opens Map Listing instead of creating an uncategorized wiki article.
-- Map creation flow with required map name plus basemap image upload.
-- Basemap upload supports file picker and drag/drop in the Map Listing create panel.
-- Browser drag/drop guard to prevent dropped image files from opening in a new tab outside the drop zone.
-- Map page header with inline map-name editing and explicit save controls (session-style save pattern).
-- Map layer management on map pages and modal viewers:
-  - Default World/Campaign/Arc layers plus custom layers.
-  - Layer visibility toggles with immediate pin filtering.
-  - Layer selection for pin placement, drag/drop reorder, and custom layer create/rename/delete controls.
 - Breadcrumbs on both maps pages:
   - `Dashboard / {world name} / Maps`
   - `Dashboard / {world name} / Maps / {map name}`
@@ -75,6 +51,10 @@ All notable changes to this project are documented in this file.
 - Map page basemap rendering is constrained to its content container to prevent horizontal overflow blowout.
 - Tree behavior now expands/selects Maps and active map nodes when navigating maps routes.
 - Map rename updates map node label in the tree immediately.
+- Saved polygons now render as filled SVG regions using the selected standardized color instead of outline-only display.
+- Polygon create mode now shows the editor bar immediately instead of waiting for polygon completion.
+- Vertex hit-testing and drag behavior were hardened for zoomed-in editing so handles remain draggable at high zoom levels.
+- Polygon selection and create-point coordinate resolution were hardened so editing still works after viewport/zoom changes.
 
 **Removed:**
 - "Add Item" action from the Maps virtual group.
@@ -92,6 +72,10 @@ All notable changes to this project are documented in this file.
 **Storage and Data:**
 - New maps tables for map metadata, layer defaults, and campaign/arc scoping pivots.
 - Basemap binaries stored in blob storage under map-scoped folders.
+- `MapFeatureCreateDto`, `MapFeatureUpdateDto`, and `MapFeatureDto` now round-trip polygon `Color` metadata alongside `Name`.
+- `MapFeature` persistence now stores polygon color selection in addition to name and geometry references.
+- Polygon geometry continues to use GeoJSON-shaped payloads with blob-backed storage for the compressed geometry body.
+- Migration `20260313180329_AddMapFeatureColor` adds map-feature color persistence.
 - Delete map permanently removes metadata records and the full map blob folder (no restoration path).
 
 ---

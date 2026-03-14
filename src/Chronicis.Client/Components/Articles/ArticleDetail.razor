@@ -176,6 +176,7 @@ else
         <SessionMapViewerModal IsOpen="_isMapModalOpen"
                                WorldId="CurrentWorldId"
                                MapId="_selectedMapId"
+                               TargetFeatureId="_selectedMapFeatureId"
                                MapName="@_selectedMapName"
                                OnClose="CloseMapModalAsync" />
     }
@@ -226,6 +227,7 @@ else
     private readonly Dictionary<string, ExternalLinkContentDto> _externalLinkCache = new(StringComparer.OrdinalIgnoreCase);
     private bool _isMapModalOpen;
     private Guid _selectedMapId;
+    private Guid? _selectedMapFeatureId;
     private string? _selectedMapName;
 
     private const string LastArticlePathKey = "chronicis_last_article_path";
@@ -463,6 +465,13 @@ else
                 if (_disposed) return;
 
                 await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", $"tiptap-editor-{_article.Id}", _dotNetHelper);
+                await JSRuntime.InvokeVoidAsync(
+                    "configureWikiLinkAutocomplete",
+                    $"tiptap-editor-{_article.Id}",
+                    new
+                    {
+                        enableMapFeatureReferences = _article.Type == ArticleType.SessionNote
+                    });
 
                 // Initialize image upload (drag-drop, paste)
                 await JSRuntime.InvokeVoidAsync("initializeImageUpload", $"tiptap-editor-{_article.Id}", _dotNetHelper);
@@ -655,10 +664,21 @@ else
         _autocompletePosition = (x, y);
         _showAutocomplete = true;
         _autocompleteSelectedIndex = 0;
+        var isMapFeatureAutocomplete = _article?.Type == ArticleType.SessionNote
+            && normalizedQuery.StartsWith("location/", StringComparison.OrdinalIgnoreCase);
         var isMapAutocomplete = normalizedQuery.StartsWith("maps/", StringComparison.OrdinalIgnoreCase);
         string? mapSearch = null;
+        string? featureSearch = null;
 
-        if (isMapAutocomplete)
+        if (isMapFeatureAutocomplete)
+        {
+            var remainder = normalizedQuery.Substring("location/".Length);
+            featureSearch = string.IsNullOrWhiteSpace(remainder) ? null : remainder.Trim();
+            _autocompleteIsExternalQuery = false;
+            _autocompleteExternalSourceKey = null;
+            _autocompleteQuery = featureSearch ?? string.Empty;
+        }
+        else if (isMapAutocomplete)
         {
             var remainder = normalizedQuery.Substring("maps/".Length);
             mapSearch = string.IsNullOrWhiteSpace(remainder) ? null : remainder.Trim();
@@ -692,7 +712,7 @@ else
             // For internal queries: require 3 characters minimum
             var minLength = _autocompleteIsExternalQuery ? 0 : 3;
 
-            if (!isMapAutocomplete && _autocompleteQuery.Length < minLength)
+            if (!isMapFeatureAutocomplete && !isMapAutocomplete && _autocompleteQuery.Length < minLength)
             {
                 _autocompleteSuggestions = new();
                 StateHasChanged();
@@ -707,7 +727,14 @@ else
         {
             var worldId = AppContext.CurrentWorldId ?? _article?.WorldId ?? Guid.Empty;
 
-            if (isMapAutocomplete)
+            if (isMapFeatureAutocomplete)
+            {
+                var featureSuggestions = await MapApi.GetMapFeatureAutocompleteAsync(worldId, featureSearch);
+                _autocompleteSuggestions = featureSuggestions
+                    .Select(WikiLinkAutocompleteItem.FromMapFeatureAutocomplete)
+                    .ToList();
+            }
+            else if (isMapAutocomplete)
             {
                 var mapSuggestions = await MapApi.GetMapAutocompleteAsync(worldId, mapSearch);
                 _autocompleteSuggestions = mapSuggestions
@@ -813,11 +840,24 @@ else
 
             if (suggestion.MapId.HasValue)
             {
-                await JSRuntime.InvokeVoidAsync(
-                    "insertMapLinkToken",
-                    $"tiptap-editor-{_article.Id}",
-                    suggestion.MapId.Value.ToString(),
-                    suggestion.Title);
+                if (suggestion.IsMapFeature && suggestion.MapFeatureId.HasValue)
+                {
+                    await JSRuntime.InvokeVoidAsync(
+                        "insertMapFeatureLinkToken",
+                        $"tiptap-editor-{_article.Id}",
+                        suggestion.MapFeatureId.Value.ToString(),
+                        suggestion.MapId.Value.ToString(),
+                        suggestion.Title,
+                        suggestion.SecondaryText ?? string.Empty);
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync(
+                        "insertMapLinkToken",
+                        $"tiptap-editor-{_article.Id}",
+                        suggestion.MapId.Value.ToString(),
+                        suggestion.Title);
+                }
             }
             else if (suggestion.IsExternal)
             {
@@ -940,6 +980,28 @@ else
         }
 
         _selectedMapId = parsedMapId;
+        _selectedMapFeatureId = null;
+        _selectedMapName = string.IsNullOrWhiteSpace(mapName) ? null : mapName.Trim();
+        _isMapModalOpen = true;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public Task OnMapFeatureChipClicked(string mapId, string featureId, string? mapName)
+    {
+        if (!Guid.TryParse(mapId, out var parsedMapId) || !Guid.TryParse(featureId, out var parsedFeatureId))
+        {
+            return Task.CompletedTask;
+        }
+
+        if (CurrentWorldId == Guid.Empty)
+        {
+            Snackbar.Add("Unable to open location: missing world context.", Severity.Warning);
+            return Task.CompletedTask;
+        }
+
+        _selectedMapId = parsedMapId;
+        _selectedMapFeatureId = parsedFeatureId;
         _selectedMapName = string.IsNullOrWhiteSpace(mapName) ? null : mapName.Trim();
         _isMapModalOpen = true;
         return InvokeAsync(StateHasChanged);
@@ -949,8 +1011,16 @@ else
     {
         _isMapModalOpen = false;
         _selectedMapId = Guid.Empty;
+        _selectedMapFeatureId = null;
         _selectedMapName = null;
         return InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public Task OnBrokenLinkClicked(string _)
+    {
+        Snackbar.Add("This link points to a missing article", Severity.Warning);
+        return Task.CompletedTask;
     }
 
     [JSInvokable]

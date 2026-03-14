@@ -2267,6 +2267,42 @@ public class WorldMapServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SearchMapFeaturesForWorldAsync_ReturnsFeatureAndMapMetadata()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Ambria");
+        var linkedArticle = await CreateArticleAsync(_worldId, "Blackroot Article");
+        var feature = await CreatePointFeatureAsync(map.WorldMapId, null, 0.2f, 0.3f);
+
+        var persistedFeature = await _db.MapFeatures.FirstAsync(existing => existing.MapFeatureId == feature.FeatureId);
+        persistedFeature.LinkedArticleId = linkedArticle.Id;
+        await _db.SaveChangesAsync();
+
+        var results = await _sut.SearchMapFeaturesForWorldAsync(_worldId, _memberId, "blackroot");
+
+        var suggestion = Assert.Single(results);
+        Assert.Equal(feature.FeatureId, suggestion.MapFeatureId);
+        Assert.Equal(map.WorldMapId, suggestion.MapId);
+        Assert.Equal("Ambria", suggestion.MapName);
+        Assert.Equal("Blackroot Article", suggestion.DisplayText);
+        Assert.Equal("Blackroot Article", suggestion.LinkedArticleTitle);
+    }
+
+    [Fact]
+    public async Task SearchMapFeaturesForWorldAsync_WhitespaceQuery_ReturnsAllFeatures()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Davokar");
+        var feature = await CreatePointFeatureAsync(map.WorldMapId, "South Gate", 0.4f, 0.6f);
+
+        var results = await _sut.SearchMapFeaturesForWorldAsync(_worldId, _memberId, "   ");
+
+        var suggestion = Assert.Single(results);
+        Assert.Equal(feature.FeatureId, suggestion.MapFeatureId);
+        Assert.Equal(map.WorldMapId, suggestion.MapId);
+        Assert.Equal("Davokar", suggestion.MapName);
+        Assert.Equal("South Gate", suggestion.DisplayText);
+    }
+
+    [Fact]
     public async Task AddFeatureToSessionNoteAsync_AllowsSameFeatureAcrossMultipleNotes()
     {
         var map = await CreateMapWithDefaultLayersAsync("Shared Session Feature");
@@ -2304,6 +2340,32 @@ public class WorldMapServiceTests : IDisposable
         var remaining = await _sut.ListFeaturesForSessionNoteAsync(_worldId, secondNote.Id, _memberId);
         Assert.Single(remaining);
         Assert.Equal(1, await _db.SessionNoteMapFeatures.CountAsync(link => link.MapFeatureId == feature.FeatureId));
+    }
+
+    [Fact]
+    public async Task SyncSessionNoteMapFeaturesAsync_ReconcilesExpectedJoinRows()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Sync Session Features");
+        var keepFeature = await CreatePointFeatureAsync(map.WorldMapId, "Blackroot Ford", 0.1f, 0.1f);
+        var removeFeature = await CreatePointFeatureAsync(map.WorldMapId, "South Gate", 0.2f, 0.2f);
+        var addFeature = await CreatePointFeatureAsync(map.WorldMapId, "Ruined Watchtower", 0.3f, 0.3f);
+        var sessionNote = await CreateSessionNoteArticleAsync("Session 12");
+
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, sessionNote.Id, keepFeature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, sessionNote.Id, removeFeature.FeatureId, _memberId);
+
+        await _sut.SyncSessionNoteMapFeaturesAsync(
+            _worldId,
+            sessionNote.Id,
+            [keepFeature.FeatureId, addFeature.FeatureId, addFeature.FeatureId],
+            _memberId);
+
+        var linked = await _sut.ListFeaturesForSessionNoteAsync(_worldId, sessionNote.Id, _memberId);
+
+        Assert.Equal(2, linked.Count);
+        Assert.Contains(linked, feature => feature.FeatureId == keepFeature.FeatureId);
+        Assert.Contains(linked, feature => feature.FeatureId == addFeature.FeatureId);
+        Assert.DoesNotContain(linked, feature => feature.FeatureId == removeFeature.FeatureId);
     }
 
     [Fact]

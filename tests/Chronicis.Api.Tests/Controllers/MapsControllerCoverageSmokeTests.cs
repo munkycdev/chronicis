@@ -920,6 +920,31 @@ public class MapsControllerCoverageSmokeTests
     }
 
     [Fact]
+    public async Task AutocompleteFeatures_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.SearchMapFeaturesForWorldAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string?>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).AutocompleteFeatures(Guid.NewGuid(), "blackroot");
+
+        var status = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task AutocompleteFeatures_Success_ReturnsOk()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.SearchMapFeaturesForWorldAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string?>())
+            .Returns([new MapFeatureAutocompleteDto { MapFeatureId = Guid.NewGuid(), DisplayText = "Blackroot Ford", MapName = "Ambria" }]);
+
+        var result = await CreateSut(service).AutocompleteFeatures(Guid.NewGuid(), "blackroot");
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
     public async Task ListFeatures_Unauthorized_Returns403()
     {
         var service = Substitute.For<IWorldMapService>();

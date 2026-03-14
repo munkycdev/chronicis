@@ -1,6 +1,7 @@
 @using System.Globalization
 @using Chronicis.Client.Utilities
 @using Chronicis.Shared.DTOs.Maps
+@using Chronicis.Shared.Enums
 @inject IMapApiService MapApi
 @inject IJSRuntime JSRuntime
 @implements IAsyncDisposable
@@ -52,7 +53,7 @@
                     <div class="session-map-viewer-modal__layout">
                         <aside class="session-map-viewer-modal__layers" aria-label="Map layers">
                             @{
-                                var effectivelyVisibleLayerIds = GetEffectivelyVisibleLayerIds();
+                                var effectivelyVisibleLayerIds = GetLocallyVisibleLayerIds();
                                 var layerTreeRoots = BuildLayerTreeRoots();
                             }
                             @if (layerTreeRoots.Count == 0)
@@ -93,6 +94,24 @@
                                          class="@GetMapImageClass()"
                                          @onload="OnMapImageLoaded"
                                          draggable="false" />
+                                    <div class="session-map-viewer-modal__features-overlay" aria-hidden="true">
+                                        @foreach (var feature in GetVisibleFeatures())
+                                        {
+                                            if (feature.FeatureType == MapFeatureType.Point && feature.Point is not null)
+                                            {
+                                                <div class="@GetFeaturePointClass(feature)"
+                                                     style="@GetFeaturePointStyle(feature)"
+                                                     title="@GetFeatureTooltip(feature)">
+                                                </div>
+                                            }
+                                            else if (feature.FeatureType == MapFeatureType.Polygon && feature.Polygon is not null)
+                                            {
+                                                <svg class="@GetFeaturePolygonClass(feature)" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                                    <polygon points="@GetFeaturePolygonPoints(feature)" />
+                                                </svg>
+                                            }
+                                        }
+                                    </div>
                                     <div class="session-map-viewer-modal__pins-overlay" aria-hidden="true">
                                         @foreach (var pin in GetVisiblePins())
                                         {
@@ -152,11 +171,15 @@
     private bool _isLoading;
     private string _basemapReadUrl = string.Empty;
     private List<MapPinResponseDto> _pins = [];
+    private List<MapFeatureDto> _features = [];
     private List<MapLayerDto> _layers = [];
     private SessionMapViewerState _state;
     private Guid _activeWorldId;
     private Guid _activeMapId;
+    private Guid? _activeTargetFeatureId;
     private bool _hasActiveTarget;
+    private bool _targetFocusPending;
+    private Guid? _highlightedFeatureId;
     private int _loadVersion;
     private const double ZoomRangeSliderMax = 100d;
     private const double ZoomButtonSliderStep = 10d;
@@ -195,6 +218,9 @@
     public Guid MapId { get; set; }
 
     [Parameter]
+    public Guid? TargetFeatureId { get; set; }
+
+    [Parameter]
     public string? MapName { get; set; }
 
     [Parameter]
@@ -210,12 +236,13 @@
 
         var modalJustOpened = !_lastIsOpen;
         var targetChangedWhileOpen = _lastIsOpen
-            && (!_hasActiveTarget || _activeWorldId != WorldId || _activeMapId != MapId);
+            && (!_hasActiveTarget || _activeWorldId != WorldId || _activeMapId != MapId || _activeTargetFeatureId != TargetFeatureId);
 
         if (modalJustOpened || targetChangedWhileOpen)
         {
             _activeWorldId = WorldId;
             _activeMapId = MapId;
+            _activeTargetFeatureId = TargetFeatureId;
             _hasActiveTarget = true;
             await LoadBasemapAsync(WorldId, MapId);
         }
@@ -229,7 +256,10 @@
         _isLoading = true;
         _basemapReadUrl = string.Empty;
         _pins = [];
+        _features = [];
         _layers = [];
+        _highlightedFeatureId = null;
+        _targetFocusPending = TargetFeatureId.HasValue;
         ResetMapViewportState();
         _state = SessionMapViewerState.None;
         await InvokeAsync(StateHasChanged);
@@ -261,6 +291,7 @@
             _basemapReadUrl = basemapResult.Basemap.ReadUrl;
             var layers = await TryLoadLayersAsync(worldId, mapId);
             var pins = await TryLoadPinsAsync(worldId, mapId);
+            var features = await TryLoadFeaturesAsync(worldId, mapId);
             if (requestVersion != _loadVersion || !IsOpen || WorldId != worldId || MapId != mapId)
             {
                 return;
@@ -268,6 +299,7 @@
 
             _layers = layers;
             _pins = pins;
+            _features = features;
             _state = SessionMapViewerState.Loaded;
         }
 
@@ -285,6 +317,24 @@
             }
 
             return await pinsTask ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private async Task<List<MapFeatureDto>> TryLoadFeaturesAsync(Guid worldId, Guid mapId)
+    {
+        try
+        {
+            var featuresTask = MapApi.ListFeaturesForMapAsync(worldId, mapId);
+            if (featuresTask is null)
+            {
+                return [];
+            }
+
+            return await featuresTask ?? [];
         }
         catch
         {
@@ -485,6 +535,7 @@
         _mapZoom = _mapMinZoom;
         _hasMapViewportLayout = true;
         RecenterMapPan();
+        FocusTargetFeatureIfNeeded();
         await SetupWheelInterceptorAsync();
     }
 
@@ -621,12 +672,53 @@
             return _pins;
         }
 
-        var enabledLayerIds = GetEffectivelyVisibleLayerIds();
+        var enabledLayerIds = GetLocallyVisibleLayerIds();
         return _pins.Where(pin => enabledLayerIds.Contains(pin.LayerId));
+    }
+
+    private IEnumerable<MapFeatureDto> GetVisibleFeatures()
+    {
+        if (_layers.Count == 0)
+        {
+            return _features;
+        }
+
+        var enabledLayerIds = GetLocallyVisibleLayerIds();
+        return _features.Where(feature => enabledLayerIds.Contains(feature.LayerId));
     }
 
     private HashSet<Guid> GetEffectivelyVisibleLayerIds() =>
         MapLayerVisibilityEvaluator.GetEffectivelyVisibleLayerIds(_layers);
+
+    private HashSet<Guid> GetLocallyVisibleLayerIds()
+    {
+        var visibleLayerIds = GetEffectivelyVisibleLayerIds();
+        if (!TargetFeatureId.HasValue)
+        {
+            return visibleLayerIds;
+        }
+
+        var targetFeature = _features.FirstOrDefault(feature => feature.FeatureId == TargetFeatureId.Value);
+        if (targetFeature is null)
+        {
+            return visibleLayerIds;
+        }
+
+        var layersById = _layers.ToDictionary(layer => layer.MapLayerId);
+        var currentLayerId = targetFeature.LayerId;
+        while (layersById.TryGetValue(currentLayerId, out var layer))
+        {
+            visibleLayerIds.Add(currentLayerId);
+            if (!layer.ParentLayerId.HasValue || layer.ParentLayerId == currentLayerId)
+            {
+                break;
+            }
+
+            currentLayerId = layer.ParentLayerId.Value;
+        }
+
+        return visibleLayerIds;
+    }
 
     private static string GetLayerRowClass(MapLayerDto layer, IReadOnlySet<Guid> effectivelyVisibleLayerIds) =>
         effectivelyVisibleLayerIds.Contains(layer.MapLayerId)
@@ -781,6 +873,57 @@
     private static bool HasUsableBounds(MapElementRect? rect) =>
         rect != null && rect.Width > 0d && rect.Height > 0d;
 
+    private void FocusTargetFeatureIfNeeded()
+    {
+        if (!_targetFocusPending || !TargetFeatureId.HasValue || !_hasMapViewportLayout)
+        {
+            return;
+        }
+
+        var targetFeature = _features.FirstOrDefault(feature => feature.FeatureId == TargetFeatureId.Value);
+        if (targetFeature is null || !TryGetFeatureCenter(targetFeature, out var centerX, out var centerY))
+        {
+            _targetFocusPending = false;
+            _highlightedFeatureId = null;
+            return;
+        }
+
+        _highlightedFeatureId = targetFeature.FeatureId;
+        _targetFocusPending = false;
+
+        var nextZoom = Clamp(_mapMinZoom * 2d, _mapMinZoom, _mapMaxZoom);
+        _mapZoom = nextZoom;
+        _mapPanX = (_mapViewportWidth / 2d) - ((centerX * _mapBaseWidth) * _mapZoom);
+        _mapPanY = (_mapViewportHeight / 2d) - ((centerY * _mapBaseHeight) * _mapZoom);
+        ClampPanToBounds();
+    }
+
+    private static bool TryGetFeatureCenter(MapFeatureDto feature, out double x, out double y)
+    {
+        if (feature.Point is not null)
+        {
+            x = feature.Point.X;
+            y = feature.Point.Y;
+            return true;
+        }
+
+        if (feature.Polygon?.Coordinates?.Count > 0 && feature.Polygon.Coordinates[0].Count > 0)
+        {
+            var ring = feature.Polygon.Coordinates[0];
+            var usablePoints = ring.Count > 1 && ring[0][0] == ring[^1][0] && ring[0][1] == ring[^1][1]
+                ? ring.Take(ring.Count - 1).ToList()
+                : ring;
+
+            x = usablePoints.Average(point => point[0]);
+            y = usablePoints.Average(point => point[1]);
+            return true;
+        }
+
+        x = 0d;
+        y = 0d;
+        return false;
+    }
+
     private static string GetPinStyle(MapPinResponseDto pin) =>
         $"left:{pin.X * 100:F4}%;top:{pin.Y * 100:F4}%;";
 
@@ -804,6 +947,30 @@
 
         return "Map pin";
     }
+
+    private string GetFeaturePointClass(MapFeatureDto feature) =>
+        feature.FeatureId == _highlightedFeatureId
+            ? "session-map-viewer-modal__feature-point session-map-viewer-modal__feature-point--highlighted"
+            : "session-map-viewer-modal__feature-point";
+
+    private static string GetFeaturePointStyle(MapFeatureDto feature) =>
+        $"left:{feature.Point!.X * 100:F4}%;top:{feature.Point.Y * 100:F4}%;";
+
+    private string GetFeaturePolygonClass(MapFeatureDto feature) =>
+        feature.FeatureId == _highlightedFeatureId
+            ? "session-map-viewer-modal__feature-polygon session-map-viewer-modal__feature-polygon--highlighted"
+            : "session-map-viewer-modal__feature-polygon";
+
+    private static string GetFeaturePolygonPoints(MapFeatureDto feature) =>
+        string.Join(
+            " ",
+            feature.Polygon!.Coordinates[0].Select(point =>
+                string.Create(CultureInfo.InvariantCulture, $"{point[0] * 100:F4},{point[1] * 100:F4}")));
+
+    private static string GetFeatureTooltip(MapFeatureDto feature) =>
+        !string.IsNullOrWhiteSpace(feature.Name)
+            ? feature.Name
+            : feature.LinkedArticle?.Title ?? "Map feature";
 
     private sealed class MapElementRect
     {

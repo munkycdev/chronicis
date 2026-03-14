@@ -52,6 +52,20 @@ public class MapFeatureDto
 }
 
 /// <summary>
+/// Minimal map feature suggestion payload for editor autocomplete.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class MapFeatureAutocompleteDto
+{
+    public Guid MapFeatureId { get; set; }
+    public Guid MapId { get; set; }
+    public string MapName { get; set; } = string.Empty;
+    public string DisplayText { get; set; } = string.Empty;
+    public string? FeatureName { get; set; }
+    public string? LinkedArticleTitle { get; set; }
+}
+
+/// <summary>
 /// Normalized point geometry for point features.
 /// </summary>
 [ExcludeFromCodeCoverage]

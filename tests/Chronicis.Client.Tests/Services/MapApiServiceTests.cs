@@ -97,6 +97,50 @@ public class MapApiServiceTests
     }
 
     [Fact]
+    public async Task GetMapFeatureAutocompleteAsync_WithQuery_UsesExpectedRoute()
+    {
+        var calls = new List<string>();
+        var worldId = Guid.NewGuid();
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            calls.Add($"{req.Method} {req.RequestUri!.PathAndQuery.TrimStart('/')}");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]")
+            });
+        });
+
+        var sut = CreateSut(handler);
+
+        _ = await sut.GetMapFeatureAutocompleteAsync(worldId, "Blackroot Ford");
+
+        Assert.Contains(calls, c => c == $"GET world/{worldId}/maps/features/autocomplete?query=Blackroot%20Ford");
+    }
+
+    [Fact]
+    public async Task GetMapFeatureAutocompleteAsync_DeserializesDtoList()
+    {
+        var worldId = Guid.NewGuid();
+        var featureId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var handler = new TestHttpMessageHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent($$"""[{"mapFeatureId":"{{featureId}}","mapId":"{{mapId}}","mapName":"Ambria","displayText":"Blackroot Ford"}]""")
+            }));
+
+        var sut = CreateSut(handler);
+
+        var result = await sut.GetMapFeatureAutocompleteAsync(worldId, "blackroot");
+
+        Assert.Single(result);
+        Assert.Equal(featureId, result[0].MapFeatureId);
+        Assert.Equal(mapId, result[0].MapId);
+        Assert.Equal("Ambria", result[0].MapName);
+        Assert.Equal("Blackroot Ford", result[0].DisplayText);
+    }
+
+    [Fact]
     public async Task GetMapAsync_Success_UsesRouteAndReturnsDto()
     {
         var worldId = Guid.NewGuid();

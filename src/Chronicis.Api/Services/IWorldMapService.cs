@@ -50,6 +50,13 @@ public interface IWorldMapService
     Task<List<MapAutocompleteDto>> SearchMapsForWorldAsync(Guid worldId, Guid userId, string? query);
 
     /// <summary>
+    /// List map feature suggestions for editor autocomplete.
+    /// Returns minimal data and supports optional feature/article-title filtering.
+    /// Requires world membership.
+    /// </summary>
+    Task<List<MapFeatureAutocompleteDto>> SearchMapFeaturesForWorldAsync(Guid worldId, Guid userId, string? query);
+
+    /// <summary>
     /// Create a pin for a map, selecting the default layer using Arc > Campaign > World.
     /// Requires world membership.
     /// </summary>
@@ -152,6 +159,12 @@ public interface IWorldMapService
     /// Requires world membership.
     /// </summary>
     Task<List<MapFeatureDto>> ListFeaturesForSessionNoteAsync(Guid worldId, Guid sessionNoteId, Guid userId);
+
+    /// <summary>
+    /// Reconciles the SessionNote map-feature links to the provided feature ID set.
+    /// Requires world membership.
+    /// </summary>
+    Task SyncSessionNoteMapFeaturesAsync(Guid worldId, Guid sessionNoteId, IEnumerable<Guid> mapFeatureIds, Guid userId);
 
     /// <summary>
     /// Validate the upload request, persist the blob key / filename / content-type,

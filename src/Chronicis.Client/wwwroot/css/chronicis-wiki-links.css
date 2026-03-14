@@ -53,6 +53,47 @@ span[data-type="wiki-link"][data-map-id]:hover {
     border-color: #3A4750;
 }
 
+span[data-type="map-feature-link"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid #4B5A45;
+    background: #4B5A45;
+    color: #F4F0EA;
+    font-weight: 600;
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+span[data-type="map-feature-link"]:hover {
+    background: #607156;
+    border-color: #607156;
+}
+
+.map-feature-link-badge {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1px 5px;
+    border-radius: 6px;
+    background: #D7D0A8;
+    color: #203020;
+}
+
+.map-feature-link-text {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.map-feature-link-map {
+    font-size: 10px;
+    opacity: 0.85;
+}
+
 .map-link-badge {
     font-size: 9px;
     text-transform: uppercase;
@@ -280,19 +321,20 @@ span[data-type="external-link"]:hover {
 
 @media (prefers-color-scheme: dark) {
     span[data-type="external-link"],
-    span[data-type="wiki-link"][data-map-id] {
+    span[data-type="wiki-link"][data-map-id],
+    span[data-type="map-feature-link"] {
         color: #F4F0EA;
-        background: #1F2A33;
-        border-color: #1F2A33;
+        border-color: currentColor;
     }
 
     span[data-type="external-link"]:hover,
-    span[data-type="wiki-link"][data-map-id]:hover {
-        background: #3A4750;
-        border-color: #3A4750;
+    span[data-type="wiki-link"][data-map-id]:hover,
+    span[data-type="map-feature-link"]:hover {
+        border-color: currentColor;
     }
 
     .map-link-badge,
+    .map-feature-link-badge,
     .external-link-badge,
     .external-link-preview-source {
         color: #1F2A33;
@@ -303,6 +345,22 @@ span[data-type="external-link"]:hover {
     .map-link-icon,
     .external-link-icon {
         color: #F4F0EA;
+    }
+
+    span[data-type="wiki-link"][data-map-id] {
+        background: #1F2A33;
+    }
+
+    span[data-type="wiki-link"][data-map-id]:hover {
+        background: #3A4750;
+    }
+
+    span[data-type="map-feature-link"] {
+        background: #4B5A45;
+    }
+
+    span[data-type="map-feature-link"]:hover {
+        background: #607156;
     }
 }
 

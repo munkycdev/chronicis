@@ -18,6 +18,11 @@ public interface IMapApiService
     Task<List<MapAutocompleteDto>> GetMapAutocompleteAsync(Guid worldId, string? query);
 
     /// <summary>
+    /// Gets map feature autocomplete suggestions for the given world.
+    /// </summary>
+    Task<List<MapFeatureAutocompleteDto>> GetMapFeatureAutocompleteAsync(Guid worldId, string? query);
+
+    /// <summary>
     /// Creates a map in the specified world.
     /// </summary>
     Task<MapDto?> CreateMapAsync(Guid worldId, MapCreateDto dto);

@@ -7,6 +7,7 @@ using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.RegularExpressions;
 
 namespace Chronicis.Api.Controllers;
 
@@ -25,8 +26,12 @@ public class ArticlesController : ControllerBase
     private readonly IArticleExternalLinkService _externalLinkService;
     private readonly IArticleHierarchyService _hierarchyService;
     private readonly IArticleDataAccessService _articleDataAccessService;
+    private readonly IWorldMapService _worldMapService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ArticlesController> _logger;
+    private static readonly Regex MapFeatureChipRegex = new(
+        "data-type=\"map-feature-link\"[^>]*data-feature-id=\"([0-9a-fA-F-]{36})\"",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public ArticlesController(
         IArticleService articleService,
@@ -36,6 +41,7 @@ public class ArticlesController : ControllerBase
         IArticleExternalLinkService externalLinkService,
         IArticleHierarchyService hierarchyService,
         IArticleDataAccessService articleDataAccessService,
+        IWorldMapService worldMapService,
         ICurrentUserService currentUserService,
         ILogger<ArticlesController> logger)
     {
@@ -46,6 +52,7 @@ public class ArticlesController : ControllerBase
         _externalLinkService = externalLinkService;
         _hierarchyService = hierarchyService;
         _articleDataAccessService = articleDataAccessService;
+        _worldMapService = worldMapService;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -248,6 +255,11 @@ public class ArticlesController : ControllerBase
                 await _linkSyncService.SyncLinksAsync(article.Id, dto.Body);
             }
 
+            if (article.Type == ArticleType.SessionNote)
+            {
+                await SyncSessionNoteMapFeaturesAsync(article.Id, article.WorldId, dto.Body, user.Id);
+            }
+
             var responseDto = new ArticleDto
             {
                 Id = article.Id,
@@ -382,6 +394,11 @@ public class ArticlesController : ControllerBase
 
             // Sync external links after update
             await _externalLinkService.SyncExternalLinksAsync(id, dto.Body);
+
+            if (article.Type == ArticleType.SessionNote)
+            {
+                await SyncSessionNoteMapFeaturesAsync(id, article.WorldId, article.Body, user.Id);
+            }
 
             // Return updated article
             var updatedArticle = await _articleService.GetArticleDetailAsync(id, user.Id);
@@ -678,5 +695,35 @@ public class ArticlesController : ControllerBase
     }
 
     #endregion
+
+    private async Task SyncSessionNoteMapFeaturesAsync(Guid articleId, Guid? worldId, string? body, Guid userId)
+    {
+        if (!worldId.HasValue || worldId.Value == Guid.Empty)
+        {
+            return;
+        }
+
+        var featureIds = ExtractMapFeatureIds(body);
+        await _worldMapService.SyncSessionNoteMapFeaturesAsync(worldId.Value, articleId, featureIds, userId);
+    }
+
+    private static List<Guid> ExtractMapFeatureIds(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return [];
+        }
+
+        var featureIds = new List<Guid>();
+        foreach (Match match in MapFeatureChipRegex.Matches(body))
+        {
+            if (Guid.TryParse(match.Groups[1].Value, out var featureId))
+            {
+                featureIds.Add(featureId);
+            }
+        }
+
+        return featureIds;
+    }
 
 }
