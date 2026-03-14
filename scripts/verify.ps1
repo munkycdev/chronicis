@@ -26,19 +26,38 @@ $CoverageTargets = @(
     }
 )
 
-function Get-LatestCoverageFile {
+function Get-CoverageVerificationData {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$ResultsDir
+        [string]$ResultsDir,
+        [Parameter(Mandatory = $true)]
+        [string]$Prefix
     )
 
     if (-not (Test-Path $ResultsDir)) {
         return $null
     }
 
-    return Get-ChildItem -Path $ResultsDir -Recurse -Filter "coverage.cobertura.xml" -File |
-        Sort-Object LastWriteTime -Descending |
-        Select-Object -First 1
+    foreach ($coverageFile in Get-ChildItem -Path $ResultsDir -Recurse -Filter "coverage.cobertura.xml" -File |
+        Sort-Object LastWriteTime -Descending) {
+        try {
+            [xml]$coverage = Get-Content $coverageFile.FullName
+            $matchingClasses = @(Get-CoverageClassesByPrefix -Coverage $coverage -Prefix $Prefix)
+
+            if ($matchingClasses.Count -gt 0) {
+                return @{
+                    File = $coverageFile
+                    Coverage = $coverage
+                    MatchingClasses = $matchingClasses
+                }
+            }
+        }
+        catch {
+            continue
+        }
+    }
+
+    return $null
 }
 
 function Get-CoverageClassesByPrefix {
@@ -50,8 +69,17 @@ function Get-CoverageClassesByPrefix {
     )
 
     $classes = @()
-    foreach ($package in $Coverage.coverage.packages.package) {
-        foreach ($class in $package.classes.class) {
+    $packages = @()
+    if ($null -ne $Coverage.coverage -and $null -ne $Coverage.coverage.packages) {
+        $packages = @($Coverage.coverage.packages.package)
+    }
+
+    foreach ($package in $packages) {
+        if ($null -eq $package -or $null -eq $package.classes) {
+            continue
+        }
+
+        foreach ($class in @($package.classes.class)) {
             if ($class.name -like "$Prefix*") {
                 $classes += $class
             }
@@ -96,19 +124,14 @@ try {
     $coverageFailures = @()
 
     foreach ($target in $CoverageTargets) {
-        $coverageFile = Get-LatestCoverageFile -ResultsDir $target.ResultsDir
-        if ($null -eq $coverageFile) {
+        $coverageData = Get-CoverageVerificationData -ResultsDir $target.ResultsDir -Prefix $target.Prefix
+        if ($null -eq $coverageData) {
             $coverageFailures += "[$($target.Name)] No coverage.cobertura.xml found under $($target.ResultsDir)"
             continue
         }
 
-        [xml]$coverage = Get-Content $coverageFile.FullName
-        $matchingClasses = @(Get-CoverageClassesByPrefix -Coverage $coverage -Prefix $target.Prefix)
-
-        if ($matchingClasses.Count -eq 0) {
-            $coverageFailures += "[$($target.Name)] No classes matched prefix '$($target.Prefix)' in $($coverageFile.FullName)"
-            continue
-        }
+        $coverageFile = $coverageData.File
+        $matchingClasses = $coverageData.MatchingClasses
 
         $below100 = @($matchingClasses | Where-Object {
             [double]$_.'line-rate' -lt 1 -or [double]$_.'branch-rate' -lt 1

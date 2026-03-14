@@ -617,6 +617,34 @@ public class MapsController : ControllerBase
     }
 
     /// <summary>
+    /// GET /world/{worldId}/maps/{mapId}/features/{featureId}/session-references — List session-note references for a map feature.
+    /// </summary>
+    [HttpGet("{mapId:guid}/features/{featureId:guid}/session-references")]
+    public async Task<ActionResult<IEnumerable<MapFeatureSessionReferenceDto>>> ListFeatureSessionReferences(
+        Guid worldId,
+        Guid mapId,
+        Guid featureId)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        try
+        {
+            var references = await _worldMapService.ListSessionReferencesForFeatureAsync(worldId, mapId, featureId, user.Id);
+            return Ok(references);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Unauthorized feature session reference list");
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarningSanitized(ex, "Feature session reference list target not found");
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// PUT /world/{worldId}/maps/{mapId}/features/{featureId} — Replace a map feature.
     /// </summary>
     [HttpPut("{mapId:guid}/features/{featureId:guid}")]

@@ -881,6 +881,85 @@ public sealed class WorldMapService : IWorldMapService
     }
 
     /// <inheritdoc/>
+    public async Task<List<MapFeatureSessionReferenceDto>> ListSessionReferencesForFeatureAsync(
+        Guid worldId,
+        Guid mapId,
+        Guid featureId,
+        Guid userId)
+    {
+        _logger.LogTraceSanitized(
+            "User {UserId} listing session references for feature {FeatureId} on map {MapId}",
+            userId,
+            featureId,
+            mapId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        await EnsureMapInWorldAsync(worldId, mapId);
+
+        var featureExists = await _db.MapFeatures
+            .AsNoTracking()
+            .AnyAsync(feature => feature.MapFeatureId == featureId && feature.WorldMapId == mapId);
+
+        if (!featureExists)
+        {
+            throw new InvalidOperationException("Feature not found");
+        }
+
+        var references = await _db.SessionNoteMapFeatures
+            .AsNoTracking()
+            .Where(link => link.MapFeatureId == featureId)
+            .Join(
+                _db.Articles.AsNoTracking(),
+                link => link.SessionNoteId,
+                article => article.Id,
+                (link, article) => new { link, article })
+            .Join(
+                _db.WorldMaps.AsNoTracking(),
+                joined => joined.link.MapFeature.WorldMapId,
+                map => map.WorldMapId,
+                (joined, map) => new { joined.link, joined.article, map.WorldId })
+            .GroupJoin(
+                _db.Sessions.AsNoTracking(),
+                joined => joined.article.SessionId,
+                session => session.Id,
+                (joined, sessions) => new { joined.link, joined.article, joined.WorldId, session = sessions.FirstOrDefault() })
+            .Where(result =>
+                result.WorldId == worldId
+                && result.article.Type == ArticleType.SessionNote
+                && (result.article.Visibility != ArticleVisibility.Private || result.article.CreatedBy == userId))
+            .Select(result => new
+            {
+                result.link.SessionNoteId,
+                SessionNoteTitle = result.article.Title,
+                result.article.SessionId,
+                SessionName = result.session != null && !string.IsNullOrWhiteSpace(result.session.Name)
+                    ? result.session.Name
+                    : null,
+                SessionDate = result.session != null && result.session.SessionDate.HasValue
+                    ? result.session.SessionDate
+                    : result.article.SessionDate,
+                result.link.CreatedAt,
+            })
+            .OrderBy(result => result.SessionDate.HasValue ? 0 : 1)
+            .ThenBy(result => result.SessionDate)
+            .ThenBy(result => result.CreatedAt)
+            .ThenBy(result => result.SessionNoteTitle)
+            .ThenBy(result => result.SessionNoteId)
+            .Select(result => new MapFeatureSessionReferenceDto
+            {
+                SessionNoteId = result.SessionNoteId,
+                SessionNoteTitle = result.SessionNoteTitle,
+                SessionId = result.SessionId,
+                SessionName = result.SessionName,
+                SessionDate = result.SessionDate,
+                CreatedAt = result.CreatedAt,
+            })
+            .ToListAsync();
+
+        return references;
+    }
+
+    /// <inheritdoc/>
     public async Task<MapFeatureDto> UpdateFeatureAsync(Guid worldId, Guid mapId, Guid featureId, Guid userId, MapFeatureUpdateDto dto)
     {
         _logger.LogTraceSanitized("User {UserId} updating feature {FeatureId} on map {MapId}", userId, featureId, mapId);

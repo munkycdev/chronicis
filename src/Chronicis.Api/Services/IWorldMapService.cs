@@ -94,6 +94,12 @@ public interface IWorldMapService
     Task<MapFeatureDto?> GetFeatureAsync(Guid worldId, Guid mapId, Guid featureId, Guid userId);
 
     /// <summary>
+    /// List session-note references for a map feature.
+    /// Requires world membership.
+    /// </summary>
+    Task<List<MapFeatureSessionReferenceDto>> ListSessionReferencesForFeatureAsync(Guid worldId, Guid mapId, Guid featureId, Guid userId);
+
+    /// <summary>
     /// Replace a map feature.
     /// Requires world membership.
     /// </summary>

@@ -1006,6 +1006,43 @@ public class MapsControllerCoverageSmokeTests
     }
 
     [Fact]
+    public async Task ListFeatureSessionReferences_Unauthorized_Returns403()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ListSessionReferencesForFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new UnauthorizedAccessException("denied"));
+
+        var result = await CreateSut(service).ListFeatureSessionReferences(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        var status = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListFeatureSessionReferences_NotFound_Returns404()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ListSessionReferencesForFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .ThrowsAsync(new InvalidOperationException("Feature not found"));
+
+        var result = await CreateSut(service).ListFeatureSessionReferences(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task ListFeatureSessionReferences_Success_ReturnsOk()
+    {
+        var service = Substitute.For<IWorldMapService>();
+        service.ListSessionReferencesForFeatureAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns([new MapFeatureSessionReferenceDto { SessionNoteId = Guid.NewGuid(), SessionNoteTitle = "Session 8" }]);
+
+        var result = await CreateSut(service).ListFeatureSessionReferences(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
     public async Task UpdateFeature_NullDto_ReturnsBadRequest()
     {
         var result = await CreateSut().UpdateFeature(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null!);

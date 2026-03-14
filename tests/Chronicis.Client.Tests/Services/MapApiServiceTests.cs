@@ -707,6 +707,38 @@ public class MapApiServiceTests
     }
 
     [Fact]
+    public async Task GetFeatureSessionReferencesAsync_UsesExpectedRouteAndDeserializes()
+    {
+        var worldId = Guid.NewGuid();
+        var mapId = Guid.NewGuid();
+        var featureId = Guid.NewGuid();
+        var sessionNoteId = Guid.NewGuid();
+
+        var handler = new TestHttpMessageHandler((req, _) =>
+        {
+            Assert.Equal(HttpMethod.Get, req.Method);
+            Assert.Equal(
+                $"world/{worldId}/maps/{mapId}/features/{featureId}/session-references",
+                req.RequestUri!.PathAndQuery.TrimStart('/'));
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    $$"""[{"sessionNoteId":"{{sessionNoteId}}","sessionNoteTitle":"Player Notes","sessionName":"Session 8","sessionDate":"2025-02-01T00:00:00Z","createdAt":"2025-02-02T00:00:00Z"}]""")
+            });
+        });
+
+        var sut = CreateSut(handler);
+        var result = await sut.GetFeatureSessionReferencesAsync(worldId, mapId, featureId);
+
+        Assert.Single(result);
+        Assert.Equal(sessionNoteId, result[0].SessionNoteId);
+        Assert.Equal("Player Notes", result[0].SessionNoteTitle);
+        Assert.Equal("Session 8", result[0].SessionName);
+        Assert.Equal(new DateTime(2025, 2, 1, 0, 0, 0, DateTimeKind.Utc), result[0].SessionDate);
+    }
+
+    [Fact]
     public async Task UpdateFeatureAsync_UsesExpectedRouteAndBody()
     {
         var worldId = Guid.NewGuid();

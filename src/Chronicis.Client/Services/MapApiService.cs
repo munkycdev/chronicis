@@ -167,6 +167,14 @@ public class MapApiService : IMapApiService
             $"feature {featureId} for map {mapId}");
     }
 
+    public async Task<List<MapFeatureSessionReferenceDto>> GetFeatureSessionReferencesAsync(Guid worldId, Guid mapId, Guid featureId)
+    {
+        return await _http.GetListAsync<MapFeatureSessionReferenceDto>(
+            $"world/{worldId}/maps/{mapId}/features/{featureId}/session-references",
+            _logger,
+            $"session references for feature {featureId} on map {mapId}");
+    }
+
     public async Task<MapFeatureDto?> UpdateFeatureAsync(Guid worldId, Guid mapId, Guid featureId, MapFeatureUpdateDto dto)
     {
         return await _http.PutEntityAsync<MapFeatureDto>(

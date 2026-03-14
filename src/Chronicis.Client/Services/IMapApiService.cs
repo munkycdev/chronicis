@@ -83,6 +83,11 @@ public interface IMapApiService
     Task<(MapFeatureDto? Feature, int? StatusCode, string? Error)> GetFeatureAsync(Guid worldId, Guid mapId, Guid featureId);
 
     /// <summary>
+    /// Lists session-note references for a feature.
+    /// </summary>
+    Task<List<MapFeatureSessionReferenceDto>> GetFeatureSessionReferencesAsync(Guid worldId, Guid mapId, Guid featureId);
+
+    /// <summary>
     /// Replaces a feature on the given map.
     /// </summary>
     Task<MapFeatureDto?> UpdateFeatureAsync(Guid worldId, Guid mapId, Guid featureId, MapFeatureUpdateDto dto);

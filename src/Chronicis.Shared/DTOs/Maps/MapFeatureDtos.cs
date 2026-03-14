@@ -52,6 +52,20 @@ public class MapFeatureDto
 }
 
 /// <summary>
+/// Session-note reference payload for map feature history display.
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class MapFeatureSessionReferenceDto
+{
+    public Guid SessionNoteId { get; set; }
+    public string SessionNoteTitle { get; set; } = string.Empty;
+    public Guid? SessionId { get; set; }
+    public string? SessionName { get; set; }
+    public DateTime? SessionDate { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
 /// Minimal map feature suggestion payload for editor autocomplete.
 /// </summary>
 [ExcludeFromCodeCoverage]

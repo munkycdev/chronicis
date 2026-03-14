@@ -86,6 +86,7 @@ public class MapDetailTests : MudBlazorTestContext
             }
         });
         _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(_ => []);
+        _mapApi.GetFeatureSessionReferencesAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(_ => []);
         _mapApi.UpdateLayerVisibilityAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>())
             .Returns(Task.CompletedTask);
     }
@@ -483,6 +484,112 @@ public class MapDetailTests : MudBlazorTestContext
                 element => Assert.Equal("⊙", element.TextContent.Trim()));
             var nameInput = cut.Find("#selected-polygon-name");
             Assert.Equal("Polygon", nameInput.GetAttribute("value"));
+        });
+    }
+
+    [Fact]
+    public async Task MapDetail_SelectedPolygon_ShowsReferencedSessionsInApiOrder()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000101");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+        _mapApi.GetFeatureSessionReferencesAsync(WorldId, MapId, featureId).Returns(
+        [
+            new MapFeatureSessionReferenceDto
+            {
+                SessionNoteId = Guid.Parse("80000000-0000-0000-0000-000000000001"),
+                SessionNoteTitle = "Fallback Note",
+                SessionDate = new DateTime(2025, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                CreatedAt = new DateTime(2025, 2, 2, 0, 0, 0, DateTimeKind.Utc),
+            },
+            new MapFeatureSessionReferenceDto
+            {
+                SessionNoteId = Guid.Parse("80000000-0000-0000-0000-000000000002"),
+                SessionNoteTitle = "Ignored Note Title",
+                SessionName = "Session 9",
+                SessionDate = new DateTime(2025, 3, 1, 0, 0, 0, DateTimeKind.Utc),
+                CreatedAt = new DateTime(2025, 3, 2, 0, 0, 0, DateTimeKind.Utc),
+            },
+        ]);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        await SelectPolygonAsync(cut, 300, 200);
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Referenced In Sessions", cut.Markup, StringComparison.Ordinal);
+            var items = cut.FindAll(".map-page__feature-session-history-item");
+            Assert.Equal(2, items.Count);
+            Assert.Contains("Fallback Note", items[0].TextContent, StringComparison.Ordinal);
+            Assert.Contains("Feb 1, 2025", items[0].TextContent, StringComparison.Ordinal);
+            Assert.Contains("Session 9", items[1].TextContent, StringComparison.Ordinal);
+            Assert.Contains("Mar 1, 2025", items[1].TextContent, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
+    public async Task MapDetail_SelectedPolygon_WithNoSessionReferences_ShowsEmptyState()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000102");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+        _mapApi.GetFeatureSessionReferencesAsync(WorldId, MapId, featureId).Returns(_ => []);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        await SelectPolygonAsync(cut, 300, 200);
+
+        cut.WaitForAssertion(() =>
+        {
+            var emptyState = cut.Find(".map-page__feature-session-history-empty");
+            Assert.Equal("No session references yet.", emptyState.TextContent.Trim());
+        });
+    }
+
+    [Fact]
+    public async Task MapDetail_ClickingSessionReference_NavigatesToSessionNoteArticle()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-000000000103");
+        var sessionNoteId = Guid.Parse("80000000-0000-0000-0000-000000000010");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+        _mapApi.GetFeatureSessionReferencesAsync(WorldId, MapId, featureId).Returns(
+        [
+            new MapFeatureSessionReferenceDto
+            {
+                SessionNoteId = sessionNoteId,
+                SessionNoteTitle = "Session Note",
+                SessionName = "Session 10",
+                SessionDate = new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc),
+                CreatedAt = new DateTime(2025, 4, 2, 0, 0, 0, DateTimeKind.Utc),
+            }
+        ]);
+        _articleApi.GetArticleDetailAsync(sessionNoteId).Returns(new ArticleDto
+        {
+            Id = sessionNoteId,
+            Breadcrumbs =
+            [
+                new BreadcrumbDto { Slug = "campaign", Title = "Campaign" },
+                new BreadcrumbDto { Slug = "session-10", Title = "Session 10" }
+            ]
+        });
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        await SelectPolygonAsync(cut, 300, 200);
+
+        cut.WaitForElement(".map-page__feature-session-history-item").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.EndsWith("/article/campaign/session-10", Services.GetRequiredService<NavigationManager>().Uri, StringComparison.Ordinal);
         });
     }
 
