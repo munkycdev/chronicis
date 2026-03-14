@@ -44,8 +44,14 @@ All notable changes to this project are documented in this file.
 - World-owner delete workflow with typed-name confirmation, matching Session Detail destructive-delete safety pattern.
 - Session Note map linking:
   - Type `[[maps/` in Session Notes to autocomplete maps from the current world.
-  - Selecting a suggestion inserts an inline map chip.
-  - Clicking the chip opens the map in a modal viewer with basemap + pins and pan/zoom support.
+  - Selecting a map suggestion inserts an inline map chip.
+  - Type `[[maps/{map}/` to autocomplete features on a specific resolved map.
+  - Selecting a feature suggestion inserts an inline map-feature chip scoped to that map.
+  - Clicking the chip opens the map in a modal viewer; feature chips center and highlight the selected feature.
+- Public shared-world map viewing:
+  - Public article rendering recognizes the same inline map and map-feature chips used in Session Notes.
+  - Clicking a public map or map-feature chip opens the modal viewer in anonymous read-only mode.
+  - Public feature chips target and highlight the selected feature without introducing anonymous persistence for modal layer toggles.
 
 **Changed:**
 - Map page basemap rendering is constrained to its content container to prevent horizontal overflow blowout.
@@ -55,6 +61,7 @@ All notable changes to this project are documented in this file.
 - Polygon create mode now shows the editor bar immediately instead of waiting for polygon completion.
 - Vertex hit-testing and drag behavior were hardened for zoomed-in editing so handles remain draggable at high zoom levels.
 - Polygon selection and create-point coordinate resolution were hardened so editing still works after viewport/zoom changes.
+- Map and map-feature chips now render as light gold-beige pills with a leading `📍` glyph and no leading type badge.
 
 **Removed:**
 - "Add Item" action from the Maps virtual group.

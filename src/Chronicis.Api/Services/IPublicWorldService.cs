@@ -1,4 +1,5 @@
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Maps;
 
 namespace Chronicis.Api.Services;
 
@@ -37,4 +38,28 @@ public interface IPublicWorldService
     /// Returns null when the document is not attached to a public article in a public world.
     /// </summary>
     Task<string?> GetPublicDocumentDownloadUrlAsync(Guid documentId);
+
+    /// <summary>
+    /// Resolve a public map basemap read URL for a map in a public world.
+    /// Returns an error message when the map is not public or the basemap is missing.
+    /// </summary>
+    Task<(GetBasemapReadUrlResponseDto? Basemap, string? Error)> GetPublicMapBasemapReadUrlAsync(string publicSlug, Guid mapId);
+
+    /// <summary>
+    /// List public map layers for a map in a public world.
+    /// Returns null when the world or map is not public.
+    /// </summary>
+    Task<List<MapLayerDto>?> GetPublicMapLayersAsync(string publicSlug, Guid mapId);
+
+    /// <summary>
+    /// List public pins for a map in a public world.
+    /// Returns null when the world or map is not public.
+    /// </summary>
+    Task<List<MapPinResponseDto>?> GetPublicMapPinsAsync(string publicSlug, Guid mapId);
+
+    /// <summary>
+    /// List public features for a map in a public world.
+    /// Returns null when the world or map is not public.
+    /// </summary>
+    Task<List<MapFeatureDto>?> GetPublicMapFeaturesAsync(string publicSlug, Guid mapId);
 }

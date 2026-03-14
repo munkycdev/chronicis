@@ -465,13 +465,6 @@ else
                 if (_disposed) return;
 
                 await JSRuntime.InvokeVoidAsync("initializeWikiLinkAutocomplete", $"tiptap-editor-{_article.Id}", _dotNetHelper);
-                await JSRuntime.InvokeVoidAsync(
-                    "configureWikiLinkAutocomplete",
-                    $"tiptap-editor-{_article.Id}",
-                    new
-                    {
-                        enableMapFeatureReferences = _article.Type == ArticleType.SessionNote
-                    });
 
                 // Initialize image upload (drag-drop, paste)
                 await JSRuntime.InvokeVoidAsync("initializeImageUpload", $"tiptap-editor-{_article.Id}", _dotNetHelper);
@@ -664,24 +657,15 @@ else
         _autocompletePosition = (x, y);
         _showAutocomplete = true;
         _autocompleteSelectedIndex = 0;
-        var isMapFeatureAutocomplete = _article?.Type == ArticleType.SessionNote
-            && normalizedQuery.StartsWith("location/", StringComparison.OrdinalIgnoreCase);
         var isMapAutocomplete = normalizedQuery.StartsWith("maps/", StringComparison.OrdinalIgnoreCase);
         string? mapSearch = null;
-        string? featureSearch = null;
 
-        if (isMapFeatureAutocomplete)
-        {
-            var remainder = normalizedQuery.Substring("location/".Length);
-            featureSearch = string.IsNullOrWhiteSpace(remainder) ? null : remainder.Trim();
-            _autocompleteIsExternalQuery = false;
-            _autocompleteExternalSourceKey = null;
-            _autocompleteQuery = featureSearch ?? string.Empty;
-        }
-        else if (isMapAutocomplete)
+        if (isMapAutocomplete)
         {
             var remainder = normalizedQuery.Substring("maps/".Length);
-            mapSearch = string.IsNullOrWhiteSpace(remainder) ? null : remainder.Trim();
+            var slashIndex = remainder.IndexOf('/');
+            var mapSegment = slashIndex >= 0 ? remainder[..slashIndex] : remainder;
+            mapSearch = string.IsNullOrWhiteSpace(mapSegment) ? null : mapSegment.Trim();
             _autocompleteIsExternalQuery = false;
             _autocompleteExternalSourceKey = null;
             _autocompleteQuery = mapSearch ?? string.Empty;
@@ -712,7 +696,7 @@ else
             // For internal queries: require 3 characters minimum
             var minLength = _autocompleteIsExternalQuery ? 0 : 3;
 
-            if (!isMapFeatureAutocomplete && !isMapAutocomplete && _autocompleteQuery.Length < minLength)
+            if (!isMapAutocomplete && _autocompleteQuery.Length < minLength)
             {
                 _autocompleteSuggestions = new();
                 StateHasChanged();
@@ -727,19 +711,15 @@ else
         {
             var worldId = AppContext.CurrentWorldId ?? _article?.WorldId ?? Guid.Empty;
 
-            if (isMapFeatureAutocomplete)
+            if (isMapAutocomplete)
             {
-                var featureSuggestions = await MapApi.GetMapFeatureAutocompleteAsync(worldId, featureSearch);
-                _autocompleteSuggestions = featureSuggestions
-                    .Select(WikiLinkAutocompleteItem.FromMapFeatureAutocomplete)
-                    .ToList();
-            }
-            else if (isMapAutocomplete)
-            {
-                var mapSuggestions = await MapApi.GetMapAutocompleteAsync(worldId, mapSearch);
-                _autocompleteSuggestions = mapSuggestions
-                    .Select(WikiLinkAutocompleteItem.FromMapAutocomplete)
-                    .ToList();
+                if (!await TryLoadSessionNoteMapFeatureSuggestionsAsync(worldId, normalizedQuery))
+                {
+                    var mapSuggestions = await MapApi.GetMapAutocompleteAsync(worldId, mapSearch);
+                    _autocompleteSuggestions = mapSuggestions
+                        .Select(WikiLinkAutocompleteItem.FromMapAutocomplete)
+                        .ToList();
+                }
             }
             else if (_autocompleteIsExternalQuery)
             {
@@ -963,6 +943,65 @@ else
         remainder = query.Substring(slashIndex + 1);
 
         return !string.IsNullOrWhiteSpace(sourceKey);
+    }
+
+    private async Task<bool> TryLoadSessionNoteMapFeatureSuggestionsAsync(Guid worldId, string normalizedQuery)
+    {
+        if (_article?.Type != ArticleType.SessionNote
+            || !TryParseMapFeatureAutocompleteQuery(normalizedQuery, out var mapName, out var featureSearch))
+        {
+            return false;
+        }
+
+        var mapSuggestions = await MapApi.GetMapAutocompleteAsync(worldId, mapName);
+        var exactMatches = mapSuggestions
+            .Where(map => string.Equals(map.Name, mapName, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var resolvedMap = exactMatches.Count == 1 ? exactMatches[0] : null;
+
+        if (resolvedMap == null)
+        {
+            _autocompleteQuery = mapName;
+            _autocompleteSuggestions = mapSuggestions
+                .Select(WikiLinkAutocompleteItem.FromMapAutocomplete)
+                .ToList();
+            return true;
+        }
+
+        _autocompleteQuery = featureSearch ?? string.Empty;
+        var featureSuggestions = await MapApi.GetMapFeatureAutocompleteAsync(worldId, resolvedMap.MapId, featureSearch);
+        _autocompleteSuggestions = featureSuggestions
+            .Select(WikiLinkAutocompleteItem.FromMapFeatureAutocomplete)
+            .ToList();
+        return true;
+    }
+
+    private static bool TryParseMapFeatureAutocompleteQuery(string normalizedQuery, out string mapName, out string? featureSearch)
+    {
+        mapName = string.Empty;
+        featureSearch = null;
+
+        if (!normalizedQuery.StartsWith("maps/", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var remainder = normalizedQuery.Substring("maps/".Length);
+        var slashIndex = remainder.IndexOf('/');
+        if (slashIndex < 0)
+        {
+            return false;
+        }
+
+        mapName = remainder[..slashIndex].Trim();
+        if (string.IsNullOrWhiteSpace(mapName))
+        {
+            return false;
+        }
+
+        var featureSegment = remainder[(slashIndex + 1)..];
+        featureSearch = string.IsNullOrWhiteSpace(featureSegment) ? null : featureSegment.Trim();
+        return true;
     }
 
     [JSInvokable]

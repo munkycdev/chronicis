@@ -2303,6 +2303,23 @@ public class WorldMapServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SearchMapFeaturesForMapAsync_FiltersToRequestedMap()
+    {
+        var roshar = await CreateMapWithDefaultLayersAsync("Roshar");
+        var scadrial = await CreateMapWithDefaultLayersAsync("Scadrial");
+        var expectedFeature = await CreatePointFeatureAsync(roshar.WorldMapId, "Ravinia", 0.2f, 0.2f);
+        _ = await CreatePointFeatureAsync(scadrial.WorldMapId, "Ravinia Outpost", 0.7f, 0.7f);
+
+        var results = await _sut.SearchMapFeaturesForMapAsync(_worldId, roshar.WorldMapId, _memberId, "rav");
+
+        var suggestion = Assert.Single(results);
+        Assert.Equal(expectedFeature.FeatureId, suggestion.MapFeatureId);
+        Assert.Equal(roshar.WorldMapId, suggestion.MapId);
+        Assert.Equal("Roshar", suggestion.MapName);
+        Assert.Equal("Ravinia", suggestion.DisplayText);
+    }
+
+    [Fact]
     public async Task AddFeatureToSessionNoteAsync_AllowsSameFeatureAcrossMultipleNotes()
     {
         var map = await CreateMapWithDefaultLayersAsync("Shared Session Feature");

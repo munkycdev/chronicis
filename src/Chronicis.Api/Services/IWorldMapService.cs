@@ -57,6 +57,13 @@ public interface IWorldMapService
     Task<List<MapFeatureAutocompleteDto>> SearchMapFeaturesForWorldAsync(Guid worldId, Guid userId, string? query);
 
     /// <summary>
+    /// List map feature suggestions scoped to a specific map for editor autocomplete.
+    /// Returns minimal data and supports optional feature/article-title filtering.
+    /// Requires world membership.
+    /// </summary>
+    Task<List<MapFeatureAutocompleteDto>> SearchMapFeaturesForMapAsync(Guid worldId, Guid mapId, Guid userId, string? query);
+
+    /// <summary>
     /// Create a pin for a map, selecting the default layer using Arc > Campaign > World.
     /// Requires world membership.
     /// </summary>

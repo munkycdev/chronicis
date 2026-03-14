@@ -298,6 +298,26 @@ public sealed class WorldMapService : IWorldMapService
 
         await EnsureWorldMembershipAsync(worldId, userId);
 
+        return await BuildMapFeatureAutocompleteQuery(worldId, mapId: null, query).ToListAsync();
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<MapFeatureAutocompleteDto>> SearchMapFeaturesForMapAsync(Guid worldId, Guid mapId, Guid userId, string? query)
+    {
+        _logger.LogTraceSanitized(
+            "User {UserId} searching feature autocomplete for map {MapId} in world {WorldId}",
+            userId,
+            mapId,
+            worldId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        await EnsureMapInWorldAsync(worldId, mapId);
+
+        return await BuildMapFeatureAutocompleteQuery(worldId, mapId, query).ToListAsync();
+    }
+
+    private IQueryable<MapFeatureAutocompleteDto> BuildMapFeatureAutocompleteQuery(Guid worldId, Guid? mapId, string? query)
+    {
         var normalizedQuery = NormalizeAutocompleteQuery(query);
         var featuresQuery = _db.MapFeatures
             .AsNoTracking()
@@ -306,7 +326,14 @@ public sealed class WorldMapService : IWorldMapService
                 feature => feature.WorldMapId,
                 map => map.WorldMapId,
                 (feature, map) => new { feature, map })
-            .Where(result => result.map.WorldId == worldId)
+            .Where(result => result.map.WorldId == worldId);
+
+        if (mapId.HasValue)
+        {
+            featuresQuery = featuresQuery.Where(result => result.feature.WorldMapId == mapId.Value);
+        }
+
+        var suggestionsQuery = featuresQuery
             .GroupJoin(
                 _db.Articles.AsNoTracking(),
                 result => result.feature.LinkedArticleId,
@@ -322,12 +349,12 @@ public sealed class WorldMapService : IWorldMapService
 
         if (!string.IsNullOrWhiteSpace(normalizedQuery))
         {
-            featuresQuery = featuresQuery.Where(result =>
+            suggestionsQuery = suggestionsQuery.Where(result =>
                 (!string.IsNullOrWhiteSpace(result.FeatureName) && result.FeatureName.ToLower().Contains(normalizedQuery))
                 || (!string.IsNullOrWhiteSpace(result.LinkedArticleTitle) && result.LinkedArticleTitle.ToLower().Contains(normalizedQuery)));
         }
 
-        return await featuresQuery
+        return suggestionsQuery
             .OrderBy(result => result.FeatureName ?? result.LinkedArticleTitle ?? string.Empty)
             .ThenBy(result => result.MapName)
             .ThenBy(result => result.MapFeatureId)
@@ -342,8 +369,7 @@ public sealed class WorldMapService : IWorldMapService
                     ? result.FeatureName!
                     : result.LinkedArticleTitle ?? "Unnamed Feature",
             })
-            .Take(25)
-            .ToListAsync();
+            .Take(25);
     }
 
     /// <inheritdoc/>

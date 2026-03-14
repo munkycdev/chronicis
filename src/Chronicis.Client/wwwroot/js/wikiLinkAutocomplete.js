@@ -21,8 +21,6 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
     // timing gaps — the element may still be in the DOM while Blazor is processing the
     // re-render that removes it, causing arrow keys to be incorrectly swallowed.
     let autocompleteVisible = false;
-    window._wikiLinkAutocompleteOptions = window._wikiLinkAutocompleteOptions || {};
-    const getOptions = () => window._wikiLinkAutocompleteOptions[editorId] || {};
 
     // Listen for input events to detect [[ typing
     container.addEventListener('input', (e) => {
@@ -32,42 +30,10 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
         // Get cursor position
         const { from } = editor.state.selection;
         const textBefore = editor.state.doc.textBetween(Math.max(0, from - 50), from, '\n');
-        const options = getOptions();
-        const featureMatch = options.enableMapFeatureReferences
-            ? textBefore.match(/@location(?:\s+([^\n]*))?$/i)
-            : null;
-
         // Check if we just typed [[
         const match = textBefore.match(/\[\[([^\]]*)$/);
 
-        if (featureMatch) {
-            const featureQuery = (featureMatch[1] || '').trimStart();
-            const coords = editor.view.coordsAtPos(from);
-            let x = coords.left;
-            let y = coords.bottom + 4;
-            const viewportWidth = window.innerWidth;
-            const viewportHeight = window.innerHeight;
-            const autocompleteWidth = 300;
-            const autocompleteHeight = 300;
-
-            if (x + autocompleteWidth > viewportWidth) {
-                x = viewportWidth - autocompleteWidth - 16;
-            }
-
-            if (y + autocompleteHeight > viewportHeight) {
-                y = coords.top - autocompleteHeight - 4;
-                if (y < 0) {
-                    y = 16;
-                }
-            }
-
-            if (x < 16) {
-                x = 16;
-            }
-
-            autocompleteVisible = true;
-            dotNetHelper.invokeMethodAsync('OnAutocompleteTriggered', `location/${featureQuery}`, x, y);
-        } else if (match) {
+        if (match) {
             const fullQuery = match[1];
             
             // Check for pipe character - if present, only search on the part before it
@@ -186,11 +152,6 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
 window._setAutocompleteVisible = (value) => { autocompleteVisible = value; };
 }
 
-function configureWikiLinkAutocomplete(editorId, options) {
-    window._wikiLinkAutocompleteOptions = window._wikiLinkAutocompleteOptions || {};
-    window._wikiLinkAutocompleteOptions[editorId] = options || {};
-}
-
 function findWikiBracketRange(doc, from) {
     for (let pos = from - 1; pos >= Math.max(0, from - 100); pos--) {
         try {
@@ -205,17 +166,6 @@ function findWikiBracketRange(doc, from) {
     }
 
     return null;
-}
-
-function findMapFeatureTriggerRange(doc, from) {
-    const textBefore = doc.textBetween(Math.max(0, from - 100), from, '\n');
-    const match = textBefore.match(/@location(?:\s+[^\n]*)?$/i);
-    if (!match || match.index === undefined) {
-        return null;
-    }
-
-    const start = from - textBefore.length + match.index;
-    return { from: start, to: from };
 }
 
 /**
@@ -367,9 +317,9 @@ function insertMapFeatureLinkToken(editorId, featureId, mapId, displayText, mapN
 
     if (window._setAutocompleteVisible) window._setAutocompleteVisible(false);
     const { from } = editor.state.selection;
-    const triggerRange = findMapFeatureTriggerRange(editor.state.doc, from);
+    const triggerRange = findWikiBracketRange(editor.state.doc, from);
     if (!triggerRange) {
-        console.error('Could not find @location trigger before cursor');
+        console.error('Could not find [[ before cursor');
         return;
     }
 
@@ -502,7 +452,6 @@ function escapeHtmlAttr(text) {
 
 // Make all functions globally available
 window.initializeWikiLinkAutocomplete = initializeWikiLinkAutocomplete;
-window.configureWikiLinkAutocomplete = configureWikiLinkAutocomplete;
 window.insertWikiLink = insertWikiLink;
 window.insertExternalLinkToken = insertExternalLinkToken;
 window.insertMapLinkToken = insertMapLinkToken;

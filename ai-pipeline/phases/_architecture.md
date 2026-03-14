@@ -69,7 +69,7 @@ The editor supports feature chips.
 
 Typing
 
-@location
+[[maps/Roshar/
 
 opens a feature search.
 

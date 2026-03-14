@@ -3,6 +3,7 @@
 @layout PublicLayout
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.Enums
+@using Chronicis.Client.Components.Maps
 @using Chronicis.Client.Components.Shared
 @using Microsoft.JSInterop
 @inject PublicWorldPageViewModel VM
@@ -186,6 +187,17 @@ else
             }
         </main>
     </div>
+
+    @if (VM.IsMapModalOpen)
+    {
+        <SessionMapViewerModal IsOpen="VM.IsMapModalOpen"
+                               WorldId="@VM.World!.Id"
+                               MapId="VM.SelectedMapId"
+                               TargetFeatureId="VM.SelectedMapFeatureId"
+                               MapName="@VM.SelectedMapName"
+                               PublicSlug="@PublicSlug"
+                               OnClose="VM.CloseMapModalAsync" />
+    }
 }
 
 @code {

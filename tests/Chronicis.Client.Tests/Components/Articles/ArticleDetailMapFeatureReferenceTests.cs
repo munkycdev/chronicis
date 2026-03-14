@@ -96,20 +96,27 @@ public class ArticleDetailMapFeatureReferenceTests : MudBlazorTestContext
     }
 
     [Fact]
-    public async Task SessionNoteAutocomplete_MapsFeatureSuggestions_AndInsertsFeatureChip()
+    public async Task SessionNoteAutocomplete_MapPathFeatureSuggestions_AndInsertsFeatureChip()
     {
         var deps = CreateDeps();
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
         var featureId = Guid.NewGuid();
         deps.AppContext.CurrentWorldId.Returns((Guid?)worldId);
-        deps.MapApi.GetMapFeatureAutocompleteAsync(worldId, "blackroot").Returns([
+        deps.MapApi.GetMapAutocompleteAsync(worldId, "Roshar").Returns([
+            new MapAutocompleteDto
+            {
+                MapId = mapId,
+                Name = "Roshar"
+            }
+        ]);
+        deps.MapApi.GetMapFeatureAutocompleteAsync(worldId, mapId, "rav").Returns([
             new MapFeatureAutocompleteDto
             {
                 MapFeatureId = featureId,
                 MapId = mapId,
-                MapName = "Ambria",
-                DisplayText = "Blackroot Ford"
+                MapName = "Roshar",
+                DisplayText = "Ravinia"
             }
         ]);
 
@@ -128,14 +135,14 @@ public class ArticleDetailMapFeatureReferenceTests : MudBlazorTestContext
         SetField(cut.Instance, "_editTitle", article.Title);
         SetField(cut.Instance, "_editBody", article.Body);
 
-        await cut.InvokeAsync(() => cut.Instance.OnAutocompleteTriggered("location/blackroot", 10d, 20d));
+        await cut.InvokeAsync(() => cut.Instance.OnAutocompleteTriggered("maps/Roshar/rav", 10d, 20d));
 
         var suggestions = Assert.IsType<List<Chronicis.Client.Components.Articles.WikiLinkAutocompleteItem>>(GetField(cut.Instance, "_autocompleteSuggestions"));
         var suggestion = Assert.Single(suggestions);
         Assert.True(suggestion.IsMapFeature);
         Assert.Equal(featureId, suggestion.MapFeatureId);
         Assert.Equal(mapId, suggestion.MapId);
-        Assert.Equal("Ambria", suggestion.SecondaryText);
+        Assert.Equal("Roshar", suggestion.SecondaryText);
 
         JSInterop.SetupVoid("insertMapFeatureLinkToken", _ => true).SetVoidResult();
         await cut.InvokeAsync(() => InvokePrivateTask(cut.Instance, "OnAutocompleteSelect", suggestion));
@@ -144,8 +151,8 @@ public class ArticleDetailMapFeatureReferenceTests : MudBlazorTestContext
         Assert.Equal($"tiptap-editor-{article.Id}", invocation.Arguments[0]?.ToString());
         Assert.Equal(featureId.ToString(), invocation.Arguments[1]?.ToString());
         Assert.Equal(mapId.ToString(), invocation.Arguments[2]?.ToString());
-        Assert.Equal("Blackroot Ford", invocation.Arguments[3]?.ToString());
-        Assert.Equal("Ambria", invocation.Arguments[4]?.ToString());
+        Assert.Equal("Ravinia", invocation.Arguments[3]?.ToString());
+        Assert.Equal("Roshar", invocation.Arguments[4]?.ToString());
     }
 
     [Fact]

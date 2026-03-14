@@ -3,6 +3,7 @@
 @using Chronicis.Shared.DTOs.Maps
 @using Chronicis.Shared.Enums
 @inject IMapApiService MapApi
+@inject IPublicApiService PublicApi
 @inject IJSRuntime JSRuntime
 @implements IAsyncDisposable
 
@@ -224,6 +225,9 @@
     public string? MapName { get; set; }
 
     [Parameter]
+    public string? PublicSlug { get; set; }
+
+    [Parameter]
     public EventCallback OnClose { get; set; }
 
     protected override async Task OnParametersSetAsync()
@@ -264,7 +268,9 @@
         _state = SessionMapViewerState.None;
         await InvokeAsync(StateHasChanged);
 
-        var basemapResult = await MapApi.GetBasemapReadUrlAsync(worldId, mapId);
+        var basemapResult = IsPublicMode
+            ? await PublicApi.GetPublicMapBasemapReadUrlAsync(PublicSlug!, mapId)
+            : await MapApi.GetBasemapReadUrlAsync(worldId, mapId);
         if (requestVersion != _loadVersion || !IsOpen || WorldId != worldId || MapId != mapId)
         {
             return;
@@ -310,7 +316,9 @@
     {
         try
         {
-            var pinsTask = MapApi.ListPinsForMapAsync(worldId, mapId);
+            var pinsTask = IsPublicMode
+                ? PublicApi.GetPublicMapPinsAsync(PublicSlug!, mapId)
+                : MapApi.ListPinsForMapAsync(worldId, mapId);
             if (pinsTask is null)
             {
                 return [];
@@ -328,7 +336,9 @@
     {
         try
         {
-            var featuresTask = MapApi.ListFeaturesForMapAsync(worldId, mapId);
+            var featuresTask = IsPublicMode
+                ? PublicApi.GetPublicMapFeaturesAsync(PublicSlug!, mapId)
+                : MapApi.ListFeaturesForMapAsync(worldId, mapId);
             if (featuresTask is null)
             {
                 return [];
@@ -346,7 +356,9 @@
     {
         try
         {
-            var layersTask = MapApi.GetLayersForMapAsync(worldId, mapId);
+            var layersTask = IsPublicMode
+                ? PublicApi.GetPublicMapLayersAsync(PublicSlug!, mapId)
+                : MapApi.GetLayersForMapAsync(worldId, mapId);
             if (layersTask is null)
             {
                 return [];
@@ -370,6 +382,13 @@
 
         if (_layers[layerIndex].IsEnabled == isEnabled)
         {
+            return;
+        }
+
+        if (IsPublicMode)
+        {
+            _layers[layerIndex].IsEnabled = isEnabled;
+            await InvokeAsync(StateHasChanged);
             return;
         }
 
@@ -995,6 +1014,8 @@
 
     private string ViewerTitle =>
         string.IsNullOrWhiteSpace(MapName) ? "Map" : MapName.Trim();
+
+    private bool IsPublicMode => !string.IsNullOrWhiteSpace(PublicSlug);
 
     public async ValueTask DisposeAsync()
     {

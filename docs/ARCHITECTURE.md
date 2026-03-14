@@ -1,6 +1,6 @@
 # Chronicis Architecture Inventory
 
-Last reviewed: 2026-03-13
+Last reviewed: 2026-03-14
 
 ## 1) Scope
 - Projects covered:
@@ -78,9 +78,9 @@ Chronicis.Shared         ---->  (no project references)
 - File/export module:
 - `BlobStorageService`, `WorldDocumentService`, `ExportService` (+ markdown builder partials).
 - Maps module:
-- `WorldMapService` + `IMapBlobStore`/`AzureBlobMapBlobStore` handle map metadata, basemap SAS flows, point/polygon feature CRUD, polygon geometry blob persistence, and destructive map-folder cleanup.
+- `WorldMapService` + `IMapBlobStore`/`AzureBlobMapBlobStore` handle map metadata, basemap SAS flows, point/polygon feature CRUD, polygon geometry blob persistence, session-note nested map/feature autocomplete reads, and destructive map-folder cleanup.
 - Public read model module:
-- `PublicWorldService` for anonymous world/article/document access projections.
+- `PublicWorldService` for anonymous world/article/document access projections plus anonymous map/modal read models for shared worlds.
 - Admin/tutorial module:
 - `AdminService`, `TutorialService`.
 - Prompting module:
@@ -205,6 +205,9 @@ Chronicis.Shared         ---->  (no project references)
 - `ChronicisAuthHandler` injects bearer token via `IAccessTokenProvider`.
 - API service pattern:
 - Interface + implementation per domain endpoint cluster (e.g., `IArticleApiService` / `ArticleApiService`).
+- Map-linking client seams:
+- `IMapApiService` / `MapApiService` serve authenticated map CRUD and nested `[[maps/...` autocomplete reads for editor map/map-feature chips.
+- `IPublicApiService` / `PublicApiService` serve anonymous public-world content reads and modal map hydration for public chip clicks.
 - Shared HTTP utility extension methods unify GET/POST/PUT/PATCH/DELETE error handling and logging behavior.
 
 ### 4.5 State and Coordination Architecture
@@ -255,6 +258,10 @@ Chronicis.Shared         ---->  (no project references)
 - `emojiPickerInterop.js`
 - `chronicis-map-engine.js` (static web asset packaged via `Chronicis.Client.Engine`)
 - `rum.js`
+- Map chip interop responsibilities:
+- `wikiLinkAutocomplete.js` routes nested `[[maps/...` editor autocomplete between world-map suggestions and feature suggestions scoped to a resolved map.
+- `wikiLinkExtension.js` renders inline map/map-feature chips as `📍` pills and forwards chip click metadata into Blazor event handlers.
+- `publicWikiLinks.js` binds rendered public map/map-feature chips to anonymous modal-open callbacks so public pages reuse the shared map viewer in read-only mode.
 
 ### 4.9 Inline Image Sub-Architecture
 - Inline image persistence model:

@@ -121,6 +121,7 @@ public class SessionDetailTests : MudBlazorTestContext
         Services.AddSingleton(d.LinkApi);
         Services.AddSingleton(d.ExternalLinkApi);
         Services.AddSingleton(d.MapApi);
+        Services.AddSingleton(Substitute.For<IPublicApiService>());
         Services.AddSingleton(d.WikiLinkService);
         Services.AddSingleton(d.AppContext);
         Services.AddSingleton(d.ArticleCache);

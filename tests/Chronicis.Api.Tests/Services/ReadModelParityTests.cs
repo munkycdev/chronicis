@@ -201,6 +201,7 @@ public class ReadModelParityTests
         var blob = Substitute.For<IBlobStorageService>();
         blob.GenerateDownloadSasUrlAsync(Arg.Any<string>())
             .Returns(args => Task.FromResult($"https://cdn.test/{args.Arg<string>()}"));
+        var mapBlobStore = Substitute.For<IMapBlobStore>();
 
         var readAccessPolicy = new ReadAccessPolicyService();
 
@@ -210,7 +211,8 @@ public class ReadModelParityTests
                 NullLogger<PublicWorldService>.Instance,
                 hierarchy,
                 blob,
-                readAccessPolicy),
+                readAccessPolicy,
+                mapBlobStore),
             new ArticleService(
                 db,
                 NullLogger<ArticleService>.Instance,

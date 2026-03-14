@@ -18,6 +18,7 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
     public void FocusTargetFeatureIfNeeded_PointTarget_CentersAndHighlights()
     {
         var mapApi = Substitute.For<IMapApiService>();
+        Services.AddSingleton(Substitute.For<IPublicApiService>());
         Services.AddSingleton(mapApi);
         Services.AddSingleton(Substitute.For<ILogger<SessionMapViewerModal>>());
 
@@ -57,6 +58,7 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
     public void FocusTargetFeatureIfNeeded_MissingTarget_LeavesHighlightUnset()
     {
         var mapApi = Substitute.For<IMapApiService>();
+        Services.AddSingleton(Substitute.For<IPublicApiService>());
         Services.AddSingleton(mapApi);
         Services.AddSingleton(Substitute.For<ILogger<SessionMapViewerModal>>());
 
@@ -78,6 +80,7 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
     public void PolygonTarget_HighlightClass_IsApplied()
     {
         var mapApi = Substitute.For<IMapApiService>();
+        Services.AddSingleton(Substitute.For<IPublicApiService>());
         Services.AddSingleton(mapApi);
         Services.AddSingleton(Substitute.For<ILogger<SessionMapViewerModal>>());
 
@@ -120,6 +123,51 @@ public class SessionMapViewerModalTests : MudBlazorTestContext
 
         var cssClass = (string)InvokePrivateWithResult(cut.Instance, "GetFeaturePolygonClass", feature)!;
         Assert.Contains("highlighted", cssClass, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PublicMode_LoadsViaPublicApi_AndTogglesLayersLocally()
+    {
+        var mapId = Guid.NewGuid();
+        var layerId = Guid.NewGuid();
+        var mapApi = Substitute.For<IMapApiService>();
+        var publicApi = Substitute.For<IPublicApiService>();
+        publicApi.GetPublicMapBasemapReadUrlAsync("public-world", mapId)
+            .Returns((new GetBasemapReadUrlResponseDto { ReadUrl = "https://cdn.test/map.png" }, 200, null));
+
+        var layers = new List<MapLayerDto>
+        {
+            new() { MapLayerId = layerId, Name = "World", SortOrder = 0, IsEnabled = true }
+        };
+
+        publicApi.GetPublicMapLayersAsync("public-world", mapId).Returns(layers);
+        publicApi.GetPublicMapPinsAsync("public-world", mapId).Returns(new List<MapPinResponseDto>());
+        publicApi.GetPublicMapFeaturesAsync("public-world", mapId).Returns(new List<MapFeatureDto>());
+
+        Services.AddSingleton(mapApi);
+        Services.AddSingleton(publicApi);
+        Services.AddSingleton(Substitute.For<ILogger<SessionMapViewerModal>>());
+
+        var cut = RenderComponent<SessionMapViewerModal>(parameters => parameters
+            .Add(component => component.IsOpen, true)
+            .Add(component => component.MapId, mapId)
+            .Add(component => component.WorldId, Guid.Empty)
+            .Add(component => component.MapName, "Roshar")
+            .Add(component => component.PublicSlug, "public-world"));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Roshar", cut.Markup, StringComparison.Ordinal);
+            Assert.Contains("session-map-viewer-modal__layer-toggle", cut.Markup, StringComparison.Ordinal);
+        });
+
+        await mapApi.DidNotReceive().GetBasemapReadUrlAsync(Arg.Any<Guid>(), Arg.Any<Guid>());
+        await publicApi.Received(1).GetPublicMapBasemapReadUrlAsync("public-world", mapId);
+
+        cut.Find("input.session-map-viewer-modal__layer-toggle").Change(false);
+
+        Assert.False(layers[0].IsEnabled);
+        await mapApi.DidNotReceive().UpdateLayerVisibilityAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>());
     }
 
     private static object? GetField(object instance, string name)

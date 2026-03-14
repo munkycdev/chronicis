@@ -105,9 +105,8 @@ function createWikiLinkExtension() {
                         class: 'wiki-link-node map-link-node',
                         ...HTMLAttributes
                     },
-                    ['span', { class: 'map-link-badge' }, 'MAP'],
+                    ['span', { class: 'map-chip-pin', 'aria-hidden': 'true' }, '📍'],
                     ['span', { class: 'map-link-text' }, mapName],
-                    ['i', { class: 'map-link-icon fa-solid fa-map', 'aria-hidden': 'true' }]
                 ];
             }
 
@@ -251,7 +250,7 @@ function createMapFeatureLinkExtension() {
                     class: 'map-feature-link-node',
                     ...HTMLAttributes
                 },
-                ['span', { class: 'map-feature-link-badge' }, 'LOC'],
+                ['span', { class: 'map-chip-pin', 'aria-hidden': 'true' }, '📍'],
                 ['span', { class: 'map-feature-link-text' }, displayText],
                 ['span', { class: 'map-feature-link-map' }, mapName]
             ];

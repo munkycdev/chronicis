@@ -1,4 +1,5 @@
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Maps;
 
 namespace Chronicis.Client.Services;
 
@@ -28,4 +29,24 @@ public interface IPublicApiService
     /// Returns null if the article doesn't exist or is not public.
     /// </summary>
     Task<string?> ResolvePublicArticlePathAsync(string publicSlug, Guid articleId);
+
+    /// <summary>
+    /// Get a public map basemap read URL for a map in a public world.
+    /// </summary>
+    Task<(GetBasemapReadUrlResponseDto? Basemap, int? StatusCode, string? Error)> GetPublicMapBasemapReadUrlAsync(string publicSlug, Guid mapId);
+
+    /// <summary>
+    /// Get public map layers for a map in a public world.
+    /// </summary>
+    Task<List<MapLayerDto>> GetPublicMapLayersAsync(string publicSlug, Guid mapId);
+
+    /// <summary>
+    /// Get public map pins for a map in a public world.
+    /// </summary>
+    Task<List<MapPinResponseDto>> GetPublicMapPinsAsync(string publicSlug, Guid mapId);
+
+    /// <summary>
+    /// Get public map features for a map in a public world.
+    /// </summary>
+    Task<List<MapFeatureDto>> GetPublicMapFeaturesAsync(string publicSlug, Guid mapId);
 }
