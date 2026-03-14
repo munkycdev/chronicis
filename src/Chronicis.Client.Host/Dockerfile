@@ -14,6 +14,7 @@ RUN dotnet workload install wasm-tools
 COPY global.json Directory.Build.props ./
 COPY src/Chronicis.Client.Host/Chronicis.Client.Host.csproj src/Chronicis.Client.Host/
 COPY src/Chronicis.Client/Chronicis.Client.csproj src/Chronicis.Client/
+COPY src/Chronicis.Client.Engine/Chronicis.Client.Engine.csproj src/Chronicis.Client.Engine/
 COPY src/Chronicis.Shared/Chronicis.Shared.csproj src/Chronicis.Shared/
 RUN dotnet restore ./src/Chronicis.Client.Host/Chronicis.Client.Host.csproj
 
