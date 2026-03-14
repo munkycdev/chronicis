@@ -136,6 +136,24 @@ public interface IWorldMapService
     Task DeletePinAsync(Guid worldId, Guid mapId, Guid pinId, Guid userId);
 
     /// <summary>
+    /// Link a map feature to a SessionNote article.
+    /// Requires world membership.
+    /// </summary>
+    Task AddFeatureToSessionNoteAsync(Guid worldId, Guid sessionNoteId, Guid mapFeatureId, Guid userId);
+
+    /// <summary>
+    /// Remove a map feature link from a SessionNote article.
+    /// Requires world membership.
+    /// </summary>
+    Task RemoveFeatureFromSessionNoteAsync(Guid worldId, Guid sessionNoteId, Guid mapFeatureId, Guid userId);
+
+    /// <summary>
+    /// List all map features linked to a SessionNote article.
+    /// Requires world membership.
+    /// </summary>
+    Task<List<MapFeatureDto>> ListFeaturesForSessionNoteAsync(Guid worldId, Guid sessionNoteId, Guid userId);
+
+    /// <summary>
     /// Validate the upload request, persist the blob key / filename / content-type,
     /// and return a short-lived SAS URL for a direct client-to-blob upload.
     /// Only the world owner may upload basemaps.

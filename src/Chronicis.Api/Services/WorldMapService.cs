@@ -908,6 +908,93 @@ public sealed class WorldMapService : IWorldMapService
     }
 
     /// <inheritdoc/>
+    public async Task AddFeatureToSessionNoteAsync(Guid worldId, Guid sessionNoteId, Guid mapFeatureId, Guid userId)
+    {
+        _logger.LogTraceSanitized(
+            "User {UserId} linking feature {FeatureId} to session note {SessionNoteId} in world {WorldId}",
+            userId,
+            mapFeatureId,
+            sessionNoteId,
+            worldId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        _ = await GetSessionNoteArticleAsync(worldId, sessionNoteId);
+        _ = await GetMapFeatureInWorldAsync(worldId, mapFeatureId);
+
+        var exists = await _db.SessionNoteMapFeatures
+            .AsNoTracking()
+            .AnyAsync(link => link.SessionNoteId == sessionNoteId && link.MapFeatureId == mapFeatureId);
+
+        if (exists)
+        {
+            return;
+        }
+
+        _db.SessionNoteMapFeatures.Add(new SessionNoteMapFeature
+        {
+            SessionNoteId = sessionNoteId,
+            MapFeatureId = mapFeatureId,
+            CreatedAt = DateTime.UtcNow,
+        });
+
+        await _db.SaveChangesAsync();
+    }
+
+    /// <inheritdoc/>
+    public async Task RemoveFeatureFromSessionNoteAsync(Guid worldId, Guid sessionNoteId, Guid mapFeatureId, Guid userId)
+    {
+        _logger.LogTraceSanitized(
+            "User {UserId} unlinking feature {FeatureId} from session note {SessionNoteId} in world {WorldId}",
+            userId,
+            mapFeatureId,
+            sessionNoteId,
+            worldId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        _ = await GetSessionNoteArticleAsync(worldId, sessionNoteId);
+        _ = await GetMapFeatureInWorldAsync(worldId, mapFeatureId);
+
+        var link = await _db.SessionNoteMapFeatures
+            .FirstOrDefaultAsync(existingLink => existingLink.SessionNoteId == sessionNoteId && existingLink.MapFeatureId == mapFeatureId);
+
+        if (link == null)
+        {
+            return;
+        }
+
+        _db.SessionNoteMapFeatures.Remove(link);
+        await _db.SaveChangesAsync();
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<MapFeatureDto>> ListFeaturesForSessionNoteAsync(Guid worldId, Guid sessionNoteId, Guid userId)
+    {
+        _logger.LogTraceSanitized(
+            "User {UserId} listing linked features for session note {SessionNoteId} in world {WorldId}",
+            userId,
+            sessionNoteId,
+            worldId);
+
+        await EnsureWorldMembershipAsync(worldId, userId);
+        _ = await GetSessionNoteArticleAsync(worldId, sessionNoteId);
+
+        var features = await _db.SessionNoteMapFeatures
+            .AsNoTracking()
+            .Where(link => link.SessionNoteId == sessionNoteId)
+            .Join(
+                _db.WorldMaps.AsNoTracking(),
+                link => link.MapFeature.WorldMapId,
+                worldMap => worldMap.WorldMapId,
+                (link, worldMap) => new { link.MapFeature, worldMap.WorldId, link.MapFeatureId })
+            .Where(result => result.WorldId == worldId)
+            .OrderBy(result => result.MapFeatureId)
+            .Select(result => result.MapFeature)
+            .ToListAsync();
+
+        return await ToMapFeatureDtosAsync(features);
+    }
+
+    /// <inheritdoc/>
     public async Task<RequestBasemapUploadResponseDto> RequestBasemapUploadAsync(
         Guid worldId, Guid mapId, Guid userId, RequestBasemapUploadDto dto)
     {
@@ -1161,6 +1248,46 @@ public sealed class WorldMapService : IWorldMapService
 
     private static bool IsProtectedDefaultLayer(string layerName) =>
         ProtectedDefaultLayerNames.Contains(layerName);
+
+    private async Task<Article> GetSessionNoteArticleAsync(Guid worldId, Guid sessionNoteId)
+    {
+        var sessionNote = await _db.Articles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(article => article.Id == sessionNoteId && article.WorldId == worldId);
+
+        if (sessionNote == null)
+        {
+            throw new InvalidOperationException("Session note not found");
+        }
+
+        if (sessionNote.Type != ArticleType.SessionNote)
+        {
+            throw new ArgumentException("Article must be a SessionNote");
+        }
+
+        return sessionNote;
+    }
+
+    private async Task<MapFeature> GetMapFeatureInWorldAsync(Guid worldId, Guid mapFeatureId)
+    {
+        var feature = await _db.MapFeatures
+            .AsNoTracking()
+            .Join(
+                _db.WorldMaps.AsNoTracking(),
+                existingFeature => existingFeature.WorldMapId,
+                worldMap => worldMap.WorldMapId,
+                (existingFeature, worldMap) => new { Feature = existingFeature, worldMap.WorldId })
+            .Where(result => result.Feature.MapFeatureId == mapFeatureId)
+            .Select(result => new { result.Feature, result.WorldId })
+            .FirstOrDefaultAsync();
+
+        if (feature == null || feature.WorldId != worldId)
+        {
+            throw new InvalidOperationException("Feature not found");
+        }
+
+        return feature.Feature;
+    }
 
     private async Task EnsureValidParentChainAsync(Guid mapId, Guid layerId, Guid parentLayerId)
     {

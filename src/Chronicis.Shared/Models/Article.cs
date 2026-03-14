@@ -229,6 +229,11 @@ public class Article
     public ICollection<ArticleExternalLink> ExternalLinks { get; set; } = new List<ArticleExternalLink>();
 
     /// <summary>
+    /// Map feature references for SessionNote articles.
+    /// </summary>
+    public ICollection<SessionNoteMapFeature> SessionNoteMapFeatures { get; set; } = new List<SessionNoteMapFeature>();
+
+    /// <summary>
     /// Inline images/documents embedded in this article's content.
     /// </summary>
     public ICollection<WorldDocument> Images { get; set; } = new List<WorldDocument>();

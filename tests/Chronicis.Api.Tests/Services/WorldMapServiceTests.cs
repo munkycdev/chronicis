@@ -2245,6 +2245,86 @@ public class WorldMapServiceTests : IDisposable
         Assert.Contains("features reference", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    // ── SessionNoteMapFeature ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AddFeatureToSessionNoteAsync_AllowsMultipleFeaturesPerNote()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Session Note Feature Links");
+        var firstFeature = await CreatePointFeatureAsync(map.WorldMapId, "Blackroot Ford", 0.2f, 0.3f);
+        var secondFeature = await CreatePointFeatureAsync(map.WorldMapId, "South Gate", 0.5f, 0.6f);
+        var sessionNote = await CreateSessionNoteArticleAsync("Session 3");
+
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, sessionNote.Id, firstFeature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, sessionNote.Id, secondFeature.FeatureId, _memberId);
+
+        var linked = await _sut.ListFeaturesForSessionNoteAsync(_worldId, sessionNote.Id, _memberId);
+
+        Assert.Equal(2, linked.Count);
+        Assert.Contains(linked, feature => feature.FeatureId == firstFeature.FeatureId);
+        Assert.Contains(linked, feature => feature.FeatureId == secondFeature.FeatureId);
+        Assert.Equal(2, await _db.SessionNoteMapFeatures.CountAsync(link => link.SessionNoteId == sessionNote.Id));
+    }
+
+    [Fact]
+    public async Task AddFeatureToSessionNoteAsync_AllowsSameFeatureAcrossMultipleNotes()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Shared Session Feature");
+        var feature = await CreatePointFeatureAsync(map.WorldMapId, "Ruined Watchtower", 0.4f, 0.4f);
+        var firstNote = await CreateSessionNoteArticleAsync("Session 8");
+        var secondNote = await CreateSessionNoteArticleAsync("Session 11");
+
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, firstNote.Id, feature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, secondNote.Id, feature.FeatureId, _memberId);
+
+        var firstLinked = await _sut.ListFeaturesForSessionNoteAsync(_worldId, firstNote.Id, _memberId);
+        var secondLinked = await _sut.ListFeaturesForSessionNoteAsync(_worldId, secondNote.Id, _memberId);
+
+        Assert.Single(firstLinked);
+        Assert.Single(secondLinked);
+        Assert.Equal(feature.FeatureId, firstLinked[0].FeatureId);
+        Assert.Equal(feature.FeatureId, secondLinked[0].FeatureId);
+        Assert.Equal(2, await _db.SessionNoteMapFeatures.CountAsync(link => link.MapFeatureId == feature.FeatureId));
+    }
+
+    [Fact]
+    public async Task RemoveFeatureFromSessionNoteAsync_RemovesOnlyRequestedLink()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Remove Session Feature");
+        var feature = await CreatePointFeatureAsync(map.WorldMapId, "Blackroot Ford", 0.1f, 0.1f);
+        var firstNote = await CreateSessionNoteArticleAsync("Session 1");
+        var secondNote = await CreateSessionNoteArticleAsync("Session 2");
+
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, firstNote.Id, feature.FeatureId, _memberId);
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, secondNote.Id, feature.FeatureId, _memberId);
+
+        await _sut.RemoveFeatureFromSessionNoteAsync(_worldId, firstNote.Id, feature.FeatureId, _memberId);
+
+        Assert.Empty(await _sut.ListFeaturesForSessionNoteAsync(_worldId, firstNote.Id, _memberId));
+        var remaining = await _sut.ListFeaturesForSessionNoteAsync(_worldId, secondNote.Id, _memberId);
+        Assert.Single(remaining);
+        Assert.Equal(1, await _db.SessionNoteMapFeatures.CountAsync(link => link.MapFeatureId == feature.FeatureId));
+    }
+
+    [Fact]
+    public async Task SessionNoteFeatureMethods_EnforceAuthorization()
+    {
+        var map = await CreateMapWithDefaultLayersAsync("Unauthorized Session Feature");
+        var feature = await CreatePointFeatureAsync(map.WorldMapId, "South Gate", 0.7f, 0.2f);
+        var sessionNote = await CreateSessionNoteArticleAsync("Session 9");
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.AddFeatureToSessionNoteAsync(_worldId, sessionNote.Id, feature.FeatureId, _outsiderId));
+
+        await _sut.AddFeatureToSessionNoteAsync(_worldId, sessionNote.Id, feature.FeatureId, _memberId);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.ListFeaturesForSessionNoteAsync(_worldId, sessionNote.Id, _outsiderId));
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => _sut.RemoveFeatureFromSessionNoteAsync(_worldId, sessionNote.Id, feature.FeatureId, _outsiderId));
+    }
+
     // ── RequestBasemapUploadAsync ─────────────────────────────────────────────
 
     [Fact]
@@ -2585,6 +2665,47 @@ public class WorldMapServiceTests : IDisposable
         _db.Articles.Add(article);
         await _db.SaveChangesAsync();
         return article;
+    }
+
+    private async Task<Article> CreateSessionNoteArticleAsync(string title)
+    {
+        var article = new Article
+        {
+            Id = Guid.NewGuid(),
+            WorldId = _worldId,
+            Title = title,
+            Slug = title.ToLowerInvariant().Replace(' ', '-'),
+            Type = ArticleType.SessionNote,
+            Visibility = ArticleVisibility.Public,
+            CreatedBy = _ownerId,
+            CreatedAt = DateTime.UtcNow,
+            EffectiveDate = DateTime.UtcNow,
+        };
+
+        _db.Articles.Add(article);
+        await _db.SaveChangesAsync();
+        return article;
+    }
+
+    private async Task<MapFeatureDto> CreatePointFeatureAsync(Guid mapId, string? name, float x, float y)
+    {
+        var layerId = (await GetMapLayersByNameAsync(mapId))["World"];
+
+        return await _sut.CreateFeatureAsync(
+            _worldId,
+            mapId,
+            _memberId,
+            new MapFeatureCreateDto
+            {
+                FeatureType = MapFeatureType.Point,
+                LayerId = layerId,
+                Name = name,
+                Point = new MapFeaturePointDto
+                {
+                    X = x,
+                    Y = y,
+                },
+            });
     }
 }
 

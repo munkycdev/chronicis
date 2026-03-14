@@ -4,6 +4,47 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [3.1.0] - 2026-03-13
+
+### Polygon Authoring and Editing on World Maps
+
+**Added:**
+- Polygon authoring workflow on map pages:
+  - Click to add vertices directly on the basemap.
+  - Live draft overlay while plotting the shape.
+  - Save from the "Editing polygon" bar or double-click to close and save.
+- Polygon editor states for both draft and selected polygons with:
+  - Save / Cancel controls during draft creation.
+  - Save / Cancel / Delete controls for existing polygons.
+  - Draft progress and unsaved-change status messaging.
+- Standardized polygon color palette:
+  - `Blue`
+  - `Green`
+  - `Amber`
+  - `Red`
+  - `Teal`
+- Polygon naming with editable text input and on-map label rendering near the polygon center.
+- Vertex-editing affordances:
+  - Direct drag handles on polygon vertices.
+  - Click-on-edge insertion to add a new point to an existing polygon.
+  - High-contrast circled-dot vertex markers with white backing for better visibility over map art.
+
+**Changed:**
+- Saved polygons now render as filled SVG regions using the selected standardized color instead of outline-only display.
+- Polygon create mode now shows the editor bar immediately instead of waiting for polygon completion.
+- Vertex hit-testing and drag behavior were hardened for zoomed-in editing so handles remain draggable at high zoom levels.
+- Polygon selection and create-point coordinate resolution were hardened so editing still works after viewport/zoom changes.
+
+**API / Data:**
+- `MapFeatureCreateDto`, `MapFeatureUpdateDto`, and `MapFeatureDto` now round-trip polygon `Color` metadata alongside `Name`.
+- `MapFeature` persistence now stores polygon color selection in addition to name and geometry references.
+- Polygon geometry continues to use GeoJSON-shaped payloads with blob-backed storage for the compressed geometry body.
+
+**Migration:**
+- `20260313180329_AddMapFeatureColor`
+
+---
+
 ## [3.0.0] - 2026-03-03
 
 ### Maps, Layers, and Basemap Image Workflow

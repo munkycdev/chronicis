@@ -1,6 +1,6 @@
 # Chronicis Feature Inventory
 
-Last reviewed: 2026-03-03
+Last reviewed: 2026-03-13
 
 Scope:
 - Included: `src/Chronicis.Api`, `src/Chronicis.Client`
@@ -192,6 +192,12 @@ Scope:
 - Dedicated map page at `/world/{worldId}/maps/{mapId}` with constrained basemap rendering.
 - Map layer stack management with default and custom layers, visibility toggles, selected layer targeting, drag/drop reorder, and custom-layer create/rename/delete actions.
 - Pin visibility and render stacking respect enabled layer state and current layer order.
+- Polygon creation workflow on map pages with click-to-add vertices, live draft overlay, layer-aware validation, and save via editor action or double-click completion.
+- Polygon editing surface with create/selected states, explicit save/cancel/delete actions, standardized color selection, and unsaved-change status.
+- Polygon rendering as filled SVG regions using a standardized palette (`Blue`, `Green`, `Amber`, `Red`, `Teal`).
+- Polygon naming with in-editor text input and on-map label rendering near the polygon's visual center.
+- Polygon geometry editing with draggable vertex handles, edge-click vertex insertion, and keyboard affordances for cancel/remove-last-point during draft editing.
+- Polygon vertex markers use high-contrast circled-dot handles for improved visibility against basemap art.
 - Session Note map linking via `[[maps/` autocomplete, inline map chips, and click-to-open modal map viewer (basemap + pins with pan/zoom).
 - Editable map-name header on map page with dirty tracking, save status indicator, and explicit save action.
 - Breadcrumbs for maps detail (`Dashboard / {world} / Maps`) and map page (`Dashboard / {world} / Maps / {map}`).
