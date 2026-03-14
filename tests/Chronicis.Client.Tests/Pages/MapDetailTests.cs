@@ -560,6 +560,58 @@ public class MapDetailTests : MudBlazorTestContext
     }
 
     [Fact]
+    public async Task MapDetail_ClickingSelectedPolygonEdge_InsertsVertex()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-00000000002C");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        await SelectPolygonAsync(cut, 300, 200);
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapImageShellClick",
+            new MouseEventArgs { OffsetX = 450, OffsetY = 100, Detail = 1 });
+
+        cut.WaitForAssertion(() =>
+        {
+            var path = cut.Find($"path[data-feature-id='{featureId}']");
+            Assert.Equal("M 0.1 0.2 L 0.45 0.2 L 0.8 0.2 L 0.4 0.7 L 0.1 0.2 Z", path.GetAttribute("d"));
+            Assert.Equal(4, cut.FindAll("span[data-polygon-vertex-index]").Count);
+        });
+    }
+
+    [Fact]
+    public async Task MapDetail_ClickingInsideSelectedPolygon_DoesNotInsertVertex()
+    {
+        var featureId = Guid.Parse("30000000-0000-0000-0000-00000000002D");
+        _mapApi.ListFeaturesForMapAsync(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(
+        [
+            CreatePolygonFeature(featureId, VisibleChildLayerId)
+        ]);
+
+        var cut = RenderMapDetail();
+        SetMapViewportLayout(cut.Instance);
+        await SelectPolygonAsync(cut, 300, 200);
+
+        await InvokePrivateOnRendererAsync(
+            cut,
+            "OnMapImageShellClick",
+            new MouseEventArgs { OffsetX = 300, OffsetY = 200, Detail = 1 });
+
+        cut.WaitForAssertion(() =>
+        {
+            var path = cut.Find($"path[data-feature-id='{featureId}']");
+            Assert.Equal("M 0.1 0.2 L 0.8 0.2 L 0.4 0.7 L 0.1 0.2 Z", path.GetAttribute("d"));
+            Assert.Equal(3, cut.FindAll("span[data-polygon-vertex-index]").Count);
+        });
+    }
+
+    [Fact]
     public async Task MapDetail_ZoomedInVertexHandle_RemainsSelectable()
     {
         var featureId = Guid.Parse("30000000-0000-0000-0000-000000000027");

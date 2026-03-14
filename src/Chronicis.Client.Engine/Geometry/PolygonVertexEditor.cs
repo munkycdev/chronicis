@@ -68,6 +68,72 @@ public static class PolygonVertexEditor
         return true;
     }
 
+    public static bool TryInsertVertex(
+        PolygonGeometry polygon,
+        NormalizedMapPoint point,
+        float maxDistance,
+        out PolygonGeometry updatedPolygon,
+        out int insertedVertexIndex)
+    {
+        updatedPolygon = polygon;
+        insertedVertexIndex = -1;
+
+        if (maxDistance < 0f)
+        {
+            return false;
+        }
+
+        var vertices = polygon.Vertices.ToList();
+        var editableVertices = GetEditableVertices(polygon);
+        if (editableVertices.Count < 2)
+        {
+            return false;
+        }
+
+        var maxDistanceSquared = maxDistance * maxDistance;
+        var nearestDistanceSquared = maxDistanceSquared;
+        var nearestInsertionIndex = -1;
+        var nearestProjectedPoint = default(NormalizedMapPoint);
+        var segmentCount = polygon.IsClosed ? editableVertices.Count : editableVertices.Count - 1;
+
+        for (var i = 0; i < segmentCount; i++)
+        {
+            var start = editableVertices[i];
+            var end = polygon.IsClosed
+                ? editableVertices[(i + 1) % editableVertices.Count]
+                : editableVertices[i + 1];
+            var projectedPoint = ProjectPointOntoSegment(start, end, point);
+            var distanceSquared = GetDistanceSquared(projectedPoint, point);
+            if (distanceSquared > nearestDistanceSquared)
+            {
+                continue;
+            }
+
+            nearestDistanceSquared = distanceSquared;
+            nearestInsertionIndex = i + 1;
+            nearestProjectedPoint = projectedPoint;
+        }
+
+        if (nearestInsertionIndex < 0)
+        {
+            return false;
+        }
+
+        if (polygon.IsClosed && nearestInsertionIndex == editableVertices.Count)
+        {
+            vertices.Insert(vertices.Count - 1, nearestProjectedPoint);
+            insertedVertexIndex = editableVertices.Count;
+        }
+        else
+        {
+            vertices.Insert(nearestInsertionIndex, nearestProjectedPoint);
+            insertedVertexIndex = nearestInsertionIndex;
+        }
+
+        updatedPolygon = new PolygonGeometry(vertices);
+        return true;
+    }
+
     public static NormalizedMapPoint ClampToBounds(NormalizedMapPoint point) =>
         new(Clamp(point.X), Clamp(point.Y));
 
@@ -81,6 +147,28 @@ public static class PolygonVertexEditor
         var deltaX = left.X - right.X;
         var deltaY = left.Y - right.Y;
         return (deltaX * deltaX) + (deltaY * deltaY);
+    }
+
+    private static NormalizedMapPoint ProjectPointOntoSegment(
+        NormalizedMapPoint start,
+        NormalizedMapPoint end,
+        NormalizedMapPoint point)
+    {
+        var deltaX = end.X - start.X;
+        var deltaY = end.Y - start.Y;
+        var segmentLengthSquared = (deltaX * deltaX) + (deltaY * deltaY);
+        if (segmentLengthSquared <= 0f)
+        {
+            return start;
+        }
+
+        var projection =
+            (((point.X - start.X) * deltaX) + ((point.Y - start.Y) * deltaY))
+            / segmentLengthSquared;
+        var clampedProjection = projection < 0f ? 0f : projection > 1f ? 1f : projection;
+        return new NormalizedMapPoint(
+            start.X + (deltaX * clampedProjection),
+            start.Y + (deltaY * clampedProjection));
     }
 
     private static float Clamp(float value) =>

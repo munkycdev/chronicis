@@ -3236,6 +3236,11 @@ else
             return false;
         }
 
+        if (TryInsertVertexIntoSelectedPolygonAtPoint(point))
+        {
+            return true;
+        }
+
         var polygon = GetVisiblePolygons()
             .Reverse()
             .FirstOrDefault(candidate => PolygonHitTester.ContainsPoint(candidate.Geometry, point));
@@ -3247,6 +3252,46 @@ else
         }
 
         SelectPolygon(polygon.FeatureId);
+        return true;
+    }
+
+    private bool TryInsertVertexIntoSelectedPolygonAtPoint(NormalizedMapPoint point)
+    {
+        if (SelectedPolygonRenderModel is not { } polygon
+            || _selectedPolygonWorkingGeometry == null)
+        {
+            return false;
+        }
+
+        if (PolygonVertexEditor.FindNearestVertexIndex(
+                _selectedPolygonWorkingGeometry,
+                point,
+                GetPolygonVertexSelectionThreshold()) >= 0)
+        {
+            return false;
+        }
+
+        if (!PolygonVertexEditor.TryInsertVertex(
+                _selectedPolygonWorkingGeometry,
+                point,
+                GetPolygonEdgeSelectionThreshold(),
+                out var updatedGeometry,
+                out _))
+        {
+            return false;
+        }
+
+        ResetPolygonVertexDragState();
+        _selectedPolygonWorkingGeometry = updatedGeometry;
+        _polygonEditError = string.Empty;
+        SetPolygonRenderGeometry(
+            polygon.FeatureId,
+            polygon.LayerId,
+            _selectedPolygonName,
+            polygon.LinkedArticleId,
+            updatedGeometry,
+            _selectedPolygonColor);
+        StateHasChanged();
         return true;
     }
 
@@ -3767,6 +3812,13 @@ else
         // Vertex markers live inside the scaled map stage, so the hit radius should track
         // their on-screen growth instead of shrinking as zoom increases.
         var normalizedThreshold = 14d / baseDimension;
+        return (float)normalizedThreshold;
+    }
+
+    private float GetPolygonEdgeSelectionThreshold()
+    {
+        var baseDimension = Math.Max(Math.Min(_mapBaseWidth, _mapBaseHeight), 1d);
+        var normalizedThreshold = 10d / baseDimension;
         return (float)normalizedThreshold;
     }
 

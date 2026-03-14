@@ -126,6 +126,103 @@ public class GeometryEngineTests
     }
 
     [Fact]
+    public void PolygonVertexEditor_TryInsertVertex_InsertsProjectedPointOnNearestEdge()
+    {
+        var polygon = new PolygonGeometry(
+        [
+            new NormalizedMapPoint(0.1f, 0.2f),
+            new NormalizedMapPoint(0.8f, 0.2f),
+            new NormalizedMapPoint(0.4f, 0.7f),
+            new NormalizedMapPoint(0.1f, 0.2f),
+        ]);
+
+        var inserted = PolygonVertexEditor.TryInsertVertex(
+            polygon,
+            new NormalizedMapPoint(0.46f, 0.24f),
+            maxDistance: 0.05f,
+            out var updated,
+            out var insertedIndex);
+
+        Assert.True(inserted);
+        Assert.Equal(1, insertedIndex);
+        Assert.Equal(new NormalizedMapPoint(0.46f, 0.2f), updated.Vertices[1]);
+        Assert.Equal(updated.Vertices[0], updated.Vertices[^1]);
+    }
+
+    [Fact]
+    public void PolygonVertexEditor_TryInsertVertex_InsertsBeforeClosingVertexForLastEdge()
+    {
+        var polygon = new PolygonGeometry(
+        [
+            new NormalizedMapPoint(0.1f, 0.2f),
+            new NormalizedMapPoint(0.8f, 0.2f),
+            new NormalizedMapPoint(0.4f, 0.7f),
+            new NormalizedMapPoint(0.1f, 0.2f),
+        ]);
+
+        var inserted = PolygonVertexEditor.TryInsertVertex(
+            polygon,
+            new NormalizedMapPoint(0.18f, 0.42f),
+            maxDistance: 0.05f,
+            out var updated,
+            out var insertedIndex);
+
+        Assert.True(inserted);
+        Assert.Equal(3, insertedIndex);
+        Assert.Equal(0.2182353f, updated.Vertices[3].X, 5);
+        Assert.Equal(0.39705884f, updated.Vertices[3].Y, 5);
+        Assert.Equal(updated.Vertices[0], updated.Vertices[^1]);
+    }
+
+    [Theory]
+    [InlineData(-0.1f, 0.4f, 0.2f)]
+    [InlineData(0.01f, 0.45f, 0.5f)]
+    public void PolygonVertexEditor_TryInsertVertex_InvalidDistanceOrMiss_ReturnsFalse(
+        float maxDistance,
+        float pointX,
+        float pointY)
+    {
+        var polygon = new PolygonGeometry(
+        [
+            new NormalizedMapPoint(0.1f, 0.2f),
+            new NormalizedMapPoint(0.8f, 0.2f),
+            new NormalizedMapPoint(0.4f, 0.7f),
+            new NormalizedMapPoint(0.1f, 0.2f),
+        ]);
+
+        var inserted = PolygonVertexEditor.TryInsertVertex(
+            polygon,
+            new NormalizedMapPoint(pointX, pointY),
+            maxDistance,
+            out var updated,
+            out var insertedIndex);
+
+        Assert.False(inserted);
+        Assert.Equal(-1, insertedIndex);
+        Assert.Same(polygon, updated);
+    }
+
+    [Fact]
+    public void PolygonVertexEditor_TryInsertVertex_WithTooFewVertices_ReturnsFalse()
+    {
+        var polygon = new PolygonGeometry(
+        [
+            new NormalizedMapPoint(0.1f, 0.2f),
+        ]);
+
+        var inserted = PolygonVertexEditor.TryInsertVertex(
+            polygon,
+            new NormalizedMapPoint(0.1f, 0.2f),
+            maxDistance: 0.05f,
+            out var updated,
+            out var insertedIndex);
+
+        Assert.False(inserted);
+        Assert.Equal(-1, insertedIndex);
+        Assert.Same(polygon, updated);
+    }
+
+    [Fact]
     public void GeoJsonPolygonSerializer_ToDto_ClosesOpenRing()
     {
         var polygon = new PolygonGeometry(
