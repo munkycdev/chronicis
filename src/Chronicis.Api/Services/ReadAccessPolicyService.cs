@@ -53,9 +53,24 @@ public sealed class ReadAccessPolicyService : IReadAccessPolicyService
 
     public IQueryable<Article> ApplyAuthenticatedReadableArticleFilter(IQueryable<Article> articles, Guid userId)
     {
-        var worldScoped = ApplyAuthenticatedWorldArticleFilter(articles, userId);
-        var tutorials = ApplyTutorialArticleFilter(articles);
-        return worldScoped.Concat(tutorials);
+        // Single predicate instead of Concat of two filtered queries.
+        //
+        // Why: EF Core translates IQueryable.Concat/Union/Except into SQL set operations (UNION ALL / UNION / EXCEPT),
+        // and entities returned from set operations are materialized as UNTRACKED, regardless of the underlying
+        // DbSet's tracking behavior. That caused writes (e.g., ArticlesController.UpdateArticle) that read an
+        // entity through this filter, mutated it, and called SaveChangesAsync to silently no-op because the change
+        // tracker never saw the entity as Modified.
+        //
+        // A single .Where(...) predicate preserves the same semantic matrix (tutorials + membership-scoped world
+        // articles respecting private ownership) while keeping returned entities tracked.
+        return articles.Where(a =>
+            (a.Type == ArticleType.Tutorial && a.WorldId == Guid.Empty)
+            ||
+            (a.Type != ArticleType.Tutorial
+                && a.WorldId != Guid.Empty
+                && a.World != null
+                && a.World.Members.Any(m => m.UserId == userId)
+                && (a.Visibility != ArticleVisibility.Private || a.CreatedBy == userId)));
     }
 
     public IQueryable<Campaign> ApplyAuthenticatedCampaignFilter(IQueryable<Campaign> campaigns, Guid userId)

@@ -214,7 +214,7 @@ public class ArticleDetailViewModelTests
     public async Task SaveArticleAsync_WhenArticleNull_ReturnsSkipped()
     {
         var c = CreateSut();
-        var result = await c.Vm.SaveArticleAsync("body");
+        var result = await c.Vm.SaveArticleAsync("body", "title");
         Assert.Equal(SaveArticleResult.ResultKind.Skipped, result.Kind);
     }
 
@@ -232,7 +232,7 @@ public class ArticleDetailViewModelTests
 
         // First call sets IsSaving=true; we test the guard by calling after
         // Note: can't reliably race in unit tests, but we verify the guard path via null article
-        var result = await c.Vm.SaveArticleAsync("body");
+        var result = await c.Vm.SaveArticleAsync("body", article.Title);
         Assert.NotEqual(SaveArticleResult.ResultKind.Skipped, result.Kind); // gets through
     }
 
@@ -245,7 +245,7 @@ public class ArticleDetailViewModelTests
         c.ArticleApi.UpdateArticleAsync(article.Id, Arg.Any<ArticleUpdateDto>()).Returns(article);
         await c.Vm.LoadArticleAsync(article.Id);
 
-        var result = await c.Vm.SaveArticleAsync("Updated body");
+        var result = await c.Vm.SaveArticleAsync("Updated body", "Magic");
 
         Assert.Equal(SaveArticleResult.ResultKind.Saved, result.Kind);
         Assert.False(c.Vm.HasUnsavedChanges);
@@ -272,9 +272,11 @@ public class ArticleDetailViewModelTests
             .Returns("/world/new-title");
 
         await c.Vm.LoadArticleAsync(article.Id);
-        c.Vm.EditTitle = "New Title";
 
-        var result = await c.Vm.SaveArticleAsync("body");
+        // Title now flows through the SaveArticleAsync parameter, simulating the
+        // razor passing its bound _editTitle on save. The VM no longer has a
+        // bidirectional binding to the razor's title field.
+        var result = await c.Vm.SaveArticleAsync("body", "New Title");
 
         Assert.Equal(SaveArticleResult.ResultKind.Navigate, result.Kind);
         Assert.Equal("/world/new-title", result.NavigationPath);
@@ -290,11 +292,63 @@ public class ArticleDetailViewModelTests
             .ThrowsAsync(new Exception("db fail"));
         await c.Vm.LoadArticleAsync(article.Id);
 
-        var result = await c.Vm.SaveArticleAsync("body");
+        var result = await c.Vm.SaveArticleAsync("body", article.Title);
 
         Assert.Equal(SaveArticleResult.ResultKind.Failed, result.Kind);
         Assert.False(c.Vm.IsSaving);
         c.Notifier.Received(1).Error(Arg.Any<string>());
+    }
+
+    // Regression: the API returning null (non-2xx) must surface as Failed,
+    // must notify the user, and must NOT mutate local state. Previously the
+    // return value was discarded, so a silent server failure produced a
+    // "Saved" toast with stale local state that disagreed with the DB on reload.
+    [Fact]
+    public async Task SaveArticleAsync_WhenApiReturnsNull_ReturnsFailedAndDoesNotMutateLocalState()
+    {
+        var c = CreateSut();
+        var article = MakeArticle("Original Title");
+        c.ArticleApi.GetArticleAsync(article.Id).Returns(article);
+        c.ArticleApi.UpdateArticleAsync(Arg.Any<Guid>(), Arg.Any<ArticleUpdateDto>())
+            .Returns(Task.FromResult<ArticleDto?>(null));
+
+        await c.Vm.LoadArticleAsync(article.Id);
+
+        var result = await c.Vm.SaveArticleAsync("attempted body", "Attempted New Title");
+
+        Assert.Equal(SaveArticleResult.ResultKind.Failed, result.Kind);
+        Assert.Equal("Original Title", c.Vm.Article!.Title);
+        Assert.False(c.Vm.IsSaving);
+        c.Notifier.Received(1).Error(Arg.Any<string>());
+        c.ArticleCache.DidNotReceive().InvalidateCache();
+    }
+
+    // Regression (Phase 5 extraction): The razor's _editTitle field is the
+    // authoritative source of the user's typed title. Before the
+    // currentTitle parameter was added, the VM looked at its own EditTitle
+    // property, which was stale because the razor does not sync changes back
+    // to the VM. Silently sending the original (loaded) title to the server
+    // meant renames looked successful but never persisted.
+    [Fact]
+    public async Task SaveArticleAsync_ForwardsCurrentTitleFromRazorToApi()
+    {
+        var c = CreateSut();
+        var article = MakeArticle("Loaded Title");
+        c.ArticleApi.GetArticleAsync(article.Id).Returns(article);
+
+        ArticleUpdateDto? capturedDto = null;
+        c.ArticleApi.UpdateArticleAsync(article.Id, Arg.Do<ArticleUpdateDto>(dto => capturedDto = dto))
+            .Returns(article);
+
+        await c.Vm.LoadArticleAsync(article.Id);
+        // Intentionally do NOT touch c.Vm.EditTitle — simulate the razor's
+        // one-way sync (VM → razor on load, nothing back). The razor holds
+        // the user's typed value and must pass it explicitly on save.
+
+        await c.Vm.SaveArticleAsync("body", "Razor-Typed Title");
+
+        Assert.NotNull(capturedDto);
+        Assert.Equal("Razor-Typed Title", capturedDto!.Title);
     }
 
     // ---------------------------------------------------------------------------

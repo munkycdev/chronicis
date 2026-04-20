@@ -2,6 +2,34 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.0.1] - 2026-04-19
+
+### Fixed — Article renames never persisted (regression from Phase 5)
+
+**Symptom:** Renaming an article showed a success toast, but reloading the page restored the old title. No errors on client or server.
+
+**Root cause:** Commit `cb39986` ("Phase 5: ArticleDetailViewModel extracted") on 2026-02-23 moved the save logic out of `ArticleDetail.razor` into a new `ArticleDetailViewModel`. The razor's title input is bound to a razor-local field (`_editTitle`) via `@bind-Title`. The extracted VM has its own `EditTitle` property, initialized once in `LoadArticleAsync` and never updated by the razor. `SaveArticleAsync` originally took only the body as a parameter and used the stale `EditTitle` for the title, so every rename sent the originally-loaded title to the server. The server's 200 OK response reflected the unchanged record and the UI accepted it as success.
+
+**Primary fix:**
+
+- `ArticleDetailViewModel.SaveArticleAsync(string currentBody)` → `SaveArticleAsync(string currentBody, string currentTitle)`. The title now flows through the same explicit parameter-passing channel as the body, eliminating the reliance on stale VM state.
+- `ArticleDetail.razor` passes its authoritative `_editTitle` on save.
+- Regression test `SaveArticleAsync_ForwardsCurrentTitleFromRazorToApi` added: confirms the DTO sent to the API uses the caller-supplied title rather than VM-internal state.
+
+**Additional resilience change — client:**
+
+- `ArticleDetailViewModel.SaveArticleAsync` now checks the return value of `IArticleApiService.UpdateArticleAsync`. A null response (non-2xx from the server) surfaces as `SaveArticleResult.Failed` with an error notification, and local article state is not mutated. Previously the return value was discarded, which would have masked the rename bug and any future silent server failures. On success, the server's returned DTO is now the source of truth for local article fields. Regression test `SaveArticleAsync_WhenApiReturnsNull_ReturnsFailedAndDoesNotMutateLocalState` added.
+
+**Latent bug fix — server (unrelated to the rename symptom):**
+
+- `ReadAccessPolicyService.ApplyAuthenticatedReadableArticleFilter` rewritten from `IQueryable.Concat(...)` of two filtered queries into a single `Where(...)` predicate. EF Core translates set operators into SQL `UNION ALL`, and entities returned from set operations are materialized as **untracked**, regardless of the underlying `DbSet` tracking behavior. Any write path that retrieves an article through this filter, mutates it, and calls `SaveChangesAsync()` would silently no-op because the change tracker never sees the entity as `Modified`. `ArticlesController.UpdateArticle` is one such path. The rename symptom did not surface through this code path (the title itself was never changed before hitting the controller), but the architectural bug would have caused identical-looking silent failures in the future.
+
+**Not changed:**
+
+- No API contract changes. No database migrations. No client-facing behavior changes other than renames actually persisting.
+
+---
+
 ## [3.0.0] - 2026-03-03
 
 ### Maps, Layers, and Basemap Image Workflow

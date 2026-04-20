@@ -518,7 +518,7 @@ else
 
     private async Task SaveArticleAsync(bool showSuccessSnackbar)
     {
-        var result = await ViewModel.SaveArticleAsync(_editBody);
+        var result = await ViewModel.SaveArticleAsync(_editBody, _editTitle);
 
         _isSaving  = ViewModel.IsSaving;
         _article   = ViewModel.Article;

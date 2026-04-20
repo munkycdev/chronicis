@@ -214,16 +214,19 @@ public sealed class ArticleDetailViewModel : ViewModelBase
     // ---------------------------------------------------------------------------
 
     /// <summary>
-    /// Saves the current article. The caller must pass the current editor body
-    /// (retrieved from the JS TipTap editor) as <paramref name="currentBody"/>.
+    /// Saves the current article. The caller must pass the current editor values
+    /// (retrieved from the razor-bound fields / JS TipTap editor) as <paramref name="currentBody"/>
+    /// and <paramref name="currentTitle"/>. Both are required: there is no bidirectional
+    /// binding between razor state and VM state, so the VM cannot observe edits directly.
     /// </summary>
-    public async Task<SaveArticleResult> SaveArticleAsync(string currentBody)
+    public async Task<SaveArticleResult> SaveArticleAsync(string currentBody, string currentTitle)
     {
         if (_article == null || IsSaving)
             return SaveArticleResult.Skipped;
 
-        // Sync editor body into VM state before saving
+        // Sync editor state into VM before saving.
         _editBody = currentBody;
+        EditTitle = currentTitle ?? string.Empty;
         IsSaving = true;
 
         try
@@ -249,12 +252,23 @@ public sealed class ArticleDetailViewModel : ViewModelBase
                 IconEmoji = _article.IconEmoji
             };
 
-            await _articleApi.UpdateArticleAsync(_article.Id, updateDto);
+            var updated = await _articleApi.UpdateArticleAsync(_article.Id, updateDto);
+            if (updated == null)
+            {
+                // API returned null (non-2xx or deserialization failure).
+                // Do NOT show success, do NOT mutate local state — the server did not accept the change.
+                _notifier.Error("Failed to save article. Please try again.");
+                return SaveArticleResult.Failed;
+            }
+
             _articleCache.InvalidateCache();
 
-            _article.Title = newTitle;
-            _article.Body = _editBody;
-            _article.ModifiedAt = DateTime.Now;
+            // Use the server's response as the source of truth rather than optimistic local mutation.
+            _article.Title = updated.Title;
+            _article.Slug = updated.Slug;
+            _article.Body = updated.Body;
+            _article.ModifiedAt = updated.ModifiedAt;
+            _article.IconEmoji = updated.IconEmoji;
             HasUnsavedChanges = false;
             LastSaveTime = "just now";
 
@@ -561,7 +575,9 @@ public sealed class ArticleDetailViewModel : ViewModelBase
     {
         _editBody = updatedBody;
         HasUnsavedChanges = true;
-        await SaveArticleAsync(updatedBody);
+        // Auto-link only modifies body; forward the VM's current title so the
+        // save path still satisfies the required title parameter.
+        await SaveArticleAsync(updatedBody, EditTitle);
         _notifier.Success($"Added {linksApplied} link(s)");
     }
 
