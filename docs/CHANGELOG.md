@@ -4,6 +4,30 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added — WikiLink autocomplete adopts trailing word at cursor
+
+When the user types `[[` immediately before an existing word (cursor touching the
+word, no space between), the autocomplete popup opens with that word pre-seeded
+as the search query. Committing a suggestion (Enter or click) replaces both the
+`[[` trigger and the trailing word with the inserted link node. If the user types
+any character into the popup before committing, the adoption is dropped: the
+search query becomes the typed text, the insert replaces only `[[` plus the typed
+text, and the original trailing word remains in the document untouched. Escape,
+scroll, and all other popup-close paths also drop adoption without modifying the
+document.
+
+Terminator characters that end word adoption: whitespace and `. , ; : ! ? ) ] } " '`
+Adoption is capped at 64 characters; if no terminator is found within that range,
+no adoption occurs. All four insert functions (`insertWikiLink`,
+`insertExternalLinkToken`, `insertMapLinkToken`, `insertMapFeatureLinkToken`)
+respect the adopted range. Behavior when no word is adopted is byte-for-byte
+identical to the previous release.
+
+Implementation is JavaScript-only (`wikiLinkAutocomplete.js?v=4`); no C#, Razor,
+DTO, or API changes were made.
+
+---
+
 ### Added — Cascade wiki-link title rewrite on article rename
 
 When an article is renamed, all wiki-link spans in back-linked articles that accepted the

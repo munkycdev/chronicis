@@ -5,6 +5,35 @@
 // ============================================
 
 /**
+ * Compute the trailing word starting at document position `from`.
+ * Returns the word string (up to the first terminator), or null if no adoption should occur.
+ * Terminators: whitespace and . , ; : ! ? ) ] } " '
+ * Cap: 64 characters. If no terminator is found within 64 chars, returns null.
+ * @param {object} doc - ProseMirror document
+ * @param {number} from - cursor position
+ * @returns {string|null}
+ */
+function _computeTrailingWord(doc, from) {
+    const TERMINATORS = new Set([' ', '\t', '\n', '\r', '.', ',', ';', ':', '!', '?', ')', ']', '}', '"', "'", '\u00a0']);
+    const MAX_LEN = 64;
+    const end = Math.min(doc.content.size, from + MAX_LEN);
+    const text = doc.textBetween(from, end, '\n');
+
+    if (!text || text.length === 0) return null;
+    if (TERMINATORS.has(text[0])) return null;
+
+    let i = 0;
+    while (i < text.length && !TERMINATORS.has(text[i])) {
+        i++;
+    }
+
+    // No terminator found within the 64-char cap → no adoption
+    if (i >= MAX_LEN) return null;
+
+    return text.substring(0, i);
+}
+
+/**
  * Initialize wiki link autocomplete for an editor
  * @param {string} editorId - The editor container ID
  * @param {object} dotNetHelper - DotNetObjectReference for callbacks
@@ -35,63 +64,84 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
 
         if (match) {
             const fullQuery = match[1];
-            
-            // Check for pipe character - if present, only search on the part before it
-            const pipeIndex = fullQuery.indexOf('|');
-            const searchQuery = pipeIndex >= 0 ? fullQuery.substring(0, pipeIndex) : fullQuery;
-            const customDisplayText = pipeIndex >= 0 ? fullQuery.substring(pipeIndex + 1) : null;
-            
-            // Store custom display text for later use when inserting
-            window._wikiLinkCustomDisplayText = customDisplayText;
-            
+
             // Get cursor position for autocomplete placement
             const coords = editor.view.coordsAtPos(from);
-            
+
             // IMPORTANT: coordsAtPos returns coordinates relative to the VIEWPORT, not the document
             // This means they automatically account for scroll position
             let x = coords.left;
             let y = coords.bottom;
-            
+
             // Add some padding below the cursor
             y += 4;
-            
+
             // Get viewport dimensions
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
-            
+
             // Estimated autocomplete dimensions (will be adjusted by CSS if needed)
             const autocompleteWidth = 300;
             const autocompleteHeight = 300; // max-height from CSS
-            
+
             // Adjust X if popup would overflow right edge
             if (x + autocompleteWidth > viewportWidth) {
                 x = viewportWidth - autocompleteWidth - 16; // 16px padding from edge
             }
-            
+
             // Adjust Y if popup would overflow bottom edge - position above cursor instead
             if (y + autocompleteHeight > viewportHeight) {
                 y = coords.top - autocompleteHeight - 4; // Position above cursor with padding
-                
+
                 // If that would overflow the top, just position at top with padding
                 if (y < 0) {
                     y = 16;
                 }
             }
-            
+
             // Ensure minimum padding from left edge
             if (x < 16) {
                 x = 16;
             }
-            
+
             // Mark autocomplete as visible synchronously before the async Blazor call so that
             // the keydown handler sees the correct state on the very next keystroke.
             autocompleteVisible = true;
 
-            // Notify Blazor to show autocomplete (only search on the part before pipe)
-            dotNetHelper.invokeMethodAsync('OnAutocompleteTriggered', searchQuery, x, y);
+            if (fullQuery === '') {
+                // Attempt trailing word adoption: look at the character(s) immediately
+                // right of the cursor. If a word starts there, pre-seed the query with it.
+                const adoptedWord = _computeTrailingWord(editor.state.doc, from);
+                if (adoptedWord) {
+                    window._wikiLinkAdoptedWord = adoptedWord;
+                    window._wikiLinkCustomDisplayText = null;
+                    dotNetHelper.invokeMethodAsync('OnAutocompleteTriggered', adoptedWord, x, y);
+                } else {
+                    // No adoption — behave exactly as before (empty query)
+                    window._wikiLinkAdoptedWord = null;
+                    window._wikiLinkCustomDisplayText = null;
+                    dotNetHelper.invokeMethodAsync('OnAutocompleteTriggered', '', x, y);
+                }
+            } else {
+                // User is actively typing — adoption window has closed for this trigger.
+                // Drop any previously stored adopted word.
+                window._wikiLinkAdoptedWord = null;
+
+                // Check for pipe character - if present, only search on the part before it
+                const pipeIndex = fullQuery.indexOf('|');
+                const searchQuery = pipeIndex >= 0 ? fullQuery.substring(0, pipeIndex) : fullQuery;
+                const customDisplayText = pipeIndex >= 0 ? fullQuery.substring(pipeIndex + 1) : null;
+
+                // Store custom display text for later use when inserting
+                window._wikiLinkCustomDisplayText = customDisplayText;
+
+                // Notify Blazor to show autocomplete (only search on the part before pipe)
+                dotNetHelper.invokeMethodAsync('OnAutocompleteTriggered', searchQuery, x, y);
+            }
         } else {
             // No [[ found — hide autocomplete immediately (synchronously).
             autocompleteVisible = false;
+            window._wikiLinkAdoptedWord = null;
             window._wikiLinkCustomDisplayText = null;
             dotNetHelper.invokeMethodAsync('OnAutocompleteHidden');
         }
@@ -123,6 +173,7 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
             dotNetHelper.invokeMethodAsync('OnAutocompleteEnter');
         } else if (e.key === 'Escape') {
             autocompleteVisible = false;
+            window._wikiLinkAdoptedWord = null;
             dotNetHelper.invokeMethodAsync('OnAutocompleteHidden');
         }
     });
@@ -134,6 +185,7 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
         editorElement.addEventListener('scroll', () => {
             if (autocompleteVisible) {
                 autocompleteVisible = false;
+                window._wikiLinkAdoptedWord = null;
                 dotNetHelper.invokeMethodAsync('OnAutocompleteHidden');
             }
         }, { passive: true });
@@ -143,13 +195,18 @@ function initializeWikiLinkAutocomplete(editorId, dotNetHelper) {
     window.addEventListener('scroll', () => {
         if (autocompleteVisible) {
             autocompleteVisible = false;
+            window._wikiLinkAdoptedWord = null;
             dotNetHelper.invokeMethodAsync('OnAutocompleteHidden');
         }
     }, { passive: true });
 
     // Expose a setter so insertWikiLink / insertExternalLinkToken can close the popup
     // without needing access to the closure-scoped flag directly.
-window._setAutocompleteVisible = (value) => { autocompleteVisible = value; };
+    // Also clears adopted-word state when popup is hidden through any path.
+    window._setAutocompleteVisible = (value) => {
+        autocompleteVisible = value;
+        if (!value) window._wikiLinkAdoptedWord = null;
+    };
 }
 
 function findWikiBracketRange(doc, from) {
@@ -169,7 +226,25 @@ function findWikiBracketRange(doc, from) {
 }
 
 /**
+ * Like findWikiBracketRange but extends the `to` position to also cover the adopted
+ * trailing word when adoption is active. When `adoptedWord` is null/empty the result
+ * is identical to findWikiBracketRange.
+ * @param {object} doc - ProseMirror document
+ * @param {number} from - current cursor position
+ * @param {string|null} adoptedWord - the word that was adopted (or null)
+ * @returns {{from: number, to: number}|null}
+ */
+function findWikiAdoptedRange(doc, from, adoptedWord) {
+    const base = findWikiBracketRange(doc, from);
+    if (!base) return null;
+    if (!adoptedWord) return base;
+    // base.to === from (cursor); extend by adoptedWord.length to consume the trailing word
+    return { from: base.from, to: from + adoptedWord.length };
+}
+
+/**
  * Insert a wiki link at the current cursor position, replacing the [[ trigger text.
+ * When an adopted word is in play the inserted node also replaces that trailing word.
  * @param {string} editorId - The editor container ID
  * @param {string} articleId - The GUID of the article to link
  * @param {string} displayText - The text to display
@@ -184,12 +259,15 @@ function insertWikiLink(editorId, articleId, displayText) {
     const customDisplayText = window._wikiLinkCustomDisplayText;
     const finalDisplayText = customDisplayText && customDisplayText.trim() ? customDisplayText.trim() : displayText;
 
+    // Capture adopted word before any clearing so range computation is correct.
+    const adoptedWord = window._wikiLinkAdoptedWord;
     window._wikiLinkCustomDisplayText = null;
+    window._wikiLinkAdoptedWord = null;
     if (window._setAutocompleteVisible) window._setAutocompleteVisible(false);
 
     const { from } = editor.state.selection;
     const doc = editor.state.doc;
-    const triggerRange = findWikiBracketRange(doc, from);
+    const triggerRange = findWikiAdoptedRange(doc, from, adoptedWord);
 
     if (!triggerRange) {
         console.error('Could not find [[ before cursor');
@@ -207,6 +285,7 @@ function insertWikiLink(editorId, articleId, displayText) {
 
 /**
  * Insert an external link token at the current cursor position.
+ * When an adopted word is in play the inserted node also replaces that trailing word.
  * @param {string} editorId - The editor container ID
  * @param {string} source - External source key
  * @param {string} id - External id value
@@ -227,12 +306,14 @@ function insertExternalLinkToken(editorId, source, id, title) {
     const customDisplayText = window._wikiLinkCustomDisplayText;
     const finalTitle = customDisplayText && customDisplayText.trim() ? customDisplayText.trim() : title;
 
+    const adoptedWord = window._wikiLinkAdoptedWord;
     window._wikiLinkCustomDisplayText = null;
+    window._wikiLinkAdoptedWord = null;
     if (window._setAutocompleteVisible) window._setAutocompleteVisible(false);
 
     const { from } = editor.state.selection;
     const doc = editor.state.doc;
-    const triggerRange = findWikiBracketRange(doc, from);
+    const triggerRange = findWikiAdoptedRange(doc, from, adoptedWord);
 
     if (!triggerRange) {
         console.error('Could not find [[ before cursor');
@@ -250,6 +331,7 @@ function insertExternalLinkToken(editorId, source, id, title) {
 
 /**
  * Insert a map link chip at the current cursor position.
+ * When an adopted word is in play the inserted node also replaces that trailing word.
  * Uses the existing wiki-link node type with map-specific attributes.
  * @param {string} editorId - The editor container ID
  * @param {string} mapId - The map GUID
@@ -273,12 +355,14 @@ function insertMapLinkToken(editorId, mapId, mapName) {
         return;
     }
 
+    const adoptedWord = window._wikiLinkAdoptedWord;
     window._wikiLinkCustomDisplayText = null;
+    window._wikiLinkAdoptedWord = null;
     if (window._setAutocompleteVisible) window._setAutocompleteVisible(false);
 
     const { from } = editor.state.selection;
     const doc = editor.state.doc;
-    const triggerRange = findWikiBracketRange(doc, from);
+    const triggerRange = findWikiAdoptedRange(doc, from, adoptedWord);
 
     if (!triggerRange) {
         console.error('Could not find [[ before cursor');
@@ -315,9 +399,12 @@ function insertMapFeatureLinkToken(editorId, featureId, mapId, displayText, mapN
         return;
     }
 
+    const adoptedWord = window._wikiLinkAdoptedWord;
+    window._wikiLinkCustomDisplayText = null;
+    window._wikiLinkAdoptedWord = null;
     if (window._setAutocompleteVisible) window._setAutocompleteVisible(false);
-    const { from } = editor.state.selection;
-    const triggerRange = findWikiBracketRange(editor.state.doc, from);
+
+    const triggerRange = findWikiAdoptedRange(editor.state.doc, editor.state.selection.from, adoptedWord);
     if (!triggerRange) {
         console.error('Could not find [[ before cursor');
         return;
