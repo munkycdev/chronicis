@@ -219,6 +219,8 @@ internal class Program
             builder.Services.AddScoped<ILinkParser, Chronicis.Api.Services.LinkParser>();
             builder.Services.AddScoped<ILinkSyncService, LinkSyncService>();
             builder.Services.AddScoped<IAutoLinkService, AutoLinkService>();
+            builder.Services.AddScoped<IWikiLinkTitleRewriter, WikiLinkTitleRewriter>();
+            builder.Services.AddScoped<IArticleRenameCascadeService, ArticleRenameCascadeService>();
             builder.Services.AddScoped<IPromptService, PromptService>();
             builder.Services.AddScoped<IDashboardReadService, DashboardReadService>();
             builder.Services.AddScoped<ISearchReadService, SearchReadService>();

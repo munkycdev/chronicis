@@ -104,7 +104,19 @@ try {
         Write-Host "No changed .cs files - skipping dotnet format."
     }
 
+    # Defense against stale bin\ artifacts after cross-branch switches.
+    # Coverlet scrapes compiled types from DLLs. If a previous branch compiled
+    # types whose source files no longer exist on the current branch, those
+    # types remain in bin\ and show up as "uncovered" in cobertura output,
+    # producing phantom coverage failures that have no source to fix.
+    # A clean pass forces the compiler to re-emit DLLs from only the current
+    # working tree, eliminating the class of ghost-type false positives.
+    Write-Host "Cleaning solution to eliminate stale build artifacts..."
+    dotnet clean $Solution -c $Configuration --nologo --verbosity minimal | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "dotnet clean failed." }
+
     dotnet build $Solution -c $Configuration -m
+    if ($LASTEXITCODE -ne 0) { throw "dotnet build failed." }
 
     # Clear previous per-test-project coverage outputs so latest run is authoritative.
     foreach ($target in $CoverageTargets) {

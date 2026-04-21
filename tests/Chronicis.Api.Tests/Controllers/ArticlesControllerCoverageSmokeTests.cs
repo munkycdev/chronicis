@@ -30,6 +30,7 @@ public class ArticlesControllerCoverageSmokeTests
             Substitute.For<IArticleDataAccessService>(),
             Substitute.For<IWorldMapService>(),
             user,
+            Substitute.For<IArticleRenameCascadeService>(),
             NullLogger<ArticlesController>.Instance);
 
         var result = await sut.GetRootArticles(null);
@@ -57,6 +58,7 @@ public class ArticlesControllerCoverageSmokeTests
             dataAccess,
             worldMapService,
             user,
+            Substitute.For<IArticleRenameCascadeService>(),
             NullLogger<ArticlesController>.Instance);
 
         var featureId = Guid.NewGuid();
@@ -97,6 +99,7 @@ public class ArticlesControllerCoverageSmokeTests
             Substitute.For<IArticleDataAccessService>(),
             worldMapService,
             user,
+            Substitute.For<IArticleRenameCascadeService>(),
             NullLogger<ArticlesController>.Instance);
 
         var dto = new ArticleCreateDto
@@ -149,6 +152,7 @@ public class ArticlesControllerCoverageSmokeTests
             dataAccess,
             worldMapService,
             user,
+            Substitute.For<IArticleRenameCascadeService>(),
             NullLogger<ArticlesController>.Instance);
 
         var result = await sut.UpdateArticle(articleId, new ArticleUpdateDto

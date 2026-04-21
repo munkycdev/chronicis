@@ -72,6 +72,8 @@ Scope:
 - Bulk link-resolution behavior for content references.
 - Auto-link suggestion and apply workflow.
 - Tutorial/system article protection behaviors.
+- Renaming an article cascades the new title to all wiki links that accepted the default display text; the previous title is preserved as an alias for future linking.
+- Renaming an article cascades the new title to all wiki links that accepted the default display text; the previous title is preserved as an alias for future linking.
 
 ## 6) Wiki Linking and Rich Editing
 - Rich text editor for articles and notes.
@@ -79,9 +81,11 @@ Scope:
 - Wiki-link autocomplete and keyboard selection.
 - Create-new-article directly from autocomplete.
 - Broken-link detection and handling in editor workflows.
+- Wiki-link display text cascades on article rename: all backlinks that used the article's default title are updated automatically; custom-labelled links and map chips are unchanged.
 - Inline editing model across core entity detail pages.
 - Keyboard save shortcut from editing contexts.
 - Keyboard shortcut to create sibling article.
+- Wiki-link display text in back-linked articles automatically updates when the target article is renamed (custom display labels are preserved).
 
 ## 7) External References and Linked Resources
 - External reference insertion using provider-based link syntax.

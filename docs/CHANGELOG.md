@@ -2,7 +2,35 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added — Cascade wiki-link title rewrite on article rename
+
+When an article is renamed, all wiki-link spans in back-linked articles that accepted the
+article's title as their default display text are automatically rewritten to the new title.
+Links where the user set a custom display label are left untouched. The previous title is
+recorded as an `ArticleAlias` on the renamed article so it remains discoverable via the
+existing alias-resolution path.
+
+**New services:**
+- `IWikiLinkTitleRewriter` / `WikiLinkTitleRewriter` — stateless regex rewriter for a
+  single article's HTML body; no DB access.
+- `IArticleRenameCascadeService` / `ArticleRenameCascadeService` — write-orchestration
+  service that queries back-linked sources, rewrites bodies, and appends the alias.
+
+**Controller change:**
+- `ArticlesController.UpdateArticle` captures `oldTitle` before mutation and invokes
+  `CascadeTitleChangeAsync` after the save when the title changes (case-insensitive guard,
+  so `"Foo" → "foo"` is treated as no-op).
+
+**Edge cases documented and tested:** custom-display links, map chips, broken-link spans,
+external-link spans, legacy `[[guid]]` syntax, zero-backlink renames, duplicate alias
+dedup, case-only renames, HTML-encoding of special characters in new titles.
+
+---
+
 ## [3.0.1] - 2026-04-19
+
 
 ### Fixed — Article renames never persisted (regression from Phase 5)
 

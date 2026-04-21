@@ -28,6 +28,7 @@ public class ArticlesController : ControllerBase
     private readonly IArticleDataAccessService _articleDataAccessService;
     private readonly IWorldMapService _worldMapService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IArticleRenameCascadeService _cascadeService;
     private readonly ILogger<ArticlesController> _logger;
     private static readonly Regex MapFeatureChipRegex = new(
         "data-type=\"map-feature-link\"[^>]*data-feature-id=\"([0-9a-fA-F-]{36})\"",
@@ -43,6 +44,7 @@ public class ArticlesController : ControllerBase
         IArticleDataAccessService articleDataAccessService,
         IWorldMapService worldMapService,
         ICurrentUserService currentUserService,
+        IArticleRenameCascadeService cascadeService,
         ILogger<ArticlesController> logger)
     {
         _articleService = articleService;
@@ -54,6 +56,7 @@ public class ArticlesController : ControllerBase
         _articleDataAccessService = articleDataAccessService;
         _worldMapService = worldMapService;
         _currentUserService = currentUserService;
+        _cascadeService = cascadeService;
         _logger = logger;
     }
 
@@ -351,6 +354,9 @@ public class ArticlesController : ControllerBase
                 article.Slug = dto.Slug;
             }
 
+            // Capture title before any mutation for cascade comparison
+            var oldTitle = article.Title;
+
             // Update fields
             if (dto.Title != null)
                 article.Title = dto.Title;
@@ -394,6 +400,12 @@ public class ArticlesController : ControllerBase
 
             // Sync external links after update
             await _externalLinkService.SyncExternalLinksAsync(id, dto.Body);
+
+            // Cascade title rename to backlinked article bodies (case-insensitive guard)
+            if (dto.Title != null && !string.Equals(oldTitle, article.Title, StringComparison.OrdinalIgnoreCase))
+            {
+                await _cascadeService.CascadeTitleChangeAsync(id, oldTitle, article.Title);
+            }
 
             if (article.Type == ArticleType.SessionNote)
             {
