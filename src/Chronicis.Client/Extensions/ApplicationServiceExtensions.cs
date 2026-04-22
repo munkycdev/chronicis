@@ -102,6 +102,7 @@ public static class ApplicationServiceExtensions
         // Domain services
         services.AddScoped<IArticleCacheService, ArticleCacheService>();
         services.AddScoped<IWikiLinkService, WikiLinkService>();
+        services.AddScoped<IWikiLinkCommitService, WikiLinkCommitService>();
         services.AddScoped<IWikiLinkAutocompleteService, WikiLinkAutocompleteService>();
         services.AddScoped<IBreadcrumbService, BreadcrumbService>();
         services.AddScoped<IMarkdownService, MarkdownService>();

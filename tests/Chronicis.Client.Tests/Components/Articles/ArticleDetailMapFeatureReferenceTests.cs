@@ -68,6 +68,7 @@ public class ArticleDetailMapFeatureReferenceTests : MudBlazorTestContext
         Services.AddSingleton(externalLinkApi);
         Services.AddSingleton(mapApi);
         Services.AddSingleton(wikiLinkService);
+        Services.AddSingleton(Substitute.For<IWikiLinkCommitService>());
         Services.AddSingleton(summaryApi);
         Services.AddSingleton(markdown);
         Services.AddSingleton(treeState);

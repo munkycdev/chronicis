@@ -79,7 +79,7 @@ Scope:
 - Rich text editor for articles and notes.
 - Internal wiki-link syntax support.
 - Wiki-link autocomplete and keyboard selection.
-- Create-new-article directly from autocomplete.
+- Create-new-article directly from autocomplete (click the "Create … in Wiki root" prompt, or press Enter when the query returns no suggestions and is at least 3 characters). Applies to the article editor, private notes editor, session notes editor, and quest update editor.
 - Broken-link detection and handling in editor workflows.
 - Wiki-link display text cascades on article rename: all backlinks that used the article's default title are updated automatically; custom-labelled links and map chips are unchanged.
 - Inline editing model across core entity detail pages.

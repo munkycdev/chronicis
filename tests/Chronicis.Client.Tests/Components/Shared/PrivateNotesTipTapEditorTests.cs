@@ -46,6 +46,7 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
         Services.AddSingleton(externalLinkApi);
         Services.AddSingleton(mapApi);
         Services.AddSingleton(wikiLinkService);
+        Services.AddSingleton(Substitute.For<IWikiLinkCommitService>());
         Services.AddSingleton(articleCache);
         Services.AddSingleton(summaryApi);
         Services.AddSingleton(worldApi);

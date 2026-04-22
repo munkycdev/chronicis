@@ -23,6 +23,7 @@
 @inject IExternalLinkApiService ExternalLinkApiService
 @inject IMapApiService MapApi
 @inject IWikiLinkService WikiLinkService
+@inject IWikiLinkCommitService WikiLinkCommitService
 @inject IAppContextService AppContext
 @inject IArticleCacheService ArticleCache
 @inject IAISummaryApiService SummaryApi
@@ -435,6 +436,7 @@ else
     private string _autocompleteQuery = string.Empty;
     private bool _autocompleteIsExternalQuery;
     private string? _autocompleteExternalSourceKey;
+    private bool _autocompleteIsMapQuery;
 
     private bool _externalPreviewOpen;
     private bool _externalPreviewLoading;
@@ -729,12 +731,14 @@ else
             var minLength = _autocompleteIsExternalQuery ? 0 : 3;
             if (!isMapAutocomplete && _autocompleteQuery.Length < minLength)
             {
+                _autocompleteIsMapQuery = false;
                 _autocompleteSuggestions = new();
                 await InvokeAsync(StateHasChanged);
                 return;
             }
         }
 
+        _autocompleteIsMapQuery = isMapAutocomplete;
         _autocompleteLoading = true;
         await InvokeAsync(StateHasChanged);
 
@@ -821,9 +825,21 @@ else
     {
         _activeEditorKind = editorKind;
 
-        if (_autocompleteSuggestions.Any() && _autocompleteSelectedIndex < _autocompleteSuggestions.Count)
+        var decision = WikiLinkCommitService.Decide(
+            _autocompleteQuery,
+            _autocompleteSuggestions.Count,
+            _autocompleteSelectedIndex,
+            _autocompleteIsExternalQuery,
+            _autocompleteIsMapQuery);
+
+        switch (decision)
         {
-            await OnAutocompleteSelect(_autocompleteSuggestions[_autocompleteSelectedIndex]);
+            case AutocompleteCommitDecision.SelectExisting select:
+                await OnAutocompleteSelect(_autocompleteSuggestions[select.Index]);
+                break;
+            case AutocompleteCommitDecision.CreateNew create:
+                await OnAutocompleteCreate(create.Name);
+                break;
         }
     }
 

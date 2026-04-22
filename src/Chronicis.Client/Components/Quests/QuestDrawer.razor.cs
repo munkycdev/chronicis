@@ -498,10 +498,46 @@ public partial class QuestDrawer : IAsyncDisposable
     [JSInvokable]
     public async Task OnAutocompleteEnter()
     {
-        var selected = AutocompleteService.GetSelectedSuggestion();
-        if (selected != null)
+        var decision = WikiLinkCommitService.Decide(
+            AutocompleteService.Query,
+            AutocompleteService.Suggestions.Count,
+            AutocompleteService.SelectedIndex,
+            AutocompleteService.IsExternalQuery,
+            false); // quest editor has no map autocomplete
+
+        switch (decision)
         {
-            await HandleAutocompleteSuggestionSelected(selected);
+            case AutocompleteCommitDecision.SelectExisting select:
+                await HandleAutocompleteSuggestionSelected(AutocompleteService.Suggestions[select.Index]);
+                break;
+            case AutocompleteCommitDecision.CreateNew create:
+                await HandleAutocompleteCreateAsync(create.Name);
+                break;
+        }
+    }
+
+    private async Task HandleAutocompleteCreateAsync(string name)
+    {
+        if (_editorModule == null || _currentWorldId is null || _currentWorldId.Value == Guid.Empty)
+            return;
+
+        try
+        {
+            var result = await WikiLinkCommitService.CreateAndLinkAsync(name, _currentWorldId.Value);
+            if (!result.Success)
+            {
+                Snackbar.Add(result.ErrorMessage ?? "Failed to create article", Severity.Error);
+                return;
+            }
+
+            await _editorModule.InvokeVoidAsync("insertWikiLink", result.Article!.Title, null);
+            AutocompleteService.Hide();
+            Snackbar.Add($"Created and linked '{name}'", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error creating article from quest autocomplete");
+            Snackbar.Add($"Failed to create article: {ex.Message}", Severity.Error);
         }
     }
 

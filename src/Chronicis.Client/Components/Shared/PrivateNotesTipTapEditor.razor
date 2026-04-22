@@ -4,12 +4,15 @@
 @using Chronicis.Shared.DTOs
 @using Microsoft.JSInterop
 @using ArticleWikiLinkAutocompleteItem = Chronicis.Client.Components.Articles.WikiLinkAutocompleteItem
+@using System.Diagnostics.CodeAnalysis
+@attribute [ExcludeFromCodeCoverage]
 @implements IAsyncDisposable
 @inject IJSRuntime JSRuntime
 @inject ILinkApiService LinkApiService
 @inject IExternalLinkApiService ExternalLinkApiService
 @inject IMapApiService MapApi
 @inject IWikiLinkService WikiLinkService
+@inject IWikiLinkCommitService CommitService
 @inject IArticleCacheService ArticleCache
 @inject IAISummaryApiService SummaryApi
 @inject IWorldApiService WorldApi
@@ -133,6 +136,7 @@ else
     private string _autocompleteQuery = string.Empty;
     private bool _autocompleteIsExternalQuery;
     private string? _autocompleteExternalSourceKey;
+    private bool _autocompleteIsMapQuery;
 
     private bool _externalPreviewOpen;
     private bool _externalPreviewLoading;
@@ -311,12 +315,14 @@ else
             var minLength = _autocompleteIsExternalQuery ? 0 : 3;
             if (!isMapAutocomplete && _autocompleteQuery.Length < minLength)
             {
+                _autocompleteIsMapQuery = false;
                 _autocompleteSuggestions = new();
                 await InvokeAsync(StateHasChanged);
                 return;
             }
         }
 
+        _autocompleteIsMapQuery = isMapAutocomplete;
         _autocompleteLoading = true;
         await InvokeAsync(StateHasChanged);
 
@@ -394,9 +400,21 @@ else
     [JSInvokable]
     public async Task OnAutocompleteEnter()
     {
-        if (_autocompleteSuggestions.Any() && _autocompleteSelectedIndex < _autocompleteSuggestions.Count)
+        var decision = CommitService.Decide(
+            _autocompleteQuery,
+            _autocompleteSuggestions.Count,
+            _autocompleteSelectedIndex,
+            _autocompleteIsExternalQuery,
+            _autocompleteIsMapQuery);
+
+        switch (decision)
         {
-            await OnAutocompleteSelect(_autocompleteSuggestions[_autocompleteSelectedIndex]);
+            case AutocompleteCommitDecision.SelectExisting select:
+                await OnAutocompleteSelect(_autocompleteSuggestions[select.Index]);
+                break;
+            case AutocompleteCommitDecision.CreateNew create:
+                await OnAutocompleteCreate(create.Name);
+                break;
         }
     }
 

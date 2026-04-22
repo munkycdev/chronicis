@@ -42,6 +42,7 @@ public class SessionDetailTests : MudBlazorTestContext
         IExternalLinkApiService ExternalLinkApi,
         IMapApiService MapApi,
         IWikiLinkService WikiLinkService,
+        IWikiLinkCommitService WikiLinkCommitService,
         IAppContextService AppContext,
         IArticleCacheService ArticleCache,
         IAISummaryApiService SummaryApi,
@@ -66,6 +67,7 @@ public class SessionDetailTests : MudBlazorTestContext
         var externalLinkApi = Substitute.For<IExternalLinkApiService>();
         var mapApi = Substitute.For<IMapApiService>();
         var wikiLinkService = Substitute.For<IWikiLinkService>();
+        var wikiLinkCommitService = Substitute.For<IWikiLinkCommitService>();
         var appContext = Substitute.For<IAppContextService>();
         var articleCache = Substitute.For<IArticleCacheService>();
         var summaryApi = Substitute.For<IAISummaryApiService>();
@@ -105,6 +107,7 @@ public class SessionDetailTests : MudBlazorTestContext
             externalLinkApi,
             mapApi,
             wikiLinkService,
+            wikiLinkCommitService,
             appContext,
             articleCache,
             summaryApi,
@@ -123,6 +126,7 @@ public class SessionDetailTests : MudBlazorTestContext
         Services.AddSingleton(d.MapApi);
         Services.AddSingleton(Substitute.For<IPublicApiService>());
         Services.AddSingleton(d.WikiLinkService);
+        Services.AddSingleton(d.WikiLinkCommitService);
         Services.AddSingleton(d.AppContext);
         Services.AddSingleton(d.ArticleCache);
         Services.AddSingleton(d.SummaryApi);

@@ -4,6 +4,51 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added — Enter-to-create from wiki-link autocomplete (all editors)
+
+Pressing Enter when the autocomplete popup shows no suggestions and the internal
+query is at least 3 characters now creates a new article and inserts the link,
+mirroring the existing "Create … in Wiki root" click prompt. Previously Enter
+was a no-op in that state.
+
+**Behaviour matrix (unchanged paths are byte-for-byte identical):**
+
+| State | Before | After |
+|---|---|---|
+| Suggestions present, item highlighted | Selects existing (✅ unchanged) | Selects existing |
+| No suggestions, internal query ≥ 3 chars | No-op | Creates article + inserts link |
+| No suggestions, external query (`srd/…`) | No-op | No-op (unchanged) |
+| No suggestions, map query (`maps/…`) | No-op | No-op (unchanged) |
+| No suggestions, query < 3 chars | No-op | No-op (unchanged) |
+
+Applies to all four wiki-link-capable editors:
+- Article editor (`ArticleDetail.razor`)
+- Private notes editor (`PrivateNotesTipTapEditor.razor`) — GM private notes on
+  World / Campaign / Arc / Session detail pages
+- Session notes public editor (`SessionDetail.razor`)
+- Quest update editor (`QuestDrawer.razor`)
+
+**New services:**
+- `AutocompleteCommitDecision` — pure static decision type (discriminated union:
+  `SelectExisting`, `CreateNew`, `DoNothing`). No dependencies; exhaustively
+  unit-tested.
+- `IWikiLinkCommitService` / `WikiLinkCommitService` — thin wrapper that
+  delegates the decision to the static helper and orchestrates article creation
+  via `IWikiLinkService`. JS interop and tree refresh remain host-specific.
+
+**Host changes (surgical `OnAutocompleteEnter` replacement only):**
+- `ArticleDetail.razor` — adds `_autocompleteIsMapQuery` field; `OnAutocompleteEnter`
+  pattern-matches on `Decide(...)`.
+- `PrivateNotesTipTapEditor.razor` — same; also gains `[ExcludeFromCodeCoverage]`
+  attribute (was missing).
+- `SessionDetail.razor` — `HandleAutocompleteEnterAsync` pattern-matches on
+  `Decide(...)`.
+- `QuestDrawer.razor/.cs` — `OnAutocompleteEnter` uses `Decide`; new
+  `HandleAutocompleteCreateAsync` inserts plain `[[Title]]` markdown via
+  `questEditor.js` (quest links resolve server-side on save).
+
+
+
 ### Added — WikiLink autocomplete adopts trailing word at cursor
 
 When the user types `[[` immediately before an existing word (cursor touching the

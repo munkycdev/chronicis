@@ -628,11 +628,16 @@ public class QuestDrawerTests : MudBlazorTestContext
     public async Task QuestDrawer_OnAutocompleteEnter_WithNoSelection_DoesNothing()
     {
         var rendered = CreateRenderedSut();
-        rendered.AutocompleteService.GetSelectedSuggestion().Returns((WikiLinkAutocompleteItem?)null);
+        // No suggestions + short query → Decide returns DoNothing → no JS insert
+        rendered.AutocompleteService.Suggestions.Returns(new List<WikiLinkAutocompleteItem>());
+        rendered.AutocompleteService.Query.Returns("ab"); // < 3 chars
+        rendered.WikiLinkCommitService
+            .Decide(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<bool>(), Arg.Any<bool>())
+            .Returns(new AutocompleteCommitDecision.DoNothing());
 
         await rendered.Cut.Instance.OnAutocompleteEnter();
 
-        rendered.AutocompleteService.Received(1).GetSelectedSuggestion();
+        rendered.AutocompleteService.DidNotReceive().GetSelectedSuggestion();
     }
 
     [Fact]
@@ -641,11 +646,18 @@ public class QuestDrawerTests : MudBlazorTestContext
         var rendered = CreateRenderedSut();
         var module = Substitute.For<IJSObjectReference>();
         SetPrivateField(rendered.Cut.Instance, "_editorModule", module);
-        rendered.AutocompleteService.GetSelectedSuggestion().Returns(new WikiLinkAutocompleteItem
+        // Provide suggestion list so Decide returns SelectExisting(0)
+        var suggestions = new List<WikiLinkAutocompleteItem>
         {
-            IsExternal = false,
-            DisplayText = "Item"
-        });
+            new WikiLinkAutocompleteItem { IsExternal = false, DisplayText = "Item" }
+        };
+        rendered.AutocompleteService.Suggestions.Returns(suggestions);
+        rendered.AutocompleteService.SelectedIndex.Returns(0);
+        rendered.AutocompleteService.Query.Returns("Item");
+        rendered.AutocompleteService.IsExternalQuery.Returns(false);
+        rendered.WikiLinkCommitService
+            .Decide(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<bool>(), Arg.Any<bool>())
+            .Returns(new AutocompleteCommitDecision.SelectExisting(0));
 
         await rendered.Cut.Instance.OnAutocompleteEnter();
 
@@ -1141,6 +1153,8 @@ public class QuestDrawerTests : MudBlazorTestContext
         var snackbar = Substitute.For<ISnackbar>();
         var logger = Substitute.For<ILogger<QuestDrawer>>();
         var articleApi = Substitute.For<IArticleApiService>();
+        var wikiLinkService = Substitute.For<IWikiLinkService>();
+        var wikiLinkCommitService = Substitute.For<IWikiLinkCommitService>();
 
         questApi.GetQuestUpdatesAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<int>())
             .Returns(new PagedResult<QuestUpdateEntryDto> { Items = new List<QuestUpdateEntryDto>(), TotalCount = 0 });
@@ -1154,9 +1168,11 @@ public class QuestDrawerTests : MudBlazorTestContext
         Services.AddSingleton(snackbar);
         Services.AddSingleton(logger);
         Services.AddSingleton(articleApi);
+        Services.AddSingleton(wikiLinkService);
+        Services.AddSingleton(wikiLinkCommitService);
 
         var cut = RenderComponent<QuestDrawer>();
-        return new Rendered(cut, questDrawerService, questApi, treeState, autocompleteService, articleApi, snackbar, JSInterop);
+        return new Rendered(cut, questDrawerService, questApi, treeState, autocompleteService, articleApi, wikiLinkService, wikiLinkCommitService, snackbar, JSInterop);
     }
 
     private static QuestDto CreateQuest(string title, Guid arcId) => new()
@@ -1213,6 +1229,8 @@ public class QuestDrawerTests : MudBlazorTestContext
         ITreeStateService TreeState,
         IWikiLinkAutocompleteService AutocompleteService,
         IArticleApiService ArticleApi,
+        IWikiLinkService WikiLinkService,
+        IWikiLinkCommitService WikiLinkCommitService,
         ISnackbar Snackbar,
         BunitJSInterop JSInterop);
 
