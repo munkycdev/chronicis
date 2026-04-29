@@ -1,3 +1,4 @@
+using Chronicis.Api.Models;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 
@@ -47,4 +48,15 @@ public interface ICampaignService
     /// Get the active context (campaign/arc) for a world, or infer if only one exists
     /// </summary>
     Task<ActiveContextDto> GetActiveContextAsync(Guid worldId, Guid userId);
+
+    /// <summary>
+    /// Lightweight slug lookup — returns (Id, Name) or null when not found.
+    /// Visibility filtering is the caller's responsibility.
+    /// </summary>
+    Task<(Guid Id, string Name)?> GetIdBySlugAsync(Guid worldId, string slug);
+
+    /// <summary>
+    /// Update the campaign's slug. Validates, checks reserved list, resolves sibling collisions.
+    /// </summary>
+    Task<ServiceResult<string>> UpdateSlugAsync(Guid campaignId, string slug, Guid userId);
 }

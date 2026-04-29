@@ -67,6 +67,10 @@ public class SessionDetailViewModelTests
             Id = id ?? Guid.NewGuid(),
             ArcId = arcId ?? Guid.NewGuid(),
             Name = name,
+            Slug = "session-one",
+            ArcSlug = "arc-a",
+            CampaignSlug = "campaign-a",
+            WorldSlug = "world-a",
             SessionDate = new DateTime(2025, 1, 10),
             PublicNotes = "<p>public</p>",
             PrivateNotes = "<p>private</p>"
@@ -404,7 +408,7 @@ public class SessionDetailViewModelTests
         await c.Vm.DeleteSessionAsync();
         c.Notifier.Received().Success("Session deleted");
         await c.TreeState.Received().RefreshAsync();
-        c.Navigator.Received().NavigateTo(Arg.Is<string>(s => s.StartsWith("/arc/", StringComparison.Ordinal)), replace: true);
+        await c.Navigator.Received().GoToArcAsync(session.WorldSlug, session.CampaignSlug, session.ArcSlug, replace: true);
 
         c.SessionApi.DeleteSessionAsync(session.Id).ThrowsAsync(new Exception("fail"));
         await c.Vm.DeleteSessionAsync();

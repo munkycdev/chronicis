@@ -1,8 +1,8 @@
+using System.IO.Compression;
+using System.Text;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
-using System.IO.Compression;
-using System.Text;
 
 namespace Chronicis.Api.Services;
 

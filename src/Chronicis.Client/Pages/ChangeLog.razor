@@ -8,6 +8,46 @@
         <h1>What's New</h1>
         <p class="changelog-subtitle">See what we've been working on</p>
 
+        @* 3.1 — URL Restructure *@
+        <section class="changelog-section">
+            <div class="changelog-version">
+                <span class="version-badge">3.1</span>
+                <span class="version-date">April 2026</span>
+            </div>
+            <h2>Unified URLs</h2>
+            <p class="changelog-summary">
+                Every world, campaign, arc, session, article, and map now has a single
+                human-readable URL shared by both public and authenticated viewers.
+            </p>
+            <ul class="changelog-features">
+                <li>
+                    <span class="feature-icon">🔗</span>
+                    <div>
+                        <strong>Slug-based URLs everywhere</strong> — World, campaign, arc, session, and map pages now
+                        live at readable paths like <code>/my-world/my-campaign/my-arc/session-1</code>
+                        instead of GUID-based routes. You can share any URL directly — public visitors and
+                        members see the same address bar.
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🌐</span>
+                    <div>
+                        <strong>No more separate /w/ viewer</strong> — Public worlds are now at
+                        <code>/{world}</code> rather than <code>/w/{world}</code>. The same URL works
+                        for both anonymous and signed-in visitors; content visibility is still
+                        controlled per-article by your visibility settings.
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">🗺️</span>
+                    <div>
+                        <strong>Maps at readable paths</strong> — Map listing and individual maps now
+                        use <code>/{world}/maps</code> and <code>/{world}/maps/{map}</code>.
+                    </div>
+                </li>
+            </ul>
+        </section>
+
         @* 3.0 — Maps *@
         <section class="changelog-section">
             <div class="changelog-version">

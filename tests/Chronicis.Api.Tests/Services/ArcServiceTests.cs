@@ -1,11 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
 using Chronicis.Api.Data;
+using Chronicis.Api.Models;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
@@ -24,7 +26,7 @@ public class ArcServiceTests : IDisposable
             .Options;
 
         _context = new ChronicisDbContext(options);
-        _service = new ArcService(_context, NullLogger<ArcService>.Instance);
+        _service = new ArcService(_context, Substitute.For<IReservedSlugProvider>(), NullLogger<ArcService>.Instance);
 
         SeedTestData();
     }
@@ -361,5 +363,89 @@ public class ArcServiceTests : IDisposable
         var success = await _service.ActivateArcAsync(Guid.NewGuid(), TestHelpers.FixedIds.User1);
 
         Assert.False(success);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  GetIdBySlugAsync
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetIdBySlugAsync_ExistingSlug_ReturnsArcInfo()
+    {
+        var arc = await _context.Arcs.FindAsync(TestHelpers.FixedIds.Arc1);
+        arc!.Slug = "act-1";
+        await _context.SaveChangesAsync();
+
+        var result = await _service.GetIdBySlugAsync(TestHelpers.FixedIds.Campaign1, "act-1");
+
+        Assert.NotNull(result);
+        Assert.Equal(TestHelpers.FixedIds.Arc1, result!.Value.Id);
+        Assert.Equal("Act 1", result.Value.Name);
+    }
+
+    [Fact]
+    public async Task GetIdBySlugAsync_UnknownSlug_ReturnsNull()
+    {
+        var result = await _service.GetIdBySlugAsync(TestHelpers.FixedIds.Campaign1, "no-such-arc");
+
+        Assert.Null(result);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Slug generation — update same-name branch
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateArcAsync_SameName_DoesNotRegenerateSlug()
+    {
+        var arc = await _context.Arcs.FindAsync(TestHelpers.FixedIds.Arc1);
+        arc!.Slug = "act-1";
+        await _context.SaveChangesAsync();
+
+        var dto = new ArcUpdateDto { Name = "Act 1", SortOrder = 1 };
+        var result = await _service.UpdateArcAsync(TestHelpers.FixedIds.Arc1, dto, TestHelpers.FixedIds.User1);
+
+        Assert.NotNull(result);
+        var saved = await _context.Arcs.FindAsync(TestHelpers.FixedIds.Arc1);
+        Assert.Equal("act-1", saved!.Slug);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  UpdateSlugAsync
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateSlugAsync_ValidSlug_UpdatesAndReturnsSlug()
+    {
+        var result = await _service.UpdateSlugAsync(TestHelpers.FixedIds.Arc1, "new-arc-slug", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.Success, result.Status);
+        var arc = await _context.Arcs.FindAsync(TestHelpers.FixedIds.Arc1);
+        Assert.Equal(result.Value, arc!.Slug);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_ArcNotFound_ReturnsNotFound()
+    {
+        var result = await _service.UpdateSlugAsync(Guid.NewGuid(), "new-slug", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.NotFound, result.Status);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_NotOwner_ReturnsForbidden()
+    {
+        var result = await _service.UpdateSlugAsync(TestHelpers.FixedIds.Arc1, "new-slug", TestHelpers.FixedIds.User2);
+
+        Assert.Equal(ServiceStatus.Forbidden, result.Status);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_InvalidSlug_ReturnsValidationError()
+    {
+        var result = await _service.UpdateSlugAsync(TestHelpers.FixedIds.Arc1, "Bad Slug!", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.ValidationError, result.Status);
+        Assert.Equal("SLUG_INVALID", result.ErrorMessage);
     }
 }

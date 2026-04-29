@@ -1,7 +1,6 @@
 using Chronicis.Api.Data;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
-using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -86,7 +85,7 @@ public sealed class PublicWorldServiceTests : IDisposable
         _context.Articles.Add(rootNote);
         await _context.SaveChangesAsync();
 
-        var tree = await _sut.GetPublicArticleTreeAsync(seed.World.PublicSlug!);
+        var tree = await _sut.GetPublicArticleTreeAsync(seed.World.Slug);
 
         var campaignsGroup = tree.Single(g => g.Slug == "campaigns");
         var campaignNode = Assert.Single(campaignsGroup.Children!);
@@ -120,7 +119,7 @@ public sealed class PublicWorldServiceTests : IDisposable
         _context.Articles.Add(rootNote);
         await _context.SaveChangesAsync();
 
-        var tree = await _sut.GetPublicArticleTreeAsync(seed.World.PublicSlug!);
+        var tree = await _sut.GetPublicArticleTreeAsync(seed.World.Slug);
 
         var campaignsGroup = tree.Single(g => g.Slug == "campaigns");
         var campaignNode = Assert.Single(campaignsGroup.Children!);
@@ -151,10 +150,10 @@ public sealed class PublicWorldServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         var legacyPathArticle = await _sut.GetPublicArticleAsync(
-            seed.World.PublicSlug!,
+            seed.World.Slug,
             $"{seed.LegacySessionArticleSlug}/{rootNote.Slug}");
         var canonicalPathArticle = await _sut.GetPublicArticleAsync(
-            seed.World.PublicSlug!,
+            seed.World.Slug,
             rootNote.Slug);
 
         Assert.Null(legacyPathArticle);
@@ -181,7 +180,7 @@ public sealed class PublicWorldServiceTests : IDisposable
         _context.Articles.Add(rootNote);
         await _context.SaveChangesAsync();
 
-        var path = await _sut.GetPublicArticlePathAsync(seed.World.PublicSlug!, rootNote.Id);
+        var path = await _sut.GetPublicArticlePathAsync(seed.World.Slug, rootNote.Id);
 
         Assert.Equal(rootNote.Slug, path);
     }
@@ -205,7 +204,7 @@ public sealed class PublicWorldServiceTests : IDisposable
         _context.Articles.Add(rootNote);
         await _context.SaveChangesAsync();
 
-        var path = await _sut.GetPublicArticlePathAsync(seed.World.PublicSlug!, rootNote.Id);
+        var path = await _sut.GetPublicArticlePathAsync(seed.World.Slug, rootNote.Id);
 
         Assert.Equal(rootNote.Slug, path);
     }
@@ -214,9 +213,8 @@ public sealed class PublicWorldServiceTests : IDisposable
     public async Task GetPublicDocumentDownloadUrlAsync_ReturnsUrl_WhenDocumentAttachedToPublicArticleInPublicWorld()
     {
         var owner = TestHelpers.CreateUser();
-        var world = TestHelpers.CreateWorld(ownerId: owner.Id, name: "Public World", slug: "internal-world");
+        var world = TestHelpers.CreateWorld(ownerId: owner.Id, name: "Public World", slug: "public-world");
         world.IsPublic = true;
-        world.PublicSlug = "public-world";
 
         var article = TestHelpers.CreateArticle(
             worldId: world.Id,
@@ -256,9 +254,8 @@ public sealed class PublicWorldServiceTests : IDisposable
     public async Task GetPublicDocumentDownloadUrlAsync_ReturnsNull_WhenArticleNotPublic()
     {
         var owner = TestHelpers.CreateUser();
-        var world = TestHelpers.CreateWorld(ownerId: owner.Id, name: "Public World", slug: "internal-world");
+        var world = TestHelpers.CreateWorld(ownerId: owner.Id, name: "Public World", slug: "public-world");
         world.IsPublic = true;
-        world.PublicSlug = "public-world";
 
         var article = TestHelpers.CreateArticle(
             worldId: world.Id,
@@ -299,7 +296,7 @@ public sealed class PublicWorldServiceTests : IDisposable
     {
         var seed = await SeedPublicWorldWithMapAsync();
 
-        var result = await _sut.GetPublicMapBasemapReadUrlAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
+        var result = await _sut.GetPublicMapBasemapReadUrlAsync(seed.World.Slug, seed.Map.WorldMapId);
 
         Assert.NotNull(result.Basemap);
         Assert.Null(result.Error);
@@ -314,7 +311,7 @@ public sealed class PublicWorldServiceTests : IDisposable
         seed.Map.BasemapBlobKey = null;
         await _context.SaveChangesAsync();
 
-        var result = await _sut.GetPublicMapBasemapReadUrlAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
+        var result = await _sut.GetPublicMapBasemapReadUrlAsync(seed.World.Slug, seed.Map.WorldMapId);
 
         Assert.Null(result.Basemap);
         Assert.Equal("Basemap is missing for this map.", result.Error);
@@ -329,9 +326,9 @@ public sealed class PublicWorldServiceTests : IDisposable
             .Returns(Task.FromResult<string?>(
                 "{\"type\":\"Polygon\",\"coordinates\":[[[0.1,0.1],[0.6,0.1],[0.3,0.5],[0.1,0.1]]]}"));
 
-        var layers = await _sut.GetPublicMapLayersAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
-        var pins = await _sut.GetPublicMapPinsAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
-        var features = await _sut.GetPublicMapFeaturesAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
+        var layers = await _sut.GetPublicMapLayersAsync(seed.World.Slug, seed.Map.WorldMapId);
+        var pins = await _sut.GetPublicMapPinsAsync(seed.World.Slug, seed.Map.WorldMapId);
+        var features = await _sut.GetPublicMapFeaturesAsync(seed.World.Slug, seed.Map.WorldMapId);
 
         Assert.NotNull(layers);
         Assert.Equal(new[] { seed.RootLayer.MapLayerId, seed.RegionLayer.MapLayerId }, layers!.Select(layer => layer.MapLayerId));
@@ -356,7 +353,7 @@ public sealed class PublicWorldServiceTests : IDisposable
     {
         var seed = await SeedPublicWorldWithMapAsync();
 
-        var result = await _sut.GetPublicMapLayersAsync(seed.World.PublicSlug!, Guid.NewGuid());
+        var result = await _sut.GetPublicMapLayersAsync(seed.World.Slug, Guid.NewGuid());
 
         Assert.Null(result);
     }
@@ -380,8 +377,8 @@ public sealed class PublicWorldServiceTests : IDisposable
             .Returns(Task.FromResult<string?>(
                 "{\"type\":\"Polygon\",\"coordinates\":[[[0.1,0.1],[0.6,0.1],[0.3,0.5],[0.1,0.1]]]}"));
 
-        var pins = await _sut.GetPublicMapPinsAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
-        var features = await _sut.GetPublicMapFeaturesAsync(seed.World.PublicSlug!, seed.Map.WorldMapId);
+        var pins = await _sut.GetPublicMapPinsAsync(seed.World.Slug, seed.Map.WorldMapId);
+        var features = await _sut.GetPublicMapFeaturesAsync(seed.World.Slug, seed.Map.WorldMapId);
 
         Assert.Null(Assert.Single(pins!).LinkedArticle);
         Assert.All(features!, feature => Assert.Null(feature.LinkedArticle));
@@ -393,9 +390,8 @@ public sealed class PublicWorldServiceTests : IDisposable
         var world = TestHelpers.CreateWorld(
             ownerId: owner.Id,
             name: "Public World",
-            slug: "internal-world");
+            slug: "public-world");
         world.IsPublic = true;
-        world.PublicSlug = "public-world";
 
         var campaign = TestHelpers.CreateCampaign(worldId: world.Id, name: "Campaign");
         campaign.OwnerId = owner.Id;
@@ -458,9 +454,8 @@ public sealed class PublicWorldServiceTests : IDisposable
         MapFeature PolygonFeature)> SeedPublicWorldWithMapAsync()
     {
         var owner = TestHelpers.CreateUser();
-        var world = TestHelpers.CreateWorld(ownerId: owner.Id, name: "Public World", slug: "internal-world");
+        var world = TestHelpers.CreateWorld(ownerId: owner.Id, name: "Public World", slug: "public-world");
         world.IsPublic = true;
-        world.PublicSlug = "public-world";
 
         var publicArticle = TestHelpers.CreateArticle(
             worldId: world.Id,

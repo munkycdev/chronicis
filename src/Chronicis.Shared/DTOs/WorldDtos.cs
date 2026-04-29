@@ -33,10 +33,6 @@ public class WorldDto
     /// </summary>
     public bool IsTutorial { get; set; }
 
-    /// <summary>
-    /// Globally unique slug for public access. Null if world is not public.
-    /// </summary>
-    public string? PublicSlug { get; set; }
 }
 
 /// <summary>

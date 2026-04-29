@@ -1,5 +1,6 @@
 @using Chronicis.Client.Models
 @using Chronicis.Client.Components.Dialogs
+@using Chronicis.Client.Services.Routing
 @using Chronicis.Shared.DTOs
 @using System.Diagnostics.CodeAnalysis
 @attribute [ExcludeFromCodeCoverage]
@@ -11,6 +12,7 @@
 @inject IAppContextService AppContext
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
+@inject IAppUrlBuilder UrlBuilder
 @implements IDisposable
 
 <div class="article-tree @(_draggedNodeId.HasValue ? "article-tree--dragging" : "")">
@@ -127,20 +129,20 @@
         switch (node.NodeType)
         {
             case TreeNodeType.World:
-                Navigation.NavigateTo($"/world/{nodeId}");
+                Navigation.NavigateTo(UrlBuilder.ForWorld(node.Slug));
                 break;
 
             case TreeNodeType.Campaign:
-                Navigation.NavigateTo($"/campaign/{nodeId}");
+                Navigation.NavigateTo(UrlBuilder.ForCampaign(node.WorldSlug, node.Slug));
                 break;
 
             case TreeNodeType.Arc:
-                Navigation.NavigateTo($"/arc/{nodeId}");
+                Navigation.NavigateTo(UrlBuilder.ForArc(node.WorldSlug, node.CampaignSlug, node.Slug));
                 break;
 
             case TreeNodeType.Session:
                 TreeState.ExpandPathToAndSelect(nodeId);
-                Navigation.NavigateTo($"/session/{nodeId}");
+                Navigation.NavigateTo(UrlBuilder.ForSession(node.WorldSlug, node.CampaignSlug, node.ArcSlug, node.Slug));
                 break;
 
             case TreeNodeType.VirtualGroup:
@@ -159,7 +161,7 @@
                 if (article != null && article.Breadcrumbs.Any())
                 {
                     var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-                    Navigation.NavigateTo($"/article/{path}");
+                    Navigation.NavigateTo($"/{path}");
                 }
                 break;
         }
@@ -193,7 +195,11 @@
             if (parentNode?.NodeType == TreeNodeType.Arc)
             {
                 Snackbar.Add("Session created", Severity.Success);
-                Navigation.NavigateTo($"/session/{newId.Value}");
+                TreeState.TryGetNode(newId.Value, out var sessionNode);
+                if (sessionNode != null && !string.IsNullOrEmpty(sessionNode.Slug))
+                    Navigation.NavigateTo(UrlBuilder.ForSession(sessionNode.WorldSlug, sessionNode.CampaignSlug, sessionNode.ArcSlug, sessionNode.Slug));
+                else
+                    Navigation.NavigateTo($"/session/{newId.Value}");
                 return;
             }
 
@@ -204,7 +210,7 @@
             if (article != null && article.Breadcrumbs.Any())
             {
                 var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-                Navigation.NavigateTo($"/article/{path}");
+                Navigation.NavigateTo($"/{path}");
             }
         }
         else
@@ -246,7 +252,7 @@
                 if (parent != null && parent.Breadcrumbs.Any())
                 {
                     var path = string.Join("/", parent.Breadcrumbs.Select(b => b.Slug));
-                    Navigation.NavigateTo($"/article/{path}");
+                    Navigation.NavigateTo($"/{path}");
                 }
             }
             else
@@ -268,7 +274,7 @@
         if (result != null && !result.Canceled && result.Data is WorldDto world)
         {
             await TreeState.RefreshAsync();
-            Navigation.NavigateTo($"/world/{world.Id}");
+            Navigation.NavigateTo(UrlBuilder.ForWorld(world.Slug));
             Snackbar.Add("World created", Severity.Success);
         }
     }

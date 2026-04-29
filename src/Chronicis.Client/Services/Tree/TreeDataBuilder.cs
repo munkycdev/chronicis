@@ -230,6 +230,7 @@ internal sealed class TreeDataBuilder
             Id = world.Id,
             NodeType = TreeNodeType.World,
             Title = world.Name,
+            Slug = world.Slug,
             WorldId = world.Id,
             IconEmoji = "fa-solid fa-globe"
         };
@@ -320,6 +321,7 @@ internal sealed class TreeDataBuilder
 
         // Build Maps group
         var mapsGroup = CreateVirtualGroupNode(VirtualGroupType.Maps, "Maps", world.Id);
+        mapsGroup.WorldSlug = world.Slug;
         foreach (var map in worldMaps.OrderBy(m => m.Name))
         {
             var mapNode = new TreeNode
@@ -327,7 +329,9 @@ internal sealed class TreeDataBuilder
                 Id = map.WorldMapId,
                 NodeType = TreeNodeType.Map,
                 Title = map.Name,
-                WorldId = world.Id
+                Slug = map.Slug,
+                WorldId = world.Id,
+                WorldSlug = world.Slug
             };
             mapsGroup.Children.Add(mapNode);
             nodeIndex.AddNode(mapNode);
@@ -393,7 +397,9 @@ internal sealed class TreeDataBuilder
             Id = campaign.Id,
             NodeType = TreeNodeType.Campaign,
             Title = campaign.Name,
+            Slug = campaign.Slug,
             WorldId = campaign.WorldId,
+            WorldSlug = campaign.WorldSlug,
             CampaignId = campaign.Id,
             IconEmoji = "fa-solid fa-dungeon"
         };
@@ -422,6 +428,9 @@ internal sealed class TreeDataBuilder
             Id = arc.Id,
             NodeType = TreeNodeType.Arc,
             Title = arc.Name,
+            Slug = arc.Slug,
+            WorldSlug = arc.WorldSlug,
+            CampaignSlug = arc.CampaignSlug,
             CampaignId = arc.CampaignId,
             ArcId = arc.Id,
             IconEmoji = "fa-solid fa-book-open"
@@ -459,6 +468,10 @@ internal sealed class TreeDataBuilder
             Id = session.Id,
             NodeType = TreeNodeType.Session,
             Title = session.Name,
+            Slug = session.Slug,
+            WorldSlug = session.WorldSlug,
+            CampaignSlug = session.CampaignSlug,
+            ArcSlug = session.ArcSlug,
             CampaignId = arc.CampaignId,
             ArcId = arc.Id,
             IconEmoji = "fa-solid fa-calendar-day",

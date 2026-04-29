@@ -22,8 +22,8 @@ public class World
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// URL-friendly slug derived from name (e.g., "forgotten-realms").
-    /// Max 200 characters. Unique per owner.
+    /// Globally unique URL-friendly slug for public and direct access (e.g., "forgotten-realms").
+    /// Max 100 characters. Lowercase alphanumeric with hyphens only. Always required.
     /// </summary>
     public string Slug { get; set; } = string.Empty;
 
@@ -60,13 +60,6 @@ public class World
     /// When true, articles with Public visibility can be viewed without authentication.
     /// </summary>
     public bool IsPublic { get; set; } = false;
-
-    /// <summary>
-    /// Globally unique URL-friendly slug for public access (e.g., "forgotten-realms").
-    /// Only set when IsPublic is true. Max 100 characters.
-    /// Lowercase alphanumeric with hyphens only, no leading/trailing hyphens.
-    /// </summary>
-    public string? PublicSlug { get; set; }
 
     // ===== Navigation Properties =====
 

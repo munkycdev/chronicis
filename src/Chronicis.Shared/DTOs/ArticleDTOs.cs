@@ -51,6 +51,8 @@ public class ArticleDto
 
     // External Links
     public List<ArticleExternalLinkDto> ExternalLinks { get; set; } = new();
+
+    public string WorldSlug { get; set; } = string.Empty;
 }
 
 /// <summary>

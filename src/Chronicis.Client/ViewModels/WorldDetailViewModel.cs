@@ -241,7 +241,7 @@ public sealed class WorldDetailViewModel : ViewModelBase
                 _world.Description = updated.Description;
                 _world.PrivateNotes = string.IsNullOrWhiteSpace(EditPrivateNotes) ? null : EditPrivateNotes;
                 _world.IsPublic = updated.IsPublic;
-                _world.PublicSlug = updated.PublicSlug;
+                _world.Slug = updated.Slug;
                 HasUnsavedChanges = false;
 
                 await _treeState.RefreshAsync();
@@ -285,7 +285,7 @@ public sealed class WorldDetailViewModel : ViewModelBase
         if (result != null && !result.Canceled && result.Data is CampaignDto campaign)
         {
             await _treeState.RefreshAsync();
-            _navigator.NavigateTo($"/campaign/{campaign.Id}");
+            await _navigator.GoToCampaignAsync(campaign);
             _notifier.Success("Campaign created");
         }
     }

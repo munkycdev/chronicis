@@ -18,4 +18,7 @@ public interface IReadAccessPolicyService
 
     IQueryable<Campaign> ApplyAuthenticatedCampaignFilter(IQueryable<Campaign> campaigns, Guid userId);
     IQueryable<Arc> ApplyAuthenticatedArcFilter(IQueryable<Arc> arcs, Guid userId);
+
+    bool CanReadWorld(bool isPublic, bool userIsMember);
+    bool CanReadMemberScopedEntity(bool userIsMember);
 }

@@ -188,4 +188,25 @@ public class SessionsController : ControllerBase
             _ => StatusCode(500, new { error = "An unexpected error occurred" })
         };
     }
+
+    /// <summary>
+    /// PUT /api/sessions/{sessionId}/slug - Update a session's slug.
+    /// </summary>
+    [HttpPut("sessions/{sessionId:guid}/slug")]
+    public async Task<ActionResult<SlugUpdateResponseDto>> UpdateSessionSlug(Guid sessionId, [FromBody] SlugUpdateRequestDto dto)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        var result = await _sessionService.UpdateSlugAsync(sessionId, dto.Slug, user.Id);
+
+        return result.Status switch
+        {
+            ServiceStatus.Success => Ok(new SlugUpdateResponseDto { Slug = result.Value! }),
+            ServiceStatus.NotFound => NotFound(new { error = "Session not found" }),
+            ServiceStatus.Forbidden => StatusCode(403, new { error = result.ErrorMessage }),
+            ServiceStatus.ValidationError when result.ErrorMessage == "SLUG_RESERVED" =>
+                BadRequest(new { error = "SLUG_RESERVED" }),
+            _ => BadRequest(new { error = result.ErrorMessage })
+        };
+    }
 }

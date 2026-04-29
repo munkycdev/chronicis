@@ -25,9 +25,9 @@ public sealed class ArticleRenameCascadeService : IArticleRenameCascadeService
         IWikiLinkTitleRewriter rewriter,
         ILogger<ArticleRenameCascadeService> logger)
     {
-        _db       = db;
+        _db = db;
         _rewriter = rewriter;
-        _logger   = logger;
+        _logger = logger;
     }
 
     /// <inheritdoc/>
@@ -81,7 +81,7 @@ public sealed class ArticleRenameCascadeService : IArticleRenameCascadeService
             {
                 _db.ArticleAliases.Add(new ArticleAlias
                 {
-                    Id        = Guid.NewGuid(),
+                    Id = Guid.NewGuid(),
                     ArticleId = renamedArticleId,
                     AliasText = oldTitle,
                     CreatedAt = DateTime.UtcNow,

@@ -1,3 +1,6 @@
+using Chronicis.Shared.DTOs;
+using Chronicis.Shared.DTOs.Sessions;
+
 namespace Chronicis.Client.Abstractions;
 
 /// <summary>
@@ -7,10 +10,6 @@ namespace Chronicis.Client.Abstractions;
 public interface IAppNavigator
 {
     /// <summary>Navigates to the specified URL.</summary>
-    /// <param name="url">The URL to navigate to.</param>
-    /// <param name="replace">
-    /// When <c>true</c> replaces the current history entry rather than pushing a new one.
-    /// </param>
     void NavigateTo(string url, bool replace = false);
 
     /// <summary>Returns the base URI of the application.</summary>
@@ -18,4 +17,18 @@ public interface IAppNavigator
 
     /// <summary>Returns the current absolute URI.</summary>
     string Uri { get; }
+
+    // ── Slug-based navigation ────────────────────────────────────────────────
+
+    Task GoToWorldAsync(string worldSlug, bool replace = false);
+    Task GoToCampaignAsync(string worldSlug, string campaignSlug, bool replace = false);
+    Task GoToCampaignAsync(CampaignDto campaign, bool replace = false);
+    Task GoToArcAsync(string worldSlug, string campaignSlug, string arcSlug, bool replace = false);
+    Task GoToArcAsync(ArcDto arc, bool replace = false);
+    Task GoToSessionAsync(string worldSlug, string campaignSlug, string arcSlug, string sessionSlug, bool replace = false);
+    Task GoToSessionAsync(SessionTreeDto session, bool replace = false);
+    Task GoToSessionNoteAsync(string worldSlug, string campaignSlug, string arcSlug, string sessionSlug, string noteSlug, bool replace = false);
+    Task GoToMapListingAsync(string worldSlug, bool replace = false);
+    Task GoToMapAsync(string worldSlug, string mapSlug, bool replace = false);
+    Task GoToWikiArticleAsync(string worldSlug, IReadOnlyList<string> articleSlugSegments, bool replace = false);
 }

@@ -2,9 +2,11 @@ using System.Collections.Frozen;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
+using Chronicis.Api.Models;
 using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
+using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
@@ -35,13 +37,17 @@ public sealed class WorldMapService : IWorldMapService
     }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
     private static readonly Regex WhitespaceCollapseRegex = new(@"\s+", RegexOptions.Compiled);
 
+    private readonly IReservedSlugProvider _reservedSlugProvider;
+
     public WorldMapService(
         ChronicisDbContext db,
         IMapBlobStore mapBlobStore,
+        IReservedSlugProvider reservedSlugProvider,
         ILogger<WorldMapService> logger)
     {
         _db = db;
         _mapBlobStore = mapBlobStore;
+        _reservedSlugProvider = reservedSlugProvider;
         _logger = logger;
     }
 
@@ -59,11 +65,20 @@ public sealed class WorldMapService : IWorldMapService
             throw new UnauthorizedAccessException("World not found or access denied");
         }
 
+        var mapSlugBase = !string.IsNullOrWhiteSpace(dto.Slug) && SlugGenerator.IsValidSlug(dto.Slug.Trim())
+            ? dto.Slug.Trim()
+            : SlugGenerator.GenerateSlug(dto.Name);
+        var existingMapSlugs = await _db.WorldMaps.AsNoTracking()
+            .Where(m => m.WorldId == worldId)
+            .Select(m => m.Slug)
+            .ToHashSetAsync();
+        var mapSlug = SlugGenerator.GenerateUniqueSiblingSlug(mapSlugBase, existingMapSlugs, _reservedSlugProvider.All);
         var map = new WorldMap
         {
             WorldMapId = Guid.NewGuid(),
             WorldId = worldId,
             Name = dto.Name,
+            Slug = mapSlug,
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow,
         };
@@ -79,7 +94,7 @@ public sealed class WorldMapService : IWorldMapService
 
         _logger.LogTraceSanitized("Created map {MapId} with 3 default layers", map.WorldMapId);
 
-        return ToMapDto(map);
+        return ToMapDto(map, world.Slug);
     }
 
     /// <inheritdoc/>
@@ -229,7 +244,13 @@ public sealed class WorldMapService : IWorldMapService
             throw new UnauthorizedAccessException("Only the world owner can update maps");
         }
 
-        map.Name = dto.Name.Trim();
+        var trimmedName = dto.Name.Trim();
+        if (map.Name != trimmedName)
+        {
+            map.Slug = await GenerateUniqueMapSlugAsync(trimmedName, map.WorldId, map.WorldMapId);
+        }
+
+        map.Name = trimmedName;
         map.UpdatedUtc = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -1784,7 +1805,7 @@ public sealed class WorldMapService : IWorldMapService
         return MapScope.WorldScoped;
     }
 
-    private static MapDto ToMapDto(WorldMap map) =>
+    private static MapDto ToMapDto(WorldMap map, string? worldSlug = null) =>
         new()
         {
             WorldMapId = map.WorldMapId,
@@ -1795,6 +1816,8 @@ public sealed class WorldMapService : IWorldMapService
             BasemapOriginalFilename = map.BasemapOriginalFilename,
             CreatedUtc = map.CreatedUtc,
             UpdatedUtc = map.UpdatedUtc,
+            Slug = map.Slug,
+            WorldSlug = worldSlug ?? map.World?.Slug ?? string.Empty
         };
 
     private static MapSummaryDto ToMapSummaryDto(WorldMap map) =>
@@ -1803,8 +1826,64 @@ public sealed class WorldMapService : IWorldMapService
             WorldMapId = map.WorldMapId,
             Name = map.Name,
             HasBasemap = map.BasemapBlobKey != null,
+            Slug = map.Slug,
             Scope = ComputeScope(map),
             CampaignIds = map.WorldMapCampaigns.Select(c => c.CampaignId).ToList(),
             ArcIds = map.WorldMapArcs.Select(a => a.ArcId).ToList(),
         };
+
+    public async Task<(Guid Id, string Name)?> GetIdBySlugAsync(Guid worldId, string slug)
+    {
+        var row = await _db.WorldMaps.AsNoTracking()
+            .Where(m => m.WorldId == worldId && m.Slug == slug)
+            .Select(m => new { m.WorldMapId, m.Name })
+            .FirstOrDefaultAsync();
+
+        return row == null ? null : (row.WorldMapId, row.Name);
+    }
+
+    public async Task<ServiceResult<string>> UpdateSlugAsync(Guid worldId, Guid mapId, Guid userId, string slug)
+    {
+        var map = await _db.WorldMaps.AsNoTracking()
+            .FirstOrDefaultAsync(m => m.WorldMapId == mapId && m.WorldId == worldId);
+
+        if (map == null)
+            return ServiceResult<string>.NotFound("Map not found");
+
+        var world = await _db.Worlds.AsNoTracking()
+            .FirstOrDefaultAsync(w => w.Id == worldId && w.OwnerId == userId);
+
+        if (world == null)
+            return ServiceResult<string>.Forbidden("Only the world owner may update the map slug");
+
+        if (!SlugGenerator.IsValidSlug(slug))
+            return ServiceResult<string>.ValidationError("SLUG_INVALID");
+
+        if (_reservedSlugProvider.IsReserved(slug))
+            return ServiceResult<string>.ValidationError("SLUG_RESERVED");
+
+        var existing = await _db.WorldMaps.AsNoTracking()
+            .Where(m => m.WorldId == worldId && m.WorldMapId != mapId)
+            .Select(m => m.Slug)
+            .ToHashSetAsync();
+
+        var finalSlug = SlugGenerator.GenerateUniqueSiblingSlug(slug, existing, _reservedSlugProvider.All);
+
+        var tracked = await _db.WorldMaps.FirstAsync(m => m.WorldMapId == mapId);
+        tracked.Slug = finalSlug;
+        await _db.SaveChangesAsync();
+
+        return ServiceResult<string>.Success(finalSlug);
+    }
+
+    private async Task<string> GenerateUniqueMapSlugAsync(string name, Guid worldId, Guid? excludeId = null)
+    {
+        var existing = await _db.WorldMaps.AsNoTracking()
+            .Where(m => m.WorldId == worldId && (!excludeId.HasValue || m.WorldMapId != excludeId.Value))
+            .Select(m => m.Slug)
+            .ToHashSetAsync();
+
+        return SlugGenerator.GenerateUniqueSiblingSlug(
+            SlugGenerator.GenerateSlug(name), existing, _reservedSlugProvider.All);
+    }
 }

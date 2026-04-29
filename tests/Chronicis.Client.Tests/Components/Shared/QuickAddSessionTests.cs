@@ -3,6 +3,7 @@ using Bunit.TestDoubles;
 using Chronicis.Client.Components.Shared;
 using Chronicis.Client.Models;
 using Chronicis.Client.Services;
+using Chronicis.Client.Services.Routing;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Sessions;
 using Chronicis.Shared.Enums;
@@ -26,6 +27,7 @@ public class QuickAddSessionTests : MudBlazorTestContext
         Services.AddSingleton(_sessionApi);
         Services.AddSingleton<ITreeStateService>(_treeState);
         Services.AddSingleton(_snackbar);
+        Services.AddSingleton<IAppUrlBuilder>(new AppUrlBuilder());
     }
 
     protected override void Dispose(bool disposing)
@@ -94,7 +96,16 @@ public class QuickAddSessionTests : MudBlazorTestContext
         });
 
         _sessionApi.CreateSessionAsync(arcId, Arg.Any<SessionCreateDto>())
-            .Returns(new SessionDto { Id = sessionId, ArcId = arcId, Name = "2026-01-01" });
+            .Returns(new SessionDto
+            {
+                Id = sessionId,
+                ArcId = arcId,
+                Name = "2026-01-01",
+                Slug = "2026-01-01",
+                ArcSlug = "arc-1",
+                CampaignSlug = "campaign-1",
+                WorldSlug = "world-1"
+            });
 
         var nav = Services.GetRequiredService<FakeNavigationManager>();
         var cut = RenderComponent<QuickAddSession>();
@@ -103,7 +114,7 @@ public class QuickAddSessionTests : MudBlazorTestContext
         cut.WaitForAssertion(() => Assert.Contains("New Session", cut.Markup));
         await cut.Find("button").ClickAsync(new());
 
-        Assert.EndsWith($"/session/{sessionId}", nav.Uri, StringComparison.OrdinalIgnoreCase);
+        Assert.EndsWith("/world-1/campaign-1/arc-1/2026-01-01", nav.Uri, StringComparison.OrdinalIgnoreCase);
         Assert.True(_treeState.RefreshCalled);
         Assert.Equal(sessionId, _treeState.LastExpandedAndSelectedId);
         await _sessionApi.Received(1).CreateSessionAsync(arcId, Arg.Any<SessionCreateDto>());

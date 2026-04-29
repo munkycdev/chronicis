@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Chronicis.Api.Data;
+using Chronicis.Api.Models;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.Enums;
@@ -41,7 +43,7 @@ public class WorldMapServiceTests : IDisposable
                 var featureId = callInfo.ArgAt<Guid>(2);
                 return $"maps/{mapId}/layers/{layerId}/features/{featureId}.geojson.gz";
             });
-        _sut = new WorldMapService(_db, _blobStore, NullLogger<WorldMapService>.Instance);
+        _sut = new WorldMapService(_db, _blobStore, Substitute.For<IReservedSlugProvider>(), NullLogger<WorldMapService>.Instance);
 
         SeedWorld();
     }
@@ -1010,7 +1012,7 @@ public class WorldMapServiceTests : IDisposable
     public async Task ListMaps_ReturnsSortedMapsWithCorrectScopes()
     {
         // World-scoped: no associations
-        var mapA = new WorldMap { WorldMapId = Guid.NewGuid(), WorldId = _worldId, Name = "Zebra Map", CreatedUtc = DateTime.UtcNow, UpdatedUtc = DateTime.UtcNow };
+        var mapA = new WorldMap { WorldMapId = Guid.NewGuid(), WorldId = _worldId, Name = "Zebra Map", Slug = "zebra-map", CreatedUtc = DateTime.UtcNow, UpdatedUtc = DateTime.UtcNow };
 
         // Campaign-scoped
         var campaignId = Guid.NewGuid();
@@ -1042,6 +1044,7 @@ public class WorldMapServiceTests : IDisposable
         Assert.Contains(arcId, result[1].ArcIds);
 
         Assert.Equal(MapScope.WorldScoped, result[2].Scope);
+        Assert.Equal("zebra-map", result[2].Slug);
     }
 
     // ── SearchMapsForWorldAsync (P2) ─────────────────────────────────────────
@@ -2896,6 +2899,140 @@ public class WorldMapServiceTests : IDisposable
                     Y = y,
                 },
             });
+    }
+
+    // ── GetIdBySlugAsync ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetIdBySlugAsync_ExistingSlug_ReturnsMapInfo()
+    {
+        var map = new WorldMap
+        {
+            WorldMapId = Guid.NewGuid(),
+            WorldId = _worldId,
+            Name = "Westeros",
+            Slug = "westeros",
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow
+        };
+        _db.WorldMaps.Add(map);
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.GetIdBySlugAsync(_worldId, "westeros");
+
+        Assert.NotNull(result);
+        Assert.Equal(map.WorldMapId, result!.Value.Id);
+        Assert.Equal("Westeros", result.Value.Name);
+    }
+
+    [Fact]
+    public async Task GetIdBySlugAsync_UnknownSlug_ReturnsNull()
+    {
+        var result = await _sut.GetIdBySlugAsync(_worldId, "no-such-map");
+
+        Assert.Null(result);
+    }
+
+    // ── UpdateMapAsync slug-unchanged branch ─────────────────────────────────
+
+    [Fact]
+    public async Task UpdateMap_SameName_DoesNotRegenerateSlug()
+    {
+        var map = new WorldMap
+        {
+            WorldMapId = Guid.NewGuid(),
+            WorldId = _worldId,
+            Name = "Faerûn",
+            Slug = "faerun",
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow
+        };
+        _db.WorldMaps.Add(map);
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.UpdateMapAsync(_worldId, map.WorldMapId, _ownerId, new MapUpdateDto { Name = "Faerûn" });
+
+        Assert.Equal("Faerûn", result.Name);
+        var saved = await _db.WorldMaps.FindAsync(map.WorldMapId);
+        Assert.Equal("faerun", saved!.Slug);
+    }
+
+    // ── UpdateSlugAsync ───────────────────────────────────────────────────────
+
+    private async Task<WorldMap> SeedMap(string slug = "test-map")
+    {
+        var map = new WorldMap
+        {
+            WorldMapId = Guid.NewGuid(),
+            WorldId = _worldId,
+            Name = "Test Map",
+            Slug = slug,
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow
+        };
+        _db.WorldMaps.Add(map);
+        await _db.SaveChangesAsync();
+        return map;
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_ValidSlug_UpdatesAndReturnsSlug()
+    {
+        var map = await SeedMap();
+        var result = await _sut.UpdateSlugAsync(_worldId, map.WorldMapId, _ownerId, "new-map-slug");
+
+        Assert.Equal(ServiceStatus.Success, result.Status);
+        var saved = await _db.WorldMaps.FindAsync(map.WorldMapId);
+        Assert.Equal(result.Value, saved!.Slug);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_MapNotFound_ReturnsNotFound()
+    {
+        var result = await _sut.UpdateSlugAsync(_worldId, Guid.NewGuid(), _ownerId, "slug");
+
+        Assert.Equal(ServiceStatus.NotFound, result.Status);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_NotOwner_ReturnsForbidden()
+    {
+        var map = await SeedMap();
+        var result = await _sut.UpdateSlugAsync(_worldId, map.WorldMapId, _outsiderId, "slug");
+
+        Assert.Equal(ServiceStatus.Forbidden, result.Status);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_InvalidSlug_ReturnsValidationError()
+    {
+        var map = await SeedMap();
+        var result = await _sut.UpdateSlugAsync(_worldId, map.WorldMapId, _ownerId, "Bad Slug!");
+
+        Assert.Equal(ServiceStatus.ValidationError, result.Status);
+        Assert.Equal("SLUG_INVALID", result.ErrorMessage);
+    }
+
+    // ── ToMapDto null-branch coverage ─────────────────────────────────────────
+
+    [Fact]
+    public void ToMapDto_WhenWorldSlugNullAndWorldNull_UsesEmptyString()
+    {
+        var map = new WorldMap
+        {
+            WorldMapId = Guid.NewGuid(),
+            WorldId = _worldId,
+            Name = "Test",
+            Slug = "test",
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow,
+            World = null!
+        };
+
+        var method = typeof(WorldMapService).GetMethod("ToMapDto", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var dto = (MapDto)method.Invoke(null, [map, null])!;
+
+        Assert.Equal(string.Empty, dto.WorldSlug);
     }
 }
 

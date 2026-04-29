@@ -1,11 +1,13 @@
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.DTOs.Sessions
 @using System.Diagnostics.CodeAnalysis
+@using Chronicis.Client.Services.Routing
 @inject ICampaignApiService CampaignApi
 @inject ISessionApiService SessionApi
 @inject ITreeStateService TreeState
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
+@inject IAppUrlBuilder UrlBuilder
 @attribute [ExcludeFromCodeCoverage]
 
 @if (_showButton)
@@ -114,12 +116,12 @@
             };
 
             var newSession = await SessionApi.CreateSessionAsync(_activeContext.ArcId.Value, createDto);
-            
+
             if (newSession != null)
             {
                 await TreeState.RefreshAsync();
                 TreeState.ExpandPathToAndSelect(newSession.Id);
-                Navigation.NavigateTo($"/session/{newSession.Id}");
+                Navigation.NavigateTo(UrlBuilder.ForSession(newSession.WorldSlug, newSession.CampaignSlug, newSession.ArcSlug, newSession.Slug));
                 
                 Snackbar.Add($"Session '{sessionName}' created", Severity.Success);
             }

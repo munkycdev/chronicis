@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
-using Chronicis.Shared.Models;
 using Chronicis.Shared.Enums;
+using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Data;
@@ -114,7 +114,7 @@ public class ChronicisDbContext : DbContext
                 .IsRequired();
 
             entity.Property(w => w.Slug)
-                .HasMaxLength(200)
+                .HasMaxLength(100)
                 .IsRequired();
 
             entity.Property(w => w.Description)
@@ -127,9 +127,6 @@ public class ChronicisDbContext : DbContext
             entity.Property(w => w.IsPublic)
                 .HasDefaultValue(false);
 
-            entity.Property(w => w.PublicSlug)
-                .HasMaxLength(100);
-
             // World -> Owner (User)
             entity.HasOne(w => w.Owner)
                 .WithMany(u => u.OwnedWorlds)
@@ -138,16 +135,10 @@ public class ChronicisDbContext : DbContext
 
             entity.HasIndex(w => w.OwnerId);
 
-            // Unique constraint: Slug must be unique per owner
-            entity.HasIndex(w => new { w.OwnerId, w.Slug })
+            // Unique constraint: Slug must be globally unique
+            entity.HasIndex(w => w.Slug)
                 .IsUnique()
-                .HasDatabaseName("IX_Worlds_OwnerId_Slug");
-
-            // Unique constraint: PublicSlug must be globally unique (when not null)
-            entity.HasIndex(w => w.PublicSlug)
-                .IsUnique()
-                .HasFilter("[PublicSlug] IS NOT NULL")
-                .HasDatabaseName("IX_Worlds_PublicSlug");
+                .HasDatabaseName("IX_Worlds_Slug");
         });
     }
 
@@ -158,6 +149,10 @@ public class ChronicisDbContext : DbContext
             entity.HasKey(c => c.Id);
 
             entity.Property(c => c.Name)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(c => c.Slug)
                 .HasMaxLength(200)
                 .IsRequired();
 
@@ -178,6 +173,11 @@ public class ChronicisDbContext : DbContext
 
             entity.HasIndex(c => c.WorldId);
             entity.HasIndex(c => c.OwnerId);
+
+            // Unique constraint: Slug must be unique within world
+            entity.HasIndex(c => new { c.WorldId, c.Slug })
+                .IsUnique()
+                .HasDatabaseName("IX_Campaigns_WorldId_Slug");
         });
     }
 
@@ -252,6 +252,10 @@ public class ChronicisDbContext : DbContext
                 .HasMaxLength(200)
                 .IsRequired();
 
+            entity.Property(a => a.Slug)
+                .HasMaxLength(200)
+                .IsRequired();
+
             entity.Property(a => a.Description)
                 .HasMaxLength(1000);
 
@@ -271,6 +275,11 @@ public class ChronicisDbContext : DbContext
             entity.HasIndex(a => a.CampaignId);
             entity.HasIndex(a => a.CreatedBy);
             entity.HasIndex(a => new { a.CampaignId, a.SortOrder });
+
+            // Unique constraint: Slug must be unique within campaign
+            entity.HasIndex(a => new { a.CampaignId, a.Slug })
+                .IsUnique()
+                .HasDatabaseName("IX_Arcs_CampaignId_Slug");
         });
     }
 
@@ -353,12 +362,17 @@ public class ChronicisDbContext : DbContext
                 .HasForeignKey(a => a.SessionId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Unique constraint: Slug must be unique among siblings
-            // For root articles (ParentId is null), scope by WorldId
+            // Root non-session-note articles: slug unique within (WorldId, Slug)
             entity.HasIndex(a => new { a.WorldId, a.Slug })
                 .IsUnique()
-                .HasFilter("[ParentId] IS NULL")
-                .HasDatabaseName("IX_Articles_WorldId_Slug_Root");
+                .HasFilter("[ParentId] IS NULL AND [Type] <> 11")
+                .HasDatabaseName("IX_Articles_WorldId_Slug_RootNonSessionNote");
+
+            // Session note articles: slug unique within (SessionId, Slug)
+            entity.HasIndex(a => new { a.SessionId, a.Slug })
+                .IsUnique()
+                .HasFilter("[Type] = 11 AND [SessionId] IS NOT NULL")
+                .HasDatabaseName("IX_Articles_SessionId_Slug_SessionNote");
 
             // For child articles (ParentId is not null)
             entity.HasIndex(a => new { a.ParentId, a.Slug })
@@ -884,6 +898,10 @@ public class ChronicisDbContext : DbContext
                 .HasMaxLength(500)
                 .IsRequired();
 
+            entity.Property(s => s.Slug)
+                .HasMaxLength(200)
+                .IsRequired();
+
             // PublicNotes and PrivateNotes are HTML (unbounded nvarchar(max))
             entity.Property(s => s.PublicNotes);
             entity.Property(s => s.PrivateNotes);
@@ -921,6 +939,11 @@ public class ChronicisDbContext : DbContext
 
             entity.HasIndex(s => new { s.ArcId, s.SessionDate })
                 .HasDatabaseName("IX_Sessions_ArcId_SessionDate");
+
+            // Unique constraint: Slug must be unique within arc
+            entity.HasIndex(s => new { s.ArcId, s.Slug })
+                .IsUnique()
+                .HasDatabaseName("IX_Sessions_ArcId_Slug");
         });
     }
 
@@ -957,6 +980,10 @@ public class ChronicisDbContext : DbContext
                 .HasMaxLength(200)
                 .IsRequired();
 
+            entity.Property(wm => wm.Slug)
+                .HasMaxLength(200)
+                .IsRequired();
+
             entity.Property(wm => wm.BasemapBlobKey)
                 .HasMaxLength(1024);
 
@@ -973,6 +1000,11 @@ public class ChronicisDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(wm => wm.WorldId);
+
+            // Unique constraint: Slug must be unique within world
+            entity.HasIndex(wm => new { wm.WorldId, wm.Slug })
+                .IsUnique()
+                .HasDatabaseName("IX_WorldMaps_WorldId_Slug");
         });
     }
 

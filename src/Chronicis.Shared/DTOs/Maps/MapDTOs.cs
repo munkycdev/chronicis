@@ -13,6 +13,8 @@ public class MapCreateDto
     /// Display name for the map.
     /// </summary>
     public string Name { get; set; } = string.Empty;
+
+    public string? Slug { get; set; }
 }
 
 /// <summary>
@@ -46,6 +48,8 @@ public class MapDto
     public string? BasemapOriginalFilename { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime UpdatedUtc { get; set; }
+    public string Slug { get; set; } = string.Empty;
+    public string WorldSlug { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -58,6 +62,7 @@ public class MapSummaryDto
     public Guid WorldMapId { get; set; }
     public string Name { get; set; } = string.Empty;
     public bool HasBasemap { get; set; }
+    public string Slug { get; set; } = string.Empty;
 
     /// <summary>
     /// Computed scope: WorldScoped, CampaignScoped, or ArcScoped.

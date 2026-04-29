@@ -1,8 +1,10 @@
 @using Chronicis.Client.Models
+@using Chronicis.Client.Services.Routing
 @using Chronicis.Shared.Enums
 @using System.Diagnostics.CodeAnalysis
 @attribute [ExcludeFromCodeCoverage]
 @inject NavigationManager Navigation
+@inject IAppUrlBuilder UrlBuilder
 @inject IJSRuntime JSRuntime
 @inject IWorldApiService WorldApi
 @inject ISnackbar Snackbar
@@ -278,25 +280,25 @@
         switch (Node.NodeType)
         {
             case TreeNodeType.World:
-                Navigation.NavigateTo($"/world/{Node.Id}");
+                Navigation.NavigateTo(UrlBuilder.ForWorld(Node.Slug));
                 break;
-                
+
             case TreeNodeType.Campaign:
-                Navigation.NavigateTo($"/campaign/{Node.Id}");
+                Navigation.NavigateTo(UrlBuilder.ForCampaign(Node.WorldSlug, Node.Slug));
                 break;
-                
+
             case TreeNodeType.Arc:
-                Navigation.NavigateTo($"/arc/{Node.Id}");
+                Navigation.NavigateTo(UrlBuilder.ForArc(Node.WorldSlug, Node.CampaignSlug, Node.Slug));
                 break;
 
             case TreeNodeType.Session:
                 await OnSelect.InvokeAsync(Node);
                 break;
-                
+
             case TreeNodeType.Article:
                 await OnSelect.InvokeAsync(Node);
                 break;
-                
+
             case TreeNodeType.ExternalLink:
                 // Check if this is a document (not a regular external link)
                 if (Node.AdditionalData?.ContainsKey("IsDocument") == true)
@@ -310,15 +312,15 @@
                     await JSRuntime.InvokeVoidAsync("open", Node.Url, "_blank");
                 }
                 break;
-                
+
             case TreeNodeType.Map:
-                Navigation.NavigateTo($"/world/{Node.WorldId}/maps/{Node.Id}");
+                Navigation.NavigateTo(UrlBuilder.ForMap(Node.WorldSlug, Node.Slug));
                 break;
 
             case TreeNodeType.VirtualGroup:
-                if (Node.VirtualGroupType == VirtualGroupType.Maps && Node.WorldId.HasValue)
+                if (Node.VirtualGroupType == VirtualGroupType.Maps && !string.IsNullOrEmpty(Node.WorldSlug))
                 {
-                    Navigation.NavigateTo($"/world/{Node.WorldId.Value}/maps");
+                    Navigation.NavigateTo(UrlBuilder.ForMapListing(Node.WorldSlug));
                 }
                 else
                 {

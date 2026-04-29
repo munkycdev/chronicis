@@ -42,6 +42,21 @@ public class TreeNode
     public string Slug { get; set; } = string.Empty;
 
     /// <summary>
+    /// World ancestor's slug (for campaign/arc/session/map nodes).
+    /// </summary>
+    public string WorldSlug { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Campaign ancestor's slug (for arc/session nodes).
+    /// </summary>
+    public string CampaignSlug { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Arc ancestor's slug (for session nodes).
+    /// </summary>
+    public string ArcSlug { get; set; } = string.Empty;
+
+    /// <summary>
     /// Icon emoji or FontAwesome class.
     /// </summary>
     public string? IconEmoji { get; set; }

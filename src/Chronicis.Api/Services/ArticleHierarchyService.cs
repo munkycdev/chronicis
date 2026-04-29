@@ -302,7 +302,7 @@ public sealed class ArticleHierarchyService : IArticleHierarchyService
         var targetArticle = await _context.Articles
             .AsNoTracking()
             .Where(a => a.Id == articleId)
-            .Select(a => new { a.CampaignId, a.ArcId, a.ParentId, a.Type })
+            .Select(a => new { a.CampaignId, a.ArcId, a.SessionId, a.ParentId, a.Type })
             .FirstOrDefaultAsync();
 
         if (targetArticle == null)
@@ -314,7 +314,7 @@ public sealed class ArticleHierarchyService : IArticleHierarchyService
             var campaign = await _context.Campaigns
                 .AsNoTracking()
                 .Where(c => c.Id == targetArticle.CampaignId.Value)
-                .Select(c => new { c.Id, c.Name })
+                .Select(c => new { c.Id, c.Name, c.Slug })
                 .FirstOrDefaultAsync();
 
             if (campaign != null)
@@ -323,7 +323,7 @@ public sealed class ArticleHierarchyService : IArticleHierarchyService
                 {
                     Id = campaign.Id,
                     Title = campaign.Name,
-                    Slug = campaign.Name.ToLowerInvariant().Replace(" ", "-"),
+                    Slug = campaign.Slug,
                     Type = default,
                     IsWorld = false
                 });
@@ -335,7 +335,7 @@ public sealed class ArticleHierarchyService : IArticleHierarchyService
                 var arc = await _context.Arcs
                     .AsNoTracking()
                     .Where(a => a.Id == targetArticle.ArcId.Value)
-                    .Select(a => new { a.Id, a.Name })
+                    .Select(a => new { a.Id, a.Name, a.Slug })
                     .FirstOrDefaultAsync();
 
                 if (arc != null)
@@ -344,7 +344,29 @@ public sealed class ArticleHierarchyService : IArticleHierarchyService
                     {
                         Id = arc.Id,
                         Title = arc.Name,
-                        Slug = arc.Name.ToLowerInvariant().Replace(" ", "-"),
+                        Slug = arc.Slug,
+                        Type = default,
+                        IsWorld = false
+                    });
+                }
+            }
+
+            // Add Session breadcrumb if present (session notes need the session segment for URL resolution)
+            if (targetArticle.SessionId.HasValue)
+            {
+                var session = await _context.Sessions
+                    .AsNoTracking()
+                    .Where(s => s.Id == targetArticle.SessionId.Value)
+                    .Select(s => new { s.Id, s.Name, s.Slug })
+                    .FirstOrDefaultAsync();
+
+                if (session != null)
+                {
+                    groups.Add(new BreadcrumbDto
+                    {
+                        Id = session.Id,
+                        Title = session.Name,
+                        Slug = session.Slug,
                         Type = default,
                         IsWorld = false
                     });
@@ -386,7 +408,7 @@ public sealed class ArticleHierarchyService : IArticleHierarchyService
                 {
                     Id = Guid.Empty,
                     Title = "Player Characters",
-                    Slug = "characters",
+                    Slug = "wiki",
                     Type = default,
                     IsWorld = false
                 });

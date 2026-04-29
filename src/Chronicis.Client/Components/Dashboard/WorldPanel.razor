@@ -270,7 +270,7 @@
     private void ViewWorld()
     {
         // Always navigate to world page - it handles missing root article
-        Navigation.NavigateTo($"/world/{World.Slug}", forceLoad: true);
+        Navigation.NavigateTo($"/{World.Slug}", forceLoad: true);
     }
 
     private void AddSessionNote()
@@ -278,7 +278,7 @@
         var activeCampaign = World.Campaigns.FirstOrDefault(c => c.IsActive);
         if (activeCampaign != null)
         {
-            Navigation.NavigateTo($"/world/{World.Slug}/campaign/{activeCampaign.Id}", forceLoad: true);
+            Navigation.NavigateTo($"/{World.Slug}/{activeCampaign.Slug}", forceLoad: true);
         }
     }
 
@@ -288,7 +288,7 @@
         if (article != null && article.Breadcrumbs.Any())
         {
             var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-            Navigation.NavigateTo($"/article/{path}");
+            Navigation.NavigateTo($"/{path}");
         }
     }
 

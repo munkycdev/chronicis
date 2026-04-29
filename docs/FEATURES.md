@@ -1,6 +1,6 @@
 # Chronicis Feature Inventory
 
-Last reviewed: 2026-03-14
+Last reviewed: 2026-04-27
 
 Scope:
 - Included: `src/Chronicis.Api`, `src/Chronicis.Client`
@@ -57,6 +57,7 @@ Scope:
 - Cleanup of session-linked content on deletion.
 - Canonical session workflows use first-class `Session` entities; legacy `ArticleType.Session` handling is compatibility-only.
 - Arc tree add-child and quick-add session actions create `Session` entities directly.
+- Session note URL shape: `/{world}/{campaign}/{arc}/{session}/{note}`.
 
 ## 5) Articles and Knowledge Base
 - Hierarchical article tree with unlimited nesting.
@@ -157,13 +158,15 @@ Scope:
 - Keyboard shortcut to open featured/help drawer.
 
 ## 14) Public Sharing and Anonymous Viewer
-- Public world landing page by slug.
+- Anonymous and authenticated viewers share the same URL scheme: `/{worldSlug}`, `/{worldSlug}/{*articlePath}`, etc.
+- Public world landing page at `/{worldSlug}` (no `/w/` prefix; legacy `/w/{slug}` is retired).
 - Public article tree navigation.
-- Public article-by-path viewing.
+- Public article-by-path viewing at `/{worldSlug}/{*path}`.
 - Public session-note routing uses canonical note-slug paths; legacy session-prefixed compatibility URLs are retired.
 - Public breadcrumbs and path-aware navigation.
 - Public rendering of visible article content only.
 - Public read-only behavior for shared content.
+- `IReadAccessPolicyService` is the single arbiter of content visibility for both anonymous and authenticated reads.
 - Public visibility enforcement (hidden non-public content).
 - Public document/image access for eligible shared content.
 - Public map and map-feature chips on shared articles open the same modal map viewer used in authenticated article views.
@@ -192,11 +195,11 @@ Scope:
 
 ## 17) Maps and Spatial Navigation
 - Maps virtual group in world navigation with route-driven selection behavior.
-- Maps detail page at `/world/{worldId}/maps` with grouped listing by world, campaign, and arc scope.
+- Maps detail page at `/{worldSlug}/maps` with grouped listing by world, campaign, and arc scope.
 - Map creation workflow with required map name and basemap image upload.
 - Basemap upload via file picker and drag/drop target in the create flow.
 - Drag/drop guard to prevent browser "open in new tab" behavior during map image uploads.
-- Dedicated map page at `/world/{worldId}/maps/{mapId}` with constrained basemap rendering.
+- Dedicated map page at `/{worldSlug}/maps/{mapSlug}` with constrained basemap rendering.
 - Map layer stack management with default and custom layers, visibility toggles, selected layer targeting, drag/drop reorder, and custom-layer create/rename/delete actions.
 - Pin visibility and render stacking respect enabled layer state and current layer order.
 - Polygon creation workflow on map pages with click-to-add vertices, live draft overlay, layer-aware validation, and save via editor action or double-click completion.

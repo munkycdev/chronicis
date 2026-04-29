@@ -13,4 +13,15 @@ public interface ISessionService
     Task<ServiceResult<bool>> DeleteSessionAsync(Guid sessionId, Guid userId);
     Task<ServiceResult<SummaryGenerationDto>> GenerateAiSummaryAsync(Guid sessionId, Guid userId);
     Task<ServiceResult<bool>> ClearAiSummaryAsync(Guid sessionId, Guid userId);
+
+    /// <summary>
+    /// Lightweight slug lookup — returns (Id, Name) or null when not found.
+    /// Visibility filtering is the caller's responsibility.
+    /// </summary>
+    Task<(Guid Id, string Name)?> GetIdBySlugAsync(Guid arcId, string slug);
+
+    /// <summary>
+    /// Update the session's slug. Validates, checks reserved list, resolves sibling collisions.
+    /// </summary>
+    Task<ServiceResult<string>> UpdateSlugAsync(Guid sessionId, string slug, Guid userId);
 }

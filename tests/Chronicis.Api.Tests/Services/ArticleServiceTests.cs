@@ -595,7 +595,89 @@ public class ArticleServiceTests : IDisposable
     }
 
     // ────────────────────────────────────────────────────────────────
-    //  GenerateUniqueSlugAsync
+    //  IsSlugUniqueAsync — session-note scope
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task IsSlugUniqueAsync_SessionNote_SameSession_CollisionDetected()
+    {
+        var sessionId = Guid.NewGuid();
+        var note = TestHelpers.CreateArticle(
+            worldId: TestHelpers.FixedIds.World1,
+            createdBy: TestHelpers.FixedIds.User1,
+            slug: "my-notes",
+            type: ArticleType.SessionNote,
+            visibility: ArticleVisibility.Public);
+        note.SessionId = sessionId;
+        _context.Articles.Add(note);
+        await _context.SaveChangesAsync();
+
+        var isUnique = await _service.IsSlugUniqueAsync(
+            "my-notes", null, TestHelpers.FixedIds.World1, TestHelpers.FixedIds.User1,
+            articleType: ArticleType.SessionNote, sessionId: sessionId);
+
+        Assert.False(isUnique);
+    }
+
+    [Fact]
+    public async Task IsSlugUniqueAsync_SessionNote_DifferentSession_Allowed()
+    {
+        var sessionId1 = Guid.NewGuid();
+        var sessionId2 = Guid.NewGuid();
+        var note = TestHelpers.CreateArticle(
+            worldId: TestHelpers.FixedIds.World1,
+            createdBy: TestHelpers.FixedIds.User1,
+            slug: "my-notes",
+            type: ArticleType.SessionNote,
+            visibility: ArticleVisibility.Public);
+        note.SessionId = sessionId1;
+        _context.Articles.Add(note);
+        await _context.SaveChangesAsync();
+
+        var isUnique = await _service.IsSlugUniqueAsync(
+            "my-notes", null, TestHelpers.FixedIds.World1, TestHelpers.FixedIds.User1,
+            articleType: ArticleType.SessionNote, sessionId: sessionId2);
+
+        Assert.True(isUnique);
+    }
+
+    [Fact]
+    public async Task IsSlugUniqueAsync_SessionNote_ParentScopedChild_DoesNotCollideWithSessionScope()
+    {
+        var sessionId = Guid.NewGuid();
+        var rootNote = TestHelpers.CreateArticle(
+            worldId: TestHelpers.FixedIds.World1,
+            createdBy: TestHelpers.FixedIds.User1,
+            slug: "notes",
+            type: ArticleType.SessionNote,
+            visibility: ArticleVisibility.Public);
+        rootNote.SessionId = sessionId;
+        _context.Articles.Add(rootNote);
+        _context.Articles.Add(TestHelpers.CreateArticle(
+            worldId: TestHelpers.FixedIds.World1,
+            parentId: rootNote.Id,
+            createdBy: TestHelpers.FixedIds.User1,
+            slug: "notes",
+            type: ArticleType.WikiArticle,
+            visibility: ArticleVisibility.Public));
+        await _context.SaveChangesAsync();
+
+        // Checking session-scoped uniqueness for a NEW root session note → collision with rootNote
+        var sessionUnique = await _service.IsSlugUniqueAsync(
+            "notes", null, TestHelpers.FixedIds.World1, TestHelpers.FixedIds.User1,
+            articleType: ArticleType.SessionNote, sessionId: sessionId);
+
+        // Checking parent-scoped uniqueness under rootNote → collision with child
+        var parentUnique = await _service.IsSlugUniqueAsync(
+            "notes", rootNote.Id, TestHelpers.FixedIds.World1, TestHelpers.FixedIds.User1,
+            articleType: ArticleType.WikiArticle);
+
+        Assert.False(sessionUnique);
+        Assert.False(parentUnique);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  GenerateUniqueSlugAsync — session-note scope
     // ────────────────────────────────────────────────────────────────
 
     [Fact]
@@ -635,6 +717,47 @@ public class ArticleServiceTests : IDisposable
         Assert.Equal("root-article", slug);
     }
 
+    [Fact]
+    public async Task GenerateUniqueSlugAsync_SessionNote_DerivesSlugFromTitle()
+    {
+        var sessionId = Guid.NewGuid();
+
+        var slug = await _service.GenerateUniqueSlugAsync(
+            "GM's Notes",
+            null,
+            TestHelpers.FixedIds.World1,
+            TestHelpers.FixedIds.User1,
+            articleType: ArticleType.SessionNote,
+            sessionId: sessionId);
+
+        Assert.Equal("gms-notes", slug);
+    }
+
+    [Fact]
+    public async Task GenerateUniqueSlugAsync_SessionNote_SuffixesOnCollisionWithinSession()
+    {
+        var sessionId = Guid.NewGuid();
+        var existing = TestHelpers.CreateArticle(
+            worldId: TestHelpers.FixedIds.World1,
+            createdBy: TestHelpers.FixedIds.User1,
+            slug: "my-notes",
+            type: ArticleType.SessionNote,
+            visibility: ArticleVisibility.Public);
+        existing.SessionId = sessionId;
+        _context.Articles.Add(existing);
+        await _context.SaveChangesAsync();
+
+        var slug = await _service.GenerateUniqueSlugAsync(
+            "My Notes",
+            null,
+            TestHelpers.FixedIds.World1,
+            TestHelpers.FixedIds.User1,
+            articleType: ArticleType.SessionNote,
+            sessionId: sessionId);
+
+        Assert.Equal("my-notes-2", slug);
+    }
+
     // ────────────────────────────────────────────────────────────────
     //  BuildArticlePathAsync
     // ────────────────────────────────────────────────────────────────
@@ -649,5 +772,146 @@ public class ArticleServiceTests : IDisposable
 
         Assert.Equal("test-world/root-article", path);
         await _hierarchyService.Received(1).BuildPathAsync(TestHelpers.FixedIds.Article1);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  ResolveWorldArticlePathAsync
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ResolveWorldArticlePathAsync_EmptySlugs_ReturnsNull()
+    {
+        var result = await _service.ResolveWorldArticlePathAsync(
+            TestHelpers.FixedIds.World1, [], TestHelpers.FixedIds.User1);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task ResolveWorldArticlePathAsync_Authenticated_FindsRootArticle()
+    {
+        var result = await _service.ResolveWorldArticlePathAsync(
+            TestHelpers.FixedIds.World1, ["root-article"], TestHelpers.FixedIds.User1);
+
+        Assert.NotNull(result);
+        Assert.Equal(TestHelpers.FixedIds.Article1, result!.Value.ArticleId);
+        Assert.Single(result.Value.PathBreadcrumbs);
+        Assert.Equal("root-article", result.Value.PathBreadcrumbs[0].Slug);
+    }
+
+    [Fact]
+    public async Task ResolveWorldArticlePathAsync_Authenticated_FindsNestedArticle()
+    {
+        var result = await _service.ResolveWorldArticlePathAsync(
+            TestHelpers.FixedIds.World1,
+            ["root-article", "child-article"],
+            TestHelpers.FixedIds.User1);
+
+        Assert.NotNull(result);
+        Assert.Equal(TestHelpers.FixedIds.Article2, result!.Value.ArticleId);
+        Assert.Equal(2, result.Value.PathBreadcrumbs.Count);
+    }
+
+    [Fact]
+    public async Task ResolveWorldArticlePathAsync_Authenticated_UnknownSlug_ReturnsNull()
+    {
+        var result = await _service.ResolveWorldArticlePathAsync(
+            TestHelpers.FixedIds.World1, ["no-such-article"], TestHelpers.FixedIds.User1);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task ResolveWorldArticlePathAsync_Anonymous_FindsPublicRootArticle()
+    {
+        var result = await _service.ResolveWorldArticlePathAsync(
+            TestHelpers.FixedIds.World1, ["root-article"], userId: null);
+
+        Assert.NotNull(result);
+        Assert.Equal(TestHelpers.FixedIds.Article1, result!.Value.ArticleId);
+    }
+
+    [Fact]
+    public async Task ResolveWorldArticlePathAsync_Anonymous_CannotFindPrivateArticle()
+    {
+        var result = await _service.ResolveWorldArticlePathAsync(
+            TestHelpers.FixedIds.World1, ["private-article"], userId: null);
+
+        Assert.Null(result);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  GetSessionNoteBySlugAsync
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetSessionNoteBySlugAsync_Authenticated_FindsNote()
+    {
+        var sessionId = Guid.NewGuid();
+        var note = TestHelpers.CreateArticle(
+            worldId: TestHelpers.FixedIds.World1,
+            createdBy: TestHelpers.FixedIds.User1,
+            title: "My Notes",
+            slug: "my-notes",
+            type: ArticleType.SessionNote,
+            visibility: ArticleVisibility.Public);
+        note.SessionId = sessionId;
+        _context.Articles.Add(note);
+        await _context.SaveChangesAsync();
+
+        var result = await _service.GetSessionNoteBySlugAsync(sessionId, "my-notes", TestHelpers.FixedIds.User1);
+
+        Assert.NotNull(result);
+        Assert.Equal(note.Id, result!.Value.ArticleId);
+        Assert.Equal("My Notes", result.Value.Title);
+    }
+
+    [Fact]
+    public async Task GetSessionNoteBySlugAsync_UnknownSlug_ReturnsNull()
+    {
+        var result = await _service.GetSessionNoteBySlugAsync(Guid.NewGuid(), "no-such-note", TestHelpers.FixedIds.User1);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetSessionNoteBySlugAsync_Anonymous_FindsPublicNote()
+    {
+        var sessionId = Guid.NewGuid();
+        var note = TestHelpers.CreateArticle(
+            worldId: TestHelpers.FixedIds.World1,
+            createdBy: TestHelpers.FixedIds.User1,
+            title: "Public Notes",
+            slug: "public-notes",
+            type: ArticleType.SessionNote,
+            visibility: ArticleVisibility.Public);
+        note.SessionId = sessionId;
+        _context.Articles.Add(note);
+        await _context.SaveChangesAsync();
+
+        var result = await _service.GetSessionNoteBySlugAsync(sessionId, "public-notes", userId: null);
+
+        Assert.NotNull(result);
+        Assert.Equal(note.Id, result!.Value.ArticleId);
+    }
+
+    [Fact]
+    public async Task GetSessionNoteBySlugAsync_Anonymous_CannotFindPrivateNote()
+    {
+        var sessionId = Guid.NewGuid();
+        var note = TestHelpers.CreateArticle(
+            worldId: TestHelpers.FixedIds.World1,
+            createdBy: TestHelpers.FixedIds.User1,
+            title: "Private Notes",
+            slug: "private-notes",
+            type: ArticleType.SessionNote,
+            visibility: ArticleVisibility.Private);
+        note.SessionId = sessionId;
+        _context.Articles.Add(note);
+        await _context.SaveChangesAsync();
+
+        var result = await _service.GetSessionNoteBySlugAsync(sessionId, "private-notes", userId: null);
+
+        Assert.Null(result);
     }
 }

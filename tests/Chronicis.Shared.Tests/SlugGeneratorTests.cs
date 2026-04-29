@@ -406,4 +406,85 @@ public class SlugGeneratorTests
         Assert.Equal("my-article-title-2", uniqueSlug);
         Assert.True(SlugGenerator.IsValidSlug(uniqueSlug));
     }
+
+    // ────────────────────────────────────────────────────────────────
+    //  GenerateUniqueSiblingSlug
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void GenerateUniqueSiblingSlug_NoConflicts_ReturnsBaseSlug()
+    {
+        var result = SlugGenerator.GenerateUniqueSiblingSlug(
+            "my-world",
+            existingSiblingSlugs: [],
+            reservedSlugs: []);
+
+        Assert.Equal("my-world", result);
+    }
+
+    [Fact]
+    public void GenerateUniqueSiblingSlug_InvalidBaseSlug_GeneratesFromBase()
+    {
+        var result = SlugGenerator.GenerateUniqueSiblingSlug(
+            "My World Name",
+            existingSiblingSlugs: [],
+            reservedSlugs: []);
+
+        Assert.Equal("my-world-name", result);
+    }
+
+    [Fact]
+    public void GenerateUniqueSiblingSlug_CollidesWithSibling_AppendsDash2()
+    {
+        var result = SlugGenerator.GenerateUniqueSiblingSlug(
+            "my-world",
+            existingSiblingSlugs: ["my-world"],
+            reservedSlugs: []);
+
+        Assert.Equal("my-world-2", result);
+    }
+
+    [Fact]
+    public void GenerateUniqueSiblingSlug_CollidesWithReserved_AppendsDash2()
+    {
+        var result = SlugGenerator.GenerateUniqueSiblingSlug(
+            "dashboard",
+            existingSiblingSlugs: [],
+            reservedSlugs: ["dashboard", "settings"]);
+
+        Assert.Equal("dashboard-2", result);
+    }
+
+    [Fact]
+    public void GenerateUniqueSiblingSlug_ReservedCheckIsCaseInsensitive()
+    {
+        var result = SlugGenerator.GenerateUniqueSiblingSlug(
+            "dashboard",
+            existingSiblingSlugs: [],
+            reservedSlugs: ["DASHBOARD"]);
+
+        Assert.Equal("dashboard-2", result);
+    }
+
+    [Fact]
+    public void GenerateUniqueSiblingSlug_CollidesWithBothSiblingAndReserved_SkipsBoth()
+    {
+        var result = SlugGenerator.GenerateUniqueSiblingSlug(
+            "settings",
+            existingSiblingSlugs: ["settings", "settings-2"],
+            reservedSlugs: ["settings-3"]);
+
+        Assert.Equal("settings-4", result);
+    }
+
+    [Fact]
+    public void GenerateUniqueSiblingSlug_MultipleSequentialSiblingCollisions_Increments()
+    {
+        var result = SlugGenerator.GenerateUniqueSiblingSlug(
+            "world",
+            existingSiblingSlugs: ["world", "world-2", "world-3"],
+            reservedSlugs: []);
+
+        Assert.Equal("world-4", result);
+    }
 }

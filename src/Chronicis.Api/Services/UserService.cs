@@ -330,8 +330,7 @@ public sealed class UserService : IUserService
             OwnerId = userId,
             CreatedAt = now,
             IsTutorial = true,
-            IsPublic = false,
-            PublicSlug = null
+            IsPublic = false
         };
 
         var clonedSummaryTemplates = templateSummaryTemplates.Select(st => new SummaryTemplate

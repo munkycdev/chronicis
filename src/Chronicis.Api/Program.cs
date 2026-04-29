@@ -125,6 +125,10 @@ internal class Program
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
+            // Reserved slug provider — reads from the "Routing" config section
+            builder.Services.Configure<RoutingOptions>(builder.Configuration.GetSection("Routing"));
+            builder.Services.AddSingleton<IReservedSlugProvider, ReservedSlugProvider>();
+
             // SysAdmin checker — reads from the "SysAdmin" config section
             builder.Services.Configure<SysAdminOptions>(builder.Configuration.GetSection("SysAdmin"));
             builder.Services.AddSingleton<Chronicis.Shared.Admin.ISysAdminChecker>(sp =>
@@ -226,6 +230,7 @@ internal class Program
             builder.Services.AddScoped<ISearchReadService, SearchReadService>();
             builder.Services.AddScoped<ICharacterClaimService, CharacterClaimService>();
             builder.Services.AddScoped<IPublicWorldService, PublicWorldService>();
+            builder.Services.AddScoped<Chronicis.Api.Services.Routing.ISlugPathResolver, Chronicis.Api.Services.Routing.SlugPathResolver>();
             builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
             builder.Services.AddScoped<IMapBlobStore, AzureBlobMapBlobStore>();
             builder.Services.AddScoped<IWorldMapService, WorldMapService>();

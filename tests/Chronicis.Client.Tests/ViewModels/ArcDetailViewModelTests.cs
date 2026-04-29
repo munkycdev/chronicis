@@ -1,4 +1,5 @@
 using Chronicis.Client.Abstractions;
+using Chronicis.Client.Models;
 using Chronicis.Client.Services;
 using Chronicis.Client.ViewModels;
 using Chronicis.Shared.DTOs;
@@ -58,6 +59,9 @@ public class ArcDetailViewModelTests
         CampaignId = campaignId ?? Guid.NewGuid(),
         Name = "Test Arc",
         Description = "Arc description",
+        Slug = "test-arc",
+        CampaignSlug = "test-campaign",
+        WorldSlug = "test-world",
         SortOrder = 1,
         IsActive = false,
         SessionCount = 0,
@@ -370,7 +374,7 @@ public class ArcDetailViewModelTests
         await c.Vm.DeleteAsync();
 
         await c.ArcApi.Received(1).DeleteArcAsync(arc.Id);
-        c.Navigator.Received(1).NavigateTo($"/campaign/{arc.CampaignId}");
+        await c.Navigator.Received(1).GoToCampaignAsync(arc.WorldSlug, arc.CampaignSlug);
         c.Notifier.Received(1).Success(Arg.Any<string>());
     }
 
@@ -429,7 +433,7 @@ public class ArcDetailViewModelTests
     // -----------------------------------------------------------------------
 
     [Fact]
-    public async Task CreateSessionAsync_WhenTreeCreateSucceeds_NavigatesToSession()
+    public async Task CreateSessionAsync_WhenNodeFound_NavigatesWithSlug()
     {
         var c = CreateSut();
         var arc = MakeArc();
@@ -440,11 +444,41 @@ public class ArcDetailViewModelTests
 
         var sessionId = Guid.NewGuid();
         c.TreeState.CreateChildArticleAsync(arc.Id).Returns((Guid?)sessionId);
+        var sessionNode = new TreeNode
+        {
+            Id = sessionId,
+            NodeType = TreeNodeType.Session,
+            Slug = "session-1",
+            ArcSlug = "arc-1",
+            CampaignSlug = "campaign-1",
+            WorldSlug = "world-1"
+        };
+        c.TreeState.TryGetNode(sessionId, out Arg.Any<TreeNode?>())
+            .Returns(x => { x[1] = sessionNode; return true; });
 
         await c.Vm.CreateSessionAsync();
 
-        await c.TreeState.Received(1).CreateChildArticleAsync(arc.Id);
-        await c.SessionApi.DidNotReceive().CreateSessionAsync(Arg.Any<Guid>(), Arg.Any<SessionCreateDto>());
+        await c.Navigator.Received(1).GoToSessionAsync("world-1", "campaign-1", "arc-1", "session-1");
+        c.Notifier.Received(1).Success("Session created");
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_WhenNodeNotFound_FallsBackToGuidNav()
+    {
+        var c = CreateSut();
+        var arc = MakeArc();
+        var campaign = MakeCampaign(id: arc.CampaignId);
+        SetupHappyPath(c, arc, campaign, MakeGmWorld(campaign.WorldId));
+        c.AuthService.GetCurrentUserAsync().Returns(new UserInfo { Email = "gm@example.com" });
+        await c.Vm.LoadAsync(arc.Id);
+
+        var sessionId = Guid.NewGuid();
+        c.TreeState.CreateChildArticleAsync(arc.Id).Returns((Guid?)sessionId);
+        c.TreeState.TryGetNode(sessionId, out Arg.Any<TreeNode?>())
+            .Returns(x => { x[1] = null; return false; });
+
+        await c.Vm.CreateSessionAsync();
+
         c.Navigator.Received(1).NavigateTo($"/session/{sessionId}");
         c.Notifier.Received(1).Success("Session created");
     }
@@ -473,14 +507,22 @@ public class ArcDetailViewModelTests
     // -----------------------------------------------------------------------
 
     [Fact]
-    public async Task NavigateToSessionAsync_WhenBreadcrumbsExist_NavigatesWithPath()
+    public async Task NavigateToSessionAsync_NavigatesWithSlugUrl()
     {
         var c = CreateSut();
-        var session = new SessionTreeDto { Id = Guid.NewGuid(), Name = "Session 1" };
+        var session = new SessionTreeDto
+        {
+            Id = Guid.NewGuid(),
+            Name = "Session 1",
+            Slug = "session-1",
+            ArcSlug = "test-arc",
+            CampaignSlug = "test-campaign",
+            WorldSlug = "test-world"
+        };
 
         await c.Vm.NavigateToSessionAsync(session);
 
-        c.Navigator.Received(1).NavigateTo($"/session/{session.Id}");
+        await c.Navigator.Received(1).GoToSessionAsync(session);
     }
 
     // -----------------------------------------------------------------------

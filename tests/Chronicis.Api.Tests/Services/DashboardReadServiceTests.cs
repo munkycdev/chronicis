@@ -21,6 +21,7 @@ public class DashboardReadServiceTests
         db.WorldMembers.Add(TestHelpers.CreateWorldMember(worldId: world.Id, userId: userId));
 
         var campaignA = TestHelpers.CreateCampaign(worldId: world.Id, name: "Alpha", isActive: true);
+        campaignA.Slug = "alpha-campaign";
         var campaignB = TestHelpers.CreateCampaign(worldId: world.Id, name: "Beta", isActive: false);
         db.Campaigns.AddRange(campaignA, campaignB);
 
@@ -88,6 +89,7 @@ public class DashboardReadServiceTests
         var activeCampaign = worldDto.Campaigns.First(c => c.Id == campaignA.Id);
         Assert.NotNull(activeCampaign.CurrentArc);
         Assert.Equal(1, activeCampaign.SessionCount);
+        Assert.Equal("alpha-campaign", activeCampaign.Slug);
 
         var inactiveCampaign = worldDto.Campaigns.First(c => c.Id == campaignB.Id);
         Assert.Null(inactiveCampaign.CurrentArc);

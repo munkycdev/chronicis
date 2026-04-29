@@ -25,6 +25,12 @@ public class WorldMap
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// URL-friendly slug derived from name. Unique within <see cref="WorldId"/>. Mutable.
+    /// Max 200 characters.
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
+
+    /// <summary>
     /// Blob storage key for the basemap image. Null until the basemap has been uploaded.
     /// </summary>
     public string? BasemapBlobKey { get; set; }

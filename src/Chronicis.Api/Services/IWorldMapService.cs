@@ -1,3 +1,4 @@
+using Chronicis.Api.Models;
 using Chronicis.Shared.DTOs.Maps;
 
 namespace Chronicis.Api.Services;
@@ -205,4 +206,16 @@ public interface IWorldMapService
     /// Only the world owner may delete maps.
     /// </summary>
     Task DeleteMapAsync(Guid worldId, Guid mapId, Guid userId);
+
+    /// <summary>
+    /// Lightweight slug lookup — returns (Id, Name) or null when not found.
+    /// Visibility filtering is the caller's responsibility.
+    /// </summary>
+    Task<(Guid Id, string Name)?> GetIdBySlugAsync(Guid worldId, string slug);
+
+    /// <summary>
+    /// Update the map's slug. Validates, checks reserved list, resolves sibling collisions.
+    /// Only the world owner may update map slugs.
+    /// </summary>
+    Task<ServiceResult<string>> UpdateSlugAsync(Guid worldId, Guid mapId, Guid userId, string slug);
 }

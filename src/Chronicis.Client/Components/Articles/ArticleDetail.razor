@@ -184,6 +184,8 @@ else
 }
 
 @code {
+    [Parameter] public Guid ArticleId { get; set; }
+
     // Article state
     private ArticleDto? _article;
     private List<BreadcrumbItem>? _breadcrumbs;
@@ -243,8 +245,8 @@ else
         KeyboardShortcutService.OnSaveRequested += HandleSaveShortcut;
         _dotNetHelper = DotNetObjectReference.Create(this);
 
-        // If an article is already selected, render loading UI before first fetch completes.
-        _isLoading = TreeState.SelectedArticleId.HasValue && TreeState.SelectedArticleId.Value != Guid.Empty;
+        var resolvedId = ArticleId != Guid.Empty ? ArticleId : TreeState.SelectedArticleId ?? Guid.Empty;
+        _isLoading = resolvedId != Guid.Empty;
 
         await Task.CompletedTask;
     }
@@ -258,12 +260,16 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && TreeState.SelectedArticleId.HasValue)
+        if (firstRender)
         {
-            await LoadArticleAsync(TreeState.SelectedArticleId.Value);
-            StateHasChanged();
-            await Task.Delay(100);
-            await InitializeEditor();
+            var resolvedId = ArticleId != Guid.Empty ? ArticleId : TreeState.SelectedArticleId ?? Guid.Empty;
+            if (resolvedId != Guid.Empty)
+            {
+                await LoadArticleAsync(resolvedId);
+                StateHasChanged();
+                await Task.Delay(100);
+                await InitializeEditor();
+            }
         }
     }
 
@@ -355,9 +361,16 @@ else
 
                 if (_disposed) return;
 
-                if (TreeState.SelectedArticleId.HasValue && TreeState.SelectedArticleId.Value != Guid.Empty)
+                // Prefer the explicit ArticleId parameter (URL-driven navigation via PathResolver)
+                // over TreeState.SelectedArticleId. Tree state may not yet reflect URL-based
+                // selection, and clobbering _article here would briefly flash "No Article Selected".
+                var preferredId = ArticleId != Guid.Empty
+                    ? (Guid?)ArticleId
+                    : TreeState.SelectedArticleId;
+
+                if (preferredId.HasValue && preferredId.Value != Guid.Empty)
                 {
-                    await LoadArticleAsync(TreeState.SelectedArticleId.Value);
+                    await LoadArticleAsync(preferredId.Value);
                 }
                 else
                 {
@@ -1088,7 +1101,7 @@ else
         {
             var path = await ArticleCache.GetNavigationPathAsync(articleId);
             if (!string.IsNullOrEmpty(path))
-                Navigation.NavigateTo($"/article/{path}");
+                Navigation.NavigateTo($"/{path}");
             else
                 Snackbar.Add("Article not found", Severity.Warning);
         }

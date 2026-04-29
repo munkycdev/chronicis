@@ -76,6 +76,7 @@ public sealed class DashboardReadService : IDashboardReadService
                     {
                         Id = campaign.Id,
                         Name = campaign.Name,
+                        Slug = campaign.Slug,
                         Description = campaign.Description,
                         CreatedAt = campaign.CreatedAt,
                         StartedAt = campaign.StartedAt,

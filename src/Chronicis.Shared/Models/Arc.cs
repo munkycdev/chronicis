@@ -27,6 +27,12 @@ public class Arc
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// URL-friendly slug derived from name. Unique within <see cref="CampaignId"/>. Mutable.
+    /// Max 200 characters.
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
+
+    /// <summary>
     /// Optional description of the arc's story or themes.
     /// Max 1000 characters.
     /// </summary>

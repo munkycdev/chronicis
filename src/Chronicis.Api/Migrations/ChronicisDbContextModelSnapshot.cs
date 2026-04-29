@@ -58,6 +58,11 @@ namespace Chronicis.Api.Migrations
                     b.Property<string>("PrivateNotes")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
@@ -77,6 +82,10 @@ namespace Chronicis.Api.Migrations
                     b.HasIndex("CreatedBy");
 
                     b.HasIndex("SummaryTemplateId");
+
+                    b.HasIndex("CampaignId", "Slug")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Arcs_CampaignId_Slug");
 
                     b.HasIndex("CampaignId", "SortOrder");
 
@@ -198,10 +207,15 @@ namespace Chronicis.Api.Migrations
                         .HasDatabaseName("IX_Articles_ParentId_Slug")
                         .HasFilter("[ParentId] IS NOT NULL");
 
+                    b.HasIndex("SessionId", "Slug")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Articles_SessionId_Slug_SessionNote")
+                        .HasFilter("[Type] = 11 AND [SessionId] IS NOT NULL");
+
                     b.HasIndex("WorldId", "Slug")
                         .IsUnique()
-                        .HasDatabaseName("IX_Articles_WorldId_Slug_Root")
-                        .HasFilter("[ParentId] IS NULL");
+                        .HasDatabaseName("IX_Articles_WorldId_Slug_RootNonSessionNote")
+                        .HasFilter("[ParentId] IS NULL AND [Type] <> 11");
 
                     b.ToTable("Articles");
                 });
@@ -348,6 +362,11 @@ namespace Chronicis.Api.Migrations
                     b.Property<string>("PrivateNotes")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("datetime2");
 
@@ -370,6 +389,10 @@ namespace Chronicis.Api.Migrations
                     b.HasIndex("SummaryTemplateId");
 
                     b.HasIndex("WorldId");
+
+                    b.HasIndex("WorldId", "Slug")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Campaigns_WorldId_Slug");
 
                     b.ToTable("Campaigns");
                 });
@@ -678,6 +701,11 @@ namespace Chronicis.Api.Migrations
                     b.Property<DateTime?>("SessionDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AiSummaryGeneratedByUserId");
@@ -690,6 +718,10 @@ namespace Chronicis.Api.Migrations
 
                     b.HasIndex("ArcId", "SessionDate")
                         .HasDatabaseName("IX_Sessions_ArcId_SessionDate");
+
+                    b.HasIndex("ArcId", "Slug")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Sessions_ArcId_Slug");
 
                     b.ToTable("Sessions");
                 });
@@ -867,27 +899,18 @@ namespace Chronicis.Api.Migrations
                     b.Property<string>("PrivateNotes")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PublicSlug")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<string>("Slug")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerId");
 
-                    b.HasIndex("PublicSlug")
+                    b.HasIndex("Slug")
                         .IsUnique()
-                        .HasDatabaseName("IX_Worlds_PublicSlug")
-                        .HasFilter("[PublicSlug] IS NOT NULL");
-
-                    b.HasIndex("OwnerId", "Slug")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Worlds_OwnerId_Slug");
+                        .HasDatabaseName("IX_Worlds_Slug");
 
                     b.ToTable("Worlds");
                 });
@@ -1056,6 +1079,11 @@ namespace Chronicis.Api.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<DateTime>("UpdatedUtc")
                         .HasColumnType("datetime2");
 
@@ -1065,6 +1093,10 @@ namespace Chronicis.Api.Migrations
                     b.HasKey("WorldMapId");
 
                     b.HasIndex("WorldId");
+
+                    b.HasIndex("WorldId", "Slug")
+                        .IsUnique()
+                        .HasDatabaseName("IX_WorldMaps_WorldId_Slug");
 
                     b.ToTable("WorldMaps");
                 });

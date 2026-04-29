@@ -67,7 +67,7 @@ public class DashboardViewModelActionsTests
         c.Notifier.Received(1).Success(Arg.Is<string>(s => s.Contains("Middle-Earth")));
         await c.TreeState.Received(1).RefreshAsync();
         Assert.True(c.TreeState.ShouldFocusTitle);
-        c.Navigator.Received(1).NavigateTo("/world/middle-earth");
+        await c.Navigator.Received(1).GoToWorldAsync("middle-earth");
     }
 
     [Fact]
@@ -122,7 +122,32 @@ public class DashboardViewModelActionsTests
     public async Task JoinWorldAsync_WhenConfirmedWithWorldId_NotifiesAndNavigates()
     {
         var c = CreateSut();
-        var joinResult = new WorldJoinResultDto { WorldName = "Faerûn", WorldId = Guid.NewGuid() };
+        var worldId = Guid.NewGuid();
+        var joinResult = new WorldJoinResultDto { WorldName = "Faerûn", WorldId = worldId };
+        var dialogRef = Substitute.For<IDialogReference>();
+        dialogRef.Result.Returns(Task.FromResult(
+            DialogResult.Ok<WorldJoinResultDto>(joinResult)));
+        c.DialogService.ShowAsync<JoinWorldDialog>(Arg.Any<string>()).Returns(dialogRef);
+        c.DashboardApi.GetDashboardAsync().Returns(new DashboardDto
+        {
+            UserDisplayName = "X",
+            Worlds = new() { new DashboardWorldDto { Id = worldId, Slug = "faerûn", Name = "Faerûn" } },
+            ClaimedCharacters = new(),
+            Prompts = new()
+        });
+
+        await c.Sut.JoinWorldAsync();
+
+        c.Notifier.Received(1).Success(Arg.Is<string>(s => s.Contains("Faerûn")));
+        await c.TreeState.Received(1).RefreshAsync();
+        await c.Navigator.Received(1).GoToWorldAsync("faerûn");
+    }
+
+    [Fact]
+    public async Task JoinWorldAsync_WhenConfirmedWithWorldIdNotInDashboard_DoesNotNavigate()
+    {
+        var c = CreateSut();
+        var joinResult = new WorldJoinResultDto { WorldName = "Ghost World", WorldId = Guid.NewGuid() };
         var dialogRef = Substitute.For<IDialogReference>();
         dialogRef.Result.Returns(Task.FromResult(
             DialogResult.Ok<WorldJoinResultDto>(joinResult)));
@@ -137,9 +162,7 @@ public class DashboardViewModelActionsTests
 
         await c.Sut.JoinWorldAsync();
 
-        c.Notifier.Received(1).Success(Arg.Is<string>(s => s.Contains("Faerûn")));
-        await c.TreeState.Received(1).RefreshAsync();
-        c.Navigator.Received(1).NavigateTo($"/world/{joinResult.WorldId}");
+        await c.Navigator.DidNotReceive().GoToWorldAsync(Arg.Any<string>());
     }
 
     [Fact]
@@ -199,7 +222,9 @@ public class DashboardViewModelActionsTests
 
         await c.Sut.NavigateToCharacterAsync(id);
 
-        c.Navigator.Received(1).NavigateTo("/article/world/characters/aragorn");
+        await c.Navigator.Received(1).GoToWikiArticleAsync(
+            "world",
+            Arg.Is<IReadOnlyList<string>>(l => l.Count == 2 && l[0] == "characters" && l[1] == "aragorn"));
     }
 
     [Fact]

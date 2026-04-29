@@ -6,7 +6,7 @@ namespace Chronicis.Api.Tests;
 public class WikiLinkTitleRewriterTests
 {
     private static readonly Guid TargetId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
-    private static readonly Guid OtherId  = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000002");
+    private static readonly Guid OtherId = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000002");
 
     private static WikiLinkTitleRewriter Sut() => new();
 
@@ -112,13 +112,13 @@ public class WikiLinkTitleRewriterTests
     [Fact]
     public void LeavesOtherTargetIds_Alone()
     {
-        var match  = Span(TargetId, "OldTitle");
-        var other  = Span(OtherId,  "OtherTitle");
-        var body   = $"{match} {other}";
+        var match = Span(TargetId, "OldTitle");
+        var other = Span(OtherId, "OtherTitle");
+        var body = $"{match} {other}";
         var (result, changed) = Sut().Rewrite(body, TargetId, "NewTitle");
 
         Assert.True(changed);
-        Assert.Contains("NewTitle",   result, StringComparison.Ordinal);
+        Assert.Contains("NewTitle", result, StringComparison.Ordinal);
         Assert.Contains("OtherTitle", result, StringComparison.Ordinal);
     }
 

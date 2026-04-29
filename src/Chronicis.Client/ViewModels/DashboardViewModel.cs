@@ -167,7 +167,7 @@ public sealed class DashboardViewModel : ViewModelBase, IDisposable
                 if (world.WorldRootArticleId.HasValue)
                 {
                     _treeState.ShouldFocusTitle = true;
-                    _navigator.NavigateTo($"/world/{world.Slug}");
+                    await _navigator.GoToWorldAsync(world.Slug);
                 }
                 else
                 {
@@ -200,7 +200,9 @@ public sealed class DashboardViewModel : ViewModelBase, IDisposable
 
             if (joinResult.WorldId.HasValue)
             {
-                _navigator.NavigateTo($"/world/{joinResult.WorldId}");
+                var world = _orderedWorlds.FirstOrDefault(w => w.Id == joinResult.WorldId.Value);
+                if (world != null)
+                    await _navigator.GoToWorldAsync(world.Slug);
             }
         }
     }
@@ -211,8 +213,12 @@ public sealed class DashboardViewModel : ViewModelBase, IDisposable
         var article = await _articleApi.GetArticleDetailAsync(characterId);
         if (article != null && article.Breadcrumbs.Any())
         {
-            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-            _navigator.NavigateTo($"/article/{path}");
+            var worldSlug = article.Breadcrumbs[0].Slug;
+            var articleSlugs = article.Breadcrumbs.Skip(1).Select(b => b.Slug).ToList();
+            if (articleSlugs.Count > 0)
+                await _navigator.GoToWikiArticleAsync(worldSlug, articleSlugs);
+            else
+                await _navigator.GoToWorldAsync(worldSlug);
         }
     }
 

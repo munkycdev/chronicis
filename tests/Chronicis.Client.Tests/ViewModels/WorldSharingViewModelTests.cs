@@ -35,7 +35,7 @@ public class WorldSharingViewModelTests
     public void InitializeFrom_SetsPropertiesFromWorld()
     {
         var c = CreateSut();
-        var world = new WorldDetailDto { IsPublic = true, PublicSlug = "my-world" };
+        var world = new WorldDetailDto { IsPublic = true, Slug = "my-world" };
         c.Vm.InitializeFrom(world);
 
         Assert.True(c.Vm.IsPublic);
@@ -247,14 +247,14 @@ public class WorldSharingViewModelTests
     {
         var c = CreateSut();
         Assert.Empty(c.Vm.GetFullPublicUrl("https://app/", null));
-        Assert.Empty(c.Vm.GetFullPublicUrl("https://app/", new WorldDetailDto { PublicSlug = null }));
+        Assert.Empty(c.Vm.GetFullPublicUrl("https://app/", new WorldDetailDto { IsPublic = false }));
     }
 
     [Fact]
     public void GetFullPublicUrl_WhenSlugSet_ReturnsFullUrl()
     {
         var c = CreateSut();
-        var world = new WorldDetailDto { IsPublic = true, PublicSlug = "my-world" };
+        var world = new WorldDetailDto { IsPublic = true, Slug = "my-world" };
         var result = c.Vm.GetFullPublicUrl("https://chronicis.app/", world);
         Assert.Equal("https://chronicis.app/w/my-world", result);
     }
@@ -263,7 +263,7 @@ public class WorldSharingViewModelTests
     public void ShouldShowPublicPreview_WhenPublicWithSlug_ReturnsTrue()
     {
         var c = CreateSut();
-        var world = new WorldDetailDto { IsPublic = true, PublicSlug = "my-world" };
+        var world = new WorldDetailDto { IsPublic = true, Slug = "my-world" };
         Assert.True(c.Vm.ShouldShowPublicPreview(world));
     }
 
@@ -274,7 +274,7 @@ public class WorldSharingViewModelTests
     public void ShouldShowPublicPreview_WhenNotPublicOrNoSlug_ReturnsFalse(bool isPublic, string? slug)
     {
         var c = CreateSut();
-        var world = new WorldDetailDto { IsPublic = isPublic, PublicSlug = slug };
+        var world = new WorldDetailDto { IsPublic = isPublic, Slug = slug ?? string.Empty };
         Assert.False(c.Vm.ShouldShowPublicPreview(world));
     }
 

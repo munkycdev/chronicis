@@ -1,6 +1,6 @@
 # Chronicis Architecture Inventory
 
-Last reviewed: 2026-03-14
+Last reviewed: 2026-04-27
 
 ## 1) Scope
 - Projects covered:
@@ -79,6 +79,11 @@ Chronicis.Shared         ---->  (no project references)
 - `BlobStorageService`, `WorldDocumentService`, `ExportService` (+ markdown builder partials).
 - Maps module:
 - `WorldMapService` + `IMapBlobStore`/`AzureBlobMapBlobStore` handle map metadata, basemap SAS flows, point/polygon feature CRUD, polygon geometry blob persistence, session-note nested map/feature autocomplete reads, and destructive map-folder cleanup.
+- Routing module:
+- `ISlugPathResolver` / `SlugPathResolver` traverses entity slug chains (world → campaign → arc → session → article/map) and returns a typed `SlugPathResolution`.
+- `IReservedSlugProvider` / `ReservedSlugProvider` enforces the `Routing:ReservedSlugs` allowlist.
+- `RoutingOptions` carries configuration-driven reserved-slug and routing policy settings.
+- Unified path endpoint (`PathsController`, `GET /api/paths/resolve/{*path}`) is anonymous-accessible and returns the resolved entity kind and IDs.
 - Public read model module:
 - `PublicWorldService` for anonymous world/article/document access projections plus anonymous map/modal read models for shared worlds.
 - Admin/tutorial module:
@@ -129,6 +134,13 @@ Chronicis.Shared         ---->  (no project references)
 - Document entities (`WorldDocument`) are world-scoped with optional article association.
 - Map entities (`WorldMap`, `MapLayer`, `MapFeature`, `WorldMapCampaign`, `WorldMapArc`) are world-scoped with optional campaign/arc scoping pivots.
 - Quest entities are arc-scoped with quest-update timeline entities and optional session reference.
+- Slug columns per entity (added in `UrlRestructure_SlugFoundations`):
+- `World.Slug`: globally unique, replaces the former `PublicSlug` field.
+- `Campaign.Slug`: sibling-unique per world.
+- `Arc.Slug`: sibling-unique per campaign.
+- `Session.Slug`: sibling-unique per arc.
+- `WorldMap.Slug`: sibling-unique per world.
+- Articles retain sibling-unique slug under the article tree (unchanged).
 - Constraint architecture:
 - Unique indexes for identity/business constraints (e.g., owner+slug, public slug, invitation code, sibling slug uniqueness).
 - Filtered indexes for nullable/conditional uniqueness.
@@ -141,7 +153,8 @@ Chronicis.Shared         ---->  (no project references)
 
 ### 3.7 API Surface Organization
 - Controller modules map to explicit bounded areas:
-- Worlds, world links, world documents, campaigns, arcs, sessions, articles, search, external links, quests/updates, users/dashboard, public sharing, admin/tutorials, summaries, resource providers, health.
+- Worlds, world links, world documents, campaigns, arcs, sessions, articles, search, external links, quests/updates, users/dashboard, public sharing, admin/tutorials, summaries, resource providers, health, paths.
+- `PathsController` exposes `GET /api/paths/resolve/{*path}` anonymously; all other entity controllers remain auth-required unless explicitly annotated.
 - Public and authenticated endpoints are split by controller intent and authorization attributes.
 
 ### 3.8 Cross-Cutting Patterns
@@ -170,7 +183,8 @@ Chronicis.Shared         ---->  (no project references)
 
 ### 4.2 Client Layering Model
 - Routing/layout layer:
-- `App.razor` + custom `ChronicisRouteView` determine layout/auth rendering behavior.
+- `App.razor` hosts Blazor routing. `PathResolver` (`/{*Path}`) is the single catch-all page for all entity-detail URLs; it resolves slug paths via `IPathApiService` and selects layout based on auth state.
+- Non-entity pages (dashboard, settings, change-log, etc.) retain their own `@page` directives and layouts unchanged.
 - Page layer:
 - Route-bound pages in `Pages/*` are top-level screens.
 - Component layer:
@@ -187,7 +201,11 @@ Chronicis.Shared         ---->  (no project references)
 - `wwwroot/js/*` modules provide editor/shortcut/upload/autocomplete interop.
 
 ### 4.3 Routing and Layout Architecture
-- `ChronicisRouteView` inspects page metadata (`@layout`, `[Authorize]`) to choose layout and avoid auth-layout flicker.
+- `PathResolver` (`@page "/{*Path}"`) is the single entry point for all entity-detail renders:
+- calls `IPathApiService.ResolveAsync(path)` to obtain a `SlugPathResolution` containing the entity kind and IDs.
+- selects layout via `SelectLayout(isAuthenticated)`: `AuthenticatedLayout` for signed-in users, `PublicLayout` for anonymous visitors.
+- dispatches to the appropriate detail component (`WorldDetail`, `CampaignDetail`, `ArcDetail`, `SessionDetail`, `ArticleDetail`, `MapListing`, `MapDetail`) passing entity IDs as component parameters.
+- reserved slugs (configured under `Routing:ReservedSlugs` — e.g., `dashboard`, `settings`) redirect to `/dashboard` before the API call.
 - `AuthenticatedLayout` hosts:
 - top app bar
 - left navigation drawer/tree
@@ -205,6 +223,8 @@ Chronicis.Shared         ---->  (no project references)
 - `ChronicisAuthHandler` injects bearer token via `IAccessTokenProvider`.
 - API service pattern:
 - Interface + implementation per domain endpoint cluster (e.g., `IArticleApiService` / `ArticleApiService`).
+- Path resolution client seam:
+- `IPathApiService` / `PathApiService` calls `GET /api/paths/resolve/{*path}` (anonymous-accessible) and returns a `SlugPathResolution`; consumed by `PathResolver` to dispatch to the correct detail component.
 - Map-linking client seams:
 - `IMapApiService` / `MapApiService` serve authenticated map CRUD and nested `[[maps/...` autocomplete reads for editor map/map-feature chips.
 - `IPublicApiService` / `PublicApiService` serve anonymous public-world content reads and modal map hydration for public chip clicks.
@@ -330,8 +350,16 @@ Chronicis.Shared         ---->  (no project references)
 ### 6.4 Artifact Storage
 - `WorldDocument` records map metadata/state for blob-backed files.
 - Optional `ArticleId` supports inline content image association.
-- `WorldMap` stores basemap metadata (`BasemapBlobKey`, content type, original filename) for blob-backed map imagery.
+- `WorldMap` stores basemap metadata (`BasemapBlobKey`, content type, original filename) for blob-backed map imagery; each map carries a `Slug` that is sibling-unique per world and is used in URL path generation.
 - `MapFeature` stores point coordinates inline and stores polygon geometry references (`GeometryBlobKey`, `GeometryETag`) plus feature-level name/color metadata for blob-backed polygon shapes.
+
+### 6.6 Slug Identity Inventory
+- `World.Slug`: globally unique across all worlds; used as the first segment of every entity URL.
+- `Campaign.Slug`: unique among campaigns within the same world.
+- `Arc.Slug`: unique among arcs within the same campaign.
+- `Session.Slug`: unique among sessions within the same arc.
+- `WorldMap.Slug`: unique among maps within the same world.
+- `Article.Slug`: unique among articles sharing the same parent (sibling-unique in the article tree).
 
 ### 6.5 Progress Tracking
 - Quests are arc-scoped.
@@ -455,15 +483,15 @@ Chronicis.Shared         ---->  (no project references)
 - Existing repository seam:
 - `IResourceProviderRepository` / `ResourceProviderRepository` is the primary explicit repository abstraction path.
 
-### 10.6 Current Implementation Inventory (As Of 2026-03-02)
+### 10.6 Current Implementation Inventory (As Of 2026-04-27)
 - Data-access boundaries:
 - Services with direct `ChronicisDbContext` field injection: `33`.
 - Controllers with direct `ChronicisDbContext` field injection: `0`.
 - Session model:
 - Legacy `ArticleType.Session` references in API controllers/services (excluding migrations/tests): `2`.
 - Distribution: `ArticleValidationService` (`1`), `PublicWorldService` (`1`).
-- Legacy `ArticleType.Session` references in client source (`.cs` + `.razor`): `8`.
-- Distribution: `TutorialPageTypes` (`1`), `ArticleMetadataDrawer` (`2`), `QuestDrawer` (`2`), `TreeNode` (`1`), `PublicWorldPageViewModel` (`1`), `TreeDataBuilder` (`1`).
+- Legacy `ArticleType.Session` references in client source (`.cs` + `.razor`): `7`.
+- Distribution: `TutorialPageTypes` (`1`), `ArticleMetadataDrawer` (`2`), `QuestDrawer` (`2`), `TreeNode` (`1`), `TreeDataBuilder` (`1`).
 - Access-policy enforcement:
 - Public visibility/public slug rule condition hits in key read-path services/controllers (`PublicWorldService`, `WorldService`, `SessionService`, `SummaryService`, `PublicController`): `48`.
 - Shared read-policy consumers:
@@ -563,7 +591,6 @@ rg -n "\.Log(Warning|Error|Critical|Trace)\(" src/Chronicis.Api --glob "**/*.cs"
 - `src/Chronicis.Client/Components/Articles/ArticleMetadataDrawer.razor`
 - `src/Chronicis.Client/Components/Quests/QuestDrawer.razor.cs`
 - `src/Chronicis.Client/Models/TreeNode.cs`
-- `src/Chronicis.Client/ViewModels/PublicWorldPageViewModel.cs`
 - `src/Chronicis.Client/Services/Tree/TreeDataBuilder.cs`
 - Freeze rule:
 - No new `ArticleType.Session` references may be introduced outside the allowlist.
@@ -576,7 +603,7 @@ rg -n "\.Log(Warning|Error|Critical|Trace)\(" src/Chronicis.Api --glob "**/*.cs"
 - Guardrails:
 - `tests/Chronicis.ArchitecturalTests/SessionModelGuardrailTests.cs` enforces:
 - no expansion of boundary file set for API/client.
-- no increase above baseline legacy-reference counts (`API <= 2`, `Client <= 8`).
+- no increase above baseline legacy-reference counts (`API <= 2`, `Client <= 7`).
 
 ### 10.13 Unified Access-Policy Architecture
 - Shared policy contract:
@@ -672,6 +699,28 @@ rg -n "\.Log(Warning|Error|Critical|Trace)\(" src/Chronicis.Api --glob "**/*.cs"
 - zero direct non-sanitized warning/error/critical/trace logger calls in API source.
 - Release policy:
 - any logging hygiene guardrail failure is a release blocker.
+
+### 10.19 URL Restructure Release
+- Scope: Phases 01–07 of the `url-redesign` branch (~43 files changed).
+- Migration: `UrlRestructure_SlugFoundations` — adds `Slug` columns to `Campaign`, `Arc`, `Session`, and `WorldMap`; renames `World.PublicSlug` to `World.Slug`; adds sibling-unique indexes per entity.
+- Retired URL shapes:
+- `/w/{publicSlug}` and `/w/{publicSlug}/{*path}` — public world/article viewer.
+- `/article/{*path}` — authenticated article path routing.
+- `/world/{guid}`, `/campaign/{guid}`, `/arc/{guid}`, `/session/{guid}` — GUID-based entity detail routes.
+- `/world/{guid}/maps` and `/world/{guid}/maps/{guid}` — GUID-based map routes.
+- Canonical URL scheme (all entity detail paths):
+- `/{worldSlug}` — world detail.
+- `/{worldSlug}/{campaignSlug}` — campaign detail.
+- `/{worldSlug}/{campaignSlug}/{arcSlug}` — arc detail.
+- `/{worldSlug}/{campaignSlug}/{arcSlug}/{sessionSlug}` — session detail.
+- `/{worldSlug}/{*articlePath}` — wiki article or session note.
+- `/{worldSlug}/maps` — map listing.
+- `/{worldSlug}/maps/{mapSlug}` — map detail.
+- Reserved slugs (`dashboard`, `settings`, `w`, `article`, etc.) redirect to `/dashboard` on the client.
+- Routing implementation: `PathResolver` (`@page "/{*Path}"`) resolves all entity URLs; `PathsController` (`GET /api/paths/resolve/{*path}`) serves the server-side resolution.
+- Deleted components: `Articles.razor`, `PublicWorldPage.razor`, `PublicWorldPageViewModel.cs`.
+- Architecture guardrail added: `ClientPages_MustNotContainGuidBasedPageDirectives` in `ArchitectureGuardrailTests.cs`.
+- Anonymous/authenticated parity: both audiences share identical URL shapes; `IReadAccessPolicyService` governs content visibility.
 
 ## 11) Out of Scope
 - `Chronicis.CaptureApp` architecture is intentionally excluded.

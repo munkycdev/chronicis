@@ -1,0 +1,124 @@
+@page "/{*Path}"
+@layout PassthroughLayout
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Rendering
+@using Chronicis.Client.Pages
+@using Chronicis.Client.Pages.Maps
+@using Chronicis.Client.Services.Routing
+@using Chronicis.Shared.Routing
+@inject IPathApiService PathApi
+@inject IClientReservedSlugProvider ReservedSlugs
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<LayoutView Layout="@_layoutType">
+    @if (_isLoading)
+    {
+        <LoadingSkeleton />
+    }
+    else if (_resolution == null && _hasResolved)
+    {
+        <NotFoundAlert Message="Page not found" />
+    }
+    else if (_resolution != null)
+    {
+        @RenderResolution(_resolution)
+    }
+</LayoutView>
+
+@code {
+    [Parameter]
+    public string? Path { get; set; }
+
+    private Type _layoutType = typeof(PublicLayout);
+    private bool _isLoading;
+    private bool _hasResolved;
+    private SlugPathResolution? _resolution;
+
+    internal static Type SelectLayout(bool isAuthenticated) =>
+        isAuthenticated ? typeof(AuthenticatedLayout) : typeof(PublicLayout);
+
+    internal static Type? GetDetailComponentType(ResolvedEntityKind kind) => kind switch
+    {
+        ResolvedEntityKind.World       => typeof(WorldDetail),
+        ResolvedEntityKind.Campaign    => typeof(CampaignDetail),
+        ResolvedEntityKind.Arc         => typeof(ArcDetail),
+        ResolvedEntityKind.Session     => typeof(SessionDetail),
+        ResolvedEntityKind.SessionNote => typeof(ArticleDetail),
+        ResolvedEntityKind.WikiArticle => typeof(ArticleDetail),
+        ResolvedEntityKind.MapListing  => typeof(MapListing),
+        ResolvedEntityKind.Map         => typeof(MapDetail),
+        _                              => null
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _layoutType = SelectLayout(authState.User.Identity?.IsAuthenticated == true);
+
+        var segments = Path?.Split('/', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+
+        if (segments.Length == 0)
+            return;
+
+        if (ReservedSlugs.IsReserved(segments[0]))
+        {
+            Navigation.NavigateTo("/dashboard", replace: true);
+            return;
+        }
+
+        _isLoading = true;
+        _hasResolved = false;
+        StateHasChanged();
+
+        _resolution = await PathApi.ResolveAsync(Path!, CancellationToken.None);
+        _isLoading = false;
+        _hasResolved = true;
+    }
+
+    private RenderFragment RenderResolution(SlugPathResolution resolution) => builder =>
+    {
+        var componentType = GetDetailComponentType(resolution.Kind);
+        if (componentType == null)
+            return;
+
+        builder.OpenComponent(0, componentType);
+        AddComponentAttributes(builder, resolution);
+        builder.CloseComponent();
+    };
+
+    private static void AddComponentAttributes(RenderTreeBuilder builder, SlugPathResolution resolution)
+    {
+        switch (resolution.Kind)
+        {
+            case ResolvedEntityKind.World:
+            case ResolvedEntityKind.MapListing:
+                if (resolution.WorldId.HasValue)
+                    builder.AddAttribute(1, "WorldId", resolution.WorldId.Value);
+                break;
+            case ResolvedEntityKind.Campaign:
+                if (resolution.CampaignId.HasValue)
+                    builder.AddAttribute(1, "CampaignId", resolution.CampaignId.Value);
+                break;
+            case ResolvedEntityKind.Arc:
+                if (resolution.ArcId.HasValue)
+                    builder.AddAttribute(1, "ArcId", resolution.ArcId.Value);
+                break;
+            case ResolvedEntityKind.Session:
+                if (resolution.SessionId.HasValue)
+                    builder.AddAttribute(1, "SessionId", resolution.SessionId.Value);
+                break;
+            case ResolvedEntityKind.Map:
+                if (resolution.WorldId.HasValue)
+                    builder.AddAttribute(1, "WorldId", resolution.WorldId.Value);
+                if (resolution.MapId.HasValue)
+                    builder.AddAttribute(2, "MapId", resolution.MapId.Value);
+                break;
+            case ResolvedEntityKind.SessionNote:
+            case ResolvedEntityKind.WikiArticle:
+                if (resolution.ArticleId.HasValue)
+                    builder.AddAttribute(1, "ArticleId", resolution.ArticleId.Value);
+                break;
+        }
+    }
+}

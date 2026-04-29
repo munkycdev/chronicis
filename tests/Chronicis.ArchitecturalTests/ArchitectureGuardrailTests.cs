@@ -142,6 +142,37 @@ public sealed class ArchitectureGuardrailTests
     }
 
     [Fact]
+    public void ClientViewModels_MustNotNavigateToLegacyCampaignOrSessionRoutes()
+    {
+        var viewModelsPath = Path.Combine(RepoRoot, "src", "Chronicis.Client", "ViewModels");
+        var files = Directory.EnumerateFiles(viewModelsPath, "*.cs", SearchOption.AllDirectories);
+        var violations = new List<string>();
+
+        var legacyPatterns = new[]
+        {
+            "NavigateTo($\"/campaign/",
+        };
+
+        foreach (var file in files)
+        {
+            if (IsBuildArtifact(file))
+                continue;
+
+            var content = File.ReadAllText(file);
+            foreach (var pattern in legacyPatterns)
+            {
+                if (content.Contains(pattern, StringComparison.Ordinal))
+                    violations.Add($"{ToRepoRelativePath(file)}: contains '{pattern}'");
+            }
+        }
+
+        Assert.True(
+            violations.Count == 0,
+            "ViewModels must not navigate to legacy /campaign/ or /session/ routes — use IAppNavigator.GoTo*Async() instead." + Environment.NewLine +
+            string.Join(Environment.NewLine, violations.Select(v => $"  - {v}")));
+    }
+
+    [Fact]
     public void SessionService_MustNotReintroduceLegacySessionArticleWrites()
     {
         var sessionServicePath = Path.Combine(RepoRoot, "src", "Chronicis.Api", "Services", "SessionService.cs");
@@ -150,6 +181,37 @@ public sealed class ArchitectureGuardrailTests
         var legacySessionPattern = new Regex(@"\bArticleType\.Session\b", RegexOptions.CultureInvariant);
         Assert.True(!legacySessionPattern.IsMatch(content), "SessionService contains legacy ArticleType.Session reference.");
         Assert.Contains("ArticleType.SessionNote", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ClientPages_MustNotContainGuidBasedPageDirectives()
+    {
+        var pagesPath = Path.Combine(RepoRoot, "src", "Chronicis.Client", "Pages");
+        var files = Directory.EnumerateFiles(pagesPath, "*.razor", SearchOption.AllDirectories);
+
+        var legacyPrefixes = new[] { "/world/", "/campaign/", "/arc/", "/session/", "/article/", "/w/" };
+        var pageDirectivePattern = new Regex(@"^\s*@page\s+""([^""]+)""", RegexOptions.Multiline | RegexOptions.CultureInvariant);
+
+        var violations = new List<string>();
+
+        foreach (var file in files)
+        {
+            if (IsBuildArtifact(file))
+                continue;
+
+            var content = File.ReadAllText(file);
+            foreach (Match match in pageDirectivePattern.Matches(content))
+            {
+                var route = match.Groups[1].Value;
+                if (legacyPrefixes.Any(p => route.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+                    violations.Add($"{ToRepoRelativePath(file)}: @page \"{route}\"");
+            }
+        }
+
+        Assert.True(
+            violations.Count == 0,
+            "Client pages must not use GUID-based legacy routes. Use PathResolver (/{*Path}) instead." + Environment.NewLine +
+            string.Join(Environment.NewLine, violations.Select(v => $"  - {v}")));
     }
 
     private static bool IsBuildArtifact(string filePath)

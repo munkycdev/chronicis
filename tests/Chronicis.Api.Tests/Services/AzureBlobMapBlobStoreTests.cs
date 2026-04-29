@@ -1,10 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
+using System.IO.Compression;
 using System.Net;
-using System.Net.Sockets;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.IO.Compression;
 using Azure.Core.Pipeline;
 using Azure.Storage;
 using Azure.Storage.Blobs;

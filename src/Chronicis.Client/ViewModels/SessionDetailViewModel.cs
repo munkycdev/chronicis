@@ -355,7 +355,7 @@ public sealed class SessionDetailViewModel : ViewModelBase
 
             await _treeState.RefreshAsync();
             _notifier.Success("Session deleted");
-            _navigator.NavigateTo($"/arc/{arcId}", replace: true);
+            await _navigator.GoToArcAsync(Session.WorldSlug, Session.CampaignSlug, Session.ArcSlug, replace: true);
         }
         catch (Exception ex)
         {

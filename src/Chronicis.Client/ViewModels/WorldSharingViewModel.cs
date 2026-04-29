@@ -77,7 +77,7 @@ public sealed class WorldSharingViewModel : ViewModelBase
     public void InitializeFrom(WorldDetailDto world)
     {
         IsPublic = world.IsPublic;
-        PublicSlug = world.PublicSlug ?? string.Empty;
+        PublicSlug = world.IsPublic ? world.Slug : string.Empty;
         SlugIsAvailable = world.IsPublic;
         SlugError = null;
         SlugHelperText = null;
@@ -176,13 +176,13 @@ public sealed class WorldSharingViewModel : ViewModelBase
 
     public string GetFullPublicUrl(string baseUri, WorldDetailDto? world)
     {
-        if (world == null || string.IsNullOrEmpty(world.PublicSlug))
+        if (world == null || !world.IsPublic || string.IsNullOrEmpty(world.Slug))
             return string.Empty;
-        return $"{GetPublicUrlBase(baseUri)}{world.PublicSlug}";
+        return $"{GetPublicUrlBase(baseUri)}{world.Slug}";
     }
 
     public bool ShouldShowPublicPreview(WorldDetailDto? world) =>
-        world is not null && world.IsPublic && !string.IsNullOrEmpty(world.PublicSlug);
+        world is not null && world.IsPublic && !string.IsNullOrEmpty(world.Slug);
 
     /// <summary>Generates a URL-safe slug from a world name.</summary>
     public static string GenerateSlugFromName(string name)

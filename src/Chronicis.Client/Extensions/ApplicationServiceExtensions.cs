@@ -1,6 +1,7 @@
 using Chronicis.Client.Abstractions;
 using Chronicis.Client.Infrastructure;
 using Chronicis.Client.Services;
+using Chronicis.Client.Services.Routing;
 using Chronicis.Client.ViewModels;
 using Chronicis.Shared.Admin;
 using Microsoft.Extensions.Options;
@@ -46,6 +47,12 @@ public static class ApplicationServiceExtensions
         services.AddChronicisApiService<IAdminApiService, AdminApiService>();
         services.AddChronicisApiService<ITutorialApiService, TutorialApiService>();
         services.AddChronicisApiService<IMapApiService, MapApiService>();
+        services.AddChronicisApiService<IPathApiService, PathApiService>();
+
+        // Routing services
+        services.AddSingleton<IAppUrlBuilder, AppUrlBuilder>();
+        services.AddSingleton<IClientReservedSlugProvider>(sp =>
+            new ClientReservedSlugProvider(sp.GetRequiredService<IConfiguration>()));
 
         // API services with special dependencies
         services.AddChronicisApiServiceWithSnackbar<IQuestApiService, QuestApiService>();
@@ -86,7 +93,6 @@ public static class ApplicationServiceExtensions
         services.AddTransient<ArticleDetailViewModel>();
         services.AddTransient<CosmosViewModel>();
         services.AddTransient<GettingStartedViewModel>();
-        services.AddTransient<PublicWorldPageViewModel>();
 
         // State & coordination services
         services.AddScoped<ITreeStateService, TreeStateService>();

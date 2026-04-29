@@ -347,4 +347,25 @@ public class WorldsController : ControllerBase
         };
     }
 
+    /// <summary>
+    /// PUT /api/worlds/{id}/slug - Update a world's slug.
+    /// </summary>
+    [HttpPut("{id:guid}/slug")]
+    public async Task<ActionResult<SlugUpdateResponseDto>> UpdateWorldSlug(Guid id, [FromBody] SlugUpdateRequestDto dto)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        var result = await _worldService.UpdateSlugAsync(id, dto.Slug, user.Id);
+
+        return result.Status switch
+        {
+            ServiceStatus.Success => Ok(new SlugUpdateResponseDto { Slug = result.Value! }),
+            ServiceStatus.NotFound => NotFound(new { error = "World not found" }),
+            ServiceStatus.Forbidden => StatusCode(403, new { error = result.ErrorMessage }),
+            ServiceStatus.ValidationError when result.ErrorMessage == "SLUG_RESERVED" =>
+                BadRequest(new { error = "SLUG_RESERVED" }),
+            _ => BadRequest(new { error = result.ErrorMessage })
+        };
+    }
+
 }

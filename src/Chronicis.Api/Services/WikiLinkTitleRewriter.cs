@@ -17,13 +17,13 @@ public sealed partial class WikiLinkTitleRewriter : IWikiLinkTitleRewriter
         if (string.IsNullOrEmpty(body))
             return (string.Empty, false);
 
-        var targetIdStr  = targetArticleId.ToString("D");
+        var targetIdStr = targetArticleId.ToString("D");
         var encodedTitle = WebUtility.HtmlEncode(newTitle);
-        var changed      = false;
+        var changed = false;
 
         var result = WikiLinkSpanRegex().Replace(body, match =>
         {
-            var attrs     = match.Groups[1].Value;
+            var attrs = match.Groups[1].Value;
             var innerText = match.Groups[2].Value;
 
             // Must be a wiki-link type span

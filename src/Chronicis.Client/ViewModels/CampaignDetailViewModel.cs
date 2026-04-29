@@ -254,13 +254,13 @@ public sealed class CampaignDetailViewModel : ViewModelBase
         {
             await _treeState.RefreshAsync();
             await LoadAsync(_campaign.Id);
-            _navigator.NavigateTo($"/arc/{arc.Id}");
+            await _navigator.GoToArcAsync(arc);
             _notifier.Success("Arc created");
         }
     }
 
     /// <summary>Navigates to the arc detail page.</summary>
-    public void NavigateToArc(Guid arcId) => _navigator.NavigateTo($"/arc/{arcId}");
+    public Task NavigateToArcAsync(ArcDto arc) => _navigator.GoToArcAsync(arc);
 
     private async Task ResolveCurrentUserRoleAsync(WorldDetailDto? world)
     {

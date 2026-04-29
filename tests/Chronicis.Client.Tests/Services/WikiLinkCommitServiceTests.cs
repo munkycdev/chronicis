@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
-using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Xunit;

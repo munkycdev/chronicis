@@ -19,6 +19,9 @@ public class ArcDto
     public DateTime CreatedAt { get; set; }
     public Guid CreatedBy { get; set; }
     public string? CreatedByName { get; set; }
+    public string Slug { get; set; } = string.Empty;
+    public string CampaignSlug { get; set; } = string.Empty;
+    public string WorldSlug { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -33,6 +36,9 @@ public class ArcTreeDto
     public int SortOrder { get; set; }
     public int SessionCount { get; set; }
     public bool IsActive { get; set; }
+    public string Slug { get; set; } = string.Empty;
+    public string CampaignSlug { get; set; } = string.Empty;
+    public string WorldSlug { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -45,6 +51,7 @@ public class ArcCreateDto
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public int SortOrder { get; set; } = 0;
+    public string? Slug { get; set; }
 }
 
 /// <summary>

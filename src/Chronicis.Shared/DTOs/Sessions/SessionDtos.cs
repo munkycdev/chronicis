@@ -20,6 +20,10 @@ public class SessionDto
     public DateTime CreatedAt { get; set; }
     public DateTime? ModifiedAt { get; set; }
     public Guid CreatedBy { get; set; }
+    public string Slug { get; set; } = string.Empty;
+    public string ArcSlug { get; set; } = string.Empty;
+    public string CampaignSlug { get; set; } = string.Empty;
+    public string WorldSlug { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -34,6 +38,10 @@ public class SessionTreeDto
     public string Name { get; set; } = string.Empty;
     public DateTime? SessionDate { get; set; }
     public bool HasAiSummary { get; set; }
+    public string Slug { get; set; } = string.Empty;
+    public string ArcSlug { get; set; } = string.Empty;
+    public string CampaignSlug { get; set; } = string.Empty;
+    public string WorldSlug { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -44,6 +52,7 @@ public class SessionCreateDto
 {
     public string Name { get; set; } = string.Empty;
     public DateTime? SessionDate { get; set; }
+    public string? Slug { get; set; }
 }
 
 /// <summary>

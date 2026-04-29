@@ -22,9 +22,9 @@ public class ArticleRenameCascadeServiceTests : IDisposable
         var opts = new DbContextOptionsBuilder<ChronicisDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-        _db      = new ChronicisDbContext(opts);
+        _db = new ChronicisDbContext(opts);
         _rewriter = Substitute.For<IWikiLinkTitleRewriter>();
-        _logger   = NullLogger<ArticleRenameCascadeService>.Instance;
+        _logger = NullLogger<ArticleRenameCascadeService>.Instance;
     }
 
     public void Dispose()
@@ -35,8 +35,10 @@ public class ArticleRenameCascadeServiceTests : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if (_disposed) return;
-        if (disposing) _db.Dispose();
+        if (_disposed)
+            return;
+        if (disposing)
+            _db.Dispose();
         _disposed = true;
     }
 
@@ -46,26 +48,26 @@ public class ArticleRenameCascadeServiceTests : IDisposable
     private static Article MakeArticle(Guid id, string body = "") =>
         new()
         {
-            Id           = id,
-            Title        = "Title",
-            Slug         = id.ToString("N")[..8],
-            Type         = ArticleType.WikiArticle,
-            Visibility   = ArticleVisibility.MembersOnly,
-            Body         = body,
-            CreatedBy    = Guid.NewGuid(),
-            CreatedAt    = DateTime.UtcNow,
-            ModifiedAt   = DateTime.UtcNow.AddDays(-1),
+            Id = id,
+            Title = "Title",
+            Slug = id.ToString("N")[..8],
+            Type = ArticleType.WikiArticle,
+            Visibility = ArticleVisibility.MembersOnly,
+            Body = body,
+            CreatedBy = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow,
+            ModifiedAt = DateTime.UtcNow.AddDays(-1),
             LastModifiedBy = Guid.NewGuid(),
         };
 
     private static ArticleLink MakeLink(Guid sourceId, Guid targetId, string? displayText = null) =>
         new()
         {
-            Id              = Guid.NewGuid(),
+            Id = Guid.NewGuid(),
             SourceArticleId = sourceId,
             TargetArticleId = targetId,
-            DisplayText     = displayText,
-            CreatedAt       = DateTime.UtcNow,
+            DisplayText = displayText,
+            CreatedAt = DateTime.UtcNow,
         };
 
     // ── no-op / guard paths ───────────────────────────────────────────────────
@@ -77,7 +79,7 @@ public class ArticleRenameCascadeServiceTests : IDisposable
     public async Task NoOp_WhenOldAndNewTitleSameIgnoreCase(string oldTitle, string newTitle)
     {
         var renamedId = Guid.NewGuid();
-        var sourceId  = Guid.NewGuid();
+        var sourceId = Guid.NewGuid();
 
         _db.Articles.Add(MakeArticle(sourceId, "<p>body</p>"));
         _db.ArticleLinks.Add(MakeLink(sourceId, renamedId));
@@ -101,10 +103,10 @@ public class ArticleRenameCascadeServiceTests : IDisposable
     [Fact]
     public async Task QueriesOnlyBacklinksWithNullDisplayText()
     {
-        var renamedId  = Guid.NewGuid();
-        var sourceA    = Guid.NewGuid();
-        var sourceB    = Guid.NewGuid();
-        var body       = "<p>some body</p>";
+        var renamedId = Guid.NewGuid();
+        var sourceA = Guid.NewGuid();
+        var sourceB = Guid.NewGuid();
+        var body = "<p>some body</p>";
 
         _db.Articles.AddRange(MakeArticle(sourceA, body), MakeArticle(sourceB, body));
         _db.ArticleLinks.AddRange(
@@ -124,7 +126,7 @@ public class ArticleRenameCascadeServiceTests : IDisposable
     public async Task IgnoresCustomDisplayTextBacklinks()
     {
         var renamedId = Guid.NewGuid();
-        var sourceId  = Guid.NewGuid();
+        var sourceId = Guid.NewGuid();
 
         _db.Articles.Add(MakeArticle(sourceId, "<p>body</p>"));
         _db.ArticleLinks.Add(MakeLink(sourceId, renamedId, "my custom label"));
@@ -140,12 +142,12 @@ public class ArticleRenameCascadeServiceTests : IDisposable
     [Fact]
     public async Task WritesRewrittenBody_OnlyWhenChanged()
     {
-        var renamedId  = Guid.NewGuid();
-        var sourceA    = Guid.NewGuid();
-        var sourceB    = Guid.NewGuid();
-        var bodyA      = "<p>unchanged</p>";
-        var bodyB      = "<p>will change</p>";
-        var newBodyB   = "<p>changed</p>";
+        var renamedId = Guid.NewGuid();
+        var sourceA = Guid.NewGuid();
+        var sourceB = Guid.NewGuid();
+        var bodyA = "<p>unchanged</p>";
+        var bodyB = "<p>will change</p>";
+        var newBodyB = "<p>changed</p>";
 
         var articleA = MakeArticle(sourceA, bodyA);
         var articleB = MakeArticle(sourceB, bodyB);
@@ -162,22 +164,22 @@ public class ArticleRenameCascadeServiceTests : IDisposable
 
         var savedA = await _db.Articles.FindAsync(sourceA);
         var savedB = await _db.Articles.FindAsync(sourceB);
-        Assert.Equal(bodyA,   savedA!.Body);
+        Assert.Equal(bodyA, savedA!.Body);
         Assert.Equal(newBodyB, savedB!.Body);
     }
 
     [Fact]
     public async Task DoesNotModifyModifiedAtOrLastModifiedBy_OnCascadedSources()
     {
-        var renamedId    = Guid.NewGuid();
-        var sourceId     = Guid.NewGuid();
-        var staleDate    = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        var staleUser    = Guid.Parse("cccccccc-0000-0000-0000-000000000001");
-        var body         = "<p>body</p>";
-        var newBody      = "<p>new body</p>";
+        var renamedId = Guid.NewGuid();
+        var sourceId = Guid.NewGuid();
+        var staleDate = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var staleUser = Guid.Parse("cccccccc-0000-0000-0000-000000000001");
+        var body = "<p>body</p>";
+        var newBody = "<p>new body</p>";
 
         var article = MakeArticle(sourceId, body);
-        article.ModifiedAt     = staleDate;
+        article.ModifiedAt = staleDate;
         article.LastModifiedBy = staleUser;
         _db.Articles.Add(article);
         _db.ArticleLinks.Add(MakeLink(sourceId, renamedId));
@@ -232,7 +234,7 @@ public class ArticleRenameCascadeServiceTests : IDisposable
         _db.Articles.Add(MakeArticle(renamedId));
         _db.ArticleAliases.Add(new ArticleAlias
         {
-            Id        = Guid.NewGuid(),
+            Id = Guid.NewGuid(),
             ArticleId = renamedId,
             AliasText = "old title",   // lowercase — case-insensitive dedup
             CreatedAt = DateTime.UtcNow,
@@ -263,9 +265,9 @@ public class ArticleRenameCascadeServiceTests : IDisposable
     {
         // Verifies body rewrite AND alias insert are both committed together.
         var renamedId = Guid.NewGuid();
-        var sourceId  = Guid.NewGuid();
-        var body      = "<p>body</p>";
-        var newBody   = "<p>new body</p>";
+        var sourceId = Guid.NewGuid();
+        var body = "<p>body</p>";
+        var newBody = "<p>new body</p>";
 
         _db.Articles.AddRange(MakeArticle(renamedId), MakeArticle(sourceId, body));
         _db.ArticleLinks.Add(MakeLink(sourceId, renamedId));
@@ -276,7 +278,7 @@ public class ArticleRenameCascadeServiceTests : IDisposable
         await Sut().CascadeTitleChangeAsync(renamedId, "Old", "New");
 
         // Both changes persisted
-        var savedBody  = (await _db.Articles.FindAsync(sourceId))!.Body;
+        var savedBody = (await _db.Articles.FindAsync(sourceId))!.Body;
         var aliasCount = await _db.ArticleAliases.CountAsync(a => a.ArticleId == renamedId);
         Assert.Equal(newBody, savedBody);
         Assert.Equal(1, aliasCount);

@@ -1,11 +1,14 @@
 using System.Diagnostics.CodeAnalysis;
 using Chronicis.Api.Data;
+using Chronicis.Api.Infrastructure;
+using Chronicis.Api.Models;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
 
@@ -36,6 +39,7 @@ public class WorldServiceTests : IDisposable
             _context,
             _membershipService,
             _publicSharingService,
+            Substitute.For<IReservedSlugProvider>(),
             NullLogger<WorldService>.Instance);
 
         SeedTestData();
@@ -359,5 +363,163 @@ public class WorldServiceTests : IDisposable
         Assert.Equal(0, detail.MemberCount);
         Assert.Empty(detail.Campaigns);
         Assert.Empty(detail.Members);
+    }
+
+    [Fact]
+    public void Mapping_PublicWorld_ExposesSlug()
+    {
+        var world = new World
+        {
+            Id = Guid.NewGuid(),
+            Name = "Public World",
+            Slug = "public-world",
+            OwnerId = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow,
+            IsPublic = true,
+            Owner = null!,
+            Campaigns = null!,
+            Members = null!
+        };
+
+        var dto = WorldService.MapToDto(world);
+        var detail = WorldService.MapToDetailDto(world);
+
+        Assert.Equal("public-world", dto.Slug);
+        Assert.Equal("public-world", detail.Slug);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Reserved slug enforcement
+    // ────────────────────────────────────────────────────────────────
+
+    private WorldService CreateServiceWithReservedSlugs(params string[] reserved)
+    {
+        var options = Options.Create(new RoutingOptions
+        {
+            ReservedSlugs = new HashSet<string>(reserved, StringComparer.OrdinalIgnoreCase)
+        });
+        var provider = new ReservedSlugProvider(options);
+        return new WorldService(
+            _context,
+            _membershipService,
+            _publicSharingService,
+            provider,
+            NullLogger<WorldService>.Instance);
+    }
+
+    [Fact]
+    public async Task CreateWorldAsync_NameGeneratesReservedSlug_AppendsSuffix()
+    {
+        // "Dashboard" generates slug "dashboard" which is reserved → should become "dashboard-2"
+        var service = CreateServiceWithReservedSlugs("dashboard");
+        var dto = new WorldCreateDto { Name = "Dashboard" };
+
+        var world = await service.CreateWorldAsync(dto, TestHelpers.FixedIds.User1);
+
+        Assert.Equal("dashboard-2", world.Slug);
+    }
+
+    [Fact]
+    public async Task UpdateWorldAsync_ReservedPublicSlug_ReturnsNull()
+    {
+        var service = CreateServiceWithReservedSlugs("admin");
+        var dto = new WorldUpdateDto
+        {
+            IsPublic = true,
+            PublicSlug = "admin"
+        };
+        _publicSharingService.ValidatePublicSlug("admin").Returns((string?)null);
+
+        var result = await service.UpdateWorldAsync(TestHelpers.FixedIds.World1, dto, TestHelpers.FixedIds.User1);
+
+        Assert.Null(result);
+        var unchanged = await _context.Worlds.FindAsync(TestHelpers.FixedIds.World1);
+        Assert.False(unchanged!.IsPublic);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  GetIdBySlugAsync
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetIdBySlugAsync_ExistingSlug_ReturnsWorldInfo()
+    {
+        var result = await _service.GetIdBySlugAsync("test-world");
+
+        Assert.NotNull(result);
+        Assert.Equal(TestHelpers.FixedIds.World1, result!.Value.Id);
+        Assert.Equal("Test World", result.Value.Name);
+    }
+
+    [Fact]
+    public async Task GetIdBySlugAsync_UnknownSlug_ReturnsNull()
+    {
+        var result = await _service.GetIdBySlugAsync("no-such-world");
+
+        Assert.Null(result);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  UpdateSlugAsync
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateSlugAsync_ValidSlug_UpdatesAndReturnsNewSlug()
+    {
+        var result = await _service.UpdateSlugAsync(TestHelpers.FixedIds.World1, "new-world-slug", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.Success, result.Status);
+        var world = await _context.Worlds.FindAsync(TestHelpers.FixedIds.World1);
+        Assert.Equal(result.Value, world!.Slug);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_WorldNotFound_ReturnsNotFound()
+    {
+        var result = await _service.UpdateSlugAsync(Guid.NewGuid(), "new-slug", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.NotFound, result.Status);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_NotOwner_ReturnsForbidden()
+    {
+        var result = await _service.UpdateSlugAsync(TestHelpers.FixedIds.World1, "new-slug", TestHelpers.FixedIds.User2);
+
+        Assert.Equal(ServiceStatus.Forbidden, result.Status);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_InvalidSlug_ReturnsValidationError()
+    {
+        var result = await _service.UpdateSlugAsync(TestHelpers.FixedIds.World1, "Bad Slug!", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.ValidationError, result.Status);
+        Assert.Equal("SLUG_INVALID", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_ReservedSlug_ReturnsValidationError()
+    {
+        var service = CreateServiceWithReservedSlugs("admin");
+
+        var result = await service.UpdateSlugAsync(TestHelpers.FixedIds.World1, "admin", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.ValidationError, result.Status);
+        Assert.Equal("SLUG_RESERVED", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_SlugCollision_GeneratesUniqueSlug()
+    {
+        // Create a second world occupying "unique-slug"
+        var world2 = TestHelpers.CreateWorld(id: Guid.NewGuid(), ownerId: TestHelpers.FixedIds.User1, slug: "unique-slug");
+        _context.Worlds.Add(world2);
+        await _context.SaveChangesAsync();
+
+        var result = await _service.UpdateSlugAsync(TestHelpers.FixedIds.World1, "unique-slug", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.Success, result.Status);
+        Assert.NotEqual("unique-slug", result.Value); // Collision resolved
     }
 }

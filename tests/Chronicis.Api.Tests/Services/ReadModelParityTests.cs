@@ -39,7 +39,7 @@ public class ReadModelParityTests
         db.Articles.AddRange(root, child);
         await db.SaveChangesAsync();
 
-        var publicArticle = await publicService.GetPublicArticleAsync(seed.World.PublicSlug!, "root/child");
+        var publicArticle = await publicService.GetPublicArticleAsync(seed.World.Slug, "root/child");
         var authenticatedArticle = await articleService.GetArticleByPathAsync($"{seed.World.Slug}/root/child", seed.Member.Id);
 
         Assert.NotNull(publicArticle);
@@ -77,7 +77,7 @@ public class ReadModelParityTests
         db.Articles.Add(privateArticle);
         await db.SaveChangesAsync();
 
-        var publicArticle = await publicService.GetPublicArticleAsync(seed.World.PublicSlug!, "private-root");
+        var publicArticle = await publicService.GetPublicArticleAsync(seed.World.Slug, "private-root");
         var authenticatedArticle = await articleService.GetArticleByPathAsync($"{seed.World.Slug}/private-root", seed.Member.Id);
 
         Assert.Null(publicArticle);
@@ -103,7 +103,7 @@ public class ReadModelParityTests
         db.Articles.Add(privateArticle);
         await db.SaveChangesAsync();
 
-        var publicArticle = await publicService.GetPublicArticleAsync(seed.World.PublicSlug!, "owner-private");
+        var publicArticle = await publicService.GetPublicArticleAsync(seed.World.Slug, "owner-private");
         var authenticatedOwnerArticle = await articleService.GetArticleByPathAsync($"{seed.World.Slug}/owner-private", seed.Owner.Id);
 
         Assert.Null(publicArticle);
@@ -169,7 +169,7 @@ public class ReadModelParityTests
         await db.SaveChangesAsync();
 
         var publicCompatibilityPathArticle =
-            await publicService.GetPublicArticleAsync(seed.World.PublicSlug!, "session-1/root-session-note");
+            await publicService.GetPublicArticleAsync(seed.World.Slug, "session-1/root-session-note");
 
         var authenticatedCompatibilityPathArticle =
             await articleService.GetArticleByPathAsync(
@@ -177,7 +177,7 @@ public class ReadModelParityTests
                 seed.Owner.Id);
 
         var publicCanonicalPathArticle =
-            await publicService.GetPublicArticleAsync(seed.World.PublicSlug!, "root-session-note");
+            await publicService.GetPublicArticleAsync(seed.World.Slug, "root-session-note");
 
         var authenticatedCanonicalPathArticle =
             await articleService.GetArticleByPathAsync(
@@ -228,9 +228,8 @@ public class ReadModelParityTests
         var world = TestHelpers.CreateWorld(
             ownerId: owner.Id,
             name: "Parity World",
-            slug: "parity-world");
+            slug: "parity-public");
         world.IsPublic = true;
-        world.PublicSlug = "parity-public";
 
         db.Users.AddRange(owner, member);
         db.Worlds.Add(world);

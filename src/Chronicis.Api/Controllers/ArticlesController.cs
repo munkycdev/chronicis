@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Chronicis.Api.Services.Articles;
@@ -7,7 +8,6 @@ using Chronicis.Shared.Models;
 using Chronicis.Shared.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.RegularExpressions;
 
 namespace Chronicis.Api.Controllers;
 
@@ -213,7 +213,7 @@ public class ArticlesController : ControllerBase
 
                 var isSlugUnique = dto.Type == ArticleType.Tutorial
                     ? await _articleDataAccessService.IsTutorialSlugUniqueAsync(dto.Slug, dto.ParentId)
-                    : await _articleService.IsSlugUniqueAsync(dto.Slug, dto.ParentId, normalizedWorldId, user.Id);
+                    : await _articleService.IsSlugUniqueAsync(dto.Slug, dto.ParentId, normalizedWorldId, user.Id, articleType: dto.Type);
 
                 if (!isSlugUnique)
                 {
@@ -226,7 +226,7 @@ public class ArticlesController : ControllerBase
             {
                 slug = dto.Type == ArticleType.Tutorial
                     ? await _articleDataAccessService.GenerateTutorialSlugAsync(dto.Title, dto.ParentId)
-                    : await _articleService.GenerateUniqueSlugAsync(dto.Title, dto.ParentId, normalizedWorldId, user.Id);
+                    : await _articleService.GenerateUniqueSlugAsync(dto.Title, dto.ParentId, normalizedWorldId, user.Id, articleType: dto.Type);
             }
 
             var article = new Article
@@ -344,7 +344,7 @@ public class ArticlesController : ControllerBase
 
                 var isSlugUnique = targetIsTutorial
                     ? await _articleDataAccessService.IsTutorialSlugUniqueAsync(dto.Slug, article.ParentId, id)
-                    : await _articleService.IsSlugUniqueAsync(dto.Slug, article.ParentId, article.WorldId, user.Id, id);
+                    : await _articleService.IsSlugUniqueAsync(dto.Slug, article.ParentId, article.WorldId, user.Id, id, article.Type, article.SessionId);
 
                 if (!isSlugUnique)
                 {

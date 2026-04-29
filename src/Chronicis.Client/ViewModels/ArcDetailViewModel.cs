@@ -290,7 +290,7 @@ public sealed class ArcDetailViewModel : ViewModelBase
             await _arcApi.DeleteArcAsync(_arc.Id);
             await _treeState.RefreshAsync();
             _notifier.Success("Arc deleted");
-            _navigator.NavigateTo($"/campaign/{_arc.CampaignId}");
+            await _navigator.GoToCampaignAsync(_arc.WorldSlug, _arc.CampaignSlug);
         }
         catch (Exception ex)
         {
@@ -314,7 +314,11 @@ public sealed class ArcDetailViewModel : ViewModelBase
                 return;
             }
 
-            _navigator.NavigateTo($"/session/{createdSessionId.Value}");
+            _treeState.TryGetNode(createdSessionId.Value, out var sessionNode);
+            if (sessionNode != null && !string.IsNullOrEmpty(sessionNode.Slug))
+                await _navigator.GoToSessionAsync(sessionNode.WorldSlug, sessionNode.CampaignSlug, sessionNode.ArcSlug, sessionNode.Slug);
+            else
+                _navigator.NavigateTo($"/session/{createdSessionId.Value}");
             _notifier.Success("Session created");
         }
         catch (Exception ex)
@@ -325,11 +329,8 @@ public sealed class ArcDetailViewModel : ViewModelBase
     }
 
     /// <summary>Navigates to a Session entity.</summary>
-    public Task NavigateToSessionAsync(SessionTreeDto session)
-    {
-        _navigator.NavigateTo($"/session/{session.Id}");
-        return Task.CompletedTask;
-    }
+    public Task NavigateToSessionAsync(SessionTreeDto session) =>
+        _navigator.GoToSessionAsync(session);
 
     /// <summary>Sets the currently selected quest for the editor panel.</summary>
     public void OnEditQuest(QuestDto quest) => SelectedQuest = quest;

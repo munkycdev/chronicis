@@ -1,10 +1,10 @@
+using System.Text.Json;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Maps;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace Chronicis.Api.Services;
 
@@ -74,7 +74,6 @@ public sealed class PublicWorldService : IPublicWorldService
             CampaignCount = world.Campaigns?.Count ?? 0,
             IsPublic = world.IsPublic,
             IsTutorial = world.IsTutorial,
-            PublicSlug = world.PublicSlug,
             // Include public campaigns
             Campaigns = world.Campaigns?.Select(c => new CampaignDto
             {
@@ -83,7 +82,9 @@ public sealed class PublicWorldService : IPublicWorldService
                 Description = c.Description,
                 WorldId = c.WorldId,
                 IsActive = c.IsActive,
-                StartedAt = c.StartedAt
+                StartedAt = c.StartedAt,
+                Slug = c.Slug,
+                WorldSlug = world.Slug
             }).ToList() ?? new List<CampaignDto>()
         };
     }

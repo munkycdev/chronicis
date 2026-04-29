@@ -27,6 +27,12 @@ public class Session
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// URL-friendly slug derived from name. Unique within <see cref="ArcId"/>. Mutable.
+    /// Max 200 characters.
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
+
+    /// <summary>
     /// Real-world date when the session was played. Optional.
     /// </summary>
     public DateTime? SessionDate { get; set; }

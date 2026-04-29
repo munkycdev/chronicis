@@ -1,7 +1,9 @@
 using Chronicis.Api.Data;
+using Chronicis.Api.Models;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
+using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
@@ -9,11 +11,16 @@ namespace Chronicis.Api.Services;
 public sealed class ArcService : IArcService
 {
     private readonly ChronicisDbContext _context;
+    private readonly IReservedSlugProvider _reservedSlugProvider;
     private readonly ILogger<ArcService> _logger;
 
-    public ArcService(ChronicisDbContext context, ILogger<ArcService> logger)
+    public ArcService(
+        ChronicisDbContext context,
+        IReservedSlugProvider reservedSlugProvider,
+        ILogger<ArcService> logger)
     {
         _context = context;
+        _reservedSlugProvider = reservedSlugProvider;
         _logger = logger;
     }
 
@@ -71,7 +78,10 @@ public sealed class ArcService : IArcService
                 IsActive = a.IsActive,
                 CreatedAt = a.CreatedAt,
                 CreatedBy = a.CreatedBy,
-                CreatedByName = a.Creator.DisplayName
+                CreatedByName = a.Creator.DisplayName,
+                Slug = a.Slug,
+                CampaignSlug = a.Campaign.Slug,
+                WorldSlug = a.Campaign.World.Slug
             })
             .ToListAsync();
     }
@@ -96,7 +106,10 @@ public sealed class ArcService : IArcService
                 IsActive = a.IsActive,
                 CreatedAt = a.CreatedAt,
                 CreatedBy = a.CreatedBy,
-                CreatedByName = a.Creator.DisplayName
+                CreatedByName = a.Creator.DisplayName,
+                Slug = a.Slug,
+                CampaignSlug = a.Campaign.Slug,
+                WorldSlug = a.Campaign.World.Slug
             })
             .FirstOrDefaultAsync();
     }
@@ -120,11 +133,20 @@ public sealed class ArcService : IArcService
             sortOrder = maxSortOrder + 1;
         }
 
+        var arcSlugBase = !string.IsNullOrWhiteSpace(dto.Slug) && SlugGenerator.IsValidSlug(dto.Slug.Trim())
+            ? dto.Slug.Trim()
+            : SlugGenerator.GenerateSlug(dto.Name);
+        var existingArcSlugs = await _context.Arcs.AsNoTracking()
+            .Where(a => a.CampaignId == dto.CampaignId)
+            .Select(a => a.Slug)
+            .ToHashSetAsync();
+        var arcSlug = SlugGenerator.GenerateUniqueSiblingSlug(arcSlugBase, existingArcSlugs, _reservedSlugProvider.All);
         var arc = new Arc
         {
             Id = Guid.NewGuid(),
             CampaignId = dto.CampaignId,
             Name = dto.Name,
+            Slug = arcSlug,
             Description = dto.Description,
             SortOrder = sortOrder,
             CreatedAt = DateTime.UtcNow,
@@ -137,6 +159,11 @@ public sealed class ArcService : IArcService
         _logger.LogTraceSanitized("Created arc {ArcId} '{ArcName}' in campaign {CampaignId}",
             arc.Id, arc.Name, arc.CampaignId);
 
+        var campaignSlugInfo = await _context.Campaigns.AsNoTracking()
+            .Where(c => c.Id == arc.CampaignId)
+            .Select(c => new { c.Slug, WorldSlug = c.World.Slug })
+            .FirstOrDefaultAsync();
+
         return new ArcDto
         {
             Id = arc.Id,
@@ -148,7 +175,10 @@ public sealed class ArcService : IArcService
             SessionCount = 0,
             IsActive = arc.IsActive,
             CreatedAt = arc.CreatedAt,
-            CreatedBy = arc.CreatedBy
+            CreatedBy = arc.CreatedBy,
+            Slug = arc.Slug,
+            CampaignSlug = campaignSlugInfo?.Slug ?? string.Empty,
+            WorldSlug = campaignSlugInfo?.WorldSlug ?? string.Empty
         };
     }
 
@@ -156,6 +186,8 @@ public sealed class ArcService : IArcService
     {
         var arc = await _context.Arcs
             .Include(a => a.Creator)
+            .Include(a => a.Campaign)
+                .ThenInclude(c => c.World)
             .FirstOrDefaultAsync(a => a.Id == arcId);
 
         if (arc == null)
@@ -168,6 +200,11 @@ public sealed class ArcService : IArcService
         {
             _logger.LogWarningSanitized("User {UserId} is not authorized to update arc {ArcId}", userId, arcId);
             return null;
+        }
+
+        if (arc.Name != dto.Name)
+        {
+            arc.Slug = await GenerateUniqueArcSlugAsync(dto.Name, arc.CampaignId, arc.Id);
         }
 
         arc.Name = dto.Name;
@@ -197,7 +234,10 @@ public sealed class ArcService : IArcService
             IsActive = arc.IsActive,
             CreatedAt = arc.CreatedAt,
             CreatedBy = arc.CreatedBy,
-            CreatedByName = arc.Creator.DisplayName
+            CreatedByName = arc.Creator.DisplayName,
+            Slug = arc.Slug,
+            CampaignSlug = arc.Campaign?.Slug ?? string.Empty,
+            WorldSlug = arc.Campaign?.World?.Slug ?? string.Empty
         };
     }
 
@@ -267,5 +307,57 @@ public sealed class ArcService : IArcService
         _logger.LogTraceSanitized("Activated arc {ArcId} in campaign {CampaignId}", arcId, arc.CampaignId);
 
         return true;
+    }
+
+    public async Task<(Guid Id, string Name)?> GetIdBySlugAsync(Guid campaignId, string slug)
+    {
+        var row = await _context.Arcs.AsNoTracking()
+            .Where(a => a.CampaignId == campaignId && a.Slug == slug)
+            .Select(a => new { a.Id, a.Name })
+            .FirstOrDefaultAsync();
+
+        return row == null ? null : (row.Id, row.Name);
+    }
+
+    public async Task<ServiceResult<string>> UpdateSlugAsync(Guid arcId, string slug, Guid userId)
+    {
+        var arc = await _context.Arcs.AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == arcId);
+
+        if (arc == null)
+            return ServiceResult<string>.NotFound("Arc not found");
+
+        if (!await UserIsCampaignOwnerOrGMAsync(arc.CampaignId, userId))
+            return ServiceResult<string>.Forbidden("Only the world owner or GM may update the slug");
+
+        if (!SlugGenerator.IsValidSlug(slug))
+            return ServiceResult<string>.ValidationError("SLUG_INVALID");
+
+        if (_reservedSlugProvider.IsReserved(slug))
+            return ServiceResult<string>.ValidationError("SLUG_RESERVED");
+
+        var existing = await _context.Arcs.AsNoTracking()
+            .Where(a => a.CampaignId == arc.CampaignId && a.Id != arcId)
+            .Select(a => a.Slug)
+            .ToHashSetAsync();
+
+        var finalSlug = SlugGenerator.GenerateUniqueSiblingSlug(slug, existing, _reservedSlugProvider.All);
+
+        var tracked = await _context.Arcs.FirstAsync(a => a.Id == arcId);
+        tracked.Slug = finalSlug;
+        await _context.SaveChangesAsync();
+
+        return ServiceResult<string>.Success(finalSlug);
+    }
+
+    private async Task<string> GenerateUniqueArcSlugAsync(string name, Guid campaignId, Guid? excludeId = null)
+    {
+        var existing = await _context.Arcs.AsNoTracking()
+            .Where(a => a.CampaignId == campaignId && (!excludeId.HasValue || a.Id != excludeId.Value))
+            .Select(a => a.Slug)
+            .ToHashSetAsync();
+
+        return SlugGenerator.GenerateUniqueSiblingSlug(
+            SlugGenerator.GenerateSlug(name), existing, _reservedSlugProvider.All);
     }
 }

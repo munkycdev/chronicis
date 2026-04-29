@@ -31,7 +31,7 @@ public sealed partial class WorldPublicSharingService : IWorldPublicSharingServi
 
         var query = _context.Worlds
             .AsNoTracking()
-            .Where(w => w.PublicSlug == normalizedSlug);
+            .Where(w => w.Slug == normalizedSlug);
 
         if (excludeWorldId.HasValue)
         {
@@ -76,7 +76,7 @@ public sealed partial class WorldPublicSharingService : IWorldPublicSharingServi
             .AsNoTracking()
             .Include(w => w.Owner)
             .Include(w => w.Campaigns)
-            .FirstOrDefaultAsync(w => w.PublicSlug == normalizedSlug && w.IsPublic);
+            .FirstOrDefaultAsync(w => w.Slug == normalizedSlug && w.IsPublic);
 
         if (world == null)
             return null;
@@ -94,7 +94,6 @@ public sealed partial class WorldPublicSharingService : IWorldPublicSharingServi
             MemberCount = world.Members?.Count ?? 0,
             IsPublic = world.IsPublic,
             IsTutorial = world.IsTutorial,
-            PublicSlug = world.PublicSlug
         };
     }
 

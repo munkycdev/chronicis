@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Chronicis.Shared.DTOs.Maps;
-using Chronicis.Shared.Enums;
 
 namespace Chronicis.Shared.Tests.DTOs;
 

@@ -24,12 +24,12 @@ public class ArticlesControllerCascadeTests
                     IArticleRenameCascadeService CascadeService)
         BuildSut(Article article)
     {
-        var user        = ControllerCoverageTestFixtures.CreateCurrentUserService();
-        var validation  = Substitute.For<IArticleValidationService>();
+        var user = ControllerCoverageTestFixtures.CreateCurrentUserService();
+        var validation = Substitute.For<IArticleValidationService>();
         validation.ValidateUpdateAsync(Arg.Any<Guid>(), Arg.Any<ArticleUpdateDto>())
                   .Returns(new ValidationResult());
 
-        var dataAccess  = Substitute.For<IArticleDataAccessService>();
+        var dataAccess = Substitute.For<IArticleDataAccessService>();
         dataAccess.FindReadableArticleAsync(ArticleId, Arg.Any<Guid>()).Returns(article);
 
         var articleService = Substitute.For<IArticleService>();
@@ -56,16 +56,16 @@ public class ArticlesControllerCascadeTests
 
     private static Article WikiArticle(string title) => new()
     {
-        Id             = ArticleId,
-        Title          = title,
-        Slug           = "slug",
-        WorldId        = Guid.NewGuid(),
-        Type           = ArticleType.WikiArticle,
-        Visibility     = ArticleVisibility.MembersOnly,
-        Body           = "<p>body</p>",
-        CreatedBy      = Guid.NewGuid(),
-        CreatedAt      = DateTime.UtcNow,
-        ModifiedAt     = DateTime.UtcNow,
+        Id = ArticleId,
+        Title = title,
+        Slug = "slug",
+        WorldId = Guid.NewGuid(),
+        Type = ArticleType.WikiArticle,
+        Visibility = ArticleVisibility.MembersOnly,
+        Body = "<p>body</p>",
+        CreatedBy = Guid.NewGuid(),
+        CreatedAt = DateTime.UtcNow,
+        ModifiedAt = DateTime.UtcNow,
         LastModifiedBy = Guid.NewGuid(),
     };
     // ── cascade triggered ─────────────────────────────────────────────────────

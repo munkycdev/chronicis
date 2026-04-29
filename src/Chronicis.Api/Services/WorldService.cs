@@ -1,4 +1,5 @@
 using Chronicis.Api.Data;
+using Chronicis.Api.Models;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
@@ -15,17 +16,20 @@ public sealed class WorldService : IWorldService
     private readonly ChronicisDbContext _context;
     private readonly IWorldMembershipService _membershipService;
     private readonly IWorldPublicSharingService _publicSharingService;
+    private readonly IReservedSlugProvider _reservedSlugProvider;
     private readonly ILogger<WorldService> _logger;
 
     public WorldService(
         ChronicisDbContext context,
         IWorldMembershipService membershipService,
         IWorldPublicSharingService publicSharingService,
+        IReservedSlugProvider reservedSlugProvider,
         ILogger<WorldService> logger)
     {
         _context = context;
         _membershipService = membershipService;
         _publicSharingService = publicSharingService;
+        _reservedSlugProvider = reservedSlugProvider;
         _logger = logger;
     }
 
@@ -80,8 +84,8 @@ public sealed class WorldService : IWorldService
 
         var now = DateTime.UtcNow;
 
-        // Generate unique slug for this owner
-        var slug = await GenerateUniqueWorldSlugAsync(dto.Name, userId);
+        // Generate globally unique slug (avoids reserved slugs automatically)
+        var slug = await GenerateUniqueWorldSlugAsync(dto.Name);
 
         // Create the World entity
         var world = new World
@@ -92,8 +96,7 @@ public sealed class WorldService : IWorldService
             Description = dto.Description,
             OwnerId = userId,
             CreatedAt = now,
-            IsPublic = false,
-            PublicSlug = null
+            IsPublic = false
         };
         _context.Worlds.Add(world);
 
@@ -242,10 +245,10 @@ public sealed class WorldService : IWorldService
         if (!isOwner && !isGM)
             return null;
 
-        // If name changed, regenerate slug
+        // If name changed, regenerate slug (globally unique, avoids reserved slugs)
         if (world.Name != dto.Name)
         {
-            world.Slug = await GenerateUniqueWorldSlugAsync(dto.Name, userId, world.Id);
+            world.Slug = await GenerateUniqueWorldSlugAsync(dto.Name, world.Id);
         }
 
         world.Name = dto.Name;
@@ -275,7 +278,14 @@ public sealed class WorldService : IWorldService
                     return null;
                 }
 
-                // Check availability via public sharing service
+                // Reject configurable reserved slugs
+                if (_reservedSlugProvider.IsReserved(normalizedSlug))
+                {
+                    _logger.LogWarningSanitized("Public slug '{Slug}' is reserved for world {WorldId}", normalizedSlug, worldId);
+                    return null;
+                }
+
+                // Check global availability
                 if (!await _publicSharingService.IsPublicSlugAvailableAsync(normalizedSlug, worldId))
                 {
                     _logger.LogWarningSanitized("Public slug '{Slug}' is already taken", normalizedSlug);
@@ -283,15 +293,14 @@ public sealed class WorldService : IWorldService
                 }
 
                 world.IsPublic = true;
-                world.PublicSlug = normalizedSlug;
+                world.Slug = normalizedSlug;
 
-                _logger.LogTraceSanitized("World {WorldId} is now public with slug '{PublicSlug}'", worldId, normalizedSlug);
+                _logger.LogTraceSanitized("World {WorldId} is now public with slug '{Slug}'", worldId, normalizedSlug);
             }
             else
             {
-                // Making world private - clear public slug
+                // Making world private - keep slug, just clear the public flag
                 world.IsPublic = false;
-                world.PublicSlug = null;
 
                 _logger.LogTraceSanitized("World {WorldId} is now private", worldId);
             }
@@ -319,16 +328,46 @@ public sealed class WorldService : IWorldService
         return MapToDto(world);
     }
 
+    public async Task<(Guid Id, bool IsPublic, string Name)?> GetIdBySlugAsync(string slug)
+    {
+        var row = await _context.Worlds.AsNoTracking()
+            .Where(w => w.Slug == slug)
+            .Select(w => new { w.Id, w.IsPublic, w.Name })
+            .FirstOrDefaultAsync();
+
+        return row == null ? null : (row.Id, row.IsPublic, row.Name);
+    }
+
+    public async Task<ServiceResult<string>> UpdateSlugAsync(Guid worldId, string slug, Guid userId)
+    {
+        var world = await _context.Worlds.FirstOrDefaultAsync(w => w.Id == worldId);
+        if (world == null)
+            return ServiceResult<string>.NotFound("World not found");
+
+        if (world.OwnerId != userId)
+            return ServiceResult<string>.Forbidden("Only the world owner may update the slug");
+
+        if (!SlugGenerator.IsValidSlug(slug))
+            return ServiceResult<string>.ValidationError("SLUG_INVALID");
+
+        if (_reservedSlugProvider.IsReserved(slug))
+            return ServiceResult<string>.ValidationError("SLUG_RESERVED");
+
+        var finalSlug = await GenerateUniqueWorldSlugAsync(slug, worldId);
+        world.Slug = finalSlug;
+        await _context.SaveChangesAsync();
+
+        return ServiceResult<string>.Success(finalSlug);
+    }
+
     /// <summary>
-    /// Generate a unique slug for a world within an owner's worlds.
+    /// Generate a globally unique slug for a world, avoiding reserved slugs.
     /// </summary>
-    private async Task<string> GenerateUniqueWorldSlugAsync(string name, Guid ownerId, Guid? excludeWorldId = null)
+    private async Task<string> GenerateUniqueWorldSlugAsync(string name, Guid? excludeWorldId = null)
     {
         var baseSlug = SlugGenerator.GenerateSlug(name);
 
-        var existingSlugsQuery = _context.Worlds
-            .AsNoTracking()
-            .Where(w => w.OwnerId == ownerId);
+        var existingSlugsQuery = _context.Worlds.AsNoTracking();
 
         if (excludeWorldId.HasValue)
         {
@@ -339,7 +378,7 @@ public sealed class WorldService : IWorldService
             .Select(w => w.Slug)
             .ToHashSetAsync();
 
-        return SlugGenerator.GenerateUniqueSlug(baseSlug, existingSlugs);
+        return SlugGenerator.GenerateUniqueSiblingSlug(baseSlug, existingSlugs, _reservedSlugProvider.All);
     }
 
     internal static WorldDto MapToDto(World world)
@@ -357,7 +396,6 @@ public sealed class WorldService : IWorldService
             MemberCount = world.Members?.Count ?? 0,
             IsPublic = world.IsPublic,
             IsTutorial = world.IsTutorial,
-            PublicSlug = world.PublicSlug
         };
     }
 
@@ -376,7 +414,6 @@ public sealed class WorldService : IWorldService
             MemberCount = world.Members?.Count ?? 0,
             IsPublic = world.IsPublic,
             IsTutorial = world.IsTutorial,
-            PublicSlug = world.PublicSlug,
             PrivateNotes = world.PrivateNotes,
             Campaigns = world.Campaigns?.Select(c => new CampaignDto
             {
@@ -388,7 +425,11 @@ public sealed class WorldService : IWorldService
                 OwnerName = c.Owner?.DisplayName ?? "Unknown",
                 CreatedAt = c.CreatedAt,
                 StartedAt = c.StartedAt,
-                EndedAt = c.EndedAt
+                EndedAt = c.EndedAt,
+                IsActive = c.IsActive,
+                ArcCount = c.Arcs?.Count ?? 0,
+                Slug = c.Slug,
+                WorldSlug = world.Slug
             }).ToList() ?? new List<CampaignDto>(),
             Members = world.Members?.Select(m => new WorldMemberDto
             {

@@ -21,13 +21,11 @@ public class ReadAccessPolicyServiceTests
         using var db = RemainingApiBranchCoverageTestHelpers.CreateDbContext();
         var sut = new ReadAccessPolicyService();
 
-        var publicWorld = TestHelpers.CreateWorld(name: "Public", slug: "internal-public");
+        var publicWorld = TestHelpers.CreateWorld(name: "Public", slug: "shared-world");
         publicWorld.IsPublic = true;
-        publicWorld.PublicSlug = "shared-world";
 
         var privateWorld = TestHelpers.CreateWorld(name: "Private", slug: "internal-private");
         privateWorld.IsPublic = false;
-        privateWorld.PublicSlug = "private-world";
 
         db.Worlds.AddRange(publicWorld, privateWorld);
         await db.SaveChangesAsync();
@@ -194,5 +192,44 @@ public class ReadAccessPolicyServiceTests
         Assert.Single(arcIds);
         Assert.Contains(readableArc.Id, arcIds);
         Assert.DoesNotContain(unreadableArc.Id, arcIds);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  CanReadWorld / CanReadMemberScopedEntity
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void CanReadWorld_PublicWorld_ReturnsTrue()
+    {
+        var sut = new ReadAccessPolicyService();
+        Assert.True(sut.CanReadWorld(isPublic: true, userIsMember: false));
+    }
+
+    [Fact]
+    public void CanReadWorld_PrivateWorldAndMember_ReturnsTrue()
+    {
+        var sut = new ReadAccessPolicyService();
+        Assert.True(sut.CanReadWorld(isPublic: false, userIsMember: true));
+    }
+
+    [Fact]
+    public void CanReadWorld_PrivateWorldNonMember_ReturnsFalse()
+    {
+        var sut = new ReadAccessPolicyService();
+        Assert.False(sut.CanReadWorld(isPublic: false, userIsMember: false));
+    }
+
+    [Fact]
+    public void CanReadMemberScopedEntity_Member_ReturnsTrue()
+    {
+        var sut = new ReadAccessPolicyService();
+        Assert.True(sut.CanReadMemberScopedEntity(userIsMember: true));
+    }
+
+    [Fact]
+    public void CanReadMemberScopedEntity_NonMember_ReturnsFalse()
+    {
+        var sut = new ReadAccessPolicyService();
+        Assert.False(sut.CanReadMemberScopedEntity(userIsMember: false));
     }
 }

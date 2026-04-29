@@ -1,4 +1,3 @@
-@page "/campaign/{CampaignId:guid}"
 @attribute [Authorize]
 @implements IDisposable
 @using Chronicis.Client.Components.Dialogs
@@ -61,7 +60,7 @@ else if (ViewModel.Campaign != null)
                         {
                             <EntityListItem Icon="@Icons.Material.Filled.Bookmark"
                                             Title="@arc.Name"
-                                            OnClick="@(() => ViewModel.NavigateToArc(arc.Id))">
+                                            OnClick="@(() => ViewModel.NavigateToArcAsync(arc))">
                                 <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
                                     @arc.SessionCount sessions
                                 </MudChip>

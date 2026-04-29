@@ -129,7 +129,6 @@ public class UserServiceTests : IDisposable
             OwnerId = templateOwner.Id,
             CreatedAt = new DateTime(2025, 12, 1, 0, 0, 0, DateTimeKind.Utc),
             IsPublic = true,
-            PublicSlug = "tutorial-template",
             IsTutorial = false
         };
         _context.Worlds.Add(templateWorld);
@@ -386,7 +385,7 @@ public class UserServiceTests : IDisposable
         Assert.Equal(templateWorld.Description, clonedWorld.Description);
         Assert.True(clonedWorld.IsTutorial);
         Assert.False(clonedWorld.IsPublic);
-        Assert.Null(clonedWorld.PublicSlug);
+        Assert.False(clonedWorld.IsPublic);
 
         var clonedMemberships = await _context.WorldMembers
             .Where(m => m.WorldId == clonedWorld.Id)

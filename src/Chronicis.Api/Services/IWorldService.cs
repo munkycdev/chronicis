@@ -1,3 +1,4 @@
+using Chronicis.Api.Models;
 using Chronicis.Shared.DTOs;
 
 namespace Chronicis.Api.Services;
@@ -31,4 +32,16 @@ public interface IWorldService
     /// Get a world by its slug for a specific owner
     /// </summary>
     Task<WorldDto?> GetWorldBySlugAsync(string slug, Guid userId);
+
+    /// <summary>
+    /// Lightweight projection — returns (Id, IsPublic, Name) or null when not found.
+    /// Visibility filtering is the caller's responsibility.
+    /// </summary>
+    Task<(Guid Id, bool IsPublic, string Name)?> GetIdBySlugAsync(string slug);
+
+    /// <summary>
+    /// Update the world's slug. Validates, checks reserved list, resolves sibling collisions.
+    /// Returns the final slug (may differ from requested if collision was auto-resolved).
+    /// </summary>
+    Task<ServiceResult<string>> UpdateSlugAsync(Guid worldId, string slug, Guid userId);
 }

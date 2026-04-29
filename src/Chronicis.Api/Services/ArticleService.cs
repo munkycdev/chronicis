@@ -246,8 +246,29 @@ namespace Chronicis.Api.Services
                 })
                 .ToListAsync();
 
-            // Build breadcrumb path using centralised hierarchy service
-            article.Breadcrumbs = await _hierarchyService.BuildBreadcrumbsAsync(id);
+            // Build breadcrumb path using centralised hierarchy service.
+            // Virtual groups (Wiki / Player Characters / Campaign-Arc-Session) are required
+            // for the breadcrumb chain to produce valid URL paths under the slug routing scheme.
+            HierarchyWalkOptions? options = null;
+            if (article.WorldId.HasValue && article.WorldId.Value != Guid.Empty)
+            {
+                var world = await _context.Worlds
+                    .AsNoTracking()
+                    .Where(w => w.Id == article.WorldId.Value)
+                    .Select(w => new WorldContext { Id = w.Id, Name = w.Name, Slug = w.Slug })
+                    .FirstOrDefaultAsync();
+
+                if (world != null)
+                {
+                    options = new HierarchyWalkOptions
+                    {
+                        IncludeVirtualGroups = true,
+                        World = world
+                    };
+                }
+            }
+
+            article.Breadcrumbs = await _hierarchyService.BuildBreadcrumbsAsync(id, options);
 
             return article;
         }
@@ -484,14 +505,25 @@ namespace Chronicis.Api.Services
 
         /// <summary>
         /// Check if a slug is unique among siblings.
-        /// For root articles (ParentId is null), checks uniqueness within the World.
-        /// For child articles, checks uniqueness within the same parent.
+        /// Session notes (with sessionId) are scoped to (SessionId, Slug).
+        /// Child articles are scoped to (ParentId, Slug).
+        /// Root non-session-note articles are scoped to (WorldId, Slug).
         /// </summary>
-        public async Task<bool> IsSlugUniqueAsync(string slug, Guid? parentId, Guid? worldId, Guid userId, Guid? excludeArticleId = null)
+        public async Task<bool> IsSlugUniqueAsync(string slug, Guid? parentId, Guid? worldId, Guid userId, Guid? excludeArticleId = null, ArticleType articleType = ArticleType.WikiArticle, Guid? sessionId = null)
         {
             IQueryable<Article> query;
 
-            if (parentId.HasValue)
+            if (articleType == ArticleType.SessionNote && sessionId.HasValue && !parentId.HasValue)
+            {
+                // Root session note: unique within (SessionId, Slug)
+                query = GetAccessibleArticles(userId)
+                    .AsNoTracking()
+                    .Where(a => a.Slug == slug &&
+                                a.Type == ArticleType.SessionNote &&
+                                a.SessionId == sessionId.Value &&
+                                a.ParentId == null);
+            }
+            else if (parentId.HasValue)
             {
                 // Child article: unique among siblings with same parent
                 query = GetAccessibleArticles(userId)
@@ -519,16 +551,26 @@ namespace Chronicis.Api.Services
 
         /// <summary>
         /// Generate a unique slug for an article among its siblings.
-        /// For root articles (ParentId is null), checks uniqueness within the World.
-        /// For child articles, checks uniqueness within the same parent.
+        /// Session notes (with sessionId) are scoped to (SessionId, Slug).
+        /// Child articles are scoped to (ParentId, Slug).
+        /// Root non-session-note articles are scoped to (WorldId, Slug).
         /// </summary>
-        public async Task<string> GenerateUniqueSlugAsync(string title, Guid? parentId, Guid? worldId, Guid userId, Guid? excludeArticleId = null)
+        public async Task<string> GenerateUniqueSlugAsync(string title, Guid? parentId, Guid? worldId, Guid userId, Guid? excludeArticleId = null, ArticleType articleType = ArticleType.WikiArticle, Guid? sessionId = null)
         {
             var baseSlug = SlugGenerator.GenerateSlug(title);
 
             IQueryable<Article> query;
 
-            if (parentId.HasValue)
+            if (articleType == ArticleType.SessionNote && sessionId.HasValue && !parentId.HasValue)
+            {
+                // Root session note: get slugs from session notes in the same session
+                query = GetAccessibleArticles(userId)
+                    .AsNoTracking()
+                    .Where(a => a.Type == ArticleType.SessionNote &&
+                                a.SessionId == sessionId.Value &&
+                                a.ParentId == null);
+            }
+            else if (parentId.HasValue)
             {
                 // Child article: get slugs from siblings with same parent
                 query = GetAccessibleArticles(userId)
@@ -558,6 +600,94 @@ namespace Chronicis.Api.Services
         public async Task<string> BuildArticlePathAsync(Guid articleId, Guid userId)
         {
             return await _hierarchyService.BuildPathAsync(articleId);
+        }
+
+        public async Task<(Guid ArticleId, IReadOnlyList<(string Slug, string Title)> PathBreadcrumbs)?> ResolveWorldArticlePathAsync(
+            Guid worldId,
+            IReadOnlyList<string> slugs,
+            Guid? userId,
+            CancellationToken cancellationToken = default)
+        {
+            if (slugs.Count == 0)
+                return null;
+
+            var breadcrumbs = new List<(string Slug, string Title)>();
+
+            Func<string, Guid?, bool, Task<(Guid Id, ArticleType Type)?>> resolveSegment;
+
+            if (userId.HasValue)
+            {
+                var uid = userId.Value;
+                resolveSegment = async (slug, parentId, isRootLevel) =>
+                {
+                    var query = GetAccessibleArticles(uid)
+                        .AsNoTracking()
+                        .Where(a => a.Slug == slug);
+
+                    query = isRootLevel
+                        ? query.Where(a => a.ParentId == null && a.WorldId == worldId)
+                        : query.Where(a => a.ParentId == parentId);
+
+                    var article = await query.Select(a => new { a.Id, a.Type, a.Title }).FirstOrDefaultAsync(cancellationToken);
+                    if (article != null)
+                        breadcrumbs.Add((slug, article.Title ?? slug));
+
+                    return article == null ? null : (article.Id, article.Type);
+                };
+            }
+            else
+            {
+                resolveSegment = async (slug, parentId, isRootLevel) =>
+                {
+                    var query = _context.Articles.AsNoTracking()
+                        .Where(a => a.Slug == slug
+                                    && a.Visibility == Chronicis.Shared.Enums.ArticleVisibility.Public
+                                    && a.WorldId == worldId);
+
+                    query = isRootLevel
+                        ? query.Where(a => a.ParentId == null)
+                        : query.Where(a => a.ParentId == parentId);
+
+                    var article = await query.Select(a => new { a.Id, a.Type, a.Title }).FirstOrDefaultAsync(cancellationToken);
+                    if (article != null)
+                        breadcrumbs.Add((slug, article.Title ?? slug));
+
+                    return article == null ? null : (article.Id, article.Type);
+                };
+            }
+
+            var resolved = await ArticleSlugPathResolver.ResolveAsync(slugs, resolveSegment);
+            return resolved.HasValue
+                ? (resolved.Value.Id, (IReadOnlyList<(string, string)>)breadcrumbs)
+                : null;
+        }
+
+        public async Task<(Guid ArticleId, string Title)?> GetSessionNoteBySlugAsync(
+            Guid sessionId,
+            string slug,
+            Guid? userId,
+            CancellationToken cancellationToken = default)
+        {
+            IQueryable<Article> query = _context.Articles
+                .AsNoTracking()
+                .Where(a => a.SessionId == sessionId
+                            && a.Type == Chronicis.Shared.Enums.ArticleType.SessionNote
+                            && a.Slug == slug);
+
+            if (userId.HasValue)
+            {
+                query = _readAccessPolicy.ApplyAuthenticatedWorldArticleFilter(query, userId.Value);
+            }
+            else
+            {
+                query = _readAccessPolicy.ApplyPublicVisibilityFilter(query);
+            }
+
+            var article = await query
+                .Select(a => new { a.Id, a.Title })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return article == null ? null : (article.Id, article.Title ?? slug);
         }
 
         private async Task<ArticleDto?> TryResolveWorldArticleByPathAsync(string[] slugs, Guid userId)

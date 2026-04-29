@@ -1,12 +1,14 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Chronicis.Api.Data;
+using Chronicis.Api.Models;
 using Chronicis.Api.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
@@ -24,7 +26,7 @@ public class CampaignServiceTests : IDisposable
             .Options;
 
         _context = new ChronicisDbContext(options);
-        _service = new CampaignService(_context, NullLogger<CampaignService>.Instance);
+        _service = new CampaignService(_context, Substitute.For<IReservedSlugProvider>(), NullLogger<CampaignService>.Instance);
 
         SeedTestData();
     }
@@ -395,6 +397,51 @@ public class CampaignServiceTests : IDisposable
         Assert.Null(context.CampaignId);
     }
 
+    // ────────────────────────────────────────────────────────────────
+    //  GetIdBySlugAsync
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetIdBySlugAsync_ExistingSlug_ReturnsCampaignInfo()
+    {
+        var campaign = await _context.Campaigns.FindAsync(TestHelpers.FixedIds.Campaign1);
+        campaign!.Slug = "test-campaign";
+        await _context.SaveChangesAsync();
+
+        var result = await _service.GetIdBySlugAsync(TestHelpers.FixedIds.World1, "test-campaign");
+
+        Assert.NotNull(result);
+        Assert.Equal(TestHelpers.FixedIds.Campaign1, result!.Value.Id);
+        Assert.Equal("Test Campaign", result.Value.Name);
+    }
+
+    [Fact]
+    public async Task GetIdBySlugAsync_UnknownSlug_ReturnsNull()
+    {
+        var result = await _service.GetIdBySlugAsync(TestHelpers.FixedIds.World1, "no-such-campaign");
+
+        Assert.Null(result);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Slug generation — update same-name branch
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateCampaignAsync_SameName_DoesNotRegenerateSlug()
+    {
+        var campaign = await _context.Campaigns.FindAsync(TestHelpers.FixedIds.Campaign1);
+        campaign!.Slug = "test-campaign";
+        await _context.SaveChangesAsync();
+
+        var dto = new CampaignUpdateDto { Name = "Test Campaign" };
+        var result = await _service.UpdateCampaignAsync(TestHelpers.FixedIds.Campaign1, dto, TestHelpers.FixedIds.User1);
+
+        Assert.NotNull(result);
+        var saved = await _context.Campaigns.FindAsync(TestHelpers.FixedIds.Campaign1);
+        Assert.Equal("test-campaign", saved!.Slug);
+    }
+
     [Fact]
     public void Mapping_UsesFallbacks_WhenOwnerAndArcsMissing()
     {
@@ -420,5 +467,44 @@ public class CampaignServiceTests : IDisposable
         Assert.Equal("Unknown", detail.OwnerName);
         Assert.Equal(0, detail.ArcCount);
         Assert.Empty(detail.Arcs);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  UpdateSlugAsync
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateSlugAsync_ValidSlug_UpdatesAndReturnsSlug()
+    {
+        var result = await _service.UpdateSlugAsync(TestHelpers.FixedIds.Campaign1, "new-campaign", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.Success, result.Status);
+        var campaign = await _context.Campaigns.FindAsync(TestHelpers.FixedIds.Campaign1);
+        Assert.Equal(result.Value, campaign!.Slug);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_CampaignNotFound_ReturnsNotFound()
+    {
+        var result = await _service.UpdateSlugAsync(Guid.NewGuid(), "new-slug", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.NotFound, result.Status);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_NotOwner_ReturnsForbidden()
+    {
+        var result = await _service.UpdateSlugAsync(TestHelpers.FixedIds.Campaign1, "new-slug", TestHelpers.FixedIds.User2);
+
+        Assert.Equal(ServiceStatus.Forbidden, result.Status);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_InvalidSlug_ReturnsValidationError()
+    {
+        var result = await _service.UpdateSlugAsync(TestHelpers.FixedIds.Campaign1, "Bad Slug!", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.ValidationError, result.Status);
+        Assert.Equal("SLUG_INVALID", result.ErrorMessage);
     }
 }

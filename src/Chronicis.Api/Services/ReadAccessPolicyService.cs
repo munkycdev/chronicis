@@ -19,7 +19,7 @@ public sealed class ReadAccessPolicyService : IReadAccessPolicyService
     {
         var normalizedSlug = NormalizePublicSlug(publicSlug);
         return ApplyPublicWorldFilter(worlds)
-            .Where(w => w.PublicSlug == normalizedSlug);
+            .Where(w => w.Slug == normalizedSlug);
     }
 
     public IQueryable<World> ApplyAuthenticatedWorldFilter(IQueryable<World> worlds, Guid userId)
@@ -86,4 +86,8 @@ public sealed class ReadAccessPolicyService : IReadAccessPolicyService
                         && a.Campaign.World != null
                         && a.Campaign.World.Members.Any(m => m.UserId == userId));
     }
+
+    public bool CanReadWorld(bool isPublic, bool userIsMember) => isPublic || userIsMember;
+
+    public bool CanReadMemberScopedEntity(bool userIsMember) => userIsMember;
 }

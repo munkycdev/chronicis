@@ -73,4 +73,33 @@ public static class SlugGenerator
 
         return uniqueSlug;
     }
+
+    /// <summary>
+    /// Generates a unique slug that is not in <paramref name="existingSiblingSlugs"/> and not in
+    /// <paramref name="reservedSlugs"/>. If <paramref name="baseSlug"/> itself is reserved or
+    /// already taken, appends <c>-2</c>, <c>-3</c>, … until a free value is found.
+    /// </summary>
+    public static string GenerateUniqueSiblingSlug(
+        string baseSlug,
+        HashSet<string> existingSiblingSlugs,
+        IReadOnlyCollection<string> reservedSlugs)
+    {
+        // Normalise to a valid slug shape first
+        var slug = IsValidSlug(baseSlug) ? baseSlug : GenerateSlug(baseSlug);
+
+        var reserved = new HashSet<string>(reservedSlugs, StringComparer.OrdinalIgnoreCase);
+
+        if (!existingSiblingSlugs.Contains(slug) && !reserved.Contains(slug))
+            return slug;
+
+        var counter = 2;
+        string candidate;
+        do
+        {
+            candidate = $"{slug}-{counter++}";
+        }
+        while (existingSiblingSlugs.Contains(candidate) || reserved.Contains(candidate));
+
+        return candidate;
+    }
 }

@@ -344,13 +344,13 @@ public class CampaignDetailViewModelTests
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void NavigateToArc_NavigatesToArcUrl()
+    public async Task NavigateToArc_NavigatesToArcSlugUrl()
     {
         var c = CreateSut();
-        var arcId = Guid.NewGuid();
+        var arc = new ArcDto { Id = Guid.NewGuid(), Slug = "my-arc", CampaignSlug = "my-campaign", WorldSlug = "my-world" };
 
-        c.Vm.NavigateToArc(arcId);
+        await c.Vm.NavigateToArcAsync(arc);
 
-        c.Navigator.Received(1).NavigateTo($"/arc/{arcId}");
+        await c.Navigator.Received(1).GoToArcAsync(arc);
     }
 }

@@ -14,17 +14,20 @@ public sealed class SessionService : ISessionService
     private readonly ChronicisDbContext _context;
     private readonly ISummaryService _summaryService;
     private readonly IWorldDocumentService _worldDocumentService;
+    private readonly IReservedSlugProvider _reservedSlugProvider;
     private readonly ILogger<SessionService> _logger;
 
     public SessionService(
         ChronicisDbContext context,
         ISummaryService summaryService,
         IWorldDocumentService worldDocumentService,
+        IReservedSlugProvider reservedSlugProvider,
         ILogger<SessionService> logger)
     {
         _context = context;
         _summaryService = summaryService;
         _worldDocumentService = worldDocumentService;
+        _reservedSlugProvider = reservedSlugProvider;
         _logger = logger;
     }
 
@@ -60,7 +63,11 @@ public sealed class SessionService : ISessionService
                 ArcId = s.ArcId,
                 Name = s.Name,
                 SessionDate = s.SessionDate,
-                HasAiSummary = !string.IsNullOrWhiteSpace(s.AiSummary)
+                HasAiSummary = !string.IsNullOrWhiteSpace(s.AiSummary),
+                Slug = s.Slug,
+                ArcSlug = s.Arc.Slug,
+                CampaignSlug = s.Arc.Campaign.Slug,
+                WorldSlug = s.Arc.Campaign.World.Slug
             })
             .ToListAsync();
 
@@ -143,18 +150,27 @@ public sealed class SessionService : ISessionService
         }
 
         var utcNow = DateTime.UtcNow;
+        var sessionSlugBase = !string.IsNullOrWhiteSpace(dto.Slug) && SlugGenerator.IsValidSlug(dto.Slug.Trim())
+            ? dto.Slug.Trim()
+            : SlugGenerator.GenerateSlug(trimmedName);
+        var existingSessionSlugs = await _context.Sessions.AsNoTracking()
+            .Where(s => s.ArcId == arc.Id)
+            .Select(s => s.Slug)
+            .ToHashSetAsync();
+        var sessionSlug = SlugGenerator.GenerateUniqueSiblingSlug(sessionSlugBase, existingSessionSlugs, _reservedSlugProvider.All);
         var session = new Session
         {
             Id = Guid.NewGuid(),
             ArcId = arc.Id,
             Name = trimmedName,
+            Slug = sessionSlug,
             SessionDate = dto.SessionDate,
             CreatedAt = utcNow,
             CreatedBy = userId
         };
 
         var noteTitle = BuildDefaultNoteTitle(username);
-        var noteSlug = await GenerateUniqueRootSlugAsync(noteTitle, arc.Campaign.WorldId);
+        var noteSlug = await GenerateSessionNoteSlugAsync(noteTitle, session.Id);
 
         var defaultNote = new Article
         {
@@ -181,6 +197,7 @@ public sealed class SessionService : ISessionService
         _logger.LogTraceSanitized("Created session {SessionId} in arc {ArcId} with default note {NoteId}",
             session.Id, arc.Id, defaultNote.Id);
 
+        session.Arc = arc;
         return ServiceResult<SessionDto>.Success(MapDto(session));
     }
 
@@ -239,6 +256,11 @@ public sealed class SessionService : ISessionService
 
         if (trimmedName != null)
         {
+            if (session.Name != trimmedName)
+            {
+                session.Slug = await GenerateUniqueSessionSlugAsync(trimmedName, session.ArcId, session.Id);
+            }
+
             session.Name = trimmedName;
         }
 
@@ -481,12 +503,14 @@ public sealed class SessionService : ISessionService
         await _context.SaveChangesAsync();
     }
 
-    private async Task<string> GenerateUniqueRootSlugAsync(string title, Guid worldId)
+    private async Task<string> GenerateSessionNoteSlugAsync(string title, Guid sessionId)
     {
         var baseSlug = SlugGenerator.GenerateSlug(title);
         var existingSlugs = await _context.Articles
             .AsNoTracking()
-            .Where(a => a.WorldId == worldId && a.ParentId == null)
+            .Where(a => a.SessionId == sessionId &&
+                        a.Type == ArticleType.SessionNote &&
+                        a.ParentId == null)
             .Select(a => a.Slug)
             .ToHashSetAsync();
 
@@ -501,6 +525,63 @@ public sealed class SessionService : ISessionService
             : $"{trimmed}'s Notes";
 
         return title.Length <= 500 ? title : title[..500];
+    }
+
+    public async Task<(Guid Id, string Name)?> GetIdBySlugAsync(Guid arcId, string slug)
+    {
+        var row = await _context.Sessions.AsNoTracking()
+            .Where(s => s.ArcId == arcId && s.Slug == slug)
+            .Select(s => new { s.Id, s.Name })
+            .FirstOrDefaultAsync();
+
+        return row == null ? null : (row.Id, row.Name);
+    }
+
+    public async Task<ServiceResult<string>> UpdateSlugAsync(Guid sessionId, string slug, Guid userId)
+    {
+        var session = await _context.Sessions.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == sessionId);
+
+        if (session == null)
+            return ServiceResult<string>.NotFound("Session not found");
+
+        var isGm = await _context.Arcs
+            .AnyAsync(a => a.Id == session.ArcId
+                && (a.Campaign.World.OwnerId == userId
+                    || a.Campaign.World.Members.Any(m => m.UserId == userId && m.Role == WorldRole.GM)));
+
+        if (!isGm)
+            return ServiceResult<string>.Forbidden("Only the world owner or GM may update the slug");
+
+        if (!SlugGenerator.IsValidSlug(slug))
+            return ServiceResult<string>.ValidationError("SLUG_INVALID");
+
+        if (_reservedSlugProvider.IsReserved(slug))
+            return ServiceResult<string>.ValidationError("SLUG_RESERVED");
+
+        var existing = await _context.Sessions.AsNoTracking()
+            .Where(s => s.ArcId == session.ArcId && s.Id != sessionId)
+            .Select(s => s.Slug)
+            .ToHashSetAsync();
+
+        var finalSlug = SlugGenerator.GenerateUniqueSiblingSlug(slug, existing, _reservedSlugProvider.All);
+
+        var tracked = await _context.Sessions.FirstAsync(s => s.Id == sessionId);
+        tracked.Slug = finalSlug;
+        await _context.SaveChangesAsync();
+
+        return ServiceResult<string>.Success(finalSlug);
+    }
+
+    private async Task<string> GenerateUniqueSessionSlugAsync(string name, Guid arcId, Guid? excludeId = null)
+    {
+        var existing = await _context.Sessions.AsNoTracking()
+            .Where(s => s.ArcId == arcId && (!excludeId.HasValue || s.Id != excludeId.Value))
+            .Select(s => s.Slug)
+            .ToHashSetAsync();
+
+        return SlugGenerator.GenerateUniqueSiblingSlug(
+            SlugGenerator.GenerateSlug(name), existing, _reservedSlugProvider.All);
     }
 
     private static SessionDto MapDto(Session session)
@@ -518,7 +599,11 @@ public sealed class SessionService : ISessionService
             AiSummaryGeneratedByUserId = session.AiSummaryGeneratedByUserId,
             CreatedAt = session.CreatedAt,
             ModifiedAt = session.ModifiedAt,
-            CreatedBy = session.CreatedBy
+            CreatedBy = session.CreatedBy,
+            Slug = session.Slug,
+            ArcSlug = session.Arc?.Slug ?? string.Empty,
+            CampaignSlug = session.Arc?.Campaign?.Slug ?? string.Empty,
+            WorldSlug = session.Arc?.Campaign?.World?.Slug ?? string.Empty
         };
     }
 }

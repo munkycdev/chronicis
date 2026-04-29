@@ -49,7 +49,7 @@ public class WorldPanelTests : MudBlazorTestContext
 
         InvokePrivate(instance, "ViewWorld");
 
-        Assert.Contains($"/world/{world.Slug}", nav!.Uri, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains($"/{world.Slug}", nav!.Uri, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -70,16 +70,15 @@ public class WorldPanelTests : MudBlazorTestContext
     [Fact]
     public void AddSessionNote_WhenActiveCampaignExists_NavigatesToCampaign()
     {
-        var activeId = Guid.NewGuid();
         var world = CreateWorld();
-        world.Campaigns = new List<DashboardCampaignDto> { new() { Id = activeId, Name = "Active", IsActive = true } };
+        world.Campaigns = new List<DashboardCampaignDto> { new() { Id = Guid.NewGuid(), Name = "Active", Slug = "active-campaign", IsActive = true } };
         var instance = CreateInstance(world);
         var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
         Assert.NotNull(nav);
 
         InvokePrivate(instance, "AddSessionNote");
 
-        Assert.Contains($"/world/{world.Slug}/campaign/{activeId}", nav!.Uri, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains($"/{world.Slug}/active-campaign", nav!.Uri, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -102,7 +101,7 @@ public class WorldPanelTests : MudBlazorTestContext
 
         await InvokePrivateAsync(instance, "NavigateToCharacter", characterId);
 
-        Assert.Contains("/article/world/hero", nav!.Uri, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("/world/hero", nav!.Uri, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -293,7 +292,7 @@ public class WorldPanelTests : MudBlazorTestContext
         chip.Click();
 
         cut.WaitForAssertion(() =>
-            Assert.Contains("/article/party/thorne", nav!.Uri, StringComparison.OrdinalIgnoreCase));
+            Assert.Contains("/party/thorne", nav!.Uri, StringComparison.OrdinalIgnoreCase));
     }
 
     private WorldPanel CreateInstance(DashboardWorldDto world)

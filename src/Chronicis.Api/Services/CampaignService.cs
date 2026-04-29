@@ -1,7 +1,9 @@
 using Chronicis.Api.Data;
+using Chronicis.Api.Models;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
 using Chronicis.Shared.Models;
+using Chronicis.Shared.Utilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
@@ -12,11 +14,16 @@ namespace Chronicis.Api.Services;
 public sealed class CampaignService : ICampaignService
 {
     private readonly ChronicisDbContext _context;
+    private readonly IReservedSlugProvider _reservedSlugProvider;
     private readonly ILogger<CampaignService> _logger;
 
-    public CampaignService(ChronicisDbContext context, ILogger<CampaignService> logger)
+    public CampaignService(
+        ChronicisDbContext context,
+        IReservedSlugProvider reservedSlugProvider,
+        ILogger<CampaignService> logger)
     {
         _context = context;
+        _reservedSlugProvider = reservedSlugProvider;
         _logger = logger;
     }
 
@@ -68,12 +75,21 @@ public sealed class CampaignService : ICampaignService
         _logger.LogTraceSanitized("Creating campaign '{Name}' in world {WorldId} for user {UserId}",
             dto.Name, dto.WorldId, userId);
 
-        // Create the Campaign entity
+        // Create the Campaign entity — use caller-supplied slug as seed if valid
+        var slugBase = !string.IsNullOrWhiteSpace(dto.Slug) && SlugGenerator.IsValidSlug(dto.Slug.Trim())
+            ? dto.Slug.Trim()
+            : SlugGenerator.GenerateSlug(dto.Name);
+        var existing = await _context.Campaigns.AsNoTracking()
+            .Where(c => c.WorldId == dto.WorldId)
+            .Select(c => c.Slug)
+            .ToHashSetAsync();
+        var campaignSlug = SlugGenerator.GenerateUniqueSiblingSlug(slugBase, existing, _reservedSlugProvider.All);
         var campaign = new Campaign
         {
             Id = Guid.NewGuid(),
             WorldId = dto.WorldId,
             Name = dto.Name,
+            Slug = campaignSlug,
             Description = dto.Description,
             OwnerId = userId,
             CreatedAt = DateTime.UtcNow
@@ -81,11 +97,13 @@ public sealed class CampaignService : ICampaignService
         _context.Campaigns.Add(campaign);
 
         // Create a default Arc (Act 1)
+        var arcSlug = await GenerateUniqueArcSlugAsync("Act 1", campaign.Id);
         var defaultArc = new Arc
         {
             Id = Guid.NewGuid(),
             CampaignId = campaign.Id,
             Name = "Act 1",
+            Slug = arcSlug,
             Description = null,
             SortOrder = 1,
             CreatedAt = DateTime.UtcNow,
@@ -100,6 +118,7 @@ public sealed class CampaignService : ICampaignService
 
         // Return DTO
         campaign.Owner = user;
+        campaign.World = world;
         return MapToDto(campaign);
     }
 
@@ -107,6 +126,7 @@ public sealed class CampaignService : ICampaignService
     {
         var campaign = await _context.Campaigns
             .Include(c => c.Owner)
+            .Include(c => c.World)
             .FirstOrDefaultAsync(c => c.Id == campaignId);
 
         if (campaign == null)
@@ -115,6 +135,11 @@ public sealed class CampaignService : ICampaignService
         // Only world owner or GM can update
         if (!await UserIsWorldOwnerOrGMAsync(campaignId, userId))
             return null;
+
+        if (campaign.Name != dto.Name)
+        {
+            campaign.Slug = await GenerateUniqueCampaignSlugAsync(dto.Name, campaign.WorldId, campaign.Id);
+        }
 
         campaign.Name = dto.Name;
         campaign.Description = dto.Description;
@@ -267,6 +292,71 @@ public sealed class CampaignService : ICampaignService
         return result;
     }
 
+    public async Task<(Guid Id, string Name)?> GetIdBySlugAsync(Guid worldId, string slug)
+    {
+        var row = await _context.Campaigns.AsNoTracking()
+            .Where(c => c.WorldId == worldId && c.Slug == slug)
+            .Select(c => new { c.Id, c.Name })
+            .FirstOrDefaultAsync();
+
+        return row == null ? null : (row.Id, row.Name);
+    }
+
+    public async Task<ServiceResult<string>> UpdateSlugAsync(Guid campaignId, string slug, Guid userId)
+    {
+        var campaign = await _context.Campaigns
+            .AsNoTracking()
+            .Include(c => c.World)
+            .FirstOrDefaultAsync(c => c.Id == campaignId);
+
+        if (campaign == null)
+            return ServiceResult<string>.NotFound("Campaign not found");
+
+        if (!await UserIsWorldOwnerOrGMAsync(campaignId, userId))
+            return ServiceResult<string>.Forbidden("Only the world owner or GM may update the slug");
+
+        if (!SlugGenerator.IsValidSlug(slug))
+            return ServiceResult<string>.ValidationError("SLUG_INVALID");
+
+        if (_reservedSlugProvider.IsReserved(slug))
+            return ServiceResult<string>.ValidationError("SLUG_RESERVED");
+
+        var existing = await _context.Campaigns.AsNoTracking()
+            .Where(c => c.WorldId == campaign.WorldId && c.Id != campaignId)
+            .Select(c => c.Slug)
+            .ToHashSetAsync();
+
+        var finalSlug = SlugGenerator.GenerateUniqueSiblingSlug(slug, existing, _reservedSlugProvider.All);
+
+        var tracked = await _context.Campaigns.FirstAsync(c => c.Id == campaignId);
+        tracked.Slug = finalSlug;
+        await _context.SaveChangesAsync();
+
+        return ServiceResult<string>.Success(finalSlug);
+    }
+
+    private async Task<string> GenerateUniqueCampaignSlugAsync(string name, Guid worldId, Guid? excludeId = null)
+    {
+        var existing = await _context.Campaigns.AsNoTracking()
+            .Where(c => c.WorldId == worldId && (!excludeId.HasValue || c.Id != excludeId.Value))
+            .Select(c => c.Slug)
+            .ToHashSetAsync();
+
+        return SlugGenerator.GenerateUniqueSiblingSlug(
+            SlugGenerator.GenerateSlug(name), existing, _reservedSlugProvider.All);
+    }
+
+    internal async Task<string> GenerateUniqueArcSlugAsync(string name, Guid campaignId, Guid? excludeId = null)
+    {
+        var existing = await _context.Arcs.AsNoTracking()
+            .Where(a => a.CampaignId == campaignId && (!excludeId.HasValue || a.Id != excludeId.Value))
+            .Select(a => a.Slug)
+            .ToHashSetAsync();
+
+        return SlugGenerator.GenerateUniqueSiblingSlug(
+            SlugGenerator.GenerateSlug(name), existing, _reservedSlugProvider.All);
+    }
+
     private static CampaignDto MapToDto(Campaign campaign)
     {
         return new CampaignDto
@@ -281,7 +371,9 @@ public sealed class CampaignService : ICampaignService
             StartedAt = campaign.StartedAt,
             EndedAt = campaign.EndedAt,
             IsActive = campaign.IsActive,
-            ArcCount = campaign.Arcs?.Count ?? 0
+            ArcCount = campaign.Arcs?.Count ?? 0,
+            Slug = campaign.Slug,
+            WorldSlug = campaign.World?.Slug ?? string.Empty
         };
     }
 
@@ -301,6 +393,8 @@ public sealed class CampaignService : ICampaignService
             EndedAt = campaign.EndedAt,
             IsActive = campaign.IsActive,
             ArcCount = campaign.Arcs?.Count ?? 0,
+            Slug = campaign.Slug,
+            WorldSlug = campaign.World?.Slug ?? string.Empty,
             Arcs = campaign.Arcs?.Select(a => new ArcDto
             {
                 Id = a.Id,
@@ -310,7 +404,10 @@ public sealed class CampaignService : ICampaignService
                 PrivateNotes = null,
                 SortOrder = a.SortOrder,
                 IsActive = a.IsActive,
-                CreatedAt = a.CreatedAt
+                CreatedAt = a.CreatedAt,
+                Slug = a.Slug,
+                CampaignSlug = campaign.Slug,
+                WorldSlug = campaign.World?.Slug ?? string.Empty
             }).ToList() ?? new List<ArcDto>()
         };
     }

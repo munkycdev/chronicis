@@ -36,6 +36,7 @@ public class SessionServiceTests : IDisposable
             _context,
             _summaryService,
             _worldDocumentService,
+            Substitute.For<IReservedSlugProvider>(),
             NullLogger<SessionService>.Instance);
 
         SeedTestData();
@@ -452,6 +453,40 @@ public class SessionServiceTests : IDisposable
         await _worldDocumentService.Received(1).DeleteArticleImagesAsync(childArticleId);
     }
 
+    // ────────────────────────────────────────────────────────────────
+    //  GetIdBySlugAsync
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetIdBySlugAsync_ExistingSlug_ReturnsSessionInfo()
+    {
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            ArcId = TestHelpers.FixedIds.Arc1,
+            Name = "Forest Raid",
+            Slug = "forest-raid",
+            CreatedBy = TestHelpers.FixedIds.User1,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Sessions.Add(session);
+        await _context.SaveChangesAsync();
+
+        var result = await _service.GetIdBySlugAsync(TestHelpers.FixedIds.Arc1, "forest-raid");
+
+        Assert.NotNull(result);
+        Assert.Equal(session.Id, result!.Value.Id);
+        Assert.Equal("Forest Raid", result.Value.Name);
+    }
+
+    [Fact]
+    public async Task GetIdBySlugAsync_UnknownSlug_ReturnsNull()
+    {
+        var result = await _service.GetIdBySlugAsync(TestHelpers.FixedIds.Arc1, "no-such-session");
+
+        Assert.Null(result);
+    }
+
     [Fact]
     public void BuildDefaultNoteTitle_PrivateHelper_CoversWhitespaceAndTruncation()
     {
@@ -491,5 +526,134 @@ public class SessionServiceTests : IDisposable
         _context.Arcs.Add(arc);
 
         _context.SaveChanges();
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  UpdateSlugAsync
+    // ────────────────────────────────────────────────────────────────
+
+    private static readonly Guid TestSessionId = Guid.Parse("99000000-0000-0000-0000-000000000001");
+
+    private async Task<Session> SeedSession()
+    {
+        var session = new Session
+        {
+            Id = TestSessionId,
+            ArcId = TestHelpers.FixedIds.Arc1,
+            Name = "Test Session",
+            CreatedBy = TestHelpers.FixedIds.User1,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Sessions.Add(session);
+        await _context.SaveChangesAsync();
+        return session;
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_ValidSlug_UpdatesAndReturnsSlug()
+    {
+        await SeedSession();
+        var result = await _service.UpdateSlugAsync(TestSessionId, "new-session-slug", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.Success, result.Status);
+        var session = await _context.Sessions.FindAsync(TestSessionId);
+        Assert.Equal(result.Value, session!.Slug);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_SessionNotFound_ReturnsNotFound()
+    {
+        var result = await _service.UpdateSlugAsync(Guid.NewGuid(), "new-slug", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.NotFound, result.Status);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_NotGm_ReturnsForbidden()
+    {
+        await SeedSession();
+        var result = await _service.UpdateSlugAsync(TestSessionId, "new-slug", TestHelpers.FixedIds.User2);
+
+        Assert.Equal(ServiceStatus.Forbidden, result.Status);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_InvalidSlug_ReturnsValidationError()
+    {
+        await SeedSession();
+        var result = await _service.UpdateSlugAsync(TestSessionId, "Bad Slug!", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.ValidationError, result.Status);
+        Assert.Equal("SLUG_INVALID", result.ErrorMessage);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  MapDto null-navigation branch coverage
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void MapDto_WhenArcNull_SlugFieldsAreEmpty()
+    {
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            ArcId = Guid.NewGuid(),
+            Name = "Test",
+            CreatedBy = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow,
+            Arc = null!
+        };
+
+        var method = typeof(SessionService).GetMethod("MapDto", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var dto = (SessionDto)method.Invoke(null, [session])!;
+
+        Assert.Equal(string.Empty, dto.ArcSlug);
+        Assert.Equal(string.Empty, dto.CampaignSlug);
+        Assert.Equal(string.Empty, dto.WorldSlug);
+    }
+
+    [Fact]
+    public void MapDto_WhenArcCampaignNull_CampaignAndWorldSlugAreEmpty()
+    {
+        var arc = new Arc { Id = Guid.NewGuid(), Name = "Arc", Slug = "arc", CampaignId = Guid.NewGuid(), Campaign = null! };
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            ArcId = arc.Id,
+            Name = "Test",
+            CreatedBy = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow,
+            Arc = arc
+        };
+
+        var method = typeof(SessionService).GetMethod("MapDto", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var dto = (SessionDto)method.Invoke(null, [session])!;
+
+        Assert.Equal("arc", dto.ArcSlug);
+        Assert.Equal(string.Empty, dto.CampaignSlug);
+        Assert.Equal(string.Empty, dto.WorldSlug);
+    }
+
+    [Fact]
+    public void MapDto_WhenCampaignWorldNull_WorldSlugIsEmpty()
+    {
+        var campaign = new Campaign { Id = Guid.NewGuid(), Name = "Campaign", Slug = "campaign", WorldId = Guid.NewGuid(), World = null! };
+        var arc = new Arc { Id = Guid.NewGuid(), Name = "Arc", Slug = "arc", CampaignId = campaign.Id, Campaign = campaign };
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            ArcId = arc.Id,
+            Name = "Test",
+            CreatedBy = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow,
+            Arc = arc
+        };
+
+        var method = typeof(SessionService).GetMethod("MapDto", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var dto = (SessionDto)method.Invoke(null, [session])!;
+
+        Assert.Equal("arc", dto.ArcSlug);
+        Assert.Equal("campaign", dto.CampaignSlug);
+        Assert.Equal(string.Empty, dto.WorldSlug);
     }
 }

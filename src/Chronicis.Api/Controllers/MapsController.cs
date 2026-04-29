@@ -1,5 +1,7 @@
 using Chronicis.Api.Infrastructure;
+using Chronicis.Api.Models;
 using Chronicis.Api.Services;
+using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Maps;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -856,5 +858,26 @@ public class MapsController : ControllerBase
             _logger.LogWarningSanitized(ex, "Basemap read request not found");
             return NotFound(new { error = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// PUT /world/{worldId}/maps/{mapId}/slug - Update a map's slug.
+    /// </summary>
+    [HttpPut("{mapId:guid}/slug")]
+    public async Task<ActionResult<SlugUpdateResponseDto>> UpdateMapSlug(Guid worldId, Guid mapId, [FromBody] SlugUpdateRequestDto dto)
+    {
+        var user = await _currentUserService.GetRequiredUserAsync();
+
+        var result = await _worldMapService.UpdateSlugAsync(worldId, mapId, user.Id, dto.Slug);
+
+        return result.Status switch
+        {
+            ServiceStatus.Success => Ok(new SlugUpdateResponseDto { Slug = result.Value! }),
+            ServiceStatus.NotFound => NotFound(new { error = "Map not found" }),
+            ServiceStatus.Forbidden => StatusCode(403, new { error = result.ErrorMessage }),
+            ServiceStatus.ValidationError when result.ErrorMessage == "SLUG_RESERVED" =>
+                BadRequest(new { error = "SLUG_RESERVED" }),
+            _ => BadRequest(new { error = result.ErrorMessage })
+        };
     }
 }

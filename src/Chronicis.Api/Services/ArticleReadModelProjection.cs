@@ -31,6 +31,7 @@ internal static class ArticleReadModelProjection
         AISummary = a.AISummary,
         AISummaryGeneratedAt = a.AISummaryGeneratedAt,
         Breadcrumbs = new List<BreadcrumbDto>(),
-        Aliases = new List<ArticleAliasDto>()
+        Aliases = new List<ArticleAliasDto>(),
+        WorldSlug = a.World != null ? a.World.Slug : string.Empty
     };
 }

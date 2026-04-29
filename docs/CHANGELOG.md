@@ -4,6 +4,33 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Changed — URL Restructure
+
+All entity-detail URLs now follow a unified slug-based scheme. Legacy GUID-based
+routes and the separate `/w/` public viewer are retired.
+
+- **World slug unification** — `World.PublicSlug` is renamed `World.Slug` and is
+  now globally unique across all worlds. The old `/w/{publicSlug}` route is
+  retired; worlds are accessed at `/{worldSlug}` by both anonymous and
+  authenticated visitors.
+- **New slug columns** — `Campaign`, `Arc`, `Session`, and `WorldMap` each carry
+  a `Slug` column with a sibling-unique index (`UrlRestructure_SlugFoundations`
+  migration). Articles retain existing sibling-unique slugs unchanged.
+- **Unified path resolution** — `GET /api/paths/resolve/{*path}` resolves any
+  slug path to entity kind + IDs. `PathResolver` (`@page "/{*Path}"`) is the
+  single client page that consumes this endpoint and dispatches to the correct
+  detail component.
+- **Retired routes** — `/w/{slug}`, `/article/{*path}`, `/world/{guid}`,
+  `/campaign/{guid}`, `/arc/{guid}`, `/session/{guid}`,
+  `/world/{guid}/maps`, `/world/{guid}/maps/{guid}` no longer exist; visiting
+  them yields a not-found render.
+- **Reserved slugs** — Configured under `Routing:ReservedSlugs`; paths whose
+  first segment matches a reserved slug (e.g., `dashboard`, `settings`) redirect
+  to `/dashboard` before the API call.
+- **Anonymous/authenticated parity** — Both audiences share identical URL shapes.
+  `IReadAccessPolicyService` governs content visibility; no separate public
+  viewer component is required.
+
 ### Added — Enter-to-create from wiki-link autocomplete (all editors)
 
 Pressing Enter when the autocomplete popup shows no suggestions and the internal
