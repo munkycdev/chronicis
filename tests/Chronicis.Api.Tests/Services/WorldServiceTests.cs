@@ -21,7 +21,6 @@ public class WorldServiceTests : IDisposable
     private readonly ChronicisDbContext _context;
     private readonly WorldService _service;
     private readonly IWorldMembershipService _membershipService;
-    private readonly IWorldPublicSharingService _publicSharingService;
 
     public WorldServiceTests()
     {
@@ -31,14 +30,11 @@ public class WorldServiceTests : IDisposable
 
         _context = new ChronicisDbContext(options);
 
-        // Mock the membership and public sharing services
         _membershipService = Substitute.For<IWorldMembershipService>();
-        _publicSharingService = Substitute.For<IWorldPublicSharingService>();
 
         _service = new WorldService(
             _context,
             _membershipService,
-            _publicSharingService,
             Substitute.For<IReservedSlugProvider>(),
             NullLogger<WorldService>.Instance);
 
@@ -402,7 +398,6 @@ public class WorldServiceTests : IDisposable
         return new WorldService(
             _context,
             _membershipService,
-            _publicSharingService,
             provider,
             NullLogger<WorldService>.Instance);
     }
@@ -417,24 +412,6 @@ public class WorldServiceTests : IDisposable
         var world = await service.CreateWorldAsync(dto, TestHelpers.FixedIds.User1);
 
         Assert.Equal("dashboard-2", world.Slug);
-    }
-
-    [Fact]
-    public async Task UpdateWorldAsync_ReservedPublicSlug_ReturnsNull()
-    {
-        var service = CreateServiceWithReservedSlugs("admin");
-        var dto = new WorldUpdateDto
-        {
-            IsPublic = true,
-            PublicSlug = "admin"
-        };
-        _publicSharingService.ValidatePublicSlug("admin").Returns((string?)null);
-
-        var result = await service.UpdateWorldAsync(TestHelpers.FixedIds.World1, dto, TestHelpers.FixedIds.User1);
-
-        Assert.Null(result);
-        var unchanged = await _context.Worlds.FindAsync(TestHelpers.FixedIds.World1);
-        Assert.False(unchanged!.IsPublic);
     }
 
     // ────────────────────────────────────────────────────────────────

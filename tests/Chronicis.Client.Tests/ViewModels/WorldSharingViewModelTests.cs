@@ -4,7 +4,6 @@ using Chronicis.Client.ViewModels;
 using Chronicis.Shared.DTOs;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 using Xunit;
 
 namespace Chronicis.Client.Tests.ViewModels;
@@ -77,7 +76,6 @@ public class WorldSharingViewModelTests
         var c = CreateSut();
         c.Vm.IsPublic = true;
         c.Vm.PublicSlug = string.Empty;
-        c.WorldApi.CheckPublicSlugAsync(Arg.Any<Guid>(), Arg.Any<string>()).Returns(new PublicSlugCheckResultDto { IsAvailable = true });
 
         var world = new WorldDetailDto { Id = Guid.NewGuid(), Name = "My Awesome World" };
         c.Vm.OnPublicToggleChanged(world);
@@ -117,7 +115,6 @@ public class WorldSharingViewModelTests
         var c = CreateSut();
         c.Vm.IsPublic = true;
         c.Vm.PublicSlug = string.Empty;
-        c.WorldApi.CheckPublicSlugAsync(Arg.Any<Guid>(), Arg.Any<string>()).Returns(new PublicSlugCheckResultDto { IsAvailable = true });
 
         var world = new WorldDetailDto { Id = Guid.NewGuid(), Name = null! };
 
@@ -144,90 +141,14 @@ public class WorldSharingViewModelTests
     }
 
     [Fact]
-    public async Task CheckSlugAvailabilityAsync_WhenApiReturnsNull_SetsError()
+    public async Task CheckSlugAvailabilityAsync_WhenSlugNotEmpty_Completes()
     {
         var c = CreateSut();
         c.Vm.PublicSlug = "my-world";
-        c.WorldApi.CheckPublicSlugAsync(Arg.Any<Guid>(), "my-world").Returns((PublicSlugCheckResultDto?)null);
-
-        await c.Vm.CheckSlugAvailabilityAsync(Guid.NewGuid());
-
-        Assert.False(c.Vm.SlugIsAvailable);
-        Assert.NotNull(c.Vm.SlugError);
-    }
-
-    [Fact]
-    public async Task CheckSlugAvailabilityAsync_WhenValidationError_SetsErrorWithSuggestion()
-    {
-        var c = CreateSut();
-        c.Vm.PublicSlug = "bad slug!";
-        c.WorldApi.CheckPublicSlugAsync(Arg.Any<Guid>(), Arg.Any<string>()).Returns(
-            new PublicSlugCheckResultDto { ValidationError = "Invalid characters", SuggestedSlug = "bad-slug" });
-
-        await c.Vm.CheckSlugAvailabilityAsync(Guid.NewGuid());
-
-        Assert.False(c.Vm.SlugIsAvailable);
-        Assert.Equal("Invalid characters", c.Vm.SlugError);
-        Assert.Contains("bad-slug", c.Vm.SlugHelperText);
-    }
-
-    [Fact]
-    public async Task CheckSlugAvailabilityAsync_WhenSlugTaken_SetsErrorWithSuggestion()
-    {
-        var c = CreateSut();
-        c.Vm.PublicSlug = "taken-slug";
-        c.WorldApi.CheckPublicSlugAsync(Arg.Any<Guid>(), "taken-slug").Returns(
-            new PublicSlugCheckResultDto { IsAvailable = false, SuggestedSlug = "taken-slug-2" });
-
-        await c.Vm.CheckSlugAvailabilityAsync(Guid.NewGuid());
-
-        Assert.False(c.Vm.SlugIsAvailable);
-        Assert.NotNull(c.Vm.SlugError);
-        Assert.Contains("taken-slug-2", c.Vm.SlugHelperText);
-    }
-
-    [Fact]
-    public async Task CheckSlugAvailabilityAsync_WhenAvailable_SetsSlugIsAvailableAndHelperText()
-    {
-        var c = CreateSut();
-        c.Vm.PublicSlug = "my-world";
-        c.WorldApi.CheckPublicSlugAsync(Arg.Any<Guid>(), "my-world").Returns(
-            new PublicSlugCheckResultDto { IsAvailable = true });
-
-        await c.Vm.CheckSlugAvailabilityAsync(Guid.NewGuid());
-
-        Assert.True(c.Vm.SlugIsAvailable);
-        Assert.Null(c.Vm.SlugError);
-        Assert.Equal("Available!", c.Vm.SlugHelperText);
-    }
-
-    [Fact]
-    public async Task CheckSlugAvailabilityAsync_WhenApiThrows_SetsError()
-    {
-        var c = CreateSut();
-        c.Vm.PublicSlug = "my-world";
-        c.WorldApi.CheckPublicSlugAsync(Arg.Any<Guid>(), Arg.Any<string>()).ThrowsAsync(new Exception("network"));
 
         await c.Vm.CheckSlugAvailabilityAsync(Guid.NewGuid());
 
         Assert.False(c.Vm.IsCheckingSlug);
-        Assert.False(c.Vm.SlugIsAvailable);
-        Assert.NotNull(c.Vm.SlugError);
-    }
-
-    [Fact]
-    public async Task CheckSlugAvailabilityAsync_FiresUnsavedChangesOnSuccess()
-    {
-        var c = CreateSut();
-        c.Vm.PublicSlug = "my-world";
-        c.WorldApi.CheckPublicSlugAsync(Arg.Any<Guid>(), Arg.Any<string>()).Returns(
-            new PublicSlugCheckResultDto { IsAvailable = true });
-        var fired = false;
-        c.Vm.UnsavedChangesOccurred += () => fired = true;
-
-        await c.Vm.CheckSlugAvailabilityAsync(Guid.NewGuid());
-
-        Assert.True(fired);
     }
 
     // ---------------------------------------------------------------------------

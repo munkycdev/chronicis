@@ -72,31 +72,4 @@ public class WorldUpdateDto
     /// Null means no change to current value.
     /// </summary>
     public bool? IsPublic { get; set; }
-
-    /// <summary>
-    /// Globally unique slug for public access.
-    /// Required when IsPublic is true. Ignored when IsPublic is false.
-    /// Must be lowercase alphanumeric with hyphens, 3-100 characters.
-    /// </summary>
-    public string? PublicSlug { get; set; }
-}
-
-/// <summary>
-/// DTO for checking public slug availability
-/// </summary>
-[ExcludeFromCodeCoverage]
-public class PublicSlugCheckDto
-{
-    public string Slug { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// Response for public slug availability check
-/// </summary>
-[ExcludeFromCodeCoverage]
-public class PublicSlugCheckResultDto
-{
-    public bool IsAvailable { get; set; }
-    public string? SuggestedSlug { get; set; }
-    public string? ValidationError { get; set; }
 }

@@ -37,7 +37,6 @@ public class WorldApiServiceTests
         await sut.CreateWorldLinkAsync(id, new WorldLinkCreateDto { Title = "t", Url = "u" });
         await sut.UpdateWorldLinkAsync(id, id2, new WorldLinkUpdateDto { Title = "t", Url = "u" });
         await sut.DeleteWorldLinkAsync(id, id2);
-        await sut.CheckPublicSlugAsync(id, "slug");
         await sut.GetMembersAsync(id);
         await sut.UpdateMemberRoleAsync(id, id2, new WorldMemberUpdateDto { Role = Shared.Enums.WorldRole.Player });
         await sut.RemoveMemberAsync(id, id2);

@@ -15,20 +15,17 @@ public sealed class WorldService : IWorldService
 {
     private readonly ChronicisDbContext _context;
     private readonly IWorldMembershipService _membershipService;
-    private readonly IWorldPublicSharingService _publicSharingService;
     private readonly IReservedSlugProvider _reservedSlugProvider;
     private readonly ILogger<WorldService> _logger;
 
     public WorldService(
         ChronicisDbContext context,
         IWorldMembershipService membershipService,
-        IWorldPublicSharingService publicSharingService,
         IReservedSlugProvider reservedSlugProvider,
         ILogger<WorldService> logger)
     {
         _context = context;
         _membershipService = membershipService;
-        _publicSharingService = publicSharingService;
         _reservedSlugProvider = reservedSlugProvider;
         _logger = logger;
     }
@@ -258,52 +255,8 @@ public sealed class WorldService : IWorldService
         // Handle public visibility changes if specified
         if (dto.IsPublic.HasValue)
         {
-            if (dto.IsPublic.Value)
-            {
-                // Making world public - require a valid public slug
-                if (string.IsNullOrWhiteSpace(dto.PublicSlug))
-                {
-                    _logger.LogWarningSanitized("Attempted to make world {WorldId} public without a public slug", worldId);
-                    return null;
-                }
-
-                var normalizedSlug = dto.PublicSlug.Trim().ToLowerInvariant();
-
-                // Validate slug format via public sharing service
-                var validationError = _publicSharingService.ValidatePublicSlug(normalizedSlug);
-                if (validationError != null)
-                {
-                    _logger.LogWarningSanitized("Invalid public slug '{Slug}' for world {WorldId}: {Error}",
-                        normalizedSlug, worldId, validationError);
-                    return null;
-                }
-
-                // Reject configurable reserved slugs
-                if (_reservedSlugProvider.IsReserved(normalizedSlug))
-                {
-                    _logger.LogWarningSanitized("Public slug '{Slug}' is reserved for world {WorldId}", normalizedSlug, worldId);
-                    return null;
-                }
-
-                // Check global availability
-                if (!await _publicSharingService.IsPublicSlugAvailableAsync(normalizedSlug, worldId))
-                {
-                    _logger.LogWarningSanitized("Public slug '{Slug}' is already taken", normalizedSlug);
-                    return null;
-                }
-
-                world.IsPublic = true;
-                world.Slug = normalizedSlug;
-
-                _logger.LogTraceSanitized("World {WorldId} is now public with slug '{Slug}'", worldId, normalizedSlug);
-            }
-            else
-            {
-                // Making world private - keep slug, just clear the public flag
-                world.IsPublic = false;
-
-                _logger.LogTraceSanitized("World {WorldId} is now private", worldId);
-            }
+            world.IsPublic = dto.IsPublic.Value;
+            _logger.LogTraceSanitized("World {WorldId} IsPublic set to {IsPublic}", worldId, dto.IsPublic.Value);
         }
 
         await _context.SaveChangesAsync();

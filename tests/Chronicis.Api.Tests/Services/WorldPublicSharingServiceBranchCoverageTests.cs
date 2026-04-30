@@ -1,5 +1,7 @@
+using Chronicis.Api.Infrastructure;
 using Chronicis.Api.Services;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
@@ -10,7 +12,9 @@ public class WorldPublicSharingServiceBranchCoverageTests
     public void WorldPublicSharingService_ValidateAndSlugHelpers_CoverBranches()
     {
         using var db = RemainingApiBranchCoverageTestHelpers.CreateDbContext();
-        var service = new WorldPublicSharingService(db, NullLogger<WorldPublicSharingService>.Instance);
+        var reservedSlugProvider = new ReservedSlugProvider(
+            Options.Create(new RoutingOptions { ReservedSlugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "api" } }));
+        var service = new WorldPublicSharingService(db, NullLogger<WorldPublicSharingService>.Instance, reservedSlugProvider);
 
         Assert.Equal("Public slug is required", service.ValidatePublicSlug(" "));
         Assert.Equal("Public slug must be at least 3 characters", service.ValidatePublicSlug("ab"));

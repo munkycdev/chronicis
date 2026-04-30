@@ -6,7 +6,7 @@ namespace Chronicis.ArchitecturalTests;
 [ExcludeFromCodeCoverage]
 public sealed class SessionModelGuardrailTests
 {
-    private const int ApiLegacyReferenceBaseline = 2;
+    private const int ApiLegacyReferenceBaseline = 1;
     private const int ClientLegacyReferenceBaseline = 8;
     private static readonly string RepoRoot = ResolveRepoRoot();
     private static readonly Regex LegacySessionPattern = new(@"\bArticleType\.Session\b", RegexOptions.CultureInvariant);
@@ -21,8 +21,7 @@ public sealed class SessionModelGuardrailTests
 
         var allowlist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "src/Chronicis.Api/Services/ArticleValidationService.cs",
-            "src/Chronicis.Api/Services/PublicWorldService.cs"
+            "src/Chronicis.Api/Services/ArticleValidationService.cs"
         };
 
         var unexpectedFiles = scan.FilesWithReferenceCounts.Keys

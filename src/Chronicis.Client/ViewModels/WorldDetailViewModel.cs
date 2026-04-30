@@ -230,8 +230,7 @@ public sealed class WorldDetailViewModel : ViewModelBase
                 Name = EditName.Trim(),
                 Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim(),
                 PrivateNotes = string.IsNullOrWhiteSpace(EditPrivateNotes) ? null : EditPrivateNotes,
-                IsPublic = sharingVm.IsPublic,
-                PublicSlug = sharingVm.IsPublic ? sharingVm.PublicSlug.Trim().ToLowerInvariant() : null
+                IsPublic = sharingVm.IsPublic
             };
 
             var updated = await _worldApi.UpdateWorldAsync(_world.Id, updateDto);

@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
@@ -13,16 +12,13 @@ public sealed partial class WorldPublicSharingService : IWorldPublicSharingServi
 {
     private readonly ChronicisDbContext _context;
     private readonly ILogger<WorldPublicSharingService> _logger;
+    private readonly IReservedSlugProvider _reservedSlugProvider;
 
-    // Reserved slugs that shouldn't be used
-    private static readonly FrozenSet<string> ReservedSlugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        { "api", "admin", "public", "private", "new", "edit", "delete", "search", "login", "logout", "settings" }
-        .ToFrozenSet(StringComparer.OrdinalIgnoreCase);
-
-    public WorldPublicSharingService(ChronicisDbContext context, ILogger<WorldPublicSharingService> logger)
+    public WorldPublicSharingService(ChronicisDbContext context, ILogger<WorldPublicSharingService> logger, IReservedSlugProvider reservedSlugProvider)
     {
         _context = context;
         _logger = logger;
+        _reservedSlugProvider = reservedSlugProvider;
     }
 
     public async Task<bool> IsPublicSlugAvailableAsync(string publicSlug, Guid? excludeWorldId = null)
@@ -39,33 +35,6 @@ public sealed partial class WorldPublicSharingService : IWorldPublicSharingServi
         }
 
         return !await query.AnyAsync();
-    }
-
-    public async Task<PublicSlugCheckResultDto> CheckPublicSlugAsync(string slug, Guid? excludeWorldId = null)
-    {
-        var normalizedSlug = slug.Trim().ToLowerInvariant();
-
-        // Validate format first
-        var validationError = ValidatePublicSlug(normalizedSlug);
-        if (validationError != null)
-        {
-            return new PublicSlugCheckResultDto
-            {
-                IsAvailable = false,
-                ValidationError = validationError,
-                SuggestedSlug = GenerateSuggestedSlug(slug)
-            };
-        }
-
-        // Check availability
-        var isAvailable = await IsPublicSlugAvailableAsync(normalizedSlug, excludeWorldId);
-
-        return new PublicSlugCheckResultDto
-        {
-            IsAvailable = isAvailable,
-            ValidationError = null,
-            SuggestedSlug = isAvailable ? null : await GenerateAvailableSlugAsync(normalizedSlug)
-        };
     }
 
     public async Task<WorldDto?> GetWorldByPublicSlugAsync(string publicSlug)
@@ -115,7 +84,7 @@ public sealed partial class WorldPublicSharingService : IWorldPublicSharingServi
         if (!ValidPublicSlugRegex().IsMatch(slug))
             return "Public slug must contain only lowercase letters, numbers, and hyphens (no leading/trailing hyphens)";
 
-        if (ReservedSlugs.Contains(slug))
+        if (_reservedSlugProvider.IsReserved(slug))
             return "This slug is reserved and cannot be used";
 
         return null;

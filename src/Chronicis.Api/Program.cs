@@ -229,7 +229,6 @@ internal class Program
             builder.Services.AddScoped<IDashboardReadService, DashboardReadService>();
             builder.Services.AddScoped<ISearchReadService, SearchReadService>();
             builder.Services.AddScoped<ICharacterClaimService, CharacterClaimService>();
-            builder.Services.AddScoped<IPublicWorldService, PublicWorldService>();
             builder.Services.AddScoped<Chronicis.Api.Services.Routing.ISlugPathResolver, Chronicis.Api.Services.Routing.SlugPathResolver>();
             builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
             builder.Services.AddScoped<IMapBlobStore, AzureBlobMapBlobStore>();

@@ -4,10 +4,7 @@ namespace Chronicis.Api.Services;
 
 public interface IReadAccessPolicyService
 {
-    string NormalizePublicSlug(string publicSlug);
-
     IQueryable<World> ApplyPublicWorldFilter(IQueryable<World> worlds);
-    IQueryable<World> ApplyPublicWorldSlugFilter(IQueryable<World> worlds, string publicSlug);
     IQueryable<World> ApplyAuthenticatedWorldFilter(IQueryable<World> worlds, Guid userId);
 
     IQueryable<Article> ApplyPublicVisibilityFilter(IQueryable<Article> articles);

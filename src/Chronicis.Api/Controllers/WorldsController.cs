@@ -18,7 +18,6 @@ public class WorldsController : ControllerBase
     private readonly IWorldService _worldService;
     private readonly IWorldMembershipService _membershipService;
     private readonly IWorldInvitationService _invitationService;
-    private readonly IWorldPublicSharingService _publicSharingService;
     private readonly IExportService _exportService;
     private readonly IWorldLinkSuggestionService _worldLinkSuggestionService;
     private readonly ICurrentUserService _currentUserService;
@@ -28,7 +27,6 @@ public class WorldsController : ControllerBase
         IWorldService worldService,
         IWorldMembershipService membershipService,
         IWorldInvitationService invitationService,
-        IWorldPublicSharingService publicSharingService,
         IExportService exportService,
         IWorldLinkSuggestionService worldLinkSuggestionService,
         ICurrentUserService currentUserService,
@@ -37,7 +35,6 @@ public class WorldsController : ControllerBase
         _worldService = worldService;
         _membershipService = membershipService;
         _invitationService = invitationService;
-        _publicSharingService = publicSharingService;
         _exportService = exportService;
         _worldLinkSuggestionService = worldLinkSuggestionService;
         _currentUserService = currentUserService;
@@ -119,32 +116,6 @@ public class WorldsController : ControllerBase
         }
 
         return Ok(world);
-    }
-
-    /// <summary>
-    /// POST /api/worlds/{id}/check-public-slug - Check if a public slug is available.
-    /// </summary>
-    [HttpPost("{id:guid}/check-public-slug")]
-    public async Task<ActionResult<PublicSlugCheckResultDto>> CheckPublicSlug(Guid id, [FromBody] PublicSlugCheckDto dto)
-    {
-        var user = await _currentUserService.GetRequiredUserAsync();
-
-        // Verify user owns this world
-        var world = await _worldService.GetWorldAsync(id, user.Id);
-        if (world == null || world.OwnerId != user.Id)
-        {
-            return StatusCode(403, new { error = "Only the world owner can check public slugs" });
-        }
-
-        if (dto == null || string.IsNullOrWhiteSpace(dto.Slug))
-        {
-            return BadRequest(new { error = "Slug is required" });
-        }
-
-        _logger.LogTraceSanitized("Checking public slug '{Slug}' for world {WorldId}", dto.Slug, id);
-
-        var result = await _publicSharingService.CheckPublicSlugAsync(dto.Slug, id);
-        return Ok(result);
     }
 
     // ===== Member Management =====

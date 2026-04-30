@@ -81,13 +81,6 @@ public interface IWorldApiService
     /// </summary>
     Task<bool> DeleteDocumentAsync(Guid worldId, Guid documentId);
 
-    // ===== Public Sharing =====
-
-    /// <summary>
-    /// Check if a public slug is available for a world
-    /// </summary>
-    Task<PublicSlugCheckResultDto?> CheckPublicSlugAsync(Guid worldId, string slug);
-
     // ===== Member Management =====
 
     /// <summary>

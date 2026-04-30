@@ -8,15 +8,7 @@ namespace Chronicis.Api.Tests;
 public class ReadAccessPolicyServiceTests
 {
     [Fact]
-    public void NormalizePublicSlug_TrimsAndLowercases()
-    {
-        var sut = new ReadAccessPolicyService();
-
-        Assert.Equal("my-public-world", sut.NormalizePublicSlug("  My-Public-World  "));
-    }
-
-    [Fact]
-    public async Task ApplyPublicWorldFilters_ReturnOnlyPublicWorldsAndMatchingSlug()
+    public async Task ApplyPublicWorldFilter_ReturnsOnlyPublicWorlds()
     {
         using var db = RemainingApiBranchCoverageTestHelpers.CreateDbContext();
         var sut = new ReadAccessPolicyService();
@@ -34,13 +26,8 @@ public class ReadAccessPolicyServiceTests
             .Select(w => w.Id)
             .ToListAsync();
 
-        var slugMatch = await sut.ApplyPublicWorldSlugFilter(db.Worlds.AsNoTracking(), "  SHARED-WORLD  ")
-            .Select(w => w.Id)
-            .SingleOrDefaultAsync();
-
         Assert.Single(publicWorldIds);
         Assert.Contains(publicWorld.Id, publicWorldIds);
-        Assert.Equal(publicWorld.Id, slugMatch);
     }
 
     [Fact]

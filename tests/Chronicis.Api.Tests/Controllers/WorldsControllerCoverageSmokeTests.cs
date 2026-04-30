@@ -19,7 +19,6 @@ public class WorldsControllerCoverageSmokeTests
             worldService,
             Substitute.For<IWorldMembershipService>(),
             Substitute.For<IWorldInvitationService>(),
-            Substitute.For<IWorldPublicSharingService>(),
             Substitute.For<IExportService>(),
             Substitute.For<IWorldLinkSuggestionService>(),
             user,

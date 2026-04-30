@@ -17,7 +17,6 @@ public sealed class WorldSharingViewModel : ViewModelBase
 
     private bool _isPublic;
     private string _publicSlug = string.Empty;
-    private bool _isCheckingSlug;
     private bool _slugIsAvailable;
     private string? _slugError;
     private string? _slugHelperText;
@@ -49,11 +48,7 @@ public sealed class WorldSharingViewModel : ViewModelBase
         set => SetField(ref _publicSlug, value);
     }
 
-    public bool IsCheckingSlug
-    {
-        get => _isCheckingSlug;
-        private set => SetField(ref _isCheckingSlug, value);
-    }
+    public bool IsCheckingSlug => false;
 
     public bool SlugIsAvailable
     {
@@ -94,61 +89,16 @@ public sealed class WorldSharingViewModel : ViewModelBase
         }
     }
 
-    public async Task CheckSlugAvailabilityAsync(Guid worldId)
+    public Task CheckSlugAvailabilityAsync(Guid worldId)
     {
         if (string.IsNullOrWhiteSpace(PublicSlug))
         {
             SlugIsAvailable = false;
             SlugError = null;
             SlugHelperText = null;
-            return;
         }
 
-        IsCheckingSlug = true;
-        SlugError = null;
-        SlugHelperText = null;
-
-        try
-        {
-            var result = await _worldApi.CheckPublicSlugAsync(worldId, PublicSlug);
-
-            if (result == null)
-            {
-                SlugError = "Failed to check availability";
-                SlugIsAvailable = false;
-            }
-            else if (!string.IsNullOrEmpty(result.ValidationError))
-            {
-                SlugError = result.ValidationError;
-                SlugIsAvailable = false;
-                if (!string.IsNullOrEmpty(result.SuggestedSlug))
-                    SlugHelperText = $"Try: {result.SuggestedSlug}";
-            }
-            else if (!result.IsAvailable)
-            {
-                SlugError = "This slug is already taken";
-                SlugIsAvailable = false;
-                if (!string.IsNullOrEmpty(result.SuggestedSlug))
-                    SlugHelperText = $"Try: {result.SuggestedSlug}";
-            }
-            else
-            {
-                SlugIsAvailable = true;
-                SlugHelperText = "Available!";
-            }
-
-            UnsavedChangesOccurred?.Invoke();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogErrorSanitized(ex, "Error checking slug availability for world {WorldId}", worldId);
-            SlugError = $"Error: {ex.Message}";
-            SlugIsAvailable = false;
-        }
-        finally
-        {
-            IsCheckingSlug = false;
-        }
+        return Task.CompletedTask;
     }
 
     public async Task CopyPublicUrlAsync(string url)

@@ -5,21 +5,9 @@ namespace Chronicis.Api.Services;
 
 public sealed class ReadAccessPolicyService : IReadAccessPolicyService
 {
-    public string NormalizePublicSlug(string publicSlug)
-    {
-        return publicSlug.Trim().ToLowerInvariant();
-    }
-
     public IQueryable<World> ApplyPublicWorldFilter(IQueryable<World> worlds)
     {
         return worlds.Where(w => w.IsPublic);
-    }
-
-    public IQueryable<World> ApplyPublicWorldSlugFilter(IQueryable<World> worlds, string publicSlug)
-    {
-        var normalizedSlug = NormalizePublicSlug(publicSlug);
-        return ApplyPublicWorldFilter(worlds)
-            .Where(w => w.Slug == normalizedSlug);
     }
 
     public IQueryable<World> ApplyAuthenticatedWorldFilter(IQueryable<World> worlds, Guid userId)

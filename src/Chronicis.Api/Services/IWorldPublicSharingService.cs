@@ -13,11 +13,6 @@ public interface IWorldPublicSharingService
     Task<bool> IsPublicSlugAvailableAsync(string publicSlug, Guid? excludeWorldId = null);
 
     /// <summary>
-    /// Check public slug availability and return detailed result with suggestions
-    /// </summary>
-    Task<PublicSlugCheckResultDto> CheckPublicSlugAsync(string slug, Guid? excludeWorldId = null);
-
-    /// <summary>
     /// Get a world by its public slug (for anonymous access to public worlds)
     /// </summary>
     Task<WorldDto?> GetWorldByPublicSlugAsync(string publicSlug);

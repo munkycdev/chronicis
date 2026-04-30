@@ -99,7 +99,6 @@ public sealed class ArchitectureGuardrailTests
         var readPolicyType = typeof(Api.Services.IReadAccessPolicyService);
         var serviceTypes = new[]
         {
-            typeof(Api.Services.PublicWorldService),
             typeof(Api.Services.ArticleService),
             typeof(Api.Services.ArticleDataAccessService),
             typeof(Api.Services.SummaryAccessService),
@@ -127,18 +126,13 @@ public sealed class ArchitectureGuardrailTests
     }
 
     [Fact]
-    public void PublicAndAuthenticatedPathServices_MustUseSharedParitySeams()
+    public void ArticleService_MustUseSharedReadSeams()
     {
         var articleServicePath = Path.Combine(RepoRoot, "src", "Chronicis.Api", "Services", "ArticleService.cs");
-        var publicWorldServicePath = Path.Combine(RepoRoot, "src", "Chronicis.Api", "Services", "PublicWorldService.cs");
-
         var articleServiceContent = File.ReadAllText(articleServicePath);
-        var publicWorldServiceContent = File.ReadAllText(publicWorldServicePath);
 
         Assert.Contains("ArticleSlugPathResolver.ResolveAsync", articleServiceContent, StringComparison.Ordinal);
         Assert.Contains("ArticleReadModelProjection.ArticleDetail", articleServiceContent, StringComparison.Ordinal);
-        Assert.Contains("ArticleSlugPathResolver.ResolveAsync", publicWorldServiceContent, StringComparison.Ordinal);
-        Assert.Contains("ArticleReadModelProjection.ArticleDetail", publicWorldServiceContent, StringComparison.Ordinal);
     }
 
     [Fact]
