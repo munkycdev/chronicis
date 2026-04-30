@@ -1,6 +1,7 @@
 @attribute [Authorize]
 @implements IAsyncDisposable
 @using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Services.Routing
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.DTOs.Maps
 @using Chronicis.Shared.Enums
@@ -10,6 +11,7 @@
 @inject IMapApiService MapApi
 @inject IWorldApiService WorldApi
 @inject IArcApiService ArcApi
+@inject IAppUrlBuilder UrlBuilder
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject ITreeStateService TreeState
@@ -120,7 +122,7 @@ else
                         {
                             <EntityListItem Icon="@Icons.Material.Filled.Map"
                                             Title="@GetDisplayName(map.Name, "Untitled Map")"
-                                            Href="@GetMapRoute(map.WorldMapId)">
+                                            Href="@GetMapRoute(map.Slug)">
                                 <span @onclick:stopPropagation="true">
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                    Color="Color.Error"
@@ -152,7 +154,7 @@ else
                                 {
                                     <EntityListItem Icon="@Icons.Material.Filled.Map"
                                                     Title="@GetDisplayName(map.Name, "Untitled Map")"
-                                                    Href="@GetMapRoute(map.WorldMapId)">
+                                                    Href="@GetMapRoute(map.Slug)">
                                         <span @onclick:stopPropagation="true">
                                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                            Color="Color.Error"
@@ -191,7 +193,7 @@ else
                                     {
                                         <EntityListItem Icon="@Icons.Material.Filled.Map"
                                                         Title="@GetDisplayName(map.Name, "Untitled Map")"
-                                                        Href="@GetMapRoute(map.WorldMapId)">
+                                                        Href="@GetMapRoute(map.Slug)">
                                             <span @onclick:stopPropagation="true">
                                                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                Color="Color.Error"
@@ -224,6 +226,7 @@ else
 
     private bool _isLoading = true;
     private bool _hasLoadFailure;
+    private string _worldSlug = string.Empty;
     private string _worldName = "World";
     private List<BreadcrumbItem> _breadcrumbs =
     [
@@ -328,11 +331,12 @@ else
                 return;
             }
 
+            _worldSlug = world.Slug;
             _worldName = GetDisplayName(world.Name, "World");
             _breadcrumbs =
             [
                 new("Dashboard", href: "/dashboard"),
-                new(_worldName, href: $"/world/{WorldId}"),
+                new(_worldName, href: UrlBuilder.ForWorld(_worldSlug)),
                 new("Maps", href: null, disabled: true)
             ];
 
@@ -797,7 +801,7 @@ else
         return MapScope.WorldScoped;
     }
 
-    private string GetMapRoute(Guid mapId) => $"/world/{WorldId}/maps/{mapId}";
+    private string GetMapRoute(string mapSlug) => UrlBuilder.ForMap(_worldSlug, mapSlug);
 
     private static string GetDisplayName(string? value, string fallback)
         => string.IsNullOrWhiteSpace(value) ? fallback : value;

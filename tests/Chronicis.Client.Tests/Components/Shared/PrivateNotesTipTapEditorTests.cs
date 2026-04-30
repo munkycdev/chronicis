@@ -1,11 +1,13 @@
 using System.Reflection;
 using Bunit;
 using Bunit.TestDoubles;
+using Chronicis.Client.Abstractions;
 using Chronicis.Client.Components.Articles;
 using Chronicis.Client.Components.Maps;
 using Chronicis.Client.Components.Shared;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Chronicis.Shared.DTOs.Maps;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,6 +54,7 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
         Services.AddSingleton(worldApi);
         Services.AddSingleton<IDrawerCoordinator>(drawerCoordinator);
         Services.AddSingleton(Substitute.For<ILogger<PrivateNotesTipTapEditor>>());
+        Services.AddSingleton(Substitute.For<IAppNavigator>());
 
         ComponentFactories.AddStub<ArticleDetailWikiLinkAutocomplete>();
         ComponentFactories.AddStub<ExternalLinkDetailPanel>();
@@ -248,13 +251,15 @@ public class PrivateNotesTipTapEditorTests : MudBlazorTestContext
         // Wiki link navigation branches
         await instance.OnWikiLinkClicked("not-a-guid");
         var articleId = Guid.NewGuid();
-        d.ArticleCache.GetNavigationPathAsync(articleId).Returns("world/wiki");
+        var appNavigator = Services.GetRequiredService<IAppNavigator>();
+        var wikiArticle = new ArticleDto { Id = articleId, Type = ArticleType.WikiArticle };
+        d.ArticleCache.GetArticleInfoAsync(articleId).Returns(new CachedArticleInfo { FullArticle = wikiArticle });
         await instance.OnWikiLinkClicked(articleId.ToString());
-        Assert.EndsWith("/article/world/wiki", fakeNav.Uri, StringComparison.OrdinalIgnoreCase);
-        d.ArticleCache.GetNavigationPathAsync(articleId).Returns((string?)null);
+        await appNavigator.Received(1).GoToArticleAsync(Arg.Is<ArticleDto>(a => a.Id == articleId));
+        d.ArticleCache.GetArticleInfoAsync(articleId).Returns(new CachedArticleInfo { FullArticle = null });
         await instance.OnWikiLinkClicked(articleId.ToString());
-        d.ArticleCache.GetNavigationPathAsync(articleId)
-            .Returns(Task.FromException<string?>(new Exception("nav fail")));
+        d.ArticleCache.GetArticleInfoAsync(articleId)
+            .Returns(Task.FromException<CachedArticleInfo?>(new Exception("nav fail")));
         await instance.OnWikiLinkClicked(articleId.ToString());
 
         await instance.OnBrokenLinkClicked("missing");

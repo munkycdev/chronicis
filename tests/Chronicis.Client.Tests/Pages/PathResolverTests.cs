@@ -301,6 +301,17 @@ public class PathResolverTests : TestContext
         cut.FindComponent<Stub<MapDetail>>();
     }
 
+    [Fact]
+    public void PathResolver_TutorialResolution_RendersArticleDetail()
+    {
+        var articleId = Guid.NewGuid();
+        SetupResolution(new SlugPathResolution(ResolvedEntityKind.Tutorial, null, null, null, null, null, articleId, []));
+
+        var cut = RenderWithPath("tutorials/my-tutorial");
+
+        cut.FindComponent<Stub<ArticleDetail>>();
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // Unknown ResolvedEntityKind → null from GetDetailComponentType, nothing rendered
     // ─────────────────────────────────────────────────────────────────────

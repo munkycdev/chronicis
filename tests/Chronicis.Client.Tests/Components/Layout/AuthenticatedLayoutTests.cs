@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Security.Claims;
 using Bunit;
 using Bunit.TestDoubles;
+using Chronicis.Client.Abstractions;
 using Chronicis.Client.Components.Articles;
 using Chronicis.Client.Components.Drawers;
 using Chronicis.Client.Components.Layout;
@@ -43,6 +44,7 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
     private readonly AuthenticationStateProvider _authStateProvider = new TestAuthStateProvider();
     private readonly ILogger<AuthenticatedLayout> _logger = Substitute.For<ILogger<AuthenticatedLayout>>();
     private readonly IVersionService _versionService = Substitute.For<IVersionService>();
+    private readonly IAppNavigator _appNavigator = Substitute.For<IAppNavigator>();
 
     public AuthenticatedLayoutTests()
     {
@@ -69,6 +71,7 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
         Services.AddSingleton<IVersionService>(_versionService);
         Services.AddSingleton<IJSRuntime>(JSInterop.JSRuntime);
         Services.AddSingleton(new MudTheme());
+        Services.AddSingleton(_appNavigator);
 
         _authService.GetCurrentUserAsync().Returns(Task.FromResult<UserInfo?>(null));
         _adminAuthService.IsSysAdminAsync().Returns(Task.FromResult(false));
@@ -445,7 +448,7 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
         await InvokePrivateAsync(instance, "OnCtrlN");
 
         _snackbar.Received().Add("Article created (Ctrl+N)", Severity.Success);
-        Assert.Contains("/article/world/new-article", nav!.Uri, StringComparison.OrdinalIgnoreCase);
+        await _appNavigator.Received(1).GoToArticleAsync(Arg.Is<ArticleDto>(a => a.Id == newId));
     }
 
     [Fact]
@@ -469,14 +472,12 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
             Id = newId,
             Breadcrumbs = new List<BreadcrumbDto>()
         });
-        var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
-        Assert.NotNull(nav);
-        var before = nav!.Uri;
         var instance = CreateInstance();
 
         await InvokePrivateAsync(instance, "OnCtrlN");
 
-        Assert.Equal(before, nav.Uri);
+        // Navigation still happens — AppNavigator decides internally whether to go to dashboard
+        await _appNavigator.Received(1).GoToArticleAsync(Arg.Is<ArticleDto>(a => a.Id == newId));
         _snackbar.Received().Add("Article created (Ctrl+N)", Severity.Success);
     }
 
@@ -551,7 +552,7 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
 
         await _treeState.Received(1).RefreshAsync();
         _treeState.Received(1).SelectNode(newId);
-        Assert.Contains("/article/world/root-sibling", nav!.Uri, StringComparison.OrdinalIgnoreCase);
+        await _appNavigator.Received(1).GoToArticleAsync(Arg.Is<ArticleDto>(a => a.Id == newId));
     }
 
     [Fact]
@@ -880,6 +881,7 @@ public class AuthenticatedLayoutTests : MudBlazorTestContext
         SetProperty(instance, "DrawerCoordinator", _drawerCoordinator);
         SetProperty(instance, "Logger", _logger);
         SetProperty(instance, "VersionService", _versionService);
+        SetProperty(instance, "AppNavigator", _appNavigator);
         return instance;
     }
 

@@ -189,4 +189,28 @@ public class AppUrlBuilderTests
     {
         Assert.Throws<ArgumentException>(() => _sut.ForWikiArticle("world", []));
     }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // ForTutorial
+    // ─────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void ForTutorial_ReturnsTutorialsPrefixedPath()
+    {
+        Assert.Equal("/tutorials/getting-started", _sut.ForTutorial("getting-started"));
+    }
+
+    [Fact]
+    public void ForTutorial_WithDashesAndDigits_Works()
+    {
+        Assert.Equal("/tutorials/step-42", _sut.ForTutorial("step-42"));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void ForTutorial_EmptySlug_Throws(string? slug)
+    {
+        Assert.Throws<ArgumentException>(() => _sut.ForTutorial(slug!));
+    }
 }

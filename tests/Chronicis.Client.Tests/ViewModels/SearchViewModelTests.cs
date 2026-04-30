@@ -137,48 +137,37 @@ public class SearchViewModelTests
     }
 
     // ---------------------------------------------------------------------------
-    // NavigateToArticle
+    // NavigateToArticleAsync
     // ---------------------------------------------------------------------------
 
     [Fact]
-    public void NavigateToArticle_WithAncestorPath_BuildsUrlAndNavigates()
+    public async Task NavigateToArticleAsync_ExpandsTreeAndDelegatesToNavigator()
     {
-        var (sut, _, breadcrumbs, treeState, navigator) = CreateSut();
-        var ancestors = new List<BreadcrumbDto> { new() { Slug = "world" }, new() { Slug = "magic" } };
-        var result = new ArticleSearchResultDto { Id = Guid.NewGuid(), Slug = "fire", AncestorPath = ancestors };
-        breadcrumbs.BuildArticleUrl(ancestors).Returns("/article/world/magic");
+        var (sut, _, _, treeState, navigator) = CreateSut();
+        var result = new ArticleSearchResultDto { Id = Guid.NewGuid(), Slug = "fireball" };
+        navigator.GoToSearchResultAsync(result, false).Returns(Task.CompletedTask);
 
-        sut.NavigateToArticle(result);
+        await sut.NavigateToArticleAsync(result);
 
         treeState.Received(1).ExpandPathToAndSelect(result.Id);
-        navigator.Received(1).NavigateTo("/article/world/magic");
+        await navigator.Received(1).GoToSearchResultAsync(result);
     }
 
     [Fact]
-    public void NavigateToArticle_WithNoAncestorPath_UsesSlugFallback()
+    public async Task NavigateToArticleAsync_PassesResultDirectlyToNavigator()
     {
-        var (sut, _, _, treeState, navigator) = CreateSut();
-        var result = new ArticleSearchResultDto { Id = Guid.NewGuid(), Slug = "fireball", AncestorPath = null };
-
-        sut.NavigateToArticle(result);
-
-        treeState.Received(1).ExpandPathToAndSelect(result.Id);
-        navigator.Received(1).NavigateTo("/article/fireball");
-    }
-
-    [Fact]
-    public void NavigateToArticle_WithEmptyAncestorPath_UsesSlugFallback()
-    {
-        var (sut, _, _, treeState, navigator) = CreateSut();
+        var (sut, _, _, _, navigator) = CreateSut();
         var result = new ArticleSearchResultDto
         {
             Id = Guid.NewGuid(),
-            Slug = "fireball",
-            AncestorPath = new List<BreadcrumbDto>()
+            Slug = "dragon",
+            WorldSlug = "middle-earth",
+            ArticleSlugChain = ["creatures", "dragon"]
         };
+        navigator.GoToSearchResultAsync(result, false).Returns(Task.CompletedTask);
 
-        sut.NavigateToArticle(result);
+        await sut.NavigateToArticleAsync(result);
 
-        navigator.Received(1).NavigateTo("/article/fireball");
+        await navigator.Received(1).GoToSearchResultAsync(result);
     }
 }

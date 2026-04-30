@@ -80,18 +80,9 @@ public sealed class SearchViewModel : ViewModelBase
     /// <summary>
     /// Expands the tree to the article and navigates to it.
     /// </summary>
-    public void NavigateToArticle(ArticleSearchResultDto result)
+    public async Task NavigateToArticleAsync(ArticleSearchResultDto result)
     {
         _treeState.ExpandPathToAndSelect(result.Id);
-
-        if (result.AncestorPath != null && result.AncestorPath.Any())
-        {
-            var path = _breadcrumbService.BuildArticleUrl(result.AncestorPath);
-            _navigator.NavigateTo(path);
-        }
-        else
-        {
-            _navigator.NavigateTo($"/article/{result.Slug}");
-        }
+        await _navigator.GoToSearchResultAsync(result);
     }
 }

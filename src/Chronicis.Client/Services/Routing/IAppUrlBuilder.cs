@@ -10,4 +10,5 @@ public interface IAppUrlBuilder
     string ForMapListing(string worldSlug);
     string ForMap(string worldSlug, string mapSlug);
     string ForWikiArticle(string worldSlug, IReadOnlyList<string> articleSlugSegments);
+    string ForTutorial(string tutorialSlug);
 }

@@ -5,6 +5,7 @@
 @using Chronicis.Client.Components.Maps
 @using Chronicis.Client.Components.Shared
 @using Chronicis.Client.Services
+@using Chronicis.Client.Abstractions
 @using ArticleWikiLinkAutocompleteItem = Chronicis.Client.Components.Articles.WikiLinkAutocompleteItem
 @using Chronicis.Shared.DTOs
 @using Chronicis.Shared.Enums
@@ -24,6 +25,7 @@
 @inject IWikiLinkService WikiLinkService
 @inject IWikiLinkCommitService WikiLinkCommitService
 @inject IAppContextService AppContext
+@inject IAppNavigator AppNavigator
 @inject IArticleCacheService ArticleCache
 @inject IAISummaryApiService SummaryApi
 @inject IWorldApiService WorldApi
@@ -1007,10 +1009,10 @@ else
 
         try
         {
-            var path = await ArticleCache.GetNavigationPathAsync(articleId);
-            if (!string.IsNullOrWhiteSpace(path))
+            var info = await ArticleCache.GetArticleInfoAsync(articleId);
+            if (info?.FullArticle != null)
             {
-                Navigation.NavigateTo($"/article/{path}");
+                await AppNavigator.GoToArticleAsync(info.FullArticle);
             }
             else
             {

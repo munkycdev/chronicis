@@ -4,6 +4,7 @@
 @using Chronicis.Shared.Enums
 @using Chronicis.Shared.DTOs
 @using System.Diagnostics.CodeAnalysis
+@using Chronicis.Client.Abstractions
 @attribute [ExcludeFromCodeCoverage]
 @inject IArticleApiService ArticleApi
 @inject ILinkApiService LinkApi
@@ -11,6 +12,7 @@
 @inject IArticleCacheService ArticleCache
 @inject IUserApiService UserApi
 @inject ITreeStateService TreeState
+@inject IAppNavigator AppNavigator
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -621,11 +623,10 @@
     {
         try
         {
-            var path = await ArticleCache.GetNavigationPathAsync(articleId);
-            
-            if (!string.IsNullOrEmpty(path))
+            var info = await ArticleCache.GetArticleInfoAsync(articleId);
+            if (info?.FullArticle != null)
             {
-                Navigation.NavigateTo($"/article/{path}");
+                await AppNavigator.GoToArticleAsync(info.FullArticle);
             }
         }
         catch (Exception)

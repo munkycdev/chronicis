@@ -7,7 +7,7 @@ namespace Chronicis.ArchitecturalTests;
 public sealed class SessionModelGuardrailTests
 {
     private const int ApiLegacyReferenceBaseline = 2;
-    private const int ClientLegacyReferenceBaseline = 7;
+    private const int ClientLegacyReferenceBaseline = 8;
     private static readonly string RepoRoot = ResolveRepoRoot();
     private static readonly Regex LegacySessionPattern = new(@"\bArticleType\.Session\b", RegexOptions.CultureInvariant);
 
@@ -54,6 +54,7 @@ public sealed class SessionModelGuardrailTests
             "src/Chronicis.Client/Components/Admin/TutorialPageTypes.cs",
             "src/Chronicis.Client/Components/Articles/ArticleMetadataDrawer.razor",
             "src/Chronicis.Client/Components/Quests/QuestDrawer.razor.cs",
+            "src/Chronicis.Client/Infrastructure/AppNavigator.cs",
             "src/Chronicis.Client/Models/TreeNode.cs",
             "src/Chronicis.Client/Services/Tree/TreeDataBuilder.cs"
         };

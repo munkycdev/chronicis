@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Chronicis.Shared.Enums;
 
 namespace Chronicis.Shared.DTOs;
 
@@ -12,6 +13,14 @@ public class ArticleSearchResultDto
     public string MatchType { get; set; } = string.Empty; // "title", "content", or "hashtag"
     public List<BreadcrumbDto> AncestorPath { get; set; } = new();
     public DateTime LastModified { get; set; }
+
+    // URL context fields for typed navigation
+    public string WorldSlug { get; set; } = string.Empty;
+    public List<string> ArticleSlugChain { get; set; } = new();
+    public ArticleType Type { get; set; }
+    public string? CampaignSlug { get; set; }
+    public string? ArcSlug { get; set; }
+    public string? SessionSlug { get; set; }
 }
 
 [ExcludeFromCodeCoverage]

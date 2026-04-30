@@ -34,4 +34,12 @@ public interface IArticleService
         string slug,
         Guid? userId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Find a Tutorial article by slug (WorldId == Guid.Empty, Type == Tutorial).
+    /// Returns (articleId, title) or null if not found.
+    /// </summary>
+    Task<(Guid ArticleId, string Title)?> GetTutorialBySlugAsync(
+        string slug,
+        CancellationToken cancellationToken = default);
 }

@@ -19,7 +19,8 @@ public enum ResolvedEntityKind
     SessionNote,
     MapListing,
     Map,
-    WikiArticle
+    WikiArticle,
+    Tutorial
 }
 
 public sealed record SlugPathBreadcrumb(

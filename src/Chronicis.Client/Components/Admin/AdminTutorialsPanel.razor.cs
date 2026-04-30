@@ -1,6 +1,8 @@
+using Chronicis.Client.Abstractions;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.Enums;
+using Chronicis.Shared.Extensions;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -13,8 +15,7 @@ public partial class AdminTutorialsPanel : ComponentBase
 {
     [Inject] private IAdminApiService AdminApi { get; set; } = default!;
     [Inject] private IArticleApiService ArticleApi { get; set; } = default!;
-    [Inject] private IBreadcrumbService BreadcrumbService { get; set; } = default!;
-    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private IAppNavigator AppNavigator { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
     [Inject] private ILogger<AdminTutorialsPanel> Logger { get; set; } = default!;
 
@@ -157,18 +158,14 @@ public partial class AdminTutorialsPanel : ComponentBase
                 article.WorldId == Guid.Empty &&
                 !string.IsNullOrWhiteSpace(article.Slug))
             {
-                // Tutorial articles are global/system content. Navigating by slug avoids
-                // edge cases in breadcrumb-derived paths for synthetic system-world rows.
-                var tutorialUrl = $"/article/system-tutorial/{Uri.EscapeDataString(article.Slug)}";
-                Navigation.NavigateTo(tutorialUrl, forceLoad: true);
+                await AppNavigator.GoToTutorialAsync(article.Slug);
                 return;
             }
 
-            var articleUrl = BreadcrumbService.BuildArticleUrl(article.Breadcrumbs);
-
-            // Tutorial articles are intentionally excluded from the tree. Force a reload so
-            // the /article page can bootstrap selection from the route before tree init completes.
-            Navigation.NavigateTo(articleUrl, forceLoad: true);
+            Logger.LogWarningSanitized(
+                "Article {ArticleId} is not a tutorial; admin tutorial editor will not navigate.",
+                articleId);
+            Snackbar.Add("Article is not a tutorial.", Severity.Warning);
         }
         catch (Exception ex)
         {

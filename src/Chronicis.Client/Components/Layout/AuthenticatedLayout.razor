@@ -1,10 +1,12 @@
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using Microsoft.AspNetCore.Components.Routing
+@using Chronicis.Client.Abstractions
 @using Chronicis.Client.Components.Drawers
 @using Chronicis.Client.Models
 @using Chronicis.Shared.DTOs
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
+@inject IAppNavigator AppNavigator
 @inject ITreeStateService TreeState
 @inject IAuthService AuthService
 @inject IArticleApiService ArticleApi
@@ -323,10 +325,9 @@
 
             // Navigate to the new article
             var newArticle = await ArticleApi.GetArticleDetailAsync(newArticleId.Value);
-            if (newArticle != null && newArticle.Breadcrumbs.Any())
+            if (newArticle != null)
             {
-                var path = string.Join("/", newArticle.Breadcrumbs.Select(b => b.Slug));
-                Navigation.NavigateTo($"/article/{path}");
+                await AppNavigator.GoToArticleAsync(newArticle);
             }
         }
         else

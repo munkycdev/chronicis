@@ -455,14 +455,12 @@ public sealed class SessionDetailViewModel : ViewModelBase
     {
         try
         {
-            var article = await _articleApi.GetArticleDetailAsync(note.Id);
-            if (article != null && article.Breadcrumbs.Any())
-            {
-                _navigator.NavigateTo(_breadcrumbService.BuildArticleUrl(article.Breadcrumbs));
-                return;
-            }
-
-            _navigator.NavigateTo($"/article/{note.Slug}");
+            await _navigator.GoToSessionNoteAsync(
+                _world!.Slug,
+                _campaign!.Slug,
+                _arc!.Slug,
+                _session!.Slug,
+                note.Slug);
         }
         catch (Exception ex)
         {

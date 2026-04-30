@@ -458,7 +458,7 @@ public sealed class ArticleDetailViewModel : ViewModelBase
             if (detail?.Breadcrumbs != null && detail.Breadcrumbs.Any())
                 return _breadcrumbService.BuildArticleUrl(detail.Breadcrumbs);
 
-            return $"/article/{created.Slug}";
+            return null;
         }
         catch (Exception ex)
         {
@@ -507,7 +507,7 @@ public sealed class ArticleDetailViewModel : ViewModelBase
             if (detail?.Breadcrumbs != null && detail.Breadcrumbs.Any())
                 return _breadcrumbService.BuildArticleUrl(detail.Breadcrumbs);
 
-            return $"/article/{created.Slug}";
+            return null;
         }
         catch (Exception ex)
         {

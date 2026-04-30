@@ -47,7 +47,29 @@ public sealed class SlugPathResolver : ISlugPathResolver
 
         var worldSlug = segments[0];
 
-        // 2. Reserved slug check
+        // 2. Tutorials short-circuit (before reserved slug check)
+        if (worldSlug.Equals("tutorials", StringComparison.OrdinalIgnoreCase))
+        {
+            if (segments.Count < 2)
+                return null;
+
+            var tutorialSlug = segments[1];
+            var tutorialInfo = await _articleService.GetTutorialBySlugAsync(tutorialSlug, cancellationToken);
+            if (tutorialInfo == null)
+                return null;
+
+            return new SlugPathResolution(
+                Kind: ResolvedEntityKind.Tutorial,
+                WorldId: null,
+                CampaignId: null,
+                ArcId: null,
+                SessionId: null,
+                MapId: null,
+                ArticleId: tutorialInfo.Value.ArticleId,
+                Breadcrumbs: [new SlugPathBreadcrumb(ResolvedEntityKind.Tutorial, tutorialSlug, tutorialInfo.Value.Title)]);
+        }
+
+        // 3. Reserved slug check
         if (_reservedSlugProvider.IsReserved(worldSlug))
             return null;
 

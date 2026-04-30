@@ -81,4 +81,11 @@ public sealed class AppUrlBuilder : IAppUrlBuilder
             throw new ArgumentException("At least one article slug segment is required.", nameof(articleSlugSegments));
         return $"/{worldSlug}/wiki/{string.Join("/", articleSlugSegments)}";
     }
+
+    public string ForTutorial(string tutorialSlug)
+    {
+        if (string.IsNullOrEmpty(tutorialSlug))
+            throw new ArgumentException("Tutorial slug is required.", nameof(tutorialSlug));
+        return $"/tutorials/{tutorialSlug}";
+    }
 }

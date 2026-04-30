@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
-clear
+try { Clear-Host } catch { }
 
 # --- Config ---
 $RepoRoot = "z:\repos\chronicis"
@@ -178,7 +178,7 @@ try {
 }
 finally {
     Pop-Location
-    if ($Host.Name -eq "ConsoleHost" -and [Environment]::UserInteractive) {
-        Read-Host -Prompt "Press Enter to exit"
+    if ($Host.Name -eq "ConsoleHost" -and [Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
+        try { Read-Host -Prompt "Press Enter to exit" } catch { }
     }
 }

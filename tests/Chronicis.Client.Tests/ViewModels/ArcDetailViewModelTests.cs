@@ -463,7 +463,7 @@ public class ArcDetailViewModelTests
     }
 
     [Fact]
-    public async Task CreateSessionAsync_WhenNodeNotFound_FallsBackToGuidNav()
+    public async Task CreateSessionAsync_WhenNodeNotFound_StaysOnCurrentPage()
     {
         var c = CreateSut();
         var arc = MakeArc();
@@ -479,7 +479,7 @@ public class ArcDetailViewModelTests
 
         await c.Vm.CreateSessionAsync();
 
-        c.Navigator.Received(1).NavigateTo($"/session/{sessionId}");
+        await c.Navigator.DidNotReceive().GoToSessionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>());
         c.Notifier.Received(1).Success("Session created");
     }
 

@@ -46,6 +46,7 @@
         ResolvedEntityKind.Session     => typeof(SessionDetail),
         ResolvedEntityKind.SessionNote => typeof(ArticleDetail),
         ResolvedEntityKind.WikiArticle => typeof(ArticleDetail),
+        ResolvedEntityKind.Tutorial    => typeof(ArticleDetail),
         ResolvedEntityKind.MapListing  => typeof(MapListing),
         ResolvedEntityKind.Map         => typeof(MapDetail),
         _                              => null
@@ -61,7 +62,9 @@
         if (segments.Length == 0)
             return;
 
-        if (ReservedSlugs.IsReserved(segments[0]))
+        // Tutorials are handled by PathApi (tutorials is also reserved to block world name collisions)
+        if (!segments[0].Equals("tutorials", StringComparison.OrdinalIgnoreCase)
+            && ReservedSlugs.IsReserved(segments[0]))
         {
             Navigation.NavigateTo("/dashboard", replace: true);
             return;
@@ -116,6 +119,7 @@
                 break;
             case ResolvedEntityKind.SessionNote:
             case ResolvedEntityKind.WikiArticle:
+            case ResolvedEntityKind.Tutorial:
                 if (resolution.ArticleId.HasValue)
                     builder.AddAttribute(1, "ArticleId", resolution.ArticleId.Value);
                 break;

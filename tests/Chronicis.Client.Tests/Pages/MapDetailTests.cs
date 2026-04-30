@@ -1,9 +1,11 @@
 using System.Reflection;
 using Bunit;
 using Bunit.TestDoubles;
+using Chronicis.Client.Abstractions;
 using Chronicis.Client.Engine.Interaction;
 using Chronicis.Client.Pages.Maps;
 using Chronicis.Client.Services;
+using Chronicis.Client.Services.Routing;
 using Chronicis.Client.Tests.Components;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Maps;
@@ -23,6 +25,7 @@ public class MapDetailTests : MudBlazorTestContext
     private readonly IUserApiService _userApi = Substitute.For<IUserApiService>();
     private readonly IArticleApiService _articleApi = Substitute.For<IArticleApiService>();
     private readonly ITreeStateService _treeState = Substitute.For<ITreeStateService>();
+    private readonly IAppNavigator _appNavigator = Substitute.For<IAppNavigator>();
 
     private static readonly Guid UserId = Guid.Parse("10000000-0000-0000-0000-000000000001");
     private static readonly Guid RootLayerId = Guid.Parse("20000000-0000-0000-0000-000000000001");
@@ -42,6 +45,8 @@ public class MapDetailTests : MudBlazorTestContext
         Services.AddSingleton(_userApi);
         Services.AddSingleton(_articleApi);
         Services.AddSingleton(_treeState);
+        Services.AddSingleton(_appNavigator);
+        Services.AddSingleton<IAppUrlBuilder>(new AppUrlBuilder());
 
         _worldApi.GetWorldAsync(Arg.Any<Guid>()).Returns(call =>
         {
@@ -589,7 +594,7 @@ public class MapDetailTests : MudBlazorTestContext
 
         cut.WaitForAssertion(() =>
         {
-            Assert.EndsWith("/article/campaign/session-10", Services.GetRequiredService<NavigationManager>().Uri, StringComparison.Ordinal);
+            _appNavigator.Received().GoToArticleAsync(Arg.Is<ArticleDto>(a => a.Id == sessionNoteId));
         });
     }
 
@@ -632,7 +637,7 @@ public class MapDetailTests : MudBlazorTestContext
         cut.WaitForAssertion(() =>
         {
             Assert.Null(GetField<Guid?>(cut.Instance, "_selectedPolygonFeatureId"));
-            Assert.EndsWith("/article/pin-article", Services.GetRequiredService<NavigationManager>().Uri, StringComparison.Ordinal);
+            _appNavigator.Received().GoToArticleAsync(Arg.Is<ArticleDto>(a => a.Id == articleId));
         });
     }
 

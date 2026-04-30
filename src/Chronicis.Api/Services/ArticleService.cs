@@ -690,6 +690,21 @@ namespace Chronicis.Api.Services
             return article == null ? null : (article.Id, article.Title ?? slug);
         }
 
+        public async Task<(Guid ArticleId, string Title)?> GetTutorialBySlugAsync(
+            string slug,
+            CancellationToken cancellationToken = default)
+        {
+            var article = await _context.Articles
+                .AsNoTracking()
+                .Where(a => a.Slug == slug
+                            && a.Type == Chronicis.Shared.Enums.ArticleType.Tutorial
+                            && a.WorldId == Guid.Empty)
+                .Select(a => new { a.Id, a.Title })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return article == null ? null : (article.Id, article.Title ?? slug);
+        }
+
         private async Task<ArticleDto?> TryResolveWorldArticleByPathAsync(string[] slugs, Guid userId)
         {
             if (slugs.Length < 2)

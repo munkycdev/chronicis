@@ -330,14 +330,6 @@ public sealed class WorldDetailViewModel : ViewModelBase
 
     private void NavigateToArticle(ArticleDto article)
     {
-        if (article.Breadcrumbs != null && article.Breadcrumbs.Any())
-        {
-            var path = _breadcrumbService.BuildArticleUrl(article.Breadcrumbs);
-            _navigator.NavigateTo(path);
-        }
-        else
-        {
-            _navigator.NavigateTo($"/article/{article.Slug}");
-        }
+        _ = _navigator.GoToArticleAsync(article);
     }
 }

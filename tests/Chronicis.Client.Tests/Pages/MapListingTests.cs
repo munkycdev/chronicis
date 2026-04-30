@@ -3,9 +3,11 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using Bunit;
+using Chronicis.Client.Abstractions;
 using Chronicis.Client.Models;
 using Chronicis.Client.Pages.Maps;
 using Chronicis.Client.Services;
+using Chronicis.Client.Services.Routing;
 using Chronicis.Client.Tests.Components;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Maps;
@@ -31,6 +33,8 @@ public class MapListingTests : MudBlazorTestContext
         Services.AddSingleton(_worldApi);
         Services.AddSingleton(_arcApi);
         Services.AddSingleton(_treeState);
+        Services.AddSingleton(Substitute.For<IAppNavigator>());
+        Services.AddSingleton<IAppUrlBuilder>(new AppUrlBuilder());
 
         _worldApi.GetWorldAsync(Arg.Any<Guid>()).Returns(call =>
         {
@@ -38,6 +42,7 @@ public class MapListingTests : MudBlazorTestContext
             return new WorldDetailDto
             {
                 Id = worldId,
+                Slug = "test-world",
                 Name = "Test World",
                 Campaigns = []
             };
@@ -108,6 +113,7 @@ public class MapListingTests : MudBlazorTestContext
         _worldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto
         {
             Id = worldId,
+            Slug = "test-world-maps",
             Name = "",
             Campaigns =
             [
@@ -129,18 +135,21 @@ public class MapListingTests : MudBlazorTestContext
             new MapSummaryDto
             {
                 WorldMapId = knownWorldMapId,
+                Slug = "world-map",
                 Name = "World Map",
                 Scope = MapScope.WorldScoped
             },
             new MapSummaryDto
             {
                 WorldMapId = unknownWorldMapId,
+                Slug = "unknown-world-map",
                 Name = "",
                 Scope = MapScope.WorldScoped
             },
             new MapSummaryDto
             {
                 WorldMapId = campaignMapId,
+                Slug = "campaign-map",
                 Name = "Campaign Map",
                 Scope = MapScope.CampaignScoped,
                 CampaignIds = [campaignKnownId]
@@ -148,6 +157,7 @@ public class MapListingTests : MudBlazorTestContext
             new MapSummaryDto
             {
                 WorldMapId = campaignUnknownMapId,
+                Slug = "unknown-campaign-map",
                 Name = "Unknown Campaign Map",
                 Scope = MapScope.CampaignScoped,
                 CampaignIds = [unknownCampaignId]
@@ -155,6 +165,7 @@ public class MapListingTests : MudBlazorTestContext
             new MapSummaryDto
             {
                 WorldMapId = arcKnownMapId,
+                Slug = "arc-map",
                 Name = "Arc Map",
                 Scope = MapScope.ArcScoped,
                 ArcIds = [arcKnownId]
@@ -162,6 +173,7 @@ public class MapListingTests : MudBlazorTestContext
             new MapSummaryDto
             {
                 WorldMapId = arcUnknownMapId,
+                Slug = "arc-unknown-map",
                 Name = "Arc Unknown",
                 Scope = MapScope.ArcScoped,
                 ArcIds = [arcUnknownId]
@@ -169,6 +181,7 @@ public class MapListingTests : MudBlazorTestContext
             new MapSummaryDto
             {
                 WorldMapId = mismatchedScopeMapId,
+                Slug = "mismatched-scope-map",
                 Name = "Mismatched Scope",
                 Scope = MapScope.WorldScoped,
                 CampaignIds = [campaignKnownId]
@@ -187,7 +200,7 @@ public class MapListingTests : MudBlazorTestContext
             Assert.Contains($"Unknown Campaign ({unknownCampaignId})", cut.Markup, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("Unknown Campaign", cut.Markup, StringComparison.OrdinalIgnoreCase);
             Assert.Contains($"Unknown Arc ({arcUnknownId})", cut.Markup, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains($"/world/{worldId}/maps/{knownWorldMapId}", cut.Markup, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("/test-world-maps/maps/world-map", cut.Markup, StringComparison.OrdinalIgnoreCase);
         });
     }
 
@@ -416,7 +429,7 @@ public class MapListingTests : MudBlazorTestContext
         var mapId = Guid.NewGuid();
         var file = CreateBrowserFile("success-map.png", "image/png", 3);
 
-        _worldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto { Id = worldId, Name = "World", Campaigns = [] });
+        _worldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto { Id = worldId, Slug = "success-world", Name = "World", Campaigns = [] });
         _mapApi.ListMapsForWorldAsync(worldId).Returns(
             new List<MapSummaryDto>(),
             [new MapSummaryDto { WorldMapId = mapId, Name = "Success Map", Scope = MapScope.WorldScoped }]);
@@ -475,9 +488,9 @@ public class MapListingTests : MudBlazorTestContext
         var worldId = Guid.NewGuid();
         var mapId = Guid.NewGuid();
 
-        _worldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto { Id = worldId, Name = "World", Campaigns = [] });
+        _worldApi.GetWorldAsync(worldId).Returns(new WorldDetailDto { Id = worldId, Slug = "delete-world", Name = "World", Campaigns = [] });
         _mapApi.ListMapsForWorldAsync(worldId).Returns(
-            [new MapSummaryDto { WorldMapId = mapId, Name = "Delete Me", Scope = MapScope.WorldScoped }],
+            [new MapSummaryDto { WorldMapId = mapId, Slug = "delete-me-map", Name = "Delete Me", Scope = MapScope.WorldScoped }],
             new List<MapSummaryDto>());
         _mapApi.DeleteMapAsync(worldId, mapId).Returns(true);
 
@@ -537,8 +550,8 @@ public class MapListingTests : MudBlazorTestContext
         Assert.Equal("Actual", (string)getDisplayName.Invoke(null, ["Actual", "Fallback"])!);
 
         var cut = RenderLoadedComponent();
-        var route = (string)getMapRoute!.Invoke(cut.Instance, [Guid.Empty])!;
-        Assert.Equal($"/world/{cut.Instance.WorldId}/maps/{Guid.Empty}", route);
+        var route = (string)getMapRoute!.Invoke(cut.Instance, ["test-map-slug"])!;
+        Assert.Equal("/test-world/maps/test-map-slug", route);
     }
 
     [Fact]

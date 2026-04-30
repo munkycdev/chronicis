@@ -1,3 +1,4 @@
+@using Chronicis.Client.Abstractions
 @using Chronicis.Client.Models
 @using Chronicis.Client.Components.Dialogs
 @using Chronicis.Client.Services.Routing
@@ -13,6 +14,8 @@
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject IAppUrlBuilder UrlBuilder
+@inject IAppNavigator AppNavigator
+@inject ILogger<ArticleTreeView> Logger
 @implements IDisposable
 
 <div class="article-tree @(_draggedNodeId.HasValue ? "article-tree--dragging" : "")">
@@ -197,9 +200,13 @@
                 Snackbar.Add("Session created", Severity.Success);
                 TreeState.TryGetNode(newId.Value, out var sessionNode);
                 if (sessionNode != null && !string.IsNullOrEmpty(sessionNode.Slug))
-                    Navigation.NavigateTo(UrlBuilder.ForSession(sessionNode.WorldSlug, sessionNode.CampaignSlug, sessionNode.ArcSlug, sessionNode.Slug));
+                {
+                    await AppNavigator.GoToSessionAsync(sessionNode.WorldSlug, sessionNode.CampaignSlug, sessionNode.ArcSlug, sessionNode.Slug);
+                }
                 else
-                    Navigation.NavigateTo($"/session/{newId.Value}");
+                {
+                    Logger.LogWarningSanitized("Created session node {NodeId} has empty slug; staying on current page.", newId.Value);
+                }
                 return;
             }
 

@@ -481,19 +481,13 @@ public class SessionDetailViewModelTests
         {
             new() { Id = created.Id, SessionId = session.Id, Type = ArticleType.SessionNote, Title = created.Title, Slug = created.Slug }
         });
-        c.ArticleApi.GetArticleDetailAsync(created.Id).Returns(new ArticleDto
-        {
-            Id = created.Id,
-            Title = created.Title,
-            Slug = created.Slug,
-            Breadcrumbs = new List<BreadcrumbDto> { new() { Id = Guid.NewGuid(), Title = "W", Slug = "w" } }
-        });
-        c.BreadcrumbService.BuildArticleUrl(Arg.Any<List<BreadcrumbDto>>()).Returns("/article/w/alyx-notes");
 
         await c.Vm.CreateSessionNoteAsync();
 
         c.Notifier.Received().Success("Session note added");
-        c.Navigator.Received().NavigateTo("/article/w/alyx-notes");
+        await c.Navigator.Received().GoToSessionNoteAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+            created.Slug);
         Assert.False(c.Vm.IsCreatingSessionNote);
     }
 
@@ -517,29 +511,31 @@ public class SessionDetailViewModelTests
     }
 
     [Fact]
-    public async Task OpenSessionNoteAsync_UsesBreadcrumbUrl_OrSlugFallback_AndHandlesErrors()
+    public async Task OpenSessionNoteAsync_CallsGoToSessionNoteAsync_WithContextSlugs()
     {
         var c = CreateSut();
+        var session = await LoadMinimalAsGmAsync(c);
         var note = new ArticleTreeDto { Id = Guid.NewGuid(), Slug = "note-a", Title = "Note A" };
-        c.ArticleApi.GetArticleDetailAsync(note.Id).Returns(new ArticleDto
-        {
-            Id = note.Id,
-            Slug = note.Slug,
-            Breadcrumbs = new List<BreadcrumbDto> { new() { Id = Guid.NewGuid(), Title = "World", Slug = "world" } }
-        });
-        c.BreadcrumbService.BuildArticleUrl(Arg.Any<List<BreadcrumbDto>>()).Returns("/article/world/note-a");
 
         await c.Vm.OpenSessionNoteAsync(note);
-        c.Navigator.Received().NavigateTo("/article/world/note-a");
 
-        var note2 = new ArticleTreeDto { Id = Guid.NewGuid(), Slug = "note-b", Title = "Note B" };
-        c.ArticleApi.GetArticleDetailAsync(note2.Id).Returns((ArticleDto?)null);
-        await c.Vm.OpenSessionNoteAsync(note2);
-        c.Navigator.Received().NavigateTo("/article/note-b");
+        await c.Navigator.Received(1).GoToSessionNoteAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+            session.Slug, note.Slug);
+    }
 
-        var note3 = new ArticleTreeDto { Id = Guid.NewGuid(), Slug = "note-c", Title = "Note C" };
-        c.ArticleApi.GetArticleDetailAsync(note3.Id).ThrowsAsync(new Exception("boom"));
-        await c.Vm.OpenSessionNoteAsync(note3);
+    [Fact]
+    public async Task OpenSessionNoteAsync_WhenNavigatorThrows_ShowsError()
+    {
+        var c = CreateSut();
+        await LoadMinimalAsGmAsync(c);
+        var note = new ArticleTreeDto { Id = Guid.NewGuid(), Slug = "note-err", Title = "Error note" };
+        c.Navigator.GoToSessionNoteAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+            .ThrowsAsync(new Exception("boom"));
+
+        await c.Vm.OpenSessionNoteAsync(note);
+
         c.Notifier.Received().Error("Failed to navigate to session note");
     }
 

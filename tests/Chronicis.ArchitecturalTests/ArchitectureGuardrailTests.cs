@@ -214,6 +214,42 @@ public sealed class ArchitectureGuardrailTests
             string.Join(Environment.NewLine, violations.Select(v => $"  - {v}")));
     }
 
+    [Fact]
+    public void ClientCode_MustNotEmitLegacyHardcodedUrls()
+    {
+        var clientSrcPath = Path.Combine(RepoRoot, "src", "Chronicis.Client");
+        var files = Directory.EnumerateFiles(clientSrcPath, "*.cs", SearchOption.AllDirectories)
+            .Concat(Directory.EnumerateFiles(clientSrcPath, "*.razor", SearchOption.AllDirectories));
+
+        // The pattern intentionally requires a known legacy prefix word
+        // (article/world/campaign/arc/session/w) and does NOT catch
+        // Navigation.NavigateTo($"/{path}") emissions built from breadcrumb slug
+        // chains. Phase 13 owns BreadcrumbService retirement: once
+        // BreadcrumbService.BuildArticleUrl is deleted and all $"/{path}"
+        // call sites are routed through IAppNavigator/IAppUrlBuilder, tighten
+        // this regex to @"\$""\/\{" so any remaining offenders fail the build.
+        var legacyPattern = new Regex(
+            @"\$""\/(article|world|campaign|arc|session|w)\/",
+            RegexOptions.CultureInvariant);
+
+        var violations = new List<string>();
+
+        foreach (var file in files)
+        {
+            if (IsBuildArtifact(file))
+                continue;
+
+            var content = File.ReadAllText(file);
+            if (legacyPattern.IsMatch(content))
+                violations.Add(ToRepoRelativePath(file));
+        }
+
+        Assert.True(
+            violations.Count == 0,
+            "Client code must not emit legacy hardcoded URL strings. Use IAppUrlBuilder or IAppNavigator instead." + Environment.NewLine +
+            string.Join(Environment.NewLine, violations.Select(v => $"  - {v}")));
+    }
+
     private static bool IsBuildArtifact(string filePath)
     {
         return IsInDirectory(filePath, "bin") || IsInDirectory(filePath, "obj");

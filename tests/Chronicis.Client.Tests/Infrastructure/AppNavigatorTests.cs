@@ -2,7 +2,9 @@ using Chronicis.Client.Infrastructure;
 using Chronicis.Client.Services.Routing;
 using Chronicis.Shared.DTOs;
 using Chronicis.Shared.DTOs.Sessions;
+using Chronicis.Shared.Enums;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Chronicis.Client.Tests.Infrastructure;
@@ -27,14 +29,14 @@ public class AppNavigatorTests
     {
         var nav = new TestNavigationManager();
         var urlBuilder = new AppUrlBuilder();
-        return (nav, urlBuilder, new AppNavigator(nav, urlBuilder));
+        return (nav, urlBuilder, new AppNavigator(nav, urlBuilder, NullLogger<AppNavigator>.Instance));
     }
 
     [Fact]
     public void BaseUri_ReturnsNavigationManagerBaseUri()
     {
         var nav = new TestNavigationManager(baseUri: "https://chronicis.app/", currentUri: "https://chronicis.app/");
-        var sut = new AppNavigator(nav, new AppUrlBuilder());
+        var sut = new AppNavigator(nav, new AppUrlBuilder(), NullLogger<AppNavigator>.Instance);
 
         Assert.Equal("https://chronicis.app/", sut.BaseUri);
     }
@@ -45,7 +47,7 @@ public class AppNavigatorTests
         var nav = new TestNavigationManager(
             baseUri: "https://chronicis.app/",
             currentUri: "https://chronicis.app/world/123");
-        var sut = new AppNavigator(nav, new AppUrlBuilder());
+        var sut = new AppNavigator(nav, new AppUrlBuilder(), NullLogger<AppNavigator>.Instance);
 
         Assert.Equal("https://chronicis.app/world/123", sut.Uri);
     }
@@ -213,5 +215,278 @@ public class AppNavigatorTests
         await sut.GoToWikiArticleAsync("middle-earth", ["locations", "rivendell"]);
 
         Assert.Equal(("/middle-earth/wiki/locations/rivendell", false), nav.Navigations[0]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // GoToTutorialAsync
+    // ─────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GoToTutorialAsync_NavigatesToTutorialsUrl()
+    {
+        var (nav, _, sut) = Create();
+
+        await sut.GoToTutorialAsync("getting-started");
+
+        Assert.Equal(("/tutorials/getting-started", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToTutorialAsync_WithReplace_PassesReplaceFlag()
+    {
+        var (nav, _, sut) = Create();
+
+        await sut.GoToTutorialAsync("getting-started", replace: true);
+
+        Assert.Equal(("/tutorials/getting-started", true), nav.Navigations[0]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // GoToArticleAsync
+    // ─────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GoToArticleAsync_Tutorial_NavigatesToTutorialsRoute()
+    {
+        var (nav, _, sut) = Create();
+        var article = new ArticleDto { Slug = "intro", Type = ArticleType.Tutorial, Breadcrumbs = [] };
+
+        await sut.GoToArticleAsync(article);
+
+        Assert.Equal(("/tutorials/intro", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToArticleAsync_SessionNote_WithFullBreadcrumbs_NavigatesToFiveSegmentUrl()
+    {
+        var (nav, _, sut) = Create();
+        var article = new ArticleDto
+        {
+            Slug = "note-1",
+            Type = ArticleType.SessionNote,
+            Breadcrumbs =
+            [
+                new BreadcrumbDto { Slug = "me", IsWorld = true },
+                new BreadcrumbDto { Slug = "wotr" },
+                new BreadcrumbDto { Slug = "fellowship" },
+                new BreadcrumbDto { Slug = "session-1" },
+                new BreadcrumbDto { Slug = "note-1" }
+            ]
+        };
+
+        await sut.GoToArticleAsync(article);
+
+        Assert.Equal(("/me/wotr/fellowship/session-1/note-1", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToArticleAsync_SessionNote_MissingBreadcrumbs_NavigatesToDashboard()
+    {
+        var (nav, _, sut) = Create();
+        var article = new ArticleDto { Slug = "orphan", Type = ArticleType.SessionNote, Breadcrumbs = [] };
+
+        await sut.GoToArticleAsync(article);
+
+        Assert.Equal(("/dashboard", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToArticleAsync_SessionNote_NullBreadcrumbs_NavigatesToDashboard()
+    {
+        var (nav, _, sut) = Create();
+        var article = new ArticleDto { Slug = "orphan", Type = ArticleType.SessionNote, Breadcrumbs = null };
+
+        await sut.GoToArticleAsync(article);
+
+        Assert.Equal(("/dashboard", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToArticleAsync_WikiArticle_NavigatesToWikiUrl()
+    {
+        var (nav, _, sut) = Create();
+        var article = new ArticleDto
+        {
+            Slug = "rivendell",
+            Type = ArticleType.WikiArticle,
+            WorldSlug = "middle-earth",
+            Breadcrumbs =
+            [
+                new BreadcrumbDto { Slug = "middle-earth", IsWorld = true },
+                new BreadcrumbDto { Slug = "wiki" },
+                new BreadcrumbDto { Slug = "rivendell" }
+            ]
+        };
+
+        await sut.GoToArticleAsync(article);
+
+        Assert.Equal(("/middle-earth/wiki/rivendell", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToArticleAsync_WikiArticle_MissingWorldSlug_FallsBackToBreadcrumb()
+    {
+        var (nav, _, sut) = Create();
+        var article = new ArticleDto
+        {
+            Slug = "rivendell",
+            Type = ArticleType.WikiArticle,
+            WorldSlug = string.Empty,
+            Breadcrumbs =
+            [
+                new BreadcrumbDto { Slug = "middle-earth", IsWorld = true },
+                new BreadcrumbDto { Slug = "wiki" },
+                new BreadcrumbDto { Slug = "rivendell" }
+            ]
+        };
+
+        await sut.GoToArticleAsync(article);
+
+        Assert.Equal(("/middle-earth/wiki/rivendell", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToArticleAsync_WikiArticle_MissingWorldSlugAndNoBreadcrumbs_NavigatesToDashboard()
+    {
+        var (nav, _, sut) = Create();
+        var article = new ArticleDto
+        {
+            Slug = "lost-article",
+            Type = ArticleType.WikiArticle,
+            WorldSlug = string.Empty,
+            Breadcrumbs = []
+        };
+
+        await sut.GoToArticleAsync(article);
+
+        Assert.Equal(("/dashboard", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToArticleAsync_WikiArticle_NullBreadcrumbs_NavigatesToDashboard()
+    {
+        var (nav, _, sut) = Create();
+        var article = new ArticleDto
+        {
+            Slug = "lost-article",
+            Type = ArticleType.WikiArticle,
+            WorldSlug = "some-world",
+            Breadcrumbs = null
+        };
+
+        await sut.GoToArticleAsync(article);
+
+        Assert.Equal(("/dashboard", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToArticleAsync_DeprecatedSession_NavigatesToDashboard()
+    {
+        var (nav, _, sut) = Create();
+        var article = new ArticleDto { Id = Guid.NewGuid(), Slug = "old-session", Type = ArticleType.Session, Breadcrumbs = [] };
+
+        await sut.GoToArticleAsync(article);
+
+        Assert.Equal(("/dashboard", false), nav.Navigations[0]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // GoToSearchResultAsync
+    // ─────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GoToSearchResultAsync_Tutorial_NavigatesToTutorialsRoute()
+    {
+        var (nav, _, sut) = Create();
+        var result = new ArticleSearchResultDto
+        {
+            Type = ArticleType.Tutorial,
+            ArticleSlugChain = ["getting-started"]
+        };
+
+        await sut.GoToSearchResultAsync(result);
+
+        Assert.Equal(("/tutorials/getting-started", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToSearchResultAsync_Tutorial_EmptySlugChain_NavigatesToDashboard()
+    {
+        var (nav, _, sut) = Create();
+        var result = new ArticleSearchResultDto { Type = ArticleType.Tutorial, ArticleSlugChain = [] };
+
+        await sut.GoToSearchResultAsync(result);
+
+        Assert.Equal(("/dashboard", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToSearchResultAsync_SessionNote_NavigatesToFiveSegmentUrl()
+    {
+        var (nav, _, sut) = Create();
+        var result = new ArticleSearchResultDto
+        {
+            Type = ArticleType.SessionNote,
+            WorldSlug = "me",
+            CampaignSlug = "wotr",
+            ArcSlug = "fellowship",
+            SessionSlug = "session-1",
+            ArticleSlugChain = ["note-1"]
+        };
+
+        await sut.GoToSearchResultAsync(result);
+
+        Assert.Equal(("/me/wotr/fellowship/session-1/note-1", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToSearchResultAsync_SessionNote_MissingContext_NavigatesToDashboard()
+    {
+        var (nav, _, sut) = Create();
+        var result = new ArticleSearchResultDto
+        {
+            Type = ArticleType.SessionNote,
+            WorldSlug = "me",
+            CampaignSlug = null,
+            ArcSlug = null,
+            SessionSlug = null,
+            ArticleSlugChain = []
+        };
+
+        await sut.GoToSearchResultAsync(result);
+
+        Assert.Equal(("/dashboard", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToSearchResultAsync_WikiArticle_NavigatesToWikiUrl()
+    {
+        var (nav, _, sut) = Create();
+        var result = new ArticleSearchResultDto
+        {
+            Type = ArticleType.WikiArticle,
+            WorldSlug = "middle-earth",
+            ArticleSlugChain = ["locations", "rivendell"]
+        };
+
+        await sut.GoToSearchResultAsync(result);
+
+        Assert.Equal(("/middle-earth/wiki/locations/rivendell", false), nav.Navigations[0]);
+    }
+
+    [Fact]
+    public async Task GoToSearchResultAsync_WikiArticle_MissingWorldSlug_NavigatesToDashboard()
+    {
+        var (nav, _, sut) = Create();
+        var result = new ArticleSearchResultDto
+        {
+            Type = ArticleType.WikiArticle,
+            WorldSlug = string.Empty,
+            ArticleSlugChain = ["rivendell"]
+        };
+
+        await sut.GoToSearchResultAsync(result);
+
+        Assert.Equal(("/dashboard", false), nav.Navigations[0]);
     }
 }

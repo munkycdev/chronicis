@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Chronicis.Api.Data;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronicis.Api.Services;
@@ -51,7 +52,12 @@ public sealed partial class SearchReadService : ISearchReadService
                 MatchSnippet = a.Title ?? string.Empty,
                 MatchType = "title",
                 LastModified = a.ModifiedAt ?? a.CreatedAt,
-                AncestorPath = new List<BreadcrumbDto>()
+                AncestorPath = new List<BreadcrumbDto>(),
+                Type = a.Type,
+                WorldSlug = a.World != null ? a.World.Slug : string.Empty,
+                CampaignSlug = a.Session != null ? a.Session.Arc.Campaign.Slug : null,
+                ArcSlug = a.Session != null ? a.Session.Arc.Slug : null,
+                SessionSlug = a.Session != null ? a.Session.Slug : null
             })
             .ToListAsync();
 
@@ -65,7 +71,12 @@ public sealed partial class SearchReadService : ISearchReadService
                 a.Title,
                 a.Slug,
                 a.Body,
-                LastModified = a.ModifiedAt ?? a.CreatedAt
+                LastModified = a.ModifiedAt ?? a.CreatedAt,
+                a.Type,
+                WorldSlug = a.World != null ? a.World.Slug : string.Empty,
+                CampaignSlug = a.Session != null ? a.Session.Arc.Campaign.Slug : null,
+                ArcSlug = a.Session != null ? a.Session.Arc.Slug : null,
+                SessionSlug = a.Session != null ? a.Session.Slug : null
             })
             .ToListAsync();
 
@@ -77,7 +88,12 @@ public sealed partial class SearchReadService : ISearchReadService
             MatchSnippet = ExtractSnippet(a.Body ?? string.Empty, query, 100),
             MatchType = "content",
             LastModified = a.LastModified,
-            AncestorPath = new List<BreadcrumbDto>()
+            AncestorPath = new List<BreadcrumbDto>(),
+            Type = a.Type,
+            WorldSlug = a.WorldSlug,
+            CampaignSlug = a.CampaignSlug,
+            ArcSlug = a.ArcSlug,
+            SessionSlug = a.SessionSlug
         }).ToList();
 
         var hashtagQuery = $"#{query}";
@@ -91,7 +107,12 @@ public sealed partial class SearchReadService : ISearchReadService
                 a.Title,
                 a.Slug,
                 a.Body,
-                LastModified = a.ModifiedAt ?? a.CreatedAt
+                LastModified = a.ModifiedAt ?? a.CreatedAt,
+                a.Type,
+                WorldSlug = a.World != null ? a.World.Slug : string.Empty,
+                CampaignSlug = a.Session != null ? a.Session.Arc.Campaign.Slug : null,
+                ArcSlug = a.Session != null ? a.Session.Arc.Slug : null,
+                SessionSlug = a.Session != null ? a.Session.Slug : null
             })
             .ToListAsync();
 
@@ -103,7 +124,12 @@ public sealed partial class SearchReadService : ISearchReadService
             MatchSnippet = ExtractSnippet(a.Body ?? string.Empty, hashtagQuery, 100),
             MatchType = "hashtag",
             LastModified = a.LastModified,
-            AncestorPath = new List<BreadcrumbDto>()
+            AncestorPath = new List<BreadcrumbDto>(),
+            Type = a.Type,
+            WorldSlug = a.WorldSlug,
+            CampaignSlug = a.CampaignSlug,
+            ArcSlug = a.ArcSlug,
+            SessionSlug = a.SessionSlug
         }).ToList();
 
         var allResults = titleMatches.Concat(bodyResults).Concat(hashtagResults).ToList();
@@ -121,6 +147,7 @@ public sealed partial class SearchReadService : ISearchReadService
         {
             if (ancestorPaths.TryGetValue(result.Id, out var path))
                 result.AncestorPath = path;
+            result.ArticleSlugChain = ComputeSlugChain(result);
         }
 
         var seenIds = new HashSet<Guid>();
@@ -136,6 +163,23 @@ public sealed partial class SearchReadService : ISearchReadService
             HashtagMatches = deduplicatedHashtagMatches,
             TotalResults = deduplicatedTitleMatches.Count + deduplicatedBodyMatches.Count + deduplicatedHashtagMatches.Count
         };
+    }
+
+    private static List<string> ComputeSlugChain(ArticleSearchResultDto result)
+    {
+        if (result.Type == ArticleType.SessionNote)
+        {
+            if (result.CampaignSlug != null && result.ArcSlug != null && result.SessionSlug != null)
+                return [result.WorldSlug, result.CampaignSlug, result.ArcSlug, result.SessionSlug, result.Slug];
+            return [result.Slug];
+        }
+
+        var chain = result.AncestorPath
+            .Where(b => !b.IsWorld && b.Slug != "wiki")
+            .Select(b => b.Slug)
+            .ToList();
+        chain.Add(result.Slug);
+        return chain;
     }
 
     private static string ExtractSnippet(string text, string searchTerm, int contextLength)

@@ -311,49 +311,39 @@ public class WorldDetailViewModelTests
     // ---------------------------------------------------------------------------
 
     [Fact]
-    public void NavigateToArticle_WhenBreadcrumbsPresent_UsesBreadcrumbPath()
+    public void NavigateToArticle_CallsGoToArticleAsyncWithArticle()
     {
         var c = CreateSut();
-        var article = new ArticleDto
-        {
-            Slug = "fallback-slug",
-            Breadcrumbs = new List<BreadcrumbDto> { new() { Title = "World", Slug = "world" } }
-        };
-        c.BreadcrumbService.BuildArticleUrl(article.Breadcrumbs).Returns("/article/world");
+        var article = new ArticleDto { Slug = "my-article", Type = Chronicis.Shared.Enums.ArticleType.WikiArticle };
+        c.Navigator.GoToArticleAsync(article, false).Returns(Task.CompletedTask);
 
         InvokePrivate(c.Vm, "NavigateToArticle", article);
 
-        c.Navigator.Received(1).NavigateTo("/article/world");
+        c.Navigator.Received(1).GoToArticleAsync(article);
     }
 
     [Fact]
-    public void NavigateToArticle_WhenBreadcrumbsEmpty_UsesSlugFallback()
+    public void NavigateToArticle_WhenBreadcrumbsEmpty_StillCallsGoToArticleAsync()
     {
         var c = CreateSut();
-        var article = new ArticleDto
-        {
-            Slug = "fallback-slug",
-            Breadcrumbs = new List<BreadcrumbDto>()
-        };
+        var article = new ArticleDto { Slug = "fallback-slug", Breadcrumbs = [] };
+        c.Navigator.GoToArticleAsync(article, false).Returns(Task.CompletedTask);
 
         InvokePrivate(c.Vm, "NavigateToArticle", article);
 
-        c.Navigator.Received(1).NavigateTo("/article/fallback-slug");
+        c.Navigator.Received(1).GoToArticleAsync(article);
     }
 
     [Fact]
-    public void NavigateToArticle_WhenBreadcrumbsNull_UsesSlugFallback()
+    public void NavigateToArticle_WhenBreadcrumbsNull_StillCallsGoToArticleAsync()
     {
         var c = CreateSut();
-        var article = new ArticleDto
-        {
-            Slug = "fallback-slug",
-            Breadcrumbs = null
-        };
+        var article = new ArticleDto { Slug = "fallback-slug", Breadcrumbs = null };
+        c.Navigator.GoToArticleAsync(article, false).Returns(Task.CompletedTask);
 
         InvokePrivate(c.Vm, "NavigateToArticle", article);
 
-        c.Navigator.Received(1).NavigateTo("/article/fallback-slug");
+        c.Navigator.Received(1).GoToArticleAsync(article);
     }
 
     private static object? InvokePrivate(object target, string methodName, params object[] args)

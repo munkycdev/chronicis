@@ -547,7 +547,7 @@ public class ArticleDetailViewModelTests
     }
 
     [Fact]
-    public async Task CreateSiblingArticleAsync_WhenNoBreadcrumbs_ReturnsFallbackPath()
+    public async Task CreateSiblingArticleAsync_WhenNoBreadcrumbs_ReturnsNull()
     {
         var c = CreateSut();
         var article = MakeArticle();
@@ -561,7 +561,7 @@ public class ArticleDetailViewModelTests
 
         var result = await c.Vm.CreateSiblingArticleAsync();
 
-        Assert.Equal($"/article/{sibling.Slug}", result);
+        Assert.Null(result);
     }
 
     // ---------------------------------------------------------------------------

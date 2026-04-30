@@ -1,5 +1,6 @@
 using System.Reflection;
 using Bunit;
+using Chronicis.Client.Abstractions;
 using Chronicis.Client.Components.Admin;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
@@ -17,9 +18,9 @@ public class AdminTutorialsPanelTests : MudBlazorTestContext
     {
         Services.AddSingleton(adminApi);
         Services.AddSingleton(Substitute.For<IArticleApiService>());
-        Services.AddSingleton(Substitute.For<IBreadcrumbService>());
         Services.AddSingleton(Substitute.For<ISnackbar>());
         Services.AddSingleton(Substitute.For<ILogger<AdminTutorialsPanel>>());
+        Services.AddSingleton(Substitute.For<IAppNavigator>());
     }
 
     [Fact]

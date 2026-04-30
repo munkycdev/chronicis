@@ -1,3 +1,4 @@
+@using Chronicis.Client.Abstractions
 @using Chronicis.Client.Components.Articles
 @using Chronicis.Client.Components.Maps
 @using Chronicis.Client.Services
@@ -16,6 +17,7 @@
 @inject IArticleCacheService ArticleCache
 @inject IAISummaryApiService SummaryApi
 @inject IWorldApiService WorldApi
+@inject IAppNavigator AppNavigator
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject ILogger<PrivateNotesTipTapEditor> Logger
@@ -454,10 +456,10 @@ else
 
         try
         {
-            var path = await ArticleCache.GetNavigationPathAsync(articleId);
-            if (!string.IsNullOrWhiteSpace(path))
+            var info = await ArticleCache.GetArticleInfoAsync(articleId);
+            if (info?.FullArticle != null)
             {
-                Navigation.NavigateTo($"/article/{path}");
+                await AppNavigator.GoToArticleAsync(info.FullArticle);
             }
             else
             {

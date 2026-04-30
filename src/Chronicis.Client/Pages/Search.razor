@@ -47,7 +47,7 @@
 
                 @foreach (var result in ViewModel.Results.TitleMatches)
                 {
-                    <SearchResultCard Result="@result" Query="@ViewModel.Results.Query" OnClick="@(() => ViewModel.NavigateToArticle(result))" />
+                    <SearchResultCard Result="@result" Query="@ViewModel.Results.Query" OnClick="@(async () => await ViewModel.NavigateToArticleAsync(result))" />
                 }
             </div>
         }
@@ -63,7 +63,7 @@
 
                 @foreach (var result in ViewModel.Results.BodyMatches)
                 {
-                    <SearchResultCard Result="@result" Query="@ViewModel.Results.Query" OnClick="@(() => ViewModel.NavigateToArticle(result))" />
+                    <SearchResultCard Result="@result" Query="@ViewModel.Results.Query" OnClick="@(async () => await ViewModel.NavigateToArticleAsync(result))" />
                 }
             </div>
         }
@@ -79,7 +79,7 @@
 
                 @foreach (var result in ViewModel.Results.HashtagMatches)
                 {
-                    <SearchResultCard Result="@result" Query="@ViewModel.Results.Query" OnClick="@(() => ViewModel.NavigateToArticle(result))" />
+                    <SearchResultCard Result="@result" Query="@ViewModel.Results.Query" OnClick="@(async () => await ViewModel.NavigateToArticleAsync(result))" />
                 }
             </div>
         }

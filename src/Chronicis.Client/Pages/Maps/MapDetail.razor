@@ -1,9 +1,11 @@
 @attribute [Authorize]
 @implements IAsyncDisposable
 @using System.Globalization
+@using Chronicis.Client.Abstractions
 @using Chronicis.Client.Engine.Geometry
 @using Chronicis.Client.Engine.Interaction
 @using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Services.Routing
 @using Chronicis.Client.Utilities
 @using Chronicis.Shared.DTOs.Maps
 @using Chronicis.Shared.Enums
@@ -11,6 +13,8 @@
 @inject IWorldApiService WorldApi
 @inject IUserApiService UserApi
 @inject IArticleApiService ArticleApi
+@inject IAppUrlBuilder UrlBuilder
+@inject IAppNavigator AppNavigator
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject ITreeStateService TreeState
@@ -592,6 +596,7 @@ else
     private bool _isDeletingPin;
     private bool _isCreatePinDialogOpen;
     private MapDetailState _state = MapDetailState.Loaded;
+    private string _worldSlug = string.Empty;
     private string _worldName = "World";
     private string _mapName = "Map";
     private string _editMapName = "Map";
@@ -875,6 +880,11 @@ else
         if (!string.IsNullOrWhiteSpace(world?.Name))
         {
             _worldName = world.Name;
+        }
+        if (!string.IsNullOrWhiteSpace(world?.Slug))
+        {
+            _worldSlug = world.Slug;
+            BuildBreadcrumbs();
         }
         _canManageMap = world != null
             && (await userProfileTask)?.Id == world.OwnerId;
@@ -3094,13 +3104,12 @@ else
     private async Task NavigateToLinkedArticleAsync(Guid articleId)
     {
         var article = await ArticleApi.GetArticleDetailAsync(articleId);
-        if (article == null || !article.Breadcrumbs.Any())
+        if (article == null)
         {
             return;
         }
 
-        var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-        Navigation.NavigateTo($"/article/{path}");
+        await AppNavigator.GoToArticleAsync(article);
     }
 
     private Task NavigateToSessionReferenceAsync(MapFeatureSessionReferenceDto reference) =>
@@ -4128,11 +4137,13 @@ else
 
     private void BuildBreadcrumbs()
     {
+        var worldHref = string.IsNullOrEmpty(_worldSlug) ? null : UrlBuilder.ForWorld(_worldSlug);
+        var mapsHref = string.IsNullOrEmpty(_worldSlug) ? null : UrlBuilder.ForMapListing(_worldSlug);
         _breadcrumbs =
         [
             new("Dashboard", href: "/dashboard"),
-            new(_worldName, href: $"/world/{WorldId}"),
-            new("Maps", href: $"/world/{WorldId}/maps"),
+            new(_worldName, href: worldHref),
+            new("Maps", href: mapsHref),
             new(_mapName, href: null, disabled: true)
         ];
     }

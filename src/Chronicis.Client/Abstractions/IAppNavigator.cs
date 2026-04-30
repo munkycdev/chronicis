@@ -31,4 +31,7 @@ public interface IAppNavigator
     Task GoToMapListingAsync(string worldSlug, bool replace = false);
     Task GoToMapAsync(string worldSlug, string mapSlug, bool replace = false);
     Task GoToWikiArticleAsync(string worldSlug, IReadOnlyList<string> articleSlugSegments, bool replace = false);
+    Task GoToArticleAsync(ArticleDto article, bool replace = false);
+    Task GoToTutorialAsync(string tutorialSlug, bool replace = false);
+    Task GoToSearchResultAsync(ArticleSearchResultDto result, bool replace = false);
 }

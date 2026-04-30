@@ -131,6 +131,7 @@ public class SessionDetailTests : MudBlazorTestContext
         Services.AddSingleton(d.ArticleCache);
         Services.AddSingleton(d.SummaryApi);
         Services.AddSingleton<IDrawerCoordinator>(d.DrawerCoordinator);
+        Services.AddSingleton(d.Navigator);
 
         Services.GetRequiredService<FakeNavigationManager>().NavigateTo("http://localhost/session/test");
 
@@ -453,8 +454,10 @@ public class SessionDetailTests : MudBlazorTestContext
         var sessionId = Guid.NewGuid();
         ConfigureLoadedSession(d, sessionId, isGm: true, publicNotes: "<p>pub</p>");
         var articleId = Guid.NewGuid();
-        const string articlePath = "world/wiki/castle-ward";
-        d.ArticleCache.GetNavigationPathAsync(articleId).Returns(articlePath);
+        var article = new ArticleDto { Id = articleId, Slug = "castle-ward", Type = Chronicis.Shared.Enums.ArticleType.WikiArticle };
+        d.ArticleCache.GetArticleInfoAsync(articleId)
+            .Returns(new CachedArticleInfo { FullArticle = article });
+        d.Navigator.GoToArticleAsync(Arg.Any<ArticleDto>(), false).Returns(Task.CompletedTask);
 
         var cut = RenderPage(d, sessionId);
         cut.WaitForAssertion(() => Assert.NotNull(cut.Instance));
@@ -464,8 +467,7 @@ public class SessionDetailTests : MudBlazorTestContext
 
         await cut.InvokeAsync(() => InvokeAnyTask(bridge!, "OnWikiLinkClicked", articleId.ToString()));
 
-        var navigation = Services.GetRequiredService<FakeNavigationManager>();
-        Assert.EndsWith($"/article/{articlePath}", navigation.Uri, StringComparison.OrdinalIgnoreCase);
+        await d.Navigator.Received(1).GoToArticleAsync(Arg.Is<ArticleDto>(a => a.Id == articleId));
         Assert.False((bool)GetField(cut.Instance, "_isMapModalOpen")!);
     }
 

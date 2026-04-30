@@ -316,9 +316,13 @@ public sealed class ArcDetailViewModel : ViewModelBase
 
             _treeState.TryGetNode(createdSessionId.Value, out var sessionNode);
             if (sessionNode != null && !string.IsNullOrEmpty(sessionNode.Slug))
+            {
                 await _navigator.GoToSessionAsync(sessionNode.WorldSlug, sessionNode.CampaignSlug, sessionNode.ArcSlug, sessionNode.Slug);
+            }
             else
-                _navigator.NavigateTo($"/session/{createdSessionId.Value}");
+            {
+                _logger.LogWarningSanitized("Created session node has empty slug; staying on current page");
+            }
             _notifier.Success("Session created");
         }
         catch (Exception ex)
