@@ -51,6 +51,15 @@ public class WorldApiService : IWorldApiService
             $"world {worldId}");
     }
 
+    public async Task<SlugUpdateResponseDto?> UpdateSlugAsync(Guid worldId, string slug)
+    {
+        return await _http.PutEntityAsync<SlugUpdateResponseDto>(
+            $"worlds/{worldId}/slug",
+            new SlugUpdateRequestDto { Slug = slug },
+            _logger,
+            $"slug for world {worldId}");
+    }
+
     // ===== World Links =====
 
     public async Task<List<WorldLinkDto>> GetWorldLinksAsync(Guid worldId)

@@ -5,9 +5,6 @@ using Chronicis.Shared.Extensions;
 
 namespace Chronicis.Client.ViewModels;
 
-/// <summary>
-/// ViewModel managing public slug and sharing settings for a world.
-/// </summary>
 public sealed class WorldSharingViewModel : ViewModelBase
 {
     private readonly IWorldApiService _worldApi;
@@ -16,10 +13,9 @@ public sealed class WorldSharingViewModel : ViewModelBase
     private readonly ILogger<WorldSharingViewModel> _logger;
 
     private bool _isPublic;
-    private string _publicSlug = string.Empty;
-    private bool _slugIsAvailable;
-    private string? _slugError;
-    private string? _slugHelperText;
+    private string _pendingSlug = string.Empty;
+    private bool _isRenamingSlug;
+    private string? _slugRenameError;
 
     /// <summary>Raised when a change is made that requires the parent world to be saved.</summary>
     public event Action? UnsavedChangesOccurred;
@@ -42,63 +38,75 @@ public sealed class WorldSharingViewModel : ViewModelBase
         set => SetField(ref _isPublic, value);
     }
 
-    public string PublicSlug
+    public string PendingSlug
     {
-        get => _publicSlug;
-        set => SetField(ref _publicSlug, value);
+        get => _pendingSlug;
+        set => SetField(ref _pendingSlug, value);
     }
 
-    public bool IsCheckingSlug => false;
-
-    public bool SlugIsAvailable
+    public bool IsRenamingSlug
     {
-        get => _slugIsAvailable;
-        private set => SetField(ref _slugIsAvailable, value);
+        get => _isRenamingSlug;
+        private set => SetField(ref _isRenamingSlug, value);
     }
 
-    public string? SlugError
+    public string? SlugRenameError
     {
-        get => _slugError;
-        private set => SetField(ref _slugError, value);
-    }
-
-    public string? SlugHelperText
-    {
-        get => _slugHelperText;
-        private set => SetField(ref _slugHelperText, value);
+        get => _slugRenameError;
+        private set => SetField(ref _slugRenameError, value);
     }
 
     /// <summary>Initialises sharing state from a loaded world.</summary>
     public void InitializeFrom(WorldDetailDto world)
     {
         IsPublic = world.IsPublic;
-        PublicSlug = world.IsPublic ? world.Slug : string.Empty;
-        SlugIsAvailable = world.IsPublic;
-        SlugError = null;
-        SlugHelperText = null;
+        PendingSlug = world.Slug;
+        SlugRenameError = null;
     }
 
-    public void OnPublicToggleChanged(WorldDetailDto? world)
+    public void OnPublicToggleChanged()
     {
         UnsavedChangesOccurred?.Invoke();
-
-        if (IsPublic && string.IsNullOrEmpty(PublicSlug))
-        {
-            PublicSlug = GenerateSlugFromName(world?.Name ?? string.Empty);
-            _ = CheckSlugAvailabilityAsync(world?.Id ?? Guid.Empty);
-        }
     }
 
-    public Task CheckSlugAvailabilityAsync(Guid worldId)
+    /// <summary>
+    /// Submits a slug rename. Returns the resolved slug on success, or null on failure.
+    /// </summary>
+    public async Task<string?> SaveSlugAsync(Guid worldId)
     {
-        if (string.IsNullOrWhiteSpace(PublicSlug))
+        if (string.IsNullOrWhiteSpace(PendingSlug))
         {
-            SlugIsAvailable = false;
-            SlugError = null;
-            SlugHelperText = null;
+            SlugRenameError = "Slug cannot be empty";
+            return null;
         }
 
-        return Task.CompletedTask;
+        IsRenamingSlug = true;
+        SlugRenameError = null;
+
+        try
+        {
+            var result = await _worldApi.UpdateSlugAsync(worldId, PendingSlug.Trim().ToLowerInvariant());
+            if (result != null)
+            {
+                PendingSlug = result.Slug;
+                _notifier.Success("World URL updated");
+                return result.Slug;
+            }
+
+            SlugRenameError = "Failed to update URL";
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorSanitized(ex, "Error updating slug for world {WorldId}", worldId);
+            _notifier.Error("Failed to update URL");
+            SlugRenameError = "Failed to update URL";
+            return null;
+        }
+        finally
+        {
+            IsRenamingSlug = false;
+        }
     }
 
     public async Task CopyPublicUrlAsync(string url)
@@ -108,7 +116,6 @@ public sealed class WorldSharingViewModel : ViewModelBase
 
         try
         {
-            // Navigation.BaseUri is passed in by the page to keep IJSRuntime out of the VM
             _navigator.NavigateTo($"javascript:navigator.clipboard.writeText('{url}')");
             _notifier.Success("Public URL copied to clipboard");
         }

@@ -27,6 +27,11 @@ public interface IWorldApiService
     /// </summary>
     Task<WorldDto?> UpdateWorldAsync(Guid worldId, WorldUpdateDto dto);
 
+    /// <summary>
+    /// Update a world's slug (URL segment). Returns the resolved slug (may differ if collision was auto-resolved).
+    /// </summary>
+    Task<SlugUpdateResponseDto?> UpdateSlugAsync(Guid worldId, string slug);
+
     // ===== World Links =====
 
     /// <summary>

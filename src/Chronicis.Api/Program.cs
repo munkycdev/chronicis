@@ -216,7 +216,6 @@ internal class Program
             builder.Services.AddScoped<IWorldLinkSuggestionService, WorldLinkSuggestionService>();
             builder.Services.AddScoped<IWorldMembershipService, WorldMembershipService>();
             builder.Services.AddScoped<IWorldInvitationService, WorldInvitationService>();
-            builder.Services.AddScoped<IWorldPublicSharingService, WorldPublicSharingService>();
             builder.Services.AddScoped<ICampaignService, CampaignService>();
             builder.Services.AddScoped<IArcService, ArcService>();
             builder.Services.AddScoped<ISessionService, SessionService>();

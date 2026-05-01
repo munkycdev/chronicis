@@ -50,6 +50,7 @@ public class WorldApiServiceTests
         await sut.DownloadDocumentAsync(id2);
         await sut.UpdateDocumentAsync(id, id2, new WorldDocumentUpdateDto { Title = "doc", Description = "d" });
         await sut.DeleteDocumentAsync(id, id2);
+        await sut.UpdateSlugAsync(id, "new-slug");
 
         Assert.Contains(calls, c => c == "GET worlds");
         Assert.Contains(calls, c => c.Contains($"GET worlds/{id}"));

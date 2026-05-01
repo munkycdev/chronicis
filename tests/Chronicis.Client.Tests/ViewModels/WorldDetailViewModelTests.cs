@@ -168,25 +168,6 @@ public class WorldDetailViewModelTests
     }
 
     [Fact]
-    public async Task SaveAsync_WhenPublicButSlugUnavailable_WarnsAndDoesNotSave()
-    {
-        var c = CreateSut();
-        var world = MakeWorld();
-        c.WorldApi.GetWorldAsync(world.Id).Returns(world);
-        c.WorldApi.GetWorldLinksAsync(world.Id).Returns(new List<WorldLinkDto>());
-        c.WorldApi.GetWorldDocumentsAsync(world.Id).Returns(new List<WorldDocumentDto>());
-        await c.Vm.LoadAsync(world.Id, c.SharingVm, c.LinksVm, c.DocumentsVm);
-
-        c.SharingVm.IsPublic = true;
-        // SlugIsAvailable is false by default
-
-        await c.Vm.SaveAsync(c.SharingVm);
-
-        c.Notifier.Received(1).Warning(Arg.Any<string>());
-        await c.WorldApi.DidNotReceive().UpdateWorldAsync(Arg.Any<Guid>(), Arg.Any<WorldUpdateDto>());
-    }
-
-    [Fact]
     public async Task SaveAsync_OnSuccess_ClearsUnsavedChanges()
     {
         var c = CreateSut();

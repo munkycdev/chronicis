@@ -4,6 +4,7 @@ using Chronicis.Client.ViewModels;
 using Chronicis.Shared.DTOs;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Xunit;
 
 namespace Chronicis.Client.Tests.ViewModels;
@@ -38,20 +39,19 @@ public class WorldSharingViewModelTests
         c.Vm.InitializeFrom(world);
 
         Assert.True(c.Vm.IsPublic);
-        Assert.Equal("my-world", c.Vm.PublicSlug);
-        Assert.True(c.Vm.SlugIsAvailable); // IsPublic=true means slug was already valid
-        Assert.Null(c.Vm.SlugError);
+        Assert.Equal("my-world", c.Vm.PendingSlug);
+        Assert.Null(c.Vm.SlugRenameError);
     }
 
     [Fact]
-    public void InitializeFrom_WhenNotPublic_SlugIsAvailableFalse()
+    public void InitializeFrom_WhenNotPublic_SetsSlugFromWorld()
     {
         var c = CreateSut();
-        var world = new WorldDetailDto { IsPublic = false };
+        var world = new WorldDetailDto { IsPublic = false, Slug = "my-world" };
         c.Vm.InitializeFrom(world);
 
         Assert.False(c.Vm.IsPublic);
-        Assert.False(c.Vm.SlugIsAvailable);
+        Assert.Equal("my-world", c.Vm.PendingSlug);
     }
 
     // ---------------------------------------------------------------------------
@@ -65,90 +65,84 @@ public class WorldSharingViewModelTests
         var fired = false;
         c.Vm.UnsavedChangesOccurred += () => fired = true;
 
-        c.Vm.OnPublicToggleChanged(null);
+        c.Vm.OnPublicToggleChanged();
 
         Assert.True(fired);
     }
 
     [Fact]
-    public void OnPublicToggleChanged_WhenPublicAndSlugEmpty_GeneratesSlug()
+    public void OnPublicToggleChanged_WhenNoSubscribers_DoesNotThrow()
     {
         var c = CreateSut();
-        c.Vm.IsPublic = true;
-        c.Vm.PublicSlug = string.Empty;
-
-        var world = new WorldDetailDto { Id = Guid.NewGuid(), Name = "My Awesome World" };
-        c.Vm.OnPublicToggleChanged(world);
-
-        Assert.NotEmpty(c.Vm.PublicSlug);
-        Assert.Contains("my", c.Vm.PublicSlug);
-    }
-
-    [Fact]
-    public void OnPublicToggleChanged_WhenSlugAlreadySet_DoesNotOverwrite()
-    {
-        var c = CreateSut();
-        c.Vm.IsPublic = true;
-        c.Vm.PublicSlug = "existing-slug";
-        var world = new WorldDetailDto { Id = Guid.NewGuid(), Name = "My World" };
-
-        c.Vm.OnPublicToggleChanged(world);
-
-        Assert.Equal("existing-slug", c.Vm.PublicSlug);
-    }
-
-    [Fact]
-    public void OnPublicToggleChanged_WhenPublicAndSlugEmpty_AndWorldNull_UsesEmptyFallbacks()
-    {
-        var c = CreateSut();
-        c.Vm.IsPublic = true;
-        c.Vm.PublicSlug = string.Empty;
-
-        c.Vm.OnPublicToggleChanged(null);
-
-        Assert.Equal(string.Empty, c.Vm.PublicSlug);
-    }
-
-    [Fact]
-    public void OnPublicToggleChanged_WhenWorldNameNull_GeneratesFromEmptyName()
-    {
-        var c = CreateSut();
-        c.Vm.IsPublic = true;
-        c.Vm.PublicSlug = string.Empty;
-
-        var world = new WorldDetailDto { Id = Guid.NewGuid(), Name = null! };
-
-        c.Vm.OnPublicToggleChanged(world);
-
-        Assert.Equal(string.Empty, c.Vm.PublicSlug);
+        var ex = Record.Exception(() => c.Vm.OnPublicToggleChanged());
+        Assert.Null(ex);
     }
 
     // ---------------------------------------------------------------------------
-    // CheckSlugAvailabilityAsync
+    // SaveSlugAsync
     // ---------------------------------------------------------------------------
 
     [Fact]
-    public async Task CheckSlugAvailabilityAsync_WhenSlugEmpty_ResetsState()
+    public async Task SaveSlugAsync_WhenSlugEmpty_SetsErrorAndReturnsNull()
     {
         var c = CreateSut();
-        c.Vm.PublicSlug = string.Empty;
+        c.Vm.PendingSlug = string.Empty;
 
-        await c.Vm.CheckSlugAvailabilityAsync(Guid.NewGuid());
+        var result = await c.Vm.SaveSlugAsync(Guid.NewGuid());
 
-        Assert.False(c.Vm.SlugIsAvailable);
-        Assert.Null(c.Vm.SlugError);
-        Assert.Null(c.Vm.SlugHelperText);
+        Assert.Null(result);
+        Assert.NotNull(c.Vm.SlugRenameError);
+        Assert.False(c.Vm.IsRenamingSlug);
     }
 
     [Fact]
-    public async Task CheckSlugAvailabilityAsync_WhenSlugNotEmpty_Completes()
+    public async Task SaveSlugAsync_OnSuccess_UpdatesPendingSlugAndReturnsNewSlug()
     {
         var c = CreateSut();
-        c.Vm.PublicSlug = "my-world";
+        var worldId = Guid.NewGuid();
+        c.Vm.PendingSlug = "my-world";
+        c.WorldApi.UpdateSlugAsync(worldId, "my-world")
+            .Returns(new SlugUpdateResponseDto { Slug = "my-world" });
 
-        await c.Vm.CheckSlugAvailabilityAsync(Guid.NewGuid());
+        var result = await c.Vm.SaveSlugAsync(worldId);
 
-        Assert.False(c.Vm.IsCheckingSlug);
+        Assert.Equal("my-world", result);
+        Assert.Equal("my-world", c.Vm.PendingSlug);
+        Assert.False(c.Vm.IsRenamingSlug);
+        Assert.Null(c.Vm.SlugRenameError);
+        c.Notifier.Received(1).Success(Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task SaveSlugAsync_WhenApiReturnsNull_SetsErrorAndReturnsNull()
+    {
+        var c = CreateSut();
+        var worldId = Guid.NewGuid();
+        c.Vm.PendingSlug = "my-world";
+        c.WorldApi.UpdateSlugAsync(worldId, "my-world").Returns((SlugUpdateResponseDto?)null);
+
+        var result = await c.Vm.SaveSlugAsync(worldId);
+
+        Assert.Null(result);
+        Assert.NotNull(c.Vm.SlugRenameError);
+        Assert.False(c.Vm.IsRenamingSlug);
+    }
+
+    [Fact]
+    public async Task SaveSlugAsync_WhenApiThrows_SetsErrorAndReturnsNull()
+    {
+        var c = CreateSut();
+        var worldId = Guid.NewGuid();
+        c.Vm.PendingSlug = "my-world";
+        c.WorldApi.UpdateSlugAsync(worldId, Arg.Any<string>())
+            .ThrowsAsync(new InvalidOperationException("network error"));
+
+        var result = await c.Vm.SaveSlugAsync(worldId);
+
+        Assert.Null(result);
+        Assert.NotNull(c.Vm.SlugRenameError);
+        Assert.False(c.Vm.IsRenamingSlug);
+        c.Notifier.Received(1).Error(Arg.Any<string>());
     }
 
     // ---------------------------------------------------------------------------

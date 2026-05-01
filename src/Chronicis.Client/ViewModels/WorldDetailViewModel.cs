@@ -215,12 +215,6 @@ public sealed class WorldDetailViewModel : ViewModelBase
         if (_world == null || !CanManageWorldDetails || IsSaving)
             return;
 
-        if (sharingVm.IsPublic && !sharingVm.SlugIsAvailable)
-        {
-            _notifier.Warning("Please enter a valid, available public slug before saving");
-            return;
-        }
-
         IsSaving = true;
 
         try

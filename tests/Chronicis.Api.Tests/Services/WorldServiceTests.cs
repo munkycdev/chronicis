@@ -499,4 +499,46 @@ public class WorldServiceTests : IDisposable
         Assert.Equal(ServiceStatus.Success, result.Status);
         Assert.NotEqual("unique-slug", result.Value); // Collision resolved
     }
+
+    // ────────────────────────────────────────────────────────────────
+    //  IsPublic / Slug independence
+    // ────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateWorldAsync_TogglingIsPublic_DoesNotMutateSlug()
+    {
+        var slugBefore = (await _context.Worlds.FindAsync(TestHelpers.FixedIds.World1))!.Slug;
+
+        var dto = new WorldUpdateDto { Name = "Test World", IsPublic = true };
+        var result = await _service.UpdateWorldAsync(TestHelpers.FixedIds.World1, dto, TestHelpers.FixedIds.User1);
+
+        Assert.NotNull(result);
+        Assert.Equal(slugBefore, result!.Slug);
+        Assert.True(result.IsPublic);
+    }
+
+    [Fact]
+    public async Task UpdateWorldAsync_NoPublicSlugRequired()
+    {
+        // Flipping IsPublic must succeed with no slug-related DTO field — no validation gate
+        var dto = new WorldUpdateDto { Name = "Test World", IsPublic = true };
+        var result = await _service.UpdateWorldAsync(TestHelpers.FixedIds.World1, dto, TestHelpers.FixedIds.User1);
+
+        Assert.NotNull(result);
+        Assert.True(result!.IsPublic);
+    }
+
+    [Fact]
+    public async Task UpdateSlugAsync_RenamesWorldSlugIndependently()
+    {
+        var worldBefore = await _context.Worlds.FindAsync(TestHelpers.FixedIds.World1);
+        var isPublicBefore = worldBefore!.IsPublic;
+
+        var result = await _service.UpdateSlugAsync(TestHelpers.FixedIds.World1, "renamed-slug", TestHelpers.FixedIds.User1);
+
+        Assert.Equal(ServiceStatus.Success, result.Status);
+        var worldAfter = await _context.Worlds.FindAsync(TestHelpers.FixedIds.World1);
+        Assert.Equal("renamed-slug", worldAfter!.Slug);
+        Assert.Equal(isPublicBefore, worldAfter.IsPublic);
+    }
 }

@@ -18,7 +18,9 @@ public sealed class PublicSurfaceGuardrailTests
             "IPublicWorldService",
             "PublicController",
             "PublicSlugCheckDto",
-            "PublicSlugCheckResultDto"
+            "PublicSlugCheckResultDto",
+            "IWorldPublicSharingService",
+            "WorldPublicSharingService"
         };
 
         var violations = new List<string>();

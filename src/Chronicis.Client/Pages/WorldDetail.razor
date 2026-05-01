@@ -276,10 +276,10 @@ else if (ViewModel.World != null)
                 <div class="sharing-section">
                     <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight: 600;">Public Sharing</MudText>
 
-                    <div class="pa-3 rounded" style="background: var(--mud-palette-background-grey);">
-                        <div class="d-flex align-center gap-3 mb-3">
+                    <div class="pa-3 rounded mb-4" style="background: var(--mud-palette-background-grey);">
+                        <div class="d-flex align-center gap-3 mb-2">
                             <MudSwitch Value="@SharingViewModel.IsPublic"
-                                       ValueChanged="@((bool v) => { SharingViewModel.IsPublic = v; SharingViewModel.OnPublicToggleChanged(ViewModel.World); })"
+                                       ValueChanged="@((bool v) => { SharingViewModel.IsPublic = v; SharingViewModel.OnPublicToggleChanged(); })"
                                        Color="Color.Primary"
                                        Label="Make this world publicly accessible"
                                        T="bool"
@@ -292,32 +292,9 @@ else if (ViewModel.World != null)
                                 Anyone with the link can view articles marked as "Public". Members-only and private articles remain hidden.
                             </MudText>
 
-                            <div class="d-flex align-center gap-2 mb-2">
-                                <MudText Typo="Typo.body2" Style="white-space: nowrap;">@SharingViewModel.GetPublicUrlBase(Navigation.BaseUri)</MudText>
-                                <MudTextField Value="@SharingViewModel.PublicSlug"
-                                              ValueChanged="@((string v) => { SharingViewModel.PublicSlug = v; _ = SharingViewModel.CheckSlugAvailabilityAsync(WorldId); })"
-                                              Placeholder="your-world-slug"
-                                              Variant="Variant.Outlined"
-                                              Margin="Margin.Dense"
-                                              Immediate="true"
-                                              Style="max-width: 300px;"
-                                              Disabled="@(SharingViewModel.IsCheckingSlug || !ViewModel.CanManageWorldDetails)"
-                                              Error="@(!string.IsNullOrEmpty(SharingViewModel.SlugError))"
-                                              ErrorText="@SharingViewModel.SlugError"
-                                              HelperText="@SharingViewModel.SlugHelperText" />
-                                @if (SharingViewModel.IsCheckingSlug)
-                                {
-                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-                                }
-                                else if (SharingViewModel.SlugIsAvailable && !string.IsNullOrEmpty(SharingViewModel.PublicSlug))
-                                {
-                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
-                                }
-                            </div>
-
                             @if (SharingViewModel.ShouldShowPublicPreview(ViewModel.World))
                             {
-                                <div class="d-flex align-center gap-2 mt-3">
+                                <div class="d-flex align-center gap-2">
                                     <MudTextField Value="@SharingViewModel.GetFullPublicUrl(Navigation.BaseUri, ViewModel.World)"
                                                   Label="Public URL"
                                                   Variant="Variant.Outlined"
@@ -343,6 +320,38 @@ else if (ViewModel.World != null)
                                 Your world is currently private. Only you and campaign members can access it.
                             </MudText>
                         }
+                    </div>
+
+                    <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight: 600;">World URL</MudText>
+
+                    <div class="pa-3 rounded" style="background: var(--mud-palette-background-grey);">
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+                            Your world's URL segment. Changing it updates all public links to this world.
+                        </MudText>
+                        <div class="d-flex align-center gap-2">
+                            <MudText Typo="Typo.body2" Style="white-space: nowrap;">@SharingViewModel.GetPublicUrlBase(Navigation.BaseUri)</MudText>
+                            <MudTextField @bind-Value="SharingViewModel.PendingSlug"
+                                          Placeholder="your-world-slug"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Style="max-width: 300px;"
+                                          Disabled="@(SharingViewModel.IsRenamingSlug || !ViewModel.CanManageWorldDetails)"
+                                          Error="@(!string.IsNullOrEmpty(SharingViewModel.SlugRenameError))"
+                                          ErrorText="@SharingViewModel.SlugRenameError" />
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Primary"
+                                       OnClick="SaveWorldSlug"
+                                       Disabled="@(SharingViewModel.IsRenamingSlug || !ViewModel.CanManageWorldDetails)">
+                                @if (SharingViewModel.IsRenamingSlug)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                }
+                                else
+                                {
+                                    <MudText>Save URL</MudText>
+                                }
+                            </MudButton>
+                        </div>
                     </div>
                 </div>
             </MudTabPanel>
@@ -409,6 +418,13 @@ else if (ViewModel.World != null)
         {
             await AppContext.SelectWorldAsync(ViewModel.World.Id);
         }
+    }
+
+    private async Task SaveWorldSlug()
+    {
+        var newSlug = await SharingViewModel.SaveSlugAsync(WorldId);
+        if (newSlug != null && ViewModel.World != null)
+            ViewModel.World.Slug = newSlug;
     }
 
     private async Task CopyPublicUrl()
