@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Chronicis.Client.Services;
 using Chronicis.Client.Services.Routing;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using Xunit;
 
 namespace Chronicis.Client.Tests.Services;
@@ -147,13 +148,15 @@ public class BreadcrumbServiceTests
     }
 
     // ════════════════════════════════════════════════════════════════
-    //  ForArticle Tests
+    //  ForArticle — WikiArticle / Character / default types
     // ════════════════════════════════════════════════════════════════
 
     [Fact]
     public void ForArticle_WithNullBreadcrumbs_ReturnsDashboardOnly()
     {
-        var breadcrumbs = _sut.ForArticle(null!);
+        var article = new ArticleDto { Type = ArticleType.WikiArticle, Breadcrumbs = null };
+
+        var breadcrumbs = _sut.ForArticle(article);
 
         Assert.Single(breadcrumbs);
         Assert.Equal("Dashboard", breadcrumbs[0].Text);
@@ -162,7 +165,9 @@ public class BreadcrumbServiceTests
     [Fact]
     public void ForArticle_WithEmptyBreadcrumbs_ReturnsDashboardOnly()
     {
-        var breadcrumbs = _sut.ForArticle(new List<BreadcrumbDto>());
+        var article = new ArticleDto { Type = ArticleType.WikiArticle, Breadcrumbs = new List<BreadcrumbDto>() };
+
+        var breadcrumbs = _sut.ForArticle(article);
 
         Assert.Single(breadcrumbs);
         Assert.Equal("Dashboard", breadcrumbs[0].Text);
@@ -171,12 +176,16 @@ public class BreadcrumbServiceTests
     [Fact]
     public void ForArticle_WithWorldOnly_ReturnsDashboardAndWorld()
     {
-        var apiBreadcrumbs = new List<BreadcrumbDto>
+        var article = new ArticleDto
         {
-            new() { Id = Guid.NewGuid(), Title = "Middle Earth", Slug = "middle-earth", IsWorld = true }
+            Type = ArticleType.WikiArticle,
+            Breadcrumbs = new List<BreadcrumbDto>
+            {
+                new() { Id = Guid.NewGuid(), Title = "Middle Earth", Slug = "middle-earth", IsWorld = true }
+            }
         };
 
-        var breadcrumbs = _sut.ForArticle(apiBreadcrumbs);
+        var breadcrumbs = _sut.ForArticle(article);
 
         Assert.Equal(2, breadcrumbs.Count);
         Assert.Equal("Dashboard", breadcrumbs[0].Text);
@@ -186,15 +195,19 @@ public class BreadcrumbServiceTests
     }
 
     [Fact]
-    public void ForArticle_WithWorldAndArticle_BuildsCorrectPath()
+    public void ForArticle_WikiArticle_WorldLinksToWorld_ArticleIsDisabled()
     {
-        var apiBreadcrumbs = new List<BreadcrumbDto>
+        var article = new ArticleDto
         {
-            new() { Id = Guid.NewGuid(), Title = "Middle Earth", Slug = "middle-earth", IsWorld = true },
-            new() { Id = Guid.NewGuid(), Title = "Rivendell", Slug = "rivendell", IsWorld = false }
+            Type = ArticleType.WikiArticle,
+            Breadcrumbs = new List<BreadcrumbDto>
+            {
+                new() { Id = Guid.NewGuid(), Title = "Middle Earth", Slug = "middle-earth", IsWorld = true },
+                new() { Id = Guid.NewGuid(), Title = "Rivendell", Slug = "rivendell", IsWorld = false }
+            }
         };
 
-        var breadcrumbs = _sut.ForArticle(apiBreadcrumbs);
+        var breadcrumbs = _sut.ForArticle(article);
 
         Assert.Equal(3, breadcrumbs.Count);
         Assert.Equal("Dashboard", breadcrumbs[0].Text);
@@ -206,125 +219,107 @@ public class BreadcrumbServiceTests
     }
 
     [Fact]
-    public void ForArticle_WithMultipleArticles_BuildsFullHierarchy()
+    public void ForArticle_WikiArticle_IntermediateNodeLinksViaWikiUrl()
     {
-        var apiBreadcrumbs = new List<BreadcrumbDto>
+        var article = new ArticleDto
         {
-            new() { Id = Guid.NewGuid(), Title = "Middle Earth", Slug = "middle-earth", IsWorld = true },
-            new() { Id = Guid.NewGuid(), Title = "Locations", Slug = "locations", IsWorld = false },
-            new() { Id = Guid.NewGuid(), Title = "Rivendell", Slug = "rivendell", IsWorld = false }
+            Type = ArticleType.WikiArticle,
+            Breadcrumbs = new List<BreadcrumbDto>
+            {
+                new() { Id = Guid.NewGuid(), Title = "Middle Earth", Slug = "middle-earth", IsWorld = true },
+                new() { Id = Guid.NewGuid(), Title = "Locations", Slug = "locations", IsWorld = false },
+                new() { Id = Guid.NewGuid(), Title = "Rivendell", Slug = "rivendell", IsWorld = false }
+            }
         };
 
-        var breadcrumbs = _sut.ForArticle(apiBreadcrumbs);
+        var breadcrumbs = _sut.ForArticle(article);
 
         Assert.Equal(4, breadcrumbs.Count);
         Assert.Equal("Dashboard", breadcrumbs[0].Text);
         Assert.Equal("Middle Earth", breadcrumbs[1].Text);
         Assert.Equal("/middle-earth", breadcrumbs[1].Href);
         Assert.Equal("Locations", breadcrumbs[2].Text);
-        Assert.Equal("/middle-earth/locations", breadcrumbs[2].Href);
+        Assert.Equal("/middle-earth/wiki/locations", breadcrumbs[2].Href);
         Assert.Equal("Rivendell", breadcrumbs[3].Text);
         Assert.True(breadcrumbs[3].Disabled);
     }
 
-    // ════════════════════════════════════════════════════════════════
-    //  BuildArticleUrl Tests
-    // ════════════════════════════════════════════════════════════════
-
     [Fact]
-    public void BuildArticleUrl_WithNullBreadcrumbs_ReturnsDashboard()
+    public void ForArticle_WikiArticle_NoWorldBreadcrumb_UsesEmptyWorldSlug()
     {
-        Assert.Equal("/dashboard", _sut.BuildArticleUrl(null!));
-    }
-
-    [Fact]
-    public void BuildArticleUrl_WithEmptyBreadcrumbs_ReturnsDashboard()
-    {
-        Assert.Equal("/dashboard", _sut.BuildArticleUrl(new List<BreadcrumbDto>()));
-    }
-
-    [Fact]
-    public void BuildArticleUrl_WithWorldOnlyBreadcrumb_ReturnsWorldSlugPath()
-    {
-        var breadcrumbs = new List<BreadcrumbDto>
+        // Exercises the null branch of FirstOrDefault(b => b.IsWorld)?.Slug ?? string.Empty
+        var article = new ArticleDto
         {
-            new() { Slug = "middle-earth" }
+            Type = ArticleType.WikiArticle,
+            Breadcrumbs = new List<BreadcrumbDto>
+            {
+                new() { Id = Guid.NewGuid(), Title = "Orphan", Slug = "orphan", IsWorld = false }
+            }
         };
 
-        Assert.Equal("/middle-earth", _sut.BuildArticleUrl(breadcrumbs));
-    }
+        var breadcrumbs = _sut.ForArticle(article);
 
-    [Fact]
-    public void BuildArticleUrl_WithMultipleBreadcrumbs_BuildsSlugPath()
-    {
-        var breadcrumbs = new List<BreadcrumbDto>
-        {
-            new() { Slug = "middle-earth" },
-            new() { Slug = "locations" },
-            new() { Slug = "rivendell" }
-        };
-
-        Assert.Equal("/middle-earth/locations/rivendell", _sut.BuildArticleUrl(breadcrumbs));
+        Assert.Equal(2, breadcrumbs.Count);
+        Assert.True(breadcrumbs[1].Disabled);
+        Assert.Null(breadcrumbs[1].Href);
     }
 
     // ════════════════════════════════════════════════════════════════
-    //  BuildArticleUrlToIndex Tests
+    //  ForArticle — SessionNote type
     // ════════════════════════════════════════════════════════════════
 
     [Fact]
-    public void BuildArticleUrlToIndex_WithNullBreadcrumbs_ReturnsDashboard()
+    public void ForArticle_SessionNote_BuildsPositionalHierarchy()
     {
-        Assert.Equal("/dashboard", _sut.BuildArticleUrlToIndex(null!, 0));
-    }
-
-    [Fact]
-    public void BuildArticleUrlToIndex_WithEmptyBreadcrumbs_ReturnsDashboard()
-    {
-        Assert.Equal("/dashboard", _sut.BuildArticleUrlToIndex(new List<BreadcrumbDto>(), 0));
-    }
-
-    [Fact]
-    public void BuildArticleUrlToIndex_WithNegativeIndex_ReturnsDashboard()
-    {
-        var breadcrumbs = new List<BreadcrumbDto> { new() { Slug = "middle-earth" } };
-
-        Assert.Equal("/dashboard", _sut.BuildArticleUrlToIndex(breadcrumbs, -1));
-    }
-
-    [Fact]
-    public void BuildArticleUrlToIndex_WithIndexZero_ReturnsWorldSlugPath()
-    {
-        var breadcrumbs = new List<BreadcrumbDto>
+        var article = new ArticleDto
         {
-            new() { Slug = "middle-earth" },
-            new() { Slug = "locations" }
+            Type = ArticleType.SessionNote,
+            Breadcrumbs = new List<BreadcrumbDto>
+            {
+                new() { Title = "Middle Earth", Slug = "middle-earth", IsWorld = true },
+                new() { Title = "War of the Ring", Slug = "war" },
+                new() { Title = "The Fellowship", Slug = "fellowship" },
+                new() { Title = "Into Moria", Slug = "moria" },
+                new() { Title = "Session 7", Slug = "session-7" }
+            }
         };
 
-        Assert.Equal("/middle-earth", _sut.BuildArticleUrlToIndex(breadcrumbs, 0));
+        var breadcrumbs = _sut.ForArticle(article);
+
+        Assert.Equal(6, breadcrumbs.Count);
+        Assert.Equal("/dashboard", breadcrumbs[0].Href);
+        Assert.Equal("/middle-earth", breadcrumbs[1].Href);
+        Assert.Equal("/middle-earth/war", breadcrumbs[2].Href);
+        Assert.Equal("/middle-earth/war/fellowship", breadcrumbs[3].Href);
+        Assert.Equal("/middle-earth/war/fellowship/moria", breadcrumbs[4].Href);
+        Assert.True(breadcrumbs[5].Disabled);
+        Assert.Null(breadcrumbs[5].Href);
     }
 
     [Fact]
-    public void BuildArticleUrlToIndex_WithMiddleIndex_ReturnsPartialSlugPath()
+    public void ForArticle_SessionNote_WithExtraDepth_FallsBackToNullHref()
     {
-        var breadcrumbs = new List<BreadcrumbDto>
+        // Exercises the _ => null arm of the session-note switch for indices >= 4 when not last
+        var article = new ArticleDto
         {
-            new() { Slug = "middle-earth" },
-            new() { Slug = "locations" },
-            new() { Slug = "rivendell" }
+            Type = ArticleType.SessionNote,
+            Breadcrumbs = new List<BreadcrumbDto>
+            {
+                new() { Title = "World", Slug = "world", IsWorld = true },
+                new() { Title = "Campaign", Slug = "campaign" },
+                new() { Title = "Arc", Slug = "arc" },
+                new() { Title = "Session", Slug = "session" },
+                new() { Title = "Part 1", Slug = "part-1" },
+                new() { Title = "Part 2", Slug = "part-2" }
+            }
         };
 
-        Assert.Equal("/middle-earth/locations", _sut.BuildArticleUrlToIndex(breadcrumbs, 1));
-    }
+        var breadcrumbs = _sut.ForArticle(article);
 
-    [Fact]
-    public void BuildArticleUrlToIndex_WithIndexBeyondRange_ClampsToLastElement()
-    {
-        var breadcrumbs = new List<BreadcrumbDto>
-        {
-            new() { Slug = "middle-earth" },
-            new() { Slug = "locations" }
-        };
-
-        Assert.Equal("/middle-earth/locations", _sut.BuildArticleUrlToIndex(breadcrumbs, 10));
+        // Part 1 at breadcrumb index 4 — not last, hits _ => null
+        Assert.Null(breadcrumbs[5].Href);
+        Assert.False(breadcrumbs[5].Disabled);
+        // Part 2 at breadcrumb index 5 — last item, disabled
+        Assert.True(breadcrumbs[6].Disabled);
     }
 }

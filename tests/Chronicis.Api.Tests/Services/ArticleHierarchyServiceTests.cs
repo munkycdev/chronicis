@@ -419,7 +419,7 @@ public class ArticleHierarchyServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task BuildBreadcrumbs_WithVirtualGroups_CharacterArticle_IncludesPlayerCharactersGroup()
+    public async Task BuildBreadcrumbs_WithVirtualGroups_CharacterArticle_DoesNotIncludeWikiGroup()
     {
         var options = new HierarchyWalkOptions
         {
@@ -430,15 +430,14 @@ public class ArticleHierarchyServiceTests : IDisposable
 
         var breadcrumbs = await _service.BuildBreadcrumbsAsync(CharacterArticleId, options);
 
-        // World + "Player Characters" virtual group + Character article
-        Assert.Equal(3, breadcrumbs.Count);
+        // World + Character article only — no virtual group
+        Assert.Equal(2, breadcrumbs.Count);
         Assert.True(breadcrumbs[0].IsWorld);
-        Assert.Equal("Player Characters", breadcrumbs[1].Title);
-        Assert.Equal("Aragorn", breadcrumbs[2].Title);
+        Assert.Equal("Aragorn", breadcrumbs[1].Title);
     }
 
     [Fact]
-    public async Task BuildBreadcrumbs_WithVirtualGroups_WikiArticle_IncludesWikiGroup()
+    public async Task BuildBreadcrumbs_WithVirtualGroups_WikiArticle_DoesNotIncludeWikiGroup()
     {
         var options = new HierarchyWalkOptions
         {
@@ -449,11 +448,10 @@ public class ArticleHierarchyServiceTests : IDisposable
 
         var breadcrumbs = await _service.BuildBreadcrumbsAsync(RootArticleId, options);
 
-        // World + "Wiki" virtual group + Root Article
-        Assert.Equal(3, breadcrumbs.Count);
+        // World + Root Article only — no virtual wiki group
+        Assert.Equal(2, breadcrumbs.Count);
         Assert.True(breadcrumbs[0].IsWorld);
-        Assert.Equal("Wiki", breadcrumbs[1].Title);
-        Assert.Equal("Root Article", breadcrumbs[2].Title);
+        Assert.Equal("Root Article", breadcrumbs[1].Title);
     }
 
     // ────────────────────────────────────────────────────────────────

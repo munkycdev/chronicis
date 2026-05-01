@@ -1,6 +1,7 @@
 @using Chronicis.Client.Components.Shared
-@inject NavigationManager Navigation
+@using Chronicis.Client.Abstractions
 @inject IArticleApiService ArticleApi
+@inject IAppNavigator AppNavigator
 
 <MudPaper Elevation="2" Class="@($"world-panel {(IsExpanded ? "expanded" : "collapsed")} {Class}")">
     <!-- World Header -->
@@ -267,29 +268,23 @@
         IsExpandedChanged.InvokeAsync(IsExpanded);
     }
 
-    private void ViewWorld()
+    private async Task ViewWorld()
     {
-        // Always navigate to world page - it handles missing root article
-        Navigation.NavigateTo($"/{World.Slug}", forceLoad: true);
+        await AppNavigator.GoToWorldAsync(World.Slug);
     }
 
-    private void AddSessionNote()
+    private async Task AddSessionNote()
     {
         var activeCampaign = World.Campaigns.FirstOrDefault(c => c.IsActive);
         if (activeCampaign != null)
-        {
-            Navigation.NavigateTo($"/{World.Slug}/{activeCampaign.Slug}", forceLoad: true);
-        }
+            await AppNavigator.GoToCampaignAsync(World.Slug, activeCampaign.Slug);
     }
 
     private async Task NavigateToCharacter(Guid characterId)
     {
         var article = await ArticleApi.GetArticleDetailAsync(characterId);
-        if (article != null && article.Breadcrumbs.Any())
-        {
-            var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-            Navigation.NavigateTo($"/{path}");
-        }
+        if (article != null)
+            await AppNavigator.GoToArticleAsync(article);
     }
 
     private string FormatRelativeTime(DateTime dateTime)

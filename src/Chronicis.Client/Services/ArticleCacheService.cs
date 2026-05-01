@@ -31,10 +31,6 @@ public interface IArticleCacheService
     /// </summary>
     Task<string?> GetArticlePathAsync(Guid articleId);
 
-    /// <summary>
-    /// Gets the navigation URL path for an article (from cache if available).
-    /// </summary>
-    Task<string?> GetNavigationPathAsync(Guid articleId);
 
     /// <summary>
     /// Adds or updates an article in the cache (called when article is loaded).
@@ -121,21 +117,6 @@ public class ArticleCacheService : IArticleCacheService
     {
         var info = await GetArticleInfoAsync(articleId);
         return info?.DisplayPath;
-    }
-
-    /// <summary>
-    /// Gets the navigation URL path for an article (from cache if available).
-    /// </summary>
-    public async Task<string?> GetNavigationPathAsync(Guid articleId)
-    {
-        var info = await GetArticleInfoAsync(articleId);
-
-        if (info?.Breadcrumbs != null && info.Breadcrumbs.Any())
-        {
-            return string.Join("/", info.Breadcrumbs.Select(b => b.Slug));
-        }
-
-        return info?.Slug;
     }
 
     /// <summary>

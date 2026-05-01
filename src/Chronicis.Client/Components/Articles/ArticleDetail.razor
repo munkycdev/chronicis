@@ -1,4 +1,5 @@
 @using Chronicis.Client.Components.Shared
+@using Chronicis.Client.Abstractions
 @using Chronicis.Client.Components.Maps
 @using Chronicis.Client.Components.Characters
 @using Chronicis.Client.Components.Drawers
@@ -28,6 +29,7 @@
 @inject ILocalStorageService LocalStorage
 @inject ILogger<ArticleDetail> Logger
 @inject IArticleCacheService ArticleCache
+@inject IAppNavigator AppNavigator
 @inject IDrawerCoordinator DrawerCoordinator
 @inject IKeyboardShortcutService KeyboardShortcutService
 @inject IWorldApiService WorldApi
@@ -442,7 +444,7 @@ else
     {
         if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
         {
-            _breadcrumbs = BreadcrumbService.ForArticle(_article.Breadcrumbs);
+            _breadcrumbs = BreadcrumbService.ForArticle(_article);
         }
         else
         {
@@ -458,9 +460,9 @@ else
 
     private async Task SaveLastArticlePath()
     {
-        if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
+        if (_article != null)
         {
-            var path = BreadcrumbService.BuildArticleUrl(_article.Breadcrumbs);
+            var path = new Uri(AppNavigator.Uri).PathAndQuery;
             await LocalStorage.SetItemAsStringAsync(LastArticlePathKey, path);
         }
     }
@@ -541,9 +543,7 @@ else
         _lastSaveTime = ViewModel.LastSaveTime;
         _breadcrumbs  = ViewModel.Breadcrumbs;
 
-        if (showSuccessSnackbar
-            && (result.Kind == SaveArticleResult.ResultKind.Saved
-                || result.Kind == SaveArticleResult.ResultKind.Navigate))
+        if (showSuccessSnackbar && result.Kind == SaveArticleResult.ResultKind.Saved)
         {
             Snackbar.Add(
                 "Article saved",
@@ -555,9 +555,6 @@ else
                 },
                 "article-save-status");
         }
-
-        if (result.Kind == SaveArticleResult.ResultKind.Navigate && result.NavigationPath != null)
-            Navigation.NavigateTo(result.NavigationPath, replace: true);
 
         StateHasChanged();
         if (_drawerHost != null)
@@ -627,17 +624,13 @@ else
 
     private async Task CreateSiblingArticle()
     {
-        var path = await ViewModel.CreateSiblingArticleAsync();
-        if (path != null)
-            Navigation.NavigateTo(path);
+        await ViewModel.CreateSiblingArticleAsync();
     }
 
     private async Task CreateChildArticle()
     {
-        var path = await ViewModel.CreateChildArticleAsync();
+        await ViewModel.CreateChildArticleAsync();
         _isCreatingChild = ViewModel.IsCreatingChild;
-        if (path != null)
-            Navigation.NavigateTo(path);
         StateHasChanged();
     }
 
@@ -1099,9 +1092,9 @@ else
 
         try
         {
-            var path = await ArticleCache.GetNavigationPathAsync(articleId);
-            if (!string.IsNullOrEmpty(path))
-                Navigation.NavigateTo($"/{path}");
+            var info = await ArticleCache.GetArticleInfoAsync(articleId);
+            if (info?.FullArticle != null)
+                await AppNavigator.GoToArticleAsync(info.FullArticle);
             else
                 Snackbar.Add("Article not found", Severity.Warning);
         }

@@ -215,6 +215,22 @@ Chronicis.Shared         ---->  (no project references)
 - keyboard bridge
 - `PublicLayout` hosts public nav/footer and renders anonymous/public pages.
 
+#### URL construction contract
+All URL strings are produced by a single authority:
+- `IAppUrlBuilder` / `AppUrlBuilder` (`Services/Routing/`) is the **only** place
+  that concatenates slug segments into URL path strings. Every other layer receives
+  and passes `IAppUrlBuilder` or calls a typed helper on `IAppNavigator`.
+- `IAppNavigator` wraps `NavigationManager` and exposes typed `GoTo*Async` methods
+  (`GoToArticleAsync`, `GoToWorldAsync`, `GoToCampaignAsync`, etc.). Components and
+  view-models call these instead of constructing URL strings directly.
+- `IBreadcrumbService` is **display-only**: it produces `BreadcrumbItem` lists for
+  UI rendering and delegates all URL construction to `IAppUrlBuilder`. It contains
+  no slug-joining logic of its own.
+- `ArchitectureGuardrailTests.UrlEmissionGuardrailTest` asserts that no `.cs` file
+  outside `Services/Routing/` contains an interpolated-string path literal of the
+  form `$"/{`. `BreadcrumbContractGuardrailTests` asserts that `BreadcrumbService`
+  exposes no URL-building methods and `AppNavigator` contains no breadcrumb slug filters.
+
 ### 4.4 HTTP and API Client Architecture
 - Named HTTP clients:
 - `ChronicisApi` (authenticated)

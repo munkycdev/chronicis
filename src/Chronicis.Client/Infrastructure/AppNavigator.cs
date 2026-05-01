@@ -186,7 +186,7 @@ public sealed class AppNavigator : IAppNavigator
             worldSlug = article.Breadcrumbs.FirstOrDefault(b => b.IsWorld)?.Slug ?? string.Empty;
 
         var slugChain = article.Breadcrumbs?
-            .Where(b => !b.IsWorld && b.Slug != "wiki")
+            .Where(b => !b.IsWorld)
             .Select(b => b.Slug)
             .ToList() ?? new List<string>();
 

@@ -254,7 +254,7 @@ public class ArticleDetailViewModelTests
     }
 
     [Fact]
-    public async Task SaveArticleAsync_WhenTitleChangedCausingNewSlug_ReturnsNavigate()
+    public async Task SaveArticleAsync_WhenTitleChangedCausingNewSlug_NavigatesAndReturnsSaved()
     {
         var c = CreateSut();
         var article = MakeArticle("Old Title");
@@ -267,19 +267,14 @@ public class ArticleDetailViewModelTests
         refreshed.Id = article.Id;
         refreshed.Slug = "new-title";
         c.ArticleApi.GetArticleAsync(article.Id).Returns(article, refreshed);
-
-        c.BreadcrumbService.BuildArticleUrl(Arg.Any<List<BreadcrumbDto>>())
-            .Returns("/world/new-title");
+        c.Navigator.GoToArticleAsync(refreshed).Returns(Task.CompletedTask);
 
         await c.Vm.LoadArticleAsync(article.Id);
 
-        // Title now flows through the SaveArticleAsync parameter, simulating the
-        // razor passing its bound _editTitle on save. The VM no longer has a
-        // bidirectional binding to the razor's title field.
         var result = await c.Vm.SaveArticleAsync("body", "New Title");
 
-        Assert.Equal(SaveArticleResult.ResultKind.Navigate, result.Kind);
-        Assert.Equal("/world/new-title", result.NavigationPath);
+        Assert.Equal(SaveArticleResult.ResultKind.Saved, result.Kind);
+        await c.Navigator.Received(1).GoToArticleAsync(refreshed);
     }
 
     [Fact]
@@ -504,15 +499,15 @@ public class ArticleDetailViewModelTests
     // ---------------------------------------------------------------------------
 
     [Fact]
-    public async Task CreateSiblingArticleAsync_WhenArticleNull_ReturnsNull()
+    public async Task CreateSiblingArticleAsync_WhenArticleNull_ReturnsFalse()
     {
         var c = CreateSut();
         var result = await c.Vm.CreateSiblingArticleAsync();
-        Assert.Null(result);
+        Assert.False(result);
     }
 
     [Fact]
-    public async Task CreateSiblingArticleAsync_WhenApiReturnsNull_ShowsErrorAndReturnsNull()
+    public async Task CreateSiblingArticleAsync_WhenApiReturnsNull_ShowsErrorAndReturnsFalse()
     {
         var c = CreateSut();
         var article = MakeArticle();
@@ -522,12 +517,12 @@ public class ArticleDetailViewModelTests
 
         var result = await c.Vm.CreateSiblingArticleAsync();
 
-        Assert.Null(result);
+        Assert.False(result);
         c.Notifier.Received(1).Error(Arg.Any<string>());
     }
 
     [Fact]
-    public async Task CreateSiblingArticleAsync_OnSuccess_ReturnsNavigationPath()
+    public async Task CreateSiblingArticleAsync_OnSuccess_NavigatesAndReturnsTrue()
     {
         var c = CreateSut();
         var article = MakeArticle();
@@ -537,17 +532,17 @@ public class ArticleDetailViewModelTests
         var sibling = MakeArticle("Sibling");
         c.ArticleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>()).Returns(sibling);
         c.ArticleApi.GetArticleDetailAsync(sibling.Id).Returns(sibling);
-        c.BreadcrumbService.BuildArticleUrl(Arg.Any<List<BreadcrumbDto>>())
-            .Returns("/world/sibling");
+        c.Navigator.GoToArticleAsync(sibling).Returns(Task.CompletedTask);
 
         var result = await c.Vm.CreateSiblingArticleAsync();
 
-        Assert.Equal("/world/sibling", result);
+        Assert.True(result);
+        await c.Navigator.Received(1).GoToArticleAsync(sibling);
         c.Notifier.Received(1).Success(Arg.Any<string>());
     }
 
     [Fact]
-    public async Task CreateSiblingArticleAsync_WhenNoBreadcrumbs_ReturnsNull()
+    public async Task CreateSiblingArticleAsync_WhenDetailNull_ReturnsFalse()
     {
         var c = CreateSut();
         var article = MakeArticle();
@@ -555,13 +550,12 @@ public class ArticleDetailViewModelTests
         await c.Vm.LoadArticleAsync(article.Id);
 
         var sibling = MakeArticle("Sibling");
-        sibling.Breadcrumbs = null;
         c.ArticleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>()).Returns(sibling);
         c.ArticleApi.GetArticleDetailAsync(sibling.Id).Returns((ArticleDto?)null);
 
         var result = await c.Vm.CreateSiblingArticleAsync();
 
-        Assert.Null(result);
+        Assert.False(result);
     }
 
     // ---------------------------------------------------------------------------
@@ -569,30 +563,29 @@ public class ArticleDetailViewModelTests
     // ---------------------------------------------------------------------------
 
     [Fact]
-    public async Task CreateChildArticleAsync_WhenArticleNull_ReturnsNull()
+    public async Task CreateChildArticleAsync_WhenArticleNull_ReturnsFalse()
     {
         var c = CreateSut();
         var result = await c.Vm.CreateChildArticleAsync();
-        Assert.Null(result);
+        Assert.False(result);
         Assert.False(c.Vm.IsCreatingChild);
     }
 
     [Fact]
-    public async Task CreateChildArticleAsync_WhenAlreadyCreating_ReturnsNull()
+    public async Task CreateChildArticleAsync_WhenAlreadyCreating_ReturnsFalse()
     {
         var c = CreateSut();
         var article = MakeArticle();
         c.ArticleApi.GetArticleAsync(article.Id).Returns(article);
         await c.Vm.LoadArticleAsync(article.Id);
 
-        // Simulate IsCreatingChild guard - can't easily race, test indirectly via null article guard
         // The guard is _article == null || IsCreatingChild
         // Already covered by WhenArticleNull test above
         Assert.True(true); // coverage placeholder for branch
     }
 
     [Fact]
-    public async Task CreateChildArticleAsync_OnSuccess_ClearsIsCreatingChild()
+    public async Task CreateChildArticleAsync_OnSuccess_NavigatesAndClearsIsCreatingChild()
     {
         var c = CreateSut();
         var article = MakeArticle();
@@ -602,13 +595,13 @@ public class ArticleDetailViewModelTests
         var child = MakeArticle("Child");
         c.ArticleApi.CreateArticleAsync(Arg.Any<ArticleCreateDto>()).Returns(child);
         c.ArticleApi.GetArticleDetailAsync(child.Id).Returns(child);
-        c.BreadcrumbService.BuildArticleUrl(Arg.Any<List<BreadcrumbDto>>())
-            .Returns("/world/child");
+        c.Navigator.GoToArticleAsync(child).Returns(Task.CompletedTask);
 
         var result = await c.Vm.CreateChildArticleAsync();
 
-        Assert.Equal("/world/child", result);
+        Assert.True(result);
         Assert.False(c.Vm.IsCreatingChild);
+        await c.Navigator.Received(1).GoToArticleAsync(child);
     }
 
     // ---------------------------------------------------------------------------
@@ -778,13 +771,5 @@ public class ArticleDetailViewModelTests
         Assert.Equal(SaveArticleResult.ResultKind.Skipped, SaveArticleResult.Skipped.Kind);
         Assert.Equal(SaveArticleResult.ResultKind.Saved, SaveArticleResult.Saved.Kind);
         Assert.Equal(SaveArticleResult.ResultKind.Failed, SaveArticleResult.Failed.Kind);
-    }
-
-    [Fact]
-    public void SaveArticleResult_NavigateTo_SetsKindAndPath()
-    {
-        var result = SaveArticleResult.NavigateTo("/world/my-article");
-        Assert.Equal(SaveArticleResult.ResultKind.Navigate, result.Kind);
-        Assert.Equal("/world/my-article", result.NavigationPath);
     }
 }

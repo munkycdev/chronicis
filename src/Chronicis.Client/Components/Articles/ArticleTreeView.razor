@@ -161,11 +161,8 @@
                 }
 
                 TreeState.ExpandPathToAndSelect(nodeId);
-                if (article != null && article.Breadcrumbs.Any())
-                {
-                    var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-                    Navigation.NavigateTo($"/{path}");
-                }
+                if (article != null)
+                    await AppNavigator.GoToArticleAsync(article);
                 break;
         }
     }
@@ -212,13 +209,9 @@
 
             Snackbar.Add("Article created", Severity.Success);
 
-            // Navigate to the new article
             var article = await ArticleApi.GetArticleDetailAsync(newId.Value);
-            if (article != null && article.Breadcrumbs.Any())
-            {
-                var path = string.Join("/", article.Breadcrumbs.Select(b => b.Slug));
-                Navigation.NavigateTo($"/{path}");
-            }
+            if (article != null)
+                await AppNavigator.GoToArticleAsync(article);
         }
         else
         {
@@ -252,19 +245,15 @@
         {
             Snackbar.Add("Article deleted", Severity.Success);
 
-            // Navigate to parent or dashboard
             if (article.ParentId.HasValue)
             {
                 var parent = await ArticleApi.GetArticleDetailAsync(article.ParentId.Value);
-                if (parent != null && parent.Breadcrumbs.Any())
-                {
-                    var path = string.Join("/", parent.Breadcrumbs.Select(b => b.Slug));
-                    Navigation.NavigateTo($"/{path}");
-                }
+                if (parent != null)
+                    await AppNavigator.GoToArticleAsync(parent);
             }
             else
             {
-                Navigation.NavigateTo("/dashboard");
+                AppNavigator.NavigateTo("/dashboard");
             }
         }
         else

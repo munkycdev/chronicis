@@ -313,7 +313,6 @@ public class AppNavigatorTests
             Breadcrumbs =
             [
                 new BreadcrumbDto { Slug = "middle-earth", IsWorld = true },
-                new BreadcrumbDto { Slug = "wiki" },
                 new BreadcrumbDto { Slug = "rivendell" }
             ]
         };
@@ -335,7 +334,6 @@ public class AppNavigatorTests
             Breadcrumbs =
             [
                 new BreadcrumbDto { Slug = "middle-earth", IsWorld = true },
-                new BreadcrumbDto { Slug = "wiki" },
                 new BreadcrumbDto { Slug = "rivendell" }
             ]
         };

@@ -389,21 +389,16 @@ public class CosmosViewModelTests
     // -------------------------------------------------------------------------
 
     [Fact]
-    public async Task NavigateToArticleAsync_WithBreadcrumbs_Navigates()
+    public async Task NavigateToArticleAsync_WhenArticleFound_CallsGoToArticleAsync()
     {
         var c = CreateSut();
-        var crumbs = new List<BreadcrumbDto>
-        {
-            new() { Title = "Lore", Slug = "lore" },
-            new() { Title = "Magic", Slug = "magic" },
-        };
-        var detail = new ArticleDto { Id = Guid.NewGuid(), Breadcrumbs = crumbs };
+        var detail = new ArticleDto { Id = Guid.NewGuid(), Breadcrumbs = new List<BreadcrumbDto>() };
         c.ArticleApi.GetArticleDetailAsync(detail.Id).Returns(detail);
-        c.BreadcrumbService.BuildArticleUrl(crumbs).Returns("/articosmoscle/lore/magic");
+        c.Navigator.GoToArticleAsync(detail).Returns(Task.CompletedTask);
 
         await c.VM.NavigateToArticleAsync(detail.Id);
 
-        c.Navigator.Received(1).NavigateTo("/articosmoscle/lore/magic");
+        await c.Navigator.Received(1).GoToArticleAsync(detail);
     }
 
     [Fact]
@@ -414,7 +409,7 @@ public class CosmosViewModelTests
 
         await c.VM.NavigateToArticleAsync(Guid.NewGuid());
 
-        c.Navigator.DidNotReceive().NavigateTo(Arg.Any<string>());
+        await c.Navigator.DidNotReceive().GoToArticleAsync(Arg.Any<ArticleDto>());
     }
 
     // -------------------------------------------------------------------------

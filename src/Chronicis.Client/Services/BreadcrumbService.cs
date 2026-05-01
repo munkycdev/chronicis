@@ -1,5 +1,6 @@
 using Chronicis.Client.Services.Routing;
 using Chronicis.Shared.DTOs;
+using Chronicis.Shared.Enums;
 using MudBlazor;
 
 namespace Chronicis.Client.Services;
@@ -9,13 +10,7 @@ public interface IBreadcrumbService
     List<BreadcrumbItem> ForWorld(WorldDto world, bool currentDisabled = true);
     List<BreadcrumbItem> ForCampaign(CampaignDto campaign, WorldDto world, bool currentDisabled = true);
     List<BreadcrumbItem> ForArc(ArcDto arc, CampaignDto campaign, WorldDto world, bool currentDisabled = true);
-    List<BreadcrumbItem> ForArticle(List<BreadcrumbDto> apiBreadcrumbs);
-
-    /// <summary>Build the full slug-based URL path from API breadcrumbs.</summary>
-    string BuildArticleUrl(List<BreadcrumbDto> breadcrumbs);
-
-    /// <summary>Build the slug-based URL path for a specific article within the breadcrumb trail.</summary>
-    string BuildArticleUrlToIndex(List<BreadcrumbDto> breadcrumbs, int index);
+    List<BreadcrumbItem> ForArticle(ArticleDto article);
 }
 
 public class BreadcrumbService : IBreadcrumbService
@@ -57,58 +52,68 @@ public class BreadcrumbService : IBreadcrumbService
         };
     }
 
-    public List<BreadcrumbItem> ForArticle(List<BreadcrumbDto> apiBreadcrumbs)
+    public List<BreadcrumbItem> ForArticle(ArticleDto article)
     {
         var result = new List<BreadcrumbItem>
         {
             new("Dashboard", href: "/dashboard")
         };
 
-        if (apiBreadcrumbs == null || apiBreadcrumbs.Count == 0)
+        var breadcrumbs = article.Breadcrumbs;
+        if (breadcrumbs == null || breadcrumbs.Count == 0)
             return result;
 
-        for (int i = 0; i < apiBreadcrumbs.Count; i++)
+        return article.Type == ArticleType.SessionNote
+            ? BuildSessionNoteBreadcrumbs(result, breadcrumbs)
+            : BuildWikiArticleBreadcrumbs(result, breadcrumbs);
+    }
+
+    private List<BreadcrumbItem> BuildWikiArticleBreadcrumbs(List<BreadcrumbItem> result, List<BreadcrumbDto> breadcrumbs)
+    {
+        var worldSlug = breadcrumbs.FirstOrDefault(b => b.IsWorld)?.Slug ?? string.Empty;
+        var nonWorldSlugs = breadcrumbs.Where(b => !b.IsWorld).Select(b => b.Slug).ToList();
+
+        for (int i = 0; i < breadcrumbs.Count; i++)
         {
-            var crumb = apiBreadcrumbs[i];
-            var isLast = i == apiBreadcrumbs.Count - 1;
+            var crumb = breadcrumbs[i];
+            var isLast = i == breadcrumbs.Count - 1;
 
-            if (crumb.IsWorld)
+            string? href = null;
+            if (!isLast)
             {
-                result.Add(new BreadcrumbItem(
-                    crumb.Title,
-                    href: isLast ? null : _urlBuilder.ForWorld(crumb.Slug),
-                    disabled: isLast));
+                if (crumb.IsWorld)
+                    href = _urlBuilder.ForWorld(crumb.Slug);
+                else
+                {
+                    var nonWorldIndex = breadcrumbs.Take(i + 1).Count(b => !b.IsWorld);
+                    href = _urlBuilder.ForWikiArticle(worldSlug, nonWorldSlugs.Take(nonWorldIndex).ToList());
+                }
             }
-            else
-            {
-                var path = BuildArticleUrlToIndex(apiBreadcrumbs, i);
-                result.Add(new BreadcrumbItem(
-                    crumb.Title,
-                    href: isLast ? null : path,
-                    disabled: isLast));
-            }
+
+            result.Add(new BreadcrumbItem(crumb.Title, href: href, disabled: isLast));
         }
-
         return result;
     }
 
-    public string BuildArticleUrl(List<BreadcrumbDto> breadcrumbs)
+    private List<BreadcrumbItem> BuildSessionNoteBreadcrumbs(List<BreadcrumbItem> result, List<BreadcrumbDto> breadcrumbs)
     {
-        if (breadcrumbs == null || breadcrumbs.Count == 0)
-            return "/dashboard";
+        // [0]=World, [1]=Campaign, [2]=Arc, [3]=Session, [4]=Note
+        for (int i = 0; i < breadcrumbs.Count; i++)
+        {
+            var crumb = breadcrumbs[i];
+            var isLast = i == breadcrumbs.Count - 1;
 
-        // Breadcrumbs from the server are pre-shaped to the URL hierarchy:
-        // wiki articles include a virtual "wiki" segment; session notes include
-        // campaign/arc/session segments. Join slugs directly without re-wrapping.
-        return "/" + string.Join("/", breadcrumbs.Select(b => b.Slug));
-    }
+            string? href = isLast ? null : i switch
+            {
+                0 => _urlBuilder.ForWorld(crumb.Slug),
+                1 => _urlBuilder.ForCampaign(breadcrumbs[0].Slug, crumb.Slug),
+                2 => _urlBuilder.ForArc(breadcrumbs[0].Slug, breadcrumbs[1].Slug, crumb.Slug),
+                3 => _urlBuilder.ForSession(breadcrumbs[0].Slug, breadcrumbs[1].Slug, breadcrumbs[2].Slug, crumb.Slug),
+                _ => null
+            };
 
-    public string BuildArticleUrlToIndex(List<BreadcrumbDto> breadcrumbs, int index)
-    {
-        if (breadcrumbs == null || breadcrumbs.Count == 0 || index < 0)
-            return "/dashboard";
-
-        index = Math.Min(index, breadcrumbs.Count - 1);
-        return "/" + string.Join("/", breadcrumbs.Take(index + 1).Select(b => b.Slug));
+            result.Add(new BreadcrumbItem(crumb.Title, href: href, disabled: isLast));
+        }
+        return result;
     }
 }

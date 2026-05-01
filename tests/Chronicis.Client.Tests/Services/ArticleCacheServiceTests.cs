@@ -36,12 +36,11 @@ public class ArticleCacheServiceTests
     }
 
     [Fact]
-    public async Task NavigationPath_UsesBreadcrumbsOrSlug()
+    public async Task GetArticleInfoAsync_SetsFullArticle()
     {
         var id = Guid.NewGuid();
-        var id2 = Guid.NewGuid();
         var api = Substitute.For<IArticleApiService>();
-        api.GetArticleAsync(id).Returns(new ArticleDto
+        var dto = new ArticleDto
         {
             Id = id,
             Title = "Title",
@@ -51,13 +50,14 @@ public class ArticleCacheServiceTests
                 new() { Id = Guid.NewGuid(), Title = "World", Slug = "world" },
                 new() { Id = id, Title = "Title", Slug = "slug" }
             }
-        });
-        api.GetArticleAsync(id2).Returns(new ArticleDto { Id = id2, Title = "T2", Slug = "slug-2", Breadcrumbs = new List<BreadcrumbDto>() });
+        };
+        api.GetArticleAsync(id).Returns(dto);
 
         var sut = new ArticleCacheService(api, NullLogger<ArticleCacheService>.Instance);
+        var info = await sut.GetArticleInfoAsync(id);
 
-        Assert.Equal("world/slug", await sut.GetNavigationPathAsync(id));
-        Assert.Equal("slug-2", await sut.GetNavigationPathAsync(id2));
+        Assert.NotNull(info);
+        Assert.Same(dto, info!.FullArticle);
     }
 
     [Fact]
@@ -126,20 +126,8 @@ public class ArticleCacheServiceTests
 
         Assert.Equal("Article", (await sut.GetArticleInfoAsync(id))!.DisplayPath);
         Assert.Equal("Article", await sut.GetArticlePathAsync(id));
-        Assert.Equal("b", await sut.GetNavigationPathAsync(id2));
+        Assert.Equal("b", (await sut.GetArticleInfoAsync(id2))!.FullArticle!.Slug);
         sut.InvalidateArticle(Guid.NewGuid()); // remove miss branch
-    }
-
-    [Fact]
-    public async Task GetNavigationPathAsync_ReturnsNull_WhenArticleMissing()
-    {
-        var api = Substitute.For<IArticleApiService>();
-        api.GetArticleAsync(Arg.Any<Guid>()).Returns((ArticleDto?)null);
-        var sut = new ArticleCacheService(api, NullLogger<ArticleCacheService>.Instance);
-
-        var result = await sut.GetNavigationPathAsync(Guid.NewGuid());
-
-        Assert.Null(result);
     }
 
     [Fact]

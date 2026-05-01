@@ -215,22 +215,23 @@ public sealed class ArchitectureGuardrailTests
         var files = Directory.EnumerateFiles(clientSrcPath, "*.cs", SearchOption.AllDirectories)
             .Concat(Directory.EnumerateFiles(clientSrcPath, "*.razor", SearchOption.AllDirectories));
 
-        // The pattern intentionally requires a known legacy prefix word
-        // (article/world/campaign/arc/session/w) and does NOT catch
-        // Navigation.NavigateTo($"/{path}") emissions built from breadcrumb slug
-        // chains. Phase 13 owns BreadcrumbService retirement: once
-        // BreadcrumbService.BuildArticleUrl is deleted and all $"/{path}"
-        // call sites are routed through IAppNavigator/IAppUrlBuilder, tighten
-        // this regex to @"\$""\/\{" so any remaining offenders fail the build.
+        // All $"/{variable}" URL emissions are forbidden — every URL must be
+        // produced by IAppUrlBuilder or IAppNavigator.
         var legacyPattern = new Regex(
-            @"\$""\/(article|world|campaign|arc|session|w)\/",
+            @"\$""\/\{",
             RegexOptions.CultureInvariant);
 
+        // AppUrlBuilder is the canonical URL factory — it is the one place
+        // where $"/{slug}" interpolations are intentional and correct.
+        var routingDir = Path.Combine(clientSrcPath, "Services", "Routing");
         var violations = new List<string>();
 
         foreach (var file in files)
         {
             if (IsBuildArtifact(file))
+                continue;
+
+            if (file.StartsWith(routingDir, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             var content = File.ReadAllText(file);

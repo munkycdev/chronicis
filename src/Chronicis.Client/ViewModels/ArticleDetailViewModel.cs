@@ -286,11 +286,8 @@ public sealed class ArticleDetailViewModel : ViewModelBase
                 var refreshed = await _articleApi.GetArticleAsync(_article.Id);
                 Article = refreshed;
 
-                if (refreshed?.Breadcrumbs != null && refreshed.Breadcrumbs.Any())
-                {
-                    var path = _breadcrumbService.BuildArticleUrl(refreshed.Breadcrumbs);
-                    return SaveArticleResult.NavigateTo(path);
-                }
+                if (refreshed != null)
+                    await _navigator.GoToArticleAsync(refreshed);
             }
 
             return SaveArticleResult.Saved;
@@ -422,13 +419,13 @@ public sealed class ArticleDetailViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Creates a sibling article (same parent as current).
-    /// Returns the navigation path on success, or null on failure.
+    /// Creates a sibling article (same parent as current) and navigates to it.
+    /// Returns true on success, false on failure.
     /// </summary>
-    public async Task<string?> CreateSiblingArticleAsync()
+    public async Task<bool> CreateSiblingArticleAsync()
     {
         if (_article == null)
-            return null;
+            return false;
 
         try
         {
@@ -446,7 +443,7 @@ public sealed class ArticleDetailViewModel : ViewModelBase
             if (created == null)
             {
                 _notifier.Error("Failed to create article");
-                return null;
+                return false;
             }
 
             await _treeState.RefreshAsync();
@@ -455,27 +452,27 @@ public sealed class ArticleDetailViewModel : ViewModelBase
             var detail = await _articleApi.GetArticleDetailAsync(created.Id);
             _notifier.Success("New article created");
 
-            if (detail?.Breadcrumbs != null && detail.Breadcrumbs.Any())
-                return _breadcrumbService.BuildArticleUrl(detail.Breadcrumbs);
+            if (detail != null)
+                await _navigator.GoToArticleAsync(detail);
 
-            return null;
+            return detail != null;
         }
         catch (Exception ex)
         {
             _logger.LogErrorSanitized(ex, "Failed to create sibling article");
             _notifier.Error($"Failed to create article: {ex.Message}");
-            return null;
+            return false;
         }
     }
 
     /// <summary>
-    /// Creates a child article under the current article.
-    /// Returns the navigation path on success, or null on failure.
+    /// Creates a child article under the current article and navigates to it.
+    /// Returns true on success, false on failure.
     /// </summary>
-    public async Task<string?> CreateChildArticleAsync()
+    public async Task<bool> CreateChildArticleAsync()
     {
         if (_article == null || IsCreatingChild)
-            return null;
+            return false;
 
         IsCreatingChild = true;
 
@@ -495,7 +492,7 @@ public sealed class ArticleDetailViewModel : ViewModelBase
             if (created == null)
             {
                 _notifier.Error("Failed to create article");
-                return null;
+                return false;
             }
 
             await _treeState.RefreshAsync();
@@ -504,16 +501,16 @@ public sealed class ArticleDetailViewModel : ViewModelBase
             var detail = await _articleApi.GetArticleDetailAsync(created.Id);
             _notifier.Success("New article created");
 
-            if (detail?.Breadcrumbs != null && detail.Breadcrumbs.Any())
-                return _breadcrumbService.BuildArticleUrl(detail.Breadcrumbs);
+            if (detail != null)
+                await _navigator.GoToArticleAsync(detail);
 
-            return null;
+            return detail != null;
         }
         catch (Exception ex)
         {
             _logger.LogErrorSanitized(ex, "Failed to create child article");
             _notifier.Error($"Failed to create article: {ex.Message}");
-            return null;
+            return false;
         }
         finally
         {
@@ -588,7 +585,7 @@ public sealed class ArticleDetailViewModel : ViewModelBase
     private void RefreshBreadcrumbs()
     {
         if (_article?.Breadcrumbs != null && _article.Breadcrumbs.Any())
-            Breadcrumbs = _breadcrumbService.ForArticle(_article.Breadcrumbs);
+            Breadcrumbs = _breadcrumbService.ForArticle(_article);
         else
             Breadcrumbs = new List<BreadcrumbItem> { new("Dashboard", href: "/dashboard") };
     }
@@ -617,19 +614,16 @@ public sealed class ArticleDetailViewModel : ViewModelBase
 /// </summary>
 public sealed class SaveArticleResult
 {
-    public enum ResultKind { Skipped, Saved, Failed, Navigate }
+    public enum ResultKind { Skipped, Saved, Failed }
 
     public ResultKind Kind { get; }
-    public string? NavigationPath { get; }
 
-    private SaveArticleResult(ResultKind kind, string? path = null)
+    private SaveArticleResult(ResultKind kind)
     {
         Kind = kind;
-        NavigationPath = path;
     }
 
     public static readonly SaveArticleResult Skipped = new(ResultKind.Skipped);
     public static readonly SaveArticleResult Saved = new(ResultKind.Saved);
     public static readonly SaveArticleResult Failed = new(ResultKind.Failed);
-    public static SaveArticleResult NavigateTo(string path) => new(ResultKind.Navigate, path);
 }

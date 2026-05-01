@@ -1,11 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Bunit;
-using Bunit.TestDoubles;
+using Chronicis.Client.Abstractions;
 using Chronicis.Client.Components.Dashboard;
 using Chronicis.Client.Services;
 using Chronicis.Shared.DTOs;
-using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Xunit;
@@ -16,10 +15,12 @@ namespace Chronicis.Client.Tests.Components.Dashboard;
 public class WorldPanelTests : MudBlazorTestContext
 {
     private readonly IArticleApiService _articleApi = Substitute.For<IArticleApiService>();
+    private readonly IAppNavigator _navigator = Substitute.For<IAppNavigator>();
 
     public WorldPanelTests()
     {
         Services.AddSingleton(_articleApi);
+        Services.AddSingleton(_navigator);
     }
 
     [Fact]
@@ -40,68 +41,64 @@ public class WorldPanelTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void ViewWorld_NavigatesToWorldPage()
+    public async Task ViewWorld_NavigatesToWorldPage()
     {
         var world = CreateWorld();
+        _navigator.GoToWorldAsync(world.Slug).Returns(Task.CompletedTask);
         var instance = CreateInstance(world);
-        var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
-        Assert.NotNull(nav);
 
-        InvokePrivate(instance, "ViewWorld");
+        await InvokePrivateAsync(instance, "ViewWorld");
 
-        Assert.Contains($"/{world.Slug}", nav!.Uri, StringComparison.OrdinalIgnoreCase);
+        await _navigator.Received(1).GoToWorldAsync(world.Slug);
     }
 
     [Fact]
-    public void AddSessionNote_WhenNoActiveCampaign_DoesNotNavigate()
+    public async Task AddSessionNote_WhenNoActiveCampaign_DoesNotNavigate()
     {
         var world = CreateWorld();
         world.Campaigns = new List<DashboardCampaignDto> { new() { Id = Guid.NewGuid(), Name = "Old", IsActive = false } };
         var instance = CreateInstance(world);
-        var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
-        Assert.NotNull(nav);
-        var before = nav!.Uri;
 
-        InvokePrivate(instance, "AddSessionNote");
+        await InvokePrivateAsync(instance, "AddSessionNote");
 
-        Assert.Equal(before, nav.Uri);
+        await _navigator.DidNotReceive().GoToCampaignAsync(Arg.Any<string>(), Arg.Any<string>());
     }
 
     [Fact]
-    public void AddSessionNote_WhenActiveCampaignExists_NavigatesToCampaign()
+    public async Task AddSessionNote_WhenActiveCampaignExists_NavigatesToCampaign()
     {
         var world = CreateWorld();
         world.Campaigns = new List<DashboardCampaignDto> { new() { Id = Guid.NewGuid(), Name = "Active", Slug = "active-campaign", IsActive = true } };
+        _navigator.GoToCampaignAsync(world.Slug, "active-campaign").Returns(Task.CompletedTask);
         var instance = CreateInstance(world);
-        var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
-        Assert.NotNull(nav);
 
-        InvokePrivate(instance, "AddSessionNote");
+        await InvokePrivateAsync(instance, "AddSessionNote");
 
-        Assert.Contains($"/{world.Slug}/active-campaign", nav!.Uri, StringComparison.OrdinalIgnoreCase);
+        await _navigator.Received(1).GoToCampaignAsync(world.Slug, "active-campaign");
     }
 
     [Fact]
-    public async Task NavigateToCharacter_WhenArticleHasBreadcrumbs_NavigatesToArticlePath()
+    public async Task NavigateToCharacter_WhenArticleFound_CallsGoToArticleAsync()
     {
         var world = CreateWorld();
         var instance = CreateInstance(world);
         var characterId = Guid.NewGuid();
-        var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
-        Assert.NotNull(nav);
-        _articleApi.GetArticleDetailAsync(characterId).Returns(new ArticleDto
+        var article = new ArticleDto
         {
             Id = characterId,
+            WorldSlug = "world",
             Breadcrumbs = new List<BreadcrumbDto>
             {
-                new() { Slug = "world" },
+                new() { Slug = "world", IsWorld = true },
                 new() { Slug = "hero" }
             }
-        });
+        };
+        _articleApi.GetArticleDetailAsync(characterId).Returns(article);
+        _navigator.GoToArticleAsync(article).Returns(Task.CompletedTask);
 
         await InvokePrivateAsync(instance, "NavigateToCharacter", characterId);
 
-        Assert.Contains("/world/hero", nav!.Uri, StringComparison.OrdinalIgnoreCase);
+        await _navigator.Received(1).GoToArticleAsync(article);
     }
 
     [Fact]
@@ -110,34 +107,26 @@ public class WorldPanelTests : MudBlazorTestContext
         var world = CreateWorld();
         var instance = CreateInstance(world);
         var characterId = Guid.NewGuid();
-        var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
-        Assert.NotNull(nav);
-        var before = nav!.Uri;
         _articleApi.GetArticleDetailAsync(characterId).Returns((ArticleDto?)null);
 
         await InvokePrivateAsync(instance, "NavigateToCharacter", characterId);
 
-        Assert.Equal(before, nav.Uri);
+        await _navigator.DidNotReceive().GoToArticleAsync(Arg.Any<ArticleDto>());
     }
 
     [Fact]
-    public async Task NavigateToCharacter_WhenBreadcrumbsEmpty_DoesNotNavigate()
+    public async Task NavigateToCharacter_WhenBreadcrumbsEmpty_StillCallsGoToArticleAsync()
     {
         var world = CreateWorld();
         var instance = CreateInstance(world);
         var characterId = Guid.NewGuid();
-        var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
-        Assert.NotNull(nav);
-        var before = nav!.Uri;
-        _articleApi.GetArticleDetailAsync(characterId).Returns(new ArticleDto
-        {
-            Id = characterId,
-            Breadcrumbs = new List<BreadcrumbDto>()
-        });
+        var article = new ArticleDto { Id = characterId, Breadcrumbs = new List<BreadcrumbDto>() };
+        _articleApi.GetArticleDetailAsync(characterId).Returns(article);
+        _navigator.GoToArticleAsync(article).Returns(Task.CompletedTask);
 
         await InvokePrivateAsync(instance, "NavigateToCharacter", characterId);
 
-        Assert.Equal(before, nav.Uri);
+        await _navigator.Received(1).GoToArticleAsync(article);
     }
 
     [Theory]
@@ -269,14 +258,21 @@ public class WorldPanelTests : MudBlazorTestContext
     }
 
     [Fact]
-    public void Render_CharacterChipClick_NavigatesToCharacterArticle()
+    public void Render_CharacterChipClick_CallsGoToArticleAsync()
     {
         var characterId = Guid.NewGuid();
-        _articleApi.GetArticleDetailAsync(characterId).Returns(new ArticleDto
+        var article = new ArticleDto
         {
             Id = characterId,
-            Breadcrumbs = new List<BreadcrumbDto> { new() { Slug = "party" }, new() { Slug = "thorne" } }
-        });
+            WorldSlug = "party",
+            Breadcrumbs = new List<BreadcrumbDto>
+            {
+                new() { Slug = "party", IsWorld = true },
+                new() { Slug = "thorne" }
+            }
+        };
+        _articleApi.GetArticleDetailAsync(characterId).Returns(article);
+        _navigator.GoToArticleAsync(article).Returns(Task.CompletedTask);
 
         var world = CreateWorld();
         world.MyCharacters = new List<DashboardCharacterDto>
@@ -285,22 +281,20 @@ public class WorldPanelTests : MudBlazorTestContext
         };
 
         var cut = RenderComponent<WorldPanel>(p => p.Add(x => x.World, world).Add(x => x.IsExpanded, true));
-        var nav = Services.GetRequiredService<NavigationManager>() as FakeNavigationManager;
-        Assert.NotNull(nav);
 
         var chip = cut.Find(".character-chip");
         chip.Click();
 
-        cut.WaitForAssertion(() =>
-            Assert.Contains("/party/thorne", nav!.Uri, StringComparison.OrdinalIgnoreCase));
+        cut.WaitForAssertion(async () =>
+            await _navigator.Received(1).GoToArticleAsync(article));
     }
 
     private WorldPanel CreateInstance(DashboardWorldDto world)
     {
         var instance = new WorldPanel();
         SetProperty(instance, "World", world);
-        SetProperty(instance, "Navigation", Services.GetRequiredService<NavigationManager>());
         SetProperty(instance, "ArticleApi", _articleApi);
+        SetProperty(instance, "AppNavigator", _navigator);
         return instance;
     }
 
@@ -327,7 +321,7 @@ public class WorldPanelTests : MudBlazorTestContext
 
     private static object? GetProperty(object instance, string propertyName)
     {
-        var property = instance.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+        var property = instance.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         Assert.NotNull(property);
         return property!.GetValue(instance);
     }

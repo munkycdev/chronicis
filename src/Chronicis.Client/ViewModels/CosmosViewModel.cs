@@ -131,11 +131,8 @@ public sealed class CosmosViewModel : ViewModelBase, IDisposable
     public async Task NavigateToArticleAsync(Guid articleId)
     {
         var article = await _articleApi.GetArticleDetailAsync(articleId);
-        if (article != null && article.Breadcrumbs.Any())
-        {
-            var path = _breadcrumbService.BuildArticleUrl(article.Breadcrumbs);
-            _navigator.NavigateTo(path);
-        }
+        if (article != null)
+            await _navigator.GoToArticleAsync(article);
     }
 
     /// <summary>

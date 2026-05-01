@@ -4,6 +4,39 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Changed — URL emission fully consolidated into IAppUrlBuilder (Phase 13)
+
+`IBreadcrumbService` is now display-only: it produces `BreadcrumbItem` lists for
+UI rendering and contains no URL construction logic. All URL strings originate
+exclusively from `IAppUrlBuilder` / `AppUrlBuilder` (`Services/Routing/`).
+
+- **Virtual `wiki` breadcrumb removed server-side** — `ArticleHierarchyService`
+  no longer emits a virtual `{ Slug = "wiki" }` breadcrumb for `WikiArticle` and
+  `Character` article types. Breadcrumbs are now purely the real content hierarchy.
+- **`BreadcrumbService.ForArticle` signature change** — now accepts `ArticleDto`
+  instead of `List<BreadcrumbDto>`. Dispatches on `article.Type`: `SessionNote`
+  uses positional URL building (world → campaign → arc → session), all other
+  types use `_urlBuilder.ForWikiArticle(worldSlug, slugChain)`.
+- **`BuildArticleUrl` / `BuildArticleUrlToIndex` removed** — both methods deleted
+  from `IBreadcrumbService` and the implementation. All callers migrated to typed
+  navigation via `IAppNavigator.GoToArticleAsync`.
+- **`AppNavigator.GoToArticleAsync` simplified** — the `b.Slug != "wiki"` filter
+  is removed; `BuildWikiArticleUrl` extracts all non-world breadcrumb slugs directly.
+- **`SaveArticleResult.Navigate` removed** — the `Navigate` enum value and
+  `NavigateTo(path)` factory are deleted. When a title change causes a new slug,
+  `ArticleDetailViewModel.SaveArticleAsync` navigates directly via
+  `_navigator.GoToArticleAsync(refreshed)`.
+- **`ArticleCacheService.GetNavigationPathAsync` removed** — was constructing
+  wrong URLs after the breadcrumb schema change. Callers now use
+  `GetArticleInfoAsync(...).FullArticle` and delegate URL resolution to `AppNavigator`.
+- **`OnWikiLinkClicked` fixed** — `ArticleDetail.razor` now calls
+  `AppNavigator.GoToArticleAsync(article)` instead of building a URL from breadcrumb slugs.
+- **Architecture guardrail tightened** — `UrlEmissionGuardrailTest` regex changed
+  to `\$"/{` (catches any interpolated-string path literal); `Services/Routing/`
+  excluded as the canonical URL factory. New `BreadcrumbContractGuardrailTests`
+  asserts no URL-building methods remain in `BreadcrumbService` or its interface,
+  and no `wiki` slug filter remains in `AppNavigator`.
+
 ### Changed — URL Restructure
 
 All entity-detail URLs now follow a unified slug-based scheme. Legacy GUID-based

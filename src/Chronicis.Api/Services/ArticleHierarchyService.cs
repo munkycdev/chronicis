@@ -402,28 +402,6 @@ public sealed class ArticleHierarchyService : IArticleHierarchyService
                 }
             }
 
-            if (rootArticleType == ArticleType.Character)
-            {
-                groups.Add(new BreadcrumbDto
-                {
-                    Id = Guid.Empty,
-                    Title = "Player Characters",
-                    Slug = "wiki",
-                    Type = default,
-                    IsWorld = false
-                });
-            }
-            else if (rootArticleType == ArticleType.WikiArticle)
-            {
-                groups.Add(new BreadcrumbDto
-                {
-                    Id = Guid.Empty,
-                    Title = "Wiki",
-                    Slug = "wiki",
-                    Type = default,
-                    IsWorld = false
-                });
-            }
         }
 
         return groups;
