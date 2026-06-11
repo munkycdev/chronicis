@@ -110,3 +110,7 @@ sitecontainers-spec.json
 
 # Publish profiles (local machine specific)
 /src/Chronicis.CaptureApp/Properties/PublishProfiles/FolderProfile.pubxml
+
+# CAC test scratch (contained a hardcoded storage key) — never commit
+/scripts/.test-cac-tmp/
+/scripts/test-cac-provider.csx

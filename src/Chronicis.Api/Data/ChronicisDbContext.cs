@@ -732,6 +732,16 @@ public class ChronicisDbContext : DbContext
                     License = "https://opengamingfoundation.org/ogl.html",
                     IsActive = true,
                     CreatedAt = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero)
+                },
+                new ResourceProvider
+                {
+                    Code = "cac",
+                    Name = "Castles & Crusades",
+                    Description = "Castles & Crusades source material",
+                    DocumentationLink = "https://trolllord.com/cnc/",
+                    License = "https://opengamingfoundation.org/ogl.html",
+                    IsActive = true,
+                    CreatedAt = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero)
                 }
             );
         });

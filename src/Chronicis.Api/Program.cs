@@ -168,6 +168,11 @@ internal class Program
                 "ros",
                 rosConfig);
 
+            var cacConfig = builder.Configuration.GetSection("ExternalLinks:BlobProviders:Cac");
+            builder.Services.Configure<BlobExternalLinkProviderOptions>(
+                "cac",
+                cacConfig);
+
             // Register srd14 provider (each provider gets its own connection string and blob client)
             builder.Services.AddScoped<IExternalLinkProvider>(sp =>
             {
@@ -195,6 +200,17 @@ internal class Program
             {
                 var optionsSnapshot = sp.GetRequiredService<IOptionsSnapshot<BlobExternalLinkProviderOptions>>();
                 var options = optionsSnapshot.Get("ros");
+                var cache = sp.GetRequiredService<IMemoryCache>();
+                var logger = sp.GetRequiredService<ILogger<BlobExternalLinkProvider>>();
+
+                return new BlobExternalLinkProvider(options, cache, logger);
+            });
+
+            // Register cac provider (Castles & Crusades)
+            builder.Services.AddScoped<IExternalLinkProvider>(sp =>
+            {
+                var optionsSnapshot = sp.GetRequiredService<IOptionsSnapshot<BlobExternalLinkProviderOptions>>();
+                var options = optionsSnapshot.Get("cac");
                 var cache = sp.GetRequiredService<IMemoryCache>();
                 var logger = sp.GetRequiredService<ILogger<BlobExternalLinkProvider>>();
 

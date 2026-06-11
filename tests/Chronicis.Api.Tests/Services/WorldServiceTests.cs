@@ -201,10 +201,12 @@ public class WorldServiceTests : IDisposable
         var campaigns = await _context.Campaigns.Where(c => c.WorldId == world.Id).ToListAsync();
         Assert.Single(campaigns);
         Assert.Equal("Campaign 1", campaigns[0].Name);
+        Assert.Equal("campaign-1", campaigns[0].Slug);
 
         var arcs = await _context.Arcs.Where(a => a.CampaignId == campaigns[0].Id).ToListAsync();
         Assert.Single(arcs);
         Assert.Equal("Arc 1", arcs[0].Name);
+        Assert.Equal("arc-1", arcs[0].Slug);
     }
 
     [Fact]

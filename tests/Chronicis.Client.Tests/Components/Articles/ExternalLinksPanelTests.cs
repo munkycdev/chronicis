@@ -159,6 +159,7 @@ public class ExternalLinksPanelTests : TestContext
     [InlineData("SRD14", "SRD 1.4")]
     [InlineData("SRD24", "SRD 2.4")]
     [InlineData("ROS", "Ruins of Symbaroum")]
+    [InlineData("CAC", "Castles & Crusades")]
     [InlineData("custom", "CUSTOM")]
     public void ExternalLinksPanel_MapsSourceNames(string source, string expectedBadgeText)
     {

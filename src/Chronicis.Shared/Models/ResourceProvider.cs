@@ -10,7 +10,7 @@ namespace Chronicis.Shared.Models;
 public class ResourceProvider
 {
     /// <summary>
-    /// Unique code identifier for the provider (e.g., "srd", "srd14", "srd24", "ros")
+    /// Unique code identifier for the provider (e.g., "srd", "srd14", "srd24", "ros", "cac")
     /// </summary>
     public string Code { get; set; } = string.Empty;
 

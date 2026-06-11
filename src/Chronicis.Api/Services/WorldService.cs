@@ -182,6 +182,7 @@ public sealed class WorldService : IWorldService
         {
             Id = Guid.NewGuid(),
             Name = "Campaign 1",
+            Slug = "campaign-1",
             Description = "Your first campaign adventure begins here.",
             WorldId = world.Id,
             OwnerId = userId,
@@ -194,6 +195,7 @@ public sealed class WorldService : IWorldService
         {
             Id = Guid.NewGuid(),
             Name = "Arc 1",
+            Slug = "arc-1",
             Description = "The first chapter of your adventure.",
             CampaignId = campaign.Id,
             SortOrder = 1,
