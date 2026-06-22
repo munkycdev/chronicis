@@ -144,6 +144,18 @@ public sealed class BlobStorageService : IBlobStorageService
     }
 
     /// <inheritdoc/>
+    public async Task UploadBlobAsync(string blobPath, byte[] content, string contentType)
+    {
+        var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+        var blobClient = containerClient.GetBlobClient(blobPath);
+
+        using var stream = new MemoryStream(content);
+        await blobClient.UploadAsync(stream, new BlobHttpHeaders { ContentType = contentType }, conditions: null);
+
+        _logger.LogTraceSanitized("Uploaded blob: {BlobPath} ({Size} bytes)", blobPath, content.Length);
+    }
+
+    /// <inheritdoc/>
     public async Task DeleteBlobAsync(string blobPath)
     {
         try

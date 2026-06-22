@@ -1,0 +1,217 @@
+@* DrawingCanvas.razor - HTML5 Canvas drawing surface with stylus/touch/mouse input *@
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
+
+<div class="drawing-canvas-container">
+    @* Toolbar *@
+    <MudPaper Class="drawing-canvas-toolbar pa-2 mb-2" Elevation="1">
+        <div class="d-flex align-center flex-wrap" style="gap: 8px;">
+            @* Color Picker *@
+            <MudButtonGroup OverrideStyles="false" Class="drawing-canvas-colors">
+                @foreach (var color in _colors)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Circle"
+                                   Size="Size.Small"
+                                   Style="@GetColorButtonStyle(color)"
+                                   OnClick="@(() => SelectColor(color))"
+                                   aria-label="@($"Select color {color}")" />
+                }
+            </MudButtonGroup>
+
+            <MudDivider Vertical="true" FlexItem="true" Class="mx-1" />
+
+            @* Pen/Eraser Toggle *@
+            <MudButtonGroup OverrideStyles="false">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Size="Size.Small"
+                               Color="@(_currentTool == "pen" ? Color.Primary : Color.Default)"
+                               Variant="@(_currentTool == "pen" ? Variant.Filled : Variant.Outlined)"
+                               OnClick="@(() => SelectTool("pen"))"
+                               aria-label="Pen tool" />
+                <MudIconButton Icon="@Icons.Material.Filled.AutoFixOff"
+                               Size="Size.Small"
+                               Color="@(_currentTool == "eraser" ? Color.Primary : Color.Default)"
+                               Variant="@(_currentTool == "eraser" ? Variant.Filled : Variant.Outlined)"
+                               OnClick="@(() => SelectTool("eraser"))"
+                               aria-label="Eraser tool" />
+            </MudButtonGroup>
+
+            <MudDivider Vertical="true" FlexItem="true" Class="mx-1" />
+
+            @* Undo/Redo *@
+            <MudButtonGroup OverrideStyles="false">
+                <MudIconButton Icon="@Icons.Material.Filled.Undo"
+                               Size="Size.Small"
+                               OnClick="Undo"
+                               aria-label="Undo" />
+                <MudIconButton Icon="@Icons.Material.Filled.Redo"
+                               Size="Size.Small"
+                               OnClick="Redo"
+                               aria-label="Redo" />
+            </MudButtonGroup>
+
+            <MudSpacer />
+
+            @* Save & Transcribe *@
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       OnClick="HandleSave"
+                       Disabled="@(_strokeCount == 0 || IsSaving)">
+                Save
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Transcribe"
+                       OnClick="HandleTranscribe"
+                       Disabled="@(_strokeCount == 0 || IsSaving)">
+                Transcribe
+            </MudButton>
+        </div>
+    </MudPaper>
+
+    @* Canvas *@
+    <div class="drawing-canvas-scroll-container" style="overflow-y: auto;">
+        <canvas id="@_canvasElementId"
+                width="2000"
+                height="2000"
+                style="width: 100%; min-height: 2000px; display: block; border: 1px solid var(--mud-palette-lines-default); cursor: crosshair;">
+        </canvas>
+    </div>
+</div>
+
+@code {
+    private const string CanvasIdPrefix = "drawing-canvas-";
+
+    private static readonly string[] _colors = { "#000000", "#FF0000", "#0000FF", "#008000", "#FF8C00", "#800080" };
+
+    private string _canvasElementId = $"{CanvasIdPrefix}{Guid.NewGuid():N}";
+    private string _currentColor = _colors[0];
+    private string _currentTool = "pen";
+    private int _strokeCount;
+    private DotNetObjectReference<DrawingCanvas>? _dotNetRef;
+    private bool _initialized;
+
+    #region Parameters
+
+    /// <summary>
+    /// Invoked with PNG bytes when user clicks Save.
+    /// </summary>
+    [Parameter]
+    public EventCallback<byte[]> OnSave { get; set; }
+
+    /// <summary>
+    /// Invoked with PNG bytes when user clicks Transcribe.
+    /// </summary>
+    [Parameter]
+    public EventCallback<byte[]> OnTranscribe { get; set; }
+
+    /// <summary>
+    /// Disables save/transcribe buttons during operation.
+    /// </summary>
+    [Parameter]
+    public bool IsSaving { get; set; }
+
+    #endregion
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            _initialized = await JSRuntime.InvokeAsync<bool>(
+                "drawingCanvasInitialize", _canvasElementId, _dotNetRef);
+        }
+    }
+
+    /// <summary>
+    /// Called from JS when stroke count changes.
+    /// </summary>
+    [JSInvokable]
+    public void OnStrokeCountChanged(int strokeCount)
+    {
+        _strokeCount = strokeCount;
+        StateHasChanged();
+    }
+
+    private async Task SelectColor(string color)
+    {
+        _currentColor = color;
+        if (_initialized)
+        {
+            await JSRuntime.InvokeVoidAsync("drawingCanvasSetColor", _canvasElementId, color);
+        }
+    }
+
+    private async Task SelectTool(string tool)
+    {
+        _currentTool = tool;
+        if (_initialized)
+        {
+            await JSRuntime.InvokeVoidAsync("drawingCanvasSetTool", _canvasElementId, tool);
+        }
+    }
+
+    private async Task Undo()
+    {
+        if (_initialized)
+        {
+            await JSRuntime.InvokeVoidAsync("drawingCanvasUndo", _canvasElementId);
+        }
+    }
+
+    private async Task Redo()
+    {
+        if (_initialized)
+        {
+            await JSRuntime.InvokeVoidAsync("drawingCanvasRedo", _canvasElementId);
+        }
+    }
+
+    private async Task HandleSave()
+    {
+        if (!_initialized || _strokeCount == 0) return;
+
+        var pngBytes = await JSRuntime.InvokeAsync<byte[]>("drawingCanvasExportPng", _canvasElementId);
+        if (pngBytes != null)
+        {
+            await OnSave.InvokeAsync(pngBytes);
+        }
+    }
+
+    private async Task HandleTranscribe()
+    {
+        if (!_initialized || _strokeCount == 0) return;
+
+        var pngBytes = await JSRuntime.InvokeAsync<byte[]>("drawingCanvasExportPng", _canvasElementId);
+        if (pngBytes != null)
+        {
+            await OnTranscribe.InvokeAsync(pngBytes);
+        }
+    }
+
+    private string GetColorButtonStyle(string color)
+    {
+        var selected = color == _currentColor;
+        var border = selected ? "3px solid var(--mud-palette-primary)" : "2px solid transparent";
+        return $"color: {color}; border: {border}; border-radius: 50%;";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_initialized)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("drawingCanvasDispose", _canvasElementId);
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit disconnected, nothing to clean up on JS side
+            }
+        }
+
+        _dotNetRef?.Dispose();
+    }
+}

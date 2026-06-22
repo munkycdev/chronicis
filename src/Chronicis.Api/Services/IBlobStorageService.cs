@@ -43,6 +43,14 @@ public interface IBlobStorageService
     Task<string> GenerateDownloadSasUrlAsync(string blobPath);
 
     /// <summary>
+    /// Upload blob content directly from a byte array.
+    /// </summary>
+    /// <param name="blobPath">The blob path to upload to.</param>
+    /// <param name="content">The file content bytes.</param>
+    /// <param name="contentType">The MIME content type.</param>
+    Task UploadBlobAsync(string blobPath, byte[] content, string contentType);
+
+    /// <summary>
     /// Build the blob path for a document.
     /// </summary>
     /// <param name="worldId">The world ID.</param>

@@ -33,6 +33,8 @@
 @inject IDrawerCoordinator DrawerCoordinator
 @inject IKeyboardShortcutService KeyboardShortcutService
 @inject IWorldApiService WorldApi
+@inject IDialogService DialogService
+@inject IHandwrittenNoteApiService HandwrittenNoteApi
 @inject Chronicis.Client.ViewModels.ArticleDetailViewModel ViewModel
 
 @implements IDisposable
@@ -93,14 +95,50 @@ else
             </div>
         }
 
+        @* Handwritten Note Section - only show for SessionNote type articles *@
+        @if (_article.Type == ArticleType.SessionNote)
+        {
+            @if (_handwrittenNoteLoadError)
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">
+                    Failed to load handwritten note state. Please refresh the page.
+                </MudAlert>
+            }
+            else if (_showDrawingCanvas)
+            {
+                <DrawingCanvas OnSave="HandleHandwrittenNoteSave"
+                               OnTranscribe="HandleHandwrittenNoteTranscribe"
+                               IsSaving="_isHandwrittenNoteSaving" />
+            }
+            else if (HandwrittenNoteViewState.ShouldShowTabUi(_article.HandwrittenNoteImageId))
+            {
+                <HandwrittenNoteTabView ImageDownloadUrl="@_handwrittenNoteImageUrl"
+                                        Body="@_article.Body"
+                                        ShowTranscribedTabActive="_showTranscribedTabActive"
+                                        OnTranscribeRequested="HandleTranscribeFromTabView"
+                                        OnBodyChanged="HandleHandwrittenNoteBodyChanged"
+                                        WorldId="CurrentWorldId" />
+
+            }
+        }
+
         <!-- TipTap Editor Container -->
         <div id="tiptap-editor-@_article.Id" class="chronicis-editor-container mb-4"></div>
 
         <!-- AI Summary Section -->
-        <AISummarySection EntityId="@_article.Id"
-                          EntityType="Article"
-                          IsExpanded="@_isSummaryExpanded"
-                          IsExpandedChanged="@((expanded) => _isSummaryExpanded = expanded)" />
+        @if (_article.Type == ArticleType.SessionNote && !SummaryEnablementState.IsSummaryEnabled(_editBody))
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">
+                AI summary is unavailable. Transcription is required first.
+            </MudAlert>
+        }
+        else
+        {
+            <AISummarySection EntityId="@_article.Id"
+                              EntityType="Article"
+                              IsExpanded="@_isSummaryExpanded"
+                              IsExpandedChanged="@((expanded) => _isSummaryExpanded = expanded)" />
+        }
 
         <!-- Action Bar (Save Status + Buttons) -->
         <ArticleActionBar IsSaving="_isSaving"
@@ -187,6 +225,7 @@ else
 
 @code {
     [Parameter] public Guid ArticleId { get; set; }
+    [SupplyParameterFromQuery(Name = "draw")] public bool StartInDrawingMode { get; set; }
 
     // Article state
     private ArticleDto? _article;
@@ -204,6 +243,13 @@ else
     private string _lastSaveTime = "just now";
     private bool _isSummaryExpanded = false;
     private bool _shouldFocusTitle = false;
+
+    // Handwritten note state
+    private bool _showDrawingCanvas = false;
+    private bool _isHandwrittenNoteSaving = false;
+    private bool _handwrittenNoteLoadError = false;
+    private string? _handwrittenNoteImageUrl;
+    private bool _showTranscribedTabActive = false;
 
     // Timer and references
     private Timer? _autoSaveTimer;
@@ -438,6 +484,20 @@ else
 
         if (_article != null)
             await SaveLastArticlePath();
+
+        // Load handwritten note state for session notes
+        _showDrawingCanvas = false;
+        _showTranscribedTabActive = false;
+        _handwrittenNoteLoadError = false;
+        _handwrittenNoteImageUrl = null;
+        if (_article?.Type == ArticleType.SessionNote && _article.HandwrittenNoteImageId.HasValue)
+        {
+            await LoadHandwrittenNoteImageUrlAsync();
+        }
+        else if (_article?.Type == ArticleType.SessionNote && StartInDrawingMode && !_article.HandwrittenNoteImageId.HasValue)
+        {
+            _showDrawingCanvas = true;
+        }
     }
 
     private void LoadBreadcrumbs()
@@ -1220,6 +1280,169 @@ else
     }
 
     private static string GetExternalCacheKey(string source, string id) => $"{source}:{id}".ToLowerInvariant();
+
+    #endregion
+
+    #region Handwritten Note
+
+    private void ShowDrawingCanvas()
+    {
+        _showDrawingCanvas = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleHandwrittenNoteSave(byte[] pngBytes)
+    {
+        if (_article == null) return;
+
+        _isHandwrittenNoteSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await HandwrittenNoteApi.SaveHandwrittenNoteAsync(_article.Id, pngBytes);
+            if (result == null)
+            {
+                Snackbar.Add("Failed to save handwritten note", Severity.Error);
+                return;
+            }
+
+            _article.HandwrittenNoteImageId = result.DocumentId;
+            _handwrittenNoteImageUrl = result.DownloadUrl;
+            _showDrawingCanvas = false;
+            _showTranscribedTabActive = false;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving handwritten note for article {ArticleId}", _article.Id);
+            Snackbar.Add($"Failed to save handwritten note: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isHandwrittenNoteSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleHandwrittenNoteTranscribe(byte[] pngBytes)
+    {
+        if (_article == null) return;
+
+        // Overwrite confirmation when Body already has content
+        if (!string.IsNullOrWhiteSpace(_article.Body))
+        {
+            var confirmed = await DialogService.ShowMessageBox(
+                "Overwrite Existing Content",
+                "The session note already has content. Transcription will overwrite it. Continue?",
+                yesText: "Overwrite",
+                cancelText: "Cancel");
+
+            if (confirmed != true) return;
+        }
+
+        _isHandwrittenNoteSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await HandwrittenNoteApi.TranscribeHandwrittenNoteAsync(_article.Id, pngBytes);
+            if (result == null)
+            {
+                Snackbar.Add("Failed to transcribe handwritten note", Severity.Error);
+                return;
+            }
+
+            _article.HandwrittenNoteImageId = result.DocumentId;
+            _article.Body = result.TranscribedText;
+            _editBody = result.TranscribedText;
+            _handwrittenNoteImageUrl = result.DownloadUrl;
+            _showDrawingCanvas = false;
+            _showTranscribedTabActive = true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error transcribing handwritten note for article {ArticleId}", _article.Id);
+            Snackbar.Add($"Failed to transcribe handwritten note: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isHandwrittenNoteSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleTranscribeFromTabView()
+    {
+        if (_article == null || !_article.HandwrittenNoteImageId.HasValue) return;
+
+        // Overwrite confirmation when Body already has content
+        if (!string.IsNullOrWhiteSpace(_article.Body))
+        {
+            var confirmed = await DialogService.ShowMessageBox(
+                "Overwrite Existing Content",
+                "The session note already has content. Transcription will overwrite it. Continue?",
+                yesText: "Overwrite",
+                cancelText: "Cancel");
+
+            if (confirmed != true) return;
+        }
+
+        _isHandwrittenNoteSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await HandwrittenNoteApi.TranscribeExistingAsync(_article.Id);
+            if (result == null)
+            {
+                Snackbar.Add("Failed to transcribe handwritten note", Severity.Error);
+                return;
+            }
+
+            _article.HandwrittenNoteImageId = result.DocumentId;
+            _article.Body = result.TranscribedText;
+            _editBody = result.TranscribedText;
+            _handwrittenNoteImageUrl = result.DownloadUrl;
+            _showTranscribedTabActive = true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error transcribing from tab view for article {ArticleId}", _article.Id);
+            Snackbar.Add($"Failed to transcribe: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isHandwrittenNoteSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private Task HandleHandwrittenNoteBodyChanged(string value)
+    {
+        if (_article == null) return Task.CompletedTask;
+
+        _article.Body = value;
+        _editBody = value;
+        _hasUnsavedChanges = true;
+        _autoSaveTimer?.Dispose();
+        _autoSaveTimer = new Timer(async _ => await AutoSave(), null, 500, Timeout.Infinite);
+        return Task.CompletedTask;
+    }
+
+    private async Task LoadHandwrittenNoteImageUrlAsync()
+    {
+        if (_article?.HandwrittenNoteImageId == null) return;
+
+        try
+        {
+            _handwrittenNoteImageUrl = await HandwrittenNoteApi.GetHandwrittenNoteUrlAsync(_article.Id);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading handwritten note image URL for article {ArticleId}", _article.Id);
+            _handwrittenNoteLoadError = true;
+        }
+    }
 
     #endregion
 

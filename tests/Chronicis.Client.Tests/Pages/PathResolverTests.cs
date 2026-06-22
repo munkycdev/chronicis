@@ -160,7 +160,7 @@ public class PathResolverTests : TestContext
 
         var cut = RenderComponent<PathResolver>(p => p.Add(r => r.Path, "my-world"));
 
-        cut.FindComponent<Stub<LoadingSkeleton>>();
+        cut.WaitForAssertion(() => cut.FindComponent<Stub<LoadingSkeleton>>());
 
         tcs.SetResult(null);
         cut.WaitForAssertion(() => cut.FindComponent<Stub<NotFoundAlert>>());

@@ -362,6 +362,16 @@ public class ChronicisDbContext : DbContext
                 .HasForeignKey(a => a.SessionId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            // Article -> HandwrittenNoteImage (WorldDocument) for handwritten session notes
+            entity.HasOne(a => a.HandwrittenNoteImage)
+                .WithMany()
+                .HasForeignKey(a => a.HandwrittenNoteImageId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasIndex(a => a.HandwrittenNoteImageId)
+                .HasFilter("[HandwrittenNoteImageId] IS NOT NULL")
+                .HasDatabaseName("IX_Articles_HandwrittenNoteImageId");
+
             // Root non-session-note articles: slug unique within (WorldId, Slug)
             entity.HasIndex(a => new { a.WorldId, a.Slug })
                 .IsUnique()

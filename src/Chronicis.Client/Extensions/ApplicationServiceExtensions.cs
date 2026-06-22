@@ -48,6 +48,7 @@ public static class ApplicationServiceExtensions
         services.AddChronicisApiService<ITutorialApiService, TutorialApiService>();
         services.AddChronicisApiService<IMapApiService, MapApiService>();
         services.AddChronicisApiService<IPathApiService, PathApiService>();
+        services.AddChronicisApiService<IHandwrittenNoteApiService, HandwrittenNoteApiService>();
 
         // Routing services
         services.AddSingleton<IAppUrlBuilder, AppUrlBuilder>();

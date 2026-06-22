@@ -155,7 +155,20 @@ public class Article
     /// </summary>
     public DateTime EffectiveDate { get; set; } = DateTime.UtcNow;
 
+    // ===== Handwritten Notes =====
+
+    /// <summary>
+    /// FK to WorldDocument storing the handwritten note image for this session note.
+    /// Null for articles without handwritten notes or non-SessionNote article types.
+    /// </summary>
+    public Guid? HandwrittenNoteImageId { get; set; }
+
     // ===== Navigation Properties =====
+
+    /// <summary>
+    /// Navigation property for the handwritten note image WorldDocument.
+    /// </summary>
+    public WorldDocument? HandwrittenNoteImage { get; set; }
 
     /// <summary>
     /// Parent article in the hierarchy.

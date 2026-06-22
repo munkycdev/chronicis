@@ -30,6 +30,7 @@ internal static class ArticleReadModelProjection
         PlayerId = a.PlayerId,
         AISummary = a.AISummary,
         AISummaryGeneratedAt = a.AISummaryGeneratedAt,
+        HandwrittenNoteImageId = a.HandwrittenNoteImageId,
         Breadcrumbs = new List<BreadcrumbDto>(),
         Aliases = new List<ArticleAliasDto>(),
         WorldSlug = a.World != null ? a.World.Slug : string.Empty

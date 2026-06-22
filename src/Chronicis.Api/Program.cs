@@ -256,6 +256,8 @@ internal class Program
             builder.Services.AddScoped<IQuestUpdateService, QuestUpdateService>();
             builder.Services.AddScoped<IAdminService, AdminService>();
             builder.Services.AddScoped<ITutorialService, TutorialService>();
+            builder.Services.AddScoped<IHandwrittenNoteService, HandwrittenNoteService>();
+            builder.Services.AddScoped<ITranscriptionService, TranscriptionService>();
 
             // Health check services
             builder.Services.AddScoped<DatabaseHealthCheckService>();

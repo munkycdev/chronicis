@@ -77,6 +77,7 @@ public class ArticleDetailMapFeatureReferenceTests : MudBlazorTestContext
         Services.AddSingleton(navigator);
         Services.AddSingleton<IDrawerCoordinator>(drawerCoordinator);
         Services.AddSingleton(Substitute.For<IKeyboardShortcutService>());
+        Services.AddSingleton(Substitute.For<IHandwrittenNoteApiService>());
         Services.AddSingleton(Substitute.For<ILogger<ArticleDetail>>());
         Services.AddSingleton(viewModel);
 

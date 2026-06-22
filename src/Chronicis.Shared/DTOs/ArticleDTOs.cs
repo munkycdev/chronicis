@@ -52,6 +52,9 @@ public class ArticleDto
     // External Links
     public List<ArticleExternalLinkDto> ExternalLinks { get; set; } = new();
 
+    // Handwritten notes
+    public Guid? HandwrittenNoteImageId { get; set; }
+
     public string WorldSlug { get; set; } = string.Empty;
 }
 

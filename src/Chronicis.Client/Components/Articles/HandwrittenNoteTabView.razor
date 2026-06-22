@@ -1,0 +1,89 @@
+@* HandwrittenNoteTabView.razor - Tab UI for Handwritten Note image and Transcribed content *@
+@using System.Diagnostics.CodeAnalysis
+@attribute [ExcludeFromCodeCoverage]
+
+<MudTabs @bind-ActivePanelIndex="_activePanelIndex" Elevation="0" ApplyEffectsToContainer="true" Class="handwritten-note-tabs">
+    <MudTabPanel Text="Handwritten">
+        <div class="handwritten-note-image-container" style="overflow: auto; touch-action: pinch-zoom pan-x pan-y;">
+            @if (!string.IsNullOrWhiteSpace(ImageDownloadUrl))
+            {
+                <img src="@ImageDownloadUrl"
+                     alt="Handwritten note"
+                     style="width: 100%; display: block;" />
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">No handwritten note image available.</MudAlert>
+            }
+        </div>
+    </MudTabPanel>
+    <MudTabPanel Text="Transcribed">
+        @if (string.IsNullOrWhiteSpace(Body))
+        {
+            <div class="d-flex flex-column align-center justify-center pa-8">
+                <MudText Typo="Typo.body1" Class="mb-4">No transcription available.</MudText>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Transcribe"
+                           OnClick="HandleTranscribeRequested">
+                    Transcribe
+                </MudButton>
+            </div>
+        }
+        else
+        {
+            <PrivateNotesTipTapEditor WorldId="WorldId"
+                                     Value="@Body"
+                                     ValueChanged="HandleBodyChanged" />
+        }
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    private int _activePanelIndex;
+
+    /// <summary>
+    /// Download URL for the handwritten note image.
+    /// </summary>
+    [Parameter]
+    public string? ImageDownloadUrl { get; set; }
+
+    /// <summary>
+    /// Article body content for the TipTap editor.
+    /// </summary>
+    [Parameter]
+    public string? Body { get; set; }
+
+    /// <summary>
+    /// Whether to default to the Transcribed tab (e.g. after transcription completes).
+    /// </summary>
+    [Parameter]
+    public bool ShowTranscribedTabActive { get; set; }
+
+    /// <summary>
+    /// Triggers transcription from the empty-state Transcribed tab.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnTranscribeRequested { get; set; }
+
+    /// <summary>
+    /// Content change callback for auto-save.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> OnBodyChanged { get; set; }
+
+    /// <summary>
+    /// World ID needed for the TipTap editor's WikiLink/ExternalReference features.
+    /// </summary>
+    [Parameter]
+    public Guid WorldId { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _activePanelIndex = ShowTranscribedTabActive ? 1 : 0;
+    }
+
+    private Task HandleTranscribeRequested() => OnTranscribeRequested.InvokeAsync();
+
+    private Task HandleBodyChanged(string value) => OnBodyChanged.InvokeAsync(value);
+}

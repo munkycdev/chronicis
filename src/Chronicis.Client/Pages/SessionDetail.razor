@@ -256,6 +256,14 @@ else
                            StartIcon="@Icons.Material.Filled.NoteAdd">
                     @(ViewModel.IsCreatingSessionNote ? "Adding..." : "Add Session Note")
                 </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           Size="Size.Small"
+                           OnClick="@CreateHandwrittenSessionNoteAsync"
+                           Disabled="@(ViewModel.IsCreatingSessionNote || ViewModel.IsDeleting || _isCreatingHandwrittenNote)"
+                           StartIcon="@Icons.Material.Filled.Draw">
+                    @(_isCreatingHandwrittenNote ? "Adding..." : "Add a handwritten note")
+                </MudButton>
             }
         </div>
 
@@ -358,6 +366,8 @@ else
         MaxWidth = MaxWidth.Small,
         FullWidth = true,
     };
+
+    private bool _isCreatingHandwrittenNote;
 
     [Parameter]
     public Guid SessionId { get; set; }
@@ -849,6 +859,42 @@ else
         _autocompleteSelectedIndex = index;
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    private async Task CreateHandwrittenSessionNoteAsync()
+    {
+        if (_isCreatingHandwrittenNote || !ViewModel.CanCreateSessionNote)
+            return;
+
+        _isCreatingHandwrittenNote = true;
+        StateHasChanged();
+
+        try
+        {
+            // Capture the current URI before navigation
+            var uriBefore = Navigation.Uri;
+
+            await ViewModel.CreateSessionNoteAsync();
+
+            // After CreateSessionNoteAsync, the ViewModel navigated to the new note's URL.
+            // Append ?draw=true to trigger drawing mode on the ArticleDetail page.
+            var uriAfter = Navigation.Uri;
+            if (uriAfter != uriBefore)
+            {
+                var baseUri = new Uri(uriAfter).GetLeftPart(UriPartial.Path);
+                Navigation.NavigateTo(baseUri + "?draw=true", forceLoad: false, replace: true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Failed to create handwritten note", MudBlazor.Severity.Error);
+            Logger.LogError(ex, "Failed to create handwritten session note");
+        }
+        finally
+        {
+            _isCreatingHandwrittenNote = false;
+            StateHasChanged();
+        }
     }
 
     private async Task OnAutocompleteSelect(ArticleWikiLinkAutocompleteItem suggestion)
