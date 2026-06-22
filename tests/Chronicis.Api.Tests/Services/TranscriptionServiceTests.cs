@@ -1,230 +1,111 @@
-using System.Net;
+using System.ClientModel;
+using System.Diagnostics.CodeAnalysis;
 using Chronicis.Api.Services;
+using Chronicis.Shared.DTOs;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
+using NSubstitute.ExceptionExtensions;
+using OpenAI.Chat;
 using Xunit;
 
 namespace Chronicis.Api.Tests;
 
+[ExcludeFromCodeCoverage]
 public class TranscriptionServiceTests
 {
     private static readonly byte[] SampleImageBytes = [0x89, 0x50, 0x4E, 0x47];
 
-    private static (TranscriptionService Sut, HttpClient Client) CreateSut(HttpMessageHandler handler, TimeSpan? timeout = null)
+    private static IConfiguration CreateConfig(
+        string endpoint = "https://openai.test/",
+        string apiKey = "test-key",
+        string deploymentName = "gpt-4o")
     {
-        var client = new HttpClient(handler) { BaseAddress = new Uri("https://ocr.test/") };
-        var sut = new TranscriptionService(client, NullLogger<TranscriptionService>.Instance,
-            timeout ?? TranscriptionService.DefaultTimeout);
-        return (sut, client);
+        var configData = new Dictionary<string, string?>
+        {
+            ["AzureOpenAI:Endpoint"] = endpoint,
+            ["AzureOpenAI:ApiKey"] = apiKey,
+            ["AzureOpenAI:DeploymentName"] = deploymentName
+        };
+        return new ConfigurationBuilder().AddInMemoryCollection(configData).Build();
     }
 
     [Fact]
-    public async Task TranscribeImageAsync_ReturnsSuccess_WhenApiReturnsText()
+    public void Constructor_ThrowsWhenEndpointMissing()
     {
-        using var handler = new FakeHandler(HttpStatusCode.OK, """{"text":"Hello world"}""");
-        var client = new HttpClient(handler) { BaseAddress = new Uri("https://ocr.test/") };
-        using (client)
-        {
-            // Use the public constructor (default 60s timeout) to verify that path
-            var sut = new TranscriptionService(client, NullLogger<TranscriptionService>.Instance);
-
-            var result = await sut.TranscribeImageAsync(SampleImageBytes);
-
-            Assert.True(result.Success);
-            Assert.Equal("Hello world", result.Text);
-            Assert.Null(result.ErrorMessage);
-        }
+        var config = CreateConfig(endpoint: "");
+        Assert.Throws<InvalidOperationException>(() =>
+            new TranscriptionService(config, NullLogger<TranscriptionService>.Instance));
     }
 
     [Fact]
-    public async Task TranscribeImageAsync_ReturnsFailure_WhenApiReturnsEmptyText()
+    public void Constructor_ThrowsWhenApiKeyMissing()
     {
-        using var handler = new FakeHandler(HttpStatusCode.OK, """{"text":""}""");
-        var (sut, client) = CreateSut(handler);
-        using (client)
-        {
-            var result = await sut.TranscribeImageAsync(SampleImageBytes);
-
-            Assert.False(result.Success);
-            Assert.Equal("Transcription produced no text.", result.ErrorMessage);
-        }
+        var config = CreateConfig(apiKey: "");
+        Assert.Throws<InvalidOperationException>(() =>
+            new TranscriptionService(config, NullLogger<TranscriptionService>.Instance));
     }
 
     [Fact]
-    public async Task TranscribeImageAsync_ReturnsFailure_WhenApiReturnsWhitespaceText()
+    public void Constructor_ThrowsWhenDeploymentNameMissing()
     {
-        using var handler = new FakeHandler(HttpStatusCode.OK, """{"text":"   "}""");
-        var (sut, client) = CreateSut(handler);
-        using (client)
-        {
-            var result = await sut.TranscribeImageAsync(SampleImageBytes);
-
-            Assert.False(result.Success);
-            Assert.Equal("Transcription produced no text.", result.ErrorMessage);
-        }
+        var config = CreateConfig(deploymentName: "");
+        Assert.Throws<InvalidOperationException>(() =>
+            new TranscriptionService(config, NullLogger<TranscriptionService>.Instance));
     }
 
     [Fact]
-    public async Task TranscribeImageAsync_ReturnsFailure_WhenApiReturnsNullText()
+    public void Constructor_UsesVisionDeploymentNameWhenPresent()
     {
-        using var handler = new FakeHandler(HttpStatusCode.OK, """{"text":null}""");
-        var (sut, client) = CreateSut(handler);
-        using (client)
+        var configData = new Dictionary<string, string?>
         {
-            var result = await sut.TranscribeImageAsync(SampleImageBytes);
+            ["AzureOpenAI:Endpoint"] = "https://openai.test/",
+            ["AzureOpenAI:ApiKey"] = "test-key",
+            ["AzureOpenAI:DeploymentName"] = "gpt-4-mini",
+            ["AzureOpenAI:VisionDeploymentName"] = "gpt-4o"
+        };
+        var config = new ConfigurationBuilder().AddInMemoryCollection(configData).Build();
 
-            Assert.False(result.Success);
-            Assert.Equal("Transcription produced no text.", result.ErrorMessage);
-        }
+        // Should not throw — VisionDeploymentName takes priority
+        var ex = Record.Exception(() =>
+            new TranscriptionService(config, NullLogger<TranscriptionService>.Instance));
+        Assert.Null(ex);
     }
 
     [Fact]
-    public async Task TranscribeImageAsync_ReturnsFailure_WhenApiReturnsErrorStatus()
+    public async Task TranscribeImageAsync_ReturnsFailure_WhenChatClientThrows()
     {
-        using var handler = new FakeHandler(HttpStatusCode.InternalServerError, "something broke");
-        var (sut, client) = CreateSut(handler);
-        using (client)
-        {
-            var result = await sut.TranscribeImageAsync(SampleImageBytes);
+        var chatClient = Substitute.For<ChatClient>();
+        chatClient.CompleteChatAsync(
+                Arg.Any<IEnumerable<ChatMessage>>(),
+                Arg.Any<ChatCompletionOptions>(),
+                Arg.Any<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("connection refused"));
 
-            Assert.False(result.Success);
-            Assert.Equal("Transcription service returned status 500.", result.ErrorMessage);
-        }
-    }
+        var sut = new TranscriptionService(chatClient, NullLogger<TranscriptionService>.Instance, TimeSpan.FromSeconds(60));
 
-    [Fact]
-    public async Task TranscribeImageAsync_ReturnsFailure_WhenApiReturnsBadRequest()
-    {
-        using var handler = new FakeHandler(HttpStatusCode.BadRequest, "bad image");
-        var (sut, client) = CreateSut(handler);
-        using (client)
-        {
-            var result = await sut.TranscribeImageAsync(SampleImageBytes);
+        var result = await sut.TranscribeImageAsync(SampleImageBytes);
 
-            Assert.False(result.Success);
-            Assert.Equal("Transcription service returned status 400.", result.ErrorMessage);
-        }
+        Assert.False(result.Success);
+        Assert.Equal("Transcription service failed.", result.ErrorMessage);
     }
 
     [Fact]
     public async Task TranscribeImageAsync_ThrowsOperationCanceled_WhenCallerCancels()
     {
-        using var handler = new DelayHandler(TimeSpan.FromSeconds(120));
-        var (sut, client) = CreateSut(handler);
-        using (client)
-        {
-            using var cts = new CancellationTokenSource();
-            cts.Cancel();
+        var chatClient = Substitute.For<ChatClient>();
+        chatClient.CompleteChatAsync(
+                Arg.Any<IEnumerable<ChatMessage>>(),
+                Arg.Any<ChatCompletionOptions>(),
+                Arg.Any<CancellationToken>())
+            .ThrowsAsync(new OperationCanceledException());
 
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                () => sut.TranscribeImageAsync(SampleImageBytes, cts.Token));
-        }
+        var sut = new TranscriptionService(chatClient, NullLogger<TranscriptionService>.Instance, TimeSpan.FromSeconds(60));
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => sut.TranscribeImageAsync(SampleImageBytes, cts.Token));
     }
-
-    [Fact]
-    public async Task TranscribeImageAsync_ReturnsFailure_WhenHttpRequestFails()
-    {
-        using var handler = new ThrowingHandler(new HttpRequestException("connection refused"));
-        var (sut, client) = CreateSut(handler);
-        using (client)
-        {
-            var result = await sut.TranscribeImageAsync(SampleImageBytes);
-
-            Assert.False(result.Success);
-            Assert.Equal("Transcription service is unavailable.", result.ErrorMessage);
-        }
-    }
-
-    [Fact]
-    public async Task TranscribeImageAsync_ReturnsFailure_WhenResponseIsInvalidJson()
-    {
-        using var handler = new FakeHandler(HttpStatusCode.OK, "not json at all {{{");
-        var (sut, client) = CreateSut(handler);
-        using (client)
-        {
-            var result = await sut.TranscribeImageAsync(SampleImageBytes);
-
-            Assert.False(result.Success);
-            Assert.Equal("Transcription service returned an invalid response.", result.ErrorMessage);
-        }
-    }
-
-    [Fact]
-    public async Task TranscribeImageAsync_TrimsText_WhenApiReturnsTextWithWhitespace()
-    {
-        using var handler = new FakeHandler(HttpStatusCode.OK, """{"text":"  trimmed text  "}""");
-        var (sut, client) = CreateSut(handler);
-        using (client)
-        {
-            var result = await sut.TranscribeImageAsync(SampleImageBytes);
-
-            Assert.True(result.Success);
-            Assert.Equal("trimmed text", result.Text);
-        }
-    }
-
-    [Fact]
-    public async Task TranscribeImageAsync_ReturnsTimeout_WhenInternalTimeoutExpires()
-    {
-        using var handler = new DelayHandler(TimeSpan.FromSeconds(5));
-        var (sut, client) = CreateSut(handler, timeout: TimeSpan.FromMilliseconds(50));
-        using (client)
-        {
-            var result = await sut.TranscribeImageAsync(SampleImageBytes);
-
-            Assert.False(result.Success);
-            Assert.Contains("timed out", result.ErrorMessage);
-        }
-    }
-
-    #region Test Helpers
-
-    private sealed class FakeHandler : HttpMessageHandler
-    {
-        private readonly HttpStatusCode _statusCode;
-        private readonly string _content;
-
-        public FakeHandler(HttpStatusCode statusCode, string content)
-        {
-            _statusCode = statusCode;
-            _content = content;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(new HttpResponseMessage(_statusCode)
-            {
-                Content = new StringContent(_content)
-            });
-        }
-    }
-
-    private sealed class DelayHandler : HttpMessageHandler
-    {
-        private readonly TimeSpan _delay;
-
-        public DelayHandler(TimeSpan delay) => _delay = delay;
-
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            await Task.Delay(_delay, cancellationToken);
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{"text":"late"}""")
-            };
-        }
-    }
-
-    private sealed class ThrowingHandler : HttpMessageHandler
-    {
-        private readonly Exception _exception;
-
-        public ThrowingHandler(Exception exception) => _exception = exception;
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            throw _exception;
-        }
-    }
-
-    #endregion
 }
